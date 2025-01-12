@@ -6,6 +6,7 @@ nav.c-navigation(
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive' data-test='NavigationToggleBtn')
     badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
+    badge.c-toggle-badge(v-else-if='currentGroupUnreadMessagesCount' data-test='dashboardBadge') {{ currentGroupUnreadMessagesCount }}
   groups-list(v-if='groupsByName.length >= 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
@@ -36,7 +37,7 @@ nav.c-navigation(
         notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
 
       .c-navigation-body(
-        @click.self='enableTimeTravel'
+        @click.stop='onMenuItemsClick'
         v-if='!notApprovedToGroupYet && groupsByName.length'
       )
         .c-navigation-body-top
@@ -130,8 +131,7 @@ export default ({
       },
       ephemeral: {
         isActive: false,
-        isTouch: null,
-        timeTravelComponentName: null
+        isTouch: null
       }
     }
   },
@@ -186,14 +186,12 @@ export default ({
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
-    enableTimeTravel (evt) {
-      if (evt.shiftKey && process.env.NODE_ENV !== 'production') {
-        console.debug('enable time travel!')
-        this.ephemeral.timeTravelComponentName = 'TimeTravel'
-      }
-    },
     checkIsTouch () {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
+    },
+    onMenuItemsClick () {
+      // Close the menu when a menu item is clicked.
+      this.ephemeral.isActive = false
     }
   }
 }: Object)

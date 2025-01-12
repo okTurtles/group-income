@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-item-wrapper(data-test='proposalItem')
+li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
   .c-item
     .c-main
       .c-icons
@@ -24,7 +24,7 @@ li.c-item-wrapper(data-test='proposalItem')
             .button.is-icon-smaller.is-primary
               i.icon-question
 
-        p(data-test='title' v-safe-html='subtitle')
+        p.c-content-title(data-test='title' v-safe-html='subtitle')
 
         p.has-text-1(
           :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
@@ -81,8 +81,8 @@ import {
 } from '@model/contracts/shared/constants.js'
 import currencies from '@model/contracts/shared/currencies.js'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
@@ -328,6 +328,8 @@ export default ({
         this.currentGroupState._vm.authorizedKeys[inviteKeyId]._notAfterHeight !== undefined ||
         // If the expiration date is less than the current date, it means that
         // the invite can no longer be used
+        // Note: Using negative logic to allow for undefined expiry, which means
+        // it never expires
         this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()
       ) {
         return true
@@ -377,6 +379,10 @@ export default ({
 
   &-content {
     flex-grow: 1;
+  }
+
+  .c-content-title {
+    word-break: break-word;
   }
 }
 

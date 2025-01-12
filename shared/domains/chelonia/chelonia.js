@@ -21,7 +21,7 @@ import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
 import './time-sync.js'
-import { buildShelterAuthorizationHeader, checkCanBeGarbageCollected, clearObject, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
+import { buildShelterAuthorizationHeader, checkCanBeGarbageCollected, clearObject, collectEventStream, eventsAfter, findForeignKeysByContractID, findKeyIdByName, findRevokedKeyIdsByName, findSuitableSecretKeyId, getContractIDfromKeyId, reactiveClearObject } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -339,7 +339,9 @@ export default (sbp('sbp/selectors/register', {
       postCleanupFn = newState
       newState = undefined
     }
-    sbp('chelonia/private/stopClockSync')
+    if (this.pubsub) {
+      sbp('chelonia/private/stopClockSync')
+    }
     // wait for any pending sync operations to finish before saving
     Object.keys(this.postSyncOperations).forEach(cID => {
       sbp('chelonia/private/enqueuePostSyncOps', cID)
@@ -368,11 +370,14 @@ export default (sbp('sbp/selectors/register', {
     clearObject(this.currentSyncs)
     clearObject(this.postSyncOperations)
     clearObject(this.sideEffectStacks)
+    const removedContractIDs = Array.from(this.subscriptionSet)
     this.subscriptionSet.clear()
     sbp('chelonia/clearTransientSecretKeys')
     sbp('okTurtles.events/emit', CHELONIA_RESET)
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
-    sbp('chelonia/private/startClockSync')
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: removedContractIDs })
+    if (this.pubsub) {
+      sbp('chelonia/private/startClockSync')
+    }
     if (newState) {
       Object.entries(newState).forEach(([key, value]) => {
         this.config.reactiveSet(rootState, key, value)
@@ -556,6 +561,9 @@ export default (sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
+    if (this.pubsub) {
+      sbp('chelonia/private/stopClockSync')
+    }
     sbp('chelonia/private/startClockSync')
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
@@ -615,7 +623,7 @@ export default (sbp('sbp/selectors/register', {
                       serializedData: JSON.parse(Buffer.from(msg.data).toString())
                     })])
                   }).catch(e => {
-                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, e)
+                    console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, msg, e)
                   })
                 }]
               default:
@@ -639,6 +647,14 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/on', CONTRACTS_MODIFIED, this.contractsModifiedListener)
     }
     return this.pubsub
+  },
+  // This selector is defined primarily for ingesting web push notifications,
+  // although it can be used as a general-purpose API to process events received
+  // from other external sources that are not managed by Chelonia itself (i.e. sources
+  // other than the Chelonia-managed websocket connection and RESTful API).
+  'chelonia/handleEvent': async function (event: string) {
+    const { contractID } = GIMessage.deserializeHEAD(event)
+    return await sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
   },
   'chelonia/defineContract': function (contract: Object) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
@@ -997,28 +1013,28 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
-  'chelonia/out/eventsAfter': eventsAfter,
   'chelonia/out/latestHEADInfo': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
   },
-  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number) {
+  'chelonia/out/eventsAfter': eventsAfter,
+  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number, options) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
     }
     const offset = Math.max(0, beforeHeight - limit + 1)
     const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
-    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit)
+    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit, undefined, options)
   },
-  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0) {
+  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0, { stream } = { stream: true }) {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
     }
     let reader: ReadableStreamReader
-    return new ReadableStream({
+    const s = new ReadableStream({
       start: async (controller) => {
         const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
         const deserializedHEAD = GIMessage.deserializeHEAD(first)
@@ -1043,6 +1059,10 @@ export default (sbp('sbp/selectors/register', {
         }
       }
     })
+
+    if (stream) return s
+    // Workaround for <https://bugs.webkit.org/show_bug.cgi?id=215485>
+    return collectEventStream(s)
   },
   'chelonia/rootState': function () { return sbp(this.config.stateSelector) },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
@@ -1114,6 +1134,7 @@ export default (sbp('sbp/selectors/register', {
     }: GIOpContract)
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
+      height: 0,
       op: [
         GIMessage.OP_CONTRACT,
         signedOutgoingDataWithRawKey(signingKey, payload)

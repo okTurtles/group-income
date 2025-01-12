@@ -1,5 +1,7 @@
 <template lang='pug'>
 .c-attachment-container(ref='container' :class='{ "is-for-download": isForDownload }')
+
+  // Displaying attachments as part of message
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
@@ -13,13 +15,16 @@
 
         .c-non-image-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext {{ fileExt(entry) }}
+          .c-file-ext-and-size
+            .c-file-ext {{ fileExt(entry) }}
+            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
 
       .c-preview-img(v-else)
         img(
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
+          @click='openImageViewer(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -33,7 +38,7 @@
         .c-attachment-actions
           tooltip(
             direction='top'
-            :text='L("Download")'
+            :text='getDownloadTooltipText(entry)'
           )
             button.is-icon-small(
               :aria-label='L("Download")'
@@ -47,15 +52,17 @@
           )
             button.is-icon-small(
               :aria-label='L("Delete")'
-              @click='deleteAttachment(entryIndex)'
+              @click='deleteAttachment({ index: entryIndex })'
             )
               i.icon-trash-alt
 
+  // Displaying attachments as part of <send-area />
   template(v-else)
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
       :key='entryIndex'
       :class='"is-" + fileType(entry)'
+      @click='openImageViewer(entry.url)'
     )
       img.c-preview-img(
         v-if='fileType(entry) === "image" && entry.url'
@@ -73,7 +80,7 @@
       button.c-attachment-remove-btn(
         type='button'
         :aria-label='L("Remove attachment")'
-        @click='$emit("remove", entry.url)'
+        @click.stop='$emit("remove", entry.url)'
       )
         i.icon-times
 
@@ -86,8 +93,10 @@
 import sbp from '@sbp/sbp'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType } from '@view-utils/filters.js'
+import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
+import { L } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -107,7 +116,9 @@ export default {
     },
     isGroupCreator: Boolean,
     isForDownload: Boolean,
-    isMsgSender: Boolean
+    isMsgSender: Boolean,
+    ownerID: String,
+    createdAt: [Date, String]
   },
   data () {
     return {
@@ -140,19 +151,40 @@ export default {
           return this.getStretchedDimension(attachment.dimension)
         })
       }
+
+      sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
+    }
+  },
+  beforeDestroy () {
+    if (this.shouldPreviewImages) {
+      sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   methods: {
     fileExt ({ name }) {
       return getFileExtension(name, true)
     },
+    fileSizeDisplay ({ size }) {
+      return size ? formatBytesDecimal(size) : ''
+    },
+    getDownloadTooltipText ({ size }) {
+      return this.shouldPreviewImages
+        ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
+        : L('Download')
+    },
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment (index) {
-      const attachment = this.attachmentList[index]
-      if (attachment.downloadData) {
-        this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+    deleteAttachment ({ index, url }) {
+      if (url) {
+        index = this.objectURLList.indexOf(url)
+      }
+
+      if (index >= 0) {
+        const attachment = this.attachmentList[index]
+        if (attachment.downloadData) {
+          this.$emit('delete-attachment', attachment.downloadData.manifestCid)
+        }
       }
     },
     async getAttachmentObjectURL (attachment) {
@@ -203,6 +235,34 @@ export default {
         width: `${widthInPixel}px`,
         height: `${heightInPixel}px`
       }
+    },
+    openImageViewer (objectURL) {
+      if (!objectURL) { return }
+
+      const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+        .map((entry, index) => {
+          const imgUrl = entry.url || this.objectURLList[index] || ''
+          return {
+            name: entry.name,
+            ownerID: this.ownerID,
+            createdAt: this.createdAt || new Date(),
+            size: entry.size,
+            id: imgUrl,
+            imgUrl,
+            manifestCid: entry.downloadData?.manifestCid
+          }
+        })
+      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
+
+      sbp(
+        'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+        null,
+        {
+          images: allImageAttachments,
+          initialIndex: initialIndex === -1 ? 0 : initialIndex,
+          canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
+        }
+      )
     }
   },
   watch: {
@@ -243,8 +303,22 @@ export default {
   &.is-for-download {
     padding: 0;
 
-    .c-preview-non-image .c-non-image-file-info {
-      width: calc(100% - 4rem);
+    .c-preview-non-image {
+      .c-non-image-file-info {
+        width: calc(100% - 4rem);
+      }
+
+      .c-file-ext-and-size {
+        display: flex;
+        align-items: flex-end;
+        flex-direction: row;
+        column-gap: 0.325rem;
+      }
+
+      .c-file-size {
+        color: $text_1;
+        font-size: 0.8em;
+      }
     }
 
     .c-attachment-actions-wrapper {
@@ -252,7 +326,6 @@ export default {
       position: absolute;
       right: 0.5rem;
       top: 0;
-      bottom: 0;
 
       .c-attachment-actions {
         display: flex;
@@ -278,6 +351,8 @@ export default {
     .is-download-item {
       &:hover .c-attachment-actions-wrapper {
         display: flex;
+        flex-direction: column;
+        align-items: flex-end;
       }
 
       .c-preview-non-image {
@@ -290,7 +365,8 @@ export default {
         padding: 0.5rem;
 
         img {
-          pointer-events: none;
+          user-select: none;
+          cursor: pointer;
           max-width: 100%;
           max-height: 20rem;
 
@@ -320,6 +396,7 @@ export default {
   &.is-image {
     width: 4.5rem;
     height: 4.5rem;
+    cursor: pointer;
 
     .c-preview-img {
       pointer-events: none;

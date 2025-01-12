@@ -4,9 +4,10 @@ import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
@@ -55,96 +56,107 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
   //   or new Vuex state: any Chelonia-specific state will be set directly from
   //   `cheloniaState` and any exisiting contract state in `state` or `vuexState`
   //   will be discarded.
-  try {
-    const vuexState = sbp('state/vuex/state')
-    if (vuexState.loggedIn && vuexState.loggedIn.identityContractID !== identityContractID) {
+  await sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
+    try {
+      const vuexState = sbp('state/vuex/state')
+      if (vuexState.loggedIn && vuexState.loggedIn.identityContractID !== identityContractID) {
       // This shouldn't happen. It means that we received a LOGIN event but
       // there's an active session for a different user. If this happens, it
       // means that there's buggy login logic that should be reported and fixed
-      console.error('Received login event during active session', { receivedIdentityContractID: identityContractID, existingIdentityContractID: vuexState.loggedIn.identityContractID })
-      throw new Error('Received login event but there already is an active session')
-    }
-    const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
-    // If `state` is set, process it and replace Vuex state with it
-    if (state) {
+        console.error('Received login event during active session', { receivedIdentityContractID: identityContractID, existingIdentityContractID: vuexState.loggedIn.identityContractID })
+        throw new Error('Received login event but there already is an active session')
+      }
+      const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
+      // If `state` is set, process it and replace Vuex state with it
+      if (state) {
       // Exclude contracts from the state
-      if (state.contracts) {
-        Object.keys(state.contracts).forEach(k => {
+        if (state.contracts) {
+          Object.keys(state.contracts).forEach(k => {
           // Vue.delete not needed as the entire object will replace the state
-          delete state[k]
-        })
-      }
-      // Augment state with Chelonia state
-      Object.keys(cheloniaState.contracts).forEach(k => {
-        if (cheloniaState[k]) {
-          // Vue.set not needed as the entire object will replace the state
-          state[k] = cheloniaState[k]
+            delete state[k]
+          })
         }
-      })
-      state.contracts = cheloniaState.contracts
-      if (cheloniaState.namespaceLookups) {
-        state.namespaceLookups = cheloniaState.namespaceLookups
-      }
-      // End exclude contracts
-      sbp('state/vuex/postUpgradeVerification', state)
-      sbp('state/vuex/replace', state)
-    } else {
+        // Augment state with Chelonia state
+        Object.keys(cheloniaState.contracts).forEach(k => {
+          if (cheloniaState[k]) {
+          // Vue.set not needed as the entire object will replace the state
+            state[k] = cheloniaState[k]
+          }
+        })
+        state.contracts = cheloniaState.contracts
+        if (cheloniaState.namespaceLookups) {
+          state.namespaceLookups = cheloniaState.namespaceLookups
+        }
+        // End exclude contracts
+        sbp('state/vuex/postUpgradeVerification', state)
+        sbp('state/vuex/replace', state)
+      } else {
       // Else, if `state` was not given, just sync add contracts from Chelonia
       // to the current Vuex state
-      const state = vuexState
-      // Exclude contracts from the state
-      if (state.contracts) {
-        Object.keys(state.contracts).forEach(k => {
-          Vue.delete(state, k)
-        })
-      }
-      Object.keys(cheloniaState.contracts).forEach(k => {
-        if (cheloniaState[k]) {
-          Vue.set(state, k, cheloniaState[k])
+        const state = vuexState
+        // Exclude contracts from the state
+        if (state.contracts) {
+          Object.keys(state.contracts).forEach(k => {
+            Vue.delete(state, k)
+          })
         }
+        Object.keys(cheloniaState.contracts).forEach(k => {
+          if (cheloniaState[k]) {
+            Vue.set(state, k, cheloniaState[k])
+          }
+        })
+        Vue.set(state, 'contracts', cheloniaState.contracts)
+        if (cheloniaState.namespaceLookups) {
+          Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+        }
+        // End exclude contracts
+        sbp('state/vuex/postUpgradeVerification', state)
+      }
+
+      if (encryptionParams) {
+        sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
+      }
+
+      // NOTE: users could notice that they leave the group by someone
+      // else when they log in
+      const currentState = sbp('state/vuex/state')
+      if (!currentState.currentGroupId) {
+        const gId = Object.keys(currentState.contracts)
+          .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
+
+        if (gId) {
+          sbp('gi.app/group/switch', gId)
+        }
+      }
+
+      // Whenever there's an active session, the encrypted save state should be
+      // removed, as it is only used for recovering the state when logging in
+      sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
+        console.error('Error deleting encrypted settings after login')
       })
-      Vue.set(state, 'contracts', cheloniaState.contracts)
-      if (cheloniaState.namespaceLookups) {
-        Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
-      }
-      // End exclude contracts
-      sbp('state/vuex/postUpgradeVerification', state)
+
+      /* Commented out as persistentActions are not being used
+      // TODO: [SW] It may make more sense to load persistent actions in
+      // actions in the SW instead of on each tab
+      const databaseKey = `chelonia/persistentActions/${identityContractID}`
+      sbp('chelonia.persistentActions/configure', { databaseKey })
+      await sbp('chelonia.persistentActions/load')
+      */
+
+      sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
+    } catch (e) {
+      sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
     }
+  })
+})
 
-    if (encryptionParams) {
-      sbp('state/vuex/commit', 'login', { identityContractID, encryptionParams })
-    }
+// handle incoming identity-related events that are sent from the service worker
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
+  sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+})
 
-    // NOTE: users could notice that they leave the group by someone
-    // else when they log in
-    const currentState = sbp('state/vuex/state')
-    if (!currentState.currentGroupId) {
-      const gId = Object.keys(currentState.contracts)
-        .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
-
-      if (gId) {
-        sbp('gi.app/group/switch', gId)
-      }
-    }
-
-    // Whenever there's an active session, the encrypted save state should be
-    // removed, as it is only used for recovering the state when logging in
-    sbp('gi.db/settings/deleteEncrypted', identityContractID).catch(e => {
-      console.error('Error deleting encrypted settings after login')
-    })
-
-    /* Commented out as persistentActions are not being used
-    // TODO: [SW] It may make more sense to load persistent actions in
-    // actions in the SW instead of on each tab
-    const databaseKey = `chelonia/persistentActions/${identityContractID}`
-    sbp('chelonia.persistentActions/configure', { databaseKey })
-    await sbp('chelonia.persistentActions/load')
-    */
-
-    sbp('okTurtles.events/emit', LOGIN_COMPLETE, { identityContractID })
-  } catch (e) {
-    sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
-  }
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
+  sbp('state/vuex/commit', 'setPreferences', preferences)
 })
 
 /* Commented out as persistentActions are not being used
@@ -156,7 +168,7 @@ sbp('okTurtles.events/on', LOGOUT, (a) => {
 */
 
 export default (sbp('sbp/selectors/register', {
-  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>) => {
+  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>): Promise<[string, ?string]> => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -175,7 +187,41 @@ export default (sbp('sbp/selectors/register', {
       'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
     })).toString()}`).then(handleFetchResult('text'))
 
-    return decryptContractSalt(c, contractHash)
+    // [contractSalt, cid]
+    return JSON.parse(decryptContractSalt(c, contractHash))
+  },
+  'gi.app/identity/updateSaltRequest': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
+    const r = randomNonce()
+    const b = hash(r)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+      .then(handleFetchResult('json'))
+
+    const { authSalt, s, sig } = authHash
+
+    const h = await hashPassword(oldPassword.valueOf(), authSalt)
+
+    const [c, hc] = computeCAndHc(r, s, h)
+
+    const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEc(newPassword.valueOf(), c)
+
+    const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body:
+        `${(new URLSearchParams({
+          'r': r,
+          's': s,
+          'sig': sig,
+          'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, ''),
+          'Ea': encryptedArgs
+        })).toString()}`
+    }).then(handleFetchResult('text'))
+
+    const [oldContractSalt, updateToken] = JSON.parse(decryptContractSalt(c, response))
+
+    return [contractSalt, oldContractSalt, updateToken]
   },
   'gi.app/identity/create': async function ({
     data: { username, email, password, picture },
@@ -208,9 +254,8 @@ export default (sbp('sbp/selectors/register', {
     // next create the identity contract itself
     try {
       const userID = await sbp('gi.actions/identity/create', {
-        // TODO: Wrap IPK and IEK in "Secret"
-        IPK: serializeKey(IPK, true),
-        IEK: serializeKey(IEK, true),
+        IPK: new Secret(serializeKey(IPK, true)),
+        IEK: new Secret(serializeKey(IEK, true)),
         publishOptions,
         username,
         email,
@@ -274,14 +319,16 @@ export default (sbp('sbp/selectors/register', {
 
       const password = wpassword?.valueOf()
       const transientSecretKeys = []
+      let oldKeysAnchorCid
 
       // If we're creating a new session, here we derive the IEK. This key (not
       // the password) will be passed to the service worker.
       if (password) {
         try {
-          const salt = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
+          const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
           const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
           transientSecretKeys.push(IEK)
+          oldKeysAnchorCid = cid
         } catch (e) {
           console.error('caught error calling retrieveSalt:', e)
           throw new GIErrorUIRuntimeError(L('Incorrect username or password'))
@@ -289,7 +336,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        sbp('appLogs/startCapture', identityContractID)
+        await sbp('appLogs/startCapture', identityContractID)
         const { state, cheloniaState, encryptionParams } = await loadState(identityContractID, password)
         let loginCompleteHandler, loginErrorHandler
 
@@ -299,7 +346,7 @@ export default (sbp('sbp/selectors/register', {
           // complete
           const loginCompletePromise = new Promise((resolve, reject) => {
             const loginCompleteHandler = ({ identityContractID: id }) => {
-              sbp('okTurtles.events/off', LOGIN_ERROR, loginErrorHandler)
+              removeLoginErrorHandler()
               if (id === identityContractID) {
               // Before the promise resolves, we need to save the state
               // by calling 'state/vuex/save' to ensure that refreshing the page
@@ -310,7 +357,7 @@ export default (sbp('sbp/selectors/register', {
               }
             }
             const loginErrorHandler = ({ identityContractID: id, error }) => {
-              sbp('okTurtles.events/off', LOGIN_COMPLETE, loginCompleteHandler)
+              removeLoginCompleteHandler()
               if (id === identityContractID) {
                 reject(error)
               } else {
@@ -318,8 +365,8 @@ export default (sbp('sbp/selectors/register', {
               }
             }
 
-            sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
-            sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
+            const removeLoginCompleteHandler = sbp('okTurtles.events/once', LOGIN_COMPLETE, loginCompleteHandler)
+            const removeLoginErrorHandler = sbp('okTurtles.events/once', LOGIN_ERROR, loginErrorHandler)
           })
 
           // Are we logging in and setting up a fresh session or loading an
@@ -331,8 +378,38 @@ export default (sbp('sbp/selectors/register', {
             // and `state` will be sent back to replace the current Vuex state
             // after login. When using a service worker, all tabs will receive
             // a new Vuex state to replace their state with.
-            await sbp('gi.actions/identity/login', { identityContractID, encryptionParams, cheloniaState, state, transientSecretKeys: transientSecretKeys.map(k => new Secret(serializeKey(k, true))) })
+            await sbp('gi.actions/identity/login', {
+              identityContractID,
+              encryptionParams,
+              cheloniaState,
+              state,
+              transientSecretKeys: new Secret(transientSecretKeys.map(k => serializeKey(k, true))),
+              oldKeysAnchorCid
+            })
           } else {
+            try {
+              await sbp('chelonia/contract/sync', identityContractID)
+            } catch (e) {
+              // Since we're throwing or returning, the `await` below will not
+              // be used. In either case, login won't complete after this point,
+              // so errors there aren't relevant anymore.
+              loginCompletePromise.catch((e) => {
+                // Using `warn` level because this error is not so relevant
+                // However, errors might be helpful for debugging purposes, so
+                // we still log it.
+                console.warn('[gi.app/identity/login] Error in login complete promise', e)
+              })
+
+              // To make it easier to test things during development, if the
+              // identity contract no longer exists, we automatically log out
+              // If we're in production mode, we show a prompt instead as logging
+              // out could result in permanent data loss (of the local state).
+              if (process.env.NODE_ENV !== 'production') {
+                console.error('Error syncing identity contract, automatically logging out', identityContractID, e)
+                return sbp('gi.app/identity/_private/logout', state)
+              }
+              throw e
+            }
             // If an existing session exists, we just emit the LOGIN event
             // to set the local Vuex state and signal we're ready.
             sbp('okTurtles.events/emit', LOGIN, { identityContractID, state })
@@ -356,7 +433,7 @@ export default (sbp('sbp/selectors/register', {
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (!result) {
-            return sbp('gi.app/identity/logout')
+            return sbp('gi.app/identity/_private/logout', state)
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
@@ -367,7 +444,7 @@ export default (sbp('sbp/selectors/register', {
         return identityContractID
       } catch (e) {
         console.error('gi.app/identity/login failed!', e)
-        const humanErr = L('Failed to login: {reportError}', LError(e))
+        const humanErr = L('Failed to log in: {reportError}', LError(e))
         alert(humanErr)
         await sbp('gi.app/identity/_private/logout')
           .catch((e) => {
@@ -385,9 +462,9 @@ export default (sbp('sbp/selectors/register', {
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
-  'gi.app/identity/_private/logout': async function () {
+  'gi.app/identity/_private/logout': async function (errorState: ?Object) {
     try {
-      const state = cloneDeep(sbp('state/vuex/state'))
+      const state = errorState || cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return
 
       const cheloniaState = await sbp('gi.actions/identity/logout')
@@ -401,7 +478,7 @@ export default (sbp('sbp/selectors/register', {
 
         await sbp('state/vuex/save', true, state)
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
-        sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+        await sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
@@ -409,5 +486,32 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.app/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', ['gi.app/identity/_private/logout', ...params])
+  },
+  'gi.app/identity/changePassword': async (wOldPassword: Secret<string>, wNewPassword: Secret<string>) => {
+    const state = sbp('state/vuex/state')
+    if (!state.loggedIn) return
+    const getters = sbp('state/vuex/getters')
+
+    const { identityContractID } = state.loggedIn
+    const username = getters.usernameFromID(identityContractID)
+    const oldPassword = wOldPassword.valueOf()
+    const newPassword = wNewPassword.valueOf()
+
+    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, wOldPassword, wNewPassword)
+
+    const oldIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, oldPassword, oldContractSalt)
+    const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)
+    const newIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, newPassword, newContractSalt)
+    const newIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, newPassword, newContractSalt)
+
+    return sbp('gi.actions/identity/changePassword', {
+      identityContractID,
+      username,
+      oldIPK: new Secret(oldIPK),
+      oldIEK: new Secret(oldIEK),
+      newIPK: new Secret(newIPK),
+      newIEK: new Secret(newIEK),
+      updateToken: new Secret(updateToken)
+    })
   }
 }): string[])

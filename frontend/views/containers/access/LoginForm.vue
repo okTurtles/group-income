@@ -4,6 +4,7 @@ form(data-test='login' @submit.prevent='')
     i18n.label Username
     input.input(
       :class='{error: $v.form.username.$error}'
+      autocapitalize='off'
       name='username'
       ref='username'
       v-model='form.username'
@@ -35,7 +36,7 @@ import { L } from '@common/common.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
-import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+import { requestNotificationPermission } from '@model/notifications/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
@@ -92,14 +93,7 @@ export default ({
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        const granted = (await requestNotificationPermission()) === 'granted'
-        if (granted) {
-          // TODO: remove in production - this is just for testing the notification
-          await sbp('service-worker/send-push', {
-            title: 'Logged in',
-            body: 'Welcome again!'
-          })
-        }
+        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

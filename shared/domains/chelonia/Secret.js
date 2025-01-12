@@ -4,9 +4,13 @@ import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from 
 
 /* Wrapper class for secrets, which identifies them as such and prevents them
 from being logged */
-export class Secret<T> {
-  _content: T
 
+// Use a `WeakMap` to store the actual secret outside of the returned `Secret`
+// object. This ensures that the only way to access the secret is via the
+// `.valueOf()` method, and it prevents accidentally logging things that
+// shouldn't be logged.
+const wm = new WeakMap()
+export class Secret<T> {
   // $FlowFixMe[unsupported-syntax]
   static [serdesDeserializeSymbol] (secret) {
     return new this(secret)
@@ -14,7 +18,7 @@ export class Secret<T> {
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesSerializeSymbol] (secret: Secret) {
-    return secret._content
+    return wm.get(secret)
   }
 
   // $FlowFixMe[unsupported-syntax]
@@ -23,10 +27,13 @@ export class Secret<T> {
   }
 
   constructor (value: T) {
-    this._content = value
+    // $FlowFixMe[escaped-generic]
+    wm.set(this, value)
   }
 
   valueOf (): T {
-    return this._content
+    // $FlowFixMe[escaped-generic]
+    // $FlowFixMe[incompatible-return]
+    return wm.get(this)
   }
 }

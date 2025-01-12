@@ -11,10 +11,11 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#body='')
     .c-text
       render-message-text(:text='interactiveMessage.text')
-      i18n.c-link(@click='$router.push({ path: "/dashboard#proposals" })') See proposal
+      i18n.c-link(@click='onSeeProposalClick') See proposal
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import {
@@ -31,6 +32,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import MessageBase from './MessageBase.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
@@ -47,6 +49,12 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     data: { proposalType, proposalData }
   })
   const options = Object.assign(proposalDetails, baseOptions)
+
+  if (options.memberID) {
+    // NOTE: replace member with their mention when their contractID is provided
+    //       e.g., when the type is  PROPOSAL_REMOVE_MEMBER
+    options['member'] = `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${options.memberID}`
+  }
 
   const settingChangeMessages = (options) => ({
     [STATUS_OPEN]: L('{from} wants to change the groups {setting}.', options),
@@ -137,10 +145,22 @@ export default ({
     humanDate,
     action () {
       console.log('TODO')
+    },
+    onSeeProposalClick () {
+      const openProposalIds = Object.keys(this.currentGroupState.proposals)
+
+      if (openProposalIds.includes(this.proposal.proposalId)) { // the proposal is currently active
+        this.$router.push({ path: '/dashboard#proposals' })
+      } else { // the proposal has been archived
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: this.proposal.proposalId })
+      }
     }
   },
   computed: {
-    ...mapGetters(['userDisplayNameFromID']),
+    ...mapGetters([
+      'currentGroupState',
+      'userDisplayNameFromID'
+    ]),
     interactiveMessage () {
       const { status, creatorID } = this.proposal
       const baseOptions = { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${creatorID}` }

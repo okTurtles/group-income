@@ -8,10 +8,20 @@ import { isRawSignedData, signedIncomingData } from './signedData.js'
 const rootStateFn = () => sbp('chelonia/rootState')
 
 export interface EncryptedData<T> {
+  // The ID of the encryption key used
   encryptionKeyId: string,
+  // The unencrypted data. For outgoing data, this is the original data given
+  // as input. For incoming data, decryption will be attempted.
   valueOf: () => T,
+  // The serialized _encrypted_ data. For outgoing data, encryption will be
+  // attempted. For incoming data, this is the original data given as input.
+  // The `additionalData` parameter is only used for outgoing data, and binds
+  // the encrypted payload to additional information.
   serialize: (additionalData: ?string) => [string, string],
+  // A string version of the serialized encrypted data (i.e., `JSON.stringify()`)
   toString: (additionalData: ?string) => string,
+  // For incoming data, this is an alias of `serialize`. Undefined for outgoing
+  // data.
   toJSON?: () => [string, string]
 }
 
@@ -254,6 +264,51 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
       // TODO: Specify height
       return signedIncomingData(contractID, state, decryptedValue, NaN, additionalData || '')
     }
+
+    return decryptedValue
+  }
+
+  return wrapper({
+    get encryptionKeyId () {
+      return encryptedDataKeyId(data)
+    },
+    get serialize () {
+      return () => data
+    },
+    get toString () {
+      return () => JSON.stringify(this.serialize())
+    },
+    get valueOf () {
+      return decryptedValueFn
+    },
+    get toJSON () {
+      return this.serialize
+    }
+  })
+}
+
+export const encryptedIncomingDataWithRawKey = <T>(key: Key, data: any, additionalData?: string): EncryptedData<T> => {
+  if (data === undefined || !key) throw new TypeError('Invalid invocation')
+
+  let decryptedValue
+  const eKeyId = keyId(key)
+  const decryptedValueFn = (): any => {
+    if (decryptedValue) {
+      return decryptedValue
+    }
+    const state = {
+      _vm: {
+        authorizedKeys: {
+          [eKeyId]: {
+            purpose: ['enc'],
+            data: serializeKey(key, false),
+            _notBeforeHeight: 0,
+            _notAfterHeight: undefined
+          }
+        }
+      }
+    }
+    decryptedValue = decryptData.call(state, NaN, data, { [eKeyId]: key }, additionalData || '')
 
     return decryptedValue
   }

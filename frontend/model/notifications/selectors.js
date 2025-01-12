@@ -2,9 +2,9 @@
 
 import sbp from '@sbp/sbp'
 import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
-import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 import { makeNotificationHash } from './utils.js'
+import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
 
 /*
  * NOTE: do not refactor occurences of `sbp('state/vuex/state')` by defining a shared constant in the
@@ -39,17 +39,47 @@ sbp('sbp/selectors/register', {
       timestamp: data.createdDate ? new Date(data.createdDate).getTime() : Date.now(),
       type
     }
+    const rootState = sbp('chelonia/rootState')
+    if (rootState.notifications.items.some(item => item.hash === notification.hash)) {
+      // We cannot throw here, as this code might be called from within a contract side effect.
+      return console.error('[gi.notifications/emit] This notification is already in the store.', notification.hash)
+    }
+    const index = rootState.notifications.items.findLastIndex(item => item.timestamp < notification.timestamp)
+    rootState.notifications.items.splice(Math.max(0, index), 0, notification)
+    sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
     sbp('gi.actions/identity/kv/addNotificationStatus', notification)
-    sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
+    sbp('okTurtles.events/emit', NOTIFICATION_EMITTED, notification)
   },
   'gi.notifications/markAsRead' (notification: Notification) {
     sbp('gi.actions/identity/kv/markNotificationStatusRead', notification.hash)
   },
   'gi.notifications/markAllAsRead' (groupID: string) {
-    const notifications = groupID
-      ? sbp('state/vuex/getters').unreadGroupNotificationsFor(groupID)
-      : sbp('state/vuex/getters').currentUnreadNotifications
-    const hashes = notifications.map(item => item.hash)
+    const rootState = sbp('chelonia/rootState')
+    if (!rootState.notifications) return
+    const hashes = rootState.notifications.items.filter(item => {
+      return !item.read && (!groupID || !item.groupID || item.groupID === groupID)
+    }).map(item => item.hash)
     sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes)
+  },
+  'gi.notifications/remove' (hashes: string | string[]) {
+    if (!Array.isArray(hashes)) hashes = [hashes]
+    const rootState = sbp('chelonia/rootState')
+    if (!rootState.notifications) return
+    const hashesSet = new Set(hashes)
+    const indices = rootState.notifications.items.map((item, index) => {
+      if (hashesSet.has(item.hash)) {
+        hashesSet.delete(item.hash)
+        return index
+      }
+      return false
+    }).filter((v) => v !== false).sort().map((v, i) => v - i)
+    indices.forEach((index) => rootState.notifications.items.splice(index, 1))
+    sbp('okTurtles.events/emit', NOTIFICATION_REMOVED, hashes)
+  },
+  'gi.notifications/setNotificationStatus' (status) {
+    const rootState = sbp('chelonia/rootState')
+    rootState.notifications.status = status
+    sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+    sbp('okTurtles.events/emit', NOTIFICATION_STATUS_LOADED, status)
   }
 })

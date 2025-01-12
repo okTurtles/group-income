@@ -33,27 +33,11 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   //       because we remove the state.proposals[proposalHash] in the process function
   //       and can not access the proposal data in the sideEffect
   sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposal]
+    ['gi.contracts/group/makeNotificationWhenProposalClosed', state, contractID, meta, height, proposalHash, proposal]
   )
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
   )
-}
-
-export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creatorID?: string): string {
-  const rootGetters = sbp('state/vuex/getters')
-  const creatorUsername = creatorID && rootGetters.usernameFromID(creatorID)
-  return `${location.origin}/app/join#?${(new URLSearchParams({
-      groupId: groupId,
-      groupName: groupName,
-      secret: inviteSecret,
-      ...(creatorID && {
-        creatorID,
-        ...(creatorUsername && {
-          creatorUsername
-        })
-      })
-    })).toString()}`
 }
 
 export const proposalSettingsType: any = objectOf({

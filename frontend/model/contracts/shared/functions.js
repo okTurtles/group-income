@@ -3,6 +3,8 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import {
+  INVITE_INITIAL_CREATOR,
+  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   POLL_STATUS,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -10,9 +12,9 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
-  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
-  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from './constants.js'
+import { NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
 import { humanDate } from './time.js'
 
 // !!!!!!!!!!!!!!!
@@ -84,7 +86,9 @@ export function getProposalDetails (proposal: Object): Object {
     options['member'] = proposalData.memberName
   } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
     options['memberID'] = proposalData.memberID
-    options['member'] = sbp('state/vuex/getters').userDisplayNameFromID(proposalData.memberID)
+    // options['member'] is not set as it's part of external state. The code
+    // responsible for notifications (`frontend/model/notifications/templates.js`)
+    // will set it
   }
 
   const { proposedValue } = proposalData
@@ -166,7 +170,7 @@ export async function leaveChatRoom (contractID: string, state: Object) {
   sbp('gi.actions/identity/kv/deleteChatRoomUnreadMessages', { contractID }).catch((e) => {
     console.error('[leaveChatroom] Error at deleteChatRoomUnreadMessages ', contractID, e)
   })
-  await sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID: contractID })
+  sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, { chatRoomID: contractID })
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
   // contract (for DMs).
@@ -181,23 +185,6 @@ export function findMessageIdx (hash: string, messages: Array<Object> = []): num
   return -1
 }
 
-// This function serves two purposes, depending on the forceUsername parameter
-// If forceUsername is true, mentions will be like @username, @all, for display
-// purposes.
-// If forceUsername is false (default), mentions like @username will be converted
-// to @<userID>, for internal representation purposes.
-// forceUsername is used for display purposes in the UI, so that we can show
-// a mention like @username instead of @userID in SendArea
-export function makeMentionFromUsername (username: string, forceUsername: ?boolean): {
-  me: string, all: string
-} {
-  const rootGetters = sbp('state/vuex/getters')
-  // Even if forceUsername is true, we want to look up the contract ID to ensure
-  // that it exists, so that we know it'll later succeed.
-  const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
-  return makeMentionFromUserID(forceUsername && userID ? username : userID)
-}
-
 export function makeMentionFromUserID (userID: string): {
   me: string, all: string
 } {
@@ -205,61 +192,6 @@ export function makeMentionFromUserID (userID: string): {
     me: userID ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${userID}` : '',
     all: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}all`
   }
-}
-
-export function makeChannelMention (str: string, withId: boolean = false): string {
-  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
-}
-
-export function getIdFromChannelMention (str: string): string {
-  return str.includes(':chatID:')
-    ? str.split(':chatID:')[1]
-    : ''
-}
-
-export function swapMentionIDForDisplayname (
-  text: string,
-  options: Object = {
-    escaped: true, // this indicates that the text contains escaped characters
-    forChat: true // this indicates that the function is being used for messages inside chatroom
-  }
-): string {
-  const {
-    getChatroomNameById,
-    usernameFromID,
-    userDisplayNameFromID
-  } = sbp('state/vuex/getters')
-  const { reverseNamespaceLookups } = sbp('state/vuex/state')
-  const possibleMentions = [
-    ...Object.keys(reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-    makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
-  ]
-
-  const { escaped, forChat } = options
-  const regEx = escaped
-    ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
-    : new RegExp(`(${possibleMentions.join('|')})`)
-
-  const swap = (t) => {
-    if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
-      // swap member mention
-      const userID = t.slice(1)
-      const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : ''
-      const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID)
-      return prefix + body
-    } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
-      // swap channel mention
-      const channelID = getIdFromChannelMention(t)
-      const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
-      return prefix + getChatroomNameById(channelID)
-    }
-    return t
-  }
-
-  return text
-    .split(regEx)
-    .map(t => regEx.test(t) ? swap(t) : t)
-    .join('')
 }
 
 // The `referenceTally` function is meant as an utility function to handle
@@ -381,4 +313,39 @@ export const referenceTally = (selector: string): Object => {
       }
     }
   }
+}
+
+export const doesGroupAnyoneCanJoinNeedUpdating = (state: Object): number | false => {
+  const hasBeenUpdated = Object.keys(state.invites).some(inviteId => {
+    return (
+      // See if there's an 'anyone can join' link
+      state.invites[inviteId].creatorID === INVITE_INITIAL_CREATOR &&
+      // that doesn't expire
+      state._vm.invites[inviteId].expires == null
+    )
+  })
+  // If non-expiring 'anyone can join' links are found, the contract
+  // doesn't need to be updated
+  if (hasBeenUpdated) return false
+
+  // Add up all all used 'anyone can join' invite links
+  // Then, we take the difference and, if the number is less than
+  // MAX_GROUP_MEMBER_COUNT, we need to create a new invite.
+  const usedInvites = Object.keys(state.invites)
+    // First, we only want 'anyone can join invites'
+    .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR)
+    // The reduce function adds the number of 'used' invites in an invite
+    // link across all existing (expired or not) invites
+    .reduce((acc, cv) => acc +
+      (
+        // For this, we take the difference between the `initialQuantity`
+        // and the 'available' invites (`quantity`, which represents how
+        // many invites are available, if the invite was still valid)
+        (state._vm.invites[cv].initialQuantity - state._vm.invites[cv].quantity) || 0
+      ), 0
+    )
+
+  const quantity = Math.max(MAX_GROUP_MEMBER_COUNT - usedInvites, 0)
+
+  return quantity
 }

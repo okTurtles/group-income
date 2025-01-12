@@ -26,7 +26,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import ConfettiAnimation from '@components/confetti-animation/ConfettiAnimation.vue'
 
@@ -41,7 +42,8 @@ export default ({
     $v: { type: Object }
   },
   computed: {
-    ...mapGetters(['groupSettings'])
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['groupSettings', 'ourIdentityContractId'])
   },
   data () {
     return {
@@ -52,6 +54,14 @@ export default ({
     toDashboard () {
       if (this.isButtonClicked) return
       this.isButtonClicked = true
+      const groupContractID = this.currentGroupId
+      sbp('gi.actions/identity/setGroupAttributes', {
+        contractID: this.ourIdentityContractId,
+        data: {
+          groupContractID,
+          attributes: { seenWelcomeScreen: true }
+        }
+      }).catch(e => console.warn('[GroupWelcome.vue] Error setting seenWelcomeScreen attribute', groupContractID, e))
       this.$router.push({ path: '/dashboard' })
     }
   }

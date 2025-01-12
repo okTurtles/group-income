@@ -63,16 +63,17 @@ tooltip(
         ) Add payment information
 
       .buttons(v-if='!isSelf')
-        i18n.button.is-outlined.is-small(
-          tag='button'
-          @click='sendMessage'
+        button-submit.is-outlined.is-small(
+          type='button'
           data-test='buttonSendMessage'
-        ) Send message
+          @click='sendMessage'
+        )
+          i18n Send message
 
         i18n.button.is-outlined.is-small(
           v-if='groupShouldPropose || isGroupCreator'
           tag='button'
-          @click='openModal("RemoveMember", { memberID: contractID })'
+          @click.stop='onRemoveMemberClick'
           data-test='buttonRemoveMember'
         ) Remove member
 
@@ -85,11 +86,12 @@ tooltip(
 <script>
 import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import DMMixin from '@containers/chatroom/DMMixin.js'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
@@ -114,7 +116,8 @@ export default ({
     AvatarUser,
     ModalClose,
     UserName,
-    Tooltip
+    Tooltip,
+    ButtonSubmit
   },
   computed: {
     ...mapGetters([
@@ -156,19 +159,29 @@ export default ({
   },
   methods: {
     openModal (modal, props) {
-      if (this.deactivated) {
-        return
-      }
+      if (this.deactivated) { return }
       this.toggleTooltip()
+
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    onRemoveMemberClick () {
+      if (this.deactivated) { return }
+      this.toggleTooltip()
+
+      sbp(
+        'okTurtles.events/emit',
+        this.$route.query?.modal === 'GroupMembersAllModal' ? REPLACE_MODAL : OPEN_MODAL,
+        'RemoveMember',
+        { memberID: this.contractID }
+      )
     },
     toggleTooltip () {
       this.$refs.tooltip.toggle()
     },
-    sendMessage () {
+    async sendMessage () {
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
       if (!chatRoomID) {
-        this.createDirectMessage(this.contractID)
+        await this.createDirectMessage(this.contractID)
       } else {
         if (!this.ourGroupDirectMessages[chatRoomID].visible) {
           this.setDMVisibility(chatRoomID, true)

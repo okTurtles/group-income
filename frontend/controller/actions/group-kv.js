@@ -1,11 +1,14 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, NEW_LAST_LOGGED_IN, ONLINE } from '~/frontend/utils/events.js'
 
 sbp('okTurtles.events/on', ONLINE, () => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
+    return
+  }
   sbp('gi.actions/group/kv/load').catch(e => {
-    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
+    console.error("Error from 'gi.actions/group/kv/load' after reestablished connection:", e)
   })
 })
 
@@ -27,29 +30,30 @@ export default (sbp('sbp/selectors/register', {
     console.info('group key-value store data loaded!')
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    return (await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN).catch((e) => {
-      console.error('[gi.actions/group/kv/fetchLastLoggedIn] Error', e)
-    }))?.data || Object.create(null)
+    return (await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN))?.data || Object.create(null)
   },
   'gi.actions/group/kv/loadLastLoggedIn': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const data = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
+      sbp('okTurtles.events/emit', NEW_LAST_LOGGED_IN, [contractID, data])
+    }).catch(e => {
+      console.error('[gi.actions/group/kv/loadLastLoggedIn] Error loading last logged in', e)
     })
   },
   'gi.actions/group/kv/updateLastLoggedIn': ({ contractID, throttle }: { contractID: string, throttle: boolean }) => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update lastLoggedIn without an active session')
     }
 
     if (throttle) {
-      // TODO: Can't use state/vuex/state
       const state = sbp('state/vuex/state')
-      const lastLoggedIn = new Date(state.lastLoggedIn[contractID]?.[identityContractID]).getTime()
+      const lastLoggedInRawValue: ?string = state.lastLoggedIn?.[contractID]?.[identityContractID]
+      if (lastLoggedInRawValue) {
+        const lastLoggedIn = new Date(lastLoggedInRawValue).getTime()
 
-      if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
+        if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
+      }
     }
 
     const now = new Date().toISOString()

@@ -9,7 +9,7 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
@@ -116,7 +116,24 @@ route.POST('/event', {
           }
         }
       }
+      const saltUpdateToken = request.headers['shelter-salt-update-token']
+      let updateSalts
+      if (saltUpdateToken) {
+        // If we've got a salt update token (i.e., a password change), fetch
+        // the username associated to the contract to see if they match, and
+        // then validate the token
+        const name = request.headers['shelter-name']
+        const namedContractID = name && await sbp('backend/db/lookupName', name)
+        if (namedContractID !== deserializedHEAD.contractID) {
+          throw new Error('Mismatched contract ID and name')
+        }
+        updateSalts = await redeemSaltUpdateToken(name, saltUpdateToken)
+      }
       await sbp('backend/server/handleEntry', deserializedHEAD, request.payload)
+      // If it's a salt update, do it now after handling the message. This way
+      // we make it less likely that someone will end up locked out from their
+      // identity contract.
+      await updateSalts?.(deserializedHEAD.hash)
       if (deserializedHEAD.isFirstMessage) {
         // Store attribution information
         if (credentials?.billableContractID) {
@@ -634,7 +651,7 @@ route.POST('/kv/{contractID}/{key}', {
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
-  await sbp('backend/server/broadcastKV', contractID, key, request.payload)
+  await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
   return h.response().code(204)
 })
@@ -821,7 +838,7 @@ route.GET('/zkpp/{name}/contract_hash', {
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/updatePasswordHash/{name}', {
+route.POST('/zkpp/{name}/updatePasswordHash', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -841,7 +858,7 @@ route.POST('/zkpp/updatePasswordHash/{name}', {
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/updatePasswordHash/{name}: ' + e.message)
+    console.error(e, 'Error at POST /zkpp/{name}/updatePasswordHash: ' + e.message)
   }
 
   return Boom.internal('internal error')

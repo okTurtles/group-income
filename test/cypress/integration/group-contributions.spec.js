@@ -27,9 +27,12 @@ function addNonMonetaryContribution (name) {
 }
 
 function assertNonMonetaryEditableValue (name) {
+  // Need to wait until the event is processed
+  cy.giEmptyInvocationQueue()
+
   cy.getByDT('buttonEditNonMonetaryContribution').click()
   cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
-  cy.getByDT('buttonSaveNonMonetaryContribution').click()
+  cy.getByDT('buttonCancelNonMonetaryContribution').click()
 }
 
 function assertGraphicSummary (legendListItems) {
@@ -87,7 +90,7 @@ describe('Contributions', () => {
       invitationLinks.anyone = url
     })
 
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 
   it('user2, user3 and user4 join the group', () => {
@@ -368,7 +371,8 @@ describe('Contributions', () => {
 
   it('user1 edits the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('inputNonMonetaryContribution').type('{selectall}{del}French classes{enter}')
+    cy.getByDT('inputNonMonetaryContribution').clear()
+    cy.getByDT('inputNonMonetaryContribution').type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')
@@ -459,7 +463,7 @@ describe('Contributions', () => {
       paymentsTitle: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You are pledging $100',
       monetaryStatus: '$100 will be used.',
-      nonMonetaryStatus: 'You and 1 other members are contributing.'
+      nonMonetaryStatus: 'You and 1 other member are contributing.'
     })
   })
 
@@ -550,7 +554,7 @@ describe('Contributions', () => {
       monetaryStatus: 'You will receive $20.83.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
     })
-    cy.giLogout()
+    cy.giLogout({ bypassUI: true })
   })
 })
 

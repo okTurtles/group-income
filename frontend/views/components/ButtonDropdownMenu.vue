@@ -4,7 +4,7 @@ menu-parent.c-menu(v-on='listeners')
     | {{ buttonText }}
     i.icon-angle-down.is-suffix
 
-  menu-content.c-menu-content
+  menu-content.c-menu-content(:class='"bound-to-" + boundEdge')
     ul
       template(v-if='options')
         component(
@@ -42,6 +42,11 @@ export default ({
        * - An item to be mapped to a 'menu-header' component:
        *  { type: 'header', name: string }
        */
+    },
+    boundEdge: {
+      type: String,
+      default: 'right',
+      validator: val => ['left', 'right'].includes(val)
     }
   },
   methods: {
@@ -96,6 +101,11 @@ export default ({
     margin-bottom: 1rem;
     left: unset;
     right: 0;
+
+    &.bound-to-left {
+      left: 0;
+      right: unset;
+    }
 
     ::v-deep .c-header {
       font: {

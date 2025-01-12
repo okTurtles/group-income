@@ -17,10 +17,25 @@ import {
   createPushErrorResponse,
   createServer
 } from './pubsub.js'
-import { pushServerActionhandlers } from './push.js'
-// $FlowFixMe[cannot-resolve-module]
-import { webcrypto } from 'node:crypto'
+import { addChannelToSubscription, deleteChannelFromSubscription, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+
+// Node.js version 18 and lower don't have global.crypto defined
+// by default
+if (
+  !('crypto' in global) &&
+  typeof require === 'function'
+) {
+  const { webcrypto } = require('crypto')
+  if (webcrypto) {
+    Object.defineProperty(global, 'crypto', {
+      'enumerable': true,
+      'configurable': true,
+      'get': () => webcrypto
+    })
+  }
+}
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -95,7 +110,13 @@ sbp('sbp/selectors/register', {
     const contractID = deserializedHEAD.contractID
     const cheloniaState = sbp('chelonia/rootState')
     // If the contract has been removed or the height hasn't been updated,
-    // there's nothing to persist
+    // there's nothing to persist.
+    // If `!cheloniaState.contracts[contractID]`, the contract's been removed
+    // and therefore we shouldn't save it.
+    // If `cheloniaState.contracts[contractID].height < deserializedHEAD.head.height`,
+    // it means that the message wasn't processed (we'd expect the height to
+    // be `>=` than the message's height if so), and therefore we also shouldn't
+    // save it.
     if (!cheloniaState.contracts[contractID] || cheloniaState.contracts[contractID].height < deserializedHEAD.head.height) {
       return
     }
@@ -155,8 +176,10 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/broadcastEntry': async function (deserializedHEAD: Object, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry)
-    const subscribers = pubsub.enumerateSubscribers(deserializedHEAD.contractID)
+    const contractID = deserializedHEAD.contractID
+    const contractType = sbp('chelonia/rootState').contracts[contractID]?.type
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry, { contractID, contractType })
+    const subscribers = pubsub.enumerateSubscribers(contractID)
     console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${deserializedHEAD.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
@@ -207,7 +230,7 @@ sbp('sbp/selectors/register', {
   'backend/server/saveDeletionToken': async function (resourceID: string) {
     const deletionTokenRaw = new Uint8Array(18)
     // $FlowFixMe[cannot-resolve-name]
-    webcrypto.getRandomValues(deletionTokenRaw)
+    crypto.getRandomValues(deletionTokenRaw)
     // $FlowFixMe[incompatible-call]
     const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
     await sbp('chelonia/db/set', `_private_deletionToken_${resourceID}`, deletionToken)
@@ -229,6 +252,32 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     connection (socket: Object, request: Object) {
       const versionInfo = { GI_VERSION, CONTRACTS_VERSION }
       socket.send(createNotification(NOTIFICATION_TYPE.VERSION_INFO, versionInfo))
+    }
+  },
+  socketHandlers: {
+    // The `close()` handler signals the server that the WS has been closed and
+    // that subsequent messages to subscribed channels should now be sent to its
+    // associated web push subscription, if it exists.
+    close () {
+      const socket = this
+      const { server } = this
+
+      const subscriptionId = socket.pushSubscriptionId
+
+      if (!subscriptionId) return
+      if (!server.pushSubscriptions[subscriptionId]) return
+
+      server.pushSubscriptions[subscriptionId].sockets.delete(socket)
+      delete socket.pushSubscriptionId
+
+      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
+        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+          if (!server.subscribersByChannelID[channelID]) {
+            server.subscribersByChannelID[channelID] = new Set()
+          }
+          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[subscriptionId])
+        })
+      }
     }
   },
   messageHandlers: {
@@ -254,6 +303,42 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       } else {
         socket.send(createPushErrorResponse({ message: `No handler for the '${action}' action` }))
       }
+    },
+    // This handler adds subscribed channels to the web push subscription
+    // associated with the WS, so that when the WS is closed we can continue
+    // sending messages as web push notifications.
+    [NOTIFICATION_TYPE.SUB] ({ channelID }: SubMessage) {
+      const socket = this
+      const { server } = this
+
+      // If the WS doesn't have an associated push subscription, we're done
+      if (!socket.pushSubscriptionId) return
+      // If the WS has an associated push subscription that's since been
+      // removed, delete the association and return.
+      if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
+        delete socket.pushSubscriptionId
+        return
+      }
+
+      addChannelToSubscription(server, socket.pushSubscriptionId, channelID)
+    },
+    // This handler removes subscribed channels from the web push subscription
+    // associated with the WS, so that when the WS is closed we don't send
+    // messages as web push notifications.
+    [NOTIFICATION_TYPE.UNSUB] ({ channelID }: UnsubMessage) {
+      const socket = this
+      const { server } = this
+
+      // If the WS doesn't have an associated push subscription, we're done
+      if (!socket.pushSubscriptionId) return
+      // If the WS has an associated push subscription that's since been
+      // removed, delete the association and return.
+      if (!server.pushSubscriptions[socket.pushSubscriptionId]) {
+        delete socket.pushSubscriptionId
+        return
+      }
+
+      deleteChannelFromSubscription(server, socket.pushSubscriptionId, channelID)
     }
   }
 }))
@@ -283,6 +368,24 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       channels.add(contractID)
     }))
     Object.assign(sbp('chelonia/rootState'), recoveredState)
+  }
+  // Then, load push subscriptions
+  const savedWebPushIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+  if (savedWebPushIndex) {
+    const { pushSubscriptions, subscribersByChannelID } = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    await Promise.all(savedWebPushIndex.split('\x00').map(async (subscriptionId) => {
+      const subscriptionSerialized = await sbp('chelonia/db/get', `_private_webpush_${subscriptionId}`)
+      if (!subscriptionSerialized) {
+        console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
+        return
+      }
+      const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)
+      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription, channelIDs)
+      channelIDs.forEach((channelID) => {
+        if (!subscribersByChannelID[channelID]) subscribersByChannelID[channelID] = new Set()
+        subscribersByChannelID[channelID].add(pushSubscriptions[subscriptionId])
+      })
+    }))
   }
   // https://hapi.dev/tutorials/plugins
   await hapi.register([

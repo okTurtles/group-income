@@ -2,7 +2,7 @@
   tr.c-row(data-test='payRow')
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
-    td
+    td.c-td-user
       slot(name='cellUser')
       template(v-if='!$slots["cellUser"]')
         .c-user
@@ -27,7 +27,7 @@
     td(v-if='$slots["cellRelativeTo"]')
       slot(name='cellRelativeTo')
 
-    td
+    td.c-td-actions
       .cpr-actions
         slot(name='cellActions')
 
@@ -109,6 +109,12 @@ export default ({
   @include phone {
     display: inline-block;
     margin-left: 0;
+  }
+}
+
+td.c-td-actions {
+  @include desktop {
+    padding-right: 1.5rem;
   }
 }
 </style>

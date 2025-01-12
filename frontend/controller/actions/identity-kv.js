@@ -1,12 +1,15 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, ONLINE } from '~/frontend/utils/events.js'
+import { KV_QUEUE, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
 sbp('okTurtles.events/on', ONLINE, () => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
+    return
+  }
   sbp('gi.actions/identity/kv/load').catch(e => {
     console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
   })
@@ -25,14 +28,14 @@ export default (sbp('sbp/selectors/register', {
     // Using 'chelonia/rootState' here as 'state/vuex/state' is not available
     // in the SW, and because, even without a SW, 'loggedIn' is not yet there
     // in Vuex state when logging in
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch chatroom unreadMessages without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
   'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
@@ -51,8 +54,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
+      sbp('okTurtles.events/emit', NEW_UNREAD_MESSAGES, currentChatRoomUnreadMessages)
     })
   },
   'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
@@ -170,14 +172,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // Preferences
   'gi.actions/identity/kv/fetchPreferences': async () => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch preferences without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.PREFERENCES))?.data || {}
   },
   'gi.actions/identity/kv/savePreferences': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update preferences without an active session')
     }
@@ -192,8 +194,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadPreferences': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
-      // TODO: Can't use state/vuex/commit
-      sbp('state/vuex/commit', 'setPreferences', preferences)
+      sbp('okTurtles.events/emit', NEW_PREFERENCES, preferences)
     })
   },
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
@@ -213,14 +214,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to fetch notification status without an active session')
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NOTIFICATIONS))?.data || {}
   },
   'gi.actions/identity/kv/saveNotificationStatus': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
@@ -251,7 +252,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/loadNotificationStatus': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
-      sbp('state/vuex/commit', 'setNotificationStatus', status)
+      sbp('gi.notifications/setNotificationStatus', status)
     })
   },
   'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
@@ -279,7 +280,7 @@ export default (sbp('sbp/selectors/register', {
       hashes = [hashes]
     }
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const { notifications } = sbp('state/vuex/getters')
+      const notifications = sbp('chelonia/rootState').notifications.items
       const getUpdatedNotificationStatus = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
         let isUpdated = false

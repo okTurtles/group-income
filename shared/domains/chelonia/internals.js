@@ -192,7 +192,7 @@ export default (sbp('sbp/selectors/register', {
     const contractNameLookupKey = `name:${contractName}`
     // If the contract name has been seen before, validate its signature now
     let signatureValidated = false
-    if (has(rootState.contractSigningKeys, contractNameLookupKey)) {
+    if (process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS !== 'true' && has(rootState.contractSigningKeys, contractNameLookupKey)) {
       console.info(`[chelonia] verifying signature for ${manifestHash} with an existing key`)
       if (!has(rootState.contractSigningKeys[contractNameLookupKey], manifest.signature.keyId)) {
         console.error(`The manifest with ${manifestHash} (named ${contractName}) claims to be signed with a key with ID ${manifest.signature.keyId}, which is not trusted. The trusted key IDs for this name are:`, Object.keys(rootState.contractSigningKeys[contractNameLookupKey]))
@@ -362,7 +362,7 @@ export default (sbp('sbp/selectors/register', {
           : this.config.contracts.defaults.modules[dep]
       },
       sbp: contractSBP,
-      fetchServerTime: async () => {
+      fetchServerTime: async (fallback: ?boolean = true) => {
         // If contracts need the current timestamp (for example, for metadata 'createdDate')
         // they must call this function so that clients are kept synchronized to the server's
         // clock, for consistency, so that if one client's clock is off, it doesn't conflict
@@ -372,6 +372,9 @@ export default (sbp('sbp/selectors/register', {
           const response = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
           return handleFetchResult('text')(response)
         } catch (e) {
+          if (fallback) {
+            return new Date(sbp('chelonia/time') * 1000).toISOString()
+          }
           throw new ChelErrorFetchServerTimeFailed('Can not fetch server time. Please check your internet connection.')
         }
       }
@@ -431,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
 
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: [contractID] })
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -1257,8 +1260,8 @@ export default (sbp('sbp/selectors/register', {
       console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latestHEAD}`)
       // there is a chance two users are logged in to the same machine and must check their contracts before syncing
       const { HEAD: recentHEAD, height: recentHeight } = state.contracts[contractID] || {}
-      const isSubcribed = this.subscriptionSet.has(contractID)
-      if (!isSubcribed) {
+      const isSubscribed = this.subscriptionSet.has(contractID)
+      if (!isSubscribed) {
         const entry = this.pending.find((entry) => entry?.contractID === contractID)
         // we're syncing a contract for the first time, make sure to add to pending
         // so that handleEvents knows to expect events from this contract
@@ -1294,9 +1297,9 @@ export default (sbp('sbp/selectors/register', {
           // this must be called directly, instead of via enqueueHandleEvent
           await sbp('chelonia/private/in/handleEvent', contractID, event)
         }
-      } else if (!isSubcribed) {
+      } else if (!isSubscribed) {
         this.subscriptionSet.add(contractID)
-        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [contractID], removed: [] })
         const entryIndex = this.pending.findIndex((entry) => entry?.contractID === contractID)
         if (entryIndex !== -1) {
           this.pending.splice(entryIndex, 1)
@@ -2093,7 +2096,7 @@ const handleEvent = {
         }
       }
       this.subscriptionSet.add(contractID)
-      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet))
+      sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [contractID], removed: [] })
     }
 
     if (!processingErrored) {

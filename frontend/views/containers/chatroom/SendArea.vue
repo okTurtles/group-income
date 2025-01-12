@@ -65,17 +65,19 @@
       :style='textareaStyles'
       :maxlength='config.messageMaxChar'
       @blur='textAreaBlur'
-      @keydown.enter.exact.prevent='handleKeyDownEnter'
+      @keydown.enter.exact='handleKeyDownEnter'
       @keydown.tab.exact='handleKeyDownTab'
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
       @keyup='handleKeyup'
+      @paste='handlePaste'
       v-bind='$attrs'
     )
 
     chat-attachment-preview(
       v-if='ephemeral.attachments.length'
       :attachmentList='ephemeral.attachments'
+      :ownerID='ourIdentityContractId'
       @remove='removeAttachment'
     )
 
@@ -270,14 +272,14 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { makeMentionFromUsername, makeChannelMention } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUsername, makeChannelMention } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MAX_MESSAGE_LEN
 } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SIZE_LIMIT } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
 import {
@@ -357,7 +359,8 @@ export default ({
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN
       },
       typingUserTimeoutIds: {},
-      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500)
+      throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
+      mediaIsPhone: null
     }
   },
   watch: {
@@ -374,9 +377,9 @@ export default ({
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    const mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
-    this.ephemeral.isPhone = mediaIsPhone.matches
-    mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
+    this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
+    this.ephemeral.isPhone = this.mediaIsPhone.matches
+    this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
     this.$refs.textarea.value = this.defaultText || ''
@@ -395,6 +398,7 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
+    this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
@@ -529,12 +533,16 @@ export default ({
       this.$refs.textarea.focus()
       this.addSelectedMention(index)
     },
-    handleKeyDownEnter () {
+    handleKeyDownEnter (e) {
+      const isNotPhone = !this.ephemeral.isPhone
+
       if (this.ephemeral.mention.options.length) {
         this.addSelectedMention(this.ephemeral.mention.index)
-      } else {
+      } else if (isNotPhone) {
         this.sendMessage()
       }
+
+      isNotPhone && e.preventDefault()
     },
     handleKeyDownTab (e) {
       if (this.ephemeral.mention.options.length) {
@@ -551,6 +559,18 @@ export default ({
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
+      }
+    },
+    handlePaste (e) {
+      // fix for the edge-case related to 'paste' action when nothing has been typed
+      // (reference: https://github.com/okTurtles/group-income/issues/2369)
+      const currVal = this.$refs.textarea.value
+
+      if (!currVal) {
+        e.preventDefault()
+        const pastedText = e.clipboardData.getData('text')
+        this.$refs.textarea.value = pastedText
+        this.updateTextArea()
       }
     },
     addSelectedMention (index) {
@@ -675,7 +695,9 @@ export default ({
       this.$emit(
         'send',
         msgToSend,
-        this.hasAttachments ? cloneDeep(this.ephemeral.attachments) : null,
+        this.hasAttachments
+          ? cloneDeep(this.ephemeral.attachments)
+          : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
@@ -728,6 +750,7 @@ export default ({
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
+          size: fileSize,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         }
 
@@ -738,6 +761,9 @@ export default ({
             attachment.dimension = { width, height }
           }
           img.src = fileUrl
+
+          // Determine if the image needs lossy-compression before upload.
+          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
         }
 
         list.push(attachment)
@@ -760,7 +786,12 @@ export default ({
       }
     },
     selectEmoticon (emoticon) {
-      this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
+      // Making sure the emoticon is added to the cursor position
+      const inputEl = this.$refs.textarea
+      const valuePrev = inputEl.value.slice(0, inputEl.selectionStart) || ''
+      const valueAfter = inputEl.value.slice(inputEl.selectionEnd) || ''
+      inputEl.value = valuePrev + emoticon.native + valueAfter
+
       this.closeEmoticon()
       this.updateTextWithLines()
     },

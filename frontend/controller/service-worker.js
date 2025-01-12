@@ -1,15 +1,21 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
-import { REQUEST_TYPE, PUSH_SERVER_ACTION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, createMessage } from '~/shared/pubsub.js'
+import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { PWA_INSTALLABLE } from '@utils/events.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { ONLINE } from '../utils/events.js'
 
 const pwa = {
   deferredInstallPrompt: null,
   installed: false
 }
+
+deserializer.register(GIMessage)
+deserializer.register(Secret)
 
 // How to provide your own in-app PWA install experience:
 // https://web.dev/articles/customize-install
@@ -29,41 +35,81 @@ sbp('sbp/selectors/register', {
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
     // NOTE: user should still be able to use app even if all the SW stuff fails
-    if (!('serviceWorker' in navigator)) { return }
+    if (!('serviceWorker' in navigator)) {
+      throw new Error('Service worker APIs missing')
+    }
 
     try {
-      const swRegistration = await navigator.serviceWorker.register('/assets/js/sw-primary.js', { scope: '/' })
+      // Using hash (#) is possible, but seems to get reset when the SW restarts
+      const params = new URLSearchParams([
+        ['routerBase', sbp('controller/router').options.base ?? ''],
+        ['standalone', isPwa() ? '1' : '0']
+      ])
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { scope: '/' })
 
-      if (swRegistration) {
-        swRegistration.active?.postMessage({ type: 'store-client-id' })
+      // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
+      await swRegistration.update()
+      setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
 
-        // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
-        await swRegistration.update()
-        setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
+      // Send a 'ready' message to the SW and wait back for a response
+      // This way we ensure that Chelonia has been set up
+      await new Promise((resolve, reject) => {
+        const messageChannel = new MessageChannel()
+        messageChannel.port1.onmessage = (event) => {
+          if (event.data.type === 'ready') {
+            resolve()
+          } else {
+            reject(event.data.error)
+          }
+          messageChannel.port1.close()
+        }
+        messageChannel.port1.onmessageerror = () => {
+          reject(new Error('Message error'))
+          messageChannel.port1.close()
+        }
 
-        // Keep the service worker alive while the window is open
-        // The default idle timeout on Chrome and Firefox is 30 seconds. We send
-        // a ping message every 5 seconds to ensure that the worker remains
-        // active.
-        // The downside of this is that there are messges going back and forth
-        // between the service worker and each tab, the number of which is
-        // proportional to the number of tabs open.
-        // The upside of this is that the service worker remains active while
-        // there are open tabs, which makes it faster and smoother to interact
-        // with contracts than if the service worker had to be restarted.
-        setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
-      }
+        navigator.serviceWorker.ready.then((worker) => {
+          worker.active.postMessage({
+            type: 'ready',
+            port: messageChannel.port2
+          }, [messageChannel.port2])
+        }).catch((e) => {
+          reject(e)
+          messageChannel.port1.close()
+        })
+      })
+
+      // Keep the service worker alive while the window is open
+      // The default idle timeout on Chrome and Firefox is 30 seconds. We send
+      // a ping message every 5 seconds to ensure that the worker remains
+      // active.
+      // The downside of this is that there are messges going back and forth
+      // between the service worker and each tab, the number of which is
+      // proportional to the number of tabs open.
+      // The upside of this is that the service worker remains active while
+      // there are open tabs, which makes it faster and smoother to interact
+      // with contracts than if the service worker had to be restarted.
+      setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
 
       navigator.serviceWorker.addEventListener('message', event => {
         const data = event.data
+        const silentEmit = sbp('sbp/selectors/fn', 'okTurtles.events/emit')
 
         if (typeof data === 'object' && data.type) {
           switch (data.type) {
             case 'pong':
               break
-            case 'pushsubscriptionchange': {
-              console.debug('[sw] Received pushsubscriptionchange:', data)
-              sbp('service-worker/resubscribe-push', data.subscription)
+            case 'event': {
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              break
+            }
+            case 'navigate': {
+              sbp('controller/router').push({ path: data.path }).catch(console.warn)
+              break
+            }
+            case CAPTURED_LOGS: {
+              // Emit silently to avoid flooding logs with event emitted entries
+              silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
               break
             }
             default:
@@ -74,128 +120,64 @@ sbp('sbp/selectors/register', {
       })
     } catch (e) {
       console.error('error setting up service worker:', e)
+      throw e
     }
   },
-  'service-worker/setup-push-subscription': async function () {
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
+  // We call this when the notification permission changes, to create a push
+  // subscription and report it to the server. We need to do this outside of the
+  // service worker because this generally happens after requesting the
+  // notifications permission, which requires user interaction and can't be
+  // done form the SW itself.
+  // In theory, the `PushManager` APIs used are available in the SW and we could
+  // have this function there. However, most examples perform this outside of the
+  // SW, and private testing showed that it's more reliable doing it here.
+  'service-worker/setup-push-subscription': async function (retryCount?: number) {
+    await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
+      // Get the installed service-worker registration
+      const registration = await navigator.serviceWorker.ready
 
-    // Get the installed service-worker registration
-    const registration = await navigator.serviceWorker.ready
-
-    if (!registration) {
-      console.error('No service-worker registration found!')
-      return
-    }
-
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const existingSubscription = await registration.pushManager.getSubscription()
-    const messageToPushServerIfSocketConnected = (msgPayload) => {
-      // make sure the websocket client is not in the state of CLOSING, CLOSED before sending a message.
-      // if it is, attach a event listener to PUBSUB_RECONNECTION_SUCCEEDED sbp event.
-      // (context: https://github.com/okTurtles/group-income/pull/1770#discussion_r1439005731)
-
-      const readyState = pubsub.socket.readyState
-      const sendMsg = () => {
-        pubsub.socket.send(createMessage(
-          REQUEST_TYPE.PUSH_ACTION,
-          msgPayload
-        ))
+      if (!registration) {
+        console.error('No service-worker registration found!')
+        return
       }
 
-      if (readyState === WebSocket.CLOSED || readyState === WebSocket.CLOSING) {
-        sbp('okTurtles.events/once', PUBSUB_RECONNECTION_SUCCEEDED, sendMsg)
-      } else {
-        sendMsg()
-      }
-    }
+      const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
 
-    if (existingSubscription) {
-      // If there is an existing subscription, no need to create a new one.
-      // But make sure server knows the subscription details too.
-      messageToPushServerIfSocketConnected({
-        action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-        payload: JSON.stringify(existingSubscription.toJSON())
-      })
-    } else {
-      return new Promise((resolve) => {
-        // Generate a new push subscription
-        sbp('okTurtles.events/once', REQUEST_TYPE.PUSH_ACTION, async ({ data }) => {
-          const PUBLIC_VAPID_KEY = data
-
-          try {
-            // 1. Add a new subscription to pushManager using it.
-            const subscription = await registration.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+      // Safari sometimes incorrectly reports 'prompt' when using
+      // `registration.pushManager.permissionState`.
+      const existingSubscription = permissionState === 'granted' || Notification.permission === 'granted'
+        ? await registration.pushManager.getSubscription().then((subscription) => {
+          if (
+            !subscription ||
+            (subscription.expirationTime != null &&
+            subscription.expirationTime <= Date.now())
+          ) {
+            console.info(
+              'Attempting to create a new subscription',
+              subscription
+            )
+            return sbp('push/getSubscriptionOptions').then(function (options) {
+              return registration.pushManager.subscribe(options)
             })
-
-            // 2. Store the subscription details to the server. (server needs it to send the push notification)
-            messageToPushServerIfSocketConnected({
-              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-              payload: JSON.stringify(subscription.toJSON())
-            })
-
-            resolve()
-          } catch (err) {
-            console.error('[sw] service-worker/setup-push-subscription failed with the following error: ', err)
-            resolve()
           }
+          return subscription
+        }).catch(e => {
+          if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
+            sbp('okTurtles.events/once', ONLINE, () => {
+              setTimeout(() => sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1), 200)
+            })
+            return
+          }
+          console.error('[service-worker/setup-push-subscription] Error setting up push subscription', e)
+          alert(e?.message || 'Error')
         })
+        : null
 
-        messageToPushServerIfSocketConnected({ action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY })
+      await sbp('push/reportExistingSubscription', existingSubscription?.toJSON()).catch(e => {
+        console.error('[service-worker/setup-push-subscription] Error reporting existing subscription', e)
       })
-    }
-  },
-  'service-worker/send-push': async function (payload) {
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return }
-
-    if (Notification.permission !== 'granted') {
-      console.debug('[sw] stopped sending a push-notification data to the server because of the permission not granted.')
-      return
-    }
-
-    const swRegistration = await navigator.serviceWorker.ready
-
-    if (!swRegistration) {
-      console.error('No service-worker registration found!')
-      return
-    }
-
-    const pushSubscription = await swRegistration.pushManager.getSubscription()
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-
-    if (pushSubscription) {
-      pubsub.socket.send(createMessage(
-        REQUEST_TYPE.PUSH_ACTION,
-        {
-          action: PUSH_SERVER_ACTION_TYPE.SEND_PUSH_NOTIFICATION,
-          payload: JSON.stringify({ ...payload, endpoint: pushSubscription.endpoint })
-        }
-      ))
-    } else {
-      console.error('No existing push subscription found!')
-    }
-  },
-  'service-worker/check-push-subscription-ready': async function () {
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) { return false }
-
-    const swRegistration = await navigator.serviceWorker.ready
-    if (swRegistration) {
-      const pushSubscription = await swRegistration.pushManager.getSubscription()
-
-      return !!pushSubscription
-    } else { return false }
-  },
-  'service-worker/resubscribe-push': function (subscription) {
-    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-
-    pubsub.socket.send(createMessage(
-      REQUEST_TYPE.PUSH_ACTION,
-      {
-        action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
-        payload: JSON.stringify(subscription.toJSON())
-      }
-    ))
+      return true
+    })
   },
   'service-worker/update': async function () {
     // This function manually checks for the service worker updates and trigger them if there are.
@@ -228,20 +210,89 @@ sbp('sbp/selectors/register', {
   }
 })
 
-// helper method
+// Events that need to be relayed to the SW
+;[LOGIN_COMPLETE, SET_APP_LOGS_FILTER].forEach((event) =>
+  sbp('okTurtles.events/on', event, (...data) => {
+    navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
+  })
+)
 
-function urlBase64ToUint8Array (base64String) {
-  // reference: https://gist.github.com/Klerith/80abd742d726dd587f4bd5d6a0ab26b6
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
+sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (obj: Object) => {
+  // Don't send messages from the SW back to the SW to prevent infinite loops
+  if (obj.from === 'sw') return
+  navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_UNREAD_POSITION, data: [obj] })
+})
 
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-
-  for (let i = 0; i < rawData.length; i++) {
-    outputArray[i] = rawData.charCodeAt(i)
+const swRpc = (() => {
+  if (!navigator.serviceWorker) {
+    throw new Error('Missing service worker object')
   }
-  return outputArray
-}
+  let controller: ?ServiceWorker = navigator.serviceWorker.controller
+  navigator.serviceWorker.addEventListener('controllerchange', (ev: Event) => {
+    controller = (navigator.serviceWorker: any).controller
+  }, false)
+
+  return (...args) => {
+    return new Promise((resolve, reject) => {
+      if (!controller) {
+        reject(new Error('Service worker not ready'))
+        return
+      }
+      const messageChannel = new MessageChannel()
+      const onmessage = (event: MessageEvent) => {
+        if (event.data && Array.isArray(event.data)) {
+          const r = deserializer(event.data[1])
+          // $FlowFixMe[incompatible-use]
+          if (event.data[0] === true) {
+            resolve(r)
+          } else {
+            reject(r)
+          }
+          cleanup()
+        }
+      }
+      const onmessageerror = (event: MessageEvent) => {
+        reject(event.data)
+        cleanup()
+      }
+      const cleanup = () => {
+        // This can help prevent memory leaks if the GC doesn't clean up once
+        // the port goes out of scope
+        messageChannel.port1.removeEventListener('message', onmessage, false)
+        messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
+        messageChannel.port1.close()
+      }
+      messageChannel.port1.addEventListener('message', onmessage, false)
+      messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
+      messageChannel.port1.start()
+      const { data, transferables } = serializer(args)
+      controller.postMessage({
+        type: 'sbp',
+        port: messageChannel.port2,
+        data
+      }, [messageChannel.port2, ...transferables])
+    })
+  }
+})()
+
+sbp('sbp/selectors/register', {
+  'gi.actions/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'chelonia/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'sw-namespace/*': (...args) => {
+    // Remove the `sw-` prefix from the selector
+    return swRpc(args[0].slice(3), ...args.slice(1))
+  }
+})
+sbp('sbp/selectors/register', {
+  'gi.notifications/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'swLogs/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'push/*': swRpc
+})

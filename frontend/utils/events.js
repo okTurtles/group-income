@@ -25,6 +25,8 @@ export const LEFT_GROUP = 'left-group'
 export const JOINED_CHATROOM = 'joined-chatroom'
 export const LEFT_CHATROOM = 'left-chatroom'
 export const DELETED_CHATROOM = 'deleted-chatroom'
+export const DELETE_ATTACHMENT = 'delete-attachment'
+export const DELETE_ATTACHMENT_FEEDBACK = 'delete-attachment-complete'
 
 export const REPLACED_STATE = 'replaced-state'
 
@@ -60,3 +62,16 @@ export const NAMESPACE_REGISTRATION = 'namespace-registration'
 export const KV_QUEUE = 'kv-queue'
 
 export const PWA_INSTALLABLE = 'pwa-installable'
+
+export const CHELONIA_STATE_MODIFIED = 'chelonia-state-modified'
+
+export const NOTIFICATION_EMITTED = 'notification-emitted'
+export const NOTIFICATION_REMOVED = 'notification-removed'
+export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'
+
+export const NEW_CHATROOM_UNREAD_POSITION = 'new-chatroom-unread-position'
+export const NEW_LAST_LOGGED_IN = 'new-last-logged-in'
+export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
+export const NEW_PREFERENCES = 'new-preferences'
+
+export const SERIOUS_ERROR = 'serious-error'

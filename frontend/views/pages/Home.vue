@@ -91,7 +91,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourProfileActive'
+      'currentIdentityState',
+      'seenWelcomeScreen'
     ]),
     ...mapState([
       'currentGroupId'
@@ -103,11 +104,11 @@ export default ({
   data () {
     return {
       ephemeral: {
-        ourProfileActive: false,
+        seenWelcomeScreen: false,
         listener: ({ contractID }) => {
           if (contractID !== this.currentGroupId) return
           // For first time joins, force redirect to /pending-approval
-          this.ephemeral.ourProfileActive = false
+          this.ephemeral.seenWelcomeScreen = false
         },
         showPwaPromo: false
       }
@@ -118,7 +119,7 @@ export default ({
     this.checkPwaInstallability()
   },
   mounted () {
-    this.ephemeral.ourProfileActive = this.ourProfileActive
+    this.ephemeral.seenWelcomeScreen = this.seenWelcomeScreen
     if (this.isLoggedIn && this.currentGroupId) {
       this.navigateToGroupPage()
     } else if (this.$route.query.next) {
@@ -140,7 +141,7 @@ export default ({
       // In this particular condition, the app needs to immediately redirect user to '$route.query.next'
       // so that the user stays in the same page after the browser refresh.
       // (Related GH issue: https://github.com/okTurtles/group-income/issues/1830)
-      const path = this.$route.query.next ?? (this.ephemeral.ourProfileActive ? '/dashboard' : '/pending-approval')
+      const path = this.$route.query.next ?? (this.ephemeral.seenWelcomeScreen ? '/dashboard' : '/pending-approval')
       this.$router.push({ path }).catch(e => ignoreWhenNavigationCancelled(e, path))
     },
     checkPwaInstallability () {
@@ -155,7 +156,9 @@ export default ({
   },
   watch: {
     currentGroupId (to) {
-      this.ephemeral.ourProfileActive = this.ourProfileActive
+      // Redirect to `/pending-approval` if our profile isn't active or the
+      // welcome screen hasn't been approved
+      this.ephemeral.seenWelcomeScreen = this.seenWelcomeScreen
       if (to && this.isLoggedIn) {
         this.navigateToGroupPage()
       }

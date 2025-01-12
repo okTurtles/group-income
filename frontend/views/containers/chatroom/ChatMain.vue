@@ -138,22 +138,12 @@ import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS } from '@utils/events.js'
-import { findMessageIdx, createMessage } from '@model/contracts/shared/functions.js'
+import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-
-const collectEventStream = async (s: ReadableStream) => {
-  const reader = s.getReader()
-  const r = []
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    r.push(value)
-  }
-  return r
-}
+import { compressImage } from '@utils/image.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -206,7 +196,7 @@ const onChatScroll = function () {
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
-        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+        sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
           chatRoomID: this.renderingChatRoomId,
           messageHash: msg.hash
         })
@@ -214,7 +204,7 @@ const onChatScroll = function () {
       }
     }
   } else if (this.currentChatRoomScrollPosition) {
-    sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+    sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
       chatRoomID: this.renderingChatRoomId,
       messageHash: null
     })
@@ -466,6 +456,7 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
+          attachments = await this.checkAndCompressImages(attachments)
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
             billableContractID: contractID
@@ -473,7 +464,7 @@ export default ({
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
-          return false
+          throw e
         }
       }
 
@@ -485,45 +476,60 @@ export default ({
           contractID,
           data,
           hooks: {
-            preSendCheck: (message, state) => {
+            preSendCheck: async (message, state) => {
               // NOTE: this preSendCheck does nothing except appending a pending message
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
-              const [, opV] = message.op()
-              const { meta } = opV.valueOf().valueOf()
-
-              temporaryMessage = createMessage({
-                meta,
-                data: { ...data, attachments },
-                hash: message.hash(),
-                height: message.height(),
-                state: this.messageState.contract,
-                pending: true,
-                innerSigningContractID: this.ourIdentityContractId
-              })
-              this.messages.push(temporaryMessage)
-
               this.stopReplying()
               this.updateScroll()
+
+              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              temporaryMessage = this.messages.find((m) => m.hash === message.hash())
+
               return false
             }
           }
         }).then(async () => {
-          const isUploaded = await uploadAttachments()
-          if (isUploaded) {
-            const removeTemporaryMessage = () => {
-              // NOTE: remove temporary message which is created before uploading attachments
-              if (temporaryMessage) {
-                const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
-                this.messages.splice(msgIndex, 1)
-              }
+          await uploadAttachments()
+          const removeTemporaryMessage = () => {
+            // NOTE: remove temporary message which is created before uploading attachments
+            if (temporaryMessage) {
+              const msgIndex = findMessageIdx(temporaryMessage.hash, this.messages)
+              this.messages.splice(msgIndex, 1)
             }
-            sendMessage(removeTemporaryMessage)
+          }
+          sendMessage(removeTemporaryMessage)
+        }).catch((e) => {
+          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
+            alert(L("Can't send message when offline, please connect to the Internet"))
           } else {
-            Vue.set(temporaryMessage, 'hasFailed', true)
+            if (temporaryMessage) {
+              Vue.set(temporaryMessage, 'hasFailed', true)
+            }
+            console.error('[ChatMain.vue] Error sending message', e)
           }
         })
       }
+    },
+    checkAndCompressImages (attachments) {
+      return Promise.all(
+        attachments.map(async attachment => {
+          if (attachment.needsImageCompression) {
+            const compressedImageBlob = await compressImage(attachment.url)
+            const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
+            const extension = compressedImageBlob.type.split('/')[1]
+
+            return {
+              ...attachment,
+              mimeType: compressedImageBlob.type,
+              name: `${fileNameWithoutExtension}.${extension}`,
+              size: compressedImageBlob.size,
+              url: URL.createObjectURL(compressedImageBlob),
+              compressedBlob: compressedImageBlob
+            }
+          } else { return attachment }
+        })
+      )
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.messages.length) {
@@ -553,12 +559,12 @@ export default ({
       } else {
         const contractID = this.summary.chatRoomID
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events = await collectEventStream(
+        const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
-          sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2)
-        ).catch((e) => {
-          console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`)
-        })
+          await sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2, { stream: false })
+            .catch((e) => {
+              console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
+            })
         if (!this.checkEventSourceConsistency(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
@@ -701,12 +707,21 @@ export default ({
       }
 
       const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      const sendDeleteAttachmentFeedback = (action) => {
+        // Delete attachment action can lead to 'success', 'error' or can be cancelled by user.
+        sbp('okTurtles.events/emit', DELETE_ATTACHMENT_FEEDBACK, { action, manifestCid })
+      }
 
       if (primaryButtonSelected) {
         const data = { hash, manifestCid, messageSender: from }
-        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data }).catch((e) => {
-          console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
-        })
+        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data })
+          .then(() => sendDeleteAttachmentFeedback('complete'))
+          .catch((e) => {
+            console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
+            sendDeleteAttachmentFeedback('error')
+          })
+      } else {
+        sendDeleteAttachmentFeedback('cancel')
       }
     },
     changeDay (index) {
@@ -785,18 +800,18 @@ export default ({
         if (shouldLoadMoreEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
           if (!this.checkEventSourceConsistency(chatRoomID)) return
-          events = await collectEventStream(sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit))
+          events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
         const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        events = await collectEventStream(sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit))
+        events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
       } else {
         let sinceHeight = 0
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
         if (this.messages.length) {
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
-        events = await collectEventStream(sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1))
+        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
       }
 
       if (!this.checkEventSourceConsistency(chatRoomID)) return
@@ -1000,8 +1015,8 @@ export default ({
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-              const fromOurselves = this.isMsgSender(this.messages[this.messages.length - 1].from)
-              if (!fromOurselves && isScrollable) {
+              if (isScrollable) {
+                // Auto-scroll to the bottom when a new message is added
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
@@ -1054,6 +1069,11 @@ export default ({
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
+            // If there's messages, call $state.loaded. This has the effect that
+            // the no-more message will be shown instead of the no-results message
+            if (this.messages.length) {
+              $state.loaded()
+            }
             $state.complete()
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
@@ -1134,14 +1154,27 @@ export default ({
       }
 
       if (toChatRoomId !== fromChatRoomId) {
+        this.ephemeral.onChatScroll?.flush()
         this.initializeState(true)
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-        } else {
-          this.refreshContent()
-        }
+        // Coerce 'chelonia/contract/isSyncing' into a Promise
+        // This may seem weird, but it's needed because the result may be a
+        // boolean when Chelonia is running in the browsing context, or it may
+        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
+        // like when using a SW.
+        // We also don't use `await`, which would be more straightforward because
+        // that'd require this entire function to be `async`, which could result
+        // in race conditions as this is a watcher.
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+          // If the chatroom has changed since, return
+          if (this.summary.chatRoomID !== toChatRoomId) return
+          if (isSyncing) {
+            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+          } else {
+            this.refreshContent()
+          }
+        })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }

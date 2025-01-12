@@ -44,7 +44,8 @@ const {
   MAX_EVENTS_AFTER = '',
   NODE_ENV = 'development',
   EXPOSE_SBP = '',
-  ENABLE_UNSAFE_NULL_CRYPTO = 'false'
+  ENABLE_UNSAFE_NULL_CRYPTO = 'false',
+  UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS = 'false'
 } = process.env
 
 if (!['development', 'production'].includes(NODE_ENV)) {
@@ -87,7 +88,7 @@ module.exports = (grunt) => {
   ;(function defineApiEnvars () {
     const API_PORT = Number.parseInt(grunt.option('port') ?? process.env.API_PORT ?? '8000', 10)
 
-    if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
+    if (Number.isNaN(API_PORT) || API_PORT < 1024 || API_PORT > 65535) {
       throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
     }
     process.env.API_PORT = String(API_PORT)
@@ -223,7 +224,8 @@ module.exports = (grunt) => {
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`
+        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',

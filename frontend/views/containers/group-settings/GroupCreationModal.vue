@@ -56,7 +56,8 @@ import proposals from '@model/contracts/shared/voting/proposals.js'
 import {
   PROPOSAL_GENERIC,
   GROUP_NAME_MAX_CHAR,
-  GROUP_DESCRIPTION_MAX_CHAR
+  GROUP_DESCRIPTION_MAX_CHAR,
+  GROUP_MINCOME_MAX
 } from '@model/contracts/shared/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import { L } from '@common/common.js'
@@ -75,7 +76,7 @@ import {
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
-import { required, between, maxLength } from 'vuelidate/lib/validators'
+import { required, between, maxLength, maxValue } from 'vuelidate/lib/validators'
 
 export default ({
   name: 'GroupCreationModal',
@@ -188,7 +189,8 @@ export default ({
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.form.mincomeCurrency].validate(value)
         },
-        [L('Mincome must be greater than 0')]: mincomePositive
+        [L('Mincome must be greater than 0')]: mincomePositive,
+        [L('Mincome cannot exceed {max}', { max: GROUP_MINCOME_MAX })]: maxValue(GROUP_MINCOME_MAX)
       },
       mincomeCurrency: {
         required

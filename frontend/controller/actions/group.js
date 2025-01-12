@@ -3,8 +3,9 @@
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
-  INVITE_EXPIRES_IN_DAYS,
   INVITE_INITIAL_CREATOR,
+  INVITE_EXPIRES_IN_DAYS,
+  MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   PROFILE_STATUS,
   PROPOSAL_GENERIC,
@@ -19,6 +20,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
+import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
 import proposals, { oneVoteToPass, oneVoteToFail } from '@model/contracts/shared/voting/proposals.js'
@@ -28,7 +30,9 @@ import {
   ACCEPTED_GROUP,
   JOINED_GROUP,
   JOINED_CHATROOM,
+  LEFT_GROUP,
   LOGOUT,
+  OPEN_MODAL,
   REPLACE_MODAL
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
@@ -37,12 +41,20 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
 import { extractProposalData } from '@model/notifications/utils.js'
+
+sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
+  const rootState = sbp('chelonia/rootState')
+  if (!rootState.notifications || rootState.loggedIn?.identityContractID !== identityContractID) return
+  const notificationHashes = rootState.notifications.items.filter(item => item.groupID === groupContractID).map(item => item.hash)
+  sbp('gi.notifications/remove', notificationHashes)
+})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
@@ -172,8 +184,11 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
-              quantity: 60,
-              expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              quantity: MAX_GROUP_MEMBER_COUNT,
+              ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
+                expires:
+                await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+              }),
               private: {
                 content: inviteKeyS
               }
@@ -245,8 +260,11 @@ export default (sbp('sbp/selectors/register', {
         new Secret([CEK, CSK, inviteKey].map(key => ({ key })))
       )
 
-      await sbp('chelonia/contract/wait', contractID).then(() => {
-        return sbp('gi.actions/identity/joinGroup', {
+      // Using ephemeral retain-release to wait until the newly created group
+      // is synced, which includes creating the #general chatroom
+      await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+      try {
+        await sbp('gi.actions/identity/joinGroup', {
           contractID: userID,
           data: {
             groupContractID: contractID,
@@ -254,7 +272,9 @@ export default (sbp('sbp/selectors/register', {
             creatorID: true
           }
         })
-      })
+      } finally {
+        await sbp('chelonia/contract/release', contractID, { ephemeral: true })
+      }
 
       return message.contractID()
     } catch (e) {
@@ -286,21 +306,23 @@ export default (sbp('sbp/selectors/register', {
     // each other
     return sbp('okTurtles.eventQueue/queueEvent', `JOIN_GROUP-${params.contractID}`, async () => {
       console.debug('[gi.actions/group/join] Scheduled call starting', params.contractID, params)
+      const { loggedIn } = sbp('chelonia/rootState')
+      if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
+      const { identityContractID: userID } = loggedIn
       // We want to process any current events first, so that we process leave
       // actions and don't interfere with the leaving process (otherwise, the
       // side-effects could prevent us from fully leaving).
       await sbp('chelonia/contract/wait', [params.originatingContractID, params.contractID])
+
+      // When syncing the group contract, the contract might call /remove on
+      // itself if we had previously joined and left the group. By using
+      // ephemeral we ensure that it's not deleted until we've finished
+      // trying to join.
+      // We use a Set as normally params.originatingContractID and userID will
+      // be the same
+      const retainedContracts = [...new Set([params.contractID, params.originatingContractID])]
+      await sbp('chelonia/contract/retain', retainedContracts, { ephemeral: true })
       try {
-        const { loggedIn } = sbp('chelonia/rootState')
-        if (!loggedIn) throw new Error('[gi.actions/group/join] Not logged in')
-
-        const { identityContractID: userID } = loggedIn
-
-        // When syncing the group contract, the contract might call /remove on
-        // itself if we had previously joined and left the group. By using
-        // ephemeral we ensure that it's not deleted until we've finished
-        // trying to join.
-        await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
         const rootState = sbp('chelonia/rootState')
         if (!rootState.contracts[params.contractID]) {
           console.warn('[gi.actions/group/join] The group contract was removed after sync. If this happened during logging in, this likely means that we left the group on a different session.', { contractID: params.contractID })
@@ -350,8 +372,8 @@ export default (sbp('sbp/selectors/register', {
               return
             }
 
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
-            sbp('okTurtles.events/off', LOGOUT, logoutHandler)
+            removeEventHandler()
+            removeLogoutHandler()
             // The event handler recursively calls this same selector
             // A different path should be taken, since te event handler
             // should be called after the key request has been answered
@@ -361,13 +383,13 @@ export default (sbp('sbp/selectors/register', {
             })
           }
           const logoutHandler = () => {
-            sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+            removeEventHandler()
           }
 
           // The event handler is configured before sending the request
           // to avoid race conditions
-          sbp('okTurtles.events/once', LOGOUT, logoutHandler)
-          sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          const removeLogoutHandler = sbp('okTurtles.events/once', LOGOUT, logoutHandler)
+          const removeEventHandler = sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
         }
 
         // !sendKeyRequest && !(hasSecretKeys && !pendingKeyShares) && !(!hasSecretKeys && !pendingKeyShares) && !pendingKeyShares
@@ -445,7 +467,7 @@ export default (sbp('sbp/selectors/register', {
                   contractID: params.contractID,
                   contractName: 'gi.contracts/group',
                   data: [encryptedOutgoingData(params.contractID, CEKid, {
-                    foreignKey: `sp:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                    foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
                     id: userCSKid,
                     data: userCSKdata,
                     permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
@@ -483,7 +505,8 @@ export default (sbp('sbp/selectors/register', {
             }
           }
 
-          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, contractID: params.contractID })
+          await sbp('chelonia/contract/wait', params.contractID)
+          sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: params.contractID })
           // We don't have the secret keys and we're not waiting for OP_KEY_SHARE
           // This means that we've been removed from the group
         } else if (!hasSecretKeys && !pendingKeyShares) {
@@ -508,12 +531,12 @@ export default (sbp('sbp/selectors/register', {
       // may have left the group. In this case, we execute any pending /remove
       // actions on the contract. This will have no side-effects if /remove on
       // the group contract hasn't been called.
-        await sbp('chelonia/contract/release', params.contractID, { ephemeral: true })
+        await sbp('chelonia/contract/release', retainedContracts, { ephemeral: true })
       }
     })
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
-    const identityContractID = sbp('chelonia/rootState').loggedIn.identityContractID
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
     // This action (`joinWithInviteSecret`) can get invoked while there are
     // events being processed in the group or identity contracts. This can cause
@@ -590,14 +613,14 @@ export default (sbp('sbp/selectors/register', {
     const cskId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'csk')
     const csk = {
       id: cskId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
       data: contractState._vm.authorizedKeys[cskId].data
     }
 
     const cekId = await sbp('chelonia/contract/currentKeyIdByName', contractState, 'cek')
     const cek = {
       id: cekId,
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+      foreignKey: `shelter:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
       data: contractState._vm.authorizedKeys[cekId].data
     }
 
@@ -606,6 +629,10 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
+        attributes: {
+          adminIDs: [contractState.groupOwnerID],
+          ...params.data?.attributes
+        },
         ...params.data
       },
       options: {
@@ -687,25 +714,36 @@ export default (sbp('sbp/selectors/register', {
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/addChatRoom', {
-      ...omit(params, ['options', 'hooks']),
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
+    // Retain needed for the sync placed later to be guaranteed to work
+    await sbp('chelonia/contract/retain', params.contractID, { ephemeral: true })
+    try {
+      const message = await sbp('gi.actions/group/addChatRoom', {
+        ...omit(params, ['options', 'hooks']),
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
 
-    const chatRoomID = message.contractID()
+      const chatRoomID = message.contractID()
 
-    await sbp('gi.actions/group/joinChatRoom', {
-      ...omit(params, ['options', 'data', 'hooks']),
-      data: { chatRoomID },
-      hooks: {
-        postpublish: params.hooks?.postpublish
-      }
-    })
+      // Sync needed here to avoid "Cannot join a chatroom which isn't part of
+      // the group" error
+      await sbp('chelonia/contract/sync', params.contractID)
+      await sbp('gi.actions/group/joinChatRoom', {
+        ...omit(params, ['options', 'data', 'hooks']),
+        data: { chatRoomID },
+        hooks: {
+          postpublish: params.hooks?.postpublish
+        }
+      })
 
-    return chatRoomID
+      return chatRoomID
+    } finally {
+      sbp('chelonia/contract/release', params.contractID, { ephemeral: true }).catch(e =>
+        console.error('[gi.actions/group/addAndJoinChatRoom] Error releasing group chatroom', e)
+      )
+    }
   },
   ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
     await sbp('gi.actions/chatroom/rename', {
@@ -848,8 +886,8 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyProposalStateInGeneralChatRoom': function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
-    const { generalChatRoomId } = sbp('chelonia/rootState')[groupID]
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
+    const { generalChatRoomId } = await sbp('chelonia/contract/state', groupID)
     return sbp('gi.actions/chatroom/addMessage', {
       contractID: generalChatRoomId,
       data: { type: MESSAGE_TYPES.INTERACTIVE, proposal }
@@ -895,9 +933,82 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
+  'gi.actions/group/checkAndSeeProposal': function ({ data }: GIActionParams) {
+    const openProposalIds = Object.keys(sbp('state/vuex/getters').currentGroupState.proposals || {})
+
+    if (openProposalIds.includes(data.proposalHash)) {
+      sbp('controller/router').push({ path: '/dashboard#proposals' })
+    } else {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: data.proposalHash })
+    }
+  },
+  'gi.actions/group/fixAnyoneCanJoinLink': function ({ contractID }) {
+    // Queue ensures that the update happens as atomically as possible
+    return sbp('chelonia/queueInvocation', `${contractID}-FIX-ANYONE-CAN-JOIN`, async () => {
+      const now = await sbp('chelonia/time') * 1000
+      const state = await sbp('chelonia/contract/wait', contractID).then(() => sbp('chelonia/contract/state', contractID))
+
+      const quantity = doesGroupAnyoneCanJoinNeedUpdating(state)
+      if (!quantity) {
+        if (quantity === false) {
+          console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Group has already been updated', contractID, MAX_GROUP_MEMBER_COUNT)
+        } else {
+          console.warn('[gi.actions/group/fixAnyoneCanJoinLink] Already used MAX_GROUP_MEMBER_COUNT invites for group', contractID, MAX_GROUP_MEMBER_COUNT)
+        }
+        return
+      }
+
+      const CEKid = findKeyIdByName(state, 'cek')
+      const CSKid = findKeyIdByName(state, 'csk')
+
+      if (!CEKid || !CSKid) {
+        throw new Error('Contract is missing a CEK or CSK')
+      }
+
+      const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+      const inviteKeyId = keyId(inviteKey)
+      const inviteKeyP = serializeKey(inviteKey, false)
+      const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
+
+      const ik = {
+        id: inviteKeyId,
+        name: '#inviteKey-' + inviteKeyId,
+        purpose: ['sig'],
+        ringLevel: Number.MAX_SAFE_INTEGER,
+        permissions: [GIMessage.OP_KEY_REQUEST],
+        meta: {
+          quantity,
+          ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
+            expires:
+          now + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+          }),
+          private: {
+            content: inviteKeyS
+          }
+        },
+        data: inviteKeyP
+      }
+
+      // Replace all existing anyone-can-join invite links with the new one
+      const activeInvites = Object.keys(state.invites)
+        .filter(invite => state.invites[invite].creatorID === INVITE_INITIAL_CREATOR && !(state._vm.invites[invite].expires >= now))
+
+      await sbp('chelonia/out/keyAdd', {
+        contractName: 'gi.contracts/group',
+        contractID,
+        data: [ik],
+        signingKeyId: CSKid
+      })
+
+      await sbp('gi.actions/group/invite', { contractID, data: { inviteKeyId, creatorID: INVITE_INITIAL_CREATOR } })
+
+      // Revoke at the end
+      await Promise.all(activeInvites.map(inviteKeyId => sbp('gi.actions/group/inviteRevoke', { contractID, data: { inviteKeyId } })))
+    })
+  },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
-    const memberID = params.data.memberID || sbp('chelonia/rootState').loggedIn.identityContractID
+    const memberID = params.data.memberID || sbp('state/vuex/state').loggedIn.identityContractID
     const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
 
     // For more efficient and correct processing, augment the leaveChatRoom
@@ -1017,18 +1128,21 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.'), async function (sendMessage, params) {
     const { contractID, data } = params
     const state = await sbp('chelonia/contract/state', contractID)
-    const proposal = state.proposals[data.proposalHash]
-    const proposalToSend = extractProposalData(proposal, { proposalId: data.proposalHash, status: STATUS_EXPIRED })
+
+    for (const proposalHash of data.proposalIds) {
+      const proposal = state.proposals[proposalHash]
+      const proposalToSend = extractProposalData(proposal, { proposalId: proposalHash, status: STATUS_EXPIRED })
+
+      await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
+    }
 
     const response = await sendMessage(params)
-
-    await sbp('gi.actions/group/notifyProposalStateInGeneralChatRoom', { groupID: contractID, proposal: proposalToSend })
-
     return response
   }),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
+  ...encryptedAction('gi.actions/group/updateGroupInviteExpiry', L('Failed to update group invite expiry.')),
   ...encryptedAction('gi.actions/group/upgradeFrom1.0.7', L('Failed to upgrade from version 1.0.7')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))

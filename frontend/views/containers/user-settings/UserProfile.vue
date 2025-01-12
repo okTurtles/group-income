@@ -57,7 +57,7 @@
             tag='button'
             type='button'
             data-test='passwordBtn'
-            @click.prevent='onUpdatePasswordClick'
+            @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
         banner-scoped(ref='formMsg' data-test='profileMsg')
@@ -73,6 +73,7 @@
         i18n.is-title-3(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
+          | {{ ' ' }}
           i18n.is-danger This action cannot be undone.
 
         .buttons
@@ -81,6 +82,7 @@
             tag='button'
             type='submit'
             data-test='deleteAccount'
+            @click='handleDeleteAccount'
           ) Delete account
 </template>
 
@@ -154,14 +156,6 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
     },
-    onUpdatePasswordClick () {
-      // TODO: use 'PasswordModal.vue' instead, once the password update is implemented in the app.
-      sbp('gi.ui/prompt', {
-        heading: L('Feature coming soon'),
-        question: L('Sorry, this feature has not been implemented yet.{br_}Please check back later.', { ...LTags() }),
-        primaryButton: L('OK')
-      })
-    },
     async saveProfile () {
       this.$refs.formMsg.clean()
       const attrs = {}
@@ -183,6 +177,13 @@ export default ({
           this.$refs.formMsg.danger(e.message)
         }
       }
+    },
+    handleDeleteAccount () {
+      sbp('gi.ui/prompt', {
+        heading: L('Coming soon!'),
+        question: L('Sorry, this feature has not been implemented yet.{br_}Please check back later.', LTags()),
+        primaryButton: L('Close')
+      })
     }
   }
 }: Object)

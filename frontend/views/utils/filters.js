@@ -1,3 +1,5 @@
+import { L } from '@common/common.js'
+
 export const toPercent = (decimal: number): number => Math.floor(decimal * 100)
 
 export const getFileExtension = (
@@ -13,6 +15,18 @@ export const getFileType = (
   mimeType: string = ''
 ): string => {
   return mimeType.match('image/') ? 'image' : 'non-image'
+}
+
+export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {
+  if (bytes < 0 || !Number.isFinite(bytes)) return L('Invalid size')
+  else if (bytes === 0) return L('0 Bytes')
+
+  const k = 1024 // Decimal base
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  const formattedValue = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))
+  return `${formattedValue} ${sizes[i]}`
 }
 
 /**

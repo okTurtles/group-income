@@ -4,6 +4,7 @@ form(data-test='signup' @submit.prevent='')
     i18n.label Username
     input.input(
       :class='{error: $v.form.username.$error}'
+      autocapitalize='off'
       name='username'
       ref='username'
       v-model.trim='form.username'
@@ -52,7 +53,7 @@ import {
   IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
   IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
 } from '@model/contracts/shared/constants.js'
-import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+import { requestNotificationPermission } from '@model/notifications/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import {
   allowedUsernameCharacters,
@@ -131,14 +132,7 @@ export default ({
         await this.postSubmit()
         this.$emit('submit-succeeded')
 
-        const granted = (await requestNotificationPermission()) === 'granted'
-        if (granted) {
-          // TODO: remove in production - this is just for testing the notification
-          await sbp('service-worker/send-push', {
-            title: 'Welcome to Group Income!',
-            body: 'Congratulations on signing up on the app.'
-          })
-        }
+        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg?.danger(e.message)
@@ -165,7 +159,7 @@ export default ({
               this.usernameAsyncValidation.resolveFn = resolve
               this.usernameAsyncValidation.timer = setTimeout(async () => {
                 try {
-                  resolve(!await sbp('namespace/lookup', value))
+                  resolve(!await sbp('namespace/lookup', value, { skipCache: true }))
                 } catch (e) {
                   console.warn('unexpected exception in SignupForm validation:', e)
                   resolve(true)

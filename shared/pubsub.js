@@ -205,8 +205,20 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   return client
 }
 
-export function createMessage (type: string, data: JSONType): string {
-  return JSON.stringify({ type, data })
+export function createMessage (type: string, data: JSONType, meta: ?Object): Object {
+  const message = { ...meta, type, data }
+  let string: string
+  const stringify = function () {
+    if (!string) string = JSON.stringify(this)
+    return string
+  }
+  // $FlowFixMe[prop-missing]
+  Object.defineProperties(message, {
+    [Symbol.toPrimitive]: {
+      value: stringify
+    }
+  })
+  return message
 }
 
 export function createKvMessage (channelID: string, key: string, data: JSONType): string {
@@ -536,6 +548,18 @@ const publicMethods = {
       throw new Error('connect() should no longer be called on this instance.')
     }
     client.socket = new WebSocket(client.url)
+    // Sometimes (like when using `createMessage`), we want to send objects that
+    // are serialized as strings. Native web sockets don't support objects, so
+    // we use this workaround.
+    // $FlowFixMe[cannot-write]
+    client.socket.send = function (data) {
+      // $FlowFixMe[method-unbinding]
+      const send = WebSocket.prototype.send.bind(this)
+      if (typeof data === 'object' && typeof data[Symbol.toPrimitive] === 'function') {
+        return send(data[Symbol.toPrimitive]())
+      }
+      return send(data)
+    }
 
     if (client.options.timeout) {
       const start = performance.now()

@@ -70,6 +70,7 @@ export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 
 // chatroom events
+export const MESSAGE_RECEIVE_RAW = 'message-receive-raw'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 
@@ -92,7 +93,7 @@ export const MESSAGE_TYPES = {
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
-  ON_BOARDING: 30,
+  ON_BOARDING: null, // No expiration
   PROPOSAL: 7
 }
 
