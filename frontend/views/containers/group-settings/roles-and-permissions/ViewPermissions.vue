@@ -1,32 +1,34 @@
 <template lang="pug">
-.c-permissions-wrapper(
-  v-on-clickaway='closeTooltip'
-)
+.c-permissions-wrapper
   span.c-display-text.has-text-1 {{ displayText }}
-  i18n.link.c-see-all(
-    tag='button'
-    @click='openTooltip'
-  ) See all
 
-  .c-permissions-tooltip(
-    :class='{ "is-active": ephemeral.isTooltipActive }'
+  .c-see-all-wrapper(
+    v-on-clickaway='closeTooltip'
   )
-    .c-permissions-tooltip-overlay(@click.stop='closeTooltip')
+    i18n.link.c-see-all(
+      tag='button'
+      @click='openTooltip'
+    ) See all
 
-    .c-permissions-tooltip-content
-      header.c-permissions-tooltip-header
-        i18n.c-tooltip-title(
-          tag='h2'
-          :args='{ no: permissionsNo }'
-        ) {no} permissions
+    .c-permissions-tooltip(
+      :class='{ "is-active": ephemeral.isTooltipActive }'
+    )
+      .c-permissions-tooltip-overlay(@click.stop='closeTooltip')
 
-        modal-close.c-permissions-close-btn(@close='closeTooltip')
+      .c-permissions-tooltip-content
+        header.c-permissions-tooltip-header
+          i18n.c-tooltip-title(
+            tag='h2'
+            :args='{ no: permissionsNo }'
+          ) {no} permissions
 
-      ul.c-permissions-list
-        li.c-permission-item(
-          v-for='permissionId in permissions'
-          :key='permissionId'
-        ) {{ `- ${getPermissionDisplayName(permissionId)}` }}
+          modal-close.c-permissions-close-btn(@close='closeTooltip')
+
+        ul.c-permissions-list
+          li.c-permission-item(
+            v-for='permissionId in permissions'
+            :key='permissionId'
+          ) {{ `- ${getPermissionDisplayName(permissionId)}` }}
 </template>
 
 <script>
@@ -92,28 +94,38 @@ export default {
   font-size: $size_4;
 }
 
+.c-see-all-wrapper {
+  position: relative;
+  display: inline-flex;
+  margin-left: 0.25rem;
+  width: max-content;
+}
+
 .c-see-all {
   display: inline-block;
-  margin-left: 0.25rem;
 }
 
 .c-permissions-tooltip {
   position: absolute;
-  bottom: -0.25rem;
+  display: block;
+  bottom: -0.5rem;
   transform: translateY(100%);
-  left: 0;
-  width: 100%;
-  max-width: 17.5rem;
-  padding: 1rem 0.75rem;
-  height: max-content;
+  right: 0;
+  width: max-content;
+  min-width: 10.75rem;
+  max-width: 14rem;
+  padding: 1rem;
   z-index: $zindex-tooltip;
   background-color: $background_0;
   border-radius: 10px;
-  display: none;
+  opacity: 0;
+  height: 0;
   pointer-events: none;
 
   &.is-active {
-    display: block;
+    opacity: 1;
+    height: max-content;
+    transition: opacity 200ms ease-out;
     pointer-events: initial;
   }
 

@@ -8,7 +8,7 @@
         strong.c-name {{ data.username }}
 
     td.c-role
-      span.pill.c-role-pill(:class='getPillClass()') {{ getRoleDisplayName(data.role ) }}
+      span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
 
     td.c-permissions
       view-permissions(:permissions='data.permissions')
@@ -40,10 +40,8 @@ export default {
       type: Object
     }
   },
-  methods: {
-    getRoleDisplayName,
-    getPermissionDisplayName,
-    getPillClass () {
+  computed: {
+    pillClasses () {
       if (!this.data?.role) { return '' }
 
       return ({
@@ -53,6 +51,10 @@ export default {
         [GROUP_ROLES.CUSTOM]: 'is-general'
       })[this.data.role]
     }
+  },
+  methods: {
+    getRoleDisplayName,
+    getPermissionDisplayName
   }
 }
 </script>

@@ -58,7 +58,7 @@ export default {
   },
   methods: {
     onMenuSelect (itemId) {
-      console.log('!@# selected', itemId)
+      alert(L('Coming soon'))
     }
   }
 }
