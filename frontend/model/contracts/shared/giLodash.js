@@ -78,6 +78,18 @@ export function randomHexString (length: number): string {
   return Array.from(randomBytes(length), byte => (byte % 16).toString(16)).join('')
 }
 
+export function normalizeString (str: string): string {
+  return str
+    // [1]. Normalize strings by replacing intial and final punctuation marks,
+    // which typically are used in smart quote substitution, with a standad
+    // character
+    // (reference issue: https://github.com/okTurtles/group-income/issues/2479)
+    .replace(/[\p{Pf}\p{Pi}]/gu, "'")
+    // [2]. Normalize the string based on 'Canonical equivalence'. eg) 'Amélie' !== 'Amélie' even when they are visually identical because their unicode sequences are different.
+    //      (reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize#canonical_equivalence_normalization)
+    .normalize('NFC')
+}
+
 export function randomIntFromRange (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
