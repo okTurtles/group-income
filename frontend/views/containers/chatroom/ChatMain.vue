@@ -304,8 +304,7 @@ export default ({
       'isGroupDirectMessage',
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
-      'isReducedMotionMode',
-      'globalProfile'
+      'isReducedMotionMode'
     ]),
     currentUserAttr () {
       return {
@@ -621,13 +620,9 @@ export default ({
 
       if (type === MESSAGE_TYPES.INTERACTIVE) {
         const proposal = message.proposal
-        const getNameFromMemberID = (memberID) => {
-          const profile = this.globalProfile(memberID)
-          return profile ? `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${memberID}` : L('Unknown user')
-        }
 
         this.ephemeral.replyingMessage = {
-          text: interactiveMessage(proposal, { from: getNameFromMemberID(proposal.creatorID) }),
+          text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` }),
           hash
         }
         this.ephemeral.replyingTo = L('Proposal notification')
