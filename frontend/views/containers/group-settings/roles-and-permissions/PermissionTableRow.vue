@@ -44,8 +44,8 @@ export default {
     getRoleDisplayName,
     getPermissionDisplayName,
     getPillClass () {
-      if (!this.data?.role) { return ''}
-  
+      if (!this.data?.role) { return '' }
+
       return ({
         [GROUP_ROLES.ADMIN]: 'is-success',
         [GROUP_ROLES.MODERATOR_DELEGATOR]: 'is-primary',

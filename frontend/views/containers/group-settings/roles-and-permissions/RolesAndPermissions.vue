@@ -36,6 +36,7 @@ import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 const fakeRolesData = [
   {
@@ -83,7 +84,7 @@ export default ({
   },
   methods: {
     handleAddPermissionsClick () {
-      console.log('TODO: add permissions')
+      alert(L('Coming soon!'))
     }
   }
 }: Object)
