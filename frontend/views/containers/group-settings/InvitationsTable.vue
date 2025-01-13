@@ -22,7 +22,7 @@ page-section.c-section(:title='L("Invite links")')
         i18n.c-invite-link(tag='th') invite link
         i18n.c-state(tag='th') state
         th.c-action(
-          :aria-label='L("action ")'
+          :aria-label='L("action")'
         )
     transition-group(name='slidedown' tag='tbody')
       tr(
