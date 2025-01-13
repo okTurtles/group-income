@@ -59,7 +59,6 @@ export function renderMarkdown (str: string): any {
   // STEP 3. Remove the unecessary starting/end line-breaks added in/outside of the converted html tags.
   converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')
     .replace(/\n<\/([a-z]+)>/g, '</$1>')
-
   return converted
 }
 
