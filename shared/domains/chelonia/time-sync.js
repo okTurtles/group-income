@@ -19,11 +19,11 @@ let watchdog
 
 const syncServerTime = async function () {
   // Get our current monotonic time
-  const newMonotonicBase = performance.now()
+  const startTime = performance.now()
   // Now, ask the server for the time
   const time = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
   const requestTimeElapsed = performance.now()
-  if (requestTimeElapsed - newMonotonicBase > 1000) {
+  if (requestTimeElapsed - startTime > 8000) {
     throw new Error('Error fetching server time: request took too long')
   }
   // If the request didn't succeed, report it
@@ -34,12 +34,21 @@ const syncServerTime = async function () {
   // Adjust `wallBase` based on the elapsed request time. We can't know
   // how long it took for the server to respond, but we can estimate that it's
   // about half the time from the moment we made the request.
-  wallBase = serverTime + (requestTimeElapsed - newMonotonicBase) / 2
+  const newMonotonicBase = performance.now()
+  wallBase =
+    serverTime +
+    (requestTimeElapsed - startTime) / 2 +
+    // Also take into account the time elapsed between `requestTimeElapsed`
+    // and this line (which should be very little)
+    (newMonotonicBase - requestTimeElapsed)
   monotonicBase = newMonotonicBase
 }
 
 export default (sbp('sbp/selectors/register', {
   'chelonia/private/startClockSync': function () {
+    if (resyncTimeout !== undefined) {
+      throw new Error('chelonia/private/startClockSync has already been called')
+    }
     // Default re-sync every 5 minutes
     const resync = (delay: number = 300000) => {
       // If there's another time sync process in progress, don't do anything
@@ -104,7 +113,7 @@ export default (sbp('sbp/selectors/register', {
   // measured locally (using a monotonic clock), which is used as an offset, and
   // a previously retrieved server time. The time value is returned as a UNIX
   // timestamp (seconds since 1 Jan 1970 00:00:00 UTC)
-  'chelonia/time': function () {
+  'chelonia/time': function (): number {
     const monotonicNow = performance.now()
     const wallNow = wallBase - monotonicBase + monotonicNow
     return (wallNow / 1e3 | 0)

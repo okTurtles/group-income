@@ -30,14 +30,14 @@ export default (sbp('sbp/selectors/register', {
     console.info('group key-value store data loaded!')
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    return (await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN).catch((e) => {
-      console.error('[gi.actions/group/kv/fetchLastLoggedIn] Error', e)
-    }))?.data || Object.create(null)
+    return (await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN))?.data || Object.create(null)
   },
   'gi.actions/group/kv/loadLastLoggedIn': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const data = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
       sbp('okTurtles.events/emit', NEW_LAST_LOGGED_IN, [contractID, data])
+    }).catch(e => {
+      console.error('[gi.actions/group/kv/loadLastLoggedIn] Error loading last logged in', e)
     })
   },
   'gi.actions/group/kv/updateLastLoggedIn': ({ contractID, throttle }: { contractID: string, throttle: boolean }) => {
@@ -48,9 +48,12 @@ export default (sbp('sbp/selectors/register', {
 
     if (throttle) {
       const state = sbp('state/vuex/state')
-      const lastLoggedIn = new Date(state.lastLoggedIn?.[contractID]?.[identityContractID]).getTime()
+      const lastLoggedInRawValue: ?string = state.lastLoggedIn?.[contractID]?.[identityContractID]
+      if (lastLoggedInRawValue) {
+        const lastLoggedIn = new Date(lastLoggedInRawValue).getTime()
 
-      if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
+        if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
+      }
     }
 
     const now = new Date().toISOString()
