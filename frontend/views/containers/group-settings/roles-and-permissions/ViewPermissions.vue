@@ -22,7 +22,10 @@
             :args='{ no: permissionsNo }'
           ) {no} permissions
 
-          modal-close.c-permissions-close-btn(@close='closeTooltip')
+          modal-close.c-permissions-close-btn(
+            @close='closeTooltip'
+            data-test='closeViewPermission'
+          )
 
         ul.c-permissions-list
           li.c-permission-item(
