@@ -130,6 +130,11 @@ export default {
   opacity: 0;
   height: 0;
   pointer-events: none;
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+
+  .is-dark-theme & {
+    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
+  }
 
   &.is-active {
     opacity: 1;
@@ -169,12 +174,6 @@ export default {
     border-radius: 4px;
     line-height: 1.175;
     display: inline-block;
-  }
-
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
-
-  .is-dark-theme & {
-    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
   }
 }
 
