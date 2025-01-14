@@ -263,7 +263,7 @@ export default ({
       level: 'info',
       subtype: data.subtype,
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+      sbpInvocation: ['gi.app/group/checkAndSeeProposal', {
         contractID: data.groupID,
         data: { proposalHash: data.proposalHash }
       }]
@@ -297,7 +297,7 @@ export default ({
       icon: 'exclamation-triangle',
       scope: 'group',
       data: { proposalId: data.proposalId },
-      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+      sbpInvocation: ['gi.app/group/checkAndSeeProposal', {
         contractID: data.groupID,
         data: { proposalHash: data.proposalId }
       }]
@@ -378,7 +378,7 @@ export default ({
       icon: statusMap[status].icon,
       level: statusMap[status].level,
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/checkAndSeeProposal', {
+      sbpInvocation: ['gi.app/group/checkAndSeeProposal', {
         contractID: data.groupID,
         data: { proposalHash: data.proposalHash }
       }]
@@ -438,7 +438,7 @@ export default ({
       icon: 'dollar-sign',
       level: 'info',
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {
+      sbpInvocation: ['gi.app/group/displayMincomeChangedPrompt', {
         contractID: data.groupID,
         data: {
           amount: data.to,

@@ -31,9 +31,7 @@ import {
   JOINED_GROUP,
   JOINED_CHATROOM,
   LEFT_GROUP,
-  LOGOUT,
-  OPEN_MODAL,
-  REPLACE_MODAL
+  LOGOUT
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -945,37 +943,6 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   }),
-  'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
-    const { withGroupCurrency } = sbp('state/vuex/getters')
-    const promptOptions = data.increased
-      ? {
-          heading: L('Mincome changed'),
-          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
-          primaryButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
-          secondaryButton: data.memberType === 'pledging' ? L('Yes') : L('No')
-        }
-      : {
-          heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
-          question: L('You now make more than the mincome. Would you like to increase your pledge?'),
-          primaryButton: L('Yes'),
-          secondaryButton: L('No')
-        }
-
-    const primaryButtonSelected = await sbp('gi.ui/prompt', promptOptions)
-    if (primaryButtonSelected) {
-      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
-      sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
-    }
-  },
-  'gi.actions/group/checkAndSeeProposal': function ({ data }: GIActionParams) {
-    const openProposalIds = Object.keys(sbp('state/vuex/getters').currentGroupState.proposals || {})
-
-    if (openProposalIds.includes(data.proposalHash)) {
-      sbp('controller/router').push({ path: '/dashboard#proposals' })
-    } else {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: data.proposalHash })
-    }
-  },
   'gi.actions/group/fixAnyoneCanJoinLink': function ({ contractID }) {
     // Queue ensures that the update happens as atomically as possible
     return sbp('chelonia/queueInvocation', `${contractID}-FIX-ANYONE-CAN-JOIN`, async () => {
