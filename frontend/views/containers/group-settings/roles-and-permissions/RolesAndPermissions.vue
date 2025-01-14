@@ -11,8 +11,13 @@ page-section.c-section(
     thead
       tr
         i18n.th-user(tag='th') User
-        i18n.th-role(tag='th') Role
-        i18n.th-permissions(tag='th') Permissions
+        i18n.th-role-and-permissions-combined(
+          v-if='ephemeral.isMobile'
+          tag='th'
+        ) Roles / Permissions
+        template(v-else)
+          i18n.th-role(tag='th') Role
+          i18n.th-permissions(tag='th') Permissions
         th.th-action(:aria-label='L("action")')
 
     tbody
@@ -20,6 +25,7 @@ page-section.c-section(
         v-for='entry in ephemeral.fakeRolesData'
         :key='entry.id'
         :data='entry'
+        :is-mobile='ephemeral.isMobile'
       )
 
   .c-buttons-container
@@ -69,8 +75,10 @@ export default ({
   data () {
     return {
       ephemeral: {
-        fakeRolesData
-      }
+        fakeRolesData,
+        isMobile: false
+      },
+      matchMediaMobile: null
     }
   },
   computed: {
@@ -86,12 +94,28 @@ export default ({
     handleAddPermissionsClick () {
       alert(L('Coming soon!'))
     }
+  },
+  mounted () {
+    this.matchMediaMobile = window.matchMedia('screen and (max-width: 570px)')
+    this.ephemeral.isMobile = this.matchMediaMobile.matches
+    this.matchMediaMobile.onchange = (e) => {
+      this.ephemeral.isMobile = e.matches
+    }
+  },
+  beforeDestroy () {
+    this.matchMediaMobile.onchange = null
   }
 }: Object)
 </script>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+@mixin component-non-mobile {
+  @media screen and (min-width: 571px) {
+    @content;
+  }
+}
 
 .c-section {
   position: relative;
@@ -117,7 +141,7 @@ export default ({
   margin-top: 2rem;
 
   th.th-user {
-    min-width: 12.25rem;
+    padding-right: 0.5rem;
   }
 
   th.th-role {
@@ -125,7 +149,19 @@ export default ({
   }
 
   th.th-action {
-    width: 5.25rem;
+    width: 2.75rem;
+    padding-right: 1rem;
+  }
+
+  @include component-non-mobile {
+    th.th-user {
+      width: auto;
+      min-width: 12.25rem;
+    }
+
+    th.th-action {
+      width: 4.25rem;
+    }
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-permissions-wrapper
+.c-permissions-wrapper(:class='{ "is-mobile": isMobile }')
   span.c-display-text.has-text-1 {{ displayText }}
 
   .c-see-all-wrapper(
@@ -53,6 +53,10 @@ export default {
   props: {
     permissions: {
       type: Array
+    },
+    isMobile: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -88,6 +92,10 @@ export default {
 .c-permissions-wrapper {
   position: relative;
   padding: 0.75rem 0.5rem 0.75rem 0;
+
+  &.is-mobile {
+    padding: 0;
+  }
 }
 
 .c-display-text {
