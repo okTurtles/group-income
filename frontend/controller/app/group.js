@@ -1,6 +1,6 @@
 'use strict'
 
-import { L, LTags } from '@common/common.js'
+import { L } from '@common/common.js'
 import {
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT
@@ -62,13 +62,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupId, isNewlyCreated })
   },
   'gi.app/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
-    await sbp('gi.actions/group/join', params).catch(e => {
-      sbp('gi.ui/prompt', {
-        heading: L('Failed to join the group'),
-        question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
-        primaryButton: L('Close')
-      })
-    })
+    await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     return sbp('gi.app/group/switch', params.contractID, true)
   },
