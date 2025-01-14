@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_INITIAL_CREATOR,
@@ -40,7 +40,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
-import { CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import type { Key } from '../../../shared/domains/chelonia/crypto.js'
@@ -54,6 +54,12 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
   if (!rootState.notifications || rootState.loggedIn?.identityContractID !== identityContractID) return
   const notificationHashes = rootState.notifications.items.filter(item => item.groupID === groupContractID).map(item => item.hash)
   sbp('gi.notifications/remove', notificationHashes)
+})
+
+const JOINED_FAILED_KEY = 'gi.actions/group/join/failed'
+
+sbp('okTurtles.events/on', CHELONIA_RESET, () => {
+  sbp('okTurtles.data/delete', JOINED_FAILED_KEY)
 })
 
 export default (sbp('sbp/selectors/register', {
@@ -451,46 +457,50 @@ export default (sbp('sbp/selectors/register', {
             const userCSKdata = rootState[userID]._vm.authorizedKeys[userCSKid].data
 
             try {
-            // Share our PEK with the group so that group members can see
-            // our name and profile information
-              PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-                contractID: params.contractID,
-                contractName: 'gi.contracts/group',
-                subjectContractID: userID,
-                keyIds: [PEKid]
-              })
-
               const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
-              // Check to avoid adding existing keys to the contract
-              if (!existingForeignKeys?.includes(userCSKid)) {
-                await sbp('chelonia/out/keyAdd', {
-                  contractID: params.contractID,
-                  contractName: 'gi.contracts/group',
-                  data: [encryptedOutgoingData(params.contractID, CEKid, {
-                    foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
-                    id: userCSKid,
-                    data: userCSKdata,
-                    permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
-                    allowedActions: '*',
-                    purpose: ['sig'],
-                    ringLevel: Number.MAX_SAFE_INTEGER,
-                    name: `${userID}/${userCSKid}`
-                  })],
-                  signingKeyId: CSKid
-                })
-              }
 
-              // Send inviteAccept action to the group to add ourselves to the members list
-              await sbp('chelonia/contract/wait', params.contractID)
-              await sbp('gi.actions/group/inviteAccept', {
+              await sbp('chelonia/out/atomic', {
                 ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
-                data: {
-                // The 'reference' value is used to help keep group joins
-                // updated. A matching value is required when leaving a group,
-                // which prevents us from accidentally leaving a group due to
-                // a previous leave action when re-joining
-                  reference: rootState[userID].groups[params.contractID].hash
-                },
+                data: [
+                  // Share our PEK with the group so that group members can see
+                  // our name and profile information
+                  PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
+                    contractID: params.contractID,
+                    contractName: 'gi.contracts/group',
+                    subjectContractID: userID,
+                    keyIds: [PEKid],
+                    returnInvocation: true
+                  }),
+                  // Check to avoid adding existing keys to the contract
+                  !existingForeignKeys?.includes(userCSKid) && ['chelonia/out/keyAdd', {
+                    contractID: params.contractID,
+                    contractName: 'gi.contracts/group',
+                    data: [encryptedOutgoingData(params.contractID, CEKid, {
+                      foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
+                      id: userCSKid,
+                      data: userCSKdata,
+                      permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                      allowedActions: '*',
+                      purpose: ['sig'],
+                      ringLevel: Number.MAX_SAFE_INTEGER,
+                      name: `${userID}/${userCSKid}`
+                    })],
+                    signingKeyId: CSKid
+                  }],
+                  // Send inviteAccept action to the group to add ourselves to the members list
+                  await sbp('gi.actions/group/inviteAccept', {
+                    ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+                    data: {
+                      // The 'reference' value is used to help keep group joins
+                      // updated. A matching value is required when leaving a group,
+                      // which prevents us from accidentally leaving a group due to
+                      // a previous leave action when re-joining
+                      reference: rootState[userID].groups[params.contractID].hash
+                    },
+                    returnInvocation: true
+                  })
+                ].filter(Boolean),
+                signingKeyId: CSKid,
                 hooks: {
                   prepublish: params.hooks?.prepublish,
                   postpublish: null
@@ -521,11 +531,7 @@ export default (sbp('sbp/selectors/register', {
         }
       } catch (e) {
         console.error('gi.actions/group/join failed!', e)
-        sbp('gi.ui/prompt', {
-          heading: L('Failed to join the group'),
-          question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
-          primaryButton: L('Close')
-        })
+        throw e
       } finally {
       // If we called join but it didn't result in any actions being sent, we
       // may have left the group. In this case, we execute any pending /remove
@@ -533,6 +539,18 @@ export default (sbp('sbp/selectors/register', {
       // the group contract hasn't been called.
         await sbp('chelonia/contract/release', retainedContracts, { ephemeral: true })
       }
+    }).then(() => {
+      const map: Map<string, any> = sbp('okTurtles.data/get', JOINED_FAILED_KEY)
+      map?.delete(params.contractID)
+    }).catch(e => {
+      let map: Map<string, any> = sbp('okTurtles.data/get', JOINED_FAILED_KEY)
+      if (!map) {
+        map = new Map()
+        sbp('okTurtles.data/set', JOINED_FAILED_KEY, map)
+      }
+
+      map.set(params.contractID, params)
+      throw e
     })
   },
   'gi.actions/group/joinWithInviteSecret': async function (groupId: string, secret: string) {
@@ -570,6 +588,22 @@ export default (sbp('sbp/selectors/register', {
     } finally {
       await sbp('chelonia/contract/release', groupId, { ephemeral: true })
     }
+  },
+  'gi.actions/group/reattemptFailedJoins': async function () {
+    const ourGroups = sbp('state/vuex/getters').ourGroups
+    const map: Map<string, any> = sbp('okTurtles.data/get', JOINED_FAILED_KEY)
+    if (!map) return
+
+    return await Promise.allSettled([...map.entries()].map(([contractID, params]) => {
+      if (!ourGroups.includes(contractID)) {
+        map.delete(contractID)
+        return undefined
+      }
+
+      return sbp('gi.actions/group/join', params).catch(e => {
+        console.error('Error on group join re-attempt', params, e)
+      })
+    }))
   },
   'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
     const rootState = sbp('chelonia/rootState')

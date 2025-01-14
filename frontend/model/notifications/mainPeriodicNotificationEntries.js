@@ -219,6 +219,21 @@ const periodicNotificationEntries: {
       },
       shouldClearStateKey: () => true
     }
+  },
+  {
+    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    notificationData: {
+      stateKey: 'reattemptFailedJoins',
+      emitCondition ({ rootGetters }) {
+        return !!rootGetters.ourIdentityContractId
+      },
+      emit () {
+        sbp('gi.actions/group/reattemptFailedJoins').catch((e) => {
+          console.error('Error calling reattemptFailedJoins', e)
+        })
+      },
+      shouldClearStateKey: () => true
+    }
   }
 ]
 
