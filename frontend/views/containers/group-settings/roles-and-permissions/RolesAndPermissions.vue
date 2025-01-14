@@ -52,19 +52,19 @@ const fakeRolesData = [
     id: 'user-1',
     username: 'Fake user 1',
     role: GROUP_ROLES.ADMIN,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.ADMIN]
+    permissions: GROUP_PERMISSIONS_PRESET.ADMIN
   },
   {
     id: 'user-2',
     username: 'Fake user 2',
     role: GROUP_ROLES.MODERATOR_DELEGATOR,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR]
+    permissions: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR
   },
   {
     id: 'user-3',
     username: 'Fake user 3',
     role: GROUP_ROLES.MODERATOR,
-    permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR]
+    permissions: GROUP_PERMISSIONS_PRESET.MODERATOR
   }
 ]
 

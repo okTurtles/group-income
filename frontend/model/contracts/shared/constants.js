@@ -59,14 +59,14 @@ export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
 // group-permissions related
 
-export const GROUP_ROLES: any = {
+export const GROUP_ROLES = {
   ADMIN: 'admin',
   MODERATOR: 'moderator',
   MODERATOR_DELEGATOR: 'moderator-delegator',
   CUSTOM: 'custom'
 }
 
-export const GROUP_PERMISSIONS: any = {
+export const GROUP_PERMISSIONS = {
   VIEW_PERMISSIONS: 'view-permissions',
   REMOVE_PERMISSIONS: 'remove-permissions',
   DELEGATE_PERMISSIONS: 'delegate-permissions',
@@ -76,8 +76,8 @@ export const GROUP_PERMISSIONS: any = {
 }
 const GP = GROUP_PERMISSIONS
 
-export const GROUP_PERMISSIONS_PRESET: any = {
-  [GROUP_ROLES.ADMIN]: [
+export const GROUP_PERMISSIONS_PRESET = {
+  ADMIN: [
     GP.VIEW_PERMISSIONS,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_PERMISSIONS,
@@ -85,13 +85,13 @@ export const GROUP_PERMISSIONS_PRESET: any = {
     GP.REVOKE_INVITE,
     GP.DELETE_CHANNEL
   ],
-  [GROUP_ROLES.MODERATOR_DELEGATOR]: [
+  MODERATOR_DELEGATOR: [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE,
     GP.DELETE_CHANNEL
   ],
-  [GROUP_ROLES.MODERATOR]: [
+  MODERATOR: [
     GP.VIEW_PERMISSIONS
   ]
 }
