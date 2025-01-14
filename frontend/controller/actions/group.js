@@ -55,6 +55,7 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
 })
 
 const JOINED_FAILED_KEY = 'gi.actions/group/join/failed'
+let reattemptTimeoutId
 
 sbp('okTurtles.events/on', CHELONIA_RESET, () => {
   sbp('okTurtles.data/delete', JOINED_FAILED_KEY)
@@ -548,6 +549,22 @@ export default (sbp('sbp/selectors/register', {
       }
 
       map.set(params.contractID, params)
+
+      const scheduleReattempt = () => {
+        if (reattemptTimeoutId === undefined) {
+          reattemptTimeoutId = setTimeout(() => {
+            reattemptTimeoutId = undefined
+            if (map.size === 0) return
+
+            sbp('gi.actions/group/reattemptFailedJoins').catch(e => {
+              console.error('Error running reattemptFailedJoins', e)
+              scheduleReattempt()
+            })
+          }, 60e3)
+        }
+      }
+      scheduleReattempt()
+
       throw e
     })
   },
