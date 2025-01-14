@@ -21,7 +21,7 @@ if (
   })
 
   const locationUrl = new URL(self.location)
-  const routerBase = locationUrl.searchParams.get('routerBase')
+  const routerBase = locationUrl.searchParams.get('routerBase') ?? '/app'
 
   self.addEventListener('install', (event) => {
     event.waitUntil(
