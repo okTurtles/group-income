@@ -716,6 +716,7 @@ route.GET('/assets/{subpath*}', {
   // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
   // This should also be suitable for serving unversioned fonts and images.
   return h.file(subpath)
+    .header('Cache-Control', 'public,max-age=604800,stale-while-revalidate=86400')
 })
 
 route.GET(staticServeConfig.routePath, {}, {

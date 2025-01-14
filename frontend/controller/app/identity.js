@@ -388,7 +388,9 @@ export default (sbp('sbp/selectors/register', {
             })
           } else {
             try {
-              await sbp('chelonia/contract/sync', identityContractID)
+              if (navigator.onLine !== false) {
+                await sbp('chelonia/contract/sync', identityContractID)
+              }
             } catch (e) {
               // Since we're throwing or returning, the `await` below will not
               // be used. In either case, login won't complete after this point,
