@@ -28,7 +28,8 @@
           li.c-permission-item(
             v-for='permissionId in permissions'
             :key='permissionId'
-          ) {{ `- ${getPermissionDisplayName(permissionId)}` }}
+          )
+            span.c-permission-name {{ `- ${getPermissionDisplayName(permissionId)}` }}
 </template>
 
 <script>
@@ -156,19 +157,24 @@ export default {
   .c-permissions-list {
     margin-top: 0.5rem;
     font-size: $size_4;
-    color: $text_1;
   }
 
   .c-permission-item:not(:last-child) {
     margin-bottom: 0.2rem;
   }
 
-  @include from($tablet) {
-    box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  .c-permission-name {
+    background-color: $general_1_opacity_6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 4px;
+    line-height: 1.175;
+    display: inline-block;
+  }
 
-    .is-dark-theme & {
-      box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
-    }
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+
+  .is-dark-theme & {
+    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
   }
 }
 
