@@ -111,6 +111,13 @@ if (
               }
 
               return response
+            }).catch(e => {
+              if (response) {
+                console.warn('Error while fetching', request.url, e)
+                return response
+              }
+
+              throw e
             })
           })
       })
