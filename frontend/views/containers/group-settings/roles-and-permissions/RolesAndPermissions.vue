@@ -11,6 +11,7 @@ page-section.c-section(
     thead
       tr
         i18n.th-user(tag='th') User
+        // Role and permissions columns are combined when the screen does not have enough space.
         i18n.th-role-and-permissions-combined(
           v-if='ephemeral.isMobile'
           tag='th'
@@ -45,20 +46,22 @@ import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/c
 import { L } from '@common/common.js'
 
 const fakeRolesData = [
+  // NOTE: This is a fake user data created for development purpose.
+  //       Should be removed once the roles & permissions features are implemented in the contract.
   {
-    id: 'fake-1',
+    id: 'user-1',
     username: 'Fake user 1',
     role: GROUP_ROLES.ADMIN,
     permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.ADMIN]
   },
   {
-    id: 'fake-2',
+    id: 'user-2',
     username: 'Fake user 2',
     role: GROUP_ROLES.MODERATOR_DELEGATOR,
     permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR]
   },
   {
-    id: 'fake-3',
+    id: 'user-3',
     username: 'Fake user 3',
     role: GROUP_ROLES.MODERATOR,
     permissions: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR]
