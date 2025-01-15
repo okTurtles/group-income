@@ -176,7 +176,7 @@ export default ({
       )
     },
     toggleTooltip () {
-      this.$refs.tooltip.toggle()
+      this.$refs.tooltip?.toggle()
     },
     async sendMessage () {
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
