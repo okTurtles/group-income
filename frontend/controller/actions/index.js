@@ -25,7 +25,8 @@ sbp('sbp/selectors/register', {
     contractID,
     contractName,
     subjectContractID,
-    keyIds
+    keyIds,
+    returnInvocation
   }) => {
     if (contractID === subjectContractID) {
       return
@@ -74,12 +75,15 @@ sbp('sbp/selectors/register', {
         }))
       }
 
-      await sbp('chelonia/out/keyShare', {
+      const invocation = ['chelonia/out/keyShare', {
         contractID,
         contractName,
         data: encryptedOutgoingData(contractID, CEKid, payload),
         signingKeyId
-      })
+      }]
+      if (returnInvocation) return invocation
+
+      await sbp(...invocation)
     } finally {
       await sbp('chelonia/contract/release', contractID, { ephemeral: true })
     }

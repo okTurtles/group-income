@@ -113,5 +113,48 @@ export default (sbp('sbp/selectors/register', {
     } else {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
+  },
+  'gi.app/group/checkAndSeeProposal': function ({ contractID, data }: GIActionParams) {
+    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
+    if (rootState.currentGroupId !== contractID) {
+      sbp('state/vuex/commit', 'setCurrentGroupId', { contractID })
+    }
+
+    const openProposalIds = Object.keys(rootGetters.currentGroupState.proposals || {})
+
+    if (openProposalIds.includes(data.proposalHash)) {
+      sbp('controller/router').push({ path: '/dashboard#proposals' })
+    } else {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal', { targetProposal: data.proposalHash })
+    }
+  },
+  'gi.app/group/displayMincomeChangedPrompt': async function ({ contractID, data }: GIActionParams) {
+    const rootGetters = sbp('state/vuex/getters')
+    const rootState = sbp('state/vuex/state')
+    if (rootState.currentGroupId !== contractID) {
+      sbp('state/vuex/commit', 'setCurrentGroupId', { contractID })
+    }
+
+    const { withGroupCurrency } = rootGetters
+    const promptOptions = data.increased
+      ? {
+          heading: L('Mincome changed'),
+          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
+          primaryButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
+          secondaryButton: data.memberType === 'pledging' ? L('Yes') : L('No')
+        }
+      : {
+          heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
+          question: L('You now make more than the mincome. Would you like to increase your pledge?'),
+          primaryButton: L('Yes'),
+          secondaryButton: L('No')
+        }
+
+    const primaryButtonSelected = await sbp('gi.ui/prompt', promptOptions)
+    if (primaryButtonSelected) {
+      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
+    }
   }
 }): string[])

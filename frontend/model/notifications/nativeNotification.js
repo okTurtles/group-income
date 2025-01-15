@@ -82,10 +82,23 @@ export async function requestNotificationPermission (): Promise<null | string> {
   }
 }
 
-export function makeNotification ({ title, body, icon, path }: {
-  title: string, body: string, icon?: string, path?: string
-}): void | Promise<void> {
+// eslint-disable-next-line require-await
+export async function makeNotification ({ title, body, icon, path, groupID, sbpInvocation }: {
+  title: string, body: string, icon?: string, path?: string, groupID?: string,
+  sbpInvocation?: any[]
+}): Promise<void> {
   if (typeof Notification !== 'function') return
+  if (typeof icon === 'object' && icon.manifestCid) {
+    // We only use cached files to render notifications as quickly as possible
+    const cachedArrayBuffer = await sbp('gi.db/filesCache/load', icon.manifestCid).catch((e) => {
+      console.error('[Avatar.vue] Error loading file from cache', e)
+    })
+    if (cachedArrayBuffer) {
+      // We use `data:` URLs because the SW is unable to create `blob:` URLs
+      icon = 'data:;base64,' + encodeURIComponent(Buffer.from(cachedArrayBuffer).toString('base64'))
+    }
+  }
+
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {
     try {
@@ -102,17 +115,19 @@ export function makeNotification ({ title, body, icon, path }: {
     } catch (e) {
       return navigator.serviceWorker?.ready.then(registration => {
         // $FlowFixMe
-        return registration.showNotification(title, { body, icon, data: { path } })
+        return registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } })
       }).catch(console.warn)
     }
   } else {
   // If running in a SW
     return self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      // If the no window is focused, display a native notification
+      // If no window is focused, display a native notification
       if (clientList.some(client => client.focused)) {
         return
       }
-      return self.registration.showNotification(title, { body, icon, data: { path } }).catch(console.warn)
+      return self.registration.showNotification(title,
+        { body, icon, data: { groupID, path, sbpInvocation } }
+      ).catch(console.warn)
     })
   }
 }
