@@ -617,6 +617,8 @@ export default (sbp('sbp/selectors/register', {
 
       return sbp('gi.actions/group/join', params).catch(e => {
         console.error('Error on group join re-attempt', params, e)
+
+        throw e
       })
     })).then((results) => {
       if (results.some(result => result.status === 'rejected')) {
