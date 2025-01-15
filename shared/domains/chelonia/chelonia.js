@@ -1713,9 +1713,19 @@ async function outEncryptedOrUnencryptedAction (
 // The gettersProxy is what makes Vue-like getters possible. In other words,
 // we want to make sure that the getter functions that we defined in each
 // contract get passed the 'state' when a getter is accessed.
-// The only way to pass in the state is by creating a Proxy object that does
-// that for us. This allows us to maintain compatibility with Vue.js and integrate
+// We pass in the state by creating a Proxy object that does it for us.
+// This allows us to maintain compatibility with Vue.js and integrate
 // the contract getters into the Vue-facing getters.
+// For this to work, other getters need to be implemented relative to a
+// 'current' getter that returns the state itself. For example:
+// ```
+// {
+//   currentMailboxState: (state) => state, // In the contract
+//   currentMailboxState: (state) => state[state.currentMailboxId], // In the app
+//   lastMessage: (state, getters) => // Shared getter for both app and contract
+//     getters.currentMailboxState.messages.slice(-1).pop()
+// }
+// ```
 function gettersProxy (state: Object, getters: Object) {
   const proxyGetters = new Proxy({}, {
     get (target, prop) {
