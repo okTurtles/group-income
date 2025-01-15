@@ -618,7 +618,11 @@ export default (sbp('sbp/selectors/register', {
       return sbp('gi.actions/group/join', params).catch(e => {
         console.error('Error on group join re-attempt', params, e)
       })
-    }))
+    })).then((results) => {
+      if (results.some(result => result.status === 'rejected')) {
+        throw new Error('Error on group join re-attempt')
+      }
+    })
   },
   'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
     const rootState = sbp('chelonia/rootState')

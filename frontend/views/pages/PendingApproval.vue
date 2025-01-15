@@ -71,6 +71,18 @@ export default ({
       this.ephemeral.contractFinishedSyncing = true
       if (this.haveActiveGroupProfile) {
         this.ephemeral.groupJoined = true
+      } else {
+        const state = await sbp('chelonia/contract/state', this.ourIdentityContractId)
+        await sbp('gi.actions/group/join', {
+          originatingContractID: this.ourIdentityContractId,
+          originatingContractName: 'gi.contracts/identity',
+          contractID: this.ephemeral.groupIdWhenMounted,
+          contractName: 'gi.contracts/group',
+          reference: state.groups[this.ephemeral.groupIdWhenMounted].hash,
+          signingKeyId: state.groups[this.ephemeral.groupIdWhenMounted].inviteSecretId,
+          innerSigningKeyId: await sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'csk'),
+          encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'cek')
+        })
       }
     }).catch(e => {
       console.error('[PendingApproval.vue]: Error waiting for contract to finish syncing', e)
