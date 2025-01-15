@@ -58,6 +58,15 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   // The 'currentGroupState' here is based off the value of `state.currentGroupId`,
   // a user preference that does not exist in the group contract state.
   currentGroupState (state) {
+    // The service worker should not be using this getter.
+    if (process.env.NODE_ENV === 'development' || process.env.CI) {
+      // $FlowFixMe[cannot-resolve-name]
+      if (typeof Window === 'undefined') {
+        const error = new Error('Tried to access currentGroupState from outside a browsing context')
+        Promise.reject(error)
+        throw error
+      }
+    }
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
   currentIdentityState (state) {
@@ -75,8 +84,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourPendingAccept (state, getters) {
     return getters.pendingAccept(getters.ourIdentityContractId)
   },
+  ourGroupProfileForGroup (state, getters) {
+    return (state) => getters.groupProfileForGroup(state, getters.ourIdentityContractId)
+  },
   ourGroupProfile (state, getters) {
-    return getters.groupProfile(getters.ourIdentityContractId)
+    return getters.ourGroupProfileForGroup(getters.currentGroupState)
   },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
@@ -85,6 +97,14 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
+  },
+  ourGroups (state, getters) {
+    const identityContractID = getters.ourIdentityContractId
+    if (!identityContractID) return []
+
+    return Object.keys(state[identityContractID]?.groups || {}).filter(
+      (gId) => !state[identityContractID].groups[gId].hasLeft && state[gId]
+    )
   },
   currentGroupLastLoggedIn (state) {
     return state.lastLoggedIn[state.currentGroupId] || {}
@@ -172,8 +192,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return profile?.displayName || profile?.username || state.reverseNamespaceLookups[userID] || userID
     }
   },
+  thisPeriodPaymentInfoForGroup (state, getters) {
+    return (state) => {
+      return getters.groupPeriodPaymentsForGroup(state)[getters.currentPaymentPeriodForGroup(state)]
+    }
+  },
   thisPeriodPaymentInfo (state, getters) {
-    return getters.groupPeriodPayments[getters.currentPaymentPeriod]
+    return getters.thisPeriodPaymentInfoForGroup(getters.currentGroupState)
   },
   latePayments (state, getters) {
     const periodPayments = getters.groupPeriodPayments
@@ -193,32 +218,37 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
-  groupIncomeAdjustedDistribution (state, getters) {
-    const paymentInfo = getters.thisPeriodPaymentInfo
-    if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
-      return paymentInfo.lastAdjustedDistribution
-    } else {
-      const period = getters.currentPaymentPeriod
-      return adjustedDistribution({
-        distribution: unadjustedDistribution({
-          haveNeeds: getters.haveNeedsForThisPeriod(period),
-          minimize: getters.groupSettings.minimizeDistribution
-        }),
-        payments: getters.paymentsForPeriod(period),
-        dueOn: getters.dueDateForPeriod(period)
-      })
+  groupIncomeAdjustedDistributionForGroup (state, getters) {
+    return (state) => {
+      const paymentInfo = getters.thisPeriodPaymentInfoForGroup(state)
+      if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
+        return paymentInfo.lastAdjustedDistribution
+      } else {
+        const period = getters.currentPaymentPeriodForGroup(state)
+        return adjustedDistribution({
+          distribution: unadjustedDistribution({
+            haveNeeds: getters.haveNeedsForThisPeriodForGroup(state, period),
+            minimize: getters.groupSettingsForGroup(state).minimizeDistribution
+          }),
+          payments: getters.paymentsForPeriodForGroup(state, period),
+          dueOn: getters.dueDateForPeriodForGroup(state, period)
+        })
+      }
     }
   },
-  ourPaymentsSentInPeriod (state, getters) {
-    return (period) => {
-      const periodPayments = getters.groupPeriodPayments
+  groupIncomeAdjustedDistribution (state, getters) {
+    return getters.groupIncomeAdjustedDistributionForGroup(getters.currentGroupState)
+  },
+  ourPaymentsSentInPeriodForGroup (state, getters) {
+    return (state, period) => {
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
       const thisPeriodPayments = periodPayments[period]
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
         const ourIdentityContractId = getters.ourIdentityContractId
-        const allPayments = getters.currentGroupState.payments
+        const allPayments = state.payments
         for (const toMemberID in paymentsFrom[ourIdentityContractId]) {
           for (const paymentHash of paymentsFrom[ourIdentityContractId][toMemberID]) {
             const { data, meta, height } = allPayments[paymentHash]
@@ -230,16 +260,19 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
-  ourPaymentsReceivedInPeriod (state, getters) {
-    return (period) => {
-      const periodPayments = getters.groupPeriodPayments
+  ourPaymentsSentInPeriod (state, getters) {
+    return (period) => getters.ourPaymentsSentInPeriodForGroup(getters.currentGroupState, period)
+  },
+  ourPaymentsReceivedInPeriodForGroup (state, getters) {
+    return (state, period) => {
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
       if (Object.keys(periodPayments).length === 0) return
       const payments = []
       const thisPeriodPayments = periodPayments[period]
       const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
       if (paymentsFrom) {
         const ourIdentityContractId = getters.ourIdentityContractId
-        const allPayments = getters.currentGroupState.payments
+        const allPayments = state.payments
         for (const fromMemberID in paymentsFrom) {
           for (const toMemberID in paymentsFrom[fromMemberID]) {
             if (toMemberID === ourIdentityContractId) {
@@ -255,27 +288,35 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       return payments.sort((paymentA, paymentB) => paymentB.height - paymentA.height)
     }
   },
+  ourPaymentsReceivedInPeriod (state, getters) {
+    return (period) => getters.ourPaymentsReceivedInPeriodForGroup(getters.currentGroupState, period)
+  },
+  ourPaymentsForGroup (state, getters) {
+    return (state) => {
+      const periodPayments = getters.groupPeriodPaymentsForGroup(state)
+      if (Object.keys(periodPayments).length === 0) return
+      const ourIdentityContractId = getters.ourIdentityContractId
+      const cPeriod = getters.currentPaymentPeriodForGroup(state)
+      const pPeriod = getters.periodBeforePeriodForGroup(state, cPeriod)
+      const currentSent = getters.ourPaymentsSentInPeriodForGroup(state, cPeriod)
+      const previousSent = getters.ourPaymentsSentInPeriodForGroup(state, pPeriod)
+      const currentReceived = getters.ourPaymentsReceivedInPeriodForGroup(state, cPeriod)
+      const previousReceived = getters.ourPaymentsReceivedInPeriodForGroup(state, pPeriod)
+
+      // TODO: take into account pending payments that have been sent but not yet completed
+      const todo = () => {
+        return getters.groupIncomeAdjustedDistributionForGroup(state).filter(p => p.fromMemberID === ourIdentityContractId)
+      }
+
+      return {
+        sent: [...currentSent, ...previousSent],
+        received: [...currentReceived, ...previousReceived],
+        todo: todo()
+      }
+    }
+  },
   ourPayments (state, getters) {
-    const periodPayments = getters.groupPeriodPayments
-    if (Object.keys(periodPayments).length === 0) return
-    const ourIdentityContractId = getters.ourIdentityContractId
-    const cPeriod = getters.currentPaymentPeriod
-    const pPeriod = getters.periodBeforePeriod(cPeriod)
-    const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
-    const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
-    const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
-    const previousReceived = getters.ourPaymentsReceivedInPeriod(pPeriod)
-
-    // TODO: take into account pending payments that have been sent but not yet completed
-    const todo = () => {
-      return getters.groupIncomeAdjustedDistribution.filter(p => p.fromMemberID === ourIdentityContractId)
-    }
-
-    return {
-      sent: [...currentSent, ...previousSent],
-      received: [...currentReceived, ...previousReceived],
-      todo: todo()
-    }
+    return getters.ourPaymentsForGroup(getters.currentGroupState)
   },
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'

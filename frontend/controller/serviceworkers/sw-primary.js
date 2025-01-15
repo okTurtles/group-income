@@ -1,15 +1,18 @@
 'use strict'
 
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
+import { makeNotification } from '@model/notifications/nativeNotification.js'
+import '@model/notifications/periodicNotifications.js'
 import '@model/swCaptureLogs.js'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
-import './sw-namespace.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
+import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
@@ -28,6 +31,7 @@ import {
 } from '../../utils/events.js'
 import './cache.js'
 import './push.js'
+import './sw-namespace.js'
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -78,6 +82,13 @@ const setupRootState = () => {
   if (!rootState.notifications) rootState.notifications = Object.create(null)
   if (!rootState.notifications.items) rootState.notifications.items = []
   if (!rootState.notifications.status) rootState.notifications.status = Object.create(null)
+
+  if (!rootState.periodicNotificationAlreadyFiredMap) {
+    rootState.periodicNotificationAlreadyFiredMap = {
+      alreadyFired: Object.create(null), // { notificationKey: boolean },
+      lastRun: Object.create(null) // { notificationKey: number },
+    }
+  }
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
@@ -149,45 +160,85 @@ sbp('sbp/selectors/register', {
   'state/vuex/state': () => sbp('chelonia/rootState'),
   'state/vuex/getters': (() => {
     // Singleton lazily generated getters
-    let obj
+    let computedGetters
+
     return () => {
-      if (!obj) {
-        obj = Object.create(null)
-        Object.defineProperties(obj, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
+      if (!computedGetters) {
+        computedGetters = Object.create(null)
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
-            get: () => {
+            get: function () {
               const state = sbp('chelonia/rootState')
-              return fn(state, obj)
+              // `fn` takes the state as the first parameter and the getters as
+              // a second parameter. We use `this` instead of `computedGetters`
+              // so that we can locally override the `computedGetters` object
+              // (e.g., using inheritance or a `Proxy`) to redefine certain
+              // getters. This is convenient, but it's incompatible with the
+              // way Vuex getters work, which do _not_ use `this`.
+              // This incompatibility is fine, since one has to go out of their
+              // way to make `this` and `computedGetters` different.
+              return fn(state, this)
             }
           }]
         })))
-        Object.defineProperties(obj, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
           return [getter, {
-            get: () => {
+            get: function () {
               const state = sbp('chelonia/rootState')
               // `state.chatroom` represents the `chatroom` module. For the SW,
               // this is defined in `sw-primary.js`.
-              return fn(state.chatroom || {}, obj, state)
+              // The same idea applies here for the use of `this` instead of
+              // `computedGetters` as above.
+              return fn(state.chatroom || {}, this, state)
             }
           }]
         })))
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, Function]) => {
+          return [getter, {
+            get: function () {
+              const state = sbp('chelonia/rootState')
+              // `state.chatroom` represents the `chatroom` module. For the SW,
+              // this is defined in `sw-primary.js`.
+              // The same idea applies here for the use of `this` instead of
+              // `computedGetters` as above.
+              return fn(state.notifications || {}, this, state)
+            }
+          }]
+        })))
+        Object.defineProperty(computedGetters, 'currentPaymentPeriodForGroup', {
+          get: function () {
+            return (state, getters) => {
+              return (state) => getters.periodStampGivenDateForGroup(state, new Date())
+            }
+          }
+        })
       }
 
-      return obj
+      return computedGetters
     }
   })()
 })
 
-const x = new URL(self.location)
+const ourLocation = new URL(self.location)
 
 sbp('sbp/selectors/register', {
   'controller/router': () => {
-    return { options: { base: x.searchParams.get('routerBase') } }
+    return { options: { base: ourLocation.searchParams.get('routerBase') } }
   }
 })
 
 sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
+})
+
+sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
+
+// Set up periodic notifications on the `CHELONIA_RESET` event. We do this here,
+// before calling `setupRootState`, so that the `CHELONIA_RESET` it will trigger
+// will set up periodic notifications.
+sbp('okTurtles.events/on', CHELONIA_RESET, () => {
+  sbp('gi.periodicNotifications/clearStatesAndStopTimers')
+  sbp('gi.periodicNotifications/init')
 })
 
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
@@ -312,13 +363,38 @@ self.addEventListener('notificationclick', event => {
 
         return 0
       })
+      // If there are no open windows, open a new window when the notification
+      // is clicked
       if (!clientList.length) {
-        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`)
+        return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`).then((client) => {
+          if (event.notification.data?.sbpInvocation) {
+            const { data } = serializer(event.notification.data.sbpInvocation)
+            client.postMessage({
+              type: 'sbp',
+              data
+            })
+          } else if (event.notification.data?.groupID) {
+            client.postMessage({
+              type: 'sbp',
+              data: ['state/vuex/commit', 'setCurrentGroupId', { contractID: event.notification.data.groupID }]
+            })
+          }
+
+          return client
+        })
       }
+      // Otherwise, pick the first client
       const client = clientList[0]
-      if (event.notification.data?.path) {
+      if (event.notification.data?.sbpInvocation) {
+        const { data } = serializer(event.notification.data.sbpInvocation)
+        client.postMessage({
+          type: 'sbp',
+          data
+        })
+      } else if (event.notification.data?.path) {
         client.postMessage({
           type: 'navigate',
+          groupID: event.notification.data.groupID,
           path: event.notification.data.path
         })
       }
@@ -363,4 +439,24 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageH
     delete rootState.chatroom.chatRoomScrollPosition[chatRoomID]
   }
   sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+})
+
+sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
+  const rootGetters = sbp('state/vuex/getters')
+  const icon = notification.avatarUserID && rootGetters.ourContactProfilesById[notification.avatarUserID]?.picture
+    ? rootGetters.ourContactProfilesById[notification.avatarUserID].picture
+    : notification.groupID
+      ? rootGetters.groupSettingsForGroup(notification.groupID).groupPicture
+      : undefined
+
+  makeNotification({
+    icon: icon || undefined,
+    title: notification.title,
+    body: notification.plaintextBody,
+    groupID: notification.groupID,
+    path: notification.linkTo,
+    sbpInvocation: notification.sbpInvocation
+  }).catch(e => {
+    console.error('Error displaying native notification', e)
+  })
 })
