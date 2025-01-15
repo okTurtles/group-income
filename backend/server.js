@@ -21,7 +21,7 @@ import {
   createPushErrorResponse,
   createServer
 } from './pubsub.js'
-import { addChannelToSubscription, deleteChannelFromSubscription, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
+import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -492,3 +492,20 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   console.info('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)
 })()
+
+// Recurring task to send messages to push clients (for periodic notifications)
+setInterval(() => {
+  const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+  // Notification text
+  const notification = JSON.stringify({ type: 'recurring' })
+  // Find push subscriptions that do _not_ have a WS open. This means clients
+  // that are 'asleep' and that might be woken up by the push event
+  Object.values(pubsub.pushSubscriptions || {})
+    .filter((pushSubscription: Object) => pushSubscription.sockets.size === 0)
+    .forEach((pushSubscription: Object) => {
+      postEvent(pushSubscription, notification).catch((e) => {
+        console.warn(e, 'Error sending recurring message to web push client', pushSubscription.id)
+      })
+    })
+// Repeat every 12 hours
+}, 12 * 60 * 60 * 1000)

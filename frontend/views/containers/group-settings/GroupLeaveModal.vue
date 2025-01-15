@@ -63,6 +63,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { normalizeString } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'GroupLeaveModal',
@@ -132,7 +133,7 @@ export default ({
       confirmation: {
         [L('This field is required')]: required,
         [L('Does not match')]: function (value) {
-          return value === this.code
+          return normalizeString(value) === normalizeString(this.code)
         }
       }
     }

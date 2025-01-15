@@ -49,7 +49,7 @@ div
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
@@ -225,6 +225,12 @@ export default ({
             name: targetGroupState.settings?.groupName || '',
             id: groupId
           }
+        } else {
+          sbp('gi.ui/prompt', {
+            heading: L('Failed to join the group'),
+            question: L('Error details:{br_}{err}', { err: e.message, ...LTags() }),
+            primaryButton: L('Close')
+          })
         }
       }
     }
