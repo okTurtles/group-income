@@ -82,10 +82,13 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
-  periodicNotificationAlreadyFiredMap: {}, // { notificationKey: boolean },
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
-  preferences: {}
+  preferences: {},
+  periodicNotificationAlreadyFiredMap: {
+    alreadyFired: Object.create(null), // { notificationKey: boolean },
+    lastRun: Object.create(null) // { notificationKey: number },
+  }
 }
 
 if (window.matchMedia) {
@@ -134,6 +137,14 @@ sbp('sbp/selectors/register', {
     if (!state.reverseNamespaceLookups) {
       // $FlowFixMe[incompatible-call]
       Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
+    }
+    if (state.periodicNotificationAlreadyFiredMap) {
+      if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
+        state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
+      }
+      if (!state.periodicNotificationAlreadyFiredMap.lastRun) {
+        state.periodicNotificationAlreadyFiredMap.lastRun = Object.create(null)
+      }
     }
     contractUpdate(state, (state: Object, contractIDHints: ?string[]) => {
       // Upgrade from version 1.0.7 to a newer version
@@ -303,8 +314,11 @@ const store: any = new Vuex.Store({
   getters: {
     ...getters,
     // this getter gets recomputed automatically according to the setInterval on reactiveDate
+    currentPaymentPeriodForGroup (state, getters) {
+      return (state) => getters.periodStampGivenDateForGroup(state, reactiveDate.date)
+    },
     currentPaymentPeriod (state, getters) {
-      return getters.periodStampGivenDate(reactiveDate.date)
+      return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
     }
   },
   modules: {

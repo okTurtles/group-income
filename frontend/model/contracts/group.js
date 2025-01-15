@@ -1582,15 +1582,6 @@ sbp('chelonia/defineContract', {
               pledgeAmount: 0
             }
           })
-
-          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
-            contractID,
-            data: {
-              amount: toAmount,
-              memberType,
-              increased: mincomeIncreased
-            }
-          })
         }
 
         sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
