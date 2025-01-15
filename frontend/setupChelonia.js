@@ -5,7 +5,7 @@ import { debounce, has } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { NOTIFICATION_TYPE, REQUEST_TYPE } from '../shared/pubsub.js'
+import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '../shared/pubsub.js'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
@@ -306,8 +306,7 @@ const setupChelonia = async (): Promise<*> => {
 // actual invocations actually happen (unless the last invocation resolved
 // and rejected)
 export default ((() => {
-  let promise
-  return () => {
+  const singletonFn = () => {
     if (!promise) {
       promise = setupChelonia().catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
@@ -317,4 +316,18 @@ export default ((() => {
     }
     return promise
   }
+  let promise
+
+  // Listen for `PUBSUB_ERROR` events. These cause the WS to be destroyed
+  // When this happens, if `setupChelonia` has been called, we will reset
+  // `promise` and then call `singletonFn` after a short delay.
+  sbp('okTurtles.events/on', PUBSUB_ERROR, () => {
+    if (!promise) return
+    promise = undefined
+    setTimeout(() => singletonFn().catch((e) => {
+      console.error('[PUBSUB_ERROR handler] Error setting up Chelonia', e)
+    }), 100)
+  })
+
+  return singletonFn
 })(): () => Promise<void>)

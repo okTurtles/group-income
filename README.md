@@ -74,10 +74,12 @@ grunt dev --tunnel
 
 > [!IMPORTANT]
 > This service (localtunnel) doesn't seem to work anymore.
-> Instead please try [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
+> Instead please try [ngrok](https://ngrok.com/) (recommended) or [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
 > ```
 > $ grunt dev
 > # then, in another terminal:
+> $ ngrok http http://localhost:8000
+> # or:
 > $ ssh -R 80:localhost:8000 nokey@localhost.run
 > ```
 

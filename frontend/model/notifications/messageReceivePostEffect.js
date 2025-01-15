@@ -66,6 +66,8 @@ async function messageReceivePostEffect ({
         ? rootGetters.userDisplayNameFromID(identityContractID)
         : partners.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
       icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
+    } else {
+      icon = rootGetters.ourContactProfilesById[memberID]?.picture
     }
     const path = `/group-chat/${contractID}`
 
