@@ -28,15 +28,6 @@
 "Failed to vote on a poll." = "Failed to vote on a poll.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
-"Automatically switched to pledging {zero}" = "Automatically switched to pledging {zero}";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Error details:{br_}{err}" = "Error details:{br_}{err}";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to accept invite." = "Failed to accept invite.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -44,9 +35,6 @@
 
 /* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to create invite." = "Failed to create invite.";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Failed to join the group" = "Failed to join the group";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to mark proposals expired." = "Failed to mark proposals expired.";
@@ -65,18 +53,6 @@
 
 /* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to upgrade from version 1.0.7" = "Failed to upgrade from version 1.0.7";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"Mincome changed" = "Mincome changed";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
-"You now make more than the mincome. Would you like to increase your pledge?" = "You now make more than the mincome. Would you like to increase your pledge?";
-
-/* MISSING TRANSLATION - controller/actions/group.js, controller/app/group.js, controller/app/identity.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue */
-"Yes" = "Yes";
-
-/* MISSING TRANSLATION - controller/actions/group.js, controller/app/identity.js, views/components/modal/Prompt.vue */
-"No" = "No";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Error during login contract sync" = "Error during login contract sync";
@@ -109,12 +85,30 @@
 "Failed to log in: {reportError}" = "Failed to log in: {reportError}";
 
 /* MISSING TRANSLATION - controller/app/group.js */
+"Automatically switched to pledging {zero}" = "Automatically switched to pledging {zero}";
+
+/* MISSING TRANSLATION - controller/app/group.js */
+"Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
+
+/* MISSING TRANSLATION - controller/app/group.js */
 "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud." = "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.";
 
 /* MISSING TRANSLATION - controller/app/group.js */
 "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?" = "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?";
 
-/* MISSING TRANSLATION - controller/app/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue, views/containers/user-settings/UserProfile.vue */
+/* MISSING TRANSLATION - controller/app/group.js */
+"Mincome changed" = "Mincome changed";
+
+/* MISSING TRANSLATION - controller/app/group.js */
+"You now make more than the mincome. Would you like to increase your pledge?" = "You now make more than the mincome. Would you like to increase your pledge?";
+
+/* MISSING TRANSLATION - controller/app/group.js, controller/app/identity.js, views/components/modal/Prompt.vue */
+"No" = "No";
+
+/* MISSING TRANSLATION - controller/app/group.js, controller/app/identity.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue */
+"Yes" = "Yes";
+
+/* MISSING TRANSLATION - controller/app/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
 "OK" = "OK";
 
 /* MISSING TRANSLATION - controller/app/identity.js */
@@ -130,13 +124,25 @@
 "Global Dashboard" = "Global Dashboard";
 
 /* MISSING TRANSLATION - controller/router.js */
-"Group Income" = "Group Income";
-
-/* MISSING TRANSLATION - controller/router.js */
 "Pending Approval" = "Pending Approval";
+
+/* MISSING TRANSLATION - controller/router.js, model/notifications/templates.js */
+"Group Income" = "Group Income";
 
 /* MISSING TRANSLATION - controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Contributions.vue */
 "Contributions" = "Contributions";
+
+/* MISSING TRANSLATION - controller/serviceworkers/push.js */
+"Chatroom activity" = "Chatroom activity";
+
+/* MISSING TRANSLATION - controller/serviceworkers/push.js */
+"Group activity" = "Group activity";
+
+/* MISSING TRANSLATION - controller/serviceworkers/push.js */
+"New chatroom message. An iOS bug prevents us from saying what it is." = "New chatroom message. An iOS bug prevents us from saying what it is.";
+
+/* MISSING TRANSLATION - controller/serviceworkers/push.js */
+"New group activity. An iOS bug prevents us from saying what it is." = "New group activity. An iOS bug prevents us from saying what it is.";
 
 /* MISSING TRANSLATION - main.js */
 "Error details: {reportError}" = "Error details: {reportError}";
@@ -198,6 +204,9 @@
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "{minutes}m" = "{minutes}m";
 
+/* MISSING TRANSLATION - model/getters.js */
+"Pending" = "Pending";
+
 /* MISSING TRANSLATION - model/notifications/messageReceivePostEffect.js */
 "New message" = "New message";
 
@@ -208,10 +217,25 @@
 "A new distribution period ({period}) has started. Please update your income details if they have changed." = "A new distribution period ({period}) has started. Please update your income details if they have changed.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"Contribution reminder" = "Contribution reminder";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Distribution period ends soon" = "Distribution period ends soon";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "Do not forget to send your pledge by {strong_}{date}{_strong}." = "Do not forget to send your pledge by {strong_}{date}{_strong}.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"Error" = "Error";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Internal error" = "Internal error";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Member added" = "Member added";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "Member addition" = "Member addition";
@@ -223,7 +247,28 @@
 "Mincome change" = "Mincome change";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"Mincome changes" = "Mincome changes";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"New distribution period" = "New distribution period";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Non-monetary contribution updated" = "Non-monetary contribution updated";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Payment received" = "Payment received";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. Please vote!" = "Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. Please vote!";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Proposal closed" = "Proposal closed";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Proposal expiring" = "Proposal expiring";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Thank you note received" = "Thank you note received";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "The group has a new member. Say hi to {strong_}{name}{_strong}!" = "The group has a new member. Say hi to {strong_}{name}{_strong}!";
@@ -232,7 +277,46 @@
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"Update income details" = "Update income details";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "Voting rule change" = "Voting rule change";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Warning" = "Warning";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You created a proposal." = "You created a proposal.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You proposed to add a member to the group." = "You proposed to add a member to the group.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You proposed to change the group distribution date." = "You proposed to change the group distribution date.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You proposed to change the group mincome." = "You proposed to change the group mincome.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You proposed to change the group voting system." = "You proposed to change the group voting system.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"You proposed to remove a member from the group." = "You proposed to remove a member from the group.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Your proposal \"{title}\" was {strong_}{closedWith}{_strong}." = "Your proposal \"{title}\" was {strong_}{closedWith}{_strong}.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Your proposal to add {member} to the group was {strong_}{closedWith}{_strong}." = "Your proposal to add {member} to the group was {strong_}{closedWith}{_strong}.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Your proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}." = "Your proposal to change group's {setting} to {value} was {strong_}{closedWith}{_strong}.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Your proposal to change group's {setting} was {strong_}{closedWith}{_strong}." = "Your proposal to change group's {setting} was {strong_}{closedWith}{_strong}.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Your proposal to remove {member} from the group was {strong_}{closedWith}{_strong}." = "Your proposal to remove {member} from the group was {strong_}{closedWith}{_strong}.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "accepted" = "accepted";
@@ -248,6 +332,9 @@
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"{errName} during {activity} for '{action}' from {who} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {who} to '{contract}': '{errMsg}'";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'";
@@ -309,9 +396,6 @@
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly." = "{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.";
 
-/* MISSING TRANSLATION - model/state.js */
-"Pending" = "Pending";
-
 /* MISSING TRANSLATION - views/components/CopyableInput.vue */
 "Copy string" = "Copy string";
 
@@ -357,6 +441,18 @@
 /* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
 "Change Password" = "Change Password";
 
+/* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
+"Please confirm your password." = "Please confirm your password.";
+
+/* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
+"Your current password is required." = "Your current password is required.";
+
+/* MISSING TRANSLATION - views/containers/access/PasswordModal.vue, views/containers/access/SignupForm.vue */
+"Passwords do not match." = "Passwords do not match.";
+
+/* MISSING TRANSLATION - views/containers/access/PasswordModal.vue, views/containers/access/SignupForm.vue */
+"Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
+
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "A username can only contain letters, digits, hyphens or underscores." = "A username can only contain letters, digits, hyphens or underscores.";
 
@@ -385,13 +481,7 @@
 "I agree to the {a_}terms and conditions{_a}" = "I agree to the {a_}terms and conditions{_a}";
 
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
-"Passwords do not match." = "Passwords do not match.";
-
-/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "You need to agree to the terms and conditions." = "You need to agree to the terms and conditions.";
-
-/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
-"Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
 
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to delete this file permanently?" = "Are you sure you want to delete this file permanently?";
@@ -410,6 +500,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Delete file" = "Delete file";
+
+/* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
+"Proposal notification" = "Proposal notification";
 
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Remove pinned message" = "Remove pinned message";
@@ -640,6 +733,9 @@
 "unknown chatroom" = "unknown chatroom";
 
 /* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Download ({size})" = "Download ({size})";
+
+/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
 "Remove attachment" = "Remove attachment";
 
 /* MISSING TRANSLATION - views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
@@ -867,6 +963,9 @@
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
 "Group purpose cannot exceed {maxchar} characters" = "Group purpose cannot exceed {maxchar} characters";
 
+/* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue */
+"Mincome cannot exceed {max}" = "Mincome cannot exceed {max}";
+
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
 "Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
 
@@ -886,6 +985,9 @@
 "{b_}{percent}{_b}" = "{b_}{percent}{_b}";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
+"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!";
+
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
 "Broken invite link!" = "Broken invite link!";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
@@ -893,6 +995,9 @@
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
 "This invite link doesn't expire" = "This invite link doesn't expire";
+
+/* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
+"Anyone with this link can join the group." = "Anyone with this link can join the group.";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Doesn't expire" = "Doesn't expire";
@@ -1168,6 +1273,15 @@
 "Illustrations" = "Illustrations";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Browser" = "Browser";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Combined" = "Combined";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Error obtaining logs. {reportError}" = "Error obtaining logs. {reportError}";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Failed to download the app logs. {reportError}" = "Failed to download the app logs. {reportError}";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
@@ -1176,11 +1290,26 @@
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
 
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Log source:" = "Log source:";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Service worker" = "Service worker";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Source:" = "Source:";
+
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Once set, the notification permission can only be adjusted by the browser in the browser settings." = "Once set, the notification permission can only be adjusted by the browser in the browser settings.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Your browser doesn't support push notifications" = "Your browser doesn't support push notifications";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
 "Use system settings" = "Use system settings";
@@ -1188,8 +1317,11 @@
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
 "Ok" = "Ok";
 
-/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue, views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue, views/pages/GroupSettings.vue */
 "Feature coming soon" = "Feature coming soon";
+
+/* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
+"Coming soon!" = "Coming soon!";
 
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
 "Sorry, this feature has not been implemented yet.{br_}Please check back later." = "Sorry, this feature has not been implemented yet.{br_}Please check back later.";
@@ -1243,6 +1375,12 @@
 "(group name unavailable)" = "(group name unavailable)";
 
 /* MISSING TRANSLATION - views/pages/Join.vue */
+"Error details:{br_}{err}" = "Error details:{br_}{err}";
+
+/* MISSING TRANSLATION - views/pages/Join.vue */
+"Failed to join the group" = "Failed to join the group";
+
+/* MISSING TRANSLATION - views/pages/Join.vue */
 "Go to dashboard" = "Go to dashboard";
 
 /* MISSING TRANSLATION - views/pages/Join.vue */
@@ -1289,6 +1427,12 @@
 
 /* MISSING TRANSLATION - views/pages/PendingApproval.vue */
 "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.";
+
+/* MISSING TRANSLATION - views/utils/filters.js */
+"0 Bytes" = "0 Bytes";
+
+/* MISSING TRANSLATION - views/utils/filters.js */
+"Invalid size" = "Invalid size";
 
 /* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Vous pouvez {a_}signaler l’erreur{_a}.";
@@ -1371,9 +1515,6 @@
 /* controller/actions/group.js */
 "Failed to vote on proposal." = "Une erreur est survenue lors du vote.";
 
-/* controller/actions/group.js, main.js, model/contracts/group.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue */
-"Close" = "Fermer";
-
 /* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Duplicate channel name" = "Nom de canal dupliqué";
 
@@ -1413,7 +1554,7 @@
 /* controller/router.js */
 "Group Dashboard" = "Tableau de bord";
 
-/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/user-settings/AppLogs.vue */
 "Loading" = "Chargement";
 
 /* controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
@@ -1437,8 +1578,8 @@
 /* main.js */
 "Your device appears to be offline." = "Votre appareil semble être hors ligne.";
 
-/* model/captureLogs.js, views/containers/user-settings/settings.js */
-"Application Logs" = "Journal de l’application";
+/* main.js, model/contracts/group.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+"Close" = "Fermer";
 
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Seul le créateur peut supprimer sa conversation.";
@@ -1496,6 +1637,9 @@
 
 /* model/notifications/templates.js */
 "You haven't updated your income details in more than {months} months. Would you like to review them now?" = "Vos détails de revenu n’ont pas été mis à jour depuis plus de {months} mois. Souhaitez-vous les vérifier maintenant ?";
+
+/* model/notifications/templates.js, views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalTemplate.vue */
+"New proposal" = "Nouvelle proposition";
 
 /* views/components/AvatarUpload.vue */
 "Avatar updated!" = "Avatar mis à jour !";
@@ -1683,7 +1827,7 @@
 /* views/containers/access/LoginForm.vue */
 "Forgot your password?" = "Mot de passe oublié ?";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+/* views/containers/access/LoginForm.vue, views/containers/access/PasswordModal.vue, views/containers/access/SignupForm.vue */
 "A password is required." = "Un mot de passe est requis.";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue */
@@ -1956,9 +2100,6 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups {setting}." = "{from} souhaite changer le {setting} du groupe.";
 
-/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalTemplate.vue */
-"New proposal" = "Nouvelle proposition";
-
 /* views/containers/chatroom/MessageNotification.vue */
 "Added a member to {title}: {displayName}" = "Membre ajouté à {title} : {displayName}";
 
@@ -2022,10 +2163,10 @@
 /* views/containers/chatroom/chat-mentions/RenderMessageText.vue, views/containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js */
 "(edited)" = "(édité)";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue */
 "Delete" = "Effacer";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/user-settings/AppLogs.vue */
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue, views/containers/user-settings/AppLogs.vue */
 "Download" = "Télécharger";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
@@ -2440,9 +2581,6 @@
 "{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}" = "{b_}{percent}{_b} {sm_}({count}* des {total} members){_sm}";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
-"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Pour ajouter un nouveau membre après la période d’initiation, un vote de l’ensemble des membres du groupe sera requis. Mais pour l’heure, vous pouvez enregistrer jusqu’à 60 membres sans vote !";
-
-/* views/containers/group-settings/InvitationLinkModal.vue */
 "Share this link to grant access to your group." = "Partagez ce lien pour donner accès à votre groupe.";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
@@ -2489,9 +2627,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Show list" = "Afficher la liste";
-
-/* views/containers/group-settings/InvitationsTable.vue */
-"This invite link is only available during the onboarding period." = "Cette invitation reste valide jusqu’à la fin de la période d’initiation.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "To generate a new link, you need to {r1}propose adding a new member{r2} to your group." = "Pour générer un nouveau lien, vous devez {r1}proposer l’ajout d’un nouveau membre {r2} à votre groupe.";
@@ -2890,6 +3025,9 @@
 "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Erreur récente : \"{errorMsg}\". Veuillez télécharger le fichier journal et {a_}nous l’envoyer{_a}, afin que nous puissions examiner le problème.";
 
 /* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
+"Application Logs" = "Journal de l’application";
+
+/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
 "Troubleshooting" = "Débogage";
 
 /* views/containers/user-settings/Appearence.vue */
@@ -3185,6 +3323,9 @@
 
 /* Not currently used */
 "Added members to this group: {to}" = "Ajouter des membres à ce groupe : {to}";
+
+/* Not currently used */
+"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Pour ajouter un nouveau membre après la période d’initiation, un vote de l’ensemble des membres du groupe sera requis. Mais pour l’heure, vous pouvez enregistrer jusqu’à 60 membres sans vote !";
 
 /* Not currently used */
 "All group members will be added to this channel." = "Tous les membres du groupe seront invités.";
@@ -3578,6 +3719,9 @@
 
 /* Not currently used */
 "This invite is not valid." = "Cette invitation n’est pas valide.";
+
+/* Not currently used */
+"This invite link is only available during the onboarding period." = "Cette invitation reste valide jusqu’à la fin de la période d’initiation.";
 
 /* Not currently used */
 "This months overview" = "Résumé de ce mois";
