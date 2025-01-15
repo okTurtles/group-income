@@ -1,6 +1,6 @@
 <template lang="pug">
 page-section.c-section(
-  v-if='isGroupCreator'
+  v-if='displayComponent'
   :title='L("Roles and Permissions")'
 )
   i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions granted to your group members.
@@ -38,7 +38,6 @@ page-section.c-section(
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
@@ -85,12 +84,9 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'ourIdentityContractId',
-      'currentGroupOwnerID'
-    ]),
-    isGroupCreator () {
-      return this.ourIdentityContractId === this.currentGroupOwnerID
+    displayComponent () {
+      // TODO: Remove this once the development is complete and the feature is ready for release.
+      return process.env.NODE_ENV === 'development'
     }
   },
   methods: {
