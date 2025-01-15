@@ -6,6 +6,7 @@
     v-on-clickaway='closeTooltip'
   )
     i18n.link.c-see-all(
+      v-if='permissionsNo > 1'
       tag='button'
       @click='openTooltip'
     ) See all
@@ -72,7 +73,7 @@ export default {
       const len = p.length
 
       return len === 1
-        ? getPermissionDisplayName(p[0])
+        ? `- '${getPermissionDisplayName(p[0])}'`
         : len > 1
           ? L("'{first}' and {restCount} more", { first: getPermissionDisplayName(p[0]), restCount: len - 1 })
           : ''

@@ -10,15 +10,12 @@ page-section.c-section(
   table.table.table-in-card.c-permissions-table
     thead
       tr
-        i18n.th-user(tag='th') User
-        // Role and permissions columns are combined when the screen does not have enough space.
-        i18n.th-role-and-permissions-combined(
-          v-if='ephemeral.isMobile'
-          tag='th'
-        ) Roles / Permissions
+        // User and role columns are combined when the screen does not have enough space.
+        i18n.th-user-and-role-combined(v-if='ephemeral.isMobile' tag='th') User / Role
         template(v-else)
+          i18n.th-user(tag='th') User
           i18n.th-role(tag='th') Role
-          i18n.th-permissions(tag='th') Permissions
+        i18n.th-permissions(tag='th') Permissions
         th.th-action(:aria-label='L("action")')
 
     tbody

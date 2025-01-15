@@ -5,21 +5,18 @@
         // TODO: Use 'AvatarUser.vue' instead and also wrap these with 'ProfileCard.vue'
         //       when implementing it with real data.
         avatar.c-avatar(src='/assets/images/user-avatar-default.png' size='xs')
-        strong.c-name.has-ellipsis {{ data.username }}
 
-    td.td-role-and-permissions-combined(v-if='isMobile')
-      .c-role-and-permissions-combined
-        .c-pill-container
-          span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
-        view-permissions(
-          :permissions='data.permissions'
-          :is-mobile='isMobile'
-        )
-    template(v-else)
-      td.td-role
-        span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
-      td.td-permissions
-        view-permissions(:permissions='data.permissions')
+        .c-name-and-role-mobile(v-if='isMobile')
+          strong.c-name.has-ellipsis {{ data.username }}
+          .c-pill-container
+            span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
+        strong.c-name.has-ellipsis(v-else) {{ data.username }}
+
+    td.td-role(v-if='!isMobile')
+      span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
+
+    td.td-permissions
+      view-permissions(:permissions='data.permissions')
 
     td.td-action
       .c-action-wrapper
@@ -79,11 +76,33 @@ export default {
   align-items: center;
   column-gap: 0.5rem;
   padding: 0.75rem 0;
+
+  .c-avatar {
+    flex-shrink: 0;
+  }
+
+  .c-name-and-role-mobile {
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.25rem;
+    align-items: flex-start;
+    flex-grow: 1;
+    max-width: calc(100% - 2rem);
+
+    .c-name {
+      align-self: stretch;
+    }
+  }
 }
 
 td.td-user,
 td.td-role {
   padding-right: 0.5rem;
+}
+
+.c-permission-table-row.is-mobile td.td-user {
+  padding-right: 0.75rem;
+  max-width: 10.25rem;
 }
 
 td.td-action {
@@ -94,48 +113,17 @@ td.td-action {
   }
 }
 
+.c-pill-container {
+  display: inline-block;
+}
+
 .c-role-pill {
   display: inline;
   white-space: initial;
 }
 
-.c-pill-container {
-  display: inline-block;
-}
-
-.c-role-and-permissions-combined {
-  display: flex;
-  flex-direction: column;
-  row-gap: 0.25rem;
-  align-items: flex-start;
-  padding: 0.75rem 0.75rem 0.75rem 0;
-  min-width: 8.75rem;
-}
-
 .c-action-wrapper {
   display: flex;
   justify-content: flex-end;
-}
-
-.c-permission-table-row.is-mobile {
-  td.td-user {
-    padding-right: 0.75rem;
-    max-width: 10.25rem;
-  }
-
-  .c-user-wrapper {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
-    align-items: center;
-    width: 100%;
-
-    .c-name {
-      display: inline-block;
-      max-width: 7.75rem;
-      width: 100%;
-    }
-  }
 }
 </style>
