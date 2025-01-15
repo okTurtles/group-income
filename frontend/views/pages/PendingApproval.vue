@@ -72,7 +72,21 @@ export default ({
       if (this.haveActiveGroupProfile) {
         this.ephemeral.groupJoined = true
       } else {
-        const state = await sbp('chelonia/contract/state', this.ourIdentityContractId)
+        // The `join` action could have failed for a variety of reasons, such as
+        // an unreliable network connection. Calling `join` multiple times with
+        // the same parameter should pick up from where we last left off, so it
+        // shouldn't break things.
+        // We call `join` again here for two purposes:
+        //   1. If `join` failed, we'll ensure that it will be retried.
+        //   2. If `join` failed, this will retry when the page is refreshed,
+        //      which align with user expectations.
+        // In addition, there's `gi.actions/group/reattemptFailedJoins`, which
+        // is non-persistent (i.e., restarting the SW will erase it).
+        const [state, innerSigningKeyId, encryptionKeyId] = await Promise.all([
+          sbp('chelonia/contract/state', this.ourIdentityContractId),
+          sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'csk'),
+          sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'cek')
+        ])
         await sbp('gi.actions/group/join', {
           originatingContractID: this.ourIdentityContractId,
           originatingContractName: 'gi.contracts/identity',
@@ -80,8 +94,8 @@ export default ({
           contractName: 'gi.contracts/group',
           reference: state.groups[this.ephemeral.groupIdWhenMounted].hash,
           signingKeyId: state.groups[this.ephemeral.groupIdWhenMounted].inviteSecretId,
-          innerSigningKeyId: await sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'csk'),
-          encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'cek')
+          innerSigningKeyId,
+          encryptionKeyId
         })
       }
     }).catch(e => {
