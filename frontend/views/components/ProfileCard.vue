@@ -181,7 +181,10 @@ export default ({
     async sendMessage () {
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
       if (!chatRoomID) {
-        await this.createDirectMessage(this.contractID)
+        const dmChatRoomId = await this.createDirectMessage(this.contractID)
+        if (dmChatRoomId) {
+          this.redirect(dmChatRoomId)
+        }
       } else {
         if (!this.ourGroupDirectMessages[chatRoomID].visible) {
           this.setDMVisibility(chatRoomID, true)
