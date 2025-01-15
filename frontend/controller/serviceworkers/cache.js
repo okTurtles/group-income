@@ -88,10 +88,11 @@ if (
       caches.open(CURRENT_CACHES.assets).then((cache) => {
         return cache
           .match(request)
-          .then((response) => {
-            if (response) {
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              // If we're offline, return the cached response, if it exists
               if (navigator.onLine === false) {
-                return response
+                return cachedResponse
               }
             }
 
@@ -108,13 +109,17 @@ if (
                 await cache.put(request, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
                 })
+              } else {
+                await cache.delete(request)
               }
 
               return response
             }).catch(e => {
-              if (response) {
+              if (cachedResponse) {
                 console.warn('Error while fetching', request.url, e)
-                return response
+                // If there was a network error fetching, return the cached
+                // response, if it exists
+                return cachedResponse
               }
 
               throw e
