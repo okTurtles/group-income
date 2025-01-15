@@ -19,8 +19,8 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
+const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const path = require('path')
 const { resolve } = path
 const packageJSON = require('./package.json')
@@ -37,6 +37,8 @@ const packageJSON = require('./package.json')
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
+
+const BUILD_SLIM_CONTRACTS = true
 
 const {
   CI = '',
@@ -128,9 +130,17 @@ module.exports = (grunt) => {
       console.log(stdout)
     }
     grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    const contractNames = (await readdir(contractsDir))
+      .filter(name => name.endsWith('.js'))
+      .map(name => name.slice(0, -'.js'.length))
     // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
-    console.log(stdout)
+    for (const name of contractNames) {
+      const { stdout } = await execWithErrMsg(
+        `node_modules/.bin/chel manifest -n gi.contracts/${name} -v ${version} ${BUILD_SLIM_CONTRACTS ? `-s ${dir}/${name}-slim.js ` : ''}${keyFile} ${dir}/${name}.js`,
+        'error generating manifests'
+      )
+      console.log(stdout)
+    }
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
@@ -607,13 +617,15 @@ module.exports = (grunt) => {
     const buildContracts = createEsbuildTask({
       ...esbuildOptionBags.contracts, plugins: defaultPlugins
     })
-    const buildContractsSlim = createEsbuildTask({
-      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
-    })
+    const buildContractsSlim = BUILD_SLIM_CONTRACTS
+      ? createEsbuildTask({
+        ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
+      })
+      : null
 
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
-    await Promise.all([buildContracts.run(), buildContractsSlim.run()])
+    await Promise.all([buildContracts.run(), buildContractsSlim?.run()])
       .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
@@ -683,7 +695,7 @@ module.exports = (grunt) => {
               await buildServiceWorkers.run({ fileEventName, filePath })
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
-              await buildContractsSlim.run({ fileEventName, filePath })
+              await buildContractsSlim?.run({ fileEventName, filePath })
               const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
