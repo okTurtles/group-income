@@ -105,7 +105,7 @@ const getZkppSaltRecord = async (contractID: string) => {
         !Array.isArray(recordObj) ||
         (recordObj.length !== 3 && recordObj.length !== 4) ||
         recordObj.slice(0, 3).some((r) => !r || typeof r !== 'string') ||
-        (recordObj[3] !== null && typeof recordObj[3] !== 'string')
+        (recordObj[3] != null && typeof recordObj[3] !== 'string')
       ) {
         console.error('Error validating encrypted JSON object ' + recordId)
         return null
