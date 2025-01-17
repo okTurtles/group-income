@@ -29,13 +29,19 @@ if (
         .open(CURRENT_CACHES.assets)
         .then((cache) =>
           cache.addAll([
+            '/',
+            '/assets/pwa-manifest.webmanifest',
+            '/assets/images/group-income-icon-transparent.png',
+            '/assets/images/pwa-icons/group-income-icon-maskable_192x192.png',
+            '/assets/css/main.css',
+            '/assets/js/main.js',
             `${routerBase}/`
           ]).catch(e => {
-            console.error('Error adding initial entries to cache')
+            console.error('Error adding initial entries to cache', e)
           })
         )
     )
-  })
+  }, false)
 
   // Taken from the MDN example:
   // <https://developer.mozilla.org/en-US/docs/Web/API/Cache>
@@ -58,7 +64,7 @@ if (
         )
       )
     )
-  })
+  }, false)
 
   self.addEventListener('fetch', function (event) {
     console.debug(`[sw] fetch : ${event.request.method} - ${event.request.url}`)
@@ -78,7 +84,7 @@ if (
       // If the route starts with `${routerBase}/`, use `${routerBase}/` as the
       // URL, since the HTML content is presumed to be the same.
       if (url.pathname.startsWith(`${routerBase}/`)) {
-        request = new Request(`${routerBase}/`, request)
+        request = new Request(`${routerBase}/`)
       }
     } catch (e) {
       return
@@ -127,5 +133,5 @@ if (
           })
       })
     )
-  })
+  }, false)
 }
