@@ -21,7 +21,6 @@ const RenderMessageWithMarkdown: any = {
   render: function (createElement: any): any {
     const { text, edited = false, isReplyingMessage = false } = this.$props
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
-
     // Turns a dom tree object structure into the equivalent recursive createElement(...) call structure.
     const recursiveCall = (entry: any): any => {
       if (entry.tagName) {

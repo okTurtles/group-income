@@ -25,6 +25,10 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
   return createRecursiveDomObjects(rootNode)?.children || []
 }
 
+function isOnlyNewlines (str: string): boolean {
+  return /^[\n]*$/.test(str)
+}
+
 function createRecursiveDomObjects (element: any): DomObject {
   /*
     This function takes the virtual DOM tree generated as a reult of calling the DOMParser method,
@@ -90,11 +94,7 @@ function createRecursiveDomObjects (element: any): DomObject {
 
     nodeObj.children = nodeObj.children.filter(child => {
       if (child.tagName) return true
-      else {
-        return isBodyElement
-          ? child.text !== '\n' // DOMParser.parseFromString() adds a '\n' at the end of the body content which needs to be removed.
-          : child.text?.length > 0 && child.text !== '\n'
-      }
+      else return child.text?.length > 0 && !isOnlyNewlines(child.text)
     })
   }
 

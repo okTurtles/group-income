@@ -40,24 +40,23 @@ export function renderMarkdown (str: string): any {
       entryText = entryText.replace(/</g, '&lt;')
         .replace(/(?<!(^|\n))>/g, '&gt;') // Replace all '>' with '&gt;' except for the ones that are not preceded by a line-break or start of the string (e.g. '> asdf' is a blockquote).
 
-      entryText = entryText.replace(/\n(?=\n)/g, '\n<br>')
-        .replace(/<br>\n(\s*)(>|\d+\.|-)/g, '\n\n$1$2') // [1] custom-handling the case where <br> is directly followed by the start of ordered/unordered lists
-        .replace(/(>|\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n') // [2] this is a custom-logic added so that the end of ordered/un-ordered lists are correctly detected by markedjs.
-        .replace(/\n(>)(\s.+)\n<br>/gs, '\n$1$2\n\n') // [3] this is a custom-logic added so that the end of blockquotes are correctly detected by markedjs. ('s' flag is needed to account for multi-line strings)
-
+      // GI needs to keep the line-breaks in the markdown but the markedjs with 'gfm' option doesn't fully support it.
+      // So we need to manually add <br/> tags here before passing it to markedjs.
+      // (Reference: https://github.com/markedjs/marked/issues/190#issuecomment-865303317)
+      entryText = entryText.replace(/\n(?=\n)/g, '\n\n<br/>\n')
       entry.text = entryText
     }
   })
 
   str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
-  str = str.replace(/(\d+\.|-)(\s.+)\n<br>/g, '$1$2\n\n')
-    .replace(/\n(>)(\s.+)\n<br>/gs, '\n$1$2\n\n') // Check for [2], [3] above once more to resolve edge-cases (reference: https://github.com/okTurtles/group-income/issues/2356)
+
   // STEP 2. convert the markdown into html DOM string.
   let converted = marked.parse(str, { gfm: true })
 
   // STEP 3. Remove the unecessary starting/end line-breaks added in/outside of the converted html tags.
   converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')
     .replace(/\n<\/([a-z]+)>/g, '</$1>')
+
   return converted
 }
 
