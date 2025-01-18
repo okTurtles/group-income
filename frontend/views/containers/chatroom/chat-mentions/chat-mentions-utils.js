@@ -25,7 +25,7 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
   return createRecursiveDomObjects(rootNode)?.children || []
 }
 
-function isOnlyNewlines (str: string): boolean {
+function isOnlyNewlines (str: any): boolean {
   return /^[\n]*$/.test(str)
 }
 
@@ -65,7 +65,6 @@ function createRecursiveDomObjects (element: any): DomObject {
 
   const isNodeTypeText = element?.nodeType === Node.TEXT_NODE
   const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat.
-  const isBodyElement = element?.nodeName === 'BODY'
 
   const nodeObj: DomObject = isNodeTypeText
     ? { tagName: null, attributes: {}, text: element.textContent }
@@ -94,7 +93,7 @@ function createRecursiveDomObjects (element: any): DomObject {
 
     nodeObj.children = nodeObj.children.filter(child => {
       if (child.tagName) return true
-      else return child.text?.length > 0 && !isOnlyNewlines(child.text)
+      else return Boolean(child.text?.length) && !isOnlyNewlines(child.text)
     })
   }
 
