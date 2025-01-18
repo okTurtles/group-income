@@ -270,8 +270,11 @@ route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
     const lookupResult = await sbp('backend/db/lookupName', name)
-    return h.response(lookupResult).type('text/plain')
+    return lookupResult
+      ? h.response(lookupResult).type('text/plain')
+      : Boom.notFound()
   } catch (err) {
+    console.error(err, '@@@@@err')
     logger.error(err, `GET /name/${name}`, err.message)
     return err
   }
