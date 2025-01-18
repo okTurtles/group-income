@@ -176,12 +176,15 @@ export default ({
       )
     },
     toggleTooltip () {
-      this.$refs.tooltip.toggle()
+      this.$refs.tooltip?.toggle()
     },
     async sendMessage () {
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
       if (!chatRoomID) {
-        await this.createDirectMessage(this.contractID)
+        const freshChatRoomID = await this.createDirectMessage(this.contractID)
+        if (freshChatRoomID) {
+          this.redirect(freshChatRoomID)
+        }
       } else {
         if (!this.ourGroupDirectMessages[chatRoomID].visible) {
           this.setDMVisibility(chatRoomID, true)

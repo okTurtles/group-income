@@ -33,9 +33,10 @@ page-section.c-section(:title='L("Invite links")')
           | {{ item.invitee }}
           tooltip.c-name-tooltip(
             v-if='item.isAnyoneLink'
-            direction='top'
+            :direction='ephemeral.isMobile ? "right" : "top"'
             :isTextCenter='true'
-            :text='L("This invite link is only available during the onboarding period.")'
+            :anchorToElement='true'
+            :text='L("Anyone with this link can join the group.")'
           )
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
@@ -151,8 +152,10 @@ export default ({
           selectedOption: 'Active'
         },
         // keep invite in "Active" list for a few seconds after being revoked
-        inviteRevokedNow: null
-      }
+        inviteRevokedNow: null,
+        isMobile: false
+      },
+      matchMediaMobile: null
     }
   },
   computed: {
@@ -354,6 +357,16 @@ export default ({
         this.$refs.inviteError.danger(e.message)
       }
     }
+  },
+  mounted () {
+    this.matchMediaMobile = window.matchMedia('screen and (max-width: 769px)')
+    this.ephemeral.isMobile = this.matchMediaMobile.matches
+    this.matchMediaMobile.onchange = (e) => {
+      this.ephemeral.isMobile = e.matches
+    }
+  },
+  beforeDestroy () {
+    this.matchMediaMobile.onchange = null
   }
 }: Object)
 </script>
