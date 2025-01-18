@@ -38,7 +38,7 @@ const periodicNotificationEntries: {
           const comparison = comparePeriodStamps(nextPeriod, now)
 
           return (
-            rootGetters.ourGroupProfileForGroup(rootState[gId]).incomeDetailsType === 'pledgeAmount' &&
+            rootGetters.ourGroupProfileForGroup(rootState[gId])?.incomeDetailsType === 'pledgeAmount' &&
               (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
               (rootGetters.ourPaymentsForGroup(rootState[gId])?.todo.length > 0) &&
               !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod, gId)
@@ -84,7 +84,7 @@ const periodicNotificationEntries: {
 
         this.nextDistributionPeriod = groupIds.map((gId) => {
           const profile = rootGetters.ourGroupProfileForGroup(rootState[gId])
-          if (!profile.incomeDetailsType) {
+          if (!profile?.incomeDetailsType) {
             // if income-details are not set yet, ignore.
             return null
           }

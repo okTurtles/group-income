@@ -22,6 +22,8 @@ const DMMixin: Object = {
       try {
         const identityContractID = this.ourIdentityContractId
         const currentGroupId = this.currentGroupId
+        let dmChatRoomId
+
         await sbp('gi.actions/identity/createDirectMessage', {
           contractID: identityContractID,
           data: { currentGroupId, memberIDs },
@@ -33,10 +35,13 @@ const DMMixin: Object = {
               // state ('pending') and we'll set the chatroom ID when the
               // contract is loaded.
               // This is done in the JOINED_CHATROOM event.
-              sbp('state/vuex/commit', 'setPendingChatRoomId', { chatRoomID: message.contractID(), groupID: currentGroupId })
+              dmChatRoomId = message.contractID()
+              sbp('state/vuex/commit', 'setPendingChatRoomId', { chatRoomID: dmChatRoomId, groupID: currentGroupId })
             }
           }
         })
+
+        return dmChatRoomId
       } catch (err) {
         console.error('[DMMixin.js] Failed to create a new chatroom', err)
         await sbp('gi.ui/prompt', {
