@@ -124,7 +124,10 @@ if (
                 await cache.put(request, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
                 })
-              } else {
+              } else if (response.status < 500) {
+                // For 5xx responses (server errors, we don't delete the cache
+                // entry. This is so that, in the event of a 5xx error,
+                // the offline app still works.)
                 await cache.delete(request)
               }
 
