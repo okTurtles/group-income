@@ -68,8 +68,6 @@ export default ({
       // side-effects. In general, UI elements should not be changing
       // non-ephemeral references.
       await sbp('chelonia/contract/retain', this.ephemeral.groupIdWhenMounted, { ephemeral: true })
-      await sbp('okTurtles.eventQueue/queueEvent', 'event-handled', () => {})
-      await new Promise(resolve => setTimeout(resolve, 200))
       this.ephemeral.contractFinishedSyncing = true
       if (this.haveActiveGroupProfile) {
         this.ephemeral.groupJoined = true
