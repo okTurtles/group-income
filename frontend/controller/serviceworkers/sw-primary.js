@@ -215,23 +215,7 @@ sbp('sbp/selectors/register', {
 
       return computedGetters
     }
-  })(),
-  // For compatibility for old contracts.
-  // TODO: This is to be deleted in a later release, once contracts are recreated.
-  'state/vuex/commit': (key, data) => {
-    switch (key) {
-      case 'deleteChatRoomScrollPosition':
-      case 'setChatRoomScrollPosition':
-        return sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, data)
-      // These are handled by events
-      case 'removeNotification':
-        return
-      case 'setCurrentChatRoomId':
-        return
-    }
-
-    throw new Error(`Invalid selector 'state/vuex/commit': Not allowed in SW. (key: ${key})`)
-  }
+  })()
 })
 
 const ourLocation = new URL(self.location)

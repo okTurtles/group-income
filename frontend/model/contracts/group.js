@@ -1374,23 +1374,6 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/group/upgradeFrom1.0.7': {
-      validate: actionRequireActiveMember(optional),
-      process ({ height }, { state }) {
-        let changed = false
-        Object.values(state.chatRooms).forEach((chatroom: Object) => {
-          Object.values(chatroom.members).forEach((member: Object) => {
-            if (member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null) {
-              member.joinedHeight = height
-              changed = true
-            }
-          })
-        })
-        if (!changed) {
-          throw new Error('[gi.contracts/group/upgradeFrom1.0.7/process] Invalid or duplicate upgrade action')
-        }
-      }
-    },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,

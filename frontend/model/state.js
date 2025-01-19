@@ -5,11 +5,9 @@
 
 import sbp from '@sbp/sbp'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
-import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 import getters from './getters.js'
@@ -22,6 +20,7 @@ import { CHELONIA_RESET, CONTRACTS_MODIFIED } from '../../shared/domains/cheloni
 
 // Wrapper function for performing contract upgrades and migrations
 // TODO: Consider moving this function into a different file
+// eslint-disable-next-line no-unused-vars
 const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early
@@ -134,10 +133,6 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
-    if (!state.reverseNamespaceLookups) {
-      // $FlowFixMe[incompatible-call]
-      Vue.set(state, 'reverseNamespaceLookups', Object.fromEntries(Object.entries(state.namespaceLookups).map(([k, v]: [string, string]) => [v, k])))
-    }
     if (state.periodicNotificationAlreadyFiredMap) {
       if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
         state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
@@ -146,113 +141,6 @@ sbp('sbp/selectors/register', {
         state.periodicNotificationAlreadyFiredMap.lastRun = Object.create(null)
       }
     }
-    contractUpdate(state, (state: Object, contractIDHints: ?string[]) => {
-      // Upgrade from version 1.0.7 to a newer version
-      // The new group contract introduces a breaking change: the
-      // `state[groupID].chatRooms[chatRoomID].members[memberID].joinedHeight`
-      // attribute.
-      // This code checks if the attribute is missing, and if so, issues the
-      // corresponing upgrade action.
-      const ourIdentityContractId = state.loggedIn?.identityContractID
-      if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
-      Object.entries(state[ourIdentityContractId].groups)
-        .filter(([groupID, { hasLeft }]: [string, Object]) => {
-          return !hasLeft &&
-           state[groupID]?.chatRooms &&
-           (!Array.isArray(contractIDHints) || contractIDHints.includes(groupID))
-        })
-        .map(([groupID]) => {
-          // $FlowFixMe[incompatible-use]
-          const chatRooms = state[groupID].chatRooms
-          const needsUpgrade = ((Object.values(chatRooms): any): Object[])
-            .flatMap(({ members }): Object => Object.values(members))
-            .some(member =>
-              member.status === PROFILE_STATUS.ACTIVE && member.joinedHeight == null
-            )
-
-          return needsUpgrade ? groupID : null
-        })
-        .filter(Boolean)
-        .forEach((contractID) => {
-          if (!contractID) return
-          sbp('gi.actions/group/upgradeFrom1.0.7', { contractID }).catch(e => {
-            console.error('[state/vuex/postUpgradeVerification] Error during gi.actions/group/upgradeFrom1.0.7', contractID, e)
-          })
-        })
-    }, 'gi.contracts/group')
-    contractUpdate(state, (contractIDHints: ?string[]) => {
-      // Upgrade from version 1.0.8 to a newer version
-      // The new chatroom contracts have an admin IDs list
-      // This code checks if the attribute is missing, and if so, issues the
-      // corresponing upgrade action.
-      const needsUpgrade = (chatroomID) => {
-        // Restrict updates to recently added contracts
-        if (Array.isArray(contractIDHints) && !contractIDHints.includes(chatroomID)) return false
-        return !!state[chatroomID]?.attributes && !Array.isArray(state[chatroomID].attributes.adminIDs)
-      }
-
-      const upgradeAction = async (contractID: string, data?: Object) => {
-        try {
-          await sbp('gi.actions/chatroom/upgradeFrom1.0.8', { contractID, data })
-        } catch (e) {
-          // If the action failed because the upgrade has already happened, we
-          // can safely ignore the error
-          if (e.message?.includes('Upgrade can only be done once')) {
-            console.warn(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
-            return
-          }
-          console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/chatroom/upgradeFrom1.0.8 for ${contractID}:`, e)
-        }
-      }
-
-      const ourIdentityContractId = state.loggedIn?.identityContractID
-      if (!ourIdentityContractId || !state[ourIdentityContractId]) return
-      if (state[ourIdentityContractId].groups) {
-        // Group chatrooms
-        Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
-          if (hasLeft || !state[groupID]?.chatRooms || !state[groupID].groupOwnerID) return []
-          // $FlowFixMe[incompatible-use]
-          return Object.entries((state[groupID].chatRooms: { [string]: Object })).flatMap(([chatroomID, { members }]) => {
-            if (members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE && needsUpgrade(chatroomID)) {
-              return [chatroomID, state[groupID].groupOwnerID]
-            }
-            return []
-          })
-        }).forEach(([contractID, groupOwnerID]) => {
-          if (!contractID) return
-          upgradeAction(contractID, groupOwnerID)
-        })
-      }
-      if (state[ourIdentityContractId].chatRooms) {
-        // DM chatrooms
-        return Object.keys((state[ourIdentityContractId].chatRooms: { [string]: Object })).map((chatroomID) => {
-          if (state[chatroomID]?.members[ourIdentityContractId] && needsUpgrade(chatroomID)) {
-            return chatroomID
-          }
-          return false
-        }).forEach((contractID) => {
-          if (!contractID) return
-          upgradeAction(contractID)
-        })
-      }
-    }, 'gi.contracts/chatroom')
-    contractUpdate(state, (contractIDHints: ?string[]) => {
-      // Update expired invites
-      // If fewer than MAX_GROUP_MEMBER_COUNT 'anyone can join' have been used,
-      // create a new 'anyone can join' link up to MAX_GROUP_MEMBER_COUNT invites
-      const ourIdentityContractId = state.loggedIn?.identityContractID
-      if (!ourIdentityContractId || !state[ourIdentityContractId]?.groups) return
-      Object.entries(state[ourIdentityContractId].groups).map(([groupID, { hasLeft }]: [string, Object]) => {
-        const groupState = state[groupID]
-        if (hasLeft || !groupState?.invites) return undefined
-        // Restrict updates to recently added contracts
-        if (Array.isArray(contractIDHints) && !contractIDHints.includes(groupID)) return undefined
-        const needsUpdate = !!doesGroupAnyoneCanJoinNeedUpdating(groupState)
-        return needsUpdate ? groupID : undefined
-      }).filter(Boolean).forEach((contractID) => {
-        sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
-      })
-    }, 'gi.contracts/group')
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
