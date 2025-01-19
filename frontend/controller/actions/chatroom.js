@@ -246,14 +246,17 @@ export default (sbp('sbp/selectors/register', {
     const rootGetters = sbp('state/vuex/getters')
     const identityState = rootGetters.currentIdentityState
     if (identityState.chatRooms?.[contractID]) {
-      // TODO
-      // Currently missing the ability to leave a DM
+      const identityContractID = rootGetters.ourIdentityContractId
+
+      await sbp('gi.actions/identity/deleteDirectMessage', { contractID: identityContractID, data: { contractID } }).catch(e => {
+        console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/identity/deleteDirectMessage ${identityContractID} for ${contractID}:`, e)
+      })
     } else {
       // This is a group chatroom. To determine which group the chatroom
       // belongs to, we need to go over each group, since there isn't a
       // chatroom->group relationship stored.
       const cIDs = Object.entries(identityState.groups || {}).filter(([cID, state]) => {
-        return !state.hasLeft
+        return !((state: any): Object).hasLeft
       }).map(([cID]) => {
         return cID
       })

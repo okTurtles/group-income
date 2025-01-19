@@ -1019,6 +1019,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/logout')
     }
   },
+  ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
