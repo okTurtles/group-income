@@ -162,6 +162,7 @@ sbp('sbp/selectors/register', {
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
   'service-worker/setup-push-subscription': async function (retryCount?: number) {
+    if (process.env.CI || window.Cypress) return
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready

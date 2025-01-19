@@ -81,10 +81,18 @@ if (
         return
       }
 
+      if (
+        ['/eventsAfter/', '/name/', '/latestHEADinfo/', '/file/', '/kv/', '/zkpp/'].some(prefix => url.pathname.startsWith(prefix)) ||
+        url.pathname === '/time'
+      ) {
+        return
+      }
+
       // If the route starts with `${routerBase}/`, use `${routerBase}/` as the
       // URL, since the HTML content is presumed to be the same.
       if (url.pathname.startsWith(`${routerBase}/`)) {
-        request = new Request(`${routerBase}/`)
+        console.error('@@@@XX rewriting request', url.pathname, `${url.origin}${routerBase}/`)
+        request = new Request(`${url.origin}${routerBase}/dashboard`)
       }
     } catch (e) {
       return
@@ -93,16 +101,25 @@ if (
     event.respondWith(
       caches.open(CURRENT_CACHES.assets).then((cache) => {
         return cache
-          .match(request)
+          .match(request, { ignoreSearch: true, ignoreVary: true })
           .then((cachedResponse) => {
+            if (request instanceof URL) {
+              console.error('@@@@XX', 106, request)
+            }
             if (cachedResponse) {
               // If we're offline, return the cached response, if it exists
               if (navigator.onLine === false) {
+                if (request instanceof URL) {
+                  console.error('@@@@XX', 112, request, navigator.onLine)
+                }
                 return cachedResponse
               }
             }
 
-            return fetch(request.clone()).then(async (response) => {
+            return fetch(request.clone?.() || request).then(async (response) => {
+              if (request instanceof URL) {
+                console.error('@@@@XX', 120, request, response.status)
+              }
               if (
                 // Save successful reponses
                 response.status >= 200 &&
@@ -119,12 +136,23 @@ if (
                 await cache.delete(request)
               }
 
+              if (request instanceof URL) {
+                console.error('@@@@XX', 139, request, response.status)
+              }
+
               return response
             }).catch(e => {
+              if (request instanceof URL) {
+                console.error('@@@@XX', 145, request, e)
+              }
+
               if (cachedResponse) {
-                console.warn('Error while fetching', request.url, e)
+                console.warn('Error while fetching', request, e)
                 // If there was a network error fetching, return the cached
                 // response, if it exists
+                if (request instanceof URL) {
+                  console.error('@@@@XX', 153, request, e)
+                }
                 return cachedResponse
               }
 
