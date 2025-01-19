@@ -18,76 +18,14 @@ const handleDeletedContract = async (contractID: string) => {
 
   await sbp('chelonia/contract/remove', contractID)
 
-  const rootGetters = sbp('state/vuex/getters')
-
-  switch (cheloniaState.type) {
-    case 'gi.contracts/chatroom': {
-      const identityState = rootGetters.currentIdentityState
-      if (identityState.chatRooms?.[contractID]) {
-        // TODO
-        // Currently missing the ability to leave a DM
-      } else {
-        // This is a group chatroom. To determine which group the chatroom
-        // belongs to, we need to go over each group, since there isn't a
-        // chatroom->group relationship stored.
-        const cIDs = Object.entries(identityState.groups || {}).filter(([cID, state]) => {
-          return !state.hasLeft
-        }).map(([cID]) => {
-          return cID
-        })
-
-        for (const cID of cIDs) {
-          const groupState = await sbp('chelonia/contract/state', cID).catch(() => {})
-          // If the chatroom isn't part of this group, continue
-          if (!groupState?.chatRooms?.[contractID]) continue
-
-          if (!groupState.chatRooms[contractID].deletedDate) {
-            // If the chatroom hasn't been 'deleted' in the group, attempt to do
-            // so now.
-            await sbp('gi.actions/group/deleteChatRoom', {
-              contractID: cID,
-              data: { chatRoomID: contractID }
-            }).catch(e => {
-              console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/group/deleteChatRoom ${cID} for ${contractID}:`, e)
-            })
-          }
-
-          // No need to continue in the loop, as chatrooms belong to a single
-          // group
-          break
-        }
-      }
-      break
-    }
-    case 'gi.contracts/group': {
-      const identityContractID = rootGetters.ourIdentityContractId
-      const currentIdentityState = rootGetters.currentIdentityState
-
-      if (!!currentIdentityState.groups[contractID] && !currentIdentityState.groups[contractID]?.hasLeft) {
-        await sbp('gi.actions/identity/leaveGroup', {
-          contractID: identityContractID,
-          data: {
-            groupContractID: contractID,
-            reference: contractState.profiles?.[identityContractID]?.reference
-          }
-        }).catch(e => {
-          console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
-        })
-      }
-
-      break
-    }
-    case 'gi.contracts/identity': {
-      const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
-
-      if (contractID === ourIdentityContractId) {
-        await sbp('gi.actions/identity/logout')
-      }
-
-      break
-    }
-    default:
-      console.warn('[handleDeletedContract] Received contract deletion notification for contract ID of unknown type', contractID, cheloniaState.type)
+  const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions')
+  const handler = type && sbp('sbp/selectors/fn', `${type}/_ondeleted`)
+  if (typeof handler === 'function') {
+    await handler(contractID, contractState).catch(e => {
+      console.error('Error handling deletion of contract', contractID)
+    })
+  } else {
+    console.warn('[handleDeletedContract] Received contract deletion notification for contract without a declared deletion handler', contractID, cheloniaState.type)
   }
 }
 

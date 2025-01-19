@@ -1012,6 +1012,13 @@ export default (sbp('sbp/selectors/register', {
       [contractID]: { token: new Secret(token.valueOf()) }
     })
   },
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
+    const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
+
+    if (contractID === ourIdentityContractId) {
+      await sbp('gi.actions/identity/logout')
+    }
+  },
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))

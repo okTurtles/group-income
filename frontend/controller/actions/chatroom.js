@@ -242,6 +242,44 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
+  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Object) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const identityState = rootGetters.currentIdentityState
+    if (identityState.chatRooms?.[contractID]) {
+      // TODO
+      // Currently missing the ability to leave a DM
+    } else {
+      // This is a group chatroom. To determine which group the chatroom
+      // belongs to, we need to go over each group, since there isn't a
+      // chatroom->group relationship stored.
+      const cIDs = Object.entries(identityState.groups || {}).filter(([cID, state]) => {
+        return !state.hasLeft
+      }).map(([cID]) => {
+        return cID
+      })
+
+      for (const cID of cIDs) {
+        const groupState = await sbp('chelonia/contract/state', cID).catch(() => {})
+        // If the chatroom isn't part of this group, continue
+        if (!groupState?.chatRooms?.[contractID]) continue
+
+        if (!groupState.chatRooms[contractID].deletedDate) {
+          // If the chatroom hasn't been 'deleted' in the group, attempt to do
+          // so now.
+          await sbp('gi.actions/group/deleteChatRoom', {
+            contractID: cID,
+            data: { chatRoomID: contractID }
+          }).catch(e => {
+            console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/group/deleteChatRoom ${cID} for ${contractID}:`, e)
+          })
+        }
+
+        // No need to continue in the loop, as chatrooms belong to a single
+        // group
+        break
+      }
+    }
+  },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
