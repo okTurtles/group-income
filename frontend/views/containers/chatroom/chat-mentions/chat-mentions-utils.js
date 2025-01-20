@@ -15,9 +15,7 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
   // Below is a bug-fix for the issue #2130 (https://github.com/okTurtles/group-income/issues/2130)
   // DOMParser.parseFromString() has some caveats re how it interprets &lt; and &gt;
   // so manually wrap them with <span> tags.
-  // $FlowFixMe[prop-missing]
-  htmlString = htmlString.replaceAll('&lt;', '<span>&lt;</span>')
-    .replaceAll('&gt;', '<span>&gt;</span>')
+  htmlString = replaceMultiple(htmlString, { '&lt;': '(&lt;)', '&gt;': '(&gt;)' })
 
   const doc = parser.parseFromString(htmlString, 'text/html')
   const rootNode = doc.body
@@ -27,6 +25,14 @@ export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject>
 
 function isOnlyNewlines (str: any): boolean {
   return /^[\n]*$/.test(str)
+}
+
+function replaceMultiple (input: string, replacements: Object): string {
+  return Object.entries(replacements).reduce(
+    // $FlowFixMe[prop-missing]
+    (str, [from, to]) => str.replaceAll(from, to),
+    input
+  )
 }
 
 function createRecursiveDomObjects (element: any): DomObject {
@@ -67,12 +73,23 @@ function createRecursiveDomObjects (element: any): DomObject {
   const isNodeCodeElement = element?.nodeName === 'CODE' // <code> ... </code> element needs a special treatment in the chat.
 
   const nodeObj: DomObject = isNodeTypeText
-    ? { tagName: null, attributes: {}, text: element.textContent }
+    ? {
+        tagName: null,
+        attributes: {},
+        text: replaceMultiple(element.textContent, { '(<)': '&lt;', '(>)': '&gt;' })
+      }
     : {
         tagName: element.tagName,
         text: isNodeCodeElement
           // $FlowFixMe[prop-missing]
-          ? element.innerText.replaceAll('<br>', '')
+          ? replaceMultiple(element.innerText,
+            {
+              '<br>': '',
+              '&gt;': '>',
+              '&lt;': '<',
+              '(<)': '<',
+              '(>)': '>'
+            })
           : undefined,
         attributes: {}
       }
