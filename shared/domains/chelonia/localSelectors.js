@@ -92,18 +92,26 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
+  // This function is similar in purpose to `chelonia/contract/wait`, except
+  // that it's also designed to take into account delays copying Chelonia state
+  // to an external state (e.g., when using `chelonia/externalStateSetup`).
   'chelonia/externalStateWait': async function (contractID) {
     await sbp('chelonia/contract/wait', contractID)
     const { cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
     const localState = sbp(this.stateSelector)
-    if (cheloniaState.height >= localState.contracts[contractID]?.height) return
+    // If the current 'local' state has a height higher than or equal to the
+    // Chelonia height, we've processed all events and don't need to wait any
+    // longer.
+    if (cheloniaState.height <= localState.contracts[contractID]?.height) return
 
+    // Otherwise, listen for `EVENT_HANDLED_READY` events till we have reached
+    // the necessary height.
     return new Promise((resolve) => {
       const removeListener = sbp('okTurtles.events/on', EVENT_HANDLED_READY, (cID) => {
         if (cID !== contractID) return
 
         const localState = sbp(this.stateSelector)
-        if (cheloniaState.height >= localState.contracts[contractID]?.height) {
+        if (cheloniaState.height <= localState.contracts[contractID]?.height) {
           resolve()
           removeListener()
         }
