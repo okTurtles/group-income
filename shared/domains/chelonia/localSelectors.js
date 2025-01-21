@@ -23,11 +23,12 @@ export default (sbp('sbp/selectors/register', {
   // 3. Each tab calls this selector once to set up event listeners on EVENT_HANDLED
   //    and CONTRACTS_MODIFIED, which will keep each tab's state updated every
   //    time Chelonia handles an event.
-  'chelonia/externalStateSetup': ({ stateSelector, reactiveSet = Reflect.set.bind(Reflect), reactiveDel = Reflect.deleteProperty.bind(Reflect) }: {
+  'chelonia/externalStateSetup': function ({ stateSelector, reactiveSet = Reflect.set.bind(Reflect), reactiveDel = Reflect.deleteProperty.bind(Reflect) }: {
     stateSelector: string,
     reactiveSet: Function,
     reactiveDel: Function
-  }) => {
+  }) {
+    this.stateSelector = stateSelector
     sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
       // The purpose of putting things immediately into a queue is to have
       // state mutations happen in a well-defined order. This is done for two
@@ -88,6 +89,32 @@ export default (sbp('sbp/selectors/register', {
           }
         }
         sbp('okTurtles.events/emit', CONTRACTS_MODIFIED_READY, subscriptionSet, { added, removed })
+      })
+    })
+  },
+  // This function is similar in purpose to `chelonia/contract/wait`, except
+  // that it's also designed to take into account delays copying Chelonia state
+  // to an external state (e.g., when using `chelonia/externalStateSetup`).
+  'chelonia/externalStateWait': async function (contractID) {
+    await sbp('chelonia/contract/wait', contractID)
+    const { cheloniaState } = await sbp('chelonia/contract/fullState', contractID)
+    const localState = sbp(this.stateSelector)
+    // If the current 'local' state has a height higher than or equal to the
+    // Chelonia height, we've processed all events and don't need to wait any
+    // longer.
+    if (cheloniaState.height <= localState.contracts[contractID]?.height) return
+
+    // Otherwise, listen for `EVENT_HANDLED_READY` events till we have reached
+    // the necessary height.
+    return new Promise((resolve) => {
+      const removeListener = sbp('okTurtles.events/on', EVENT_HANDLED_READY, (cID) => {
+        if (cID !== contractID) return
+
+        const localState = sbp(this.stateSelector)
+        if (cheloniaState.height <= localState.contracts[contractID]?.height) {
+          resolve()
+          removeListener()
+        }
       })
     })
   }

@@ -58,7 +58,7 @@ export default ({
     let reset = false
     let destroyed = false
 
-    const syncPromise = sbp('chelonia/contract/wait', this.ourIdentityContractId).then(async () => {
+    const syncPromise = sbp('chelonia/externalStateWait', this.ourIdentityContractId).then(async () => {
       if (destroyed) return
       reset = false
       // We don't want to accidentally unsubscribe from the group while this
@@ -87,6 +87,8 @@ export default ({
           sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'csk'),
           sbp('chelonia/contract/currentKeyIdByName', this.ourIdentityContractId, 'cek')
         ])
+
+        if (!state.groups[this.ephemeral.groupIdWhenMounted]) return
         await sbp('gi.actions/group/join', {
           originatingContractID: this.ourIdentityContractId,
           originatingContractName: 'gi.contracts/identity',
