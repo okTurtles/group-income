@@ -23,7 +23,7 @@
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
               //- Todo: discuss if tooltip better than toggle
-              sentence-with-member-tooltip(:members='onTimePayments')
+              sentence-with-member-tooltip(:members='onTimePayments' :noEllpsis='true')
                 .member-count-sentence(v-safe-html='memberCountSentences["onTimePayments"]')
 
     .c-column

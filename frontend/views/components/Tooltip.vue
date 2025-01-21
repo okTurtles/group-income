@@ -173,8 +173,8 @@ export default ({
             break
           case 'bottom-left':
             x = 0
-            y = '100%'
-            absPosition = { bottom: `-${spacing}px` }
+            y = `${spacing}px`
+            absPosition = { top: '100%' }
             break
           case 'bottom-right':
             x = '-100%'
@@ -391,6 +391,7 @@ export default ({
 
 .c-anchored-tooltip {
   width: max-content;
+  height: max-content;
 }
 
 .c-background {

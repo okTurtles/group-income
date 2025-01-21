@@ -17,7 +17,8 @@ component(
       v-for='(name, index) in members'
       :key='`member-${index}`'
     )
-      .has-ellipsis {{ name }}
+      .has-ellipsis(v-if='!noEllpsis') {{ name }}
+      div(v-else) {{ name }}
 </template>
 
 <script>
@@ -29,7 +30,11 @@ export default ({
     Tooltip
   },
   props: {
-    members: Array
+    members: Array,
+    noEllpsis: {
+      type: Boolean,
+      default: false
+    }
   }
 }: Object)
 </script>
