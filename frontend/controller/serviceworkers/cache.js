@@ -1,7 +1,4 @@
-import sbp from '@sbp/sbp'
-import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-
-const CACHE_VERSION = '1.0.0'
+const CACHE_VERSION = process.env.GI_VERSION
 const CURRENT_CACHES = {
   assets: `assets-cache_v${CACHE_VERSION}`
 }
@@ -12,14 +9,6 @@ if (
   typeof caches === 'object' &&
   (caches instanceof CacheStorage)
 ) {
-  sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (data) => {
-    if (data.GI_VERSION !== process.env.GI_VERSION) {
-      caches.delete(CURRENT_CACHES.assets).catch(e => {
-        console.error('Error trying to delete cache', CURRENT_CACHES.assets)
-      })
-    }
-  })
-
   const locationUrl = new URL(self.location)
   const routerBase = locationUrl.searchParams.get('routerBase') ?? '/app'
 
@@ -29,7 +18,6 @@ if (
         .open(CURRENT_CACHES.assets)
         .then((cache) =>
           cache.addAll([
-            '/',
             '/assets/pwa-manifest.webmanifest',
             '/assets/images/group-income-icon-transparent.png',
             '/assets/images/pwa-icons/group-income-icon-maskable_192x192.png',
@@ -73,11 +61,10 @@ if (
       return
     }
 
-    let request = event.request
-
     try {
-      const url = new URL(request.url)
-      if (url.pathname.startsWith('/file')) {
+      const url = new URL(event.request.url)
+
+      if (url.origin !== self.location.origin) {
         return
       }
 
@@ -88,12 +75,16 @@ if (
         return
       }
 
-      // If the route starts with `${routerBase}/`, use `${routerBase}/` as the
-      // URL, since the HTML content is presumed to be the same.
-      // This is _crucial_ for the offline PWA to work, since currently the
-      // app uses different paths.
-      if (url.pathname.startsWith(`${routerBase}/`)) {
-        request = new Request(`${url.origin}${routerBase}/`)
+      // If the route starts with `${routerBase}/` or `/`, redirect to
+      // `${routerBase}/`, since the HTML content is presumed to be the same.
+      // This is _crucial_ for the offline PWA to work, since currently the app
+      // uses different paths.
+      if (
+        url.pathname === '/' ||
+        (url.pathname.startsWith(`${routerBase}/`) && url.pathname !== `${routerBase}/`)
+      ) {
+        event.respondWith(Response.redirect(`${routerBase}/`, 302))
+        return
       }
     } catch (e) {
       return
@@ -102,7 +93,7 @@ if (
     event.respondWith(
       caches.open(CURRENT_CACHES.assets).then((cache) => {
         return cache
-          .match(request, { ignoreSearch: true, ignoreVary: true })
+          .match(event.request, { ignoreSearch: true, ignoreVary: true })
           .then((cachedResponse) => {
             if (cachedResponse) {
               // If we're offline, return the cached response, if it exists
@@ -111,7 +102,10 @@ if (
               }
             }
 
-            return fetch(event.request.clone?.() || request).then(async (response) => {
+            // We use the original `event.request` for the network fetch
+            // instead of the possibly re-written `request` (used as a cache
+            // key) because the re-written request makes tests fail.
+            return fetch(event.request).then(async (response) => {
               if (
                 // Save successful reponses
                 response.status >= 200 &&
@@ -121,20 +115,20 @@ if (
                 // Which don't have a 'no-store' directive
                 !response.headers.get('cache-control')?.split(',').some(x => x.trim() === 'no-store')
               ) {
-                await cache.put(request, response.clone()).catch(e => {
+                await cache.put(event.request, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
                 })
               } else if (response.status < 500) {
                 // For 5xx responses (server errors, we don't delete the cache
                 // entry. This is so that, in the event of a 5xx error,
                 // the offline app still works.)
-                await cache.delete(request)
+                await cache.delete(event.request)
               }
 
               return response
             }).catch(e => {
               if (cachedResponse) {
-                console.warn('Error while fetching', request, e)
+                console.warn('Error while fetching', event.request, e)
                 // If there was a network error fetching, return the cached
                 // response, if it exists
                 return cachedResponse
