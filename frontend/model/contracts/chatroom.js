@@ -300,6 +300,18 @@ sbp('chelonia/defineContract', {
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
         await leaveChatRoom(contractID, state)
+        const me = sbp('state/vuex/state').loggedIn.identityContractID
+        if (me === state.attributes.creatorID || state.attributes.adminIDs.includes(me)) {
+          await sbp('chelonia/out/deleteContract', contractID, {
+            [contractID]: {
+              billableContractID: me
+            }
+          }).catch((e) => {
+            // We can expect this to happen, as we're guessing who the owner
+            // might be.
+            console.warn('[gi.contracts/chatroom/delete] Error calling chelonia/out/deleteContract', contractID, e)
+          })
+        }
       }
     },
     'gi.contracts/chatroom/addMessage': {

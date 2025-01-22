@@ -20,6 +20,25 @@ const handleDeletedContract = async (contractID: string) => {
 
   const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions/')
   const handler = type && sbp('sbp/selectors/fn', `${type}/_ondeleted`)
+
+  const currentIdentityState = sbp('state/vuex/getters').currentIdentityState
+  // Delete redudant file deletion tokens. If a contract has been deleted, so
+  // have been the files it contained, and therefore we no longer need to
+  // hold on to their file deletion tokens.
+  if (currentIdentityState.fileDeleteTokens) {
+    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billingContractID }]) => {
+      return billingContractID === contractID
+    }).map(([cid]) => cid)
+    await sbp('gi.actions/identity/removeFiles', {
+      manifestCids,
+      option: {
+        shouldDeleteToken: true
+      }
+    }).catch(e => {
+      console.error('[handleDeletedContract] Error deleting saved tokens for deleted contract', contractID, e)
+    })
+  }
+
   if (typeof handler === 'function') {
     await handler(contractID, contractState).catch(e => {
       console.error('Error handling deletion of contract', contractID)
@@ -129,6 +148,7 @@ const setupChelonia = async (): Promise<*> => {
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',
+          'chelonia/out/deleteContract',
           'chelonia/contract/waitingForKeyShareTo',
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',

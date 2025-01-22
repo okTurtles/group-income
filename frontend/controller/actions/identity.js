@@ -792,7 +792,7 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('gi.actions/identity/saveFileDeleteToken', {
         contractID: identityContractID,
-        data: { tokensByManifestCid }
+        data: { billableContractID, tokensByManifestCid }
       })
 
       return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
@@ -819,7 +819,7 @@ export default (sbp('sbp/selectors/register', {
           return [cid, null]
         };
         const credential = shouldDeleteToken
-          ? { token: currentIdentityState.fileDeleteTokens[cid] }
+          ? { token: currentIdentityState.fileDeleteTokens[cid].token }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))

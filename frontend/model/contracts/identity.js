@@ -340,6 +340,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/saveFileDeleteToken': {
       validate: objectOf({
+        billableContractID: stringMax(MAX_HASH_LEN, 'manifestCid'),
         tokensByManifestCid: arrayOf(objectOf({
           manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
           token: string
@@ -347,7 +348,10 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data }, { state }) {
         for (const { manifestCid, token } of data.tokensByManifestCid) {
-          state.fileDeleteTokens[manifestCid] = token
+          state.fileDeleteTokens[manifestCid] = {
+            billableContractID: data.billableContractID,
+            token
+          }
         }
       }
     },
