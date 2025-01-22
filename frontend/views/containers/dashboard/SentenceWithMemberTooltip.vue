@@ -47,5 +47,6 @@ export default ({
   flex-direction: column;
   align-items: stretch;
   font-weight: normal;
+  word-break: break-word;
 }
 </style>
