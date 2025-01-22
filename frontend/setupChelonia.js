@@ -18,7 +18,7 @@ const handleDeletedContract = async (contractID: string) => {
 
   await sbp('chelonia/contract/remove', contractID)
 
-  const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions')
+  const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions/')
   const handler = type && sbp('sbp/selectors/fn', `${type}/_ondeleted`)
   if (typeof handler === 'function') {
     await handler(contractID, contractState).catch(e => {
