@@ -57,6 +57,11 @@ export function renderMarkdown (str: string): any {
   converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')
     .replace(/\n<\/([a-z]+)>/g, '</$1>')
 
+  // STEP 4. Sanitize some <br/>s that directly precedes/follows <ul>, <ol>, <blockquote> elements.
+  //         - These are block elements by themselves, meaning they naturally carry one line-breaks at the start/end the tag(s).
+  //           So remove 1 direct sibling <br>s. (reference issue: https://github.com/okTurtles/group-income/issues/2529)
+  converted = converted.replace(/<br\/>\s*?(<ul>|<ol>|<blockquote>)/g, '$1')
+    .replace(/(<\/ul>|<\/ol>|<\/blockquote>)\s*?<br\/>/g, '$1')
   return converted
 }
 
