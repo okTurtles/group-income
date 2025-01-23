@@ -61,6 +61,8 @@ if (
       return
     }
 
+    // Needed mostly for Cypress
+    let cacheKey = event.request
     try {
       const url = new URL(event.request.url)
 
@@ -83,8 +85,14 @@ if (
         url.pathname === '/' ||
         (url.pathname.startsWith(`${routerBase}/`) && url.pathname !== `${routerBase}/`)
       ) {
-        event.respondWith(Response.redirect(`${routerBase}/`, 302))
-        return
+        if (window.Cypress) {
+          // Apparently, Cypress doesn't like redirects, so we rewrite the
+          // cache key instead
+          cacheKey = new Request(`${routerBase}/`)
+        } else {
+          event.respondWith(Response.redirect(`${routerBase}/`, 302))
+          return
+        }
       }
     } catch (e) {
       return
@@ -93,19 +101,24 @@ if (
     event.respondWith(
       caches.open(CURRENT_CACHES.assets).then((cache) => {
         return cache
-          .match(event.request, { ignoreSearch: true, ignoreVary: true })
+          .match(cacheKey, { ignoreSearch: true, ignoreVary: true })
           .then((cachedResponse) => {
+            // If a cached response exists, return it. Not only does this
+            // improve performance, but it also makes the app work 'offline'
+            // (`navigator.onLine` is unreliable; can be `true` even when
+            // offline). The downside of this approach is that we may return
+            // stale assets when the app is updated. Fortunately, so long as the
+            // version is updated (GI_VERSION), existing cache entries will be
+            // deleted. This will happen with SW updates, so, ideally, we won't
+            // serve stale resources for too long.
             if (cachedResponse) {
-              // If we're offline, return the cached response, if it exists
-              if (navigator.onLine === false) {
-                return cachedResponse
-              }
+              return cachedResponse
             }
 
             // We use the original `event.request` for the network fetch
             // instead of the possibly re-written `request` (used as a cache
             // key) because the re-written request makes tests fail.
-            return fetch(event.request).then(async (response) => {
+            return fetch(event.request).then((response) => {
               if (
                 // Save successful reponses
                 response.status >= 200 &&
@@ -115,26 +128,17 @@ if (
                 // Which don't have a 'no-store' directive
                 !response.headers.get('cache-control')?.split(',').some(x => x.trim() === 'no-store')
               ) {
-                await cache.put(event.request, response.clone()).catch(e => {
+                event.waitUntil(cache.put(cacheKey, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
-                })
+                }))
               } else if (response.status < 500) {
                 // For 5xx responses (server errors, we don't delete the cache
                 // entry. This is so that, in the event of a 5xx error,
                 // the offline app still works.)
-                await cache.delete(event.request)
+                event.waitUntil(cache.delete(cacheKey))
               }
 
               return response
-            }).catch(e => {
-              if (cachedResponse) {
-                console.warn('Error while fetching', event.request, e)
-                // If there was a network error fetching, return the cached
-                // response, if it exists
-                return cachedResponse
-              }
-
-              throw e
             })
           })
       })

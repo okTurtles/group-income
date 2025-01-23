@@ -261,7 +261,8 @@ route.POST('/name', {
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
-    return await sbp('backend/db/lookupName', name)
+    // TODO: conflict with PR 2494
+    return h.response(await sbp('backend/db/lookupName', name)).header('content-type', 'text/plain')
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
@@ -476,7 +477,8 @@ route.GET('/file/{hash}', {
   if (!blobOrString) {
     return Boom.notFound()
   }
-  return h.response(blobOrString).etag(hash)
+  // TODO: conflict with PR 2494
+  return h.response(blobOrString).etag(hash).header('content-type', 'text/plain')
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -679,7 +681,8 @@ route.GET('/kv/{contractID}/{key}', {
     return Boom.notFound()
   }
 
-  return h.response(result).etag(createCID(result))
+  // TODO: conflict with PR 2494
+  return h.response(result).etag(createCID(result)).header('content-type', 'application/json')
 })
 
 // SPA routes
