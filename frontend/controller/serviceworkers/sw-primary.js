@@ -88,6 +88,9 @@ const setupRootState = () => {
       lastRun: Object.create(null) // { notificationKey: number },
     }
   }
+
+  if (!rootState.namespaceLookups) rootState.namespaceLookups = Object.create(null)
+  if (!rootState.reverseNamespaceLookups) rootState.reverseNamespaceLookups = Object.create(null)
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
