@@ -119,7 +119,7 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
         let salt
         let uaPublic
 
-        return function (this: Object) {
+        return function (/* this: Object */) {
           // Rotate encryption keys every 2**32 messages
           // This is just a precaution for a birthday attack, which reduces the
           // odds of a collision due to salt reuse to under 10**-18.
