@@ -585,7 +585,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
   let remainingEvents = limit ?? Number.POSITIVE_INFINITY
   let eventsStreamReader
   let latestHeight
-  let state: 'fetch' | 'read-eos' | 'read-new-response' | 'read' | 'events' = 'fetch'
+  let state: 'fetch' | 'read-eos' | 'read-new-response' | 'read' | 'events' | 'eod' = 'fetch'
   let requestLimit: number
   let count: number
   let buffer: string = ''
@@ -616,7 +616,9 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
             // data by making a new request
             if (done) {
               // No more events to process or reached the latest event
-              if (remainingEvents === 0 || sinceHeight === latestHeight) {
+              // Using `>=` instead of `===` to avoid an infinite loop in the
+              // event of data loss on the server.
+              if (remainingEvents === 0 || sinceHeight >= latestHeight) {
                 controller.close()
                 return
               } else if (state === 'read-new-response' || buffer) {
@@ -707,8 +709,14 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                   const deserialized = GIMessage.deserializeHEAD(currentEvent)
                   sinceHeight = deserialized.head.height
                   sinceHash = deserialized.hash
+                  state = 'read-eos'
+                } else {
+                  // If the response came empty, assume there are no more events
+                  // after. Mostly this prevents infinite loops if a server is
+                  // claiming there are more events than it's willing to return
+                  // data for.
+                  state = 'eod'
                 }
-                state = 'read-eos'
                 // This should be an empty string now
                 buffer = buffer.slice(nextIdx + 1).trim()
               } else if (currentEvent) {
@@ -730,6 +738,14 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
               return
             }
             break
+          }
+          case 'eod': {
+            if (remainingEvents === 0 || sinceHeight >= latestHeight) {
+              controller.close()
+            } else {
+              controller.error(new Error('Unexpected end of data'))
+            }
+            return
           }
         }
       }
