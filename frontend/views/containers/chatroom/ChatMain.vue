@@ -280,7 +280,9 @@ export default ({
     if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
       // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
       //       after the first opening the Group Income application
-      this.setInitMessages()
+      this.setInitMessages().catch(e => {
+        console.error('[ChatMain.vue] mounted error', e)
+      })
     }
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
@@ -755,8 +757,8 @@ export default ({
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
-    generateNewChatRoomState (shouldClearMessages = false, height) {
-      const state = sbp('chelonia/contract/state', this.renderingChatRoomId, height) || {}
+    async generateNewChatRoomState (shouldClearMessages = false, height) {
+      const state = await sbp('chelonia/contract/state', this.renderingChatRoomId, height) || {}
       return {
         settings: state.settings || {},
         attributes: state.attributes || {},
@@ -767,11 +769,11 @@ export default ({
         renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
-    initializeState (forceClearMessages = false) {
+    async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
       this.latestEvents = []
-      Vue.set(this.messageState, 'contract', this.generateNewChatRoomState(forceClearMessages))
+      Vue.set(this.messageState, 'contract', await this.generateNewChatRoomState(forceClearMessages))
     },
     /**
      * Load/render events for one or more pages
@@ -866,7 +868,7 @@ export default ({
 
       if (this.latestEvents.length > 0) {
         const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        let state = this.generateNewChatRoomState(true, entryHeight)
+        let state = await this.generateNewChatRoomState(true, entryHeight)
 
         for (const event of this.latestEvents) {
           state = await sbp('chelonia/in/processMessage', event, state)
@@ -875,14 +877,14 @@ export default ({
         Vue.set(this.messageState, 'contract', state)
       }
     },
-    setInitMessages () {
+    async setInitMessages () {
       if (this.renderingChatRoomId === this.currentChatRoomId) {
         return
       }
       // NOTE: since the state is initialized based on the renderingChatRoomId
       //       need to set renderingChatRoomId here, before calling initializeState
       this.renderingChatRoomId = this.currentChatRoomId
-      this.initializeState()
+      await this.initializeState()
       this.ephemeral.messagesInitiated = false
       this.ephemeral.unprocessedEvents = []
       if (this.ephemeral.infiniteLoading) {
@@ -1119,7 +1121,9 @@ export default ({
     // doesn't need to be flushed
     refreshContent: debounce(function () {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      this.setInitMessages()
+      this.setInitMessages().catch(e => {
+        console.error('[ChatMain.vue] refreshContent error', e)
+      })
     }, 250),
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
@@ -1161,30 +1165,28 @@ export default ({
 
       const initAfterSynced = (toChatRoomId) => {
         if (toChatRoomId !== this.summary.chatRoomID || this.ephemeral.messagesInitiated) return
-        this.setInitMessages()
+        return this.setInitMessages()
       }
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.onChatScroll?.flush()
-        this.initializeState(true)
-        this.ephemeral.messagesInitiated = false
-        this.ephemeral.scrolledDistance = 0
-        // Coerce 'chelonia/contract/isSyncing' into a Promise
-        // This may seem weird, but it's needed because the result may be a
-        // boolean when Chelonia is running in the browsing context, or it may
-        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
-        // like when using a SW.
-        // We also don't use `await`, which would be more straightforward because
+        // We don't use `await`, which would be more straightforward because
         // that'd require this entire function to be `async`, which could result
         // in race conditions as this is a watcher.
-        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+        this.initializeState(true).then(async () => {
+          this.checkEventSourceConsistency(toChatRoomId)
+          this.ephemeral.messagesInitiated = false
+          this.ephemeral.scrolledDistance = 0
+          const isSyncing = await sbp('chelonia/contract/isSyncing', toChatRoomId)
           // If the chatroom has changed since, return
           if (this.summary.chatRoomID !== toChatRoomId) return
           if (isSyncing) {
-            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+            return toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
           } else {
             this.refreshContent()
           }
+        }).catch(e => {
+          console.error('[ChatMain.vue] summary watcher error', e)
         })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
