@@ -84,7 +84,15 @@ export default (sbp('sbp/selectors/register', {
         // If the subscription has changed, report it to the server
         pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,
-          { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
+          {
+            action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+            payload: {
+              settings: {
+                heartbeatInterval: 12 * 60 * 60 * 1000
+              },
+              subscriptionInfo
+            }
+          }
         ))
       } else if (!subscriptionInfo && reported) {
         // If the subscription has been removed, also report it to the server
