@@ -104,8 +104,19 @@ async function startApp () {
     Vue.set(reverseCache, value, name)
   })
 
-  sbp('okTurtles.events/on', SERIOUS_ERROR, (error) => {
+  sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {
     sbp('gi.ui/seriousErrorBanner', error)
+    if (error?.name === 'ChelErrorForkedChain') {
+      const rootState = sbp('state/vuex/state')
+      const type = rootState.contracts[contractID].type || '(unknown)'
+      const retry = confirm(L('There was a serious issue when trying to sync the contract with ID {contractID} of type {type}. The data we received doesn\'t match what we have on file, which could mean there has been tampering or possibly a loss of data on the server. Unfortunately, we can\'t recover the original data. However, if you think this might be an error, you can try deleting your local records and syncing the contract again.\n\nDo you want to attempt this?', { contractID, type }))
+
+      if (retry) {
+        sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
+          console.error('Error during re-sync', contractID, e)
+        })
+      }
+    }
     if (process.env.CI) {
       Promise.reject(error)
     }

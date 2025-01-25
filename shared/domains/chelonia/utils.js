@@ -8,7 +8,7 @@ import { INVITE_STATUS } from './constants.js'
 import { deserializeKey, serializeKey, sign, verifySignature } from './crypto.js'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
-import { ChelErrorWarning } from './errors.js'
+import { ChelErrorForkedChain, ChelErrorWarning } from './errors.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
@@ -688,7 +688,11 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                   const hash = GIMessage.deserializeHEAD(currentEvent).hash
                   const height = GIMessage.deserializeHEAD(currentEvent).head.height
                   if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
-                    controller.error(new Error('hash() !== since'))
+                    if (height === sinceHeight && sinceHash && sinceHash !== hash) {
+                      controller.error(new ChelErrorForkedChain('Forked chain: hash() !== since'))
+                    } else {
+                      controller.error(new Error('hash() !== since'))
+                    }
                     return
                   }
                 }

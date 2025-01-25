@@ -59,10 +59,16 @@ export const serializer = (data: any): any => {
     }
     // Error, Blob, File, etc. are supported by structuredClone but not by JSON
     // We mark these as 'refs', so that the reviver can undo this transformation
-    if (value instanceof Error || value instanceof Blob || value instanceof File) {
+    if (value instanceof Blob || value instanceof File) {
       const pos = verbatim.length
       verbatim[verbatim.length] = value
       return rawResult(['_', '_ref', pos])
+    }
+    // However, Error cloning doesn't preserve `.name`
+    if (value instanceof Error) {
+      const pos = verbatim.length
+      verbatim[verbatim.length] = value
+      return rawResult(['_', '_err', rawResult(['_', '_ref', pos]), value.name])
     }
     // Same for other types supported by structuredClone but not JSON
     if (value instanceof MessagePort || value instanceof ReadableStream || value instanceof WritableStream || value instanceof ArrayBuffer) {
@@ -167,6 +173,12 @@ export const deserializer = (data: any): any => {
         // These are literal values, return them
         case '_ref':
           return verbatim[value[2]]
+        case '_err': {
+          if (value[2].name !== value[3]) {
+            value[2].name = value[3]
+          }
+          return value[2]
+        }
         // These were functions converted to a MessagePort. Convert them on this
         // end back into functions using that port.
         case '_fn': {
