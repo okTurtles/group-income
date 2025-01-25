@@ -72,7 +72,8 @@ describe('avatar file serving', function () {
         ...manifests,
         defaults: {
           allowedSelectors: [
-            'chelonia/queueInvocation'
+            'chelonia/queueInvocation',
+            'sbp/selectors/register'
           ],
           modules: { '@common/common.js': Common },
           preferSlim: true

@@ -103,6 +103,7 @@ const setupChelonia = async (): Promise<*> => {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
+          'sbp/selectors/register',
           'namespace/lookup', 'namespace/lookupCached',
           // TODO: [SW] the `state/` selectors should _not_ be used from contracts
           // since they refer to Vuex (i.e., tab / window) state and not to
