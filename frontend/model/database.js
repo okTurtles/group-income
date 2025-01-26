@@ -26,26 +26,43 @@ const localforage = {
               reject(new Error('Unsupported characters in name: -'))
               return
             }
-            const request = self.indexedDB.open(name + '--' + storeName)
 
-            // Create the object store if it doesn't exist
-            request.onupgradeneeded = (event) => {
-              const db = event.target.result
-              db.createObjectStore(storeName)
+            const openDB = (version?: number) => {
+              // By default `version` is the latest DB version. Initially, we
+              // try to open that, but in some cases (e.g., when manually
+              // deleting the DBs), the schema will be wrong and miss the object
+              // store. In these cases, we need to upgrade the DB by
+              // incrementing the version number to re-create the schema, which
+              // can only be done when the DB is being 'upgraded'.
+              const request = self.indexedDB.open(name + '--' + storeName, version)
+
+              // Create the object store if it doesn't exist
+              request.onupgradeneeded = (event) => {
+                const db = event.target.result
+                db.createObjectStore(storeName)
+              }
+
+              request.onsuccess = (event) => {
+                const db = event.target.result
+                if (!db.objectStoreNames.contains(storeName)) {
+                  return openDB(db.version + 1)
+                }
+
+                resolve(db)
+              }
+
+              request.onerror = (error) => {
+                reject(error)
+              }
+
+              // If this happens, closing all tabs and stopping the SW could
+              // help.
+              request.onblocked = (event) => {
+                reject(new Error('DB is blocked'))
+              }
             }
 
-            request.onsuccess = (event) => {
-              const db = event.target.result
-              resolve(db)
-            }
-
-            request.onerror = (error) => {
-              reject(error)
-            }
-
-            request.onblocked = (event) => {
-              reject(new Error('DB is blocked'))
-            }
+            openDB()
           })
         }
         return promise

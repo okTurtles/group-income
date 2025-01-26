@@ -83,19 +83,26 @@ grunt dev --tunnel
 > $ ssh -R 80:localhost:8000 nokey@localhost.run
 > ```
 
-Build the app for distribution
+Pin a new version of contracts:
 
 ```bash
-grunt deploy
+$ NODE_ENV=production grunt pin:0.1.0
 ```
 
-Clean up files in `dist/`
+Build the app for distribution:
+
+```bash
+$ NODE_ENV=production grunt deploy
+$ tar cfz gi-v1.1.0.tgz dist
+```
+
+Clean up files in `dist/`:
 
 ```bash
 grunt clean
 ```
 
-Run tests.
+Run tests:
 
 **NOTE: You may need to first install Cypress using `./node_modules/.bin/cypress install`**
 
