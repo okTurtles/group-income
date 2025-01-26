@@ -109,11 +109,14 @@ async function startApp () {
     if (error?.name === 'ChelErrorForkedChain') {
       const rootState = sbp('state/vuex/state')
       const type = rootState.contracts[contractID].type || '(unknown)'
-      const retry = confirm(L('There was a serious issue when trying to sync the contract with ID {contractID} of type {type}. The data we received doesn\'t match what we have on file, which could mean there has been tampering or possibly a loss of data on the server. Unfortunately, we can\'t recover the original data. However, if you think this might be an error, you can try deleting your local records and syncing the contract again.\n\nDo you want to attempt this?', { contractID, type }))
+      console.error('Forked chain detected', { contractID, type }, error)
+
+      const retry = confirm(L("The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)", { type }))
 
       if (retry) {
         sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
           console.error('Error during re-sync', contractID, e)
+          alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
         })
       }
     }

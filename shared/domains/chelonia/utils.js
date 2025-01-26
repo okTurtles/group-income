@@ -623,8 +623,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                 return
               } else if (state === 'read-new-response' || buffer) {
                 // If done prematurely, throw an error
-                controller.error(new Error('Invalid response: done too early'))
-                return
+                throw new Error('Invalid response: done too early')
               } else {
                 // If there are still events to fetch, switch state to fetch
                 state = 'fetch'
@@ -633,8 +632,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
             }
             if (!value) {
               // If there's no value (e.g., empty response), throw an error
-              controller.error(new Error('Invalid response: missing body'))
-              return
+              throw new Error('Invalid response: missing body')
             }
             // Concatenate new data to the buffer, trimming any
             // leading/trailing whitespace (the response is a JSON array of
@@ -646,8 +644,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
               // Response is in JSON format, so we look for the start of an
               // array (`[`)
               if (buffer[0] !== '[') {
-                controller.error(new Error('Invalid response: no array start delimiter'))
-                return
+                throw new Error('Invalid response: no array start delimiter')
               }
               // Trim the array start delimiter from the buffer
               buffer = buffer.slice(1)
@@ -655,8 +652,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
               // If in 'read-eos' state and still reading data, it's an error
               // because the response isn't valid JSON (there should be
               // nothing other than whitespace after `]`)
-              controller.error(new Error('Invalid data at the end of response'))
-              return
+              throw new Error('Invalid data at the end of response')
             }
             // If not handling new response or end-of-stream, switch to
             // processing events
@@ -680,8 +676,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
               if (eventValue) {
                 // Check if the event limit is reached; if so, throw an error
                 if (count === requestLimit) {
-                  controller.error(new Error('Received too many events'))
-                  return
+                  throw new Error('Received too many events')
                 }
                 currentEvent = b64ToStr(JSON.parse(eventValue))
                 if (count === 0) {
@@ -689,11 +684,10 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                   const height = GIMessage.deserializeHEAD(currentEvent).head.height
                   if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
                     if (height === sinceHeight && sinceHash && sinceHash !== hash) {
-                      controller.error(new ChelErrorForkedChain('Forked chain: hash() !== since'))
+                      throw new ChelErrorForkedChain(`Forked chain: hash(${hash}) !== since(${sinceHash})`)
                     } else {
-                      controller.error(new Error('hash() !== since'))
+                      throw new Error(`Unexpected data: hash(${hash}) !== since(${sinceHash}) or height(${height}) !== since(${sinceHeight})`)
                     }
-                    return
                   }
                 }
                 // If this is the first event in a second or later request,
@@ -728,8 +722,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                 buffer = buffer.slice(nextIdx + 1).trimStart()
               } else {
                 // If the end delimiter (`]`) is missing, throw an error
-                controller.error(new Error('Missing end delimiter'))
-                return
+                throw new Error('Missing end delimiter')
               }
               // If an event was successfully enqueued, exit the loop to wait
               // for the next pull request
@@ -738,8 +731,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
               }
             } catch (e) {
               console.error('[chelonia] Error during event parsing', e)
-              controller.error(e)
-              return
+              throw e
             }
             break
           }
@@ -747,7 +739,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
             if (remainingEvents === 0 || sinceHeight >= latestHeight) {
               controller.close()
             } else {
-              controller.error(new Error('Unexpected end of data'))
+              throw new Error('Unexpected end of data')
             }
             return
           }
