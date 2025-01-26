@@ -10,7 +10,7 @@ page-section.c-section(
   table.table.table-in-card.c-permissions-table
     thead
       tr
-        // User and role columns are combined when the screen does not have enough space.
+        // User and role columns are combined when the screen is not wide enough.
         i18n.th-user-and-role-combined(v-if='ephemeral.isMobile' tag='th') User / Role
         template(v-else)
           i18n.th-user(tag='th') User
