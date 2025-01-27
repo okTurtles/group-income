@@ -687,7 +687,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                       if (height === sinceHeight && sinceHash && sinceHash !== hash) {
                         throw new ChelErrorForkedChain(`Forked chain: hash(${hash}) !== since(${sinceHash})`)
                       } else {
-                        throw new Error(`Unexpected data: hash(${hash}) !== since(${sinceHash}) or height(${height}) !== since(${sinceHeight})`)
+                        throw new Error(`Unexpected data: hash(${hash}) !== since(${sinceHash || ''}) or height(${height}) !== since(${sinceHeight})`)
                       }
                     }
                   }
@@ -746,10 +746,12 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
             }
           }
         }
-      } finally {
-        if (eventsStreamReader) {
-          await eventsStreamReader.cancel()
-        }
+      } catch (e) {
+        // $FlowFixMe[incompatible-use]
+        eventsStreamReader?.cancel('Error during pull').catch(e2 => {
+          console.error('Error canceling underlying event stream reader on error', e, e2)
+        })
+        throw e
       }
     }
   })
