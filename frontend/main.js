@@ -104,8 +104,22 @@ async function startApp () {
     Vue.set(reverseCache, value, name)
   })
 
-  sbp('okTurtles.events/on', SERIOUS_ERROR, (error) => {
+  sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {
     sbp('gi.ui/seriousErrorBanner', error)
+    if (error?.name === 'ChelErrorForkedChain') {
+      const rootState = sbp('state/vuex/state')
+      const type = rootState.contracts[contractID].type || '(unknown)'
+      console.error('Forked chain detected', { contractID, type }, error)
+
+      const retry = confirm(L("The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)", { type }))
+
+      if (retry) {
+        sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
+          console.error('Error during re-sync', contractID, e)
+          alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
+        })
+      }
+    }
     if (process.env.CI) {
       Promise.reject(error)
     }
