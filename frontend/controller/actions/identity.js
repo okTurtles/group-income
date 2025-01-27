@@ -837,6 +837,13 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/logout': (...params) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'ACTIONS-LOGIN', ['gi.actions/identity/_private/logout', ...params])
   },
+  'gi.actions/identity/clearStateAndLogout': () => {
+    const state = sbp('state/vuex/state')
+    const identityContractID = state.loggedIn.identityContractID
+    sbp('gi.db/settings/delete', identityContractID)
+    sbp('gi.db/settings/deleteEncrypted', identityContractID)
+    sbp('gi.db/settings/delete', SETTING_CHELONIA_STATE)
+  },
   'gi.actions/identity/changePassword': async ({
     identityContractID,
     username,
