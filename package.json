@@ -178,7 +178,7 @@
     "flow-remove-types": "2.181.0",
     "mocha": "8.4.0",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
-    "sass": "1.37.5",
+    "sass": "1.71.1",
     "should": "13.2.3",
     "should-sinon": "0.0.6",
     "sinon": "9.2.1",
