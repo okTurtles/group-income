@@ -595,154 +595,160 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
     // The pull function is called whenever the internal buffer of the stream
     // becomes empty and needs more data.
     async pull (controller) {
-      for (;;) {
+      try {
+        for (;;) {
         // Handle different states of the stream reading process.
-        switch (state) {
+          switch (state) {
           // When in 'fetch' state, initiate a new fetch request to obtain a
           // stream reader for events.
-          case 'fetch': {
-            eventsStreamReader = await fetchEventsStreamReader()
-            // Transition to reading the new response and reset the processed
-            // events counter
-            state = 'read-new-response'
-            count = 0
-            break
-          }
-          case 'read-eos': // End of stream case
-          case 'read-new-response': // Just started reading a new response
-          case 'read': { // Reading from the response stream
-            const { done, value } = await eventsStreamReader.read()
-            // If done, determine if the stream should close or fetch more
-            // data by making a new request
-            if (done) {
+            case 'fetch': {
+              eventsStreamReader = await fetchEventsStreamReader()
+              // Transition to reading the new response and reset the processed
+              // events counter
+              state = 'read-new-response'
+              count = 0
+              break
+            }
+            case 'read-eos': // End of stream case
+            case 'read-new-response': // Just started reading a new response
+            case 'read': { // Reading from the response stream
+              const { done, value } = await eventsStreamReader.read()
+              // If done, determine if the stream should close or fetch more
+              // data by making a new request
+              if (done) {
               // No more events to process or reached the latest event
               // Using `>=` instead of `===` to avoid an infinite loop in the
               // event of data loss on the server.
-              if (remainingEvents === 0 || sinceHeight >= latestHeight) {
-                controller.close()
-                return
-              } else if (state === 'read-new-response' || buffer) {
+                if (remainingEvents === 0 || sinceHeight >= latestHeight) {
+                  controller.close()
+                  return
+                } else if (state === 'read-new-response' || buffer) {
                 // If done prematurely, throw an error
-                throw new Error('Invalid response: done too early')
-              } else {
+                  throw new Error('Invalid response: done too early')
+                } else {
                 // If there are still events to fetch, switch state to fetch
-                state = 'fetch'
-                break
+                  state = 'fetch'
+                  break
+                }
               }
-            }
-            if (!value) {
+              if (!value) {
               // If there's no value (e.g., empty response), throw an error
-              throw new Error('Invalid response: missing body')
-            }
-            // Concatenate new data to the buffer, trimming any
-            // leading/trailing whitespace (the response is a JSON array of
-            // base64-encoded data, meaning that whitespace is not significant)
-            buffer = buffer + Buffer.from(value).toString().trim()
-            // If there was only whitespace, try reading again
-            if (!buffer) break
-            if (state === 'read-new-response') {
+                throw new Error('Invalid response: missing body')
+              }
+              // Concatenate new data to the buffer, trimming any
+              // leading/trailing whitespace (the response is a JSON array of
+              // base64-encoded data, meaning that whitespace is not significant)
+              buffer = buffer + Buffer.from(value).toString().trim()
+              // If there was only whitespace, try reading again
+              if (!buffer) break
+              if (state === 'read-new-response') {
               // Response is in JSON format, so we look for the start of an
               // array (`[`)
-              if (buffer[0] !== '[') {
-                throw new Error('Invalid response: no array start delimiter')
-              }
-              // Trim the array start delimiter from the buffer
-              buffer = buffer.slice(1)
-            } else if (state === 'read-eos') {
+                if (buffer[0] !== '[') {
+                  throw new Error('Invalid response: no array start delimiter')
+                }
+                // Trim the array start delimiter from the buffer
+                buffer = buffer.slice(1)
+              } else if (state === 'read-eos') {
               // If in 'read-eos' state and still reading data, it's an error
               // because the response isn't valid JSON (there should be
               // nothing other than whitespace after `]`)
-              throw new Error('Invalid data at the end of response')
-            }
-            // If not handling new response or end-of-stream, switch to
-            // processing events
-            state = 'events'
-            break
-          }
-          case 'events': {
-            // Process events by looking for a comma or closing bracket that
-            // indicates the end of an event
-            const nextIdx = buffer.search(/(?<=\s*)[,\]]/)
-            // If the end of the event isn't found, go back to reading more
-            // data
-            if (nextIdx < 0) {
-              state = 'read'
+                throw new Error('Invalid data at the end of response')
+              }
+              // If not handling new response or end-of-stream, switch to
+              // processing events
+              state = 'events'
               break
             }
-            let enqueued = false
-            try {
+            case 'events': {
+            // Process events by looking for a comma or closing bracket that
+            // indicates the end of an event
+              const nextIdx = buffer.search(/(?<=\s*)[,\]]/)
+              // If the end of the event isn't found, go back to reading more
+              // data
+              if (nextIdx < 0) {
+                state = 'read'
+                break
+              }
+              let enqueued = false
+              try {
               // Extract the current event's value and trim whitespace
-              const eventValue = buffer.slice(0, nextIdx).trim()
-              if (eventValue) {
+                const eventValue = buffer.slice(0, nextIdx).trim()
+                if (eventValue) {
                 // Check if the event limit is reached; if so, throw an error
-                if (count === requestLimit) {
-                  throw new Error('Received too many events')
-                }
-                currentEvent = b64ToStr(JSON.parse(eventValue))
-                if (count === 0) {
-                  const hash = GIMessage.deserializeHEAD(currentEvent).hash
-                  const height = GIMessage.deserializeHEAD(currentEvent).head.height
-                  if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
-                    if (height === sinceHeight && sinceHash && sinceHash !== hash) {
-                      throw new ChelErrorForkedChain(`Forked chain: hash(${hash}) !== since(${sinceHash})`)
-                    } else {
-                      throw new Error(`Unexpected data: hash(${hash}) !== since(${sinceHash}) or height(${height}) !== since(${sinceHeight})`)
+                  if (count === requestLimit) {
+                    throw new Error('Received too many events')
+                  }
+                  currentEvent = b64ToStr(JSON.parse(eventValue))
+                  if (count === 0) {
+                    const hash = GIMessage.deserializeHEAD(currentEvent).hash
+                    const height = GIMessage.deserializeHEAD(currentEvent).head.height
+                    if (height !== sinceHeight || (sinceHash && sinceHash !== hash)) {
+                      if (height === sinceHeight && sinceHash && sinceHash !== hash) {
+                        throw new ChelErrorForkedChain(`Forked chain: hash(${hash}) !== since(${sinceHash})`)
+                      } else {
+                        throw new Error(`Unexpected data: hash(${hash}) !== since(${sinceHash}) or height(${height}) !== since(${sinceHeight})`)
+                      }
                     }
                   }
+                  // If this is the first event in a second or later request,
+                  // drop the event because it's already been included in
+                  // a previous response
+                  if (count++ !== 0 || requestCount !== 0) {
+                    controller.enqueue(currentEvent)
+                    enqueued = true
+                    remainingEvents--
+                  }
                 }
-                // If this is the first event in a second or later request,
-                // drop the event because it's already been included in
-                // a previous response
-                if (count++ !== 0 || requestCount !== 0) {
-                  controller.enqueue(currentEvent)
-                  enqueued = true
-                  remainingEvents--
-                }
-              }
-              // If the stream is finished (indicated by a closing bracket),
-              // update `since` (to make the next request if needed) and
-              // switch to 'read-eos'.
-              if (buffer[nextIdx] === ']') {
-                if (currentEvent) {
-                  const deserialized = GIMessage.deserializeHEAD(currentEvent)
-                  sinceHeight = deserialized.head.height
-                  sinceHash = deserialized.hash
-                  state = 'read-eos'
-                } else {
+                // If the stream is finished (indicated by a closing bracket),
+                // update `since` (to make the next request if needed) and
+                // switch to 'read-eos'.
+                if (buffer[nextIdx] === ']') {
+                  if (currentEvent) {
+                    const deserialized = GIMessage.deserializeHEAD(currentEvent)
+                    sinceHeight = deserialized.head.height
+                    sinceHash = deserialized.hash
+                    state = 'read-eos'
+                  } else {
                   // If the response came empty, assume there are no more events
                   // after. Mostly this prevents infinite loops if a server is
                   // claiming there are more events than it's willing to return
                   // data for.
-                  state = 'eod'
-                }
-                // This should be an empty string now
-                buffer = buffer.slice(nextIdx + 1).trim()
-              } else if (currentEvent) {
+                    state = 'eod'
+                  }
+                  // This should be an empty string now
+                  buffer = buffer.slice(nextIdx + 1).trim()
+                } else if (currentEvent) {
                 // Otherwise, move the buffer pointer to the next event
-                buffer = buffer.slice(nextIdx + 1).trimStart()
-              } else {
+                  buffer = buffer.slice(nextIdx + 1).trimStart()
+                } else {
                 // If the end delimiter (`]`) is missing, throw an error
-                throw new Error('Missing end delimiter')
+                  throw new Error('Missing end delimiter')
+                }
+                // If an event was successfully enqueued, exit the loop to wait
+                // for the next pull request
+                if (enqueued) {
+                  return
+                }
+              } catch (e) {
+                console.error('[chelonia] Error during event parsing', e)
+                throw e
               }
-              // If an event was successfully enqueued, exit the loop to wait
-              // for the next pull request
-              if (enqueued) {
-                return
+              break
+            }
+            case 'eod': {
+              if (remainingEvents === 0 || sinceHeight >= latestHeight) {
+                controller.close()
+              } else {
+                throw new Error('Unexpected end of data')
               }
-            } catch (e) {
-              console.error('[chelonia] Error during event parsing', e)
-              throw e
+              return
             }
-            break
           }
-          case 'eod': {
-            if (remainingEvents === 0 || sinceHeight >= latestHeight) {
-              controller.close()
-            } else {
-              throw new Error('Unexpected end of data')
-            }
-            return
-          }
+        }
+      } finally {
+        if (eventsStreamReader) {
+          await eventsStreamReader.cancel()
         }
       }
     }
