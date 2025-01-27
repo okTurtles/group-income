@@ -7,43 +7,19 @@
         | &nbsp;
         i18n.link(tag='button' @click='openAppLogs') See application logs
 
-      ul.c-legend
-        li.c-legend-item
-          i18n Total space used
-          strong.c-legend-dd {{ ephemeral.sizeMb }}
-        li.c-legend-item
-          i18n Status
-          strong.c-legend-dd {{ ephemeral.statusText }}
-          .c-marker(:class='`has-background-${ephemeral.style}-solid`')
-
-      template(v-if='ephemeral.status === "corrupted"')
-        banner-simple.c-banner(data-test='corruptedMsg' severity='danger')
-          i18n Please use the re-sync option below to restore functionality.
-
-      template(v-else-if='ephemeral.status === "recovering"')
-        .c-progress
-          progress-bar(:max='1' :value='ephemeral.progress.percentage')
-          .c-progress-desc.has-text-1(aria-label='polite')
-            span {{ephemeral.progress.part}}
-            span {{ephemeral.progress.percentage * 100}} %
-
       banner-scoped(ref='doneMsg' data-test='doneMsg')
 
       .c-cta-container
         i18n.c-cta(
           v-if='ephemeral.status !== "recovering"'
           tag='button'
-          :disabled='true'
           @click='startResync'
-        ) Re-sync
-
-        .c-coming-soon
-          i.icon-info-circle
-          i18n Feature coming soon
+        ) Reset Group Income
 </template>
 
 <script>
 import { L, LError } from '@common/common.js'
+import sbp from '@sbp/sbp'
 import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -62,10 +38,6 @@ export default ({
         ok: {
           statusText: L('Ok'),
           style: 'success'
-        },
-        corrupted: {
-          statusText: L('Corrupted'),
-          style: 'danger'
         }
       },
       ephemeral: {
@@ -87,8 +59,6 @@ export default ({
     this.ephemeral.status = status
     this.ephemeral.statusText = this.config[status].statusText
     this.ephemeral.style = this.config[status].style
-
-    this.ephemeral.sizeMb = '9Mb' // TODO this
   },
   computed: {
     ...mapState([
@@ -104,41 +74,15 @@ export default ({
         }
       })
     },
-    dummy3secTask () {
-      return new Promise((resolve, reject) => {
-        setTimeout(resolve, 3000)
-      })
-    },
     async startResync () {
       if (this.ephemeral.status === 'ok' && !confirm(L('Are you sure you want to re-sync your app data? This might take a few minutes.'))) {
         return null
       }
 
-      this.ephemeral.status = 'recovering'
-      this.$refs.doneMsg.clean()
-
       try {
-        // Dummy logic, obviously.
-        this.updateProgress(L('Deleting local data...'), 0.25)
-        await this.dummy3secTask()
-        this.updateProgress(L('Downloading new data...'), 0.50)
-        await this.dummy3secTask()
-        this.updateProgress(L('Last touches...'), 0.90)
-
-        // Change false to true to force a dummy error
-        if (false) { // eslint-disable-line
-          throw Error('Dummy error forced')
-        }
-
-        await this.dummy3secTask()
-
-        // All done!
+        this.ephemeral.status = 'recovering'
+        await sbp('gi.actions/identity/logout', null, true)
         this.ephemeral.status = 'ok'
-        this.updateProgress('', 1)
-
-        this.$refs.doneMsg.success(L('Your local contract version is synced! All the app functionality was restored!'))
-        this.ephemeral.statusText = this.config.ok.statusText
-        this.ephemeral.style = this.config.ok.style
       } catch (e) {
         this.ephemeral.status = 'failed'
         this.$refs.doneMsg.danger(L('Re-sync failed. {reportError}', LError(e)))
