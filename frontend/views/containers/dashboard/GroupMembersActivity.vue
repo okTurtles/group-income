@@ -164,8 +164,8 @@ export default ({
           ? L('{span_}1 member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
         'missedPayments': this.missedPayments.length === 1
-          ? L('{span_}1 member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
-          : L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
+          ? L('{span_}1 member{_span} has {strong_} missed their payments {_strong}', argsMap['missedPayments'])
+          : L('{span_}{membercount} members{_span} have {strong_} missed their payments {_strong}', argsMap['missedPayments']),
         'noVotes': this.noVotes.length === 1
           ? L('{span_}1 member{_span} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
