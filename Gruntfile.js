@@ -229,7 +229,6 @@ module.exports = (grunt) => {
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
-      incremental: true,
       loader: {
         '.eot': 'file',
         '.ttf': 'file',
@@ -242,8 +241,7 @@ module.exports = (grunt) => {
       outdir: distJS,
       sourcemap: true,
       // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks'),
-      watch: false // Not using esbuild's own watch mode since it involves polling.
+      splitting: !grunt.option('no-chunks')
     },
     // Native options used when building the main entry point.
     main: {
@@ -257,7 +255,7 @@ module.exports = (grunt) => {
   }
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle', 'watch', 'incremental'
+      'define', 'bundle'
     ]),
     // format: 'esm',
     format: 'iife',
