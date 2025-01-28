@@ -184,7 +184,7 @@ const onChatScroll = function () {
     }
   }
 
-  if (!this.ephemeral.messagesInitiated && this.renderingChatRoomId) {
+  if (!this.ephemeral.messagesInitiated && this.nonReactive.renderingChatRoomId) {
     return
   }
 
@@ -197,7 +197,7 @@ const onChatScroll = function () {
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
         sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
-          chatRoomID: this.renderingChatRoomId,
+          chatRoomID: this.nonReactive.renderingChatRoomId,
           messageHash: msg.hash
         })
         break
@@ -205,7 +205,7 @@ const onChatScroll = function () {
     }
   } else if (this.currentChatRoomScrollPosition) {
     sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
-      chatRoomID: this.renderingChatRoomId,
+      chatRoomID: this.nonReactive.renderingChatRoomId,
       messageHash: null
     })
   }
@@ -241,7 +241,14 @@ export default ({
       latestEvents: [],
       // keys here are meant to be used without Vue.set as they're not directly
       // connected to rendering
-      nonReactive: {},
+      nonReactive: {
+      // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
+      //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomID
+      //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
+      //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
+      //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
+        renderingChatRoomId: null
+      },
       ephemeral: {
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
@@ -250,12 +257,6 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
-        // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
-        //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomID
-        //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
-        //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
-        //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
-        renderingChatRoomId: null,
         replyingMessage: null,
         replyingTo: null,
         unprocessedEvents: []
@@ -394,7 +395,7 @@ export default ({
     },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
@@ -639,7 +640,7 @@ export default ({
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
@@ -652,7 +653,7 @@ export default ({
       })
     },
     pinToChannel (message) {
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
       sbp('gi.actions/chatroom/pinMessage', {
         contractID,
         data: { message }
@@ -661,7 +662,7 @@ export default ({
       })
     },
     async unpinFromChannel (hash) {
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
 
       const promptConfig = {
         heading: L('Remove pinned message'),
@@ -682,7 +683,7 @@ export default ({
       }
     },
     async deleteMessage (message) {
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       const question = message.attachments?.length
         ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
@@ -752,7 +753,7 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      const contractID = this.renderingChatRoomId
+      const contractID = this.nonReactive.renderingChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID,
         data: { hash: message.hash, emoticon }
@@ -761,7 +762,7 @@ export default ({
       })
     },
     async generateNewChatRoomState (shouldClearMessages = false, height) {
-      const state = await sbp('chelonia/contract/state', this.renderingChatRoomId, height) || {}
+      const state = await sbp('chelonia/contract/state', this.nonReactive.renderingChatRoomId, height) || {}
       return {
         settings: state.settings || {},
         attributes: state.attributes || {},
@@ -775,9 +776,25 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
-      const chatroomID = this.renderingChatRoomId
+      const chatroomID = this.nonReactive.renderingChatRoomId
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
       if (!this.checkEventSourceConsistency(chatroomID)) return
+      this.latestEvents = []
+      Vue.set(this.messageState, 'contract', messageState)
+    },
+    // Similar to calling initializeState(true), except that it's synchronous
+    // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
+    skeletonState (chatRoomId) {
+      const state = sbp('state/vuex/state')[chatRoomId] || {}
+      const messageState = {
+        settings: state.settings || {},
+        attributes: state.attributes || {},
+        members: state.members || {},
+        _vm: state._vm,
+        messages: [],
+        pinnedMessages: [],
+        renderingContext: true
+      }
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
@@ -792,11 +809,11 @@ export default ({
      *            when user switches channels very fast.
     */
     async renderMoreMessages () {
-      // NOTE: 'this.renderingChatRoomId' can be changed while running this function
+      // NOTE: 'this.nonReactive.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
-      const chatRoomID = this.renderingChatRoomId
+      const chatRoomID = this.nonReactive.renderingChatRoomId
       if (!this.checkEventSourceConsistency(chatRoomID)) return
 
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
@@ -884,14 +901,14 @@ export default ({
       }
     },
     async setInitMessages () {
-      if (this.renderingChatRoomId === this.currentChatRoomId) {
+      if (this.nonReactive.renderingChatRoomId === this.currentChatRoomId) {
         return
       }
       // NOTE: since the state is initialized based on the renderingChatRoomId
       //       need to set renderingChatRoomId here, before calling initializeState
-      this.renderingChatRoomId = this.currentChatRoomId
+      this.nonReactive.renderingChatRoomId = this.currentChatRoomId
       await this.initializeState()
-      if (this.renderingChatRoomId !== this.summary.chatroomID) {
+      if (this.nonReactive.renderingChatRoomId !== this.currentChatRoomId) {
         return
       }
       this.ephemeral.messagesInitiated = false
@@ -922,7 +939,7 @@ export default ({
       }
     },
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
-      const chatRoomID = this.renderingChatRoomId
+      const chatRoomID = this.nonReactive.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
           // NOTE: skip adding useless invocations in KV_QUEUE queue
@@ -1077,7 +1094,7 @@ export default ({
         // NOTE: this infinite handler is being called once which should be ignored
         //       before calling the setInitMessages function
         return
-      } else if (this.currentChatRoomId !== this.renderingChatRoomId) {
+      } else if (this.currentChatRoomId !== this.nonReactive.renderingChatRoomId) {
         // NOTE: should ignore to render messages before chatroom state is initiated
         return
       }
@@ -1179,30 +1196,27 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.onChatScroll?.flush()
-        // Object reference to avoid redudant checks
-        const summaryWatcherReference = {}
-        this.nonReactive.summaryWatcherReference = summaryWatcherReference
-        // We don't use `await`, which would be more straightforward because
+        // Skeleton state is to render what basic information we can get
+        // synchronously.
+        this.skeletonState(toChatRoomId)
+        this.ephemeral.messagesInitiated = false
+        this.ephemeral.scrolledDistance = 0
+        // Coerce 'chelonia/contract/isSyncing' into a Promise
+        // This may seem weird, but it's needed because the result may be a
+        // boolean when Chelonia is running in the browsing context, or it may
+        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
+        // like when using a SW.
+        // We also don't use `await`, which would be more straightforward because
         // that'd require this entire function to be `async`, which could result
         // in race conditions as this is a watcher.
-        this.initializeState(true).then(async () => {
+        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
           // If the chatroom has changed since, return
-          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
-          this.ephemeral.messagesInitiated = false
-          this.ephemeral.scrolledDistance = 0
-          const isSyncing = await sbp('chelonia/contract/isSyncing', toChatRoomId)
-          // If the chatroom has changed since, return
-          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
+          if (this.summary.chatRoomID !== toChatRoomId) return
           if (isSyncing) {
-            return toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
           } else {
             this.refreshContent()
           }
-        }).catch(e => {
-          console.error('[ChatMain.vue] summary watcher error', e)
-        }).finally(() => {
-          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
-          delete this.nonReactive.summaryWatcherReference
         })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
