@@ -139,10 +139,6 @@ small {
   text-overflow: ellipsis;
 }
 
-// formerly in _colors.scss, moved here so that
-// @import "_variables"; in scoped styles in vue components
-// doesn't result in repeated CSS generated
-
 .has-text-0 {
   color: $text_0;
 }
