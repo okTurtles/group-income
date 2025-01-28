@@ -1183,12 +1183,13 @@ export default ({
         // that'd require this entire function to be `async`, which could result
         // in race conditions as this is a watcher.
         this.initializeState(true).then(async () => {
+          // If the chatroom has changed since, return
           if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
           this.ephemeral.messagesInitiated = false
           this.ephemeral.scrolledDistance = 0
           const isSyncing = await sbp('chelonia/contract/isSyncing', toChatRoomId)
           // If the chatroom has changed since, return
-          if (this.summary.chatRoomID !== toChatRoomId) return
+          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
           if (isSyncing) {
             return toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
           } else {
