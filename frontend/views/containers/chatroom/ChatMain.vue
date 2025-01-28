@@ -891,6 +891,9 @@ export default ({
       //       need to set renderingChatRoomId here, before calling initializeState
       this.renderingChatRoomId = this.currentChatRoomId
       await this.initializeState()
+      if (this.renderingChatRoomId !== this.summary.chatroomID) {
+        return
+      }
       this.ephemeral.messagesInitiated = false
       this.ephemeral.unprocessedEvents = []
       if (this.ephemeral.infiniteLoading) {
