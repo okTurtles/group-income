@@ -239,6 +239,9 @@ export default ({
         isPhone: null
       },
       latestEvents: [],
+      // keys here are meant to be used without Vue.set as they're not directly
+      // connected to rendering
+      nonReactive: {},
       ephemeral: {
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
@@ -1175,12 +1178,12 @@ export default ({
         this.ephemeral.onChatScroll?.flush()
         // Object reference to avoid redudant checks
         const summaryWatcherReference = {}
-        this.ephemeral.summaryWatcherReference = summaryWatcherReference
+        this.nonReactive.summaryWatcherReference = summaryWatcherReference
         // We don't use `await`, which would be more straightforward because
         // that'd require this entire function to be `async`, which could result
         // in race conditions as this is a watcher.
         this.initializeState(true).then(async () => {
-          if (summaryWatcherReference !== this.ephemeral.summaryWatcherReference) return
+          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
           this.ephemeral.messagesInitiated = false
           this.ephemeral.scrolledDistance = 0
           const isSyncing = await sbp('chelonia/contract/isSyncing', toChatRoomId)
@@ -1194,8 +1197,8 @@ export default ({
         }).catch(e => {
           console.error('[ChatMain.vue] summary watcher error', e)
         }).finally(() => {
-          if (summaryWatcherReference !== this.ephemeral.summaryWatcherReference) return
-          delete this.ephemeral.summaryWatcherReference
+          if (summaryWatcherReference !== this.nonReactive.summaryWatcherReference) return
+          delete this.nonReactive.summaryWatcherReference
         })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
