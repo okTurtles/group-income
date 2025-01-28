@@ -17,7 +17,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, fork } = require('child_process')
+const { exec, execSync, fork } = require('child_process')
 const execP = util.promisify(exec)
 const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -83,6 +83,9 @@ if (!process.env.DB_PATH) {
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
+
+  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('ascii')
+  Object.assign(process.env, { GI_GIT_VERSION })
 
   // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
   ;(function defineApiEnvars () {
@@ -220,6 +223,7 @@ module.exports = (grunt) => {
         'process.env.CI': `'${CI}'`,
         'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
+        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
