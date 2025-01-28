@@ -52,6 +52,8 @@ export const STATUS_EXPIRING = 'expiring' // Only useful to notify users that th
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_CANCELLED = 'cancelled'
 
+// group-streaks related
+
 export const STREAK_ON_TIME_PAYMENTS = 1
 export const STREAK_MISSED_PAYMENTS = 1
 export const STREAK_MISSED_PROPSAL_VOTE = 2
