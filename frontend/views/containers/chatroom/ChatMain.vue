@@ -772,8 +772,11 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
+      const chatroomID = this.renderingChatRoomId
+      const messageState = await this.generateNewChatRoomState(forceClearMessages)
+      if (!this.checkEventSourceConsistency(chatroomID)) return
       this.latestEvents = []
-      Vue.set(this.messageState, 'contract', await this.generateNewChatRoomState(forceClearMessages))
+      Vue.set(this.messageState, 'contract', messageState)
     },
     /**
      * Load/render events for one or more pages
@@ -1170,11 +1173,14 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.onChatScroll?.flush()
+        // Object reference to avoid redudant checks
+        const summaryWatcherReference = {}
+        this.ephemeral.summaryWatcherReference = summaryWatcherReference
         // We don't use `await`, which would be more straightforward because
         // that'd require this entire function to be `async`, which could result
         // in race conditions as this is a watcher.
         this.initializeState(true).then(async () => {
-          this.checkEventSourceConsistency(toChatRoomId)
+          if (summaryWatcherReference !== this.ephemeral.summaryWatcherReference) return
           this.ephemeral.messagesInitiated = false
           this.ephemeral.scrolledDistance = 0
           const isSyncing = await sbp('chelonia/contract/isSyncing', toChatRoomId)
@@ -1187,6 +1193,9 @@ export default ({
           }
         }).catch(e => {
           console.error('[ChatMain.vue] summary watcher error', e)
+        }).finally(() => {
+          if (summaryWatcherReference !== this.ephemeral.summaryWatcherReference) return
+          delete this.ephemeral.summaryWatcherReference
         })
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
