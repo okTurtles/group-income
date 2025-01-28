@@ -44,6 +44,7 @@ import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -114,6 +115,7 @@ async function startApp () {
       const retry = confirm(L("The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)", { type }))
 
       if (retry) {
+        sbp('gi.ui/clearBanner')
         sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
           console.error('Error during re-sync', contractID, e)
           alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
