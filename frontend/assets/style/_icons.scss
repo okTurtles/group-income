@@ -1,3 +1,5 @@
+@use "sass:map";
+
 // More fonts icon in node_module/fontawesome
 $icons: (
   arrow-up: "\f062",
@@ -148,7 +150,7 @@ $icons: (
 }
 
 @mixin icon($name) {
-  content: map-get($icons, $name);
+  content: map.get($icons, $name);
   text-rendering: auto;
   line-height: 1;
   font-family: "Font Awesome 5 Free";

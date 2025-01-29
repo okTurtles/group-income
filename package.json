@@ -76,7 +76,9 @@
             "content",
             "each",
             "for",
-            "if"
+            "if",
+            "use",
+            "forward"
           ]
         }
       ],

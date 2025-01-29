@@ -1,24 +1,23 @@
 @charset "utf-8";
 
-@import "_reset";
-@import "_misc";
-@import "_variables";
-@import "_typography"; // make sure this comes after _variables
-@import "_utilities";
-@import "_base";
-@import "_layout";
-@import "_transitions";
+@use "reset";
+@use "misc";
+@use "typography";
+@use "utilities";
+@use "base";
+@use "layout";
+@use "transitions";
 
-@import "_icons";
-@import "_svgs";
-@import "components/_cards";
-@import "components/_buttons";
-@import "components/_links";
-@import "components/_loading";
-@import "components/_forms";
-@import "components/_pills";
-@import "components/_tabs";
-@import "components/_selectsolo";
-@import "components/_steps"; // TODO: MOVE IN COMPONENT ONCE CREATED
-@import "components/_tables";
-@import "components/_custom-markdowns";
+@use "icons";
+@use "svgs";
+@use "components/cards";
+@use "components/buttons";
+@use "components/links";
+@use "components/loading";
+@use "components/forms";
+@use "components/pills";
+@use "components/tabs";
+@use "components/selectsolo";
+@use "components/steps"; // TODO: MOVE IN COMPONENT ONCE CREATED
+@use "components/tables";
+@use "components/custom-markdowns";
