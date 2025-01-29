@@ -2,8 +2,7 @@
 
 @use "reset";
 @use "misc";
-@use "variables"; // TODO: remove this maybe?
-@use "typography"; // make sure this comes after _variables
+@use "typography";
 @use "utilities";
 @use "base";
 @use "layout";
