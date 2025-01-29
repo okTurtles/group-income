@@ -1,3 +1,5 @@
+@use "../variables" as *;
+
 @mixin buttonState($color, $color_2) {
   @media (hover: hover) {
     &:hover,

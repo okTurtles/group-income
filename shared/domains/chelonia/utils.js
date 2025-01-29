@@ -566,9 +566,11 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
     throw new Error('Missing contract ID')
   }
 
+  let lastUrl
   const fetchEventsStreamReader = async () => {
     requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
-    const eventsResponse = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`, { signal })
+    lastUrl = `${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`
+    const eventsResponse = await fetch(lastUrl, { signal })
     if (!eventsResponse.ok) throw new Error('Unexpected status code')
     if (!eventsResponse.body) throw new Error('Missing body')
     latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
@@ -747,6 +749,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
           }
         }
       } catch (e) {
+        console.error('[eventsAfter] Error', { lastUrl }, e)
         // $FlowFixMe[incompatible-use]
         eventsStreamReader?.cancel('Error during pull').catch(e2 => {
           console.error('Error canceling underlying event stream reader on error', e, e2)
