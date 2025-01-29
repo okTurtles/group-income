@@ -156,6 +156,12 @@
 /* MISSING TRANSLATION - main.js */
 "Loading events from server..." = "Loading events from server...";
 
+/* MISSING TRANSLATION - main.js */
+"The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)" = "The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)";
+
+/* MISSING TRANSLATION - main.js */
+"There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.";
+
 /* MISSING TRANSLATION - model/contracts/chatroom.js */
 "Only the channel creator can change description." = "Only the channel creator can change description.";
 
@@ -1315,10 +1321,16 @@
 "Use system settings" = "Use system settings";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"For diagnostic info, see application logs." = "For diagnostic info, see application logs.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT." = "If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
 "Ok" = "Ok";
 
-/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue, views/pages/GroupSettings.vue */
-"Feature coming soon" = "Feature coming soon";
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Reset Group Income" = "Reset Group Income";
 
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
 "Coming soon!" = "Coming soon!";
@@ -1361,6 +1373,9 @@
 
 /* MISSING TRANSLATION - views/pages/GroupDashboard.vue */
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.";
+
+/* MISSING TRANSLATION - views/pages/GroupSettings.vue */
+"Feature coming soon" = "Feature coming soon";
 
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "Group description cannot exceed {maxchar} characters" = "Group description cannot exceed {maxchar} characters";
@@ -3061,46 +3076,10 @@
 "You have granted browser notification!" = "Vous avez autorisé la notification du navigateur!";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d’autres membres du groupe}. L’actualisation téléchargera la plus récente version des informations relatives au groupe.";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir actualiser les données de l’application ? Cela peut durer quelques minutes.";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Corrupted" = "Corrompu";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Deleting local data..." = "Effacement des données locales...";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Downloading new data..." = "Téléchargement des nouvelles données...";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Last touches..." = "Dernières touches...";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Please use the re-sync option below to restore functionality." = "Afin de restaurer les fonctionnalités, utilisez l’option suivante.";
-
-/* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync and rebuild data" = "Actualiser et reconstruire les données";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync failed. {reportError}" = "La connexion a échoué. {reportError}";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Re-sync" = "Actualiser";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"See application logs" = "Voir l’historique des transactions";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Status" = "Statut";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Total space used" = "Espace total utilisé";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Your local contract version is synced! All the app functionality was restored!" = "La version locale de votre contrat a été synchronisée ! Toutes les fonctionnalités de l’application ont été restaurées !";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Bio" = "Biographie";
@@ -3331,6 +3310,9 @@
 "All group members will be added to this channel." = "Tous les membres du groupe seront invités.";
 
 /* Not currently used */
+"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d’autres membres du groupe}. L’actualisation téléchargera la plus récente version des informations relatives au groupe.";
+
+/* Not currently used */
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* Not currently used */
@@ -3344,6 +3326,9 @@
 
 /* Not currently used */
 "Are you sure you want to leave {groupName}?" = "Êtes-vous sûr(e) de vouloir quitter {groupName}?";
+
+/* Not currently used */
+"Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir actualiser les données de l’application ? Cela peut durer quelques minutes.";
 
 /* Not currently used */
 "Cannot connect to the server." = "Échec de la reconnexion au serveur.";
@@ -3373,6 +3358,9 @@
 "Copy message Link" = "Copier le lien du message";
 
 /* Not currently used */
+"Corrupted" = "Corrompu";
+
+/* Not currently used */
 "Define the number of people required to block a proposal." = "Définir le nombre de personnes requis pour bloquer une proposition.";
 
 /* Not currently used */
@@ -3385,6 +3373,9 @@
 "Deleted the channel: {title}" = "Le salon {title} a été supprimé";
 
 /* Not currently used */
+"Deleting local data..." = "Effacement des données locales...";
+
+/* Not currently used */
 "Direct messages" = "Conversations privées";
 
 /* Not currently used */
@@ -3395,6 +3386,9 @@
 
 /* Not currently used */
 "Do not forget to send your pledge by {date}." = "N’oubliez pas d’envoyer votre contribution avant le {date}.";
+
+/* Not currently used */
+"Downloading new data..." = "Téléchargement des nouvelles données...";
 
 /* Not currently used */
 "Due in" = "Échéance dans";
@@ -3502,6 +3496,9 @@
 "Join channel" = "Rejoignez la chaîne";
 
 /* Not currently used */
+"Last touches..." = "Dernières touches...";
+
+/* Not currently used */
 "Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
@@ -3604,6 +3601,9 @@
 "Please enter a valid email." = "Veuillez entrer une adresse email valide.";
 
 /* Not currently used */
+"Please use the re-sync option below to restore functionality." = "Afin de restaurer les fonctionnalités, utilisez l’option suivante.";
+
+/* Not currently used */
 "Privacy & Safety" = "Vie privée & Sécurité";
 
 /* Not currently used */
@@ -3629,6 +3629,9 @@
 
 /* Not currently used */
 "Propose changing to this voting system" = "Proposer d’adopter ce système de vote";
+
+/* Not currently used */
+"Re-sync" = "Actualiser";
 
 /* Not currently used */
 "Record a single payment" = "Enregistrer un seul paiement";
@@ -3658,6 +3661,9 @@
 "Search for a person" = "Rechercher une personne";
 
 /* Not currently used */
+"See application logs" = "Voir l’historique des transactions";
+
+/* Not currently used */
 "Send to" = "Envoyer à";
 
 /* Not currently used */
@@ -3665,6 +3671,9 @@
 
 /* Not currently used */
 "Show payment menu" = "Afficher le menu de paiement";
+
+/* Not currently used */
+"Status" = "Statut";
 
 /* Not currently used */
 "Support History" = "Historique du Support";
@@ -3739,6 +3748,9 @@
 "To:" = "À :";
 
 /* Not currently used */
+"Total space used" = "Espace total utilisé";
+
+/* Not currently used */
 "Updated the channel description to: {title}" = "La description du salon a été mise à jour : {title}";
 
 /* Not currently used */
@@ -3770,6 +3782,9 @@
 
 /* Not currently used */
 "Your group is still in its first month." = "Votre groupe a moins d’un mois.";
+
+/* Not currently used */
+"Your local contract version is synced! All the app functionality was restored!" = "La version locale de votre contrat a été synchronisée ! Toutes les fonctionnalités de l’application ont été restaurées !";
 
 /* Not currently used */
 "Your password must be at least 7 characteres long." = "Votre mot de passe doit comporter au moins sept caractères.";
