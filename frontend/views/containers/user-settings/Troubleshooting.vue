@@ -3,9 +3,8 @@
     section.card
       i18n.is-title-3(tag='h3') Re-sync and rebuild data
       p.c-desc.has-text-1
-        i18n All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.
-        | &nbsp;
-        i18n.link(tag='button' @click='openAppLogs') See application logs
+        i18n If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT.
+        i18n.link(tag='button' @click='openAppLogs') For diagnostic info, see application logs.
 
       banner-scoped(ref='doneMsg' data-test='doneMsg')
 
@@ -75,7 +74,12 @@ export default ({
       })
     },
     async startResync () {
-      if (this.ephemeral.status === 'ok' && !confirm(L('Are you sure you want to re-sync your app data? This might take a few minutes.'))) {
+      const confirmString = L(`This will reset Group Income and log you out.
+
+You will need to log back in with your password and wait for a bit while the app's state is being rebuilt from scratch.
+
+Are you sure?`)
+      if (this.ephemeral.status === 'ok' && !confirm(confirmString)) {
         return null
       }
 
