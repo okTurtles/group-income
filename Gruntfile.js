@@ -84,7 +84,7 @@ if (!process.env.DB_PATH) {
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
-  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('ascii')
+  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('utf8').trim()
   Object.assign(process.env, { GI_GIT_VERSION })
 
   // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
