@@ -68,6 +68,10 @@ export const serializer = (data: any): any => {
     if (value instanceof Error) {
       const pos = verbatim.length
       verbatim[verbatim.length] = value
+      // We need to also serialize `Error.cause` recursively
+      if (value.cause) {
+        value.cause = serializer(value.cause).data
+      }
       return rawResult(['_', '_err', rawResult(['_', '_ref', pos]), value.name])
     }
     // Same for other types supported by structuredClone but not JSON
@@ -176,6 +180,9 @@ export const deserializer = (data: any): any => {
         case '_err': {
           if (value[2].name !== value[3]) {
             value[2].name = value[3]
+          }
+          if (value[2].cause) {
+            value[2].cause = deserializer(value[2].cause)
           }
           return value[2]
         }
