@@ -14,14 +14,40 @@ const languageFileMap = new Map([
 ])
 
 sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
+  if (versionInfo.GI_VERSION === process.env.GI_VERSION) {
+    // No refresh necessary, we're already at the latest version
+    sessionStorage.removeItem(NOTIFICATION_TYPE.VERSION_INFO)
+    return
+  }
+
   console.info('New Group Income version available:', versionInfo)
-  // Prevent the client from trying to reconnect when the page starts unloading.
-  sbp('okTurtles.data/get', PUBSUB_INSTANCE).destroy()
   // TODO: allow the user to manually reload the page later.
+  try {
+    // Store the current VERSION_INFO in session storage to prevent infinite
+    // reload loops
+    const existingSerialized = sessionStorage.getItem(NOTIFICATION_TYPE.VERSION_INFO)
+    if (existingSerialized) {
+      const existingVersionInfo = JSON.parse(existingSerialized)
+      if (
+        Array.isArray(existingVersionInfo) &&
+        !(Date.now() - existingVersionInfo[0] >= 1e7) &&
+        versionInfo.GI_VERSION === existingVersionInfo[1].GI_VERSION
+      ) {
+        console.warn('[NOTIFICATION_TYPE.VERSION_INFO] A different Group Income version is available, but reloading has failed to address it', { existingVersionInfo, versionInfo })
+        return
+      }
+    }
+
+    sessionStorage.setItem(NOTIFICATION_TYPE.VERSION_INFO, JSON.stringify([Date.now(), versionInfo]))
+  } catch (e) {
+    console.error('[NOTIFICATION_TYPE.VERSION_INFO] Error in handler', e)
+  }
+  // Prevent the client from trying to reconnect when the page starts unloading.
+  sbp('okTurtles.data/get', PUBSUB_INSTANCE)?.destroy()
   window.location.reload()
 })
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   /**
    * Fetches a JSON object containing translation strings for a given language.
    *
@@ -39,4 +65,4 @@ sbp('sbp/selectors/register', {
         .then(handleFetchResult('json'))
     }
   }
-})
+}): string[])
