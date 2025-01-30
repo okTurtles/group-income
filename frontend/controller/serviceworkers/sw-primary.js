@@ -32,6 +32,12 @@ import {
 import './push.js'
 import './sw-namespace.js'
 
+console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
+console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
+console.info('NODE_ENV:', process.env.NODE_ENV)
+
 deserializer.register(GIMessage)
 deserializer.register(Secret)
 

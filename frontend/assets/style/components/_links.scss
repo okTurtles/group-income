@@ -1,3 +1,5 @@
+@use "../variables" as *;
+
 .link {
   display: inline; // so border breaks correctly on multiple lines.
   color: $primary_0;
