@@ -110,10 +110,15 @@ async function startApp () {
     if (error?.name === 'ChelErrorForkedChain') {
       const rootState = sbp('state/vuex/state')
       if (!rootState.contracts[contractID]) {
+        // If `rootState.contracts[contractID]` doesn't exist, it means we're no
+        // longer subscribed to the contract. This could happen, e.g., if the
+        // contract has since been released. In any case, the absence of
+        // `rootState.contracts[contractID]` means that there's nothing to
+        // left to recover.
         console.error('Forked chain detected. However, there is no contract entry.', { contractID }, error)
         return
       }
-      const type = rootState.contracts[contractID] || '(unknown)'
+      const type = rootState.contracts[contractID].type || '(unknown)'
       console.error('Forked chain detected', { contractID, type }, error)
 
       const retry = confirm(L("The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)", { type }))
