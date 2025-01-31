@@ -114,6 +114,9 @@
 /* MISSING TRANSLATION - controller/app/identity.js */
 "Login error" = "Login error";
 
+/* MISSING TRANSLATION - controller/app/identity.js */
+"The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}." = "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.";
+
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
