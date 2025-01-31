@@ -3,6 +3,7 @@
 import type { JSONObject } from '~/shared/types.js'
 
 import sbp from '@sbp/sbp'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
@@ -30,7 +31,7 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
       const existingVersionInfo = JSON.parse(existingSerialized)
       if (
         Array.isArray(existingVersionInfo) &&
-        !(Date.now() - existingVersionInfo[0] >= 1e7) &&
+        !(Date.now() - existingVersionInfo[0] >= 2.5 * HOURS_MILLIS) &&
         versionInfo.GI_VERSION === existingVersionInfo[1].GI_VERSION
       ) {
         console.warn('[NOTIFICATION_TYPE.VERSION_INFO] A different Group Income version is available, but reloading has failed to address it', { existingVersionInfo, versionInfo })

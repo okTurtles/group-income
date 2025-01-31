@@ -369,6 +369,9 @@ self.addEventListener('message', function (event) {
 
         // If the window is outdated (different GI_VERSION), trigger an event
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
+        // This handles new SW clients that have an outdated
+        // `process.env.GI_VERSION` (for example, by having loaded a cached
+        // version of `main.js`).
         if (
           currentVersionInfo &&
           event.source &&
