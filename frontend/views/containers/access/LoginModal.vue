@@ -46,7 +46,7 @@ export default ({
           this.onPostSubmit()
           break
         }
-        default: // 'error'
+        default: // 'error' status
           this.ephemeral.isLoggingIn = false
       }
     },
