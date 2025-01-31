@@ -425,16 +425,21 @@ export default (sbp('sbp/selectors/register', {
           const errMessage = e?.message || String(e)
           console.error('[gi.app/identity] Error during login contract sync', e)
 
+          const wipeOut = (e && (e.name === 'ChelErrorForkedChain' || e.cause?.name === 'ChelErrorForkedChain'))
+
           const promptOptions = {
             heading: L('Login error'),
-            question: L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
+            question: wipeOut
+              ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
+              : L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
             primaryButton: L('No'),
             secondaryButton: L('Yes')
           }
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (!result) {
-            return sbp('gi.app/identity/_private/logout', state)
+            sbp('gi.ui/clearBanner')
+            return sbp('gi.app/identity/_private/logout', state, wipeOut)
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e

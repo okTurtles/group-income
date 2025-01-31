@@ -109,6 +109,15 @@ async function startApp () {
     sbp('gi.ui/seriousErrorBanner', error)
     if (error?.name === 'ChelErrorForkedChain') {
       const rootState = sbp('state/vuex/state')
+      if (!rootState.contracts[contractID]) {
+        // If `rootState.contracts[contractID]` doesn't exist, it means we're no
+        // longer subscribed to the contract. This could happen, e.g., if the
+        // contract has since been released. In any case, the absence of
+        // `rootState.contracts[contractID]` means that there's nothing to
+        // left to recover.
+        console.error('Forked chain detected. However, there is no contract entry.', { contractID }, error)
+        return
+      }
       const type = rootState.contracts[contractID].type || '(unknown)'
       console.error('Forked chain detected', { contractID, type }, error)
 
@@ -116,10 +125,15 @@ async function startApp () {
 
       if (retry) {
         sbp('gi.ui/clearBanner')
-        sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
-          console.error('Error during re-sync', contractID, e)
-          alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
-        })
+        // If it's our identity contract, we need to log in again to be able
+        // to propery decrypt all data, since that requires the user password
+        ;((rootState.loggedIn?.identityContractID === contractID)
+          ? sbp('gi.actions/identity/logout', null, true)
+          : sbp('chelonia/contract/sync', contractID, { resync: true }))
+          .catch((e) => {
+            console.error('Error during re-sync', contractID, e)
+            alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
+          })
       }
     }
     if (process.env.CI) {
