@@ -478,7 +478,7 @@ route.GET('/file/{hash}', {
     return Boom.notFound()
   }
   // TODO: conflict with PR 2494
-  return h.response(blobOrString).etag(hash).header('content-type', 'text/plain')
+  return h.response(blobOrString).etag(hash).header('content-type', 'application/octet-stream')
 })
 
 route.POST('/deleteFile/{hash}', {
