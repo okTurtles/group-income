@@ -1,4 +1,4 @@
-@import "_variables";
+@use "variables" as *;
 
 @mixin reduce-motion {
   *:not(.force-motion),

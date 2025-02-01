@@ -874,7 +874,11 @@ Cypress.Commands.add('giSendMessage', (sender, message) => {
   // The following is to ensure the chatroom has finished loading (no spinner)
   cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
+    // NOTE: Cypress bug: for some reason this {enter} thing is causing the tests to fail
+    //       Instead we manually click the send button.
+    // cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
+    cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    cy.getByDT('sendMessageButton').click()
     cy.get('textarea').should('be.empty')
   })
   cy.getByDT('conversationWrapper').within(() => {

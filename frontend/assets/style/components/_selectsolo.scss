@@ -1,10 +1,13 @@
+@use "../variables" as *;
+@use "../icons" as i;
+
 .selectsolo {
   position: relative;
   border: none;
   width: max-content;
 
   &::after {
-    @include icon(angle-down);
+    @include i.icon(angle-down);
     position: absolute;
     top: 50%;
     right: 1rem;

@@ -253,6 +253,26 @@ sbp('sbp/selectors/register', {
         sbp('gi.actions/group/fixAnyoneCanJoinLink', { contractID }).catch(e => console.error(`[state/vuex/postUpgradeVerification] Error during gi.actions/group/fixAnyoneCanJoinLink for ${contractID}:`, e))
       })
     }, 'gi.contracts/group')
+
+    // Fix missing `namespaceLookups`. See issue
+    // Promise.resolve to coerce into a promise, making `then` safe
+    Promise.resolve(sbp('chelonia/rootState')).then((state) => {
+      if (state.namespaceLookups) return
+
+      const identityContractIDs = Object.entries(state.contracts)
+        // $FlowFixMe[incompatible-use]
+        .filter(([, { type }]) => type === 'gi.contracts/identity')
+        .map(([id]) => id)
+      console.info('Fixing missing lookup entries', identityContractIDs)
+
+      return Promise.all(identityContractIDs.map((id) => {
+        const username = state[id].attributes?.username
+        if (!username) return undefined
+        return sbp('namespace/lookup', username, { skipCache: true })
+      })).catch(e => {
+        console.error('[state/vuex/postUpgradeVerification] Error during lookup', e)
+      })
+    })
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
