@@ -167,10 +167,6 @@ sbp('sbp/selectors/register', {
       throw new Error('No suitable signing key found')
     }
 
-    // TODO: GI-specific
-    const CEKid = findKeyIdByName(state, 'cek')
-    if (!CEKid) return
-
     // Share new keys with other contracts
     const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
 
@@ -191,8 +187,9 @@ sbp('sbp/selectors/register', {
         contractID,
         contractName,
         data: [
-          ...keyShares.map((data) => ['chelonia/out/keyShare', { data: encryptedOutgoingData(contractID, CEKid, data) }]),
-          ['chelonia/out/keyUpdate', { data: updatedKeys }]
+          ...(keyShares[0] ?? []),
+          ['chelonia/out/keyUpdate', { data: updatedKeys }],
+          ...(keyShares[1] ?? [])
         ],
         signingKeyId,
         hooks: {

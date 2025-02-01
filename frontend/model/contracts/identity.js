@@ -124,6 +124,11 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data }, { state }) {
+        if (!state.attributes) {
+          // If it's not our own identity contract, attributes may not be
+          // defined
+          state.attributes = Object.create(null)
+        }
         for (const key in data) {
           state.attributes[key] = data[key]
         }
@@ -142,6 +147,11 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data }, { state }) {
+        if (!state.attributes) {
+          // If it's not our own identity contract, attributes may not be
+          // defined
+          return
+        }
         for (const attribute of data) {
           delete state.attributes[attribute]
         }
@@ -180,6 +190,10 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         // NOTE: this method is always created by another
         const { contractID } = data
+        if (!state.chatRooms) {
+          // When creating a DM, we may not have the `.chatRooms` property
+          state.chatRooms = Object.create(null)
+        }
         if (state.chatRooms[contractID]) {
           throw new TypeError(L('Already joined direct message.'))
         }
@@ -388,14 +402,8 @@ sbp('chelonia/defineContract', {
   },
   methods: {
     'gi.contracts/identity/revokeGroupKeyAndRotateOurPEK': (identityContractID, state, groupContractID) => {
-      if (!state._volatile) state['_volatile'] = Object.create(null)
-      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
       const CSKid = findKeyIdByName(state, 'csk')
       const CEKid = findKeyIdByName(state, 'cek')
-      const PEKid = findKeyIdByName(state, 'pek')
-
-      state._volatile.pendingKeyRevocations[PEKid] = true
 
       const groupCSKids = findForeignKeysByContractID(state, groupContractID)
 
@@ -415,11 +423,11 @@ sbp('chelonia/defineContract', {
           })
       }
 
-      sbp('chelonia/queueInvocation', identityContractID, ['chelonia/contract/disconnect', identityContractID, groupContractID]).catch(e => {
-        console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
-      })
-
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      sbp('chelonia/queueInvocation', identityContractID, async () => {
+        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'])
+        await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
+        await sbp('chelonia/contract/disconnect', identityContractID, groupContractID)
+      }).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },

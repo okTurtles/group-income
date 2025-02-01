@@ -215,32 +215,38 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userID, { ephemeral: true })
     }
   },
-  'gi.actions/chatroom/shareNewKeys': (contractID: string, newKeys) => {
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys) => {
     const state = sbp('chelonia/contract/state', contractID)
+    const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
     // $FlowFixMe
-    return Promise.all(Object.keys(state.members).map(async (pContractID) => {
+    return [Promise.all(Object.keys(state.members).map(async (pContractID) => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
       if (!CEKid) {
         console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
         return
       }
-      return {
-        contractID,
-        foreignContractID: pContractID,
-        // $FlowFixMe
-        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-          id: newId,
-          meta: {
-            private: {
-              content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
-            }
-          }
-        }))
-      }
-    }))
+      return [
+        'chelonia/out/keyShare',
+        {
+          data: encryptedOutgoingData(contractID, mainCEKid, {
+            contractID,
+            foreignContractID: pContractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
+          })
+        }
+      ]
+    }))]
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),

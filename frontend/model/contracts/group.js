@@ -194,17 +194,11 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
   // (to actually perform the rotation) and Chelonia (to unset the flag if
   // they are rotated by somebody else)
-  // TODO: Improve this API. Developers should not modify state that is managed
-  // by Chelonia.
-  // Example: sbp('chelonia/contract/markKeyForRevocation', contractID, 'csk')
-  if (!state._volatile) state['_volatile'] = Object.create(null)
-  if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
-  const CSKid = findKeyIdByName(state, 'csk')
-  const CEKid = findKeyIdByName(state, 'cek')
-
-  state._volatile.pendingKeyRevocations[CSKid] = true
-  state._volatile.pendingKeyRevocations[CEKid] = true
+  sbp('chelonia/queueInvocation', contractID, () => {
+    return sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
+  }).catch(e => {
+    console.warn('[memberLeaves] Error marking key for revocation', e)
+  })
 }
 
 function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object): boolean {
@@ -1765,16 +1759,11 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
-      const state = rootState[identityContractID]
 
-      if (!state._volatile) state['_volatile'] = Object.create(null)
-      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
-      const PEKid = findKeyIdByName(state, 'pek')
-
-      state._volatile.pendingKeyRevocations[PEKid] = true
-
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      sbp('chelonia/queueInvocation', identityContractID, async () => {
+        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'])
+        await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
+      }).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },

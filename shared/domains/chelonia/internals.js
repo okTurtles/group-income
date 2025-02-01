@@ -786,6 +786,7 @@ export default (sbp('sbp/selectors/register', {
           const cheloniaState = sbp(self.config.stateSelector)
 
           const targetState = cheloniaState[v.contractID]
+          const missingDecryptionKeyIds = cheloniaState.contracts[v.contractID]?.missingDecryptionKeyIds
 
           let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
           for (const key of v.keys) {
@@ -801,7 +802,9 @@ export default (sbp('sbp/selectors/register', {
                     key: deserializeKey(decrypted),
                     transient
                   }]))
-                  if (
+                  if (missingDecryptionKeyIds?.includes(key.id)) {
+                    newestEncryptionKeyHeight = Number.NEGATIVE_INFINITY
+                  } else if (
                     targetState?._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
                       targetState._vm.authorizedKeys[key.id].purpose.includes('enc')
@@ -1842,6 +1845,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const internalSideEffectStack = !this.config.skipSideEffects ? [] : undefined
+      let missingDecryptionKeyId: string | undefined
 
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
@@ -1853,6 +1857,7 @@ export default (sbp('sbp/selectors/register', {
       } catch (e) {
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+          missingDecryptionKeyId = e.cause
         } else {
           console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
         }
@@ -1903,7 +1908,7 @@ export default (sbp('sbp/selectors/register', {
       //   3. Applying changes to rootState.contracts
       try {
         const state = sbp(this.config.stateSelector)
-        await handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
+        await handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, missingDecryptionKeyId, processingErrored, postHandleEvent })
       } catch (e) {
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
@@ -2056,7 +2061,7 @@ const handleEvent = {
       }
     })
   },
-  async applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
+  async applyProcessResult ({ message, state, contractState, missingDecryptionKeyId, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, missingDecryptionKeyId?: string, processingErrored: boolean, postHandleEvent: ?Function }) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
@@ -2091,6 +2096,15 @@ const handleEvent = {
     }
     this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
     this.config.reactiveSet(state.contracts[contractID], 'height', height)
+    if (missingDecryptionKeyId) {
+      const missingDecryptionKeyIds = state.contracts[contractID].missingDecryptionKeyIds
+      if (!missingDecryptionKeyIds) {
+        this.config.reactiveSet(state.contracts[contractID], 'missingDecryptionKeyIds', [missingDecryptionKeyId])
+      } else if (!missingDecryptionKeyIds.includes(missingDecryptionKeyId)) {
+        missingDecryptionKeyIds.push(missingDecryptionKeyId)
+      }
+      this.config.reactiveSet(state.contracts[contractID], 'height', height)
+    }
 
     if (!this.subscriptionSet.has(contractID)) {
       const entry = this.pending.find((entry) => entry?.contractID === contractID)
