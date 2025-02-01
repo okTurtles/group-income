@@ -51,6 +51,44 @@ sbp('sbp/selectors/register', {
       await swRegistration.update()
       setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
 
+      navigator.serviceWorker.addEventListener('message', event => {
+        const data = event.data
+        const silentEmit = sbp('sbp/selectors/fn', 'okTurtles.events/emit')
+
+        if (typeof data === 'object' && data.type) {
+          switch (data.type) {
+            case 'pong':
+              break
+            case 'event': {
+              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              break
+            }
+            case 'navigate': {
+              if (data.groupID) {
+                sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: data.groupID })
+              }
+              sbp('controller/router').push({ path: data.path }).catch(console.warn)
+              break
+            }
+            // `sbp` invocations from the SW to the app. Used by the
+            // `notificationclick` handler for notifications that have an
+            // `sbpInvocation` instead of a `linkTo` property.
+            case 'sbp': {
+              sbp(...deserializer(event.data.data))
+              break
+            }
+            case CAPTURED_LOGS: {
+              // Emit silently to avoid flooding logs with event emitted entries
+              silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
+              break
+            }
+            default:
+              console.error('[sw] Received unknown message type from the service worker:', data)
+              break
+          }
+        }
+      })
+
       // Send a 'ready' message to the SW and wait back for a response
       // This way we ensure that Chelonia has been set up
       await new Promise((resolve, reject) => {
@@ -71,7 +109,8 @@ sbp('sbp/selectors/register', {
         navigator.serviceWorker.ready.then((worker) => {
           worker.active.postMessage({
             type: 'ready',
-            port: messageChannel.port2
+            port: messageChannel.port2,
+            GI_VERSION: process.env.GI_VERSION
           }, [messageChannel.port2])
         }).catch((e) => {
           reject(e)
@@ -110,44 +149,6 @@ sbp('sbp/selectors/register', {
       // there are open tabs, which makes it faster and smoother to interact
       // with contracts than if the service worker had to be restarted.
       setInterval(() => navigator.serviceWorker.controller?.postMessage({ type: 'ping' }), 5000)
-
-      navigator.serviceWorker.addEventListener('message', event => {
-        const data = event.data
-        const silentEmit = sbp('sbp/selectors/fn', 'okTurtles.events/emit')
-
-        if (typeof data === 'object' && data.type) {
-          switch (data.type) {
-            case 'pong':
-              break
-            case 'event': {
-              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
-              break
-            }
-            case 'navigate': {
-              if (data.groupID) {
-                sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: data.groupID })
-              }
-              sbp('controller/router').push({ path: data.path }).catch(console.warn)
-              break
-            }
-            // `sbp` invocations from the SW to the app. Used by the
-            // `notificationclick` handler for notifications that have an
-            // `sbpInvocation` instead of a `linkTo` property.
-            case 'sbp': {
-              sbp(...deserializer(event.data.data))
-              break
-            }
-            case CAPTURED_LOGS: {
-              // Emit silently to avoid flooding logs with event emitted entries
-              silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
-              break
-            }
-            default:
-              console.error('[sw] Received unknown message type from the service worker:', data)
-              break
-          }
-        }
-      })
     } catch (e) {
       console.error('error setting up service worker:', e)
       throw e

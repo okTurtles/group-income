@@ -12,7 +12,7 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed } from './errors.js'
+import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -1291,7 +1291,7 @@ export default (sbp('sbp/selectors/register', {
           const { done, value: event } = await eventReader.read()
           if (done) {
             if (!latestHashFound) {
-              throw new ChelErrorUnrecoverable(`expected hash ${latestHEAD} in list of events for contract ${contractID}`)
+              throw new ChelErrorForkedChain(`expected hash ${latestHEAD} in list of events for contract ${contractID}`)
             }
             break
           }
@@ -1869,7 +1869,13 @@ export default (sbp('sbp/selectors/register', {
         processingErrored = e?.name !== 'ChelErrorWarning'
         this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
         // special error that prevents the head from being updated, effectively killing the contract
-        if (e.name === 'ChelErrorUnrecoverable' || message.isFirstMessage()) throw e
+        if (
+          e.name === 'ChelErrorUnrecoverable' ||
+          e.name === 'ChelErrorForkedChain' ||
+          message.isFirstMessage()
+        ) {
+          throw e
+        }
       }
 
       // process any side-effects (these must never result in any mutation to the contract state!)

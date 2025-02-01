@@ -1,7 +1,7 @@
 {
   "name": "group-income",
-  "version": "1.1.0",
-  "contractsVersion": "1.1.0",
+  "version": "1.2.3",
+  "contractsVersion": "1.2.0",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
@@ -76,7 +76,9 @@
             "content",
             "each",
             "for",
-            "if"
+            "if",
+            "use",
+            "forward"
           ]
         }
       ],
@@ -97,6 +99,7 @@
   "author": "okTurtles Foundation",
   "license": "AGPL-3.0",
   "dependencies": {
+    "@apeleghq/rfc8188": "1.0.7",
     "@babel/core": "7.23.7",
     "@babel/eslint-parser": "7.16.0",
     "@babel/plugin-syntax-dynamic-import": "7.8.3",
@@ -109,7 +112,6 @@
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.0.0",
     "@exact-realty/multipart-parser": "1.0.12",
-    "@apeleghq/rfc8188": "1.0.7",
     "@hapi/boom": "9.1.0",
     "@hapi/hapi": "20.1.2",
     "@hapi/inert": "6.0.3",
@@ -163,8 +165,8 @@
     "cypress": "13.14.2",
     "cypress-file-upload": "5.0.8",
     "cypress-pipe": "2.0.0",
-    "esbuild": "0.14.47",
-    "esbuild-sass-plugin": "2.2.6",
+    "esbuild": "0.24.2",
+    "esbuild-sass-plugin": "3.3.1",
     "eslint": "7.32.0",
     "eslint-config-standard": "16.0.2",
     "eslint-plugin-cypress": "2.11.3",
@@ -178,7 +180,7 @@
     "flow-remove-types": "2.181.0",
     "mocha": "8.4.0",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
-    "sass": "1.37.5",
+    "sass": "1.71.1",
     "should": "13.2.3",
     "should-sinon": "0.0.6",
     "sinon": "9.2.1",

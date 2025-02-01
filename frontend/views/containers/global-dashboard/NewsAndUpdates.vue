@@ -23,6 +23,43 @@ import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/Render
 
 const dummyPosts = [
   {
+    createdAt: new Date('2025-01-23T00:00:01'),
+    title: 'Version 1.2.0 + The coming server wipe!',
+    content:
+      '**New Features in 1.2.0:**\n\n' +
+      '- Push notifications! This version includes full support for end-to-end encrypted web push notifications. ' +
+      'Works best on mobile as a [PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing). ' +
+      'Please see [our blog](https://groupincome.org/blog/) for this release for more details and caveats about push notifications, especially on iOS.\n' +
+      '- Push notifications are now used for important in-group events and reminders.\n' +
+      '- You can now change your password!\n' +
+      '- Image compression: uploaded images will take up a maximum of ~400KB each to speed up loading times and save server space.\n' +
+      '- Image viewer now supports left/right arrow keys to switch between multiple image attachments.\n' +
+      '- Chat file attachments now show their size.\n' +
+      '- You can now use the paste feature to add an image attachment.\n' +
+      '- Mobile: `<enter>` key creates newline instead of sending message\n' +
+      '- Chelonia now runs in a service worker to support push notifications and better state management with multiple open tabs.\n\n' +
+      '**Bugfixes**\n\n' +
+      '- Prevent accidental creation of multiple DMs.\n' +
+      '- Fixed rendering of payment table rows.\n' +
+      '- Fixes for forced-color mode.\n' +
+      '- Fixed remaining issues related to showing not-logged-in users under group inactivity.\n' +
+      '- "See proposal" link should always lead to proposal.\n' +
+      '- Fixed chat auto-scroll issue.\n' +
+      '- Fixed various markdown rendering bugs in chat.\n' +
+      '- Miscellaneous bug fixes.\n\n' +
+      '**Improvements**\n\n' +
+      '- Added download/delete buttons to the image viewer.\n' +
+      '- Emojis rendered slightly larger in chat now.\n' +
+      '- Increased the maximum length of payment details to support long Lightning payment addresses.\n' +
+      '- Various UI/UX improvements. See the 1.2.0 release [here](https://github.com/okTurtles/group-income/releases) for a complete list.\n\n' +
+      'Congratulations to [@Vayras](https://github.com/Vayras) on making their first contribution to the project!\n\n' +
+      '**Server Wipe Coming in Version 2.0!**\n\n' +
+      'Version 2.0 is coming soon, and with it some major backwards-incompatible changes to the internals of Group Income. ' +
+      'We will be forced to wipe all data on the groupincome.app site. Therefore, **please backup** any ' +
+      'important data before the release to your computer. We will host a temporary backup site where users will be able ' +
+      'to access their data for a period of time after the new version launches.'
+  },
+  {
     createdAt: new Date('2024-10-29T00:00:01'),
     title: '1.1.0 Released!',
     content: '**New Features**\n\n' +
@@ -30,7 +67,7 @@ const dummyPosts = [
       '- "Notes to self": can create DM\'s to yourself now\n' +
       '- Notifications for non-monetary contributions updates\n' +
       '- Anyone-can-join invite links are now updated to support maximum 150 invitations\n\n' +
-      '  NOTE: old anyone-can-join invite links are expired, please use the new one!\n' +
+      'NOTE: old anyone-can-join invite links are expired, please use the new one!\n\n' +
       '**Bugfixes**\n\n' +
       '- The emoji selector\'s search field is now selected when you open it\n' +
       '- Fix for usernames in app notifications when user is removed\n' +
@@ -104,7 +141,7 @@ export default ({
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: 1.5rem;
 
   .c-post-img-container {
     display: inline-flex;
@@ -121,7 +158,7 @@ export default ({
     flex-grow: 1;
 
     h3 {
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.5rem;
     }
   }
 }

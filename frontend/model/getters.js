@@ -8,7 +8,7 @@ import groupGetters from './contracts/shared/getters/group.js'
 import identityGetters from './contracts/shared/getters/identity.js'
 
 const checkedUsername = (state: Object, username: string, userID: string) => {
-  if (username && state.namespaceLookups[username] === userID) {
+  if (username && state.namespaceLookups?.[username] === userID) {
     return username
   }
 }
