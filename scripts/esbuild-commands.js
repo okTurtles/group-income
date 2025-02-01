@@ -9,6 +9,7 @@ const esbuild = require('esbuild')
  * @returns {Object}
  */
 const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
+  let context = null
   const { postoperation } = otherOptions
 
   if (!esbuildOptions.plugins) esbuildOptions.plugins = []
@@ -27,18 +28,18 @@ const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
     async run ({ fileEventName, filePath } = {}) {
       const { state } = this
 
-      if (!state.result || !esbuildOptions.incremental) {
+      if (!state.result) {
         if (fileEventName || filePath) {
           throw new Error('No argument should be provided when first running this task.')
         }
-        state.result = await esbuild.build(esbuildOptions)
+        context = await esbuild.context(esbuildOptions)
+        state.result = await context.rebuild()
       } else {
         if (!fileEventName || !filePath) {
           throw new Error('Arguments `fileEventName` and `filePath` must be provided when rerunning this task.')
         }
-        // Below line used to be just 'await state.result.rebuild()' but changed like this as a bug-fix for Gruntfile.dashboard.js
-        // where execution of rebuild() in response to changes in '.js' files doesn't lead to browser UI updates.
-        state.result = await state.result.rebuild()
+        await context.cancel()
+        state.result = await context.rebuild()
       }
       if (postoperation) {
         await postoperation({ fileEventName, filePath })

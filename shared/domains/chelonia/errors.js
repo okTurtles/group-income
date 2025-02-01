@@ -14,7 +14,7 @@ export const ChelErrorGenerator = (
       // $FlowFixMe[prop-missing]
       if (params[1]?.cause !== this.cause) {
         // $FlowFixMe[prop-missing]
-        Object.defineProperty(this, 'cause', { value: params[1].cause })
+        Object.defineProperty(this, 'cause', { configurable: true, writable: true, value: params[1].cause })
       }
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, this.constructor)
@@ -28,6 +28,7 @@ export const ChelErrorDBBadPreviousHEAD: typeof Error = ChelErrorGenerator('Chel
 export const ChelErrorDBConnection: typeof Error = ChelErrorGenerator('ChelErrorDBConnection')
 export const ChelErrorUnexpected: typeof Error = ChelErrorGenerator('ChelErrorUnexpected')
 export const ChelErrorUnrecoverable: typeof Error = ChelErrorGenerator('ChelErrorUnrecoverable')
+export const ChelErrorForkedChain: typeof Error = ChelErrorGenerator('ChelErrorForkedChain')
 export const ChelErrorDecryptionError: typeof Error = ChelErrorGenerator('ChelErrorDecryptionError')
 export const ChelErrorDecryptionKeyNotFound: typeof Error = ChelErrorGenerator('ChelErrorDecryptionKeyNotFound', ChelErrorDecryptionError)
 export const ChelErrorSignatureError: typeof Error = ChelErrorGenerator('ChelErrorSignatureError')
