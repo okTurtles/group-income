@@ -262,7 +262,9 @@ route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
     // TODO: conflict with PR 2494
-    return h.response(await sbp('backend/db/lookupName', name)).header('content-type', 'text/plain')
+    const r = await sbp('backend/db/lookupName', name)
+    if (typeof r !== 'string') return r
+    return h.response(r).header('content-type', 'text/plain')
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
