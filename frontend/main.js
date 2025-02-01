@@ -23,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -281,7 +281,8 @@ async function startApp () {
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
-        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
+        // Remove the loading animation that sits on top of the Vue app, so that
+        // users can properly interact with the app for a follow-up action.
         this.removeLoadingAnimation()
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID, isNewlyCreated }) => {
@@ -345,7 +346,14 @@ async function startApp () {
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
+        // Calling login could result in a prompt in case of an error; if the
+        // loading animation is visible, it'll hide the prompt. We remove it,
+        // so that it's possible to interact with the prompt.
+        const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+          this.removeLoadingAnimation()
+        })
         await sbp('gi.app/identity/login', { identityContractID })
+        removeHandler()
         await sbp('chelonia/contract/wait', identityContractID)
       }).catch(async e => {
         this.removeLoadingAnimation()
