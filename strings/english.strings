@@ -252,9 +252,6 @@
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "All new messages" = "All new messages";
 
-/* views/containers/user-settings/Troubleshooting.vue */
-"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.";
-
 /* views/containers/proposals/PropositionsAllModal.vue */
 "All proposals" = "All proposals";
 
@@ -335,9 +332,6 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Are you sure you want to leave {channelName}?" = "Are you sure you want to leave {channelName}?";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Are you sure you want to re-sync your app data? This might take a few minutes." = "Are you sure you want to re-sync your app data? This might take a few minutes.";
 
 /* views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to remove this pinned message?" = "Are you sure you want to remove this pinned message?";
@@ -612,9 +606,6 @@
 /* views/components/CopyableInput.vue */
 "Copy string" = "Copy string";
 
-/* views/containers/user-settings/Troubleshooting.vue */
-"Corrupted" = "Corrupted";
-
 /* model/contracts/group.js */
 "Couldn't join the #{chatroomName} in the group. An error occurred: {error}" = "Couldn't join the #{chatroomName} in the group. An error occurred: {error}";
 
@@ -711,9 +702,6 @@
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
 
-/* views/containers/user-settings/Troubleshooting.vue */
-"Deleting local data..." = "Deleting local data...";
-
 /* views/containers/user-settings/UserProfile.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "Deleting your account will erase all your data, and remove you from the groups you belong to.";
 
@@ -788,9 +776,6 @@
 
 /* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
 "Download ({size})" = "Download ({size})";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Downloading new data..." = "Downloading new data...";
 
 /* views/containers/payments/RecordPaymentsList.vue */
 "Due" = "Due";
@@ -1092,7 +1077,7 @@
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "Fatal error: {reportError}";
 
-/* views/containers/user-settings/Troubleshooting.vue, views/pages/GroupSettings.vue */
+/* views/pages/GroupSettings.vue */
 "Feature coming soon" = "Feature coming soon";
 
 /* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
@@ -1103,6 +1088,9 @@
 
 /* views/pages/Payments.vue */
 "First payment sent. Distribution is now locked." = "First payment sent. Distribution is now locked.";
+
+/* views/containers/user-settings/Troubleshooting.vue */
+"For diagnostic info, see application logs." = "For diagnostic info, see application logs.";
 
 /* views/containers/access/LoginForm.vue */
 "Forgot your password?" = "Forgot your password?";
@@ -1263,6 +1251,9 @@
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}." = "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.";
 
+/* views/containers/user-settings/Troubleshooting.vue */
+"If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT." = "If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT.";
+
 /* views/containers/user-settings/Acknowledgements.vue */
 "Illustrations" = "Illustrations";
 
@@ -1352,9 +1343,6 @@
 
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "LEAVE {GROUP_NAME}";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Last touches..." = "Last touches...";
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Leave Channel";
@@ -1893,9 +1881,6 @@
 /* views/containers/payments/RecordPayment.vue */
 "Please support the development of Group Income by {r1}sending a donation{r2}!" = "Please support the development of Group Income by {r1}sending a donation{r2}!";
 
-/* views/containers/user-settings/Troubleshooting.vue */
-"Please use the re-sync option below to restore functionality." = "Please use the re-sync option below to restore functionality.";
-
 /* views/containers/contributions/IncomeDetails.vue */
 "Pledge amount cannot exceed {max}" = "Pledge amount cannot exceed {max}";
 
@@ -2038,9 +2023,6 @@
 "QR code payment" = "QR code payment";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Re-sync" = "Re-sync";
-
-/* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync and rebuild data" = "Re-sync and rebuild data";
 
 /* views/containers/user-settings/Troubleshooting.vue */
@@ -2151,6 +2133,9 @@
 /* views/containers/payments/PaymentRowRecord.vue, views/containers/payments/PaymentRowSendLightning.vue */
 "Reset" = "Reset";
 
+/* views/containers/user-settings/Troubleshooting.vue */
+"Reset Group Income" = "Reset Group Income";
+
 /* views/containers/chatroom/MessageActions.vue, views/containers/loading-error/ErrorPage.vue */
 "Retry" = "Retry";
 
@@ -2195,9 +2180,6 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "See all {groupMembersCount} members";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"See application logs" = "See application logs";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "See more" = "See more";
@@ -2346,9 +2328,6 @@
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Start sharing your resources with the ones who matter to you!" = "Start sharing your resources with the ones who matter to you!";
 
-/* views/containers/user-settings/Troubleshooting.vue */
-"Status" = "Status";
-
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Step {current} of {max}" = "Step {current} of {max}";
 
@@ -2442,6 +2421,12 @@
 /* views/components/VotingRulesInput.vue */
 "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.";
 
+/* main.js */
+"The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)" = "The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)";
+
+/* controller/app/identity.js */
+"The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}." = "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.";
+
 /* views/containers/user-settings/Appearence.vue */
 "Theme" = "Theme";
 
@@ -2459,6 +2444,9 @@
 
 /* model/contracts/group.js */
 "There is an identical open proposal." = "There is an identical open proposal.";
+
+/* main.js */
+"There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.";
 
 /* views/containers/payments/MonthOverview.vue */
 "There was a problem with {nr} of your payments." = "There was a problem with {nr} of your payments.";
@@ -2582,9 +2570,6 @@
 
 /* views/components/graphs/Overview.vue */
 "Total needed" = "Total needed";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Total space used" = "Total space used";
 
 /* views/containers/contributions/TodoHistory.vue */
 "Total: {total}" = "Total: {total}";
@@ -2906,9 +2891,6 @@
 
 /* views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
 "Your invite" = "Your invite";
-
-/* views/containers/user-settings/Troubleshooting.vue */
-"Your local contract version is synced! All the app functionality was restored!" = "Your local contract version is synced! All the app functionality was restored!";
 
 /* views/containers/access/PasswordModal.vue, views/containers/access/SignupForm.vue */
 "Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";

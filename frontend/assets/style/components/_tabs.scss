@@ -1,3 +1,6 @@
+@use "../variables" as *;
+@use "cards" as c;
+
 .tabs {
   display: flex;
   flex-direction: row;
@@ -6,8 +9,8 @@
   font-family: "Poppins";
   font-size: 0.75rem;
   line-height: 1rem;
-  @include removeSideCardPadding;
-  @include removeTopCardPadding;
+  @include c.removeSideCardPadding;
+  @include c.removeTopCardPadding;
 
   &-link {
     display: flex;

@@ -17,7 +17,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, fork } = require('child_process')
+const { exec, execSync, fork } = require('child_process')
 const execP = util.promisify(exec)
 const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -83,6 +83,9 @@ if (!process.env.DB_PATH) {
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
+
+  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('utf8').trim()
+  Object.assign(process.env, { GI_GIT_VERSION })
 
   // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
   ;(function defineApiEnvars () {
@@ -220,6 +223,7 @@ module.exports = (grunt) => {
         'process.env.CI': `'${CI}'`,
         'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
+        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
@@ -229,7 +233,6 @@ module.exports = (grunt) => {
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
-      incremental: true,
       loader: {
         '.eot': 'file',
         '.ttf': 'file',
@@ -242,8 +245,7 @@ module.exports = (grunt) => {
       outdir: distJS,
       sourcemap: true,
       // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks'),
-      watch: false // Not using esbuild's own watch mode since it involves polling.
+      splitting: !grunt.option('no-chunks')
     },
     // Native options used when building the main entry point.
     main: {
@@ -257,7 +259,7 @@ module.exports = (grunt) => {
   }
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle', 'watch', 'incremental'
+      'define', 'bundle'
     ]),
     // format: 'esm',
     format: 'iife',

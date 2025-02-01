@@ -251,6 +251,7 @@
           .c-send-button(
             id='mobileSendButton'
             tag='button'
+            data-test='sendMessageButton'
             :class='{ isActive }'
             @click='sendMessage'
           )

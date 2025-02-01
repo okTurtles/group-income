@@ -1,3 +1,11 @@
+// Breakpoints
+// // Same as JS breakpoints at breakpoints.js
+// TODO: Redefine the breakpoints with @mmbotelho in a next task.
+$gap: 1rem;
+$tablet: 769px;
+$desktop: 1200px;
+$payment-table-desktop-bp: 1290px;
+
 @mixin fa($size, $dimensions) {
   display: inline-block;
   font-size: $size;
@@ -48,7 +56,6 @@
   }
 }
 
-$payment-table-desktop-bp: 1290px;
 @mixin payment-table-desktop {
   @media screen and (min-width: $payment-table-desktop-bp) {
     @content;
