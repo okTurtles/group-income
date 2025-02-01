@@ -139,9 +139,15 @@ const setupChelonia = async (): Promise<*> => {
       }
     },
     hooks: {
+      syncContractError: (e: Error, contractID: string) => {
+        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
+          sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID })
+        }
+      },
       handleEventError: (e: Error, message: GIMessage) => {
-        if (e.name === 'ChelErrorUnrecoverable') {
-          sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
+        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
+          const contractID = message.contractID()
+          sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
           // Avoid duplicate notifications for the same message.
@@ -161,7 +167,8 @@ const setupChelonia = async (): Promise<*> => {
         errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
+        const contractID = message.contractID()
+        sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }

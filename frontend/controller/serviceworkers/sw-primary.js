@@ -19,7 +19,8 @@ import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import {
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
@@ -31,6 +32,12 @@ import {
 } from '../../utils/events.js'
 import './push.js'
 import './sw-namespace.js'
+
+console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
+console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
+console.info('NODE_ENV:', process.env.NODE_ENV)
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -88,17 +95,21 @@ const setupRootState = () => {
       lastRun: Object.create(null) // { notificationKey: number },
     }
   }
+
+  if (!rootState.namespaceLookups) rootState.namespaceLookups = Object.create(null)
+  if (!rootState.reverseNamespaceLookups) rootState.reverseNamespaceLookups = Object.create(null)
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
-  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN,
-  LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP,
-  JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND,
-  NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
+  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED,
+  EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,
+  CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT,
+  NOTIFICATION_TYPE.VERSION_INFO,
+  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
   NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
   PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
@@ -240,6 +251,11 @@ sbp('okTurtles.events/on', CHELONIA_RESET, () => {
   sbp('gi.periodicNotifications/init')
 })
 
+let currentVersionInfo
+sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
+  currentVersionInfo = versionInfo
+})
+
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
 const setupPromise = setupChelonia()
@@ -334,6 +350,23 @@ self.addEventListener('message', function (event) {
         }).finally(() => {
           port.close()
         })
+
+        // If the window is outdated (different GI_VERSION), trigger an event
+        // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
+        // This handles new SW clients that have an outdated
+        // `process.env.GI_VERSION` (for example, by having loaded a cached
+        // version of `main.js`).
+        if (
+          currentVersionInfo &&
+          event.source &&
+          event.data.GI_VERSION !== currentVersionInfo.GI_VERSION
+        ) {
+          event.source.postMessage({
+            type: 'event',
+            subtype: NOTIFICATION_TYPE.VERSION_INFO,
+            data: [currentVersionInfo]
+          })
+        }
         break
       }
       default:
