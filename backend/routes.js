@@ -51,6 +51,61 @@ const cidLookupTable = {
   [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
 }
 
+const IPV4_ADDR_REGEX = /^(?:[3-9]\d{0,1}|1\d{0,2}|2\d{0,1}|2[0-4]\d|25[0-5])(?:\.(?:0|[3-9]\d{0,1}|1\d{0,2}|2\d{0,1}|2[0-4]\d|25[0-5])){3}$/
+const IPV6_SEGMENT_REGEX = /^[0-9a-fA-F]{1,4}$/
+const limiterKey = (ip: string) => {
+  if (IPV4_ADDR_REGEX.test(ip)) {
+    return ip
+  } else if (/^(?:[0-9a-fA-F]{0,4}:){0,8}(?:[0-9a-fA-F]{0,4}|[\d.]{7,15})(?:%[0-9a-zA-Z]{1,})?$/.test(ip)) {
+    // Likely IPv6
+    const [address, zoneIdx] = ip.split('%')
+    const segments = address.split(':')
+
+    // Is this a compressed form IPv6 address?
+    let isCompressed = false
+    for (let i = 0; i < segments.length - 1; i++) {
+      // Compressed form address
+      if (!isCompressed && segments[i] === '') {
+        if ((i === 0 || i === segments.length - 2) && segments[i + 1] === '') {
+          segments[i + 1] = '0'
+        }
+        if (i === 0 && segments.length === 3 && segments[i + 2] === '') {
+          segments[i + 2] = '0'
+        }
+        segments.splice(i, 1, ...new Array(9 - segments.length).fill('0'))
+        isCompressed = true
+        continue
+      }
+      if (!IPV6_SEGMENT_REGEX.test(segments[i])) {
+        throw new Error('Invalid IPv6 address')
+      }
+      // Remove leading zeroes
+      segments[i] = segments[i].replace(/^0+/, '0')
+    }
+
+    if (IPV4_ADDR_REGEX.test(segments[7])) {
+      // IPv4-embedded, IPv4-mapped and IPv4-translated addresses are returned
+      // as IPv4
+      return segments[7]
+    } else if (IPV6_SEGMENT_REGEX.test(segments[7])) {
+      if (zoneIdx) {
+        segments[7] = segments[7].replace(/^0+/, '0')
+        // Use tagged (link-local) addresses in full
+        return segments.join(':').toLowerCase() + '%' + zoneIdx
+      } else {
+        // If an IPv6 address, return the first 64 bits. This is because that's
+        // the smallest possible subnet, and spammers can easily get an entire
+        // /64
+        return segments.slice(0, 4).join(':').toLowerCase() + '::'
+      }
+    } else {
+      throw new Error('Invalid IPv6 address')
+    }
+  }
+
+  throw new Error('Invalid address format')
+}
+
 // Constant-time equal
 const ctEq = (expected: string, actual: string) => {
   let r = actual.length ^ expected.length
@@ -136,11 +191,11 @@ route.POST('/event', {
         // rate limit signups in production
         if (!SIGNUP_LIMIT_DISABLED) {
           try {
-            // IMPORTANT: if the server is using IPv6 addresses, this isn't sufficient!
             // See discussion: https://github.com/okTurtles/group-income/pull/2280#pullrequestreview-2219347378
-            await limiterPerMinute.key(ip).schedule(() => Promise.resolve())
-            await limiterPerHour.key(ip).schedule(() => Promise.resolve())
-            await limiterPerDay.key(ip).schedule(() => Promise.resolve())
+            const keyedIp = limiterKey(ip)
+            await limiterPerMinute.key(keyedIp).schedule(() => Promise.resolve())
+            await limiterPerHour.key(keyedIp).schedule(() => Promise.resolve())
+            await limiterPerDay.key(keyedIp).schedule(() => Promise.resolve())
           } catch {
             console.warn('rate limit hit for IP:', ip)
             throw Boom.tooManyRequests('Rate limit exceeded')
