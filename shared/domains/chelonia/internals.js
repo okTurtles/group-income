@@ -18,6 +18,9 @@ import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKey
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
+// Used for the index at which an error occurred in OP_ATOMIC
+const errorIndexSymbol = Symbol('chelonia/errorIndex')
+
 const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
   const signingKeyId = message.signingKeyId()
   let innerSigningKeyId: ?string = null
@@ -682,12 +685,18 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void | Promise<void> } = {
       async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        for (const u of v) {
-          if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
-          if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
-            throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
+        for (let i = 0; i < v.length; i++) {
+          const u = v[i]
+          try {
+            if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
+            if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
+              throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
+            }
+            await opFns[u[0]](u[1])
+          } catch (e) {
+            e[errorIndexSymbol] = i
+            throw e
           }
-          await opFns[u[0]](u[1])
         }
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
@@ -1845,7 +1854,10 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const internalSideEffectStack = !this.config.skipSideEffects ? [] : undefined
-      let missingDecryptionKeyId: string | undefined
+      let missingDecryptionKeyId: ?string
+      // To process side effects up to where the error occurred, if OP_ATOMIC
+      // and ChelErrorWarning happened
+      let errorIndex: ?number
 
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
@@ -1867,6 +1879,9 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
         processingErrored = e?.name !== 'ChelErrorWarning'
+        if (Number.isFinite(e?.[errorIndexSymbol])) {
+          errorIndex = e[errorIndexSymbol]
+        }
         this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
         // special error that prevents the head from being updated, effectively killing the contract
         if (
@@ -1888,7 +1903,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-          await handleEvent.processSideEffects.call(this, message, contractStateCopy)?.catch((e) => {
+          await handleEvent.processSideEffects.call(this, message, contractStateCopy, errorIndex)?.catch((e) => {
             console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
             // We used to revert the state and rethrow the error here, but we no longer do that
             // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
@@ -1998,7 +2013,7 @@ const handleEvent = {
     }
     await sbp('chelonia/private/in/processMessage', message, state, internalSideEffectStack)
   },
-  processSideEffects (message: GIMessage, state: Object) {
+  processSideEffects (message: GIMessage, state: Object, errorIndex: ?number) {
     const opT = message.opType()
     if (![GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
       return
@@ -2051,17 +2066,22 @@ const handleEvent = {
       return acc
     }
 
-    const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+    const actionsOpV = (Number.isFinite(errorIndex)
+      // $FlowFixMe[incompatible-call]
+      ? ((msg: any): GIOpAtomic).slice(0, errorIndex)
+      : ((msg: any): GIOpAtomic)
+    ).reduce(reducer, [])
 
     return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
       const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
       if (errors.length > 0) {
+        console.error('Side-effect errors', contractID, errors)
         // $FlowFixMe[cannot-resolve-name]
         throw new AggregateError(errors, `Error at side effects for ${contractID}`)
       }
     })
   },
-  async applyProcessResult ({ message, state, contractState, missingDecryptionKeyId, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, missingDecryptionKeyId?: string, processingErrored: boolean, postHandleEvent: ?Function }) {
+  async applyProcessResult ({ message, state, contractState, missingDecryptionKeyId, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, missingDecryptionKeyId: ?string, processingErrored: boolean, postHandleEvent: ?Function }) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()

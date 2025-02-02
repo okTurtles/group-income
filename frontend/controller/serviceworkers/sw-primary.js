@@ -39,6 +39,16 @@ console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
+
 deserializer.register(GIMessage)
 deserializer.register(Secret)
 

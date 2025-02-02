@@ -930,22 +930,14 @@ sbp('chelonia/defineContract', {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
                   console.error('Error while joining the #General chatroom', e)
-                  const errMsg = L("Couldn't join the #{chatroomName} in the group. An error occurred: {error}", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e })
-                  const promptOptions = {
-                    heading: L('Error while joining a chatroom'),
-                    question: errMsg,
-                    primaryButton: L('Close')
-                  }
 
-                  sbp('gi.ui/prompt', promptOptions)
+                  // TODO: event
                 })
               }
             } else {
-              // avoid blocking the main thread
-              // eslint-disable-next-line require-await
-              (async () => {
-                alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-              })()
+              console.error('Couldn\'t join the chatroom in the group. Doesn\'t exist.', { chatroomName: CHATROOM_GENERAL_NAME })
+
+              // TODO: event
             }
 
             sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })

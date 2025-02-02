@@ -632,7 +632,7 @@ export default (sbp('sbp/selectors/register', {
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // $FlowFixMe
-    return [Promise.all(
+    return Promise.all(
       Object.entries(state.profiles)
         .filter(([_, p]) => (p: any).status === PROFILE_STATUS.ACTIVE)
         .map(async ([pContractID]) => {
@@ -658,7 +658,7 @@ export default (sbp('sbp/selectors/register', {
                 }))
               })
             }]
-        }))]
+        })).then((keys) => [keys])
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')
