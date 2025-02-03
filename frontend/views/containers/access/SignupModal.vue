@@ -49,7 +49,7 @@ export default ({
           break
         case 'success': {
           this.ephemeral.isSigningUp = false
-          this.onPostSubmit()
+          this.$nextTick(this.onPostSubmit)
           break
         }
         default: // 'error' status
