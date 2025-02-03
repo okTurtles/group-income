@@ -219,7 +219,7 @@ sbp('sbp/selectors/register', {
 if (process.env.NODE_ENV === 'development' && !process.env.CI) {
   hapi.events.on('response', (req, event, tags) => {
     const ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.debug(chalk`{grey ${ip}: ${req.method.toUpperCase()} ${req.path} --> ${req.response.statusCode}}`)
+    console.debug(chalk`{grey ${ip}: ${req.method} ${req.path} --> ${req.response.statusCode}}`)
   })
 }
 
