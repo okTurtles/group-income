@@ -1,5 +1,10 @@
 <template lang='pug'>
-  modal-template(class='has-background' ref='modal' :a11yTitle='L("Log in")' :loading='ephemeral.isLoggingIn')
+  modal-template(
+    class='has-background'
+    ref='modal'
+    :a11yTitle='L("Log in")'
+    :loading='ephemeral.isLoggingIn'
+  )
     template(slot='title')
       i18n Log in
 
