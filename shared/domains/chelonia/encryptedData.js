@@ -108,6 +108,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   const key = additionalKeys[eKeyId]
 
   if (!key) {
+    // $FlowFixMe[extra-arg]
     throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`, { cause: eKeyId })
   }
 
