@@ -301,7 +301,8 @@ describe('Group - Removing a member', () => {
       existingMemberUsername: `user2-${userId}`,
       groupName: groupNameB,
       isLoggedIn: true,
-      bypassUI: true
+      // TODO: Sometimes it seems to get stuck here when bypassing the UI
+      bypassUI: false
     })
   })
 
