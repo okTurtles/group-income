@@ -691,7 +691,7 @@ export default (sbp('sbp/selectors/register', {
         2. "Failure" errors
         Example: OP_KEY_ADD
         1. IGNORING: an error is thrown because we wanted to add a key but the key we wanted to add is already there. This is not a hard error, it's an ignoring error. We don't care that the operation failed in this case because the intent was accomplished.
-        2. FAILURE: an error is thrown because we wanted to add a key that doesn't exist.
+        2. FAILURE: an error is thrown while attempting to add a key that doesn't exist.
         Example: OP_ACTION_ENCRYPTED
         1. IGNORING: An error is thrown because we don't have the key to decrypt the action. We ignore it.
         2. FAILURE: An error is thrown by the process function during processing.
@@ -711,16 +711,18 @@ export default (sbp('sbp/selectors/register', {
           } catch (e) {
             if (e) {
               if (e.name === 'ChelErrorDecryptionKeyNotFound') {
-                console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
-                const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
-                if (missingDecryptionKeyIds) {
-                  missingDecryptionKeyIds.add(e.cause)
-                } else {
-                  missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+                console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMessage for ${message.description()}: ${e.message}`, e, message.serialize())
+                if (e.cause) {
+                  const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
+                  if (missingDecryptionKeyIds) {
+                    missingDecryptionKeyIds.add(e.cause)
+                  } else {
+                    missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+                  }
                 }
                 continue
               } else {
-                console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
+                console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
               }
               console.warn(`[chelonia] [OP_ATOMIC] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
               if (this.config.strictProcessing) {
@@ -845,9 +847,14 @@ export default (sbp('sbp/selectors/register', {
                     key: deserializeKey(decrypted),
                     transient
                   }]))
+                  // If we've just received a known missing key (i.e., a key
+                  // that previously resulted in a decryption error), we know
+                  // our state is outdated and we need to re-sync the contract
                   if (missingDecryptionKeyIds?.includes(key.id)) {
                     newestEncryptionKeyHeight = Number.NEGATIVE_INFINITY
                   } else if (
+                  // Otherwise, we make an educated guess on whether a re-sync
+                  // is needed based on the height.
                     targetState?._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
                       targetState._vm.authorizedKeys[key.id].purpose.includes('enc')
@@ -1900,11 +1907,13 @@ export default (sbp('sbp/selectors/register', {
       } catch (e) {
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
-          const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
-          if (missingDecryptionKeyIds) {
-            missingDecryptionKeyIds.add(e.cause)
-          } else {
-            missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+          if (e.cause) {
+            const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
+            if (missingDecryptionKeyIds) {
+              missingDecryptionKeyIds.add(e.cause)
+            } else {
+              missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+            }
           }
         } else {
           console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
@@ -2151,8 +2160,15 @@ const handleEvent = {
     }
     this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
     this.config.reactiveSet(state.contracts[contractID], 'height', height)
+    // If there were decryption errors due to missing encryption keys, we store
+    // those key IDs. If those key IDs are later shared with us, we can re-sync
+    // the contract. Without this information, we can only guess whether a
+    // re-sync is needed or not.
+    // We do it here because the property is stored under `.contracts` instead
+    // of in the contract state itself, and this is where `.contracts` gets
+    // updated after handling a message.
     const missingDecryptionKeyIdsForMessage = missingDecryptionKeyIdsMap.get(message)
-    if (Array.isArray(missingDecryptionKeyIdsForMessage)) {
+    if (missingDecryptionKeyIdsForMessage) {
       let missingDecryptionKeyIds = state.contracts[contractID].missingDecryptionKeyIds
       if (!missingDecryptionKeyIds) {
         missingDecryptionKeyIds = []
@@ -2162,7 +2178,6 @@ const handleEvent = {
         if (missingDecryptionKeyIds.includes(keyId)) return
         missingDecryptionKeyIds.push(keyId)
       })
-      this.config.reactiveSet(state.contracts[contractID], 'height', height)
     }
 
     if (!this.subscriptionSet.has(contractID)) {

@@ -194,11 +194,9 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
   // (to actually perform the rotation) and Chelonia (to unset the flag if
   // they are rotated by somebody else)
-  sbp('chelonia/queueInvocation', contractID, () => {
+  sbp('gi.contracts/group/pushSideEffect', contractID, ['chelonia/queueInvocation', contractID, () => {
     return sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
-  }).catch(e => {
-    console.warn('[memberLeaves] Error marking key for revocation', e)
-  })
+  }])
 }
 
 function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object): boolean {
@@ -935,7 +933,7 @@ sbp('chelonia/defineContract', {
                 })
               }
             } else {
-              console.error('Couldn\'t join the chatroom in the group. Doesn\'t exist.', { chatroomName: CHATROOM_GENERAL_NAME })
+              console.error("Couldn't join the chatroom in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })
 
               // TODO: event
             }

@@ -639,7 +639,7 @@ export default (sbp('sbp/selectors/register', {
           const CEKid = await sbp('chelonia/contract/currentKeyIdByName', rootState[pContractID], 'cek')
           if (!CEKid) {
             console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
-            return Promise.resolve()
+            return
           }
           return [
             'chelonia/out/keyShare',
@@ -658,7 +658,7 @@ export default (sbp('sbp/selectors/register', {
                 }))
               })
             }]
-        })).then((keys) => [keys])
+        })).then((keys) => [keys.filter(Boolean)])
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')

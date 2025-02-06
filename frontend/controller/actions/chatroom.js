@@ -246,7 +246,7 @@ export default (sbp('sbp/selectors/register', {
           })
         }
       ]
-    })).then((keys) => [keys])
+    })).then((keys) => [keys.filter(Boolean)])
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
