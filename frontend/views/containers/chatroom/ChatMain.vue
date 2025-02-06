@@ -191,14 +191,14 @@ const onChatScroll = function () {
     return
   }
 
-  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+  if (curScrollTop > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i <= this.messages.length - 1; i++) {
       const msg = this.messages[i]
       if (msg.pending || msg.hasFailed) continue
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
-      const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
-      if (offsetTop - scrollMarginTop > curScrollTop) {
+
+      if (offsetTop > curScrollTop) {
         sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
           chatRoomID: this.nonReactive.renderingChatRoomId,
           messageHash: msg.hash
@@ -552,13 +552,13 @@ export default ({
         if (!eleMessage) { return }
 
         if (effect) {
-          eleMessage.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth', block: 'start' })
+          eleMessage.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleMessage.scrollIntoView({ block: 'start' })
+          eleMessage.scrollIntoView()
         }
       }
 

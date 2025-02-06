@@ -440,7 +440,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.contains('Sending three profile pictures which are designed by Apple. Cute, right?').should('be.visible')
+      cy.contains('Sending two files; one is image, and the other is JSON file.').should('be.visible')
     })
 
     cy.getByDT('messageInputWrapper').within(() => {
