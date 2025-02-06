@@ -166,10 +166,13 @@ const onChatScroll = function () {
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
+    const msgEl = this.$refs[msg.hash][0].$el
+
     if (msg.pending || msg.hasFailed) continue
-    const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
+    const offsetTop = msgEl.offsetTop
     // const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
-    const height = this.$refs[msg.hash][0].$el.clientHeight
+    const height = msgEl.clientHeight
+
     if (offsetTop + height <= curScrollBottom) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
@@ -188,9 +191,9 @@ const onChatScroll = function () {
     return
   }
 
-  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+  if (curScrollTop > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
-    for (let i = 0; i < this.messages.length - 1; i++) {
+    for (let i = 0; i <= this.messages.length - 1; i++) {
       const msg = this.messages[i]
       if (msg.pending || msg.hasFailed) continue
       const offsetTop = this.$refs[msg.hash][0].$el.offsetTop
@@ -257,6 +260,7 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
+        scrollHashOnInitialLoad: null, // Message hash to scroll to on chatroom's initial load
         replyingMessage: null,
         replyingTo: null,
         unprocessedEvents: []
@@ -544,25 +548,27 @@ export default ({
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
-        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
 
-        if (!eleTarget) { return }
+        if (!eleMessage) { return }
 
         if (effect) {
-          eleTarget.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth' })
+          eleMessage.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth', block: 'start' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleTarget.scrollIntoView()
+          eleMessage.scrollIntoView({ block: 'start' })
         }
       }
 
       const msgIndex = findMessageIdx(messageHash, this.messages)
       if (msgIndex >= 0) {
+        // if the message has already been loaded in the DOM, scroll to it.
         scrollAndHighlight(msgIndex)
       } else {
+        // If the target message cannot be found in the current messages state, fetch more events
+        // and render the older messages.
         const contractID = this.summary.chatRoomID
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
@@ -858,23 +864,7 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
-
-        // NOTE: we do want the 'c-focused' animation if there is a message-scroll query.
-        if (events.length) {
-          // NOTE: if 'messageHashToScroll' was not there in the messages of the contract state
-          //       we need to retrieve more events, and render to scroll to that message
-          this.updateScroll(messageHashToScroll, Boolean(mhash))
-        } else {
-          // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
-          await this.updateScroll(messageHashToScroll, Boolean(mhash))
-
-          if (mhash) {
-            // NOTE: delete mhash in the query after scroll and highlight the message with mhash
-            const newQuery = { ...this.$route.query }
-            delete newQuery.mhash
-            this.$router.replace({ query: newQuery })
-          }
-        }
+        this.ephemeral.scrollHashOnInitialLoad = messageHashToScroll
       }
 
       return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
@@ -1090,6 +1080,7 @@ export default ({
     }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
+
       if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once which should be ignored
         //       before calling the setInitMessages function
@@ -1105,6 +1096,7 @@ export default ({
 
         try {
           const completed = await this.renderMoreMessages()
+
           if (!this.checkEventSourceConsistency(chatRoomID)) return
 
           if (completed === true) {
@@ -1129,9 +1121,30 @@ export default ({
           } else if (completed === false) {
             $state.loaded()
           }
+
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
+
+            if (this.ephemeral.scrollHashOnInitialLoad) {
+              const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
+
+              this.$nextTick(() => {
+                this.updateScroll(
+                  this.ephemeral.scrollHashOnInitialLoad,
+                  scrollingToSpecificMessage // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+                )
+
+                // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+                if (scrollingToSpecificMessage) {
+                  const newQuery = { ...this.$route.query }
+                  delete newQuery.mhash
+                  this.$router.replace({ query: newQuery })
+                }
+
+                this.ephemeral.scrollHashOnInitialLoad = null
+              })
+            }
           }
         } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
