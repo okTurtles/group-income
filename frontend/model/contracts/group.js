@@ -4,7 +4,7 @@
 
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -927,13 +927,13 @@ sbp('chelonia/defineContract', {
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
                   console.error('Error while joining the #General chatroom', e)
 
-                  // TODO: event
+                  sbp('okTurtles.events/emit', ERROR_JOINING_CHATROOM, { identityContractID: userID, groupContractID: contractID, chatRoomID: generalChatRoomId })
                 })
               }
             } else {
               console.error("Couldn't join the chatroom in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })
 
-              // TODO: event
+              sbp('okTurtles.events/emit', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, { identityContractID: userID, groupContractID: contractID })
             }
 
             sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
