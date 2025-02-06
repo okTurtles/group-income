@@ -191,7 +191,7 @@ const onChatScroll = function () {
     return
   }
 
-  if (curScrollTop > ignorableScrollDistanceInPixel) {
+  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i <= this.messages.length - 1; i++) {
       const msg = this.messages[i]
