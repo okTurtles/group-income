@@ -189,14 +189,6 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   Object.keys(state.chatRooms).forEach((chatroomID) => {
     removeGroupChatroomProfile(state, chatroomID, memberID, ourselvesLeaving)
   })
-
-  // When a member is leaving, we need to mark the CSK and the CEK as needing
-  // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
-  // (to actually perform the rotation) and Chelonia (to unset the flag if
-  // they are rotated by somebody else)
-  sbp('gi.contracts/group/pushSideEffect', contractID, ['chelonia/queueInvocation', contractID, () => {
-    return sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
-  }])
 }
 
 function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object): boolean {
@@ -857,6 +849,12 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
+        // When a member is leaving, we need to mark the CSK and the CEK as needing
+        // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
+        // (to actually perform the rotation) and Chelonia (to unset the flag if
+        // they are rotated by somebody else)
+        sbp('chelonia/queueInvocation', contractID, () => sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk']))
+
         sbp('gi.contracts/group/referenceTally', contractID, memberID, 'release')
         // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
