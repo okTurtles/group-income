@@ -24,7 +24,9 @@ import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import {
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP,
+  CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
+  JOINED_CHATROOM, JOINED_GROUP,
   KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
@@ -38,6 +40,16 @@ console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
+
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -104,7 +116,9 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
+
   CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED,
+  ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
   LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT,
@@ -115,7 +129,7 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
   PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
 ].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
-    const { data } = serializer(args)
+    const { data, transferables } = serializer(args)
     const message = {
       type: 'event',
       subtype: et,
@@ -124,10 +138,30 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
     self.clients.matchAll()
       .then((clientList) => {
         clientList.forEach((client) => {
-          client.postMessage(message)
+          client.postMessage(message, transferables)
         })
       })
   })
+})
+
+sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
+  // Remove function types from contract data
+  // This avoids unnecessary MessagePorts
+  const argsCopy = Object.fromEntries(Object.entries(contract).filter(([_, v]) => {
+    return typeof v !== 'function'
+  }))
+  const { data, transferables } = serializer([argsCopy])
+  const message = {
+    type: 'event',
+    subtype: CONTRACT_REGISTERED,
+    data
+  }
+  self.clients.matchAll()
+    .then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage(message, transferables)
+      })
+    })
 })
 
 // This event (`NEW_CHATROOM_UNREAD_POSITION`) requires special handling because
@@ -136,7 +170,7 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
   // Set a 'from' parameter to signal it comes from the SW
   const argsCopy = { ...args, from: 'sw' }
-  const { data } = serializer([argsCopy])
+  const { data, transferables } = serializer([argsCopy])
   const message = {
     type: 'event',
     subtype: NEW_CHATROOM_UNREAD_POSITION,
@@ -145,7 +179,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
   self.clients.matchAll()
     .then((clientList) => {
       clientList.forEach((client) => {
-        client.postMessage(message)
+        client.postMessage(message, transferables)
       })
     })
 })
@@ -153,7 +187,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
 // Logs are treated especially to avoid spamming logs with event emitted
 // entries
 sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
-  const { data } = serializer(args)
+  const { data, transferables } = serializer(args)
   const message = {
     type: CAPTURED_LOGS,
     data
@@ -161,7 +195,7 @@ sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
   self.clients.matchAll()
     .then((clientList) => {
       clientList.forEach((client) => {
-        client.postMessage(message)
+        client.postMessage(message, transferables)
       })
     })
 })
