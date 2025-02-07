@@ -16,7 +16,7 @@ import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
 import './chelonia-utils.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedOutgoingData, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -54,6 +54,7 @@ export type ChelActionParams = {
   signingKeyId: string;
   innerSigningKeyId: string;
   encryptionKeyId: ?string;
+  encryptionKey: ?Key,
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => Promise<void>;
@@ -536,6 +537,22 @@ export default (sbp('sbp/selectors/register', {
     }
     const keyId = findSuitableSecretKeyId(contractIDOrState, permissions, purposes, ringLevel, allowedActions)
     return keyId
+  },
+  'chelonia/contract/setPendingKeyRevocation': function (contractID: string, names: string[]) {
+    const rootState = sbp(this.config.stateSelector)
+    const state = rootState[contractID]
+
+    if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
+    if (!state._volatile.pendingKeyRevocations) this.config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
+
+    for (const name of names) {
+      const keyId = findKeyIdByName(state, name)
+      if (keyId) {
+        this.config.reactiveSet(state._volatile.pendingKeyRevocations, keyId, true)
+      } else {
+        console.warn('[setPendingKeyRevocation] Unable to find keyId for name', { contractID, name })
+      }
+    }
   },
   'chelonia/shelterAuthorizationHeader' (contractID: string) {
     return buildShelterAuthorizationHeader.call(this, contractID)
@@ -1693,9 +1710,17 @@ async function outEncryptedOrUnencryptedAction (
   if (opType === GIMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
     throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')
   }
+  if (params.encryptionKey) {
+    if (params.encryptionKeyId !== keyId(params.encryptionKey)) {
+      throw new Error('OP_ACTION_ENCRYPTED raw encryption key does not match encryptionKeyId')
+    }
+  }
+
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED
     ? signedMessage
-    : encryptedOutgoingData(contractID, ((params.encryptionKeyId: any): string), signedMessage)
+    : params.encryptionKey
+      ? encryptedOutgoingDataWithRawKey(((params.encryptionKey: any): Key), signedMessage)
+      : encryptedOutgoingData(contractID, ((params.encryptionKeyId: any): string), signedMessage)
   let message = GIMessage.createV1_0({
     contractID,
     op: [

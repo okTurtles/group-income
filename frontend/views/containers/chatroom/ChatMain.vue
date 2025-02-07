@@ -947,6 +947,8 @@ export default ({
         }
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight
+        }).catch(e => {
+          console.error('[ChatMain.vue] Error setting read until', e)
         })
       }
     },

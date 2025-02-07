@@ -291,4 +291,27 @@ describe('Group - Removing a member', () => {
     removeMemberNow('user2')
     cy.giLogout({ bypassUI: true })
   })
+
+  // Tests to verify that PEK rotation works
+  it('user3 joins groupB', () => {
+    cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
+      username: `user3-${userId}`,
+      existingMemberUsername: `user2-${userId}`,
+      groupName: groupNameB,
+      bypassUI: true
+    })
+  })
+
+  it('user3 can see the username for user2', () => {
+    cy.giLogin(`user3-${userId}`, { bypassUI: true })
+    assertMembersCount(2)
+
+    cy.getByDT('groupMembers').contains('user2-')
+    cy.window().its('sbp').then(sbp => {
+      const rootState = sbp('state/vuex/state')
+      const userbotId = rootState.namespaceLookups[`user2-${userId}`]
+      const PEKs = Object.values(rootState[userbotId]._vm.authorizedKeys).filter(key => key.name === 'pek')
+      if (PEKs.length < 2) throw new RangeError('Expected the PEK to have been rotated')
+    })
+  })
 })

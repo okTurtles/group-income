@@ -93,7 +93,12 @@ sbp('sbp/selectors/register', {
     contractID: string,
     contractName: string,
     keysToRotate: string[] | '*' | 'pending',
-    shareNewKeysSelector?: string
+    // Additional operations to be done along with key roation.
+    // If any, it should return an array of arrays of invocations that can be
+    // passed to `'chelonia/out/atomic'`. The first element of the array are
+    // operations to be done before `keyUpdate` and the second element are
+    // to be added after `keyUpdate`.
+    addtionalOperationsSelector?: string
   ) => {
     const state = sbp('chelonia/contract/state', contractID)
 
@@ -167,12 +172,9 @@ sbp('sbp/selectors/register', {
       throw new Error('No suitable signing key found')
     }
 
-    // TODO: GI-specific
-    const CEKid = findKeyIdByName(state, 'cek')
-    if (!CEKid) return
-
-    // Share new keys with other contracts
-    const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
+    // Additional operations to be done along with key roation.
+    // E.g., share new keys with other contracts
+    const additionalOperations = addtionalOperationsSelector ? await sbp(addtionalOperationsSelector, contractID, newKeys) : undefined
 
     const preSendCheck = (msg, state) => {
       const updatedKeysRemaining = updatedKeys.filter((key) => {
@@ -185,14 +187,15 @@ sbp('sbp/selectors/register', {
       return true
     }
 
-    if (Array.isArray(keyShares) && keyShares.length > 0) {
+    if (Array.isArray(additionalOperations) && additionalOperations.length > 0) {
       // Issue OP_ATOMIC
       await sbp('chelonia/out/atomic', {
         contractID,
         contractName,
         data: [
-          ...keyShares.map((data) => ['chelonia/out/keyShare', { data: encryptedOutgoingData(contractID, CEKid, data) }]),
-          ['chelonia/out/keyUpdate', { data: updatedKeys }]
+          ...(additionalOperations[0] ?? []),
+          ['chelonia/out/keyUpdate', { data: updatedKeys }],
+          ...(additionalOperations[1] ?? [])
         ],
         signingKeyId,
         hooks: {

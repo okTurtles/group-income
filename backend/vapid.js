@@ -15,6 +15,7 @@ const vapid = { VAPID_EMAIL: process.env.VAPID_EMAIL || 'mailto:test@example.com
 export const initVapid = async () => {
   const vapidKeyPair = await sbp('chelonia/db/get', '_private_immutable_vapid_key').then(async (vapidKeyPair: string): Promise<[Object, string]> => {
     if (!vapidKeyPair) {
+      console.info('Generating new VAPID keypair...')
       // Generate a new ECDSA key pair
       const keyPair = await crypto.subtle.generateKey(
         {
@@ -35,6 +36,7 @@ export const initVapid = async () => {
       ])
 
       return sbp('chelonia/db/set', '_private_immutable_vapid_key', JSON.stringify(serializedKeyPair)).then(() => {
+        console.info('Successfully saved newly generated VAPID keys')
         return [keyPair.privateKey, serializedKeyPair[1]]
       })
     }

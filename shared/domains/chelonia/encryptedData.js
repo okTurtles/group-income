@@ -108,7 +108,8 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   const key = additionalKeys[eKeyId]
 
   if (!key) {
-    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`)
+    // $FlowFixMe[extra-arg]
+    throw new ChelErrorDecryptionKeyNotFound(`Key ${eKeyId} not found`, { cause: eKeyId })
   }
 
   // height as NaN is used to allow checking for revokedKeys as well as

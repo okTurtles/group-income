@@ -270,7 +270,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-            sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
+            sbp('gi.contracts/chatroom/rotateKeys', contractID)
           }
 
           sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state)
@@ -652,17 +652,11 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
-      if (!state._volatile) state['_volatile'] = Object.create(null)
-      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
-      const CSKid = findKeyIdByName(state, 'csk')
-      const CEKid = findKeyIdByName(state, 'cek')
-
-      state._volatile.pendingKeyRevocations[CSKid] = true
-      state._volatile.pendingKeyRevocations[CEKid] = true
-
-      sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys').catch(e => {
+    'gi.contracts/chatroom/rotateKeys': (contractID) => {
+      sbp('chelonia/queueInvocation', contractID, async () => {
+        await sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
+        await sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
+      }).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
