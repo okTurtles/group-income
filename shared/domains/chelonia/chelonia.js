@@ -1643,6 +1643,9 @@ function parseEncryptedOrUnencryptedMessage ({
   let innerSigningKeyId
 
   // Lazy unwrap function
+  // We don't use `unwrapMaybeEncryptedData`, which would almost do the same,
+  // because it swallows decryption errors, which we want to propagate to
+  // consumers of the KV API.
   const unwrap = (() => {
     let result
 

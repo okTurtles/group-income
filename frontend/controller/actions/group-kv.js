@@ -43,13 +43,6 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const data = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
       sbp('okTurtles.events/emit', NEW_LAST_LOGGED_IN, [contractID, data])
-
-      // If running in a SW, update lastLoggedIn record. This is comparable to
-      // what the browser does when receiving the NEW_LAST_LOGGED_IN event
-      if (typeof WorkerGlobalScope === 'function') {
-        const rootState = sbp('state/vuex/state')
-        rootState.lastLoggedIn[contractID] = data
-      }
     }).catch(e => {
       console.error('[gi.actions/group/kv/loadLastLoggedIn] Error loading last logged in', e)
     })
