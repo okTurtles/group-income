@@ -709,7 +709,7 @@ export default (sbp('sbp/selectors/register', {
             }
             await opFns[u[0]](u[1])
           } catch (e) {
-            if (e) {
+            if (!e || typeof e !== 'object') {
               if (e.name === 'ChelErrorDecryptionKeyNotFound') {
                 console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMessage for ${message.description()}: ${e.message}`, e, message.serialize())
                 if (e.cause) {
@@ -730,6 +730,8 @@ export default (sbp('sbp/selectors/register', {
               }
               this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
               if (e.name === 'ChelErrorWarning') continue
+            } else {
+              console.error('Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
             }
             throw e
           }
