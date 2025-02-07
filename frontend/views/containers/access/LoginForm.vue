@@ -86,17 +86,19 @@ export default ({
 
         const username = this.form.username
 
+        this.$emit('login-status', 'submitting')
         await sbp('gi.app/identity/login', {
           username,
           password: new Secret(this.form.password)
         })
         await this.postSubmit()
-        this.$emit('submit-succeeded')
+        this.$emit('login-status', 'success')
 
         requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
+        this.$emit('login-status', 'error')
       }
     },
     forgotPassword () {

@@ -217,8 +217,9 @@ sbp('sbp/selectors/register', {
 })
 
 if (process.env.NODE_ENV === 'development' && !process.env.CI) {
-  hapi.events.on('response', (request, event, tags) => {
-    console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
+  hapi.events.on('response', (req, event, tags) => {
+    const ip = req.headers['x-real-ip'] || req.info.remoteAddress
+    console.debug(chalk`{grey ${ip}: ${req.method} ${req.path} --> ${req.response.statusCode}}`)
   })
 }
 
@@ -270,10 +271,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         try {
           await handler.call(socket, payload)
         } catch (error) {
-          socket.send(createPushErrorResponse({
-            actionType: action,
-            message: error?.message || `push server failed to perform [${action}] action`
-          }))
+          const message = error?.message || `push server failed to perform [${action}] action`
+          console.warn(`Handler '${REQUEST_TYPE.PUSH_ACTION}' failed: ${message}`)
+          socket.send(createPushErrorResponse({ actionType: action, message }))
         }
       } else {
         socket.send(createPushErrorResponse({ message: `No handler for the '${action}' action` }))
@@ -395,7 +395,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         !!pushSubscription.settings.heartbeatInterval &&
         pushSubscription.sockets.size === 0
       ).forEach((pushSubscription: Object) => {
-        const last = map.get(pushSubscription)
+        const last = map.get(pushSubscription) ?? Number.NEGATIVE_INFINITY
         // If we've recently sent a recurring notification, skip it
         if ((now - last) < pushSubscription.settings.heartbeatInterval) return
 

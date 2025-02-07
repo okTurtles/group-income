@@ -30,7 +30,7 @@ const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
 }
 
 const saveSubscription = (server, subscriptionId) => {
-  sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
+  return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
     settings: server.pushSubscriptions[subscriptionId].settings,
     subscriptionInfo: server.pushSubscriptions[subscriptionId],
     channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
@@ -167,22 +167,25 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
   return subscriptionInfo
 }
 
-const removeSubscription = (server, subscriptionId) => {
-  const subscription = server.pushSubscriptions[subscriptionId]
-  delete server.pushSubscriptions[subscriptionId]
-  if (server.subscribersByChannelID) {
-    subscription.subscriptions.forEach((channelID) => {
-      server.subscribersByChannelID[channelID].delete(subscription)
-    })
+const removeSubscription = async (server, subscriptionId) => {
+  try {
+    const subscription = server.pushSubscriptions[subscriptionId]
+    delete server.pushSubscriptions[subscriptionId]
+    if (server.subscribersByChannelID) {
+      subscription.subscriptions.forEach((channelID) => {
+        server.subscribersByChannelID[channelID].delete(subscription)
+      })
+    }
+    await deleteSubscriptionFromIndex(subscriptionId)
+    await sbp('chelonia/db/delete', `_private_webpush_${subscriptionId}`)
+  } catch (e) {
+    console.error(e, 'Error removing subscription', subscriptionId)
   }
-  deleteSubscriptionFromIndex(subscriptionId).then(() => {
-    return sbp('chelonia/db/delete', `_private_webpush_${subscriptionId}`)
-  }).catch((e) => console.error(e, 'Error removing subscription', subscriptionId))
 }
 
 const deleteClient = (subscriptionId) => {
   const server = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-  removeSubscription(server, subscriptionId)
+  return removeSubscription(server, subscriptionId)
 }
 
 // Web push subscriptions (that contain a body) are mandatorily encrypted. The
@@ -243,6 +246,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   })
 
   if (!req.ok) {
+    console.warn('Error sending push notification', subscription.id, req.status)
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
@@ -273,11 +277,17 @@ export const pushServerActionhandlers: any = {
     const subscriptionId = await getSubscriptionId(subscriptionInfo)
 
     if (!server.pushSubscriptions[subscriptionId]) {
+      console.debug(`saving new push subscription '${subscriptionId}':`, subscriptionInfo)
       // If this is a new subscription, we call `subscriptionInfoWrapper` and
       // store it in memory.
       server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo, { settings })
       addSubscriptionToIndex(subscriptionId).then(() => {
         return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ settings, subscriptionInfo, channelIDs: [] }))
+          .catch(async e => {
+            console.error(e, 'removing subscription from index because of error saving subscription', subscriptionId)
+            await deleteSubscriptionFromIndex(subscriptionId)
+            throw e
+          })
       }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
       // Send an initial push notification to verify that the endpoint works
       // This is mostly for testing to be able to auto-remove invalid or expired
