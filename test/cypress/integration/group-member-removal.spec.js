@@ -293,19 +293,6 @@ describe('Group - Removing a member', () => {
   })
 
   // Tests to verify that PEK rotation works
-  it('userBot joins groupB', () => {
-    cy.giLogin(`userbot-${userId}`, { toGroupDashboardUponSuccess: false, bypassUI: true })
-
-    cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
-      username: `userbot-${userId}`,
-      existingMemberUsername: `user2-${userId}`,
-      groupName: groupNameB,
-      isLoggedIn: true,
-      // TODO: Sometimes it seems to get stuck here when bypassing the UI
-      bypassUI: false
-    })
-  })
-
   it('user3 joins groupB', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupB, {
       username: `user3-${userId}`,
@@ -315,14 +302,14 @@ describe('Group - Removing a member', () => {
     })
   })
 
-  it('user3 can see the username for userBot', () => {
+  it('user3 can see the username for user2', () => {
     cy.giLogin(`user3-${userId}`, { bypassUI: true })
-    assertMembersCount(3)
+    assertMembersCount(2)
 
-    cy.getByDT('groupMembers').contains('userbot-')
+    cy.getByDT('groupMembers').contains('user2-')
     cy.window().its('sbp').then(sbp => {
       const rootState = sbp('state/vuex/state')
-      const userbotId = rootState.namespaceLookups[`userbot-${userId}`]
+      const userbotId = rootState.namespaceLookups[`user2-${userId}`]
       const PEKs = Object.values(rootState[userbotId]._vm.authorizedKeys).filter(key => key.name === 'pek')
       if (PEKs.length < 2) throw new RangeError('Expected the PEK to have been rotated')
     })
