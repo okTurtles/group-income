@@ -1,9 +1,14 @@
 <template lang='pug'>
-  modal-template(class='has-background' ref='modal' :a11yTitle='L("Log in")')
+  modal-template(
+    class='has-background'
+    ref='modal'
+    :a11yTitle='L("Log in")'
+    :loading='ephemeral.isLoggingIn'
+  )
     template(slot='title')
       i18n Log in
 
-    login-form(@submit-succeeded='submit')
+    login-form(@login-status='onLoginStatusChange')
 
     template(slot='footer')
       p
@@ -24,10 +29,31 @@ export default ({
     ModalTemplate,
     LoginForm
   },
+  data () {
+    return {
+      ephemeral: {
+        isLoggingIn: false
+      }
+    }
+  },
   methods: {
-    submit () {
+    onPostSubmit () {
       this.$refs.modal.close()
       this.$router.push({ query: this.$route.query, path: this.$route.query.next ?? '/' }).catch(() => {})
+    },
+    onLoginStatusChange (status) {
+      switch (status) {
+        case 'submitting':
+          this.ephemeral.isLoggingIn = true
+          break
+        case 'success': {
+          this.ephemeral.isLoggingIn = false
+          this.$nextTick(this.onPostSubmit)
+          break
+        }
+        default: // 'error' status
+          this.ephemeral.isLoggingIn = false
+      }
     },
     showSignupModal () {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'SignupModal')
