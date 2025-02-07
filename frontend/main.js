@@ -49,6 +49,16 @@ console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
+
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
   // Fix for https://github.com/okTurtles/group-income/issues/684
@@ -106,6 +116,7 @@ async function startApp () {
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {
+    console.error('Serious error', contractID, error)
     sbp('gi.ui/seriousErrorBanner', error)
     if (error?.name === 'ChelErrorForkedChain') {
       const rootState = sbp('state/vuex/state')
