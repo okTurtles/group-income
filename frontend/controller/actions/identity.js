@@ -637,7 +637,20 @@ export default (sbp('sbp/selectors/register', {
     // share along with OP_KEY_UPDATE. In this case, we're sharing all keys
     // to their respective contracts and there are no keys to include in
     // the same event as OP_KEY_UPDATE. Therefore, we return undefined
-    return undefined
+    if (!newKeys.pek) return undefined
+    return [
+      undefined, // Nothing before OP_KEY_UPDATE
+      [
+        // Re-encrypt attributes with the new PEK
+        await sbp('gi.actions/identity/setAttributes', {
+          contractID,
+          data: state.attributes,
+          encryptionKey: newKeys.pek[1],
+          encryptionKeyId: newKeys.pek[2],
+          returnInvocation: true
+        })
+      ]
+    ]
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
