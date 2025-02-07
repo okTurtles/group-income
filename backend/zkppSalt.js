@@ -202,7 +202,7 @@ export const registrationKey = async (contractID: string, b: string): Promise<fa
   }
 }
 
-export const register = async (contractID: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<boolean> => {
+export const register = async (contractID: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<string | false> => {
   if (!verifyChallenge(contractID, clientPublicKey, encryptedSecretKey, userSig)) {
     console.warn('register: Error validating challenge: ' + JSON.stringify({ contract: contractID, clientPublicKey, userSig }))
     throw new Error('register: Invalid challenge')
@@ -233,11 +233,15 @@ export const register = async (contractID: string, clientPublicKey: string, encr
     return false
   }
 
-  const [authSalt, contractSalt, hashedPasswordBuf] = parseRegisterSaltRes
+  const [authSalt, contractSalt, hashedPasswordBuf, sharedEncryptionKey] = parseRegisterSaltRes
 
-  await setZkppSaltRecord(contractID, Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt)
+  const token = encryptSaltUpdate(
+    hashUpdateSecret,
+    contractID,
+    JSON.stringify([Date.now(), Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt])
+  )
 
-  return true
+  return encryptContractSalt(sharedEncryptionKey, token)
 }
 
 const contractSaltVerifyC = (h: string, r: string, s: string, userHc: string) => {
@@ -333,6 +337,22 @@ export const updateContractSalt = async (contract: string, r: string, s: string,
   }
 
   return false
+}
+
+export const redeemSaltRegistrationToken = async (provisoryRegistrationKey: string, contract: string, token: string): Promise<void> => {
+  const decryptedToken = decryptSaltUpdate(
+    hashUpdateSecret,
+    provisoryRegistrationKey,
+    token
+  )
+
+  const [timestamp, hashedPassword, authSalt, contractSalt] = JSON.parse(decryptedToken)
+
+  if (timestamp < (Date.now() - 180e3)) {
+    throw new Error('ZKPP token expired')
+  }
+
+  await setZkppSaltRecord(contract, hashedPassword, authSalt, contractSalt)
 }
 
 export const redeemSaltUpdateToken = async (contract: string, token: string): Promise<(cid: ?string) => Promise<void>> => {
