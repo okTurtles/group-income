@@ -176,8 +176,6 @@ export default async () => {
     // Remember to keep these values up-to-date.
     const HASH_LENGTH = 56
 
-    const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
-    const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
     // Note: the data folder may contain other files if the `fs` persistence mode
     // has been used before. We won't load them here; that's the job of `chel migrate`.
@@ -202,8 +200,8 @@ export default async () => {
         const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
         if (
-          (CONTRACT_MANIFEST_REGEX.test(key) && value.startsWith(CONTRACT_MANIFEST_MAGIC)) ||
-          (CONTRACT_SOURCE_REGEX.test(key) && value.startsWith(CONTRACT_SOURCE_MAGIC))
+          CONTRACT_MANIFEST_REGEX.test(key) ||
+          CONTRACT_SOURCE_REGEX.test(key)
         ) {
           await sbp('chelonia/db/set', key, value)
           numNewKeys++
