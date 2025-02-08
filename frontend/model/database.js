@@ -173,12 +173,12 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   })
   // use localforage for storage
   sbp('sbp/selectors/overwrite', {
-    'chelonia/db/get': key => log.getItem(key),
+    'chelonia.db/get': key => log.getItem(key),
     // TODO: handle QuotaExceededError
-    'chelonia/db/set': (key, value) => log.setItem(key, value),
-    'chelonia/db/delete': (key: string) => log.removeItem(key)
+    'chelonia.db/set': (key, value) => log.setItem(key, value),
+    'chelonia.db/delete': (key: string) => log.removeItem(key)
   })
-  sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+  sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
 }
 
 // =======================
