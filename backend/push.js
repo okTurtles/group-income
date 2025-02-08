@@ -10,27 +10,27 @@ const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../sha
 
 const addSubscriptionToIndex = async (subcriptionId: string) => {
   await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
     // Add the current subscriptionId to the subscription index. Entries in the
     // index are separated by \x00 (NUL). The index itself is used to know
     // which entries to load.
     const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${subcriptionId}`
-    await sbp('chelonia/db/set', '_private_webpush_index', updatedIndex)
+    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
   })
 }
 
 const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
   await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
     const index = currentIndex.indexOf(subcriptionId)
     if (index === -1) return
     const updatedIndex = currentIndex.slice(0, index > 1 ? index - 1 : 0) + currentIndex.slice(index + subcriptionId.length)
-    await sbp('chelonia/db/set', '_private_webpush_index', updatedIndex)
+    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
   })
 }
 
 const saveSubscription = (server, subscriptionId) => {
-  return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
+  return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
     subscription: server.pushSubscriptions[subscriptionId],
     channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
   })).catch(e => {
@@ -173,7 +173,7 @@ const removeSubscription = async (server, subscriptionId) => {
       })
     }
     await deleteSubscriptionFromIndex(subscriptionId)
-    await sbp('chelonia/db/delete', `_private_webpush_${subscriptionId}`)
+    await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
   } catch (e) {
     console.error(e, 'Error removing subscription', subscriptionId)
   }
@@ -277,7 +277,7 @@ export const pushServerActionhandlers: any = {
       // store it in memory.
       server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
       addSubscriptionToIndex(subscriptionId).then(() => {
-        return sbp('chelonia/db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
+        return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
           .catch(async e => {
             console.error(e, 'removing subscription from index because of error saving subscription', subscriptionId)
             await deleteSubscriptionFromIndex(subscriptionId)

@@ -69,8 +69,8 @@ const domainBlacklist = [
 ].reduce(reducer, {})
 // Selectors for which debug logging won't be enabled.
 const selectorBlacklist = [
-  'chelonia/db/get',
-  'chelonia/db/set',
+  'chelonia.db/get',
+  'chelonia.db/set',
   'chelonia/rootState',
   'chelonia/haveSecretKey',
   'chelonia/private/enqueuePostSyncOps',
