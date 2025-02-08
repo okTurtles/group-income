@@ -103,7 +103,11 @@ class PersistentAction {
     // Schedule a retry if appropriate.
     if (status.nextRetry) {
       // Note: there should be no older active timeout to clear.
-      this.timer = setTimeout(() => this.attempt(), this.options.retrySeconds * 1e3)
+      this.timer = setTimeout(() => {
+        this.attempt().catch((e) => {
+          console.error('Error attempting persistent action', id, e)
+        })
+      }, this.options.retrySeconds * 1e3)
     }
   }
 
@@ -142,12 +146,11 @@ sbp('sbp/selectors/register', {
 
   // Cancels a specific action by its ID.
   // The action won't be retried again, but an async action cannot be aborted if its promise is stil attempting.
-  'chelonia.persistentActions/cancel' (id: UUIDV4): void {
+  async 'chelonia.persistentActions/cancel' (id: UUIDV4): Promise<void> {
     if (id in this.actionsByID) {
       this.actionsByID[id].cancel()
       delete this.actionsByID[id]
-      // Likely no need to await this call.
-      sbp('chelonia.persistentActions/save')
+      return await sbp('chelonia.persistentActions/save')
     }
   },
 
@@ -172,9 +175,14 @@ sbp('sbp/selectors/register', {
       this.actionsByID[action.id] = action
       ids.push(action.id)
     }
-    // Likely no need to await this call.
-    sbp('chelonia.persistentActions/save')
-    for (const id of ids) this.actionsByID[id].attempt()
+    sbp('chelonia.persistentActions/save').catch(e => {
+      console.error('Error saving persistent actions', e)
+    })
+    for (const id of ids) {
+      this.actionsByID[id].attempt().catch((e) => {
+        console.error('Error attempting persistent action', id, e)
+      })
+    }
     return ids
   },
 
@@ -182,9 +190,9 @@ sbp('sbp/selectors/register', {
   // - 'status.failedAttemptsSoFar' will still be increased upon failure.
   // - Does nothing if a retry is already running.
   // - Does nothing if the action has already been resolved, rejected or cancelled.
-  'chelonia.persistentActions/forceRetry' (id: UUIDV4): void {
+  'chelonia.persistentActions/forceRetry' (id: UUIDV4): void | Promise<void> {
     if (id in this.actionsByID) {
-      this.actionsByID[id].attempt()
+      return this.actionsByID[id].attempt()
     }
   },
 
@@ -198,16 +206,16 @@ sbp('sbp/selectors/register', {
       // TODO: find a cleaner alternative.
       this.actionsByID[id].id = id
     }
-    sbp('chelonia.persistentActions/retryAll')
+    return sbp('chelonia.persistentActions/retryAll')
   },
 
   // Retry all existing persisted actions.
   // TODO: add some delay between actions so as not to spam the server,
   // or have a way to issue them all at once in a single network call.
-  'chelonia.persistentActions/retryAll' (): void {
-    for (const id in this.actionsByID) {
-      sbp('chelonia.persistentActions/forceRetry', id)
-    }
+  'chelonia.persistentActions/retryAll' () {
+    return Promise.allSettled(
+      Object.keys(this.actionsByID).map(id => sbp('chelonia.persistentActions/forceRetry', id))
+    )
   },
 
   // Updates the database version of the attempting action list.

@@ -12,6 +12,42 @@ import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
+const handleDeletedContract = async (contractID: string) => {
+  const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
+  if (!cheloniaState) return
+
+  await sbp('chelonia/contract/remove', contractID)
+
+  const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions/')
+  const handler = type && sbp('sbp/selectors/fn', `${type}/_ondeleted`)
+
+  const currentIdentityState = sbp('state/vuex/getters').currentIdentityState
+  // Delete redudant file deletion tokens. If a contract has been deleted, so
+  // have been the files it contained, and therefore we no longer need to
+  // hold on to their file deletion tokens.
+  if (currentIdentityState.fileDeleteTokens) {
+    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billingContractID }]) => {
+      return billingContractID === contractID
+    }).map(([cid]) => cid)
+    await sbp('gi.actions/identity/removeFiles', {
+      manifestCids,
+      option: {
+        shouldDeleteToken: true
+      }
+    }).catch(e => {
+      console.error('[handleDeletedContract] Error deleting saved tokens for deleted contract', contractID, e)
+    })
+  }
+
+  if (typeof handler === 'function') {
+    await handler(contractID, contractState).catch(e => {
+      console.error('Error handling deletion of contract', contractID)
+    })
+  } else {
+    console.warn('[handleDeletedContract] Received contract deletion notification for contract without a declared deletion handler', contractID, cheloniaState.type)
+  }
+}
+
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
 // worker should call this function. On the other hand, if Chelonia is running
@@ -113,6 +149,7 @@ const setupChelonia = async (): Promise<*> => {
           'chelonia/contract/setPendingKeyRevocation',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',
+          'chelonia/out/deleteContract',
           'chelonia/contract/waitingForKeyShareTo',
           'chelonia/contract/successfulKeySharesByContractID',
           'gi.actions/group/removeOurselves', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt', 'gi.actions/group/addChatRoom',
@@ -140,8 +177,15 @@ const setupChelonia = async (): Promise<*> => {
       }
     },
     hooks: {
-      syncContractError: (e: Error, contractID: string) => {
-        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
+      syncContractError: (e, contractID) => {
+        if (!e) return
+        if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
+          console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
+          handleDeletedContract(contractID).catch(e => {
+            console.error('Error handling contract deletion', e)
+          })
+        }
+        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e.name)) {
           sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID })
         }
       },
@@ -262,6 +306,12 @@ const setupChelonia = async (): Promise<*> => {
         if (!data) return
 
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
+      },
+      [NOTIFICATION_TYPE.DELETION] (contractID) {
+        console.error('[messageHandler] Contract ID ' + contractID + ' has been deleted')
+        handleDeletedContract(contractID).catch(e => {
+          console.error('Error handling contract deletion', e)
+        })
       }
     },
     handlers: {
