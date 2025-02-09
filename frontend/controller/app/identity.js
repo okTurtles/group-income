@@ -121,7 +121,7 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       // NOTE: users could notice that they leave the group by someone
       // else when they log in
       const currentState = sbp('state/vuex/state')
-      if (!currentState.currentGroupId) {
+      if (!currentState.currentGroupId && currentState[identityContractID]) {
         const gId = Object.keys(currentState.contracts)
           .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
 
