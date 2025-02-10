@@ -257,6 +257,7 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
+        scrollHashOnInitialLoad: null, // Message hash to scroll to on chatroom's initial load
         replyingMessage: null,
         replyingTo: null,
         unprocessedEvents: []
@@ -858,23 +859,7 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
-
-        // NOTE: we do want the 'c-focused' animation if there is a message-scroll query.
-        if (events.length) {
-          // NOTE: if 'messageHashToScroll' was not there in the messages of the contract state
-          //       we need to retrieve more events, and render to scroll to that message
-          this.updateScroll(messageHashToScroll, Boolean(mhash))
-        } else {
-          // NOTE: we need to scroll to the message first in order to no more infiniteHandler is called
-          await this.updateScroll(messageHashToScroll, Boolean(mhash))
-
-          if (mhash) {
-            // NOTE: delete mhash in the query after scroll and highlight the message with mhash
-            const newQuery = { ...this.$route.query }
-            delete newQuery.mhash
-            this.$router.replace({ query: newQuery })
-          }
-        }
+        this.ephemeral.scrollHashOnInitialLoad = messageHashToScroll
       }
 
       return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
@@ -1092,6 +1077,7 @@ export default ({
     }, 40),
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
+
       if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once which should be ignored
         //       before calling the setInitMessages function
@@ -1134,6 +1120,23 @@ export default ({
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
+
+            if (this.ephemeral.scrollHashOnInitialLoad) {
+              const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
+              this.$nextTick(() => {
+                this.updateScroll(
+                  this.ephemeral.scrollHashOnInitialLoad,
+                  scrollingToSpecificMessage // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+                )
+                // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+                if (scrollingToSpecificMessage) {
+                  const newQuery = { ...this.$route.query }
+                  delete newQuery.mhash
+                  this.$router.replace({ query: newQuery })
+                }
+                this.ephemeral.scrollHashOnInitialLoad = null
+              })
+            }
           }
         } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
