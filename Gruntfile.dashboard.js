@@ -44,7 +44,6 @@ module.exports = (grunt) => {
   const esbuildOptionsBag = {
     default: {
       bundle: true,
-      incremental: true,
       loader: {
         '.eot': 'file',
         '.ttf': 'file',
@@ -57,7 +56,6 @@ module.exports = (grunt) => {
       sourcemap: isDevelopment,
       format: 'esm',
       external: ['*.eot', '*.ttf', '*woff', '*.woff2'],
-      watch: false,
       chunkNames: '[name]-[hash]-cached'
     },
     mainJS: {
