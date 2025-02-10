@@ -1,3 +1,9 @@
+// Breakpoints
+$gap: 1rem;
+$phone_narrow: 441px;
+$tablet: 769px;
+$desktop: 1200px;
+
 @mixin fa($size, $dimensions) {
   display: inline-block;
   font-size: $size;
