@@ -1,3 +1,6 @@
+@use "../variables" as *;
+@use "../icons" as i;
+
 form {
   display: block;
   width: 100%;
@@ -178,7 +181,7 @@ p.error {
   user-select: none;
 
   &::before {
-    @include icon(close-circle);
+    @include i.icon(close-circle);
     position: relative;
     top: 2px;
     display: inline-block;

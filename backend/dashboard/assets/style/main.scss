@@ -2,17 +2,16 @@
 
 // Files here are currently the replica of the same files in the 'group-income' project,
 // but likely to be modified according to the design
-@import "_variables";
-@import "_reset";
-@import "_base";
-@import "_typography";
-@import "_utilities";
-@import "_icons";
-@import "_layout";
-@import "_transitions";
+@use "reset";
+@use "base";
+@use "typography";
+@use "utilities";
+@use "icons";
+@use "layout";
+@use "transitions";
 
-@import "components/_buttons";
-@import "components/_miscellaneous";
-@import "components/_tables";
-@import "components/_forms";
-@import "components/_skeletons";
+@use "components/buttons";
+@use "components/miscellaneous";
+@use "components/tables";
+@use "components/forms";
+@use "components/skeletons";
