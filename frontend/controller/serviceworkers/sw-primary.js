@@ -19,11 +19,14 @@ import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import {
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM, JOINED_CHATROOM, JOINED_GROUP,
+  CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
+  JOINED_CHATROOM, JOINED_GROUP,
   KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
@@ -37,6 +40,16 @@ console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
+
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
 
 deserializer.register(GIMessage)
 deserializer.register(Secret)
@@ -103,17 +116,20 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
-  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED, LOGIN,
-  LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM, LEFT_CHATROOM, LEFT_GROUP,
-  JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, MESSAGE_RECEIVE, MESSAGE_SEND,
-  NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
+
+  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED,
+  ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
+  EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,
+  CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT,
+  NOTIFICATION_TYPE.VERSION_INFO,
+  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
   NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
   PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
 ].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
-    const { data } = serializer(args)
+    const { data, transferables } = serializer(args)
     const message = {
       type: 'event',
       subtype: et,
@@ -122,10 +138,30 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
     self.clients.matchAll()
       .then((clientList) => {
         clientList.forEach((client) => {
-          client.postMessage(message)
+          client.postMessage(message, transferables)
         })
       })
   })
+})
+
+sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
+  // Remove function types from contract data
+  // This avoids unnecessary MessagePorts
+  const argsCopy = Object.fromEntries(Object.entries(contract).filter(([_, v]) => {
+    return typeof v !== 'function'
+  }))
+  const { data, transferables } = serializer([argsCopy])
+  const message = {
+    type: 'event',
+    subtype: CONTRACT_REGISTERED,
+    data
+  }
+  self.clients.matchAll()
+    .then((clientList) => {
+      clientList.forEach((client) => {
+        client.postMessage(message, transferables)
+      })
+    })
 })
 
 // This event (`NEW_CHATROOM_UNREAD_POSITION`) requires special handling because
@@ -134,7 +170,7 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
   // Set a 'from' parameter to signal it comes from the SW
   const argsCopy = { ...args, from: 'sw' }
-  const { data } = serializer([argsCopy])
+  const { data, transferables } = serializer([argsCopy])
   const message = {
     type: 'event',
     subtype: NEW_CHATROOM_UNREAD_POSITION,
@@ -143,7 +179,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
   self.clients.matchAll()
     .then((clientList) => {
       clientList.forEach((client) => {
-        client.postMessage(message)
+        client.postMessage(message, transferables)
       })
     })
 })
@@ -151,7 +187,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
 // Logs are treated especially to avoid spamming logs with event emitted
 // entries
 sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
-  const { data } = serializer(args)
+  const { data, transferables } = serializer(args)
   const message = {
     type: CAPTURED_LOGS,
     data
@@ -159,7 +195,7 @@ sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
   self.clients.matchAll()
     .then((clientList) => {
       clientList.forEach((client) => {
-        client.postMessage(message)
+        client.postMessage(message, transferables)
       })
     })
 })
@@ -265,6 +301,11 @@ sbp('okTurtles.events/on', CHELONIA_RESET, () => {
   sbp('gi.periodicNotifications/init')
 })
 
+let currentVersionInfo
+sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
+  currentVersionInfo = versionInfo
+})
+
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
 const setupPromise = setupChelonia()
@@ -359,6 +400,23 @@ self.addEventListener('message', function (event) {
         }).finally(() => {
           port.close()
         })
+
+        // If the window is outdated (different GI_VERSION), trigger an event
+        // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
+        // This handles new SW clients that have an outdated
+        // `process.env.GI_VERSION` (for example, by having loaded a cached
+        // version of `main.js`).
+        if (
+          currentVersionInfo &&
+          event.source &&
+          event.data.GI_VERSION !== currentVersionInfo.GI_VERSION
+        ) {
+          event.source.postMessage({
+            type: 'event',
+            subtype: NOTIFICATION_TYPE.VERSION_INFO,
+            data: [currentVersionInfo]
+          })
+        }
         break
       }
       default:
@@ -487,4 +545,19 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   }).catch(e => {
     console.error('Error displaying native notification', e)
   })
+})
+
+// These `NEW_*` events are emitted in KV files. To keep things consistent with
+// the browser state, we update the state when these events are generated.
+sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.lastLoggedIn[contractID] = data
+})
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.preferences = preferences
+})
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
 })

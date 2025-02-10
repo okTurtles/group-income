@@ -92,8 +92,10 @@ $ NODE_ENV=production grunt pin:0.1.0
 Build the app for distribution:
 
 ```bash
+$ git tag -u <email> v1.1.0  # create the tag before calling grunt deploy
 $ NODE_ENV=production grunt deploy
 $ tar cfz gi-v1.1.0.tgz dist
+# Debug build is the same except without NODE_ENV var
 ```
 
 Clean up files in `dist/`:

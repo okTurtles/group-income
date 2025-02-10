@@ -23,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -48,6 +48,16 @@ console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
+
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
@@ -106,9 +116,19 @@ async function startApp () {
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {
+    console.error('Serious error', contractID, error)
     sbp('gi.ui/seriousErrorBanner', error)
     if (error?.name === 'ChelErrorForkedChain') {
       const rootState = sbp('state/vuex/state')
+      if (!rootState.contracts[contractID]) {
+        // If `rootState.contracts[contractID]` doesn't exist, it means we're no
+        // longer subscribed to the contract. This could happen, e.g., if the
+        // contract has since been released. In any case, the absence of
+        // `rootState.contracts[contractID]` means that there's nothing to
+        // left to recover.
+        console.error('Forked chain detected. However, there is no contract entry.', { contractID }, error)
+        return
+      }
       const type = rootState.contracts[contractID].type || '(unknown)'
       console.error('Forked chain detected', { contractID, type }, error)
 
@@ -116,10 +136,15 @@ async function startApp () {
 
       if (retry) {
         sbp('gi.ui/clearBanner')
-        sbp('chelonia/contract/sync', contractID, { resync: true }).catch((e) => {
-          console.error('Error during re-sync', contractID, e)
-          alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
-        })
+        // If it's our identity contract, we need to log in again to be able
+        // to propery decrypt all data, since that requires the user password
+        ;((rootState.loggedIn?.identityContractID === contractID)
+          ? sbp('gi.actions/identity/logout', null, true)
+          : sbp('chelonia/contract/sync', contractID, { resync: true }))
+          .catch((e) => {
+            console.error('Error during re-sync', contractID, e)
+            alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
+          })
       }
     }
     if (process.env.CI) {
@@ -267,7 +292,8 @@ async function startApp () {
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
-        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
+        // Remove the loading animation that sits on top of the Vue app, so that
+        // users can properly interact with the app for a follow-up action.
         this.removeLoadingAnimation()
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID, isNewlyCreated }) => {
@@ -331,7 +357,14 @@ async function startApp () {
       sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
+        // Calling login could result in a prompt in case of an error; if the
+        // loading animation is visible, it'll hide the prompt. We remove it,
+        // so that it's possible to interact with the prompt.
+        const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+          this.removeLoadingAnimation()
+        })
         await sbp('gi.app/identity/login', { identityContractID })
+        removeHandler()
         await sbp('chelonia/contract/wait', identityContractID)
       }).catch(async e => {
         this.removeLoadingAnimation()

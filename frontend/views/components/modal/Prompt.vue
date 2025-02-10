@@ -8,7 +8,7 @@ modal-template(ref='modal' class='is-prompt' :a11yTitle='$attrs.heading' :modalF
       @submit.prevent=''
       novalidate='true'
     )
-      fieldset.field
+      fieldset.field.c-prompt-content(:class='{ "is-text-center": isContentCentered }')
         legend.label(v-safe-html:a='$attrs.question')
 
       .buttons
@@ -18,8 +18,9 @@ modal-template(ref='modal' class='is-prompt' :a11yTitle='$attrs.heading' :modalF
           @click='closeModal'
         ) {{ $attrs.secondaryButton || L('No')}}
 
-        button-submit.is-outlined(
+        button-submit(
           v-if='$attrs.primaryButton'
+          :class='"is-" + primaryButtonStyle'
           @click='submit'
           data-test='submitPrompt'
         ) {{ $attrs.primaryButton || L('Yes')}}
@@ -38,6 +39,16 @@ export default ({
     ModalTemplate,
     ButtonSubmit,
     L
+  },
+  props: {
+    primaryButtonStyle: {
+      type: String,
+      default: 'outlined'
+    },
+    isContentCentered: {
+      type: Boolean,
+      default: true
+    }
   },
   mounted () {
     if (Object.keys(this.$attrs).length === 0) this.closeModal()
@@ -60,7 +71,6 @@ export default ({
 
 .c-container {
   width: 100%;
-  text-align: center;
 
   .buttons {
     justify-content: center;
@@ -70,8 +80,16 @@ export default ({
     }
   }
 
-  fieldset.field > legend.label {
-    margin: 0 auto 0.5rem auto;
+  .c-prompt-content {
+    position: relative;
+
+    &.is-text-center {
+      text-align: center;
+    }
+
+    legend.label {
+      margin: 0 auto 0.5rem auto;
+    }
   }
 }
 
