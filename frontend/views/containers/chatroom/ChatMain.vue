@@ -558,7 +558,11 @@ export default ({
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleTarget.scrollIntoView({ block: targetIsLatestMessage ? 'end' : 'start' })
+          if (targetIsLatestMessage) {
+            this.jumpToLatest('instant')
+          } else {
+            eleTarget.scrollIntoView()
+          }
         }
       }
 
