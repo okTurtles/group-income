@@ -544,8 +544,10 @@ export default ({
       }
 
       const scrollAndHighlight = (index) => {
-        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
-        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
+        const allMessageEls = document.querySelectorAll('.c-body-conversation > .c-message')
+        const eleMessage = allMessageEls[index]
+        const targetIsLatestMessage = index === (allMessageEls.length - 1)
+        const eleTarget = targetIsLatestMessage ? eleMessage : allMessageEls[Math.max(0, index - 1)]
 
         if (!eleTarget) { return }
 
@@ -556,7 +558,7 @@ export default ({
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleTarget.scrollIntoView()
+          eleTarget.scrollIntoView({ block: targetIsLatestMessage ? 'end' : 'start' })
         }
       }
 
