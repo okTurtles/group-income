@@ -71,6 +71,16 @@ const route = new Proxy({}, {
   }
 })
 
+// helper function that returns 404 and prevents client from caching the 404 response
+// which can sometimes break things: https://github.com/okTurtles/group-income/issues/2608
+function return404nocache (h) {
+  return h.response()
+    .code(404)
+    .header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    .header('Pragma', 'no-cache')
+    .header('Expires', '0')
+}
+
 // RESTful API routes
 
 // TODO: Update this regex once `chel` uses prefixed manifests
@@ -277,7 +287,7 @@ route.GET('/latestHEADinfo/{contractID}', {
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
-      return Boom.notFound()
+      return return404nocache(h)
     }
     return HEADinfo
   } catch (err) {
@@ -473,7 +483,7 @@ route.GET('/file/{hash}', {
 
   const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
   if (!blobOrString) {
-    return Boom.notFound()
+    return return404nocache(h)
   }
   return h.response(blobOrString).etag(hash)
 })
@@ -675,7 +685,7 @@ route.GET('/kv/{contractID}/{key}', {
 
   const result = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
   if (!result) {
-    return Boom.notFound()
+    return return404nocache(h)
   }
 
   return h.response(result).etag(createCID(result))
@@ -804,7 +814,7 @@ route.GET('/zkpp/{name}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
-    return challenge || Boom.notFound()
+    return challenge || return404nocache(h)
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)
