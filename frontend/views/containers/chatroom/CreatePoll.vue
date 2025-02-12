@@ -18,6 +18,7 @@
             name='question'
             ref='question'
             :placeholder='L("Ask a question!")'
+            :maxlength='config.questionMaxChars'
             @input='e => debounceField("question", e.target.value)'
             @blur='e => updateField("question", e.target.value)'
             :class='{ error: $v.form.question.$error }'
@@ -39,6 +40,7 @@
                 :ref='"input" + option.id'
                 :placeholder='optionPlaceholder(index + 1)'
                 v-model.trim='option.value'
+                :maxlength='config.optionMaxChars'
               )
               button.is-icon-small.is-btn-shifted(
                 type='button'
@@ -112,7 +114,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
@@ -152,6 +154,10 @@ export default {
         options: [
           { id: createRandomId(), value: '' }
         ]
+      },
+      config: {
+        maxOptions: POLL_MAX_OPTIONS,
+        optionMaxChars: POLL_OPTION_MAX_CHARS
       }
     }
   },
@@ -163,7 +169,7 @@ export default {
       return this.form.options.length
     },
     enableMoreButton () {
-      return this.optionCount < POLL_MAX_OPTIONS
+      return this.optionCount < this.config.maxOptions
     },
     disableSubmit () {
       return this.$v.invalid ||
