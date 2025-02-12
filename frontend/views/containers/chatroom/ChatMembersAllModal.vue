@@ -284,6 +284,7 @@ export default ({
       }
 
       if (contractID === this.ourIdentityContractId && !undoing) {
+        // If it's the current user,open the 'Leave-channel' modal instead.
         return sbp('okTurtles.events/emit', REPLACE_MODAL, 'LeaveChannelModal')
       }
 
