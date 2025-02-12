@@ -197,7 +197,7 @@ async function startApp () {
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
-    alert(L('Error while setting up service worker'))
+    alert(L('Error while setting up service worker: {err}', { err: e.message }))
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
@@ -380,7 +380,7 @@ async function startApp () {
           console.error('[app] Service worker failed to become ready:', e)
           // Fallback behavior
           this.removeLoadingAnimation()
-          alert(L('Error while setting up service worker'))
+          alert(L('Error while setting up service worker: {err}', { err: e.message }))
           throw e
         })
       })()]).then(async ([identityContractID]) => {
