@@ -725,10 +725,10 @@ export default (sbp('sbp/selectors/register', {
                 console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
               }
               console.warn(`[chelonia] [OP_ATOMIC] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
-              if (this.config.strictProcessing) {
+              if (config.strictProcessing) {
                 throw e
               }
-              this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+              config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
               if (e.name === 'ChelErrorWarning') continue
             } else {
               console.error('Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
