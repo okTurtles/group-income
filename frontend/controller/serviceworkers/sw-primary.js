@@ -251,7 +251,7 @@ sbp('sbp/selectors/register', {
         })))
         Object.defineProperty(computedGetters, 'currentPaymentPeriodForGroup', {
           get: function () {
-            return (state) => getters.periodStampGivenDateForGroup(state, new Date())
+            return (state) => this.periodStampGivenDateForGroup(state, new Date())
           }
         })
       }
