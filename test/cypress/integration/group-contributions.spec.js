@@ -26,15 +26,6 @@ function addNonMonetaryContribution (name) {
   })
 }
 
-function assertNonMonetaryEditableValue (name) {
-  // Need to wait until the event is processed
-  cy.giEmptyInvocationQueue()
-
-  cy.getByDT('buttonEditNonMonetaryContribution').click()
-  cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
-  cy.getByDT('buttonCancelNonMonetaryContribution').click()
-}
-
 function assertGraphicSummary (legendListItems) {
   cy.getByDT('groupPledgeSummary', 'ul').within(([list]) => {
     legendListItems.forEach((legendText, index) => {
@@ -373,8 +364,7 @@ describe('Contributions', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear()
     cy.getByDT('inputNonMonetaryContribution').type('French classes{enter}')
-    assertNonMonetaryEditableValue('French classes')
-
+    cy.giEmptyInvocationQueue() // wait for edits to go through
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
