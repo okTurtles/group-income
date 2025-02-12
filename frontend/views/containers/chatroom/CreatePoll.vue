@@ -82,6 +82,8 @@
           i.icon-exclamation-triangle
           i18n Note: it is possible for a group member to "hack" the app to figure out who voted on what.
 
+        banner-scoped(ref='formMsg' allow-a)
+
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
@@ -102,15 +104,16 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import Vue from 'vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
 
@@ -127,7 +130,8 @@ export default {
     trapFocus
   ],
   components: {
-    ModalClose
+    ModalClose,
+    BannerScoped
   },
   data () {
     return {
@@ -218,26 +222,27 @@ export default {
         })
       }
     },
-    submit () {
+    async submit () {
       this.form.disabled = true
       const contractID = this.currentChatRoomId
-      sbp('gi.actions/chatroom/addMessage', {
-        contractID,
-        data: {
-          type: MESSAGE_TYPES.POLL,
-          pollData: {
-            question: this.form.question,
-            options: this.form.options,
-            expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
-            hideVoters: this.form.hideVoters,
-            pollType: this.form.allowMultipleChoice
-              ? POLL_TYPES.MULTIPLE_CHOICES
-              : POLL_TYPES.SINGLE_CHOICE
+      this.$refs.formMsg.clean()
+      try {
+        await sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data: {
+            type: MESSAGE_TYPES.POLL,
+            pollData: {
+              question: this.form.question,
+              options: this.form.options,
+              expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
+              hideVoters: this.form.hideVoters,
+              pollType: this.form.allowMultipleChoice
+                ? POLL_TYPES.MULTIPLE_CHOICES
+                : POLL_TYPES.SINGLE_CHOICE
+            }
           }
-        }
-      }).catch((e) => {
-        console.log(`Error adding message to create poll for ${contractID}`, e)
-      }).finally(() => {
+        })
+
         this.form = {
           question: '',
           allowMultipleChoice: false,
@@ -250,7 +255,12 @@ export default {
         }
         this.$v.form.$reset()
         this.close()
-      })
+      } catch (e) {
+        console.log(`Error adding message to create poll for ${contractID}`, e)
+        this.$refs.formMsg.danger(e.message)
+      } finally {
+        this.form.disabled = false
+      }
     },
     resizeHandler () {
       if (window.matchMedia('(hover: hover)').matches) {
