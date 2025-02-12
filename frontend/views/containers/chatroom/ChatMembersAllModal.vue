@@ -125,6 +125,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
@@ -281,6 +282,11 @@ export default ({
         console.log(`${contractID} is not part of this chatroom`)
         return
       }
+
+      if (contractID === this.ourIdentityContractId && !undoing) {
+        return sbp('okTurtles.events/emit', REPLACE_MODAL, 'LeaveChannelModal')
+      }
+
       try {
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
