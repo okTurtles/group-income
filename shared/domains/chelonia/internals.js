@@ -12,7 +12,7 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
+import { ChelErrorKeyAlreadyExists, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -22,7 +22,7 @@ import { isSignedData, signedIncomingData } from './signedData.js'
 // message
 const missingDecryptionKeyIdsMap = new WeakMap()
 
-const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
+const getMsgMeta = (message: GIMessage, contractID: string, state: Object, index?: number) => {
   const signingKeyId = message.signingKeyId()
   let innerSigningKeyId: ?string = null
 
@@ -45,7 +45,8 @@ const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
     },
     get innerSigningContractID () {
       return getContractIDfromKeyId(contractID, result.innerSigningKeyId, state)
-    }
+    },
+    index
   }
 
   return result
@@ -69,7 +70,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
     key._notBeforeHeight = height
     if (authorizedKeys?.[key.id]) {
       if (authorizedKeys[key.id]._notAfterHeight == null) {
-        throw new Error(`Cannot set existing unrevoked key: ${key.id}`)
+        throw new ChelErrorKeyAlreadyExists(`Cannot set existing unrevoked key: ${key.id}`)
       }
       // If the key was get previously, preserve its _notBeforeHeight
       // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
