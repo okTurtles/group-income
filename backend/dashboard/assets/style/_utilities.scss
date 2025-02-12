@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 // spacing utiltity classes
 // utility classes for margins
 @for $n from 0 through 6 {
