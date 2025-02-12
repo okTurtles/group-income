@@ -74,11 +74,7 @@ const route = new Proxy({}, {
 // helper function that returns 404 and prevents client from caching the 404 response
 // which can sometimes break things: https://github.com/okTurtles/group-income/issues/2608
 function notFoundNoCache (h) {
-  return h.response()
-    .code(404)
-    .header('Cache-Control', 'no-store, must-revalidate, proxy-revalidate')
-    .header('Pragma', 'no-cache')
-    .header('Expires', '0')
+  return h.response().code(404).header('Cache-Control', 'no-store')
 }
 
 // RESTful API routes
@@ -468,13 +464,7 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {
-  cache: {
-    // Do not set other cache options here, to make sure the 'otherwise' option
-    // will be used so that the 'immutable' directive gets included.
-    otherwise: 'public,max-age=31536000,immutable'
-  }
-}, async function (request, h) {
+route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
   if (hash.startsWith('_private')) {
@@ -485,7 +475,8 @@ route.GET('/file/{hash}', {
   if (!blobOrString) {
     return notFoundNoCache(h)
   }
-  return h.response(blobOrString).etag(hash)
+  return h.response(blobOrString).code(200).etag(hash)
+    .header('Cache-Control', 'public,max-age=31536000,immutable')
 })
 
 route.POST('/deleteFile/{hash}', {
