@@ -16,14 +16,18 @@ import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import { findContractIDByForeignKeyId } from '~/shared/domains/chelonia/utils.js'
 
 export default ({
-  CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage }) {
-    const { activity, error, message } = data
+  CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage, msgMeta?: Object }) {
+    const { activity, error, message, msgMeta } = data
     const contractID = message.contractID()
     const opType = message.opType()
     const value = message.decryptedValue()
     let action
-    if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType) && value) {
-      action = value.action
+    if (value) {
+      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType)) {
+        action = value.action
+      } else if (msgMeta && opType === GIMessage.OP_ATOMIC && Number.isFinite(msgMeta.index) && [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(value[msgMeta.index][0])) {
+        action = value[msgMeta.index][1].action
+      }
     }
     const state = sbp('state/vuex/state')
     let who, plaintextWho
@@ -40,7 +44,8 @@ export default ({
       errName: error.name,
       activity,
       action: action ?? opType,
-      contract: state.contracts[contractID]?.type ?? contractID
+      contract: state.contracts[contractID]?.type ?? contractID,
+      errMsg: error.message
     }
 
     const Lparams = {
