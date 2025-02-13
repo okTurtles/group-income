@@ -358,7 +358,7 @@ async function startApp () {
         // Wait for SW to be ready
         console.debug('[app] Waiting for SW to be ready')
         return Promise.race([
-          navigator.serviceWorker.ready,
+          navigator.serviceWorker?.ready,
           new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
         ]).catch(e => {
           console.error('[app] Service worker failed to become ready:', e)
@@ -380,6 +380,8 @@ async function startApp () {
         removeHandler()
         await sbp('chelonia/contract/wait', identityContractID)
       }).then(() => {
+        // We know that `navigator.serviceWorker` is defined, since we've used
+        // it. This may need to be checked if a non-SW version is also supported.
         const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
         const onready = () => {
           this.ephemeral.ready = true
