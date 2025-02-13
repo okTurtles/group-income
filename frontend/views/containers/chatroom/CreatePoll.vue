@@ -14,7 +14,7 @@
     section.c-body
       form.c-form(@submit.prevent='' :disabled='form.disabled')
         .field(data-test='question')
-          input.input.c-input(
+          input.input.c-input.c-question-input(
             name='question'
             ref='question'
             :placeholder='L("Ask a question!")'
@@ -26,6 +26,13 @@
             v-error:question=''
           )
 
+          char-length-indicator.c-for-question(
+            v-if='form.question'
+            :current-length='form.question.length || 0'
+            :max='config.questionMaxChars'
+            :error='$v.form.question.$error'
+          )
+
         .field.c-add-options(data-test='options')
           i18n.label Add options
 
@@ -33,8 +40,9 @@
             fieldset.inputgroup.c-option-item(
               v-for='(option, index) in form.options'
               :key='option.id'
+              :class='{ "has-value": option.value.length > 0 }'
             )
-              input.input.c-input(
+              input.input.c-input.c-option-input(
                 type='text'
                 :aria-label='L("Option value")'
                 :ref='"input" + option.id'
@@ -48,6 +56,11 @@
                 @click='removeOption(option.id)'
               )
                 i.icon-times
+              char-length-indicator.c-for-option(
+                v-if='option.value'
+                :current-length='option.value.length || 0'
+                :max='config.optionMaxChars'
+              )
 
           button.link.has-icon(
             v-if='enableMoreButton'
@@ -114,7 +127,8 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
+import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS, POLL_QUESTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
@@ -133,7 +147,8 @@ export default {
   ],
   components: {
     ModalClose,
-    BannerScoped
+    BannerScoped,
+    CharLengthIndicator
   },
   data () {
     return {
@@ -157,6 +172,7 @@ export default {
       },
       config: {
         maxOptions: POLL_MAX_OPTIONS,
+        questionMaxChars: POLL_QUESTION_MAX_CHARS,
         optionMaxChars: POLL_OPTION_MAX_CHARS
       }
     }
@@ -385,6 +401,30 @@ export default {
   padding-right: 0.625rem;
 }
 
+.c-char-len.c-for-question,
+.c-char-len.c-for-option {
+  position: absolute;
+  display: none;
+  top: 100%;
+  transform: translateY(0.5rem);
+}
+
+.c-char-len.c-for-question {
+  right: 0;
+
+  .c-question-input:focus ~ & {
+    display: inline-block;
+  }
+}
+
+.c-char-len.c-for-option {
+  right: 2.175rem;
+
+  .c-option-input:focus ~ & {
+    display: inline-block;
+  }
+}
+
 .c-body {
   grid-area: poll-body;
   position: relative;
@@ -410,6 +450,11 @@ export default {
 
   &:not(:last-of-type) {
     margin-bottom: 0.5rem;
+  }
+
+  &.has-value:has(.c-option-input:focus) {
+    // If the option input element is focused, add some bottom-margin for the string length indicator to be displayed below.
+    margin-bottom: 1.75rem;
   }
 }
 

@@ -21,7 +21,8 @@ import {
   MESSAGE_RECEIVE_RAW,
   MESSAGE_TYPES,
   POLL_STATUS,
-  POLL_OPTION_MAX_CHARS
+  POLL_OPTION_MAX_CHARS,
+  POLL_QUESTION_MAX_CHARS
 } from './shared/constants.js'
 import {
   createMessage,
@@ -309,6 +310,9 @@ sbp('chelonia/defineContract', {
 
         if (data.type === MESSAGE_TYPES.POLL) {
           const optionStrings = data.pollData.options.map(o => o.value)
+          if (data.pollData.question.length > POLL_QUESTION_MAX_CHARS) {
+            throw new TypeError(L('Poll question must be less than {n} characters', { n: POLL_QUESTION_MAX_CHARS }))
+          }
           if (optionStrings.some(v => v.length > POLL_OPTION_MAX_CHARS)) {
             throw new TypeError(L('Poll option must be less than {n} characters', { n: POLL_OPTION_MAX_CHARS }))
           }
