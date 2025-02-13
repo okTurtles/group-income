@@ -44,7 +44,8 @@ export default ({
       errName: error.name,
       activity,
       action: action ?? opType,
-      contract: state.contracts[contractID]?.type ?? contractID
+      contract: state.contracts[contractID]?.type ?? contractID,
+      errMsg: error.message
     }
 
     const Lparams = {

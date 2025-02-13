@@ -165,8 +165,9 @@ const setupChelonia = async (): Promise<*> => {
         if (e.name === 'ChelErrorDecryptionKeyNotFound') {
           return
         }
-        // We also ignore errors related to adding existing keys
-        if (e.name === 'ChelErrorKeyAlreadyExists') {
+        // We also ignore errors related to outgoing messages
+        if (message.direction() === 'outgoing') {
+          console.warn('Ignoring error on outgoing message', message, e)
           return
         }
         errorNotification('process', e, message, msgMeta)
