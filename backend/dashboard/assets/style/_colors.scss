@@ -1,3 +1,5 @@
+@use "sass:list";
+
 $black: var(--black);
 $white: var(--white);
 $text_black: var(--text_black);
@@ -89,7 +91,7 @@ $colors_map: (
 // "light-theme" custom-variable declarations
 :root {
   @each $name, $values in $colors_map {
-    $light_value: nth($values, 1);
+    $light_value: list.nth($values, 1);
 
     --#{$name}: #{$light_value};
   }
@@ -98,7 +100,7 @@ $colors_map: (
 // "dark-theme" custom-variable declarations
 :root[data-theme="dark"] {
   @each $name, $values in $colors_map {
-    $dark_value: nth($values, 2);
+    $dark_value: list.nth($values, 2);
 
     --#{$name}: #{$dark_value};
   }

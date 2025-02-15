@@ -197,7 +197,7 @@ async function startApp () {
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
-    alert(L('Error while setting up service worker'))
+    alert(L('Error while setting up service worker: {err}', { err: e.message }))
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
@@ -354,7 +354,20 @@ async function startApp () {
       // happened (an example where things can happen this quickly is in the
       // tests).
       let oldIdentityContractID = null
-      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+      Promise.all([sbp('gi.db/settings/load', SETTING_CURRENT_USER), (() => {
+        // Wait for SW to be ready
+        console.debug('[app] Waiting for SW to be ready')
+        return Promise.race([
+          navigator.serviceWorker?.ready,
+          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
+        ]).catch(e => {
+          console.error('[app] Service worker failed to become ready:', e)
+          // Fallback behavior
+          this.removeLoadingAnimation()
+          alert(L('Error while setting up service worker: {err}', { err: e.message }))
+          throw e
+        })
+      })()]).then(async ([identityContractID]) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
         // Calling login could result in a prompt in case of an error; if the
@@ -366,6 +379,24 @@ async function startApp () {
         await sbp('gi.app/identity/login', { identityContractID })
         removeHandler()
         await sbp('chelonia/contract/wait', identityContractID)
+      }).then(() => {
+        // We know that `navigator.serviceWorker` is defined, since we've used
+        // it. This may need to be checked if a non-SW version is also supported.
+        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
+        const onready = () => {
+          this.ephemeral.ready = true
+          this.removeLoadingAnimation()
+          setupNativeNotificationsListeners()
+        }
+        if (!sw.controller) {
+          const listener = (ev: Event) => {
+            sw.removeEventListener('controllerchange', listener, false)
+            onready()
+          }
+          sw.addEventListener('controllerchange', listener, false)
+        } else {
+          onready()
+        }
       }).catch(async e => {
         this.removeLoadingAnimation()
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
@@ -377,34 +408,6 @@ async function startApp () {
           heading: L('Failed to login'),
           question: L('Error details: {reportError}', LError(e)),
           primaryButton: L('Close')
-        })
-      }).finally(() => {
-        // Wait for SW to be ready
-        console.debug('[app] Waiting for SW to be ready')
-        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
-        Promise.race([
-          sw.ready,
-          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
-        ]).then(() => {
-          const onready = () => {
-            this.ephemeral.ready = true
-            this.removeLoadingAnimation()
-            setupNativeNotificationsListeners()
-          }
-          if (!sw.controller) {
-            const listener = (ev: Event) => {
-              sw.removeEventListener('controllerchange', listener, false)
-              onready()
-            }
-            sw.addEventListener('controllerchange', listener, false)
-          } else {
-            onready()
-          }
-        }).catch(e => {
-          console.error('[app] Service worker failed to become ready:', e)
-          // Fallback behavior
-          this.removeLoadingAnimation()
-          alert(L('Error while setting up service worker'))
         })
       })
     },
