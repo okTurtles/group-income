@@ -30,7 +30,14 @@ export default (sbp('sbp/selectors/register', {
     console.info('group key-value store data loaded!')
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    return (await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN))?.data || Object.create(null)
+    const kvData = await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN)
+    // kvData could be falsy if the server returns 404
+    if (kvData) {
+      // Note: this could throw an exception if there's a signature or decryption
+      // issue
+      return kvData.data
+    }
+    return Object.create(null)
   },
   'gi.actions/group/kv/loadLastLoggedIn': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
@@ -46,21 +53,22 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to update lastLoggedIn without an active session')
     }
 
+    const now = sbp('chelonia/time') * 1000
     if (throttle) {
       const state = sbp('state/vuex/state')
       const lastLoggedInRawValue: ?string = state.lastLoggedIn?.[contractID]?.[identityContractID]
       if (lastLoggedInRawValue) {
         const lastLoggedIn = new Date(lastLoggedInRawValue).getTime()
 
-        if ((Date.now() - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
+        if ((now - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return
       }
     }
 
-    const now = new Date().toISOString()
+    const nowString = new Date(now).toISOString()
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedLastLoggedIn = async (contractID) => {
         const current = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
-        return { ...current, [identityContractID]: now }
+        return { ...current, [identityContractID]: nowString }
       }
 
       const data = await getUpdatedLastLoggedIn(contractID)

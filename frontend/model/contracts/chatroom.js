@@ -20,7 +20,9 @@ import {
   MESSAGE_NOTIFICATIONS,
   MESSAGE_RECEIVE_RAW,
   MESSAGE_TYPES,
-  POLL_STATUS
+  POLL_STATUS,
+  POLL_OPTION_MAX_CHARS,
+  POLL_QUESTION_MAX_CHARS
 } from './shared/constants.js'
 import {
   createMessage,
@@ -303,7 +305,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/addMessage': {
-      validate: actionRequireInnerSignature(messageType),
+      validate: (data, props) => {
+        actionRequireInnerSignature(messageType)(data, props)
+
+        if (data.type === MESSAGE_TYPES.POLL) {
+          const optionStrings = data.pollData.options.map(o => o.value)
+          if (data.pollData.question.length > POLL_QUESTION_MAX_CHARS) {
+            throw new TypeError(L('Poll question must be less than {n} characters', { n: POLL_QUESTION_MAX_CHARS }))
+          }
+          if (optionStrings.some(v => v.length > POLL_OPTION_MAX_CHARS)) {
+            throw new TypeError(L('Poll option must be less than {n} characters', { n: POLL_OPTION_MAX_CHARS }))
+          }
+        }
+      },
       // NOTE: This function is 'reentrant' and may be called multiple times
       // for the same message and state. The `direction` attributes handles
       // these situations especially, and it's meant to mark sent-by-the-user

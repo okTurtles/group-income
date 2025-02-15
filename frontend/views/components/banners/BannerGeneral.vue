@@ -82,6 +82,7 @@ export default ({
 
   .c-banner-content {
     text-align: left;
+    word-break: break-word;
   }
 }
 

@@ -16,7 +16,7 @@ import { GIMessage } from './GIMessage.js'
 import type { Secret } from './Secret.js'
 import './chelonia-utils.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData } from './encryptedData.js'
 import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -1090,6 +1090,7 @@ export default (sbp('sbp/selectors/register', {
       return cloneDeep(rootState[contractID])
     }
     let state = Object.create(null)
+    let contractName = rootState.contracts[contractID]?.type
     const eventsStream = sbp('chelonia/out/eventsAfter', contractID, 0, undefined, contractID)
     const eventsStreamReader = eventsStream.getReader()
     if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
@@ -1098,7 +1099,10 @@ export default (sbp('sbp/selectors/register', {
       if (done) return state
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state, undefined, contractName)
+        if (!contractName && state._vm) {
+          contractName = state._vm.type
+        }
       } catch (e) {
         console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
         if (e instanceof ChelErrorUnrecoverable) throw e
@@ -1655,30 +1659,84 @@ function parseEncryptedOrUnencryptedMessage ({
     return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, aad, undefined)
   })
 
-  const encryptedData = unwrapMaybeEncryptedData(v.valueOf())
+  // Cached values
+  let encryptionKeyId
+  let innerSigningKeyId
+
+  // Lazy unwrap function
+  // We don't use `unwrapMaybeEncryptedData`, which would almost do the same,
+  // because it swallows decryption errors, which we want to propagate to
+  // consumers of the KV API.
+  const unwrap = (() => {
+    let result
+
+    return () => {
+      if (!result) {
+        try {
+          let unwrapped
+          // First, we unwrap the signed data
+          unwrapped = v.valueOf()
+          // If this is encrypted data, attempt decryption
+          if (isEncryptedData(unwrapped)) {
+            encryptionKeyId = unwrapped.encryptionKeyId
+            unwrapped = unwrapped.valueOf()
+
+            // There could be inner signed data (inner signatures), so we unwrap
+            // that too
+            if (isSignedData(unwrapped)) {
+              innerSigningKeyId = unwrapped.signingKeyId
+              unwrapped = unwrapped.valueOf()
+            } else {
+              innerSigningKeyId = null
+            }
+          } else {
+            encryptionKeyId = null
+            innerSigningKeyId = null
+          }
+          result = [unwrapped]
+        } catch (e) {
+          result = [undefined, e]
+        }
+      }
+
+      if (result.length === 2) {
+        throw result[1]
+      }
+      return result[0]
+    }
+  })()
 
   const result = {
     get contractID () {
       return contractID
     },
     get innerSigningKeyId () {
-      if (!encryptedData) return
-      if (isSignedData(encryptedData.data)) {
-        return encryptedData.data.signingKeyId
+      if (innerSigningKeyId === undefined) {
+        try {
+          unwrap()
+        } catch {
+          // We're not interested in an error, that'd only be for the 'data'
+          // accessor.
+        }
       }
+      return innerSigningKeyId
     },
     get encryptionKeyId () {
-      return encryptedData?.encryptionKeyId
+      if (encryptionKeyId === undefined) {
+        try {
+          unwrap()
+        } catch {
+          // We're not interested in an error, that'd only be for the 'data'
+          // accessor.
+        }
+      }
+      return encryptionKeyId
     },
     get signingKeyId () {
       return v.signingKeyId
     },
     get data () {
-      if (!encryptedData) return
-      if (isSignedData(encryptedData.data)) {
-        return encryptedData.data.valueOf()
-      }
-      return encryptedData.data
+      return unwrap()
     },
     get signingContractID () {
       return getContractIDfromKeyId(contractID, result.signingKeyId, state)
