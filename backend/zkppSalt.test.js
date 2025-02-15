@@ -1,12 +1,12 @@
 /* eslint-env mocha */
 
-import nacl from 'tweetnacl'
 import should from 'should'
-import initDB from './database.js'
 import 'should-sinon'
+import nacl from 'tweetnacl'
+import initDB from './database.js'
 
 import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
+import { getChallenge, getContractSalt, redeemSaltRegistrationToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 
 const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
@@ -17,6 +17,19 @@ const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash:
   const encryptedHashedPassword = Buffer.concat([nonce, nacl.secretbox(Buffer.from(hash), nonce, encryptionKey)]).toString('base64url')
 
   return [authSalt, contractSalt, encryptedHashedPassword]
+}
+
+const decryptRegistrationRedemptionToken = (p: string, secretKey: Uint8Array, encryptedToken: string) => {
+  const dhKey = nacl.hash(nacl.box.before(Buffer.from(p, 'base64url'), secretKey))
+  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(AUTHSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from(CONTRACTSALT)), dhKey]))).slice(0, SALT_LENGTH_IN_OCTETS).toString('base64')
+  const encryptionKey = nacl.hash(Buffer.concat([Buffer.from(CS), nacl.hash(Buffer.from(authSalt + contractSalt)).slice(0, nacl.secretbox.keyLength)])).slice(0, nacl.secretbox.keyLength)
+  const encryptedTokenBuf = Buffer.from(encryptedToken, 'base64url')
+  const nonce = encryptedTokenBuf.slice(0, nacl.secretbox.nonceLength)
+  const ciphertext = encryptedTokenBuf.slice(nacl.secretbox.nonceLength)
+  const token = Buffer.from(nacl.secretbox.open(ciphertext, nonce, encryptionKey)).toString()
+
+  return token
 }
 
 before(async () => {
@@ -35,7 +48,9 @@ describe('ZKPP Salt functions', () => {
     should(regKeyAlice2).be.of.type('object')
     const [, , encryptedHashedPasswordAlice1] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
     const res1 = await register('alice', publicKey, regKeyAlice1.s, regKeyAlice1.sig, encryptedHashedPasswordAlice1)
-    should(res1).equal(true, 'register should allow new entry (alice)')
+    should(typeof res1).equal('string', 'register should return a token (alice)')
+    const token = decryptRegistrationRedemptionToken(regKeyAlice1.p, keyPair.secretKey, res1)
+    await redeemSaltRegistrationToken('alice', 'alice', token)
 
     const [, , encryptedHashedPasswordAlice2] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
     const res2 = await register('alice', publicKey, regKeyAlice2.s, regKeyAlice2.sig, encryptedHashedPasswordAlice2)
@@ -45,7 +60,7 @@ describe('ZKPP Salt functions', () => {
     should(regKeyBob1).be.of.type('object')
     const [, , encryptedHashedPasswordBob1] = saltsAndEncryptedHashedPassword(regKeyBob1.p, keyPair.secretKey, 'hash')
     const res3 = await register('bob', publicKey, regKeyBob1.s, regKeyBob1.sig, encryptedHashedPasswordBob1)
-    should(res3).equal(true, 'register should allow new entry (bob)')
+    should(typeof res3).equal('string', 'register should return a token (bob)')
   })
 
   it('getContractSalt() conforms to the API to obtain salt', async () => {
@@ -60,7 +75,9 @@ describe('ZKPP Salt functions', () => {
     const [authSalt, contractSalt, encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
 
     const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
-    should(res).equal(true, 'register should allow new entry (' + contract + ')')
+    should(typeof res).equal('string', 'register should allow new entry (' + contract + ')')
+    const token = decryptRegistrationRedemptionToken(regKey.p, keyPair.secretKey, res)
+    await redeemSaltRegistrationToken(contract, contract, token)
 
     const b = Buffer.from(nacl.hash(Buffer.from(r))).toString('base64url')
     const challenge = await getChallenge(contract, b)
@@ -95,7 +112,9 @@ describe('ZKPP Salt functions', () => {
     const [authSalt, , encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
 
     const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
-    should(res).equal(true, 'register should allow new entry (' + contract + ')')
+    should(typeof res).equal('string', 'register should allow new entry (' + contract + ')')
+    const token = decryptRegistrationRedemptionToken(regKey.p, keyPair.secretKey, res)
+    await redeemSaltRegistrationToken(contract, contract, token)
 
     const b = Buffer.from(nacl.hash(Buffer.from(r))).toString('base64url')
     const challenge = await getChallenge(contract, b)
