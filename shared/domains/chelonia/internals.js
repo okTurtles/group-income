@@ -668,7 +668,7 @@ export default (sbp('sbp/selectors/register', {
       )
     )
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[], contractName?: string) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const height = message.height()
@@ -1231,11 +1231,13 @@ export default (sbp('sbp/selectors/register', {
       // Having rootState.contracts[contractID] is not enough to determine we
       // have previously synced this contract, as reference counts are also
       // stored there. Hence, we check for the presence of 'type'
-      const contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
-        ? rootState.contracts[contractID].type
-        : opT === GIMessage.OP_CONTRACT
-          ? ((opV: any): GIOpContract).type
-          : ''
+      if (!contractName) {
+        contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
+          ? rootState.contracts[contractID].type
+          : opT === GIMessage.OP_CONTRACT
+            ? ((opV: any): GIOpContract).type
+            : ''
+      }
       if (!contractName) {
         throw new Error(`Unable to determine the name for a contract and refusing to load it (contract ID was ${contractID} and its manifest hash was ${manifestHash})`)
       }
