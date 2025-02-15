@@ -58,13 +58,19 @@ export default ({
           if (this.content) this.replaceModal(toModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
           else this.content = toModal
         }
-        const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
-        if (subcontent !== this.activeSubContent) {
-          // Try to find the new subcontent in the list of subcontent
-          const i = this.subcontent.indexOf(subcontent)
-          if (i !== -1) {
-            this.subcontent = this.subcontent.slice(0, i)
-          } else this.subcontent = subcontent
+
+        // Sometimes, the query string for modal has both 'modal' and 'subcontent' eg.) '/app/?modal=SignupModal&subcontent=Prompt'
+        if (to.query.subcontent) {
+          const subContentTo = to.query.subcontent.split('+').pop()
+          if (subContentTo !== this.activeSubContent) {
+            // Try to find the target subcontent in the list of subcontent
+            const i = this.subcontent.indexOf(subContentTo)
+            if (i !== -1) {
+              this.subcontent = this.subcontent.slice(0, i)
+            } else {
+              this.subcontent = [subContentTo]
+            }
+          }
         }
       } else {
         // Prevent a bug where we click to close a modal at the same time we

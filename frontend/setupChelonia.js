@@ -98,8 +98,8 @@ const setupChelonia = async (): Promise<*> => {
   })
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: GIMessage) => {
-    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
+  const errorNotification = (activity: string, error: Error, message: GIMessage, msgMeta?: Object) => {
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
       console.error('Error saving logs during error notification', e)
@@ -199,7 +199,7 @@ const setupChelonia = async (): Promise<*> => {
           errorNotification('handleEvent', e, message)
         }
       },
-      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }) => {
+      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string, index?: number }) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
           sbp('okTurtles.eventQueue/queueEvent', message.contractID(), [
             'gi.actions/group/autobanUser', message, e, msgMeta
@@ -209,7 +209,12 @@ const setupChelonia = async (): Promise<*> => {
         if (e.name === 'ChelErrorDecryptionKeyNotFound') {
           return
         }
-        errorNotification('process', e, message)
+        // We also ignore errors related to outgoing messages
+        if (message.direction() === 'outgoing') {
+          console.warn('Ignoring error on outgoing message', message, e)
+          return
+        }
+        errorNotification('process', e, message, msgMeta)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
         const contractID = message.contractID()

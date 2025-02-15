@@ -71,6 +71,12 @@ const route = new Proxy({}, {
   }
 })
 
+// helper function that returns 404 and prevents client from caching the 404 response
+// which can sometimes break things: https://github.com/okTurtles/group-income/issues/2608
+function notFoundNoCache (h) {
+  return h.response().code(404).header('Cache-Control', 'no-store')
+}
+
 // RESTful API routes
 
 // TODO: Update this regex once `chel` uses prefixed manifests
@@ -284,7 +290,7 @@ route.GET('/latestHEADinfo/{contractID}', {
     }
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
-      return Boom.notFound()
+      return notFoundNoCache(h)
     }
     return HEADinfo
   } catch (err) {
@@ -465,26 +471,21 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {
-  cache: {
-    // Do not set other cache options here, to make sure the 'otherwise' option
-    // will be used so that the 'immutable' directive gets included.
-    otherwise: 'public,max-age=31536000,immutable'
-  }
-}, async function (request, h) {
+route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
   if (hash.startsWith('_private')) {
-    return Boom.notFound()
+    return notFoundNoCache(h)
   }
 
   const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
   if (blobOrString === '') {
     return Boom.resourceGone()
   } else if (!blobOrString) {
-    return Boom.notFound()
+    return notFoundNoCache(h)
   }
-  return h.response(blobOrString).etag(hash)
+  return h.response(blobOrString).code(200).etag(hash)
+    .header('Cache-Control', 'public,max-age=31536000,immutable')
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -743,7 +744,7 @@ route.GET('/kv/{contractID}/{key}', {
 
   const result = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
   if (!result) {
-    return Boom.notFound()
+    return notFoundNoCache(h)
   }
 
   return h.response(result).etag(createCID(result))
@@ -872,7 +873,7 @@ route.GET('/zkpp/{name}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
-    return challenge || Boom.notFound()
+    return challenge || notFoundNoCache(h)
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)

@@ -91,6 +91,12 @@
 "Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
 
 /* MISSING TRANSLATION - controller/app/group.js */
+"Error joining chatroom" = "Error joining chatroom";
+
+/* MISSING TRANSLATION - controller/app/group.js */
+"Error joining the #general chatroom" = "Error joining the #general chatroom";
+
+/* MISSING TRANSLATION - controller/app/group.js */
 "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud." = "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.";
 
 /* MISSING TRANSLATION - controller/app/group.js */
@@ -98,6 +104,12 @@
 
 /* MISSING TRANSLATION - controller/app/group.js */
 "Mincome changed" = "Mincome changed";
+
+/* MISSING TRANSLATION - controller/app/group.js */
+"There was an error joining the #general chatroom because it doesn't exist" = "There was an error joining the #general chatroom because it doesn't exist";
+
+/* MISSING TRANSLATION - controller/app/group.js */
+"There was an error joining the {chatRoomName} chatroom" = "There was an error joining the {chatRoomName} chatroom";
 
 /* MISSING TRANSLATION - controller/app/group.js */
 "You now make more than the mincome. Would you like to increase your pledge?" = "You now make more than the mincome. Would you like to increase your pledge?";
@@ -191,12 +203,6 @@
 
 /* MISSING TRANSLATION - model/contracts/group.js */
 "Chatroom name must be lower-case only" = "Chatroom name must be lower-case only";
-
-/* MISSING TRANSLATION - model/contracts/group.js */
-"Couldn't join the #{chatroomName} in the group. An error occurred: {error}" = "Couldn't join the #{chatroomName} in the group. An error occurred: {error}";
-
-/* MISSING TRANSLATION - model/contracts/group.js */
-"Error while joining a chatroom" = "Error while joining a chatroom";
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Unable to confirm that the username {username} belongs to this identity contract";
@@ -1554,6 +1560,9 @@
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";
 
+/* controller/app/group.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+"Close" = "Fermer";
+
 /* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Annuler";
 
@@ -1596,17 +1605,11 @@
 /* main.js */
 "Your device appears to be offline." = "Votre appareil semble être hors ligne.";
 
-/* main.js, model/contracts/group.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
-"Close" = "Fermer";
-
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Seul le créateur peut supprimer sa conversation.";
 
 /* model/contracts/group.js */
 "Admin credentials needed and not implemented yet." = "Un compte administrateur est requis mais n’est pas encore implementé.";
-
-/* model/contracts/group.js */
-"Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Impossible de rejoindre le salon #{chatroomName} dans le groupe. Il est introuvable.";
 
 /* model/contracts/group.js */
 "Not part of the group." = "Ne fait pas partie du groupe.";
@@ -3362,6 +3365,9 @@
 
 /* Not currently used */
 "Corrupted" = "Corrompu";
+
+/* Not currently used */
+"Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Impossible de rejoindre le salon #{chatroomName} dans le groupe. Il est introuvable.";
 
 /* Not currently used */
 "Define the number of people required to block a proposal." = "Définir le nombre de personnes requis pour bloquer une proposition.";
