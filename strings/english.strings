@@ -546,7 +546,7 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Click on the individual link you received from an existing group. Don't have an invite?" = "Click on the individual link you received from an existing group. Don't have an invite?";
 
-/* main.js, model/contracts/group.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "Close";
 
 /* views/components/ProfileCard.vue, views/containers/notifications/NotificationCard.vue */
@@ -605,12 +605,6 @@
 
 /* views/components/CopyableInput.vue */
 "Copy string" = "Copy string";
-
-/* model/contracts/group.js */
-"Couldn't join the #{chatroomName} in the group. An error occurred: {error}" = "Couldn't join the #{chatroomName} in the group. An error occurred: {error}";
-
-/* model/contracts/group.js */
-"Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Couldn't join the #{chatroomName} in the group. Doesn't exist.";
 
 /* views/containers/chatroom/ViewArea.vue */
 "Couldn't join the chatroom An error occurred: {error}" = "Couldn't join the chatroom An error occurred: {error}";
@@ -825,11 +819,14 @@
 /* controller/actions/identity.js */
 "Error during login contract sync" = "Error during login contract sync";
 
+/* controller/app/group.js */
+"Error joining chatroom" = "Error joining chatroom";
+
+/* controller/app/group.js */
+"Error joining the #general chatroom" = "Error joining the #general chatroom";
+
 /* views/containers/user-settings/AppLogs.vue */
 "Error obtaining logs. {reportError}" = "Error obtaining logs. {reportError}";
-
-/* model/contracts/group.js */
-"Error while joining a chatroom" = "Error while joining a chatroom";
 
 /* main.js */
 "Error while setting up service worker" = "Error while setting up service worker";
@@ -2450,6 +2447,12 @@
 
 /* views/containers/payments/MonthOverview.vue */
 "There was a problem with {nr} of your payments." = "There was a problem with {nr} of your payments.";
+
+/* controller/app/group.js */
+"There was an error joining the #general chatroom because it doesn't exist" = "There was an error joining the #general chatroom because it doesn't exist";
+
+/* controller/app/group.js */
+"There was an error joining the {chatRoomName} chatroom" = "There was an error joining the {chatRoomName} chatroom";
 
 /* views/containers/user-settings/UserProfile.vue */
 "This action cannot be undone." = "This action cannot be undone.";

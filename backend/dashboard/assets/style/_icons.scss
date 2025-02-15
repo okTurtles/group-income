@@ -1,4 +1,4 @@
-// TODO Remove font-awesome and replace by https://icomoon.io font.
+@use "sass:map";
 
 // More fonts icon in node_module/fontawesome
 $icons: (
@@ -84,7 +84,7 @@ $icons: (
 }
 
 @mixin icon($name) {
-  content: map-get($icons, $name);
+  content: map.get($icons, $name);
   text-rendering: auto;
   line-height: 1;
   font-family: "Chelonia Icons";

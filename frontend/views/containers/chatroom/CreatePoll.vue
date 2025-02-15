@@ -14,15 +14,23 @@
     section.c-body
       form.c-form(@submit.prevent='' :disabled='form.disabled')
         .field(data-test='question')
-          input.input.c-input(
+          input.input.c-input.c-question-input(
             name='question'
             ref='question'
             :placeholder='L("Ask a question!")'
+            :maxlength='config.questionMaxChars'
             @input='e => debounceField("question", e.target.value)'
             @blur='e => updateField("question", e.target.value)'
             :class='{ error: $v.form.question.$error }'
             v-model='form.question'
             v-error:question=''
+          )
+
+          char-length-indicator.c-for-question(
+            v-if='form.question'
+            :current-length='form.question.length || 0'
+            :max='config.questionMaxChars'
+            :error='$v.form.question.$error'
           )
 
         .field.c-add-options(data-test='options')
@@ -32,13 +40,15 @@
             fieldset.inputgroup.c-option-item(
               v-for='(option, index) in form.options'
               :key='option.id'
+              :class='{ "has-value": option.value.length > 0 }'
             )
-              input.input.c-input(
+              input.input.c-input.c-option-input(
                 type='text'
                 :aria-label='L("Option value")'
                 :ref='"input" + option.id'
                 :placeholder='optionPlaceholder(index + 1)'
                 v-model.trim='option.value'
+                :maxlength='config.optionMaxChars'
               )
               button.is-icon-small.is-btn-shifted(
                 type='button'
@@ -46,6 +56,11 @@
                 @click='removeOption(option.id)'
               )
                 i.icon-times
+              char-length-indicator.c-for-option(
+                v-if='option.value'
+                :current-length='option.value.length || 0'
+                :max='config.optionMaxChars'
+              )
 
           button.link.has-icon(
             v-if='enableMoreButton'
@@ -82,6 +97,8 @@
           i.icon-exclamation-triangle
           i18n Note: it is possible for a group member to "hack" the app to figure out who voted on what.
 
+        banner-scoped(ref='formMsg' allow-a)
+
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
@@ -102,15 +119,17 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS } from '@model/contracts/shared/constants.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
+import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS, POLL_QUESTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import Vue from 'vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
 
@@ -127,7 +146,9 @@ export default {
     trapFocus
   ],
   components: {
-    ModalClose
+    ModalClose,
+    BannerScoped,
+    CharLengthIndicator
   },
   data () {
     return {
@@ -148,6 +169,11 @@ export default {
         options: [
           { id: createRandomId(), value: '' }
         ]
+      },
+      config: {
+        maxOptions: POLL_MAX_OPTIONS,
+        questionMaxChars: POLL_QUESTION_MAX_CHARS,
+        optionMaxChars: POLL_OPTION_MAX_CHARS
       }
     }
   },
@@ -159,7 +185,7 @@ export default {
       return this.form.options.length
     },
     enableMoreButton () {
-      return this.optionCount < POLL_MAX_OPTIONS
+      return this.optionCount < this.config.maxOptions
     },
     disableSubmit () {
       return this.$v.invalid ||
@@ -218,26 +244,27 @@ export default {
         })
       }
     },
-    submit () {
+    async submit () {
       this.form.disabled = true
       const contractID = this.currentChatRoomId
-      sbp('gi.actions/chatroom/addMessage', {
-        contractID,
-        data: {
-          type: MESSAGE_TYPES.POLL,
-          pollData: {
-            question: this.form.question,
-            options: this.form.options,
-            expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
-            hideVoters: this.form.hideVoters,
-            pollType: this.form.allowMultipleChoice
-              ? POLL_TYPES.MULTIPLE_CHOICES
-              : POLL_TYPES.SINGLE_CHOICE
+      this.$refs.formMsg.clean()
+      try {
+        await sbp('gi.actions/chatroom/addMessage', {
+          contractID,
+          data: {
+            type: MESSAGE_TYPES.POLL,
+            pollData: {
+              question: this.form.question,
+              options: this.form.options,
+              expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
+              hideVoters: this.form.hideVoters,
+              pollType: this.form.allowMultipleChoice
+                ? POLL_TYPES.MULTIPLE_CHOICES
+                : POLL_TYPES.SINGLE_CHOICE
+            }
           }
-        }
-      }).catch((e) => {
-        console.log(`Error adding message to create poll for ${contractID}`, e)
-      }).finally(() => {
+        })
+
         this.form = {
           question: '',
           allowMultipleChoice: false,
@@ -250,7 +277,12 @@ export default {
         }
         this.$v.form.$reset()
         this.close()
-      })
+      } catch (e) {
+        console.log(`Error adding message to create poll for ${contractID}`, e)
+        this.$refs.formMsg.danger(e.message)
+      } finally {
+        this.form.disabled = false
+      }
     },
     resizeHandler () {
       if (window.matchMedia('(hover: hover)').matches) {
@@ -369,6 +401,30 @@ export default {
   padding-right: 0.625rem;
 }
 
+.c-char-len.c-for-question,
+.c-char-len.c-for-option {
+  position: absolute;
+  display: none;
+  top: 100%;
+  transform: translateY(0.5rem);
+}
+
+.c-char-len.c-for-question {
+  right: 0;
+
+  .c-question-input:focus ~ & {
+    display: inline-block;
+  }
+}
+
+.c-char-len.c-for-option {
+  right: 2.175rem;
+
+  .c-option-input:focus ~ & {
+    display: inline-block;
+  }
+}
+
 .c-body {
   grid-area: poll-body;
   position: relative;
@@ -394,6 +450,11 @@ export default {
 
   &:not(:last-of-type) {
     margin-bottom: 0.5rem;
+  }
+
+  &.has-value:has(.c-option-input:focus) {
+    // If the option input element is focused, add some bottom-margin for the string length indicator to be displayed below.
+    margin-bottom: 1.75rem;
   }
 }
 

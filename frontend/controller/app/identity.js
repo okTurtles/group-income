@@ -437,12 +437,14 @@ export default (sbp('sbp/selectors/register', {
             question: wipeOut
               ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
               : L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-            primaryButton: L('No'),
-            secondaryButton: L('Yes')
+            primaryButton: L('Yes'),
+            secondaryButton: L('No'),
+            primaryButtonStyle: 'primary', // make primary button 'filled' style
+            isContentCentered: !wipeOut
           }
 
           const result = await sbp('gi.ui/prompt', promptOptions)
-          if (!result) {
+          if (result) {
             sbp('gi.ui/clearBanner')
             return sbp('gi.app/identity/_private/logout', state, wipeOut)
           } else {

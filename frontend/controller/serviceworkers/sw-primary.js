@@ -252,9 +252,7 @@ sbp('sbp/selectors/register', {
         })))
         Object.defineProperty(computedGetters, 'currentPaymentPeriodForGroup', {
           get: function () {
-            return (state, getters) => {
-              return (state) => getters.periodStampGivenDateForGroup(state, new Date())
-            }
+            return (state) => this.periodStampGivenDateForGroup(state, new Date())
           }
         })
       }
@@ -542,4 +540,19 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   }).catch(e => {
     console.error('Error displaying native notification', e)
   })
+})
+
+// These `NEW_*` events are emitted in KV files. To keep things consistent with
+// the browser state, we update the state when these events are generated.
+sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.lastLoggedIn[contractID] = data
+})
+sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.preferences = preferences
+})
+sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
+  const rootState = sbp('state/vuex/state')
+  rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
 })

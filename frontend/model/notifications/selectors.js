@@ -36,7 +36,7 @@ sbp('sbp/selectors/register', {
       // Sets 'groupID' if this notification only pertains to a certain group.
       ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
       // Store integer timestamps rather than ISO strings here to make age comparisons easier.
-      timestamp: data.createdDate ? new Date(data.createdDate).getTime() : Date.now(),
+      timestamp: new Date(data.createdDate ? data.createdDate : (sbp('chelonia/time') * 1000)).getTime(),
       type
     }
     const rootState = sbp('chelonia/rootState')
