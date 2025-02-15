@@ -4,7 +4,8 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { createCID } from '~/shared/functions.js'
+import { CONTRACT_DATA_REGEX, CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX, FILE_CHUNK_REGEX, FILE_MANIFEST_REGEX } from '~/shared/domains/chelonia/utils.js'
+import { createCID, multicodes } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
@@ -61,6 +62,10 @@ const staticServeConfig = {
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
 }
 
+// We define a `Proxy` for route so that we can use `route.VERB` syntax for
+// defining routes instead of calling `server.route` with an object, and to
+// dynamically get the HAPI server object from the `SERVER_INSTANCE`, which is
+// defined in `server.js`.
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
@@ -79,9 +84,6 @@ function notFoundNoCache (h) {
 
 // RESTful API routes
 
-// TODO: Update this regex once `chel` uses prefixed manifests
-const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
-
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
@@ -98,7 +100,7 @@ route.POST('/event', {
   try {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
-      if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
+      if (!CONTRACT_MANIFEST_REGEX.test(deserializedHEAD.head.manifest)) {
         return Boom.badData('Invalid manifest')
       }
       const credentials = request.auth.credentials
@@ -195,7 +197,13 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   const { contractID, since, limit } = request.params
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    if (contractID.startsWith('_private') || since.startsWith('_private')) {
+    if (
+      !contractID ||
+      !CONTRACT_DATA_REGEX.test(contractID) ||
+      contractID.startsWith('_private') ||
+      !/^[0-9]+$/.test(since) ||
+      (limit && !/^[0-9]+$/.test(limit))
+    ) {
       return Boom.notFound()
     }
 
@@ -267,8 +275,12 @@ route.POST('/name', {
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
-    return await sbp('backend/db/lookupName', name)
+    const lookupResult = await sbp('backend/db/lookupName', name)
+    return lookupResult
+      ? h.response(lookupResult).type('text/plain')
+      : Boom.notFound()
   } catch (err) {
+    console.error(err, '@@@@@err')
     logger.error(err, `GET /name/${name}`, err.message)
     return err
   }
@@ -279,7 +291,12 @@ route.GET('/latestHEADinfo/{contractID}', {
 }, async function (request, h) {
   const { contractID } = request.params
   try {
-    if (contractID.startsWith('_private')) return Boom.notFound()
+    if (
+      !contractID ||
+      !CONTRACT_DATA_REGEX.test(contractID) ||
+      contractID.startsWith('_private')
+    ) return Boom.notFound()
+
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
@@ -293,7 +310,7 @@ route.GET('/latestHEADinfo/{contractID}', {
 })
 
 route.GET('/time', {}, function (request, h) {
-  return new Date().toISOString()
+  return h.response(new Date().toISOString()).type('text/plain')
 })
 
 // TODO: if the browser deletes our cache then not everyone
@@ -341,9 +358,9 @@ if (process.env.NODE_ENV === 'development') {
       const { hash, data } = request.payload
       if (!hash) return Boom.badRequest('missing hash')
       if (!data) return Boom.badRequest('missing data')
-      const ourHash = createCID(data)
-      if (ourHash !== hash) {
-        console.error(`hash(${hash}) != ourHash(${ourHash})`)
+      const ourHashes = Object.values(multicodes).map((multicode) => createCID(data, ((multicode: any): number)))
+      if (ourHashes.includes(hash)) {
+        console.error(`hash(${hash}) != ourHash(${ourHashes.join(',')})`)
         return Boom.badRequest('bad hash!')
       }
       await sbp('chelonia/db/set', hash, data)
@@ -413,7 +430,7 @@ route.POST('/file', {
       if (!request.payload[i] || !(request.payload[i].payload instanceof Uint8Array)) {
         throw Boom.badRequest('chunk missing in submitted data')
       }
-      const ourHash = createCID(request.payload[i].payload)
+      const ourHash = createCID(request.payload[i].payload, multicodes.SHELTER_FILE_CHUNK)
       if (request.payload[i].payload.byteLength !== chunk[0]) {
         throw Boom.badRequest('bad chunk size')
       }
@@ -427,7 +444,7 @@ route.POST('/file', {
     // Finally, verify the size is correct
     if (ourSize !== manifest.size) return Boom.badRequest('Mismatched total size')
 
-    const manifestHash = createCID(manifestMeta.payload)
+    const manifestHash = createCID(manifestMeta.payload, multicodes.SHELTER_FILE_MANIFEST)
 
     // Check that we're not overwriting data. At best this is a useless operation
     // since there is no need to write things that exist. However, overwriting
@@ -467,7 +484,7 @@ route.POST('/file', {
 route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
-  if (hash.startsWith('_private')) {
+  if (!hash || hash.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -475,8 +492,31 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   if (!blobOrString) {
     return notFoundNoCache(h)
   }
-  return h.response(blobOrString).code(200).etag(hash)
+  let type = 'application/octet-stream'
+
+  if (CONTRACT_DATA_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contractdata+json'
+  } else if (CONTRACT_MANIFEST_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contractmanifest+json'
+  } else if (CONTRACT_SOURCE_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.contracttext'
+  } else if (FILE_MANIFEST_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.filemanifest+json'
+  } else if (FILE_CHUNK_REGEX.test(hash)) {
+    type = 'application/vnd.shelter.filechunk+octet-stream'
+  } else if (hash.startsWith('name=')) {
+    type = 'text/plain'
+  }
+
+  return h
+    .response(blobOrString)
+    .etag(hash)
     .header('Cache-Control', 'public,max-age=31536000,immutable')
+    // CSP to disable everything -- this only affects direct navigation to the
+    // `/file` URL.
+    .header('content-security-policy', "default-src 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests; sandbox")
+    .header('x-content-type-options', 'nosniff')
+    .type(type)
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -489,7 +529,10 @@ route.POST('/deleteFile/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+  if (!hash || !FILE_MANIFEST_REGEX.test(hash) || hash.startsWith('_private')) {
+    return Boom.notFound()
+  }
+
   const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
   if (!owner) {
     return Boom.notFound()
@@ -585,7 +628,8 @@ route.POST('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
+  // The key is mandatory and we don't allow NUL in it as it's used for indexing
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -620,7 +664,7 @@ route.POST('/kv/{contractID}/{key}', {
       // pass through
     } else {
       // "Quote" string (to match ETag format)
-      const cid = JSON.stringify(createCID(existing))
+      const cid = JSON.stringify(createCID(existing, multicodes.RAW))
       if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
         return Boom.preconditionFailed()
       }
@@ -666,7 +710,7 @@ route.GET('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
+  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
     return Boom.notFound()
   }
 
@@ -679,7 +723,7 @@ route.GET('/kv/{contractID}/{key}', {
     return notFoundNoCache(h)
   }
 
-  return h.response(result).etag(createCID(result))
+  return h.response(result).etag(createCID(result, multicodes.RAW))
 })
 
 // SPA routes
