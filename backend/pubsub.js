@@ -332,7 +332,7 @@ const publicMethods = {
    */
   broadcast (
     message: Message | string,
-    { to, except }: { to?: Iterable<Object>, except?: Object }
+    { to, except, wsOnly }: { to?: Iterable<Object>, except?: Object, wsOnly?: boolean }
   ) {
     const server = this
 
@@ -355,7 +355,7 @@ const publicMethods = {
       // Duplicate message sending (over both WS and push) is handled on the
       // WS logic, for the `close` event (to remove the WS and send over push)
       // and for the `STORE_SUBSCRIPTION` WS action.
-      if (client.endpoint) {
+      if (!wsOnly && client.endpoint) {
         // `client.endpoint` means the client is a subscription info object
         // The max length for push notifications in many providers is 4 KiB.
         // However, encrypting adds a slight overhead of 17 bytes at the end

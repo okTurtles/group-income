@@ -91,8 +91,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
         sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
 
         // We also run the test manually in case there are no events
-        check()
         const x = setInterval(check, 1000)
+        check()
       })
     })
   })

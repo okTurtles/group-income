@@ -132,3 +132,5 @@ export const POLL_STATUS = {
 }
 
 export const POLL_MAX_OPTIONS = 20
+export const POLL_QUESTION_MAX_CHARS = 280
+export const POLL_OPTION_MAX_CHARS = 280
