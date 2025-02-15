@@ -114,10 +114,22 @@ const setupRootState = () => {
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
 
+const broadcastMessage = (...args) => {
+  self.clients.matchAll()
+    .then((clientList) => {
+      // eslint-disable-next-line require-await
+      return Promise.all(clientList.map(async (client) => {
+        return client.postMessage(...args)
+      })).catch(e => {
+        console.error('[broadcastMessage] Error', args, e)
+      })
+    })
+}
+
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
 
-  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED,
+  CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
@@ -135,33 +147,24 @@ sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
       subtype: et,
       data
     }
-    self.clients.matchAll()
-      .then((clientList) => {
-        clientList.forEach((client) => {
-          client.postMessage(message, transferables)
-        })
-      })
+    broadcastMessage(message, transferables)
   })
 })
 
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   // Remove function types from contract data
   // This avoids unnecessary MessagePorts
-  const argsCopy = Object.fromEntries(Object.entries(contract).filter(([_, v]) => {
-    return typeof v !== 'function'
-  }))
+  const argsCopy = {
+    manifest: contract.manifest,
+    name: contract.name
+  }
   const { data, transferables } = serializer([argsCopy])
   const message = {
     type: 'event',
     subtype: CONTRACT_REGISTERED,
     data
   }
-  self.clients.matchAll()
-    .then((clientList) => {
-      clientList.forEach((client) => {
-        client.postMessage(message, transferables)
-      })
-    })
+  broadcastMessage(message, transferables)
 })
 
 // This event (`NEW_CHATROOM_UNREAD_POSITION`) requires special handling because
@@ -176,12 +179,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
     subtype: NEW_CHATROOM_UNREAD_POSITION,
     data
   }
-  self.clients.matchAll()
-    .then((clientList) => {
-      clientList.forEach((client) => {
-        client.postMessage(message, transferables)
-      })
-    })
+  broadcastMessage(message, transferables)
 })
 
 // Logs are treated especially to avoid spamming logs with event emitted
@@ -192,12 +190,7 @@ sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
     type: CAPTURED_LOGS,
     data
   }
-  self.clients.matchAll()
-    .then((clientList) => {
-      clientList.forEach((client) => {
-        client.postMessage(message, transferables)
-      })
-    })
+  broadcastMessage(message, transferables)
 })
 
 sbp('sbp/selectors/register', {
@@ -289,6 +282,18 @@ sbp('sbp/selectors/register', {
   'appLogs/save': () => sbp('swLogs/save')
 })
 
+sbp('sbp/selectors/register', {
+  'sw/version': () => {
+    return {
+      GI_VERSION: process.env.GI_VERSION,
+      GI_GIT_VERSION: process.env.GI_GIT_VERSION,
+      CONTRACTS_VERSION: process.env.CONTRACTS_VERSION,
+      LIGHTWEIGHT_CLIENT: process.env.LIGHTWEIGHT_CLIENT,
+      NODE_ENV: process.env.NODE_ENV
+    }
+  }
+})
+
 sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
 
 // Set up periodic notifications on the `CHELONIA_RESET` event. We do this here,
@@ -310,14 +315,14 @@ const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
-  event.waitUntil(self.skipWaiting())
+  event.waitUntil(Promise.all([setupPromise, self.skipWaiting()]))
 })
 
 self.addEventListener('activate', function (event) {
   console.debug('[sw] activate')
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
-  event.waitUntil(setupPromise.then(() => self.clients.claim()))
+  event.waitUntil(self.clients.claim())
 })
 
 self.addEventListener('fetch', function (event) {
@@ -340,6 +345,8 @@ const sendMessageToClient = async function (payload) {
   }
 }
 */
+
+setupChelonia()
 
 self.addEventListener('message', function (event) {
   console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
@@ -392,7 +399,7 @@ self.addEventListener('message', function (event) {
             }, 30e3)
           })
         ]).then(() => {
-          port.postMessage({ type: 'ready' })
+          port.postMessage({ type: 'ready', GI_VERSION: process.env.GI_VERSION })
         }, (e) => {
           port.postMessage({ type: 'error', error: e })
         }).finally(() => {

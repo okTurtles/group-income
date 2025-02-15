@@ -189,7 +189,7 @@ async function startApp () {
 
   // register service-worker
   await Promise.race(
-    [sbp('service-workers/setup'),
+    [sbp('service-worker/setup'),
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
@@ -354,20 +354,7 @@ async function startApp () {
       // happened (an example where things can happen this quickly is in the
       // tests).
       let oldIdentityContractID = null
-      Promise.all([sbp('gi.db/settings/load', SETTING_CURRENT_USER), (() => {
-        // Wait for SW to be ready
-        console.debug('[app] Waiting for SW to be ready')
-        return Promise.race([
-          navigator.serviceWorker?.ready,
-          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
-        ]).catch(e => {
-          console.error('[app] Service worker failed to become ready:', e)
-          // Fallback behavior
-          this.removeLoadingAnimation()
-          alert(L('Error while setting up service worker: {err}', { err: e.message }))
-          throw e
-        })
-      })()]).then(async ([identityContractID]) => {
+      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
         oldIdentityContractID = identityContractID
         if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
         // Calling login could result in a prompt in case of an error; if the
@@ -380,23 +367,9 @@ async function startApp () {
         removeHandler()
         await sbp('chelonia/contract/wait', identityContractID)
       }).then(() => {
-        // We know that `navigator.serviceWorker` is defined, since we've used
-        // it. This may need to be checked if a non-SW version is also supported.
-        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
-        const onready = () => {
-          this.ephemeral.ready = true
-          this.removeLoadingAnimation()
-          setupNativeNotificationsListeners()
-        }
-        if (!sw.controller) {
-          const listener = (ev: Event) => {
-            sw.removeEventListener('controllerchange', listener, false)
-            onready()
-          }
-          sw.addEventListener('controllerchange', listener, false)
-        } else {
-          onready()
-        }
+        this.ephemeral.ready = true
+        this.removeLoadingAnimation()
+        setupNativeNotificationsListeners()
       }).catch(async e => {
         this.removeLoadingAnimation()
         oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {

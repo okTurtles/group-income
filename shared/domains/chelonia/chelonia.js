@@ -193,7 +193,9 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/_init': function () {
     this.config = {
       // TODO: handle connecting to multiple servers for federation
-      connectionURL: null, // override!
+      get connectionURL () { throw new Error('Invalid use of connectionURL before initialization') },
+      // override!
+      set connectionURL (value) { Object.defineProperty(this, 'connectionURL', { value, writable: true }) },
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
       contracts: {
         defaults: {
