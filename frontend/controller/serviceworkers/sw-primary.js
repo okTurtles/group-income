@@ -32,6 +32,7 @@ import {
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, SERIOUS_ERROR, SWITCH_GROUP
 } from '../../utils/events.js'
+import './cache.js'
 import './push.js'
 import './sw-namespace.js'
 
@@ -318,10 +319,6 @@ self.addEventListener('activate', function (event) {
 
   // 'clients.claim()' reference: https://web.dev/articles/service-worker-lifecycle#clientsclaim
   event.waitUntil(setupPromise.then(() => self.clients.claim()))
-})
-
-self.addEventListener('fetch', function (event) {
-  console.debug(`[sw] fetch : ${event.request.method} - ${event.request.url}`)
 })
 
 // TODO: this doesn't persist data across browser restarts, so try to use
