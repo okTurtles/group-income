@@ -1101,7 +1101,7 @@ export default (sbp('sbp/selectors/register', {
       try {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state, undefined, contractName)
         if (!contractName && state._vm) {
-          contractName = state._vm?.type
+          contractName = state._vm.type
         }
       } catch (e) {
         console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
