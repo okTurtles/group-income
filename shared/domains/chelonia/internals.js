@@ -1929,7 +1929,7 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
         processingErrored = e?.name !== 'ChelErrorWarning'
-        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, contractStateCopy))
         // special error that prevents the head from being updated, effectively killing the contract
         if (
           e.name === 'ChelErrorUnrecoverable' ||
