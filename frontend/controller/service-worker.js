@@ -1,5 +1,6 @@
 'use strict'
 
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
@@ -163,6 +164,9 @@ sbp('sbp/selectors/register', {
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
   'service-worker/setup-push-subscription': async function (retryCount?: number) {
+    if (process.env.CI) {
+      throw new Error('Push disabled in CI mode')
+    }
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
@@ -194,13 +198,29 @@ sbp('sbp/selectors/register', {
           return subscription
         }).catch(e => {
           if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
-            sbp('okTurtles.events/once', ONLINE, () => {
-              setTimeout(() => sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1), 200)
+            return new Promise((resolve, reject) => {
+              const errorTimeoutId = setTimeout(() => {
+                reject(new Error('Timed out waiting to come back online'))
+                cancel()
+              }, 600e3)
+              const cancel = sbp('okTurtles.events/once', ONLINE, () => {
+                clearTimeout(errorTimeoutId)
+                setTimeout(() => resolve(sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1)), 200)
+              })
             })
-            return
           }
           console.error('[service-worker/setup-push-subscription] Error setting up push subscription', e)
-          alert(e?.message || 'Error')
+          sbp('gi.ui/prompt', {
+            heading: L('Error setting up push notifications'),
+            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
+              errMsg: e?.message,
+              a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
+              _a: '</a>',
+              br_: '<br/>'
+            }),
+            primaryButton: L('Close')
+          })
+          throw e
         })
         : null
 
