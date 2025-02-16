@@ -1090,6 +1090,7 @@ export default (sbp('sbp/selectors/register', {
       return cloneDeep(rootState[contractID])
     }
     let state = Object.create(null)
+    let contractName = rootState.contracts[contractID]?.type
     const eventsStream = sbp('chelonia/out/eventsAfter', contractID, 0, undefined, contractID)
     const eventsStreamReader = eventsStream.getReader()
     if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
@@ -1098,7 +1099,10 @@ export default (sbp('sbp/selectors/register', {
       if (done) return state
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.transientSecretKeys, state), state, undefined, contractName)
+        if (!contractName && state._vm) {
+          contractName = state._vm.type
+        }
       } catch (e) {
         console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
         if (e instanceof ChelErrorUnrecoverable) throw e

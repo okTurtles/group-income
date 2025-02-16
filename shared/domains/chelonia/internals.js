@@ -12,7 +12,7 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
+import { ChelErrorKeyAlreadyExists, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -22,7 +22,7 @@ import { isSignedData, signedIncomingData } from './signedData.js'
 // message
 const missingDecryptionKeyIdsMap = new WeakMap()
 
-const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
+const getMsgMeta = (message: GIMessage, contractID: string, state: Object, index?: number) => {
   const signingKeyId = message.signingKeyId()
   let innerSigningKeyId: ?string = null
 
@@ -45,7 +45,8 @@ const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
     },
     get innerSigningContractID () {
       return getContractIDfromKeyId(contractID, result.innerSigningKeyId, state)
-    }
+    },
+    index
   }
 
   return result
@@ -69,7 +70,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
     key._notBeforeHeight = height
     if (authorizedKeys?.[key.id]) {
       if (authorizedKeys[key.id]._notAfterHeight == null) {
-        throw new Error(`Cannot set existing unrevoked key: ${key.id}`)
+        throw new ChelErrorKeyAlreadyExists(`Cannot set existing unrevoked key: ${key.id}`)
       }
       // If the key was get previously, preserve its _notBeforeHeight
       // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
@@ -667,7 +668,7 @@ export default (sbp('sbp/selectors/register', {
       )
     )
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[], contractName?: string) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const height = message.height()
@@ -709,7 +710,7 @@ export default (sbp('sbp/selectors/register', {
             }
             await opFns[u[0]](u[1])
           } catch (e) {
-            if (!e || typeof e !== 'object') {
+            if (e && typeof e === 'object') {
               if (e.name === 'ChelErrorDecryptionKeyNotFound') {
                 console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMessage for ${message.description()}: ${e.message}`, e, message.serialize())
                 if (e.cause) {
@@ -725,10 +726,10 @@ export default (sbp('sbp/selectors/register', {
                 console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
               }
               console.warn(`[chelonia] [OP_ATOMIC] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
-              if (this.config.strictProcessing) {
+              if (config.strictProcessing) {
                 throw e
               }
-              this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+              config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
               if (e.name === 'ChelErrorWarning') continue
             } else {
               console.error('Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
@@ -1230,11 +1231,13 @@ export default (sbp('sbp/selectors/register', {
       // Having rootState.contracts[contractID] is not enough to determine we
       // have previously synced this contract, as reference counts are also
       // stored there. Hence, we check for the presence of 'type'
-      const contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
-        ? rootState.contracts[contractID].type
-        : opT === GIMessage.OP_CONTRACT
-          ? ((opV: any): GIOpContract).type
-          : ''
+      if (!contractName) {
+        contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
+          ? rootState.contracts[contractID].type
+          : opT === GIMessage.OP_CONTRACT
+            ? ((opV: any): GIOpContract).type
+            : ''
+      }
       if (!contractName) {
         throw new Error(`Unable to determine the name for a contract and refusing to load it (contract ID was ${contractID} and its manifest hash was ${manifestHash})`)
       }
@@ -1926,7 +1929,7 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
         processingErrored = e?.name !== 'ChelErrorWarning'
-        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, contractStateCopy))
         // special error that prevents the head from being updated, effectively killing the contract
         if (
           e.name === 'ChelErrorUnrecoverable' ||
