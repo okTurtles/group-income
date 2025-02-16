@@ -198,8 +198,13 @@ sbp('sbp/selectors/register', {
           return subscription
         }).catch(e => {
           if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
-            return new Promise((resolve) => {
-              sbp('okTurtles.events/once', ONLINE, () => {
+            return new Promise((resolve, reject) => {
+              const errorTimeoutId = setTimeout(() => {
+                reject(new Error('Timed out waiting to come back online'))
+                cancel()
+              }, 600e3)
+              const cancel = sbp('okTurtles.events/once', ONLINE, () => {
+                clearTimeout(errorTimeoutId)
                 setTimeout(() => resolve(sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1)), 200)
               })
             })
