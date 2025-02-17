@@ -48,10 +48,10 @@ const waitUntilSwReady = () => {
     }
     const oncontrollerchange = () => {
       navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
-      reject(new Error('Service worker controller changed'))
-      waitUntilSwReady().catch(e => {
-        console.error('[waitUntilSwReady] Error', e)
-      })
+      // If the SW controller has changed (e.g., because of an update), we call
+      // `waitUntilSwReady` again and return the result of that call. That will
+      // also populate `serviceWorkerMap`
+      resolve(waitUntilSwReady())
     }
     navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
 
