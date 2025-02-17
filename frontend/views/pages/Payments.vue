@@ -392,7 +392,7 @@ export default ({
         displayName: this.userDisplayNameFromID(payment.data.toMemberID),
         monthstamp: dateToMonthstamp(payment.meta.createdDate),
         date: payment.meta.createdDate
-      }))
+      })).sort(this.sortPaymentByDescendingPeriod)
     },
     paymentsReceived () {
       return this.historicalPayments.received.map(payment => ({
@@ -400,7 +400,7 @@ export default ({
         fromMemberID: payment.data.fromMemberID,
         displayName: this.userDisplayNameFromID(payment.data.fromMemberID),
         date: payment.meta.createdDate
-      }))
+      })).sort(this.sortPaymentByDescendingPeriod)
     },
     paymentsListData () {
       return {
@@ -459,6 +459,9 @@ export default ({
         `${amount}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
 
       return matchesMethodFilter && matchesSearchQuery
+    },
+    sortPaymentByDescendingPeriod (a, b) {
+      return new Date(b.period) - new Date(a.period)
     },
     paginateList (list) {
       const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
