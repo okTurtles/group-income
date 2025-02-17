@@ -354,35 +354,38 @@ async function startApp () {
       // happened (an example where things can happen this quickly is in the
       // tests).
       let oldIdentityContractID = null
-      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
-        oldIdentityContractID = identityContractID
-        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        // Calling login could result in a prompt in case of an error; if the
-        // loading animation is visible, it'll hide the prompt. We remove it,
-        // so that it's possible to interact with the prompt.
-        const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+      ;(async () => {
+        try {
+          const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+          oldIdentityContractID = identityContractID
+          if (identityContractID && this.ephemeral.finishedLogin !== 'yes') {
+            // Calling login could result in a prompt in case of an error; if the
+            // loading animation is visible, it'll hide the prompt. We remove it,
+            // so that it's possible to interact with the prompt.
+            const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+              this.removeLoadingAnimation()
+            })
+            await sbp('gi.app/identity/login', { identityContractID })
+            removeHandler()
+            await sbp('chelonia/contract/wait', identityContractID)
+          }
+          this.ephemeral.ready = true
           this.removeLoadingAnimation()
-        })
-        await sbp('gi.app/identity/login', { identityContractID })
-        removeHandler()
-        await sbp('chelonia/contract/wait', identityContractID)
-      }).then(() => {
-        this.ephemeral.ready = true
-        this.removeLoadingAnimation()
-        setupNativeNotificationsListeners()
-      }).catch(async e => {
-        this.removeLoadingAnimation()
-        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
-          console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
-        }) // https://github.com/okTurtles/group-income/issues/2194
-        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-        await sbp('gi.app/identity/logout')
-        await sbp('gi.ui/prompt', {
-          heading: L('Failed to login'),
-          question: L('Error details: {reportError}', LError(e)),
-          primaryButton: L('Close')
-        })
-      })
+          setupNativeNotificationsListeners()
+        } catch (e) {
+          this.removeLoadingAnimation()
+          oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
+            console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
+          }) // https://github.com/okTurtles/group-income/issues/2194
+          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+          await sbp('gi.app/identity/logout')
+          await sbp('gi.ui/prompt', {
+            heading: L('Failed to login'),
+            question: L('Error details: {reportError}', LError(e)),
+            primaryButton: L('Close')
+          })
+        }
+      })()
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
