@@ -54,27 +54,21 @@ export default ({
     defaultTab: String // initial tab name
   },
   data () {
-    const appVersion = process.env.GI_VERSION.split('@')[0]
-    const contractsVersion = process.env.CONTRACTS_VERSION
-
     return {
       activeTab: 0,
       activeComponent: null,
       title: '',
       transitionName: '',
       open: true,
-      subNav: [{
-        html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
-          ...LTags(),
-          appVersion,
-          contractsVersion
-        })
-      }, {
-        title: L('Acknowledgements'),
-        url: 'acknowledgements',
-        component: 'Acknowledgements',
-        index: 11 // NOTE: index should not be duplicated with the link of tabNav
-      }]
+      subNav: [
+        { html: '' },
+        {
+          title: L('Acknowledgements'),
+          url: 'acknowledgements',
+          component: 'Acknowledgements',
+          index: 11 // NOTE: index should not be duplicated with the link of tabNav
+        }
+      ]
     }
   },
   computed: {
@@ -137,7 +131,18 @@ export default ({
       }
     }
   },
-  mounted () {
+  async mounted () {
+    const appVersion = process.env.GI_VERSION.split('@')[0]
+    const contractsVersion = process.env.CONTRACTS_VERSION
+    const { GI_GIT_VERSION } = await sbp('sw/version')
+    const swVer: string = GI_GIT_VERSION.slice(1)
+    this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
+      ...LTags(),
+      appVersion,
+      contractsVersion,
+      swVer
+    })
+
     const defaultTab = this.$route.query.tab || this.defaultTab
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
@@ -335,5 +340,4 @@ export default ({
     }
   }
 }
-
 </style>
