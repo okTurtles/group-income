@@ -131,22 +131,7 @@ export default ({
       }
     }
   },
-  async mounted () {
-    const appVersion = process.env.GI_VERSION.split('@')[0]
-    const contractsVersion = process.env.CONTRACTS_VERSION
-    let swVer: string = ''
-    try {
-      swVer = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
-    } catch (e) {
-      swVer = `ERR: ${e.message}`
-    }
-    this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
-      ...LTags(),
-      appVersion,
-      contractsVersion,
-      swVer
-    })
-
+  mounted () {
     const defaultTab = this.$route.query.tab || this.defaultTab
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
@@ -176,6 +161,23 @@ export default ({
         this.tabClick(fallbackLink)
       }
     }
+
+    ;(async () => {
+      const appVersion = process.env.GI_VERSION.split('@')[0]
+      const contractsVersion = process.env.CONTRACTS_VERSION
+      let swVer: string = ''
+      try {
+        swVer = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+      } catch (e) {
+        swVer = `ERR: ${e.message}`
+      }
+      this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
+        ...LTags(),
+        appVersion,
+        contractsVersion,
+        swVer
+      })
+    })()
   },
   beforeDestroy () {
     this.$router.push(this.$route.query).catch(logExceptNavigationDuplicated)
