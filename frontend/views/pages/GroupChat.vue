@@ -10,7 +10,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
       h1.is-title-2.p-title {{summary.title}}
-      menu-parent.c-menu-parent(v-if='summary.isJoined')
+      menu-parent.c-menu-parent
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
@@ -20,14 +20,14 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
 
           ul
             menu-item(
-              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
+              v-if='!summary.isGeneral && isChatRoomCreator && !isGroupDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
 
             menu-item(
-              v-if='ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
+              v-if='isChatRoomCreator && !isGroupDirectMessage()'
               @click='editDescription'
               data-test='updateDescription'
             )
@@ -40,25 +40,26 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
               menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
                 i18n Add People
 
-            menu-item.hide-desktop(v-if='pinnedMessages.length')
-              i18n(@click='showPinnedMessages($event)') Pinned Messages
+            template(v-if='summary.isJoined')
+              menu-item.hide-desktop(v-if='pinnedMessages.length')
+                i18n(@click='showPinnedMessages($event)') Pinned Messages
 
-            menu-item(
-              :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
-              @click='openModal("ChatNotificationSettingsModal")'
-              data-test='notificationsSettings'
-            )
-              i18n Notification settings
+              menu-item(
+                :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
+                @click='openModal("ChatNotificationSettingsModal")'
+                data-test='notificationsSettings'
+              )
+                i18n Notification settings
 
-            menu-item(
-              v-if='!summary.isGeneral && !isGroupDirectMessage()'
-              @click='openModal("LeaveChannelModal")'
-              data-test='leaveChannel'
-            )
-              i18n(:args='{ channelName: summary.title }') Leave {channelName}
+              menu-item(
+                v-if='!summary.isGeneral && !isGroupDirectMessage()'
+                @click='openModal("LeaveChannelModal")'
+                data-test='leaveChannel'
+              )
+                i18n(:args='{ channelName: summary.title }') Leave {channelName}
 
             menu-item.has-text-danger(
-              v-if='!summary.isGeneral && ourIdentityContractId === summary.attributes.creatorID && !isGroupDirectMessage()'
+              v-if='!summary.isGeneral && isChatRoomCreator && !isGroupDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )

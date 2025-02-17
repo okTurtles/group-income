@@ -211,7 +211,7 @@ export default ({
       return this.isJoined
         ? this.chatRoomMembersInSort
         : this.groupMembersSorted
-          .filter(member => this.groupChatRooms[this.currentChatRoomId].members[member.username]?.status === PROFILE_STATUS.ACTIVE)
+          .filter(member => this.groupChatRooms[this.currentChatRoomId].members[member.contractID]?.status === PROFILE_STATUS.ACTIVE)
           .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
     }
   },
