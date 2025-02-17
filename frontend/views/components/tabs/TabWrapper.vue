@@ -61,7 +61,7 @@ export default ({
       transitionName: '',
       open: true,
       subNav: [
-        { html: '' },
+        { html: '' }, // this will get filled in `mounted()` below
         {
           title: L('Acknowledgements'),
           url: 'acknowledgements',
@@ -134,8 +134,12 @@ export default ({
   async mounted () {
     const appVersion = process.env.GI_VERSION.split('@')[0]
     const contractsVersion = process.env.CONTRACTS_VERSION
-    const { GI_GIT_VERSION } = await sbp('sw/version')
-    const swVer: string = GI_GIT_VERSION.slice(1)
+    let swVer: string = ''
+    try {
+      swVer = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+    } catch (e) {
+      swVer = `ERR: ${e.message}`
+    }
     this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
       ...LTags(),
       appVersion,
