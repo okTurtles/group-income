@@ -1817,3 +1817,5 @@ function gettersProxy (state: Object, getters: Object) {
   })
   return { getters: proxyGetters }
 }
+
+sbp('sbp/domains/lock', ['chelonia'])
