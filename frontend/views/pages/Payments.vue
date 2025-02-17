@@ -172,7 +172,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { dateToMonthstamp, dateFromPeriodStamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString, deepEqualJSONType, omit, uniq } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
@@ -461,7 +461,7 @@ export default ({
       return matchesMethodFilter && matchesSearchQuery
     },
     sortPaymentByDescendingPeriod (a, b) {
-      return new Date(b.period) - new Date(a.period)
+      return dateFromPeriodStamp(b.period) - dateFromPeriodStamp(a.period)
     },
     paginateList (list) {
       const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
