@@ -20,7 +20,7 @@
 
     td.td-action
       .c-action-wrapper
-        permission-action-menu(role='admin')
+        permission-action-menu
 </template>
 
 <script>

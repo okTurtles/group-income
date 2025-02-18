@@ -10,7 +10,7 @@ export const GROUP_ROLES_DISPLAY_NAME: { [string]: string } = {
 
 export const GROUP_PERIMSSIONS_DISPLAY_NAME: { [string]: string } = {
   [GROUP_PERMISSIONS.VIEW_PERMISSIONS]: L('View permissions'),
-  [GROUP_PERMISSIONS.REMOVE_PERMISSIONS]: L('Remove permissions'),
+  [GROUP_PERMISSIONS.ASSIGN_DELEGATOR]: L('Assign delegator'),
   [GROUP_PERMISSIONS.DELEGATE_PERMISSIONS]: L('Delegate permissions'),
   [GROUP_PERMISSIONS.REMOVE_MEMBER]: L('Remove member'),
   [GROUP_PERMISSIONS.REVOKE_INVITE]: L('Revoke invites'),

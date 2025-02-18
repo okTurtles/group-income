@@ -70,8 +70,8 @@ export const GROUP_ROLES = {
 
 export const GROUP_PERMISSIONS = {
   VIEW_PERMISSIONS: 'view-permissions',
-  REMOVE_PERMISSIONS: 'remove-permissions',
-  DELEGATE_PERMISSIONS: 'delegate-permissions',
+  ASSIGN_DELEGATOR: 'assign-delegator',
+  DELEGATE_PERMISSIONS: 'delegate-permissions', // add/edit/remove permissions
   REMOVE_MEMBER: 'remove-member',
   REVOKE_INVITE: 'revoke-invite',
   DELETE_CHANNEL: 'delete-channel'
@@ -81,20 +81,24 @@ const GP = GROUP_PERMISSIONS
 export const GROUP_PERMISSIONS_PRESET = {
   ADMIN: [
     GP.VIEW_PERMISSIONS,
+    GP.ASSIGN_DELEGATOR,
     GP.DELEGATE_PERMISSIONS,
-    GP.REMOVE_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE,
     GP.DELETE_CHANNEL
   ],
   MODERATOR_DELEGATOR: [
     GP.VIEW_PERMISSIONS,
+    GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE,
     GP.DELETE_CHANNEL
   ],
   MODERATOR: [
-    GP.VIEW_PERMISSIONS
+    GP.VIEW_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
   ]
 }
 

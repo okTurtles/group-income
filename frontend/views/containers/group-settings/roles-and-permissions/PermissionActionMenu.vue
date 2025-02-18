@@ -20,21 +20,15 @@ menu-parent.c-permission-action-menu(
 <script>
 import { L } from '@common/common.js'
 import { MenuParent, MenuContent, MenuTrigger, MenuItem } from '@components/menu'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'PermissionActionMenu',
+  inject: ['permissionsUtils'],
   components: {
     MenuParent,
     MenuContent,
     MenuTrigger,
     MenuItem
-  },
-  props: {
-    role: {
-      type: String,
-      validator: (role) => Object.values(GROUP_ROLES).includes(role)
-    }
   },
   computed: {
     menuOptions () {
@@ -43,17 +37,17 @@ export default {
           id: 'edit',
           label: L('Edit permissions'),
           icon: 'edit',
-          enabledFor: [GROUP_ROLES.ADMIN, GROUP_ROLES.MODERATOR_DELEGATOR]
+          enabled: () => this.permissionsUtils.canDelegatePermissions
         },
         {
           id: 'remove',
           label: L('Remove'),
           icon: 'trash-alt',
-          enabledFor: [GROUP_ROLES.ADMIN, GROUP_ROLES.MODERATOR_DELEGATOR]
+          enabled: () => this.permissionsUtils.canDelegatePermissions
         }
       ]
 
-      return list.filter(option => option.enabledFor.includes(this.role))
+      return list.filter(entry => entry.enabled())
     }
   },
   methods: {

@@ -28,6 +28,7 @@ page-section.c-section(
 
   .c-buttons-container
     button.is-small.is-outlined(
+      v-if='canDelegatePermissions'
       type='button'
       @click='handleAddPermissionsClick'
     )
@@ -38,7 +39,7 @@ page-section.c-section(
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 const fakeRolesData = [
@@ -61,6 +62,15 @@ const fakeRolesData = [
     username: 'Fake user 3',
     role: GROUP_ROLES.MODERATOR,
     permissions: GROUP_PERMISSIONS_PRESET.MODERATOR
+  },
+  {
+    id: 'user-4',
+    username: 'Fake user 4',
+    role: GROUP_ROLES.CUSTOM,
+    permissions: [
+      GROUP_PERMISSIONS.VIEW_PERMISSIONS,
+      GROUP_PERMISSIONS.DELETE_CHANNEL
+    ]
   }
 ]
 
@@ -84,11 +94,27 @@ export default ({
     displayComponent () {
       // TODO: Remove this once the development is complete and the feature is ready for release.
       return process.env.NODE_ENV === 'development'
+    },
+    myPermissions () {
+      // NOTE: Using ADMIN preset here for a development purpose for now.
+      // (TODO: Replace with logic that uses actual permissions eg. Implement a vuex getter)
+      return GROUP_PERMISSIONS_PRESET.ADMIN
+    },
+    canDelegatePermissions () {
+      return this.myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
     }
   },
   methods: {
     handleAddPermissionsClick () {
       alert(L('Coming soon!'))
+    }
+  },
+  provide () {
+    return {
+      permissionsUtils: {
+        myPermissions: this.myPermissions,
+        canDelegatePermissions: this.canDelegatePermissions
+      }
     }
   },
   mounted () {
