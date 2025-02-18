@@ -30,24 +30,14 @@ export default (sbp('sbp/selectors/register', {
     console.info('group key-value store data loaded!')
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     const kvData = await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN)
     // kvData could be falsy if the server returns 404
     if (kvData) {
       // Note: this could throw an exception if there's a signature or decryption
       // issue
-      if (kvData.data) {
-        return kvData.data
-      }
-      return {
-        _creator: identityContractID,
-        _reason: 'empty'
-      }
+      return kvData.data
     }
-    return {
-      _creator: identityContractID,
-      _reason: 'new'
-    }
+    return Object.create(null)
   },
   'gi.actions/group/kv/loadLastLoggedIn': ({ contractID }: { contractID: string }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
@@ -78,11 +68,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedLastLoggedIn = async (contractID) => {
         const current = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
-        return {
-          ...current,
-          [identityContractID]: nowString,
-          _setter: identityContractID
-        }
+        return { ...current, [identityContractID]: nowString }
       }
 
       const data = await getUpdatedLastLoggedIn(contractID)
