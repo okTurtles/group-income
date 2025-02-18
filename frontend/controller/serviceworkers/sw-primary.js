@@ -128,7 +128,6 @@ const broadcastMessage = (...args) => {
 
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
-
   CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,

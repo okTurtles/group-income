@@ -13,7 +13,7 @@ export default (sbp('sbp/selectors/register', {
         cachedVapidInformation &&
         // Cache the VAPID information for one hour. The server public
         // information should change very infrequently, if it changes at all.
-        (performance.now() - cachedVapidInformation[0]) < 3600e3
+        (Date.now() - cachedVapidInformation[0]) < 3600e3
       ) {
         return cachedVapidInformation[1]
       }
@@ -48,7 +48,7 @@ export default (sbp('sbp/selectors/register', {
         ))
       })
       result.then((options) => {
-        cachedVapidInformation = [performance.now(), Promise.resolve(options)]
+        cachedVapidInformation = [Date.now(), Promise.resolve(options)]
       })
       return result
     }
