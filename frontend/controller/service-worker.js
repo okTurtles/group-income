@@ -9,6 +9,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { ONLINE } from '../utils/events.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -188,12 +189,13 @@ sbp('sbp/selectors/register', {
       throw new Error('Push disabled in CI mode')
     }
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
+      console.info('[service-worker/setup-push-subscription] run')
+
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
 
       if (!registration) {
-        console.error('No service-worker registration found!')
-        return
+        throw new Error('No service-worker registration found!')
       }
 
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
@@ -204,20 +206,24 @@ sbp('sbp/selectors/register', {
         ? await registration.pushManager.getSubscription().then((subscription) => {
           if (
             !subscription ||
-            (subscription.expirationTime != null &&
-            subscription.expirationTime <= Date.now())
+            (subscription.expirationTime != null && subscription.expirationTime <= Date.now())
           ) {
-            console.info(
-              'Attempting to create a new subscription',
-              subscription
-            )
+            console.info('[service-worker/setup-push-subscription] attempting to create a new subscription', subscription)
             return sbp('push/getSubscriptionOptions').then(function (options) {
               return registration.pushManager.subscribe(options)
             })
+          } else {
+            const subClone = cloneDeep(subscription)
+            if (subscription?.endpoint) {
+              // hide the full endpoint from the logs for privacy
+              subClone.endpoint = new URL(subClone.endpoint).host
+            }
+            console.info('[service-worker/setup-push-subscription] got existing subscription:', subClone)
           }
           return subscription
         }).catch(e => {
           if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
+            console.error('[service-worker/setup-push-subscription] offline, will retry', e)
             return new Promise((resolve, reject) => {
               const errorTimeoutId = setTimeout(() => {
                 reject(new Error('Timed out waiting to come back online'))
@@ -229,7 +235,7 @@ sbp('sbp/selectors/register', {
               })
             })
           }
-          console.error('[service-worker/setup-push-subscription] Error setting up push subscription', e)
+          console.error('[service-worker/setup-push-subscription] error subscribing:', e)
           sbp('gi.ui/prompt', {
             heading: L('Error setting up push notifications'),
             question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
@@ -359,26 +365,14 @@ const swRpc = (() => {
 })()
 
 sbp('sbp/selectors/register', {
-  'gi.actions/*': swRpc
-})
-sbp('sbp/selectors/register', {
-  'chelonia/*': swRpc
-})
-sbp('sbp/selectors/register', {
+  'gi.actions/*': swRpc,
+  'chelonia/*': swRpc,
   'sw-namespace/*': (...args) => {
     // Remove the `sw-` prefix from the selector
     return swRpc(args[0].slice(3), ...args.slice(1))
-  }
-})
-sbp('sbp/selectors/register', {
-  'gi.notifications/*': swRpc
-})
-sbp('sbp/selectors/register', {
-  'sw/*': swRpc
-})
-sbp('sbp/selectors/register', {
-  'swLogs/*': swRpc
-})
-sbp('sbp/selectors/register', {
-  'push/*': swRpc
+  },
+  'gi.notifications/*': swRpc,
+  'sw/*': swRpc,
+  'swLogs/*': swRpc,
+  'push/*': swRpc,
 })

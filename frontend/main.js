@@ -202,9 +202,12 @@ async function startApp () {
     throw e
   })
   // Call `setNotificationEnabled` after the service worker setup, because it
-  // calls `service-worker/setup-push-subscription`.
+  // calls 'service-worker/setup-push-subscription'.
   if (typeof Notification === 'function') {
+    // TODO: do not do this now, but once we are sure the websocket is ready and online
     sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
+  } else {
+    console.warn("Notifications aren't available in this browser!")
   }
 
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
