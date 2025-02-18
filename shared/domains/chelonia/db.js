@@ -53,15 +53,15 @@ export const prefixHandlers: Object = {
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
 //       to overwrite the following selectors:
-sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+sbp('sbp/selectors/unsafe', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
 // NOTE: MAKE SURE TO CALL 'sbp/selectors/lock' after overwriting them!
 
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
-      'chelonia/db/get': function (key: string): Promise<HEADInfo | Buffer | string | void> {
+      'chelonia.db/get': function (key: string): Promise<HEADInfo | Buffer | string | void> {
         const id = getContractIdFromLogHead(key)
         if (!id) return Promise.resolve()
-        const state = sbp(this.config.stateSelector).contracts[id]
+        const state = sbp('chelonia/rootState').contracts[id]
         const value = (state?.HEAD
           ? JSON.stringify({
             HEAD: state.HEAD,
@@ -70,14 +70,14 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
           : undefined)
         return Promise.resolve(value)
       },
-      'chelonia/db/set': function (key: string, value: HEADInfo | Buffer | string): Promise<Error | void> {
+      'chelonia.db/set': function (key: string, value: HEADInfo | Buffer | string): Promise<Error | void> {
         return Promise.resolve()
       },
-      'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
+      'chelonia.db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
       // eslint-disable-next-line require-await
-      'chelonia/db/get': async function (prefixableKey: string): Promise<HEADInfo | Buffer | Error | string | void> {
+      'chelonia.db/get': async function (prefixableKey: string): Promise<HEADInfo | Buffer | Error | string | void> {
         const [prefix, key] = parsePrefixableKey(prefixableKey)
         const value = sbp('okTurtles.data/get', key)
         if (value === undefined) {
@@ -86,24 +86,24 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         return prefixHandlers[prefix](value)
       },
       // eslint-disable-next-line require-await
-      'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<Error | void> {
+      'chelonia.db/set': async function (key: string, value: Buffer | string): Promise<Error | void> {
         checkKey(key)
         return sbp('okTurtles.data/set', key, value)
       },
       // eslint-disable-next-line require-await
-      'chelonia/db/delete': async function (key: string): Promise<boolean> {
+      'chelonia.db/delete': async function (key: string): Promise<boolean> {
         return sbp('okTurtles.data/delete', key)
       }
     }
 
-export default (sbp('sbp/selectors/register', {
+export default ((sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
   'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
-    return sbp('chelonia/db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
+    return sbp('chelonia.db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
     try {
-      const value: string = await sbp('chelonia/db/get', hash)
+      const value: string = await sbp('chelonia.db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
       return GIMessage.deserialize(value, this.transientSecretKeys)
     } catch (e) {
@@ -122,7 +122,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       const { previousHEAD: entryPreviousHEAD, height: entryHeight } = entry.head()
       const contractID: string = entry.contractID()
-      if (await sbp('chelonia/db/get', entry.hash())) {
+      if (await sbp('chelonia.db/get', entry.hash())) {
         console.warn(`[chelonia.db] entry exists: ${entry.hash()}`)
         return entry.hash()
       }
@@ -148,10 +148,10 @@ export default (sbp('sbp/selectors/register', {
           throw new ChelErrorDBBadPreviousHEAD(`[chelonia.db] bad height: ${entryHeight}! Expected: 0 for contractID: ${contractID}`)
         }
       }
-      await sbp('chelonia/db/set', entry.hash(), entry.serialize())
-      await sbp('chelonia/db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
+      await sbp('chelonia.db/set', entry.hash(), entry.serialize())
+      await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
-      await sbp('chelonia/db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
+      await sbp('chelonia.db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {
@@ -169,4 +169,4 @@ export default (sbp('sbp/selectors/register', {
       throw new ChelErrorDBConnection(`${e.name} during lastEntry: ${e.message}`)
     }
   }
-}): any)
+}): any): string[])

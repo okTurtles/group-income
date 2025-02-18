@@ -54,27 +54,21 @@ export default ({
     defaultTab: String // initial tab name
   },
   data () {
-    const appVersion = process.env.GI_VERSION.split('@')[0]
-    const contractsVersion = process.env.CONTRACTS_VERSION
-
     return {
       activeTab: 0,
       activeComponent: null,
       title: '',
       transitionName: '',
       open: true,
-      subNav: [{
-        html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
-          ...LTags(),
-          appVersion,
-          contractsVersion
-        })
-      }, {
-        title: L('Acknowledgements'),
-        url: 'acknowledgements',
-        component: 'Acknowledgements',
-        index: 11 // NOTE: index should not be duplicated with the link of tabNav
-      }]
+      subNav: [
+        { html: '' }, // this will get filled in `mounted()` below
+        {
+          title: L('Acknowledgements'),
+          url: 'acknowledgements',
+          component: 'Acknowledgements',
+          index: 11 // NOTE: index should not be duplicated with the link of tabNav
+        }
+      ]
     }
   },
   computed: {
@@ -167,6 +161,23 @@ export default ({
         this.tabClick(fallbackLink)
       }
     }
+
+    ;(async () => {
+      const appVersion = process.env.GI_VERSION.split('@')[0]
+      const contractsVersion = process.env.CONTRACTS_VERSION
+      let swVer: string = ''
+      try {
+        swVer = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+      } catch (e) {
+        swVer = `ERR: ${e.message}`
+      }
+      this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
+        ...LTags(),
+        appVersion,
+        contractsVersion,
+        swVer
+      })
+    })()
   },
   beforeDestroy () {
     this.$router.push(this.$route.query).catch(logExceptNavigationDuplicated)
@@ -335,5 +346,4 @@ export default ({
     }
   }
 }
-
 </style>
