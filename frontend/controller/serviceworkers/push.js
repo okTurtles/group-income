@@ -13,7 +13,7 @@ export default (sbp('sbp/selectors/register', {
         cachedVapidInformation &&
         // Cache the VAPID information for one hour. The server public
         // information should change very infrequently, if it changes at all.
-        (Date.now() - cachedVapidInformation[0]) < 3600e3
+        (performance.now() - cachedVapidInformation[0]) < 3600e3
       ) {
         return cachedVapidInformation[1]
       }
@@ -48,7 +48,7 @@ export default (sbp('sbp/selectors/register', {
         ))
       })
       result.then((options) => {
-        cachedVapidInformation = [Date.now(), Promise.resolve(options)]
+        cachedVapidInformation = [performance.now(), Promise.resolve(options)]
       })
       return result
     }
@@ -80,13 +80,15 @@ export default (sbp('sbp/selectors/register', {
       const socket = pubsub.socket
       const reported = map.get(socket)
       map.set(socket, subscriptionInfo)
-      if (subscriptionInfo?.endpoint && reported !== subscriptionInfo.endpoint) {
-        // If the subscription has changed, report it to the server
-        pubsub.socket.send(createMessage(
-          REQUEST_TYPE.PUSH_ACTION,
-          { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
-        ))
-      } else if (!subscriptionInfo && reported) {
+      if (subscriptionInfo?.endpoint) {
+        if (!reported || subscriptionInfo.endpoint !== reported.endpoint) {
+          // If the subscription has changed, report it to the server
+          pubsub.socket.send(createMessage(
+            REQUEST_TYPE.PUSH_ACTION,
+            { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
+          ))
+        }
+      } else if (reported) {
         // If the subscription has been removed, also report it to the server
         pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,

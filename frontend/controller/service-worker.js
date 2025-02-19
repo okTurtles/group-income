@@ -8,7 +8,6 @@ import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
-import { ONLINE } from '../utils/events.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 const pwa = {
@@ -184,13 +183,13 @@ sbp('sbp/selectors/register', {
   // In theory, the `PushManager` APIs used are available in the SW and we could
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
-  'service-worker/setup-push-subscription': async function (retryCount?: number) {
+  'service-worker/setup-push-subscription': async function () {
     if (process.env.CI) {
       throw new Error('Push disabled in CI mode')
     }
-    await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
-      console.info('[service-worker/setup-push-subscription] run')
 
+    await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
+      const { notificationEnabled } = sbp('state/vuex/state').settings
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
 
@@ -199,61 +198,51 @@ sbp('sbp/selectors/register', {
       }
 
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
+      const granted = permissionState === 'granted' || Notification.permission === 'granted'
+      console.info(`[service-worker/setup-push-subscription] setup: notifications (${notificationEnabled}) perms (${granted})`)
 
-      // Safari sometimes incorrectly reports 'prompt' when using
-      // `registration.pushManager.permissionState`.
-      const existingSubscription = permissionState === 'granted' || Notification.permission === 'granted'
-        ? await registration.pushManager.getSubscription().then((subscription) => {
-          if (
-            !subscription ||
-            (subscription.expirationTime != null && subscription.expirationTime <= Date.now())
-          ) {
-            console.info('[service-worker/setup-push-subscription] attempting to create a new subscription', subscription)
-            return sbp('push/getSubscriptionOptions').then(function (options) {
-              return registration.pushManager.subscribe(options)
-            })
-          } else {
-            const subClone = cloneDeep(subscription)
-            if (subscription?.endpoint) {
-              // hide the full endpoint from the logs for privacy
-              subClone.endpoint = new URL(subClone.endpoint).host
-            }
-            console.info('[service-worker/setup-push-subscription] got existing subscription:', subClone)
+      // Safari sometimes incorrectly reports 'prompt' when using `registration.pushManager.permissionState`
+      let subscription = null
+      let subPrivVer = subscription
+      if (notificationEnabled && granted) {
+        try {
+          subscription = await registration.pushManager.getSubscription()
+          let newSub = false
+          if (!subscription || (subscription.expirationTime != null && subscription.expirationTime <= Date.now())) {
+            subscription = await registration.pushManager.subscribe(await sbp('push/getSubscriptionOptions'))
+            newSub = true
           }
-          return subscription
-        }).catch(e => {
-          if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
-            console.error('[service-worker/setup-push-subscription] offline, will retry', e)
-            return new Promise((resolve, reject) => {
-              const errorTimeoutId = setTimeout(() => {
-                reject(new Error('Timed out waiting to come back online'))
-                cancel()
-              }, 600e3)
-              const cancel = sbp('okTurtles.events/once', ONLINE, () => {
-                clearTimeout(errorTimeoutId)
-                setTimeout(() => resolve(sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1)), 200)
-              })
+          subPrivVer = cloneDeep(subscription)
+          if (subscription?.endpoint) {
+            // hide the full endpoint from the logs for privacy
+            subPrivVer.endpoint = new URL(subPrivVer.endpoint).host
+          }
+          console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription:`, subPrivVer)
+        } catch (e) {
+          console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
+          if (e?.message !== 'WebSocket connection is not open') {
+            sbp('gi.ui/prompt', {
+              heading: L('Error setting up push notifications'),
+              question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
+                errMsg: e?.message,
+                a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
+                _a: '</a>',
+                br_: '<br/>'
+              }),
+              primaryButton: L('Close')
             })
           }
-          console.error('[service-worker/setup-push-subscription] error subscribing:', e)
-          sbp('gi.ui/prompt', {
-            heading: L('Error setting up push notifications'),
-            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
-              errMsg: e?.message,
-              a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
-              _a: '</a>',
-              br_: '<br/>'
-            }),
-            primaryButton: L('Close')
-          })
           throw e
-        })
-        : null
+        }
+      }
 
-      await sbp('push/reportExistingSubscription', existingSubscription?.toJSON()).catch(e => {
-        console.error('[service-worker/setup-push-subscription] Error reporting existing subscription', e)
-      })
-      return true
+      try {
+        console.info('[service-worker/setup-push-subscription] reporting subscription:', subPrivVer)
+        await sbp('push/reportExistingSubscription', subscription?.toJSON())
+      } catch (e) {
+        console.error('[service-worker/setup-push-subscription] error reporting subscription:', e)
+        throw e
+      }
     })
   },
   'service-worker/update': async function () {
@@ -374,5 +363,5 @@ sbp('sbp/selectors/register', {
   'gi.notifications/*': swRpc,
   'sw/*': swRpc,
   'swLogs/*': swRpc,
-  'push/*': swRpc,
+  'push/*': swRpc
 })

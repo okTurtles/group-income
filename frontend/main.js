@@ -201,14 +201,6 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
-  // Call `setNotificationEnabled` after the service worker setup, because it
-  // calls 'service-worker/setup-push-subscription'.
-  if (typeof Notification === 'function') {
-    // TODO: do not do this now, but once we are sure the websocket is ready and online
-    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
-  } else {
-    console.warn("Notifications aren't available in this browser!")
-  }
 
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
@@ -236,6 +228,7 @@ async function startApp () {
       }
     },
     mounted () {
+      let oldIdentityContractID = null // lets us know if there's a previously logged in user
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -271,9 +264,14 @@ async function startApp () {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
+
+        // NOTE: the SignupForm and LoginForm call requestNotificationPermission() upon LOGIN_COMPLETE,
+        // which also results in a call to 'service-worker/setup-push-subscription'.
+        // This call to setupNativeNotificationsListeners() will result in a call to 'setNotificationEnabled'
+        // which will then result in a call to 'service-worker/setup-push-subscription'
+        setupNativeNotificationsListeners()
       })
 
       // The following are event handlers that affect the root application state.
@@ -304,6 +302,12 @@ async function startApp () {
         this.checkAndEmitOneTimeNotifications()
       })
       sbp('okTurtles.events/on', ONLINE, () => {
+        const state = sbp('state/vuex/state')
+        if (state.loggedIn) {
+          sbp('service-worker/setup-push-subscription').catch(e => {
+            console.error('came back online, tried to report push subscription, but got:', e)
+          })
+        }
         sbp('gi.ui/clearBanner')
       })
       sbp('okTurtles.events/on', OFFLINE, () => {
@@ -356,7 +360,6 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      let oldIdentityContractID = null
       ;(async () => {
         try {
           const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
@@ -374,7 +377,6 @@ async function startApp () {
           }
           this.ephemeral.ready = true
           this.removeLoadingAnimation()
-          setupNativeNotificationsListeners()
         } catch (e) {
           this.removeLoadingAnimation()
           oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {

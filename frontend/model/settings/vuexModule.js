@@ -70,19 +70,20 @@ const mutations = {
     state.increasedContrast = isChecked
   },
   setNotificationEnabled (state, enabled) {
-    if (state.notificationEnabled !== enabled && enabled) {
-      // We do this call to `service-worker` here to avoid DRY violations.
-      // The intent is creating a subscription if none exists and letting the
-      // server know of the subscription.
-      // The parent `if` branch should prevent infinite loops
-      sbp('service-worker/setup-push-subscription').catch(e => {
-        console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
-        setTimeout(() => {
-          sbp('state/vuex/commit', 'setNotificationEnabled', false)
-        }, 1) // ensures notificationEnabled = true, then false
-      })
-    }
+    console.info('[setNotificationEnabled] set to:', enabled)
     state.notificationEnabled = enabled
+    // We do this call to `service-worker` here to avoid DRY violations.
+    // The intent is creating a subscription if none exists and letting the
+    // server know of the subscription.
+    // The parent `if` branch should prevent infinite loops
+    sbp('service-worker/setup-push-subscription').catch(e => {
+      console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
+      // if we attempted to turn it on and failed, then turn it off (so the user sees that the toggle
+      // switch is off and attempts to turn it back on again)
+      if (enabled) {
+        setTimeout(() => sbp('state/vuex/commit', 'setNotificationEnabled', false), 100)
+      }
+    })
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked

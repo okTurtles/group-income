@@ -14,10 +14,11 @@
           input.switch(
             type='checkbox'
             name='switch'
-            :checked='!!pushNotificationGranted && !inconsistentNotificationEnabled'
-            :disabled='!pushNotificationSupported || (pushNotificationGranted !== null && !inconsistentNotificationEnabled)'
-            @click.prevent='handleNotificationSettings'
+            v-model='checkboxValue'
+            :disabled='notificationsToggleDisabled'
+            @click='handleNotificationSettings'
           )
+        //- TODO: disable the checkbox and display an info field when we're offline
 </template>
 
 <script>
@@ -34,7 +35,8 @@ export default ({
     return {
       pushNotificationSupported: false,
       pushNotificationGranted: null,
-      cancelListener: () => {}
+      cancelListener: () => {},
+      checkboxValue: false
     }
   },
   beforeMount () {
@@ -79,6 +81,9 @@ export default ({
       fallback()
     }
   },
+  mounted () {
+    this.checkboxValue = this.notificationEnabled
+  },
   destroyed () {
     this.cancelListener()
   },
@@ -90,31 +95,52 @@ export default ({
       // This can happen if the permission has been granted but setting up
       // the push subscription failed. In this case, we show the toggle for
       // manually letting users set up a push subscription.
-      return this.pushNotificationGranted && !this.notificationEnabled
+      return this.notificationEnabled && this.pushNotificationGranted === false
+    },
+    notificationsToggleDisabled () {
+      return !this.pushNotificationSupported || (this.pushNotificationGranted && this.inconsistentNotificationEnabled)
+    }
+  },
+  watch: {
+    notificationEnabled (to, from) {
+      this.checkboxValue = to
     }
   },
   methods: {
-    ...mapMutations([
-      'setNotificationEnabled'
-    ]),
+    ...mapMutations(['setNotificationEnabled']),
     async handleNotificationSettings (e) {
       if (typeof Notification !== 'function') return
       let permission = Notification.permission
-
       if (permission === 'default') {
         permission = await requestNotificationPermission()
-      } else if (permission && !this.inconsistentNotificationEnabled) {
-        alert(L('Sorry, you should reset browser notification permission again.'))
-        return
+        if (!permission) {
+          alert(L('There was a problem requesting notifications permission'))
+          return
+        }
+      } else if (permission === 'denied') {
+        // attempt to request permissions again
+        permission = await requestNotificationPermission()
+        if (!permission) {
+          alert(L('There was a problem requesting notifications permission'))
+          return
+        } else if (permission !== 'granted') {
+          alert(L('Try granting notifications permissions in your browser settings first'))
+        }
+      } else if (permission === 'granted' && this.notificationEnabled) {
+        permission = 'denied'
       }
-      const granted = (Notification.permission === 'granted')
+      const granted = permission === 'granted'
       this.setNotificationEnabled(granted)
+      this.$nextTick(() => {
+        this.checkboxValue = this.notificationEnabled
+      })
       if (granted) {
-        this.pushNotificationGranted = true
-        makeNotification({
-          title: L('Congratulations'),
-          body: L('You have granted browser notification!')
-        })
+        setTimeout(() => {
+          // 'setNotificationEnabled' will disable notifications within 100 msec if there was an error enabling them
+          if (this.notificationEnabled) {
+            makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
+          }
+        }, 500)
       }
     }
   }

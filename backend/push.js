@@ -166,11 +166,19 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
 const removeSubscription = async (server, subscriptionId) => {
   try {
     const subscription = server.pushSubscriptions[subscriptionId]
-    delete server.pushSubscriptions[subscriptionId]
-    if (server.subscribersByChannelID) {
-      subscription.subscriptions.forEach((channelID) => {
-        server.subscribersByChannelID[channelID].delete(subscription)
-      })
+    if (subscription) {
+      delete server.pushSubscriptions[subscriptionId]
+      if (server.subscribersByChannelID) {
+        subscription.subscriptions.forEach((channelID) => {
+          server.subscribersByChannelID[channelID].delete(subscription)
+        })
+      }
+    } else {
+      // this can happen for example when a new subscription is added but then
+      // immediately removed because postEvent got a 401 Unauthorized when adding
+      // the new subscription. In this case removeSubscription could be later called
+      // again by the client but it's already been removed
+      console.error(`removeSubscription: non-existent subscription '${subscriptionId}'`)
     }
     await deleteSubscriptionFromIndex(subscriptionId)
     await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
@@ -219,6 +227,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   // Note: web push notifications can be 'bodyless' or they can contain a body
   // If there's no body, there isn't anything to encrypt, so we skip both the
   // encryption and the encryption headers.
+  // console.debug(`postEvent to ${subscription.id}:`, event)
   const body = event
     ? await encryptPayload(subscription, event)
     : undefined
@@ -246,11 +255,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
-      console.warn(
-        new Date().toISOString(),
-        'Removing subscription',
-        subscription.id
-      )
+      console.warn(new Date().toISOString(), 'Removing subscription', subscription.id)
       deleteClient(subscription.id)
       return
     }

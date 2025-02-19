@@ -35,7 +35,10 @@ export const setupNativeNotificationsListeners = () => {
     typeof PushManager !== 'function' ||
     typeof ServiceWorker !== 'function' ||
     typeof navigator.serviceWorker !== 'object'
-  ) return
+  ) {
+    console.warn("Notifications aren't available in this browser!")
+    return
+  }
 
   if (
     typeof navigator.permissions === 'object' &&
