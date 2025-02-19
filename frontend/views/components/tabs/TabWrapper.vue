@@ -59,7 +59,7 @@ export default ({
       activeComponent: null,
       title: '',
       transitionName: '',
-      open: true,
+      open: true, // reveal/hide the side-menu
       subNav: [
         { html: '' }, // this will get filled in `mounted()` below
         {
@@ -111,7 +111,7 @@ export default ({
       }
       this.title = tabItem.title
       this.activeComponent = tabItem.component
-      this.open = false
+
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
@@ -129,17 +129,30 @@ export default ({
           alert(`An error occurred: ${e?.name}`)
         }
       }
+
+      this.hideMenu()
+    },
+    hideMenu () {
+      this.open = false
+    },
+    showMenu () {
+      this.open = true
     }
   },
   mounted () {
     const defaultTab = this.$route.query.tab || this.defaultTab
+    const hasQueriedTab = defaultTab === this.$route.query.tab
+
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
         if (defaultTab === link.url) {
           this.activeTab = link.index
           this.title = link.title
           this.activeComponent = link.component
-          this.open = false
+
+          if (hasQueriedTab) {
+            this.hideMenu()
+          }
         }
       }
       const allTabNavLinks = this.tabNav.reduce(
