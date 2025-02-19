@@ -4,6 +4,7 @@ import { makeNotification } from '@model/notifications/nativeNotification.js'
 import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
+import { getSubscriptionId } from '~/shared/functions.js'
 
 export default (sbp('sbp/selectors/register', {
   'push/getSubscriptionOptions': (() => {
@@ -67,7 +68,6 @@ export default (sbp('sbp/selectors/register', {
   //      one.
   'push/reportExistingSubscription': (() => {
     const map = new WeakMap()
-    // eslint-disable-next-line require-await
     return async (subscriptionInfo: Object) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
@@ -82,6 +82,9 @@ export default (sbp('sbp/selectors/register', {
       map.set(socket, subscriptionInfo)
       if (subscriptionInfo?.endpoint) {
         if (!reported || subscriptionInfo.endpoint !== reported.endpoint) {
+          const subID = await getSubscriptionId(subscriptionInfo)
+          const host = new URL(subscriptionInfo.endpoint).host
+          console.info(`[reportExistingSubscription] reporting '${subID}':`, host)
           // If the subscription has changed, report it to the server
           pubsub.socket.send(createMessage(
             REQUEST_TYPE.PUSH_ACTION,
@@ -89,6 +92,9 @@ export default (sbp('sbp/selectors/register', {
           ))
         }
       } else if (reported) {
+        const subID = await getSubscriptionId(reported)
+        const host = new URL(reported.endpoint).host
+        console.info(`[reportExistingSubscription] removing subscription '${subID}':`, host)
         // If the subscription has been removed, also report it to the server
         pubsub.socket.send(createMessage(
           REQUEST_TYPE.PUSH_ACTION,
@@ -138,9 +144,15 @@ self.addEventListener('push', function (event) {
     }).catch((e) => {
       console.error('Error processing push event', e)
       if (data.contractType === 'gi.contracts/chatroom') {
-        return makeNotification({ title: L('Chatroom activity'), body: L('New chatroom message. An iOS bug prevents us from saying what it is.') })
+        return makeNotification({
+          title: L('Chatroom activity'),
+          body: L('New chatroom message. An iOS bug prevents us from saying what it is.')
+        })
       } else if (data.contractType === 'gi.contracts/group') {
-        return makeNotification({ title: L('Group activity'), body: L('New group activity. An iOS bug prevents us from saying what it is.') })
+        return makeNotification({
+          title: L('Group activity'),
+          body: L('New group activity. An iOS bug prevents us from saying what it is.')
+        })
       }
     }))
   } else if (data.type === 'recurring') {
