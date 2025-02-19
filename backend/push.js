@@ -251,7 +251,8 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   })
 
   if (!req.ok) {
-    console.warn('Error sending push notification', subscription.id, req.status)
+    const endpointHost = new URL(subscription.endpoint).host
+    console.warn(`Error ${req.status} sending push notification to '${subscription.id}' via ${endpointHost}`)
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
