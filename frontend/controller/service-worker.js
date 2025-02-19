@@ -8,6 +8,7 @@ import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
+import { getSubscriptionId } from '~/shared/functions.js'
 
 const pwa = {
   deferredInstallPrompt: null,
@@ -202,19 +203,21 @@ sbp('sbp/selectors/register', {
 
       // Safari sometimes incorrectly reports 'prompt' when using `registration.pushManager.permissionState`
       let subscription = null
-      let endpoint = null
       if (notificationEnabled && granted) {
         try {
           subscription = await registration.pushManager.getSubscription()
           let newSub = false
+          let endpoint = null
+          let subID = null
           if (!subscription || (subscription.expirationTime != null && subscription.expirationTime <= Date.now())) {
             subscription = await registration.pushManager.subscribe(await sbp('push/getSubscriptionOptions'))
             newSub = true
           }
           if (subscription?.endpoint) {
             endpoint = new URL(subscription.endpoint).host // hide the full endpoint from the logs for privacy
+            subID = await getSubscriptionId(subscription.toJSON())
           }
-          console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription:`, endpoint)
+          console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
         } catch (e) {
           console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
           if (e?.message !== 'WebSocket connection is not open') {

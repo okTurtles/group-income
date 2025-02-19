@@ -68,6 +68,14 @@ export default (sbp('sbp/selectors/register', {
   //      one.
   'push/reportExistingSubscription': (() => {
     const map = new WeakMap()
+    async function getSubID (subscription) {
+      try {
+        return await getSubscriptionId(subscription.toJSON())
+      } catch (e) {
+        return `ERR: ${e.message}`
+      }
+    }
+
     return async (subscriptionInfo: Object) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
@@ -82,7 +90,7 @@ export default (sbp('sbp/selectors/register', {
       map.set(socket, subscriptionInfo)
       if (subscriptionInfo?.endpoint) {
         if (!reported || subscriptionInfo.endpoint !== reported.endpoint) {
-          const subID = await getSubscriptionId(subscriptionInfo)
+          const subID = await getSubID(subscriptionInfo)
           const host = new URL(subscriptionInfo.endpoint).host
           console.info(`[reportExistingSubscription] reporting '${subID}':`, host)
           // If the subscription has changed, report it to the server
@@ -92,7 +100,7 @@ export default (sbp('sbp/selectors/register', {
           ))
         }
       } else if (reported) {
-        const subID = await getSubscriptionId(reported)
+        const subID = await getSubID(reported)
         const host = new URL(reported.endpoint).host
         console.info(`[reportExistingSubscription] removing subscription '${subID}':`, host)
         // If the subscription has been removed, also report it to the server
