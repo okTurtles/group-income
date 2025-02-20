@@ -70,14 +70,20 @@ export const setupNativeNotificationsListeners = () => {
   }
 }
 
-export async function requestNotificationPermission (): Promise<null | string> {
+export async function requestNotificationPermission (
+  { skipPushSetup }: { skipPushSetup: boolean } = {}
+): Promise<null | string> {
   if (typeof Notification !== 'function') {
     return null
   }
 
   try {
     const result = await Notification.requestPermission()
-    sbp('state/vuex/commit', 'setNotificationEnabled', result === 'granted')
+    // allows us to just request permissions early on in user flow before web socket is connected
+    // see LoginForm.vue for details.
+    if (!skipPushSetup) {
+      sbp('state/vuex/commit', 'setNotificationEnabled', result === 'granted')
+    }
     return result
   } catch (e) {
     console.error('requestNotificationPermission:', e.message)

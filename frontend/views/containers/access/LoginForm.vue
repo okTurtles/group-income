@@ -40,7 +40,6 @@ import { requestNotificationPermission } from '@model/notifications/nativeNotifi
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { LOGIN_COMPLETE } from '@utils/events.js'
 
 export default ({
   name: 'LoginForm',
@@ -81,10 +80,6 @@ export default ({
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
-
-      const removeListener = sbp('okTurtles.events/once', LOGIN_COMPLETE, () => {
-        requestNotificationPermission().catch(e => console.error('[LoginForm.vue] Error requesting notification permission', e))
-      })
       try {
         this.$refs.formMsg.clean()
 
@@ -97,12 +92,18 @@ export default ({
         })
         await this.postSubmit()
         this.$emit('login-status', 'success')
+
+        // main.js will call setupNativeNotificationsListeners() when the web socket should
+        // be available and that will send our push info over. Just request notification
+        // permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ skipPushSetup: true }).catch(e => {
+          console.error('[LoginForm.vue] Error requesting notification permission', e)
+        })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
         this.$emit('login-status', 'error')
-      } finally {
-        removeListener()
       }
     },
     forgotPassword () {

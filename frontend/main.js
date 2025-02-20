@@ -267,8 +267,6 @@ async function startApp () {
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
 
-        // NOTE: the SignupForm and LoginForm call requestNotificationPermission() upon LOGIN_COMPLETE,
-        // which also results in a call to 'service-worker/setup-push-subscription'.
         // This call to setupNativeNotificationsListeners() will result in a call to 'setNotificationEnabled'
         // which will then result in a call to 'service-worker/setup-push-subscription'
         setupNativeNotificationsListeners()

@@ -65,7 +65,6 @@ import {
 } from '@model/contracts/shared/validators.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import { LOGIN_COMPLETE } from '@utils/events.js'
 
 export const usernameValidations = {
   [L('A username is required.')]: required,
@@ -125,9 +124,6 @@ export default ({
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
-      const removeListener = sbp('okTurtles.events/once', LOGIN_COMPLETE, () => {
-        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
-      })
       try {
         this.$emit('signup-status', 'submitting')
         await sbp('gi.app/identity/signupAndLogin', {
@@ -136,12 +132,18 @@ export default ({
         })
         await this.postSubmit()
         this.$emit('signup-status', 'success')
+
+        // main.js will call setupNativeNotificationsListeners() when the web socket should
+        // be available and that will send our push info over. Just request notification
+        // permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ skipPushSetup: true }).catch(e => {
+          console.error('[SignupForm.vue] Error requesting notification permission', e)
+        })
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg?.danger(e.message)
         this.$emit('signup-status', 'error')
-      } finally {
-        removeListener()
       }
     }
   },
