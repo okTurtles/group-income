@@ -47,9 +47,9 @@ export default ({
     const handler = (permissionState) => {
       let newPermission = null
       if (permissionState === 'granted') {
-        this.pushNotificationGranted = true
+        newPermission = true
       } else if (permissionState === 'denied') {
-        this.pushNotificationGranted = false
+        newPermission = false
       }
       // since the fallback calls this handler repeatedly and often, have this check here
       if (newPermission !== this.pushNotificationGranted) {
