@@ -184,7 +184,7 @@ sbp('sbp/selectors/register', {
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
   'service-worker/setup-push-subscription': async function (attemptNumber = 1) {
-    if (process.env.CI) {
+    if (window.Cypress || process.env.CI) {
       throw new Error('Push disabled in CI mode')
     }
     let retryAttemptsPromise = null
