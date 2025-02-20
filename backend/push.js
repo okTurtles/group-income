@@ -294,7 +294,7 @@ export const pushServerActionhandlers: any = {
       })
       await saveSubscription(server, subscriptionId)
     } catch (e) {
-      const host = server.pushSubscriptions[subscriptionId]?.endpoint.host || 'unknown'
+      const host = server.pushSubscriptions[subscriptionId]?.endpoint.host || ''
       console.error(e, `Failed to store subscription '${subscriptionId || '??'}' (${host}), removing it!`)
       subscriptionId && await removeSubscription(subscriptionId)
       throw e // rethrow

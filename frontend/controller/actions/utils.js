@@ -316,7 +316,7 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
   }
 }
 
-export function groupContractsByType (contracts: Object): Object {
+export function groupContractsByType (contracts?: Object): Object {
   const contractIDs = Object.create(null)
   if (contracts) {
     // Note: `references` holds non-ephemeral references (i.e., explicit

@@ -8,6 +8,8 @@ const handler = (statuses: string[]) => {
   // For some reason, Safari seems to always return `'prompt'` with
   // `Notification.permission` being correct.
   const granted = statuses.every(status => status === 'granted') || (statuses.every(status => status === 'prompt') && Notification.permission === 'granted')
+  // BUG: this probably overrides the user notification setting even if they've
+  //      explicitely disabled them in-app. fix!
   sbp('state/vuex/commit', 'setNotificationEnabled', granted)
 }
 

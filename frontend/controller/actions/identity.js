@@ -11,7 +11,7 @@ import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -520,6 +520,7 @@ export default (sbp('sbp/selectors/register', {
   // error occurs)
   'gi.actions/identity/_private/logout': async function () {
     let cheloniaState
+    sbp('okTurtles.events/emit', LOGGING_OUT)
     try {
       console.info('logging out, waiting for any events to finish...')
       // wait for any pending operations to finish before calling state/vuex/save

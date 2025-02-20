@@ -75,7 +75,12 @@ const mutations = {
     // We do this call to `service-worker` here to avoid DRY violations.
     // The intent is creating a subscription if none exists and letting the
     // server know of the subscription.
-    // The parent `if` branch should prevent infinite loops
+    // The  `if` branch below should prevent infinite loops.
+    // Additionally, we call this regardless of whether or not `enabled` is equal
+    // to `state.notificationEnabled` before this function was called, because
+    // we want to make sure that this gets run even when they may be equal already
+    // e.g. because Vuex loaded `notificationEnabled` as `true` and `setupNativeNotificationsListeners`
+    // calls this function.
     sbp('service-worker/setup-push-subscription').catch(e => {
       console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
       // if we attempted to turn it on and failed, then turn it off (so the user sees that the toggle
