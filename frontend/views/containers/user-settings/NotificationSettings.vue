@@ -111,7 +111,7 @@ export default ({
         permission = await requestNotificationPermission()
         if (!permission) {
           alert(L('There was a problem requesting notifications permission'))
-          return
+          return disableCheckbox()
         } else if (permission !== 'granted') {
           return disableCheckbox()
         }
@@ -120,7 +120,7 @@ export default ({
         permission = await requestNotificationPermission()
         if (!permission) {
           alert(L('There was a problem requesting notifications permission'))
-          return
+          return disableCheckbox()
         } else if (permission !== 'granted') {
           alert(L('Try granting notifications permissions in your browser settings first'))
           return disableCheckbox()
