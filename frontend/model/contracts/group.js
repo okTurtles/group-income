@@ -1582,6 +1582,9 @@ sbp('chelonia/defineContract', {
 
       // Session has changed
       if (actorID !== originalActorID) {
+        console.info('[gi.contracts/group/joinGroupChatrooms] Session changed', {
+          actorID, contractID, chatRoomID, originalActorID, memberID, height
+        })
         return
       }
 
@@ -1590,7 +1593,18 @@ sbp('chelonia/defineContract', {
         state?.chatRooms?.[chatRoomID]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE ||
         state?.chatRooms?.[chatRoomID]?.members[memberID]?.joinedHeight !== height
       ) {
-        sbp('okTurtles.data/set', `gi.contracts/group/chatroom-skipped-${contractID}-${chatRoomID}-${height}`, true)
+        console.info('[gi.contracts/group/joinGroupChatrooms] Skipping outdated action', {
+          actorID,
+          contractID,
+          chatRoomID,
+          originalActorID,
+          memberID,
+          height,
+          groupStatusActor: state?.profiles?.[actorID]?.status,
+          groupSatusMember: state?.profiles?.[memberID]?.status,
+          chatRoomStatus: state?.chatRooms?.[chatRoomID]?.members[memberID]?.status,
+          chatRoomHeight: state?.chatRooms?.[chatRoomID]?.members[memberID]?.joinedHeight
+        })
         return
       }
 
@@ -1631,7 +1645,7 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
+          console.warn(`[gi.contracts/group/joinGroupChatrooms] Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         }).finally(() => {
           sbp('chelonia/contract/release', chatRoomID, { ephemeral: true }).catch(e => console.error('[gi.contracts/group/joinGroupChatrooms] Error during release', e))
         })

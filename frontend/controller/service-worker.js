@@ -1,5 +1,6 @@
 'use strict'
 
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
@@ -29,8 +30,53 @@ window.addEventListener('beforeinstallprompt', e => {
   sbp('okTurtles.events/emit', PWA_INSTALLABLE)
 })
 
+const serviceWorkerMap = new WeakMap()
+const waitUntilSwReady = () => {
+  const promise = new Promise((resolve, reject) => {
+    const messageChannel = new MessageChannel()
+    messageChannel.port1.onmessage = (event) => {
+      if (event.data.type === 'ready') {
+        resolve()
+      } else {
+        reject(event.data.error)
+      }
+      messageChannel.port1.close()
+    }
+    messageChannel.port1.onmessageerror = () => {
+      reject(new Error('Message error'))
+      messageChannel.port1.close()
+    }
+    const oncontrollerchange = () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
+      // If the SW controller has changed (e.g., because of an update), we call
+      // `waitUntilSwReady` again and return the result of that call. That will
+      // also populate `serviceWorkerMap`
+      resolve(waitUntilSwReady())
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
+
+    navigator.serviceWorker.ready.then((worker) => {
+      if (serviceWorkerMap.has(worker.active)) {
+        resolve(serviceWorkerMap.get(worker.active))
+        return
+      }
+      serviceWorkerMap.set(worker.active, promise)
+      worker.active.postMessage({
+        type: 'ready',
+        port: messageChannel.port2,
+        GI_VERSION: process.env.GI_VERSION
+      }, [messageChannel.port2])
+    }).catch((e) => {
+      reject(e)
+      messageChannel.port1.close()
+    })
+  })
+
+  return promise
+}
+
 sbp('sbp/selectors/register', {
-  'service-workers/setup': async function () {
+  'service-worker/setup': async function () {
     // setup service worker
     // TODO: move ahead with encryption stuff ignoring this service worker stuff for now
     // TODO: improve updating the sw: https://stackoverflow.com/a/49748437
@@ -91,32 +137,7 @@ sbp('sbp/selectors/register', {
 
       // Send a 'ready' message to the SW and wait back for a response
       // This way we ensure that Chelonia has been set up
-      await new Promise((resolve, reject) => {
-        const messageChannel = new MessageChannel()
-        messageChannel.port1.onmessage = (event) => {
-          if (event.data.type === 'ready') {
-            resolve()
-          } else {
-            reject(event.data.error)
-          }
-          messageChannel.port1.close()
-        }
-        messageChannel.port1.onmessageerror = () => {
-          reject(new Error('Message error'))
-          messageChannel.port1.close()
-        }
-
-        navigator.serviceWorker.ready.then((worker) => {
-          worker.active.postMessage({
-            type: 'ready',
-            port: messageChannel.port2,
-            GI_VERSION: process.env.GI_VERSION
-          }, [messageChannel.port2])
-        }).catch((e) => {
-          reject(e)
-          messageChannel.port1.close()
-        })
-      })
+      await waitUntilSwReady()
 
       if (typeof PeriodicSyncManager === 'function') {
         navigator.permissions.query({
@@ -163,6 +184,9 @@ sbp('sbp/selectors/register', {
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
   'service-worker/setup-push-subscription': async function (retryCount?: number) {
+    if (process.env.CI) {
+      throw new Error('Push disabled in CI mode')
+    }
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
@@ -194,13 +218,29 @@ sbp('sbp/selectors/register', {
           return subscription
         }).catch(e => {
           if (!(retryCount > 3) && e?.message === 'WebSocket connection is not open') {
-            sbp('okTurtles.events/once', ONLINE, () => {
-              setTimeout(() => sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1), 200)
+            return new Promise((resolve, reject) => {
+              const errorTimeoutId = setTimeout(() => {
+                reject(new Error('Timed out waiting to come back online'))
+                cancel()
+              }, 600e3)
+              const cancel = sbp('okTurtles.events/once', ONLINE, () => {
+                clearTimeout(errorTimeoutId)
+                setTimeout(() => resolve(sbp('service-worker/setup-push-subscription', (retryCount || 0) + 1)), 200)
+              })
             })
-            return
           }
           console.error('[service-worker/setup-push-subscription] Error setting up push subscription', e)
-          alert(e?.message || 'Error')
+          sbp('gi.ui/prompt', {
+            heading: L('Error setting up push notifications'),
+            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
+              errMsg: e?.message,
+              a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
+              _a: '</a>',
+              br_: '<br/>'
+            }),
+            primaryButton: L('Close')
+          })
+          throw e
         })
         : null
 
@@ -263,12 +303,12 @@ const swRpc = (() => {
     controller = (navigator.serviceWorker: any).controller
   }, false)
 
-  return (...args) => {
+  const fn = async (maxControllerChanges, ...args) => {
+    if (!controller) {
+      throw new Error('Service worker not ready')
+    }
+    await waitUntilSwReady()
     return new Promise((resolve, reject) => {
-      if (!controller) {
-        reject(new Error('Service worker not ready'))
-        return
-      }
       const messageChannel = new MessageChannel()
       const onmessage = (event: MessageEvent) => {
         if (event.data && Array.isArray(event.data)) {
@@ -286,15 +326,25 @@ const swRpc = (() => {
         reject(event.data)
         cleanup()
       }
+      const oncontrollerchange = (event: Event) => {
+        if (maxControllerChanges > 0) {
+          resolve(fn(maxControllerChanges - 1, ...args))
+        } else {
+          reject(new Error('SW controller changed'))
+        }
+        cleanup()
+      }
       const cleanup = () => {
         // This can help prevent memory leaks if the GC doesn't clean up once
         // the port goes out of scope
         messageChannel.port1.removeEventListener('message', onmessage, false)
         messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
+        navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
         messageChannel.port1.close()
       }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
+      navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
       messageChannel.port1.start()
       const { data, transferables } = serializer(args)
       controller.postMessage({
@@ -304,6 +354,8 @@ const swRpc = (() => {
       }, [messageChannel.port2, ...transferables])
     })
   }
+
+  return (...args) => fn(3, ...args)
 })()
 
 sbp('sbp/selectors/register', {
@@ -320,6 +372,9 @@ sbp('sbp/selectors/register', {
 })
 sbp('sbp/selectors/register', {
   'gi.notifications/*': swRpc
+})
+sbp('sbp/selectors/register', {
+  'sw/*': swRpc
 })
 sbp('sbp/selectors/register', {
   'swLogs/*': swRpc
