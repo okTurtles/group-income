@@ -52,7 +52,7 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${height}`)
+    let currentHash = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${height}`)
     let prefix = '['
     let ended = false
     // NOTE: if this ever stops working you can also try Readable.from():
@@ -69,7 +69,7 @@ export default ((sbp('sbp/selectors/register', {
               const currentPrefix = prefix
               prefix = ','
               counter++
-              currentHash = await sbp('chelonia/db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
+              currentHash = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
               this.push(`${currentPrefix}"${strToB64(entry.serialize())}"`)
             } else {
               this.push(counter > 0 ? ']' : '[]')
@@ -109,11 +109,11 @@ export default ((sbp('sbp/selectors/register', {
       }
       // otherwise it is a Boom.notFound(), proceed ahead
     }
-    await sbp('chelonia/db/set', namespaceKey(name), value)
+    await sbp('chelonia.db/set', namespaceKey(name), value)
     return { name, value }
   },
   'backend/db/lookupName': async function (name: string): Promise<string | Error> {
-    const value = await sbp('chelonia/db/get', namespaceKey(name))
+    const value = await sbp('chelonia.db/get', namespaceKey(name))
     return value || Boom.notFound()
   }
 }): any): string[])
@@ -125,7 +125,7 @@ function namespaceKey (name: string): string {
 export const initDB = async () => {
   // If persistence must be enabled:
   // - load and initialize the selected storage backend
-  // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
+  // - then overwrite 'chelonia.db/get' and '-set' to use it with an LRU cache
   if (persistence) {
     const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
 
@@ -137,7 +137,7 @@ export const initDB = async () => {
     })
 
     sbp('sbp/selectors/overwrite', {
-      'chelonia/db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
+      'chelonia.db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
         const lookupValue = cache.get(prefixableKey)
         if (lookupValue !== undefined) {
           return lookupValue
@@ -151,7 +151,7 @@ export const initDB = async () => {
         cache.set(prefixableKey, value)
         return value
       },
-      'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
+      'chelonia.db/set': async function (key: string, value: Buffer | string): Promise<void> {
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
@@ -162,7 +162,7 @@ export const initDB = async () => {
         await writeData(key, value)
         cache.set(key, value)
       },
-      'chelonia/db/delete': async function (key: string): Promise<void> {
+      'chelonia.db/delete': async function (key: string): Promise<void> {
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           throw new Error('Cannot delete immutable key')
@@ -171,7 +171,7 @@ export const initDB = async () => {
         cache.delete(key)
       }
     })
-    sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+    sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
   }
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
@@ -196,11 +196,11 @@ export const initDB = async () => {
     console.info('[chelonia.db] Preloading...')
     for (const key of keys) {
       // Skip keys which are already in the DB.
-      if (!persistence || !await sbp('chelonia/db/get', key)) {
+      if (!persistence || !await sbp('chelonia.db/get', key)) {
         const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
         if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
-          await sbp('chelonia/db/set', key, value)
+          await sbp('chelonia.db/set', key, value)
           numNewKeys++
         }
       }
@@ -236,7 +236,7 @@ export const appendToIndexFactory = (key: string): (value: string) => Promise<vo
     // is needed for the load & store operation.
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the current index from the database using the provided key
-      const currentIndex = await sbp('chelonia/db/get', key)
+      const currentIndex = await sbp('chelonia.db/get', key)
 
       // If the current index exists, check if the value is already present
       if (currentIndex) {
@@ -254,12 +254,12 @@ export const appendToIndexFactory = (key: string): (value: string) => Promise<vo
         }
 
         // Append the new value to the current index, separated by NUL
-        await sbp('chelonia/db/set', key, `${currentIndex}\x00${value}`)
+        await sbp('chelonia.db/set', key, `${currentIndex}\x00${value}`)
         return
       }
 
       // If the current index does not exist, set it to the new value
-      await sbp('chelonia/db/set', key, value)
+      await sbp('chelonia.db/set', key, value)
     })
   }
 }
@@ -277,19 +277,19 @@ export const removeFromIndexFactory = (key: string): (value: string) => Promise<
   return (value: string) => {
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the existing entries from the database using the provided key
-      const existingEntries = await sbp('chelonia/db/get', key)
+      const existingEntries = await sbp('chelonia.db/get', key)
       // Exit if there are no existing entries
       if (!existingEntries) return
 
       // Handle the case where the value is at the end of the entries
       if (existingEntries.endsWith('\x00' + value)) {
-        await sbp('chelonia/db/set', key, existingEntries.slice(0, -value.length - 1))
+        await sbp('chelonia.db/set', key, existingEntries.slice(0, -value.length - 1))
         return
       }
 
       // Handle the case where the value is at the start of the entries
       if (existingEntries.startsWith(value + '\x00')) {
-        await sbp('chelonia/db/set', key, existingEntries.slice(value.length + 1))
+        await sbp('chelonia.db/set', key, existingEntries.slice(value.length + 1))
         return
       }
 
@@ -308,7 +308,7 @@ export const removeFromIndexFactory = (key: string): (value: string) => Promise<
 
       // Update the index in the database or delete it if empty
       if (updatedIndex) {
-        await sbp('chelonia/db/set', key, updatedIndex)
+        await sbp('chelonia.db/set', key, updatedIndex)
       } else {
         await sbp('chelonia/db/delete', key)
       }

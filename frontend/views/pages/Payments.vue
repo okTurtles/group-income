@@ -172,7 +172,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { dateToMonthstamp, dateFromPeriodStamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString, deepEqualJSONType, omit, uniq } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
@@ -392,7 +392,7 @@ export default ({
         displayName: this.userDisplayNameFromID(payment.data.toMemberID),
         monthstamp: dateToMonthstamp(payment.meta.createdDate),
         date: payment.meta.createdDate
-      }))
+      })).sort(this.sortPaymentByDescendingPeriod)
     },
     paymentsReceived () {
       return this.historicalPayments.received.map(payment => ({
@@ -400,7 +400,7 @@ export default ({
         fromMemberID: payment.data.fromMemberID,
         displayName: this.userDisplayNameFromID(payment.data.fromMemberID),
         date: payment.meta.createdDate
-      }))
+      })).sort(this.sortPaymentByDescendingPeriod)
     },
     paymentsListData () {
       return {
@@ -459,6 +459,9 @@ export default ({
         `${amount}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
 
       return matchesMethodFilter && matchesSearchQuery
+    },
+    sortPaymentByDescendingPeriod (a, b) {
+      return dateFromPeriodStamp(b.period) - dateFromPeriodStamp(a.period)
     },
     paginateList (list) {
       const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage

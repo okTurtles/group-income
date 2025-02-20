@@ -292,7 +292,7 @@
 "Anyone with this link can join the group." = "Anyone with this link can join the group.";
 
 /* views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}";
+"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}";
 
 /* views/containers/user-settings/settings.js */
 "App settings" = "App settings";
@@ -546,7 +546,7 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Click on the individual link you received from an existing group. Don't have an invite?" = "Click on the individual link you received from an existing group. Don't have an invite?";
 
-/* controller/app/group.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "Close";
 
 /* views/components/ProfileCard.vue, views/containers/notifications/NotificationCard.vue */
@@ -828,8 +828,14 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Error obtaining logs. {reportError}" = "Error obtaining logs. {reportError}";
 
+/* controller/service-worker.js */
+"Error setting up push notifications" = "Error setting up push notifications";
+
+/* controller/service-worker.js */
+"Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again." = "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.";
+
 /* main.js */
-"Error while setting up service worker" = "Error while setting up service worker";
+"Error while setting up service worker: {err}" = "Error while setting up service worker: {err}";
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
@@ -1886,6 +1892,12 @@
 
 /* views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "Poll closed" = "Poll closed";
+
+/* model/contracts/chatroom.js */
+"Poll option must be less than {n} characters" = "Poll option must be less than {n} characters";
+
+/* model/contracts/chatroom.js */
+"Poll question must be less than {n} characters" = "Poll question must be less than {n} characters";
 
 /* views/containers/contributions/Contribution.vue */
 "Portuguese classes" = "Portuguese classes";

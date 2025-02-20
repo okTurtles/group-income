@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '../shared/pubsub.js'
-import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
+// import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
@@ -26,6 +26,7 @@ const handleDeletedContract = async (contractID: string) => {
   // have been the files it contained, and therefore we no longer need to
   // hold on to their file deletion tokens.
   if (currentIdentityState.fileDeleteTokens) {
+    // $FlowFixMe[incompatible-use]
     const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billingContractID }]) => {
       return billingContractID === contractID
     }).map(([cid]) => cid)
@@ -348,6 +349,7 @@ const setupChelonia = async (): Promise<*> => {
     }
   }))
 
+  /*
   await sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
     // This loads CHELONIA_STATE when _not_ running as a service worker
     const cheloniaState = await sbp('chelonia/rootState')
@@ -362,6 +364,7 @@ const setupChelonia = async (): Promise<*> => {
       console.error('[setupChelonia] Error syncing identity contract and groups', e)
     })
   })
+  */
 }
 
 // This implements a 'singleton promise' or 'lazy intialization' of setupChelonia.

@@ -124,7 +124,7 @@ sbp('sbp/selectors/register', {
       // the foreign key is rotated or deleted. For this to work reliably, we'd
       // need to ensure that the state for both contract B and contract A are
       // saved when the foreign key gets added to contract B.
-      await sbp('chelonia/db/set', '_private_cheloniaState_' + contractID, JSON.stringify(state))
+      await sbp('chelonia.db/set', '_private_cheloniaState_' + contractID, JSON.stringify(state))
     }
     // If this is a new contract, we also need to add it to the index, which
     // is used when starting up the server to know which keys to fetch.
@@ -176,11 +176,11 @@ sbp('sbp/selectors/register', {
     // Use a queue to check that the owner exists, preventing the creation of
     // orphaned resources (e.g., because the owner was just deleted)
     await sbp('chelonia/queueInvocation', ownerID, async () => {
-      const owner = await sbp('chelonia/db/get', ownerID)
+      const owner = await sbp('chelonia.db/get', ownerID)
       if (!owner) {
         throw new Error('Owner resource does not exist')
       }
-      await sbp('chelonia/db/set', `_private_owner_${resourceID}`, ownerID)
+      await sbp('chelonia.db/set', `_private_owner_${resourceID}`, ownerID)
       const resourcesKey = `_private_resources_${ownerID}`
       // Store the resource in the resource index key
       // This is done in a queue to handle several simultaneous requests
@@ -197,11 +197,11 @@ sbp('sbp/selectors/register', {
     // Use a queue to ensure atomic updates
     await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
       // Size is stored as a decimal value
-      const existingSize = parseInt(await sbp('chelonia/db/get', sizeKey, 10) ?? '0')
+      const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, 10) ?? '0')
       if (!(existingSize >= 0)) {
         throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
       }
-      await sbp('chelonia/db/set', sizeKey, (existingSize + size).toString(10))
+      await sbp('chelonia.db/set', sizeKey, (existingSize + size).toString(10))
     })
   },
   'backend/server/saveDeletionToken': async function (resourceID: string) {
@@ -210,15 +210,15 @@ sbp('sbp/selectors/register', {
     crypto.getRandomValues(deletionTokenRaw)
     // $FlowFixMe[incompatible-call]
     const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
-    await sbp('chelonia/db/set', `_private_deletionToken_${resourceID}`, deletionToken)
+    await sbp('chelonia.db/set', `_private_deletionToken_${resourceID}`, deletionToken)
     return deletionToken
   },
   'backend/server/stop': function () {
     return hapi.stop()
   },
   async 'backend/deleteFile' (cid: string): Promise<void> {
-    const owner = await sbp('chelonia/db/get', `_private_owner_${cid}`)
-    const rawManifest = await sbp('chelonia/db/get', cid)
+    const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+    const rawManifest = await sbp('chelonia.db/get', cid)
     if (rawManifest === '') throw new BackendErrorGone()
     if (!rawManifest) throw new BackendErrorNotFound()
 
@@ -242,7 +242,7 @@ sbp('sbp/selectors/register', {
     await sbp('chelonia/db/delete', `_private_size_${cid}`)
     await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
 
-    await sbp('chelonia/db/set', cid, '')
+    await sbp('chelonia.db/set', cid, '')
   },
   // eslint-disable-next-line require-await
   async 'backend/deleteContract' (cid: string): Promise<void> {
@@ -258,18 +258,18 @@ sbp('sbp/selectors/register', {
     contractsPendingDeletion.add(cid)
 
     return sbp('chelonia/queueInvocation', cid, async () => {
-      const owner = await sbp('chelonia/db/get', `_private_owner_${cid}`)
-      const rawManifest = await sbp('chelonia/db/get', cid)
+      const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+      const rawManifest = await sbp('chelonia.db/get', cid)
       if (rawManifest === '') throw new BackendErrorGone()
       if (!rawManifest) throw new BackendErrorNotFound()
 
       const resourcesKey = `_private_resources_${cid}`
-      const resources = await sbp('chelonia/db/get', resourcesKey)
+      const resources = await sbp('chelonia.db/get', resourcesKey)
       if (resources) {
         await Promise.allSettled(resources.split('\x00').map(async (resourceCid) => {
         // TODO: Temporary logic until we can figure out the resource type
         // directly from a CID
-          const resource = Buffer.from(await sbp('chelonia/db/get', resourceCid)).toString()
+          const resource = Buffer.from(await sbp('chelonia.db/get', resourceCid)).toString()
           if (resource) {
             if (resource.includes('previousHEAD') && resource.includes('contractID') && resource.includes('op') && resource.includes('height')) {
               return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
@@ -285,7 +285,7 @@ sbp('sbp/selectors/register', {
       if (latestHEADinfo) {
         for (let i = latestHEADinfo.height; i > 0; i--) {
           const eventKey = `_private_hidx=${cid}#${i}`
-          const event = await sbp('chelonia/db/get', eventKey)
+          const event = await sbp('chelonia.db/get', eventKey)
           if (event) {
             await sbp('chelonia/db/delete', event)
             await sbp('chelonia/db/delete', eventKey)
@@ -295,7 +295,7 @@ sbp('sbp/selectors/register', {
       }
 
       const kvIndexKey = `_private_kvIdx_${cid}`
-      const kvKeys = await sbp('chelonia/db/get', kvIndexKey)
+      const kvKeys = await sbp('chelonia.db/get', kvIndexKey)
       if (kvKeys) {
         await kvKeys.split('\x00').map((key) => {
           return sbp('chelonia/db/delete', `_private_kv_${cid}_${key}`)
@@ -310,7 +310,7 @@ sbp('sbp/selectors/register', {
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
       await sbp('chelonia/db/delete', `_private_hidx=${cid}#0`)
-      await sbp('chelonia/db/set', cid, '')
+      await sbp('chelonia.db/set', cid, '')
 
       await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
@@ -434,7 +434,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   })
   // Load the saved Chelonia state
   // First, get the contract index
-  const savedStateIndex = await sbp('chelonia/db/get', '_private_cheloniaState_index')
+  const savedStateIndex = await sbp('chelonia.db/get', '_private_cheloniaState_index')
   if (savedStateIndex) {
     // Now, we contract the contract state by reading each contract state
     // partition
@@ -442,7 +442,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     recoveredState.contracts = Object.create(null)
     const channels = sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels
     await Promise.all(savedStateIndex.split('\x00').map(async (contractID) => {
-      const cpSerialized = await sbp('chelonia/db/get', `_private_cheloniaState_${contractID}`)
+      const cpSerialized = await sbp('chelonia.db/get', `_private_cheloniaState_${contractID}`)
       if (!cpSerialized) {
         console.warn(`[server] missing state for contractID ${contractID} - skipping setup for this contract`)
         return
@@ -456,11 +456,11 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     Object.assign(sbp('chelonia/rootState'), recoveredState)
   }
   // Then, load push subscriptions
-  const savedWebPushIndex = await sbp('chelonia/db/get', '_private_webpush_index')
+  const savedWebPushIndex = await sbp('chelonia.db/get', '_private_webpush_index')
   if (savedWebPushIndex) {
     const { pushSubscriptions, subscribersByChannelID } = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     await Promise.all(savedWebPushIndex.split('\x00').map(async (subscriptionId) => {
-      const subscriptionSerialized = await sbp('chelonia/db/get', `_private_webpush_${subscriptionId}`)
+      const subscriptionSerialized = await sbp('chelonia.db/get', `_private_webpush_${subscriptionId}`)
       if (!subscriptionSerialized) {
         console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
         return
