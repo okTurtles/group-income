@@ -45,15 +45,18 @@ export default ({
     }
     this.pushNotificationSupported = true
     const handler = (permissionState) => {
-      console.info('[NotifSettings] handler called with:', permissionState, 'and this.notificationsEnabled=', this.notificationEnabled)
+      let newPermission = null
       if (permissionState === 'granted') {
         this.pushNotificationGranted = true
       } else if (permissionState === 'denied') {
         this.pushNotificationGranted = false
-      } else {
-        this.pushNotificationGranted = null
       }
-      this.checkboxValue = this.notificationEnabled === true && this.pushNotificationGranted
+      // since the fallback calls this handler repeatedly and often, have this check here
+      if (newPermission !== this.pushNotificationGranted) {
+        this.pushNotificationGranted = newPermission
+        this.checkboxValue = this.notificationEnabled === true && newPermission
+        console.info('[NotifSettings] handler called with:', permissionState, 'and this.notificationsEnabled=', this.notificationEnabled)
+      }
     }
     const fallback = () => {
       handler(Notification.permission)
