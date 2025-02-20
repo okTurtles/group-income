@@ -197,6 +197,7 @@ export default (sbp('sbp/selectors/register', {
       // override!
       set connectionURL (value) { Object.defineProperty(this, 'connectionURL', { value, writable: true }) },
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
+      disableNotifications: false, // if true, will disable push notifications even if push subscription exists
       contracts: {
         defaults: {
           modules: {}, // '<module name>' => resolved module import

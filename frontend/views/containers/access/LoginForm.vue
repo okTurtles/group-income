@@ -92,14 +92,9 @@ export default ({
         })
         await this.postSubmit()
         this.$emit('login-status', 'success')
-
-        // main.js will call setupNativeNotificationsListeners() when the web socket should
-        // be available and that will send our push info over. Just request notification
-        // permissions now (within short time window of user action:
+        // Request notification permissions now (within short time window of user action:
         // https://github.com/whatwg/notifications/issues/108 )
-        requestNotificationPermission({ skipPushSetup: true }).catch(e => {
-          console.error('[LoginForm.vue] Error requesting notification permission', e)
-        })
+        requestNotificationPermission({ enableIfGranted: true })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

@@ -7,10 +7,18 @@ import sbp from '@sbp/sbp'
 const handler = (statuses: string[]) => {
   // For some reason, Safari seems to always return `'prompt'` with
   // `Notification.permission` being correct.
-  const granted = statuses.every(status => status === 'granted') || (statuses.every(status => status === 'prompt') && Notification.permission === 'granted')
-  // BUG: this probably overrides the user notification setting even if they've
-  //      explicitely disabled them in-app. fix!
-  sbp('state/vuex/commit', 'setNotificationEnabled', granted)
+  const granted = statuses.every(status => status === 'granted') ||
+    (statuses.every(status => status === 'prompt') && Notification.permission === 'granted')
+
+  const { notificationEnabled } = sbp('state/vuex/state').settings
+  console.info(`Browser notifications have been: ${granted ? 'enabled' : 'disabled'}`)
+  // either report the fact that browser notification permissions have been disabled
+  // or report the fact that they've been enabled (when the user wants push notifications)
+  if (!granted || notificationEnabled) {
+    sbp('service-worker/setup-push-subscription').catch(e => {
+      console.error('[handler] Error calling service-worker/setup-push-subscription', e)
+    })
+  }
 }
 
 const fallbackChangeListener = () => {
@@ -73,20 +81,17 @@ export const setupNativeNotificationsListeners = () => {
 }
 
 export async function requestNotificationPermission (
-  { skipPushSetup }: { skipPushSetup: boolean } = {}
+  { enableIfGranted }: { enableIfGranted: boolean } = { enableIfGranted: false }
 ): Promise<null | string> {
   if (typeof Notification !== 'function') {
     return null
   }
-
   try {
-    const result = await Notification.requestPermission()
-    // allows us to just request permissions early on in user flow before web socket is connected
-    // see LoginForm.vue for details.
-    if (!skipPushSetup) {
-      sbp('state/vuex/commit', 'setNotificationEnabled', result === 'granted')
+    const permission = await Notification.requestPermission()
+    if (enableIfGranted && permission === 'granted') {
+      sbp('state/vuex/commit', 'setNotificationEnabled', true)
     }
-    return result
+    return permission
   } catch (e) {
     console.error('requestNotificationPermission:', e.message)
     return null

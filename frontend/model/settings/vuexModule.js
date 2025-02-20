@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-
+import { L } from '@common/common.js'
 import Colors from './colors.js'
 import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
@@ -31,7 +31,7 @@ export const defaultSettings = {
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
-  notificationEnabled: false,
+  notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
@@ -72,22 +72,22 @@ const mutations = {
   setNotificationEnabled (state, enabled) {
     console.info('[setNotificationEnabled] set to:', enabled)
     state.notificationEnabled = enabled
+    // if necessary, prevents the service working from ignoring our notificationEnabled
+    // setting (which is not stored in the SW because it's Vuex-only) from requesting push
+    // notifications upon reconnecting to server
+    sbp('chelonia/configure', { disableNotifications: !enabled }).catch(e => {
+      console.error(`Error configuring Chelonia for push (enabled=${enabled}): ${e.message}`)
+    })
     // We do this call to `service-worker` here to avoid DRY violations.
     // The intent is creating a subscription if none exists and letting the
     // server know of the subscription.
-    // The  `if` branch below should prevent infinite loops.
     // Additionally, we call this regardless of whether or not `enabled` is equal
-    // to `state.notificationEnabled` before this function was called, because
-    // we want to make sure that this gets run even when they may be equal already
-    // e.g. because Vuex loaded `notificationEnabled` as `true` and `setupNativeNotificationsListeners`
-    // calls this function.
+    // to `state.notificationEnabled` before this function was called, just to
+    // increase the likelihood that the server gets the latest and most correct
+    // push URL for us.
     sbp('service-worker/setup-push-subscription').catch(e => {
       console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
-      // if we attempted to turn it on and failed, then turn it off (so the user sees that the toggle
-      // switch is off and attempts to turn it back on again)
-      if (enabled) {
-        setTimeout(() => sbp('state/vuex/commit', 'setNotificationEnabled', false), 100)
-      }
+      alert(L(`There was a problem setting push notifications: ${e.message}`))
     })
   },
   setReducedMotion (state, isChecked) {

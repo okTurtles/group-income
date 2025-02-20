@@ -204,7 +204,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
       console.warn(new Date().toISOString(), 'Removing subscription', subscription.id)
-      await removeSubscription(subscription.id)
+      removeSubscription(subscription.id)
       throw new Error(`Error sending push: ${req.status}`)
     }
     if (req.status === 413) {
@@ -296,7 +296,7 @@ export const pushServerActionhandlers: any = {
     } catch (e) {
       const host = server.pushSubscriptions[subscriptionId]?.endpoint.host || ''
       console.error(e, `Failed to store subscription '${subscriptionId || '??'}' (${host}), removing it!`)
-      subscriptionId && await removeSubscription(subscriptionId)
+      subscriptionId && removeSubscription(subscriptionId)
       throw e // rethrow
     }
   },

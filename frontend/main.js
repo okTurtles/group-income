@@ -253,6 +253,8 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+        setupNativeNotificationsListeners()
+
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) {
           console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
@@ -266,10 +268,6 @@ async function startApp () {
         }
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
-
-        // This call to setupNativeNotificationsListeners() will result in a call to 'setNotificationEnabled'
-        // which will then result in a call to 'service-worker/setup-push-subscription'
-        setupNativeNotificationsListeners()
       })
 
       // The following are event handlers that affect the root application state.

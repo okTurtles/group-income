@@ -413,15 +413,15 @@ export default (sbp('sbp/selectors/register', {
 
       try {
         if (!state) {
-        // Make sure we don't unsubscribe from our own identity contract
-        // Note that this should be done _after_ calling
-        // `chelonia/storeSecretKeys`: If the following line results in
-        // syncing the identity contract and fetching events, the secret keys
-        // for processing them will not be available otherwise.
+          // Make sure we don't unsubscribe from our own identity contract
+          // Note that this should be done _after_ calling
+          // `chelonia/storeSecretKeys`: If the following line results in
+          // syncing the identity contract and fetching events, the secret keys
+          // for processing them will not be available otherwise.
           await sbp('chelonia/contract/retain', identityContractID)
         } else {
-        // If there is a state, we've already retained the identity contract
-        // but might need to fetch the latest events
+          // If there is a state, we've already retained the identity contract
+          // but might need to fetch the latest events
           await sbp('chelonia/contract/sync', identityContractID)
         }
       } catch (e) {
@@ -437,7 +437,7 @@ export default (sbp('sbp/selectors/register', {
         await syncContractsInOrder(contractIDs)
 
         try {
-        // The state above might be null, so we re-grab it
+          // The state above might be null, so we re-grab it
           const cheloniaState = sbp('chelonia/rootState')
 
           // The updated list of groups
@@ -451,8 +451,8 @@ export default (sbp('sbp/selectors/register', {
           // Call 'gi.actions/group/join' on all groups which may need re-joining
           await Promise.allSettled(
             groupIds.map(async groupId => (
-            // (1) Check whether the contract exists (may have been removed
-            //     after sync)
+              // (1) Check whether the contract exists (may have been removed
+              //     after sync)
               has(cheloniaState.contracts, groupId) &&
               has(cheloniaState[identityContractID].groups, groupId) &&
               // (2) Check whether the join process is still incomplete
@@ -486,8 +486,8 @@ export default (sbp('sbp/selectors/register', {
             // $FlowFixMe[incompatible-use]
             .filter(([, { hasLeft }]) => !hasLeft)
             .forEach(([cId]) => {
-            // We send this action only for groups we have fully joined (i.e.,
-            // accepted an invite and added our profile)
+              // We send this action only for groups we have fully joined (i.e.,
+              // accepted an invite and added our profile)
               if (cheloniaState[cId]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE) {
                 sbp('gi.actions/group/kv/updateLastLoggedIn', { contractID: cId, throttle: false }).catch((e) => console.error('Error sending updateLastLoggedIn', e))
               }

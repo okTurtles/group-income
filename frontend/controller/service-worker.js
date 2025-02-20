@@ -183,11 +183,11 @@ sbp('sbp/selectors/register', {
   // In theory, the `PushManager` APIs used are available in the SW and we could
   // have this function there. However, most examples perform this outside of the
   // SW, and private testing showed that it's more reliable doing it here.
-  'service-worker/setup-push-subscription': async function () {
+  'service-worker/setup-push-subscription': async function (attemptNumber = 1) {
     if (process.env.CI) {
       throw new Error('Push disabled in CI mode')
     }
-
+    let retryAttemptsPromise = null
     await sbp('okTurtles.eventQueue/queueEvent', 'service-worker/setup-push-subscription', async () => {
       const { notificationEnabled } = sbp('state/vuex/state').settings
       // Get the installed service-worker registration
@@ -196,13 +196,13 @@ sbp('sbp/selectors/register', {
       if (!registration) {
         throw new Error('No service-worker registration found!')
       }
-
+      // Safari sometimes incorrectly reports 'prompt' when using `registration.pushManager.permissionState`
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
       const granted = permissionState === 'granted' || Notification.permission === 'granted'
       console.info(`[service-worker/setup-push-subscription] setup: notifications (${notificationEnabled}) perms (${granted})`)
 
-      // Safari sometimes incorrectly reports 'prompt' when using `registration.pushManager.permissionState`
       let subscription = null
+      // report a real push subscription only if both browser permissions allow and user wants us to
       if (notificationEnabled && granted) {
         try {
           subscription = await registration.pushManager.getSubscription()
@@ -220,7 +220,20 @@ sbp('sbp/selectors/register', {
           console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
         } catch (e) {
           console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
-          if (e?.message !== 'WebSocket connection is not open') {
+          if (e?.message === 'WebSocket connection is not open') {
+            if (attemptNumber >= 3) {
+              console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
+              throw e // give up
+            }
+            // this outer promise is a way to wait on this sub-call to finish with getting the eventQueue stuck
+            retryAttemptsPromise = new Promise((resolve, reject) => {
+              // try again in 1 second
+              setTimeout(() => {
+                sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
+              }, 1e3)
+            })
+            return // exit the event queue immediately and do not rethrow
+          } else {
             sbp('gi.ui/prompt', {
               heading: L('Error setting up push notifications'),
               question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
@@ -235,14 +248,18 @@ sbp('sbp/selectors/register', {
           throw e
         }
       }
-
       try {
+        console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription...')
         await sbp('push/reportExistingSubscription', subscription?.toJSON())
       } catch (e) {
         console.error('[service-worker/setup-push-subscription] error reporting subscription:', e)
         throw e
       }
     })
+    if (retryAttemptsPromise) {
+      // wait until all attempts have finished
+      await retryAttemptsPromise
+    }
   },
   'service-worker/update': async function () {
     // This function manually checks for the service worker updates and trigger them if there are.

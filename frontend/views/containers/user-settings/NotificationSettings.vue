@@ -9,13 +9,12 @@
           i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
           p
             i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
-            i18n.c-description(v-else-if='pushNotificationGranted !== null && !inconsistentNotificationEnabled' tag='strong') Once set, the notification permission can only be adjusted by the browser in the browser settings.
+            i18n.has-text-danger(v-else-if='pushNotificationGranted === false' tag='strong') Push notifications are disabled because your browser settings have disabled them.
         .switch-wrapper
           input.switch(
             type='checkbox'
             name='switch'
             v-model='checkboxValue'
-            :disabled='notificationsToggleDisabled'
             @click='handleNotificationSettings'
           )
         //- TODO: disable the checkbox and display an info field when we're offline
@@ -46,6 +45,7 @@ export default ({
     }
     this.pushNotificationSupported = true
     const handler = (permissionState) => {
+      console.info('[NotifSettings] handler called with:', permissionState, 'and this.notificationsEnabled=', this.notificationEnabled)
       if (permissionState === 'granted') {
         this.pushNotificationGranted = true
       } else if (permissionState === 'denied') {
@@ -53,6 +53,7 @@ export default ({
       } else {
         this.pushNotificationGranted = null
       }
+      this.checkboxValue = this.notificationEnabled === true && this.pushNotificationGranted
     }
     const fallback = () => {
       handler(Notification.permission)
@@ -61,7 +62,10 @@ export default ({
       }, 500)
       this.cancelListener = () => clearInterval(intervalId)
     }
+    // Check if browser is Webkit-based
+    const isWebkit = typeof navigator === 'object' && navigator.vendor === 'Apple Computer, Inc.'
     if (
+      !isWebkit &&
       typeof navigator.permissions === 'object' &&
       // $FlowFixMe[method-unbinding]
       typeof navigator.permissions.query === 'function'
@@ -81,9 +85,6 @@ export default ({
       fallback()
     }
   },
-  mounted () {
-    this.checkboxValue = this.notificationEnabled
-  },
   destroyed () {
     this.cancelListener()
   },
@@ -91,19 +92,8 @@ export default ({
     notificationEnabled () {
       return this.$store.state.settings.notificationEnabled
     },
-    inconsistentNotificationEnabled () {
-      // This can happen if the permission has been granted but setting up
-      // the push subscription failed. In this case, we show the toggle for
-      // manually letting users set up a push subscription.
-      return this.notificationEnabled && this.pushNotificationGranted === false
-    },
     notificationsToggleDisabled () {
-      return !this.pushNotificationSupported || (this.pushNotificationGranted && this.inconsistentNotificationEnabled)
-    }
-  },
-  watch: {
-    notificationEnabled (to, from) {
-      this.checkboxValue = to
+      return !this.pushNotificationSupported || (!this.pushNotificationGranted && this.notificationEnabled)
     }
   },
   methods: {
@@ -111,11 +101,16 @@ export default ({
     async handleNotificationSettings (e) {
       if (typeof Notification !== 'function') return
       let permission = Notification.permission
+      const disableCheckbox = () => {
+        this.$nextTick(() => { this.checkboxValue = false })
+      }
       if (permission === 'default') {
         permission = await requestNotificationPermission()
         if (!permission) {
           alert(L('There was a problem requesting notifications permission'))
           return
+        } else if (permission !== 'granted') {
+          return disableCheckbox()
         }
       } else if (permission === 'denied') {
         // attempt to request permissions again
@@ -125,22 +120,15 @@ export default ({
           return
         } else if (permission !== 'granted') {
           alert(L('Try granting notifications permissions in your browser settings first'))
+          return disableCheckbox()
         }
       } else if (permission === 'granted' && this.notificationEnabled) {
         permission = 'denied'
       }
       const granted = permission === 'granted'
       this.setNotificationEnabled(granted)
-      this.$nextTick(() => {
-        this.checkboxValue = this.notificationEnabled
-      })
       if (granted) {
-        setTimeout(() => {
-          // 'setNotificationEnabled' will disable notifications within 100 msec if there was an error enabling them
-          if (this.notificationEnabled) {
-            makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
-          }
-        }, 500)
+        makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
       }
     }
   }

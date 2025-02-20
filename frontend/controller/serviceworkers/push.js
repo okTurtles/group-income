@@ -70,13 +70,13 @@ export default (sbp('sbp/selectors/register', {
     const map = new WeakMap()
     async function getSubID (subscription) {
       try {
-        return await getSubscriptionId(subscription.toJSON())
+        return await getSubscriptionId(subscription)
       } catch (e) {
         return `ERR: ${e.message}`
       }
     }
 
-    return async (subscriptionInfo: Object) => {
+    return async (subscriptionInfo?: Object) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 
@@ -119,9 +119,12 @@ if (self.registration?.pushManager) {
     sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, () => {
       if (inProgress) return
       inProgress = true
-      self.registration.pushManager.getSubscription().then((subscription) =>
-        sbp('push/reportExistingSubscription', subscription?.toJSON())
-      ).catch((e) => {
+      const { disableNotifications } = sbp('chelonia/config')
+      self.registration.pushManager.getSubscription().then((subscription) => {
+        if (!disableNotifications) {
+          sbp('push/reportExistingSubscription', subscription?.toJSON())
+        }
+      }).catch((e) => {
         console.error('Error reporting subscription on reconnection', e)
       }).finally(() => {
         inProgress = false
@@ -172,12 +175,13 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('pushsubscriptionchange', function (event) {
   // NOTE: Currently there is no specific way to validate if a push-subscription is valid. So it has to be handled in the front-end.
-  // (reference:https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
+  // (reference: https://pushpad.xyz/blog/web-push-how-to-check-if-a-push-endpoint-is-still-valid)
   event.waitUntil((async () => {
     try {
-      const subscription = await self.registration.pushManager.subscribe(
-        event.oldSubscription.options
-      )
+      let subscription = null
+      if (event.oldSubscription) {
+        subscription = await self.registration.pushManager.subscribe(event.oldSubscription.options)
+      }
       await sbp('push/reportExistingSubscription', subscription?.toJSON())
     } catch (e) {
       console.error('[pushsubscriptionchange] Error resubscribing:', e)
