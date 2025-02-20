@@ -1293,9 +1293,9 @@ page(
               br
               | await sbp('gi.ui/prompt', {
               br
-              | &nbsp question: 'Tacos?',
+              | &nbsp question: '...',
               br
-              | &nbsp  heading: 'Update info',
+              | &nbsp  heading: '...',
               br
               | &nbsp  primaryButton: 'Yes',
               br
@@ -1303,7 +1303,7 @@ page(
               br
               | })
           td
-            button.is-outlined(@click='openPrompt()')
+            button.is-outlined(@click='openPrompt')
               i18n Open Prompt
 
       p *primaryButton and secondaryButton parameters are optional
@@ -1622,8 +1622,11 @@ export default ({
     },
     async openPrompt () {
       const boolYesOrNo = await sbp('gi.ui/prompt', {
-        question: 'Would you like fresh tacos?',
-        heading: 'Update info'
+        question: "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. Would you like to log out and resync data on your next login?",
+        heading: 'Login Error',
+        primaryButton: 'Yes',
+        secondaryButton: 'No',
+        primaryButtonStyle: 'primary'
       })
 
       alert(`User said ${boolYesOrNo ? 'yes' : 'no'}`)
