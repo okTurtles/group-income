@@ -345,8 +345,6 @@ const sendMessageToClient = async function (payload) {
 }
 */
 
-setupChelonia()
-
 self.addEventListener('message', function (event) {
   console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
   // const client = await self.clients.get(event.source.id)
