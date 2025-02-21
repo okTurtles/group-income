@@ -195,21 +195,6 @@ const setupChelonia = async (): Promise<*> => {
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
     })
-
-    sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
-      // This loads CHELONIA_STATE when _not_ running as a service worker
-      const cheloniaState = await sbp('chelonia/rootState')
-      if (!cheloniaState || !identityContractID) return
-      if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
-      // it is important we first login before syncing any contracts here since that will load the
-      // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
-      await sbp('chelonia/contract/sync', identityContractID).then(async () => {
-        const contractIDs = groupContractsByType(cheloniaState.contracts)
-        await syncContractsInOrder(contractIDs)
-      }).catch(e => {
-        console.error('[setupChelonia] Error syncing identity contract and groups', e)
-      })
-    })
   })
 
   sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED, () => {
@@ -315,6 +300,25 @@ const setupChelonia = async (): Promise<*> => {
       }
     }
   }))
+
+  // this should be done here and not in LOGIN_COMPLETE because:
+  // If the SW awakens but it's not a navigation event, you'll skip the code syncing all
+  // contracts, which will remove all contracts from the push subscription. So, the second
+  // time the SW wakes up it'll have no contracts
+  sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+    // This loads CHELONIA_STATE when _not_ running as a service worker
+    const cheloniaState = await sbp('chelonia/rootState')
+    if (!cheloniaState || !identityContractID) return
+    if (cheloniaState.loggedIn?.identityContractID !== identityContractID) return
+    // it is important we first login before syncing any contracts here since that will load the
+    // state and the contract sideEffects will sometimes need that state, e.g. loggedIn.identityContractID
+    await sbp('chelonia/contract/sync', identityContractID).then(async () => {
+      const contractIDs = groupContractsByType(cheloniaState.contracts)
+      await syncContractsInOrder(contractIDs)
+    }).catch(e => {
+      console.error('[setupChelonia] Error syncing identity contract and groups', e)
+    })
+  })
 }
 
 // This implements a 'singleton promise' or 'lazy intialization' of setupChelonia.
