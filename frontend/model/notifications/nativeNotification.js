@@ -51,6 +51,7 @@ export const setupNativeNotificationsListeners = () => {
   }
 
   if (
+    !navigator.vendor === 'Apple Computer, Inc.' && // WebKit doesn't work
     typeof navigator.permissions === 'object' &&
     // $FlowFixMe[method-unbinding]
     typeof navigator.permissions.query === 'function'
