@@ -116,19 +116,19 @@ export default (sbp('sbp/selectors/register', {
 if (self.registration?.pushManager) {
   (() => {
     let inProgress = false
-    sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, () => {
+    sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, async () => {
       if (inProgress) return
       inProgress = true
       const { disableNotifications } = sbp('chelonia/config')
-      self.registration.pushManager.getSubscription().then((subscription) => {
-        if (!disableNotifications) {
-          sbp('push/reportExistingSubscription', subscription?.toJSON())
+      if (!disableNotifications) {
+        try {
+          const subscription = await self.registration.pushManager.getSubscription()
+          await sbp('push/reportExistingSubscription', subscription?.toJSON())
+        } catch (e) {
+          console.error('Error reporting subscription on reconnection', e)
         }
-      }).catch((e) => {
-        console.error('Error reporting subscription on reconnection', e)
-      }).finally(() => {
-        inProgress = false
-      })
+      }
+      inProgress = false
     })
   })()
 }
