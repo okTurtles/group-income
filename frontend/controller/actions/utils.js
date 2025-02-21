@@ -375,6 +375,8 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
             console.error(`syncContractsInOrder: failed to sync ${type}(${contractID}):`, e)
             failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)
           }
+        } else {
+          console.warn(`syncContractsInOrder: skipping ${type}(${contractID}) as it was removed while syncing previous contracts`)
         }
       }
     }
