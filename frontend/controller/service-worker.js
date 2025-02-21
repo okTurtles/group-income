@@ -201,12 +201,12 @@ sbp('sbp/selectors/register', {
       console.info(`[service-worker/setup-push-subscription] setup: notifications (${notificationEnabled}) perms (${granted})`)
       try {
         let subscription = null
+        let subID = null
         // get a real push subscription only if both browser permissions allow and user wants us to
         if (notificationEnabled && granted) {
           subscription = await registration.pushManager.getSubscription()
           let newSub = false
           let endpoint = null
-          let subID = null
           if (!subscription || (subscription.expirationTime != null && subscription.expirationTime <= Date.now())) {
             subscription = await registration.pushManager.subscribe(await sbp('push/getSubscriptionOptions'))
             newSub = true
@@ -217,7 +217,7 @@ sbp('sbp/selectors/register', {
           }
           console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
         }
-        console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription...')
+        console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription on:', subID)
         await sbp('push/reportExistingSubscription', subscription?.toJSON())
       } catch (e) {
         console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
@@ -226,7 +226,7 @@ sbp('sbp/selectors/register', {
             console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
             throw e // give up
           }
-          // this outer promise is a way to wait on this sub-call to finish with getting the eventQueue stuck
+          // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck
           retryAttemptsPromise = new Promise((resolve, reject) => {
             // try again in 1 second
             setTimeout(() => {
