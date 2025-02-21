@@ -362,7 +362,7 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
     const sortedContractTypes = Object.entries(groupedContractIDs).sort(([a], [b]) => {
       return getContractSyncPriority(a) - getContractSyncPriority(b)
     })
-    for (const [, contractIDs] of sortedContractTypes) {
+    for (const [type, contractIDs] of sortedContractTypes) {
       // For each contract of this type, check if it still exists before syncing because
       // e.g. syncing a group contract could have removed one of the chatroom contracts
       // $FlowFixMe[incompatible-type]
@@ -372,8 +372,8 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
           try {
             await sbp('chelonia/contract/sync', contractID)
           } catch (e) {
-            console.error(`syncContractsInOrder: failed to sync ${contractID}:`, e)
-            failedSyncs.push(`...${contractID.slice(-5)} failed sync with '${e.message}'`)
+            console.error(`syncContractsInOrder: failed to sync ${type}(${contractID}):`, e)
+            failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)
           }
         }
       }
