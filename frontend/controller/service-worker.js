@@ -237,7 +237,7 @@ sbp('sbp/selectors/register', {
         } else {
           sbp('gi.ui/prompt', {
             heading: L('Error setting up push notifications'),
-            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
+            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.', {
               errMsg: e?.message,
               a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
               _a: '</a>',

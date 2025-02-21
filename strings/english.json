@@ -276,7 +276,7 @@
   "Error joining the #general chatroom": "Error joining the #general chatroom",
   "Error obtaining logs. {reportError}": "Error obtaining logs. {reportError}",
   "Error setting up push notifications": "Error setting up push notifications",
-  "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.": "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.",
+  "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.": "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.",
   "Error while setting up service worker: {err}": "Error while setting up service worker: {err}",
   "Expired": "Expired",
   "Expired on {date}": "Expired on {date}",

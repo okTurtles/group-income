@@ -49,7 +49,7 @@
   "Group Income": "Group Income",
   "Contributions": "Contributions",
   "Error setting up push notifications": "Error setting up push notifications",
-  "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.": "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.",
+  "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.": "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.",
   "Chatroom activity": "Chatroom activity",
   "Group activity": "Group activity",
   "New chatroom message. An iOS bug prevents us from saying what it is.": "New chatroom message. An iOS bug prevents us from saying what it is.",
