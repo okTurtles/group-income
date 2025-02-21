@@ -193,7 +193,7 @@ router.beforeEach((to, from, next) => {
     !['SignupModal', 'LoginModal'].includes(to.query.modal) &&
     !store.state.loggedIn) {
     // if modal is queried and,
-    // the requested modal is only meant to be used post authentication and,
+    // the requested modal is only meant to be used post authentication and
     // the user is not logged in now, navigate to home page and set the next query param
     // to redirect to the requested page after login.
     return next({ path: '/', query: { next: to.fullPath } })
