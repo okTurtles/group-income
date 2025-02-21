@@ -357,6 +357,7 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
     const index = contractSyncPriorityList.indexOf(key)
     return index === -1 ? contractSyncPriorityList.length : index
   }
+  const failedSyncs = []
   try {
     const sortedContractTypes = Object.entries(groupedContractIDs).sort(([a], [b]) => {
       return getContractSyncPriority(a) - getContractSyncPriority(b)
@@ -368,10 +369,16 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
       for (const contractID of contractIDs) {
         const { contracts } = sbp('chelonia/rootState')
         if (contractID in contracts) {
-          await sbp('chelonia/contract/sync', contractID)
+          try {
+            await sbp('chelonia/contract/sync', contractID)
+          } catch (e) {
+            console.error(`syncContractsInOrder: failed to sync ${contractID}:`, e)
+            failedSyncs.push(`...${contractID.slice(-5)} failed sync with '${e.message}'`)
+          }
         }
       }
     }
+    if (failedSyncs.length > 0) throw new Error(failedSyncs.join(', '))
   } catch (err) {
     console.error('Error during contract sync (syncing all contractIDs)', err)
     throw err
