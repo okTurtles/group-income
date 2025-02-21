@@ -192,7 +192,6 @@ sbp('sbp/selectors/register', {
       const { notificationEnabled } = sbp('state/vuex/state').settings
       // Get the installed service-worker registration
       const registration = await navigator.serviceWorker.ready
-
       if (!registration) {
         throw new Error('No service-worker registration found!')
       }
@@ -200,11 +199,10 @@ sbp('sbp/selectors/register', {
       const permissionState = await registration.pushManager.permissionState({ userVisibleOnly: true })
       const granted = permissionState === 'granted' || Notification.permission === 'granted'
       console.info(`[service-worker/setup-push-subscription] setup: notifications (${notificationEnabled}) perms (${granted})`)
-
-      let subscription = null
-      // report a real push subscription only if both browser permissions allow and user wants us to
-      if (notificationEnabled && granted) {
-        try {
+      try {
+        let subscription = null
+        // get a real push subscription only if both browser permissions allow and user wants us to
+        if (notificationEnabled && granted) {
           subscription = await registration.pushManager.getSubscription()
           let newSub = false
           let endpoint = null
@@ -218,41 +216,36 @@ sbp('sbp/selectors/register', {
             subID = await getSubscriptionId(subscription.toJSON())
           }
           console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
-        } catch (e) {
-          console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
-          if (e?.message === 'WebSocket connection is not open') {
-            if (attemptNumber >= 3) {
-              console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
-              throw e // give up
-            }
-            // this outer promise is a way to wait on this sub-call to finish with getting the eventQueue stuck
-            retryAttemptsPromise = new Promise((resolve, reject) => {
-              // try again in 1 second
-              setTimeout(() => {
-                sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
-              }, 1e3)
-            })
-            return // exit the event queue immediately and do not rethrow
-          } else {
-            sbp('gi.ui/prompt', {
-              heading: L('Error setting up push notifications'),
-              question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
-                errMsg: e?.message,
-                a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
-                _a: '</a>',
-                br_: '<br/>'
-              }),
-              primaryButton: L('Close')
-            })
-          }
-          throw e
         }
-      }
-      try {
         console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription...')
         await sbp('push/reportExistingSubscription', subscription?.toJSON())
       } catch (e) {
-        console.error('[service-worker/setup-push-subscription] error reporting subscription:', e)
+        console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
+        if (e?.message === 'WebSocket connection is not open') {
+          if (attemptNumber >= 3) {
+            console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
+            throw e // give up
+          }
+          // this outer promise is a way to wait on this sub-call to finish with getting the eventQueue stuck
+          retryAttemptsPromise = new Promise((resolve, reject) => {
+            // try again in 1 second
+            setTimeout(() => {
+              sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
+            }, 1e3)
+          })
+          return // exit the event queue immediately and do not rethrow
+        } else {
+          sbp('gi.ui/prompt', {
+            heading: L('Error setting up push notifications'),
+            question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.', {
+              errMsg: e?.message,
+              a_: '<a class="link" target="_blank" href="https://stackoverflow.com/a/69624651">',
+              _a: '</a>',
+              br_: '<br/>'
+            }),
+            primaryButton: L('Close')
+          })
+        }
         throw e
       }
     })
