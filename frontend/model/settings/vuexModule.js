@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
 import Colors from './colors.js'
 import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
@@ -86,8 +85,7 @@ const mutations = {
     // increase the likelihood that the server gets the latest and most correct
     // push URL for us.
     sbp('service-worker/setup-push-subscription').catch(e => {
-      console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
-      alert(L(`There was a problem setting push notifications: ${e.message}`))
+      console.error(`[setNotificationEnabled] Error calling setup-push-subscription (enabled=${enabled})`, e)
     })
   },
   setReducedMotion (state, isChecked) {
