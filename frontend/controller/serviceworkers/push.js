@@ -119,6 +119,7 @@ if (self.registration?.pushManager) {
     let inProgress = false
     sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, async () => {
       if (inProgress) return
+      if (!sbp('chelonia/rootState').loggedIn) return // return b/c device settings not loaded
       inProgress = true
       const disableNotifications = sbp('sw/deviceSettings/get', DEVICE_SETTINGS.DISABLE_NOTIFICATIONS)
       console.info('pubsub reconnected. disableNotifications=', disableNotifications)
