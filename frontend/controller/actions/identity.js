@@ -412,26 +412,26 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        if (!state) {
+        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
+
+        try {
+          if (!state) {
           // Make sure we don't unsubscribe from our own identity contract
           // Note that this should be done _after_ calling
           // `chelonia/storeSecretKeys`: If the following line results in
           // syncing the identity contract and fetching events, the secret keys
           // for processing them will not be available otherwise.
-          await sbp('chelonia/contract/retain', identityContractID)
-        } else {
+            await sbp('chelonia/contract/retain', identityContractID)
+          } else {
           // If there is a state, we've already retained the identity contract
           // but might need to fetch the latest events
-          await sbp('chelonia/contract/sync', identityContractID)
+            await sbp('chelonia/contract/sync', identityContractID)
+          }
+        } catch (e) {
+          console.error('[gi.actions/identity] Error during login contract sync', e)
+          throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
         }
-      } catch (e) {
-        console.error('[gi.actions/identity] Error during login contract sync', e)
-        throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
-      }
-
-      try {
-        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
-        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
         const contractIDs = groupContractsByType(cheloniaState?.contracts)
         await syncContractsInOrder(contractIDs)
