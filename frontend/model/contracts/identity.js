@@ -3,7 +3,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { LEFT_GROUP } from '~/frontend/utils/events.js'
+import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
@@ -177,10 +177,8 @@ sbp('chelonia/defineContract', {
           visible: true // NOTE: this attr is used to hide/show direct message
         }
       },
-      sideEffect ({ data }) {
-        sbp('chelonia/contract/retain', data.contractID).catch((e) => {
-          console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
-        })
+      sideEffect ({ contractID, data }) {
+        sbp('gi.contracts/identity/referenceTally', contractID, data.contractID, 'retain')
       }
     },
     'gi.contracts/identity/joinDirectMessage': {
@@ -204,11 +202,9 @@ sbp('chelonia/defineContract', {
           visible: true
         }
       },
-      sideEffect ({ data }, { state }) {
+      sideEffect ({ contractID, data }, { state }) {
         if (state.chatRooms[data.contractID].visible) {
-          sbp('chelonia/contract/retain', data.contractID).catch((e) => {
-            console.error('[gi.contracts/identity/createDirectMessage/sideEffect] Error calling retain', e)
-          })
+          sbp('gi.contracts/identity/referenceTally', contractID, data.contractID, 'retain')
         }
       }
     },
@@ -360,6 +356,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/saveFileDeleteToken': {
       validate: objectOf({
+        billableContractID: stringMax(MAX_HASH_LEN, 'manifestCid'),
         tokensByManifestCid: arrayOf(objectOf({
           manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
           token: string
@@ -367,7 +364,10 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data }, { state }) {
         for (const { manifestCid, token } of data.tokensByManifestCid) {
-          state.fileDeleteTokens[manifestCid] = token
+          state.fileDeleteTokens[manifestCid] = {
+            billableContractID: data.billableContractID,
+            token
+          }
         }
       }
     },
@@ -398,6 +398,28 @@ sbp('chelonia/defineContract', {
             throw new Error('seenWelcomeScreen already set')
           }
           state.groups[groupContractID].seenWelcomeScreen = attributes.seenWelcomeScreen
+        }
+      }
+    },
+    'gi.contracts/identity/deleteDirectMessage': {
+      validate: objectOf({
+        contractID: string
+      }),
+      process ({ contractID, data }, { state }) {
+        if (state.chatRooms[data.contractID].visible) {
+          sbp('gi.contracts/identity/pushSideEffect', contractID,
+            ['gi.contracts/identity/referenceTally', contractID, data.contractID, 'release']
+          )
+        }
+        delete state.chatRooms[data.contractID]
+      },
+      sideEffect ({ data, contractID, innerSigningContractID }) {
+        sbp('okTurtles.events/emit', DELETED_CHATROOM, { chatRoomID: data.contractID })
+        const { identityContractID } = sbp('state/vuex/state').loggedIn
+        if (identityContractID === innerSigningContractID) {
+          sbp('gi.actions/chatroom/delete', { contractID: data.contractID, data: {} }).catch(e => {
+            console.log(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
+          })
         }
       }
     }
