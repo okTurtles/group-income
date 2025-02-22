@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '~/shared/pubsub.js'
 import { getSubscriptionId } from '~/shared/functions.js'
+import { SETTING_DISABLE_NOTIFS } from '@model/database.js'
 
 export default (sbp('sbp/selectors/register', {
   'push/getSubscriptionOptions': (() => {
@@ -119,7 +120,7 @@ if (self.registration?.pushManager) {
     sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, async () => {
       if (inProgress) return
       inProgress = true
-      const { disableNotifications } = sbp('chelonia/config')
+      const disableNotifications = await sbp('gi.db/settings/load', SETTING_DISABLE_NOTIFS)
       if (!disableNotifications) {
         try {
           const subscription = await self.registration.pushManager.getSubscription()

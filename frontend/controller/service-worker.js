@@ -224,6 +224,7 @@ sbp('sbp/selectors/register', {
         if (e?.message === 'WebSocket connection is not open') {
           if (attemptNumber >= 3) {
             console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
+            // NOTE: we do not need to setup an ONLINE event listener here because one is already setup in main.js
             throw e // give up
           }
           // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck

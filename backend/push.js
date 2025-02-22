@@ -68,8 +68,8 @@ const removeSubscription = async (subscriptionId) => {
       // again by the client but it's already been removed
       console.warn(`removeSubscription: non-existent subscription '${subscriptionId}'`)
     }
-    await deleteSubscriptionFromIndex(subscriptionId)
     await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
+    await deleteSubscriptionFromIndex(subscriptionId)
   } catch (e) {
     console.error(e, 'Error removing subscription', subscriptionId)
     // swallow error

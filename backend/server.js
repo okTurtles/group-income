@@ -352,6 +352,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const subscriptionSerialized = await sbp('chelonia.db/get', `_private_webpush_${subscriptionId}`)
       if (!subscriptionSerialized) {
         console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
+        // TODO: implement removing the missing subscriptionId from the index
         return
       }
       const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)

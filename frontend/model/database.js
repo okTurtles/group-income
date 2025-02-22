@@ -195,26 +195,27 @@ class EmptyValue extends Error {}
 
 export const SETTING_CURRENT_USER = '@settings/currentUser'
 export const SETTING_CHELONIA_STATE = 'CHELONIA_STATE'
+export const SETTING_DISABLE_NOTIFS = '@settings/disableNotifs'
 
 sbp('sbp/selectors/register', {
   'gi.db/ready': function () {
     return localforage.ready()
   },
-  'gi.db/settings/save': function (user: string, value: any): Promise<*> {
+  'gi.db/settings/save': function (key: string, value: any): Promise<*> {
   // Items in the DB have a prefix to disambiguate their type.
   //  'u' means unencrypted data
   //  'e' means encrypted data
   //  'k' means that it's a cryptographic key (used for encrypted data)
-  // This allows us to store encrypted and unencrypted states for the same user
-    return appSettings.setItem('u' + user, value)
+  // This allows us to store encrypted and unencrypted states for the same key
+    return appSettings.setItem('u' + key, value)
   },
-  'gi.db/settings/load': function (user: string): Promise<any> {
-    return appSettings.getItem('u' + user)
+  'gi.db/settings/load': function (key: string): Promise<any> {
+    return appSettings.getItem('u' + key)
   },
-  'gi.db/settings/delete': function (user: string): Promise<Object> {
-    return appSettings.removeItem('u' + user)
+  'gi.db/settings/delete': function (key: string): Promise<Object> {
+    return appSettings.removeItem('u' + key)
   },
-  'gi.db/settings/saveEncrypted': async function (user: string, value: any, encryptionParams: any): Promise<*> {
+  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<*> {
     const {
       stateEncryptionKeyId,
       salt,
@@ -224,24 +225,24 @@ sbp('sbp/selectors/register', {
     const stateEncryptionKeyP = await appSettings.getItem('k' + stateEncryptionKeyId)
     if (!stateEncryptionKeyP) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
     // Encrypt the current state
-    const encryptedState = encrypt(stateEncryptionKeyP, JSON.stringify(value), user)
+    const encryptedState = encrypt(stateEncryptionKeyP, JSON.stringify(value), key)
     // Save the four fields of the encrypted state. We use base64 encoding to
     // allow saving any incoming data.
     //   (1) stateEncryptionKeyId
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
+    return appSettings.setItem('e' + key, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
       // Delete the unencypted setting key, if it exists
-      sbp('gi.db/settings/delete', user).catch(e => {
-        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for user', user, e)
+      sbp('gi.db/settings/delete', key).catch(e => {
+        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for key', key, e)
       })
     })
   },
-  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
-    return appSettings.getItem('e' + user).then(async (encryptedValue) => {
+  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
+    return appSettings.getItem('e' + key).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
-        throw new EmptyValue(`Unable to retrive state for ${user || ''}`)
+        throw new EmptyValue(`Unable to retrive state for ${key || ''}`)
       }
       // Split the encrypted state into its constituent parts
       const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.').map(x => atob(x))
@@ -261,7 +262,7 @@ sbp('sbp/selectors/register', {
       }
 
       // Now, attempt to decrypt the state
-      const value = JSON.parse(decrypt(stateEncryptionKeyS, data, user || ''))
+      const value = JSON.parse(decrypt(stateEncryptionKeyS, data, key || ''))
 
       // Saving the state encryption key in appSettings is necessary for
       // functionality such as refreshing the page to work
@@ -299,8 +300,8 @@ sbp('sbp/selectors/register', {
   'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<Object> {
     return appSettings.removeItem('k' + stateEncryptionKeyId)
   },
-  'gi.db/settings/deleteEncrypted': function (user: string): Promise<Object> {
-    return appSettings.removeItem('e' + user)
+  'gi.db/settings/deleteEncrypted': function (key: string): Promise<Object> {
+    return appSettings.removeItem('e' + key)
   }
 })
 

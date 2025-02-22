@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import Colors from './colors.js'
 import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
+import { SETTING_DISABLE_NOTIFS } from '@model/database.js'
 import { THEME_LIGHT, THEME_DARK } from './themes.js'
 
 const checkSystemColor = () => {
@@ -74,8 +75,8 @@ const mutations = {
     // if necessary, prevents the service working from ignoring our notificationEnabled
     // setting (which is not stored in the SW because it's Vuex-only) from requesting push
     // notifications upon reconnecting to server
-    sbp('chelonia/configure', { disableNotifications: !enabled }).catch(e => {
-      console.error(`Error configuring Chelonia for push (enabled=${enabled}): ${e.message}`)
+    sbp('gi.db/settings/save', SETTING_DISABLE_NOTIFS, !enabled).catch(e => {
+      console.error(`Couldn't save SETTING_DISABLE_NOTIFS (${!enabled}): ${e.message}`)
     })
     // We do this call to `service-worker` here to avoid DRY violations.
     // The intent is creating a subscription if none exists and letting the
