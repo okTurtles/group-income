@@ -195,7 +195,6 @@ class EmptyValue extends Error {}
 
 export const SETTING_CURRENT_USER = '@settings/currentUser'
 export const SETTING_CHELONIA_STATE = 'CHELONIA_STATE'
-export const SETTING_DISABLE_NOTIFS = '@settings/disableNotifs'
 
 sbp('sbp/selectors/register', {
   'gi.db/ready': function () {

@@ -110,6 +110,8 @@ const setupRootState = () => {
 
   if (!rootState.namespaceLookups) rootState.namespaceLookups = Object.create(null)
   if (!rootState.reverseNamespaceLookups) rootState.reverseNamespaceLookups = Object.create(null)
+
+  if (!rootState.deviceSettings) rootState.deviceSettings = Object.create(null)
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
@@ -290,6 +292,14 @@ sbp('sbp/selectors/register', {
       LIGHTWEIGHT_CLIENT: process.env.LIGHTWEIGHT_CLIENT,
       NODE_ENV: process.env.NODE_ENV
     }
+  },
+  'sw/deviceSettings/set': (key, value) => {
+    const reactiveSet = sbp('chelonia/config').reactiveSet
+    const rootState = sbp('chelonia/rootState')
+    reactiveSet(rootState.deviceSettings, key, value)
+  },
+  'sw/deviceSettings/get': (key) => {
+    return sbp('chelonia/rootState').deviceSettings[key]
   }
 })
 
