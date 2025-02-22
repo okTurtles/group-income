@@ -272,7 +272,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
           await handler.call(socket, payload)
         } catch (error) {
           const message = error?.message || `push server failed to perform [${action}] action`
-          console.warn(`Handler '${REQUEST_TYPE.PUSH_ACTION}' failed: ${message}`)
+          console.warn(error, `Action '${action}' for '${REQUEST_TYPE.PUSH_ACTION}' handler failed: ${message}`)
           socket.send(createPushErrorResponse({ actionType: action, message }))
         }
       } else {
@@ -352,6 +352,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       const subscriptionSerialized = await sbp('chelonia.db/get', `_private_webpush_${subscriptionId}`)
       if (!subscriptionSerialized) {
         console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
+        // TODO: implement removing the missing subscriptionId from the index
         return
       }
       const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)
