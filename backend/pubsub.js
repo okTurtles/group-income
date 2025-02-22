@@ -171,7 +171,7 @@ const defaultServerHandlers = {
     socket.server = server
     socket.subscriptions = new Set()
     socket.ip = request.headers['x-real-ip'] ||
-      request.headers['x-forwarded-for']?.split(',')[0].trim() || 
+      request.headers['x-forwarded-for']?.split(',')[0].trim() ||
       request.socket.remoteAddress
     // Sometimes (like when using `createMessage`), we want to send objects that
     // are serialized as strings. The `ws` library sends these as binary data,
