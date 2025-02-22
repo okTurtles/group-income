@@ -42,7 +42,7 @@ const { CONTRACTS_VERSION, GI_VERSION } = process.env
 const hapi = new Hapi.Server({
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
-  debug: { log: ['error'], request: ['error'] },
+  // debug: { log: ['error'], request: ['error'] },
   port: process.env.API_PORT,
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
   routes: {

@@ -224,20 +224,25 @@ export const pushServerActionhandlers: any = {
     const { server } = socket
     const subscription = payload
     let subscriptionId = null
+    let host = ''
+    let subscriptionWrapper = null
     try {
       subscriptionId = await getSubscriptionId(subscription)
+      subscriptionWrapper = server.pushSubscriptions[subscriptionId]
 
-      if (!server.pushSubscriptions[subscriptionId]) {
+      if (!subscriptionWrapper) {
         console.debug(`saving new push subscription '${subscriptionId}':`, subscription)
         // If this is a new subscription, we call `subscriptionInfoWrapper` and store it in memory.
         server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+        subscriptionWrapper = server.pushSubscriptions[subscriptionId]
+        host = subscriptionWrapper.endpoint.host
         await addSubscriptionToIndex(subscriptionId)
         await saveSubscription(server, subscriptionId)
         // Send an initial push notification to verify that the endpoint works
         // This is mostly for testing to be able to auto-remove invalid or expired
         // endpoints. This doesn't need more error handling than any other failed
         // call to `postEvent`.
-        await postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' }))
+        await postEvent(subscriptionWrapper, JSON.stringify({ type: 'initial' }))
       } else {
         // Otherwise, if this is an _existing_ push subscription, we don't need
         // to call `subscriptionInfoWrapper` but we need to stop sending messages
@@ -247,10 +252,11 @@ export const pushServerActionhandlers: any = {
         // be `0` when the WS connection has been closed and has since reconnected
         // If it's not 0, we've already run this code at least once and we don't
         // need to run it again.
-        if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
-          server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
+        host = subscriptionWrapper.endpoint.host // seems like a DRY violation but is actually necessary
+        if (subscriptionWrapper.sockets.size === 0) {
+          subscriptionWrapper.subscriptions.forEach((channelID) => {
             if (!server.subscribersByChannelID[channelID]) return
-            server.subscribersByChannelID[channelID].delete(server.pushSubscriptions[subscriptionId])
+            server.subscribersByChannelID[channelID].delete(subscriptionWrapper)
           })
         }
       }
@@ -285,16 +291,16 @@ export const pushServerActionhandlers: any = {
       // web push subscription (so that we can easily switch over if / when the
       // WS is closed, see the `close` () function in socketHandlers in server.js)
       socket.pushSubscriptionId = subscriptionId
-      server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
-        server.subscribersByChannelID[channelID]?.delete(server.pushSubscriptions[subscriptionId])
+      subscriptionWrapper.subscriptions.forEach((channelID) => {
+        server.subscribersByChannelID[channelID]?.delete(subscriptionWrapper)
       })
-      server.pushSubscriptions[subscriptionId].sockets.add(socket)
+      subscriptionWrapper.sockets.add(socket)
       socket.subscriptions?.forEach(channelID => {
-        server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
+        // $FlowFixMe[incompatible-use]
+        subscriptionWrapper.subscriptions.add(channelID)
       })
       await saveSubscription(server, subscriptionId)
     } catch (e) {
-      const host = server.pushSubscriptions[subscriptionId]?.endpoint.host || ''
       console.error(e, `[${socket.ip}] Failed to store subscription '${subscriptionId || '??'}' (${host}), removing it!`)
       subscriptionId && removeSubscription(subscriptionId)
       throw e // rethrow
