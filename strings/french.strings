@@ -147,6 +147,12 @@
 /* MISSING TRANSLATION - controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Contributions.vue */
 "Contributions" = "Contributions";
 
+/* MISSING TRANSLATION - controller/service-worker.js */
+"Error setting up push notifications" = "Error setting up push notifications";
+
+/* MISSING TRANSLATION - controller/service-worker.js */
+"Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings." = "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.";
+
 /* MISSING TRANSLATION - controller/serviceworkers/push.js */
 "Chatroom activity" = "Chatroom activity";
 
@@ -163,7 +169,7 @@
 "Error details: {reportError}" = "Error details: {reportError}";
 
 /* MISSING TRANSLATION - main.js */
-"Error while setting up service worker" = "Error while setting up service worker";
+"Error while setting up service worker: {err}" = "Error while setting up service worker: {err}";
 
 /* MISSING TRANSLATION - main.js */
 "Failed to login" = "Failed to login";
@@ -191,6 +197,12 @@
 
 /* MISSING TRANSLATION - model/contracts/chatroom.js */
 "Original message was removed by {user}" = "Original message was removed by {user}";
+
+/* MISSING TRANSLATION - model/contracts/chatroom.js */
+"Poll option must be less than {n} characters" = "Poll option must be less than {n} characters";
+
+/* MISSING TRANSLATION - model/contracts/chatroom.js */
+"Poll question must be less than {n} characters" = "Poll question must be less than {n} characters";
 
 /* MISSING TRANSLATION - model/contracts/group.js */
 "Can't change distribution date because distribution period has already started." = "Can't change distribution date because distribution period has already started.";
@@ -451,7 +463,7 @@
 "ESC" = "ESC";
 
 /* MISSING TRANSLATION - views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}";
+"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}";
 
 /* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
 "Change Password" = "Change Password";
@@ -1321,7 +1333,13 @@
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Once set, the notification permission can only be adjusted by the browser in the browser settings." = "Once set, the notification permission can only be adjusted by the browser in the browser settings.";
+"Push notifications are disabled because your browser settings have disabled them." = "Push notifications are disabled because your browser settings have disabled them.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"There was a problem requesting notifications permission" = "There was a problem requesting notifications permission";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Try granting notifications permissions in your browser settings first" = "Try granting notifications permissions in your browser settings first";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
 "Your browser doesn't support push notifications" = "Your browser doesn't support push notifications";
@@ -1560,7 +1578,7 @@
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";
 
-/* controller/app/group.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "Fermer";
 
 /* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
@@ -3076,9 +3094,6 @@
 "Congratulations" = "Toutes nos félicitations";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
-
-/* views/containers/user-settings/NotificationSettings.vue */
 "You have granted browser notification!" = "Vous avez autorisé la notification du navigateur!";
 
 /* views/containers/user-settings/Troubleshooting.vue */
@@ -3680,6 +3695,9 @@
 
 /* Not currently used */
 "Show payment menu" = "Afficher le menu de paiement";
+
+/* Not currently used */
+"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
 
 /* Not currently used */
 "Status" = "Statut";

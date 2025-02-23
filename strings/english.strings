@@ -292,7 +292,7 @@
 "Anyone with this link can join the group." = "Anyone with this link can join the group.";
 
 /* views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}";
+"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}";
 
 /* views/containers/user-settings/settings.js */
 "App settings" = "App settings";
@@ -546,7 +546,7 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Click on the individual link you received from an existing group. Don't have an invite?" = "Click on the individual link you received from an existing group. Don't have an invite?";
 
-/* controller/app/group.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/containers/user-settings/UserProfile.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "Close";
 
 /* views/components/ProfileCard.vue, views/containers/notifications/NotificationCard.vue */
@@ -828,8 +828,14 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Error obtaining logs. {reportError}" = "Error obtaining logs. {reportError}";
 
+/* controller/service-worker.js */
+"Error setting up push notifications" = "Error setting up push notifications";
+
+/* controller/service-worker.js */
+"Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings." = "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.";
+
 /* main.js */
-"Error while setting up service worker" = "Error while setting up service worker";
+"Error while setting up service worker: {err}" = "Error while setting up service worker: {err}";
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
@@ -1665,9 +1671,6 @@
 /* views/components/group-creation-steps/GroupMincome.vue */
 "On what day should the first payment distribution be calculated?" = "On what day should the first payment distribution be calculated?";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Once set, the notification permission can only be adjusted by the browser in the browser settings." = "Once set, the notification permission can only be adjusted by the browser in the browser settings.";
-
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Only added members will have access." = "Only added members will have access.";
 
@@ -1887,6 +1890,12 @@
 /* views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "Poll closed" = "Poll closed";
 
+/* model/contracts/chatroom.js */
+"Poll option must be less than {n} characters" = "Poll option must be less than {n} characters";
+
+/* model/contracts/chatroom.js */
+"Poll question must be less than {n} characters" = "Poll question must be less than {n} characters";
+
 /* views/containers/contributions/Contribution.vue */
 "Portuguese classes" = "Portuguese classes";
 
@@ -2015,6 +2024,9 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Public channel" = "Public channel";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Push notifications are disabled because your browser settings have disabled them." = "Push notifications are disabled because your browser settings have disabled them.";
 
 /* views/containers/payments/SendPaymentsViaLightning.vue */
 "QR code payment" = "QR code payment";
@@ -2313,9 +2325,6 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Sorry, we couldn't find anyone called \"{searchTerm}\"";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Sorry, you should reset browser notification permission again." = "Sorry, you should reset browser notification permission again.";
-
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "Sounds:";
 
@@ -2441,6 +2450,9 @@
 
 /* model/contracts/group.js */
 "There is an identical open proposal." = "There is an identical open proposal.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"There was a problem requesting notifications permission" = "There was a problem requesting notifications permission";
 
 /* main.js */
 "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.";
@@ -2582,6 +2594,9 @@
 
 /* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
 "Troubleshooting" = "Troubleshooting";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Try granting notifications permissions in your browser settings first" = "Try granting notifications permissions in your browser settings first";
 
 /* views/pages/Payments.vue */
 "Try out the {r1}payments simulator.{r2}" = "Try out the {r1}payments simulator.{r2}";

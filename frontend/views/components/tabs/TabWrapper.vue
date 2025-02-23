@@ -54,27 +54,21 @@ export default ({
     defaultTab: String // initial tab name
   },
   data () {
-    const appVersion = process.env.GI_VERSION.split('@')[0]
-    const contractsVersion = process.env.CONTRACTS_VERSION
-
     return {
       activeTab: 0,
       activeComponent: null,
       title: '',
       transitionName: '',
-      open: true,
-      subNav: [{
-        html: L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}', {
-          ...LTags(),
-          appVersion,
-          contractsVersion
-        })
-      }, {
-        title: L('Acknowledgements'),
-        url: 'acknowledgements',
-        component: 'Acknowledgements',
-        index: 11 // NOTE: index should not be duplicated with the link of tabNav
-      }]
+      open: true, // reveal/hide the side-menu
+      subNav: [
+        { html: '' }, // this will get filled in `mounted()` below
+        {
+          title: L('Acknowledgements'),
+          url: 'acknowledgements',
+          component: 'Acknowledgements',
+          index: 11 // NOTE: index should not be duplicated with the link of tabNav
+        }
+      ]
     }
   },
   computed: {
@@ -117,7 +111,7 @@ export default ({
       }
       this.title = tabItem.title
       this.activeComponent = tabItem.component
-      this.open = false
+
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
@@ -135,17 +129,30 @@ export default ({
           alert(`An error occurred: ${e?.name}`)
         }
       }
+
+      this.hideMenu()
+    },
+    hideMenu () {
+      this.open = false
+    },
+    showMenu () {
+      this.open = true
     }
   },
   mounted () {
     const defaultTab = this.$route.query.tab || this.defaultTab
+    const hasQueriedTab = defaultTab === this.$route.query.tab
+
     if (defaultTab) {
       const switchTabIfMatch = (link) => {
         if (defaultTab === link.url) {
           this.activeTab = link.index
           this.title = link.title
           this.activeComponent = link.component
-          this.open = false
+
+          if (hasQueriedTab) {
+            this.hideMenu()
+          }
         }
       }
       const allTabNavLinks = this.tabNav.reduce(
@@ -167,6 +174,23 @@ export default ({
         this.tabClick(fallbackLink)
       }
     }
+
+    ;(async () => {
+      const appVersion = process.env.GI_VERSION.split('@')[0]
+      const contractsVersion = process.env.CONTRACTS_VERSION
+      let swVer: string = ''
+      try {
+        swVer = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+      } catch (e) {
+        swVer = `ERR: ${e.message}`
+      }
+      this.subNav[0].html = L('App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}', {
+        ...LTags(),
+        appVersion,
+        contractsVersion,
+        swVer
+      })
+    })()
   },
   beforeDestroy () {
     this.$router.push(this.$route.query).catch(logExceptNavigationDuplicated)
@@ -335,5 +359,4 @@ export default ({
     }
   }
 }
-
 </style>

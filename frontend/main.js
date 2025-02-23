@@ -81,8 +81,8 @@ async function startApp () {
     ].reduce(reducer, {})
     // Selectors for which debug logging won't be enabled.
     const selectorBlacklist = [
-      'chelonia/db/get',
-      'chelonia/db/set',
+      'chelonia.db/get',
+      'chelonia.db/set',
       'chelonia/rootState',
       'chelonia/haveSecretKey',
       'chelonia/private/enqueuePostSyncOps',
@@ -189,7 +189,7 @@ async function startApp () {
 
   // register service-worker
   await Promise.race(
-    [sbp('service-workers/setup'),
+    [sbp('service-worker/setup'),
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
@@ -201,11 +201,6 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
-  // Call `setNotificationEnabled` after the service worker setup, because it
-  // calls `service-worker/setup-push-subscription`.
-  if (typeof Notification === 'function') {
-    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
-  }
 
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
@@ -233,6 +228,7 @@ async function startApp () {
       }
     },
     mounted () {
+      let oldIdentityContractID = null // lets us know if there's a previously logged in user
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -257,6 +253,8 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+        setupNativeNotificationsListeners()
+
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) {
           console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
@@ -268,7 +266,6 @@ async function startApp () {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
@@ -301,6 +298,12 @@ async function startApp () {
         this.checkAndEmitOneTimeNotifications()
       })
       sbp('okTurtles.events/on', ONLINE, () => {
+        const state = sbp('state/vuex/state')
+        if (state.loggedIn) {
+          sbp('service-worker/setup-push-subscription').catch(e => {
+            console.error('came back online, tried to report push subscription, but got:', e)
+          })
+        }
         sbp('gi.ui/clearBanner')
       })
       sbp('okTurtles.events/on', OFFLINE, () => {
@@ -353,63 +356,37 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      let oldIdentityContractID = null
-      Promise.all([sbp('gi.db/settings/load', SETTING_CURRENT_USER), (() => {
-        // Wait for SW to be ready
-        console.debug('[app] Waiting for SW to be ready')
-        return Promise.race([
-          navigator.serviceWorker?.ready,
-          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
-        ]).catch(e => {
-          console.error('[app] Service worker failed to become ready:', e)
-          // Fallback behavior
-          this.removeLoadingAnimation()
-          alert(L('Error while setting up service worker: {err}', { err: e.message }))
-          throw e
-        })
-      })()]).then(async ([identityContractID]) => {
-        oldIdentityContractID = identityContractID
-        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        // Calling login could result in a prompt in case of an error; if the
-        // loading animation is visible, it'll hide the prompt. We remove it,
-        // so that it's possible to interact with the prompt.
-        const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
-          this.removeLoadingAnimation()
-        })
-        await sbp('gi.app/identity/login', { identityContractID })
-        removeHandler()
-        await sbp('chelonia/contract/wait', identityContractID)
-      }).then(() => {
-        // We know that `navigator.serviceWorker` is defined, since we've used
-        // it. This may need to be checked if a non-SW version is also supported.
-        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
-        const onready = () => {
+      ;(async () => {
+        try {
+          const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+          oldIdentityContractID = identityContractID
+          if (identityContractID && this.ephemeral.finishedLogin !== 'yes') {
+            // Calling login could result in a prompt in case of an error; if the
+            // loading animation is visible, it'll hide the prompt. We remove it,
+            // so that it's possible to interact with the prompt.
+            const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+              this.removeLoadingAnimation()
+            })
+            await sbp('gi.app/identity/login', { identityContractID })
+            removeHandler()
+            await sbp('chelonia/contract/wait', identityContractID)
+          }
           this.ephemeral.ready = true
           this.removeLoadingAnimation()
-          setupNativeNotificationsListeners()
+        } catch (e) {
+          this.removeLoadingAnimation()
+          oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
+            console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
+          }) // https://github.com/okTurtles/group-income/issues/2194
+          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+          await sbp('gi.app/identity/logout')
+          await sbp('gi.ui/prompt', {
+            heading: L('Failed to login'),
+            question: L('Error details: {reportError}', LError(e)),
+            primaryButton: L('Close')
+          })
         }
-        if (!sw.controller) {
-          const listener = (ev: Event) => {
-            sw.removeEventListener('controllerchange', listener, false)
-            onready()
-          }
-          sw.addEventListener('controllerchange', listener, false)
-        } else {
-          onready()
-        }
-      }).catch(async e => {
-        this.removeLoadingAnimation()
-        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
-          console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
-        }) // https://github.com/okTurtles/group-income/issues/2194
-        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-        await sbp('gi.app/identity/logout')
-        await sbp('gi.ui/prompt', {
-          heading: L('Failed to login'),
-          question: L('Error details: {reportError}', LError(e)),
-          primaryButton: L('Close')
-        })
-      })
+      })()
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),

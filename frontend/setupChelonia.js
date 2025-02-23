@@ -10,7 +10,7 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
@@ -203,9 +203,12 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
+  sbp('okTurtles.events/on', LOGGING_OUT, () => {
+    logoutInProgress = true
+  })
+
   sbp('okTurtles.events/on', LOGOUT, () => {
     // TODO: [SW] This is to be done by the SW
-    logoutInProgress = true
     saveCheloniaDebounced.clear()
     Promise.all([
       sbp('chelonia/reset'),
@@ -298,7 +301,11 @@ const setupChelonia = async (): Promise<*> => {
     }
   }))
 
-  await sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+  // this should be done here and not in LOGIN_COMPLETE because:
+  // If the SW awakens but it's not a navigation event, you'll skip the code syncing all
+  // contracts, which will remove all contracts from the push subscription. So, the second
+  // time the SW wakes up it'll have no contracts
+  sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
     // This loads CHELONIA_STATE when _not_ running as a service worker
     const cheloniaState = await sbp('chelonia/rootState')
     if (!cheloniaState || !identityContractID) return
