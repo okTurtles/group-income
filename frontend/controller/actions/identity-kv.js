@@ -23,6 +23,31 @@ export default (sbp('sbp/selectors/register', {
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
     console.info('identity key-value store data loaded!')
   },
+  'gi.actions/identity/kv/fetchUserStateSnapshot': async () => {
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to fetch a state snapshot without an active session')
+    }
+
+    const snapshot = await sbp('chelonia/kv/get', identityContractID, KV_KEYS.USER_STATE_SNAPSHOT)
+    return snapshot?.data
+  },
+  'gi.actions/identity/kv/saveUserStateSnapshot': () => {
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to save a state snapshot without an active session')
+    }
+
+    const onconflict = () => sbp('chelonia/rootState')
+
+    return sbp('chelonia/kv/queuedSet', {
+      contractID: identityContractID,
+      key: KV_KEYS.USER_STATE_SNAPSHOT,
+      encryptionKeyName: 'iek',
+      data: onconflict(),
+      onconflict
+    })
+  },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
     // Using 'chelonia/rootState' here as 'state/vuex/state' is not available

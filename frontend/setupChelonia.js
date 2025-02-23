@@ -2,6 +2,7 @@
 
 import * as Common from '@common/common.js'
 import { debounce, has } from '@model/contracts/shared/giLodash.js'
+import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -71,9 +72,24 @@ const setupChelonia = async (): Promise<*> => {
   }
 
   let logoutInProgress = false
+  let lastKvSaveTimestamp = Number.POSITIVE_INFINITY
+  let unsavedCount = 0
   const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => {
     if (logoutInProgress) return
-    return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
+    unsavedCount++
+    return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState')).then(() => {
+      // Save every 100 save operations, or every 30 minutes
+      if (unsavedCount < 100 && (performance.now() - lastKvSaveTimestamp) < 1 * MINS_MILLIS) return
+      const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+      if (!identityContractID) return
+
+      sbp('gi.actions/identity/kv/saveUserStateSnapshot').then(() => {
+        unsavedCount = 0
+        lastKvSaveTimestamp = performance.now()
+      }).catch((e) => {
+        console.error('Error saving user state snapshot', e)
+      })
+    })
   })
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
 
@@ -218,6 +234,9 @@ const setupChelonia = async (): Promise<*> => {
     }).finally(() => {
       logoutInProgress = false
     })
+
+    logoutInProgress = false
+    lastKvSaveTimestamp = Number.POSITIVE_INFINITY
   })
 
   // must create the connection before we call login
