@@ -422,7 +422,22 @@ export default (sbp('sbp/selectors/register', {
           // `chelonia/storeSecretKeys`: If the following line results in
           // syncing the identity contract and fetching events, the secret keys
           // for processing them will not be available otherwise.
-            await sbp('chelonia/contract/retain', identityContractID)
+            await sbp('chelonia/contract/retain', identityContractID, { ephemeral: true })
+
+            const snapshot = await sbp('gi.actions/identity/kv/fetchUserStateSnapshot').catch(e => {
+              console.warn('Error fetching snapshot', identityContractID, e)
+            })
+
+            if (snapshot) {
+              await sbp('chelonia/contract/release', identityContractID, { ephemeral: true })
+              console.info('Restored from snapshot', identityContractID)
+              await sbp('chelonia/reset', { ...snapshot, loggedIn: { identityContractID } })
+              await sbp('chelonia/contract/sync', identityContractID)
+            } else {
+              console.info('No snapshot available', identityContractID)
+              await sbp('chelonia/contract/retain', identityContractID)
+              await sbp('chelonia/contract/release', identityContractID, { ephemeral: true })
+            }
           } else {
           // If there is a state, we've already retained the identity contract
           // but might need to fetch the latest events
