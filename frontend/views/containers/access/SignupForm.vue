@@ -132,8 +132,9 @@ export default ({
         })
         await this.postSubmit()
         this.$emit('signup-status', 'success')
-
-        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
+        // Request notification permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ enableIfGranted: true })
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg?.danger(e.message)
