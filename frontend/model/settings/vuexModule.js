@@ -1,11 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-
 import Colors from './colors.js'
 import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from './themes.js'
+import { DEVICE_SETTINGS } from '@utils/constants.js'
 
 const checkSystemColor = () => {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches
@@ -31,7 +31,7 @@ export const defaultSettings = {
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
-  notificationEnabled: false,
+  notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
@@ -70,17 +70,24 @@ const mutations = {
     state.increasedContrast = isChecked
   },
   setNotificationEnabled (state, enabled) {
-    if (state.notificationEnabled !== enabled) {
-      // We do this call to `service-worker` here to avoid DRY violations.
-      // The intent is creating a subscription if none exists and letting the
-      // server know of the subscription
-      sbp('service-worker/setup-push-subscription').catch(e => {
-        // The parent `if` branch should prevent infinite loops
-        sbp('state/vuex/commit', 'setNotificationEnabled', false)
-        console.error('[setNotificationEnabled] Error calling service-worker/setup-push-subscription', e)
-      })
-    }
+    console.info('[setNotificationEnabled] set to:', enabled)
     state.notificationEnabled = enabled
+    // if necessary, prevents the service working from ignoring our notificationEnabled
+    // setting (which is not stored in the SW because it's Vuex-only) from requesting push
+    // notifications upon reconnecting to server
+    sbp('sw/deviceSettings/set', DEVICE_SETTINGS.DISABLE_NOTIFICATIONS, !enabled).catch(e => {
+      console.error(`Couldn't set DISABLE_NOTIFICATIONS (${!enabled}): ${e.message}`)
+    })
+    // We do this call to `service-worker` here to avoid DRY violations.
+    // The intent is creating a subscription if none exists and letting the
+    // server know of the subscription.
+    // Additionally, we call this regardless of whether or not `enabled` is equal
+    // to `state.notificationEnabled` before this function was called, just to
+    // increase the likelihood that the server gets the latest and most correct
+    // push URL for us.
+    sbp('service-worker/setup-push-subscription').catch(e => {
+      console.error(`[setNotificationEnabled] Error calling setup-push-subscription (enabled=${enabled})`, e)
+    })
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
