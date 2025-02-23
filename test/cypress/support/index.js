@@ -66,6 +66,10 @@ Cypress.on('window:before:load', window => {
   // thrown.
   Object.defineProperty(window.navigator, 'language', { value: 'en-US-POSIX', configurable: true })
   Object.defineProperty(window.navigator, 'languages', { value: ['en-US-POSIX', 'en-US', 'en'], configurable: true })
+  // Remove `Notification` object, since we're not currently testing push events
+  // or native notifications on Cypress. Setting up a push subscription will
+  // also fail on Cypress.
+  delete window.Notification
 })
 
 Cypress.on('uncaught:exception', (err, runnable, promise) => {
