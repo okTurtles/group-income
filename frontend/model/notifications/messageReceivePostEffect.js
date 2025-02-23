@@ -73,6 +73,16 @@ async function messageReceivePostEffect ({
 
     const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
     const { messageNotification, messageSound } = chatNotificationSettings
+
+    // If the contract is syncing (meaning we're loading the app, joining a
+    // chatroom, etc.), don't use a native notification or sound. Do this only
+    // for messages coming over the WS
+    const isSyncing = sbp('chelonia/contract/isSyncing', contractID)
+    // TODO: This could be an issue (false negative for emitting a native
+    // notification) for very large (over 4 KiB) push events, which are
+    // handled using a sync.
+    if (isSyncing) return
+
     const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
       (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
     const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
