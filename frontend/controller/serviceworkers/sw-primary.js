@@ -16,7 +16,7 @@ import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
+import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
@@ -110,6 +110,8 @@ const setupRootState = () => {
 
   if (!rootState.namespaceLookups) rootState.namespaceLookups = Object.create(null)
   if (!rootState.reverseNamespaceLookups) rootState.reverseNamespaceLookups = Object.create(null)
+
+  if (!rootState.deviceSettings) rootState.deviceSettings = Object.create(null)
 }
 
 sbp('okTurtles.events/on', CHELONIA_RESET, setupRootState)
@@ -128,10 +130,9 @@ const broadcastMessage = (...args) => {
 
 // These are all of the events that will be forwarded to all open tabs and windows
 ;[
-
   CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
-  EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, ACCEPTED_GROUP,
+  EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
   LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT,
   NOTIFICATION_TYPE.VERSION_INFO,
@@ -291,6 +292,14 @@ sbp('sbp/selectors/register', {
       LIGHTWEIGHT_CLIENT: process.env.LIGHTWEIGHT_CLIENT,
       NODE_ENV: process.env.NODE_ENV
     }
+  },
+  'sw/deviceSettings/set': (key, value) => {
+    const reactiveSet = sbp('chelonia/config').reactiveSet
+    const rootState = sbp('chelonia/rootState')
+    reactiveSet(rootState.deviceSettings, key, value)
+  },
+  'sw/deviceSettings/get': (key) => {
+    return sbp('chelonia/rootState').deviceSettings[key]
   }
 })
 
@@ -345,8 +354,6 @@ const sendMessageToClient = async function (payload) {
   }
 }
 */
-
-setupChelonia()
 
 self.addEventListener('message', function (event) {
   console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)

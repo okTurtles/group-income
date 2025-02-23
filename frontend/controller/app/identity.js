@@ -349,9 +349,9 @@ export default (sbp('sbp/selectors/register', {
             const loginCompleteHandler = ({ identityContractID: id }) => {
               removeLoginErrorHandler()
               if (id === identityContractID) {
-              // Before the promise resolves, we need to save the state
-              // by calling 'state/vuex/save' to ensure that refreshing the page
-              // results in a page with the same state.
+                // Before the promise resolves, we need to save the state
+                // by calling 'state/vuex/save' to ensure that refreshing the page
+                // results in a page with the same state.
                 resolve(sbp('state/vuex/save'))
               } else {
                 reject(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${id}`))
