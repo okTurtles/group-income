@@ -2,10 +2,10 @@
   .settings-container
     section.card
       .c-loader-container(v-if='ephemeral.versionInfos.loading')
-        .loading-box.c-load-ani.is-1
-        .loading-box.c-load-ani.is-2
-        .loading-box.c-load-ani.is-3
-        .loading-box.c-load-ani.is-4
+        .loading-box
+        .loading-box
+        .loading-box
+        .loading-box
 
       template(v-else)
         .c-header
@@ -371,25 +371,25 @@ export default ({
 .c-loader-container {
   position: relative;
   width: 100%;
-}
 
-.c-load-ani {
-  display: block;
-  width: 100%;
-  min-height: unset;
+  .loading-box {
+    display: block;
+    width: 100%;
+    min-height: unset;
 
-  &.is-1 {
-    height: 1.25rem;
-    max-width: 20rem;
+    &:first-child {
+      height: 1.25rem;
+      max-width: 20rem;
+    }
+
+    &:nth-child(2),
+    &:nth-child(3) {
+      height: 1.25rem;
+    }
+
+    &:nth-child(2) { max-width: 31.25rem; }
+
+    &:last-child { height: 16.25rem; }
   }
-
-  &.is-2,
-  &.is-3 {
-    height: 1.25rem;
-  }
-
-  &.is-2 { max-width: 31.25rem; }
-
-  &.is-4 { height: 16.25rem; }
 }
 </style>
