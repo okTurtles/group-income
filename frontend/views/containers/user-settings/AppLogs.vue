@@ -1,7 +1,7 @@
 <template lang='pug'>
   .settings-container
     section.card
-      .c-loader-container(v-if='ephemeral.versions.loading')
+      .c-loader-container(v-if='ephemeral.versionInfos.loading')
         .loading-box.c-load-ani.is-1
         .loading-box.c-load-ani.is-2
         .loading-box.c-load-ani.is-3
@@ -73,6 +73,7 @@ import { CAPTURED_LOGS } from '@utils/events.js'
 import { MAX_LOG_ENTRIES } from '@utils/constants.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
 import { L, LError } from '@common/common.js'
+import { omit } from '@model/contracts/shared/giLodash.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
@@ -92,11 +93,11 @@ export default ({
         ready: false,
         logs: [],
         useWebShare: false,
-        versions: {
+        versionInfos: {
           loading: true,
-          app: '',
-          contracts: '',
-          sw: ''
+          app_version: '',
+          contracts_version: '',
+          service_worker_version: ''
         }
       }
     }
@@ -157,11 +158,11 @@ export default ({
       } catch (e) {
         console.error('TroubleShooting.vue caught: ', e)
       } finally {
-        this.ephemeral.versions = {
+        this.ephemeral.versionInfos = {
           loading: false,
-          app: process.env.GI_VERSION.split('@')[0],
-          contracts: process.env.CONTRACTS_VERSION,
-          sw: swVersion
+          app_version: process.env.GI_VERSION.split('@')[0],
+          contracts_version: process.env.CONTRACTS_VERSION,
+          service_worker_version: swVersion
         }
       }
     },
@@ -202,6 +203,7 @@ export default ({
         // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
+          version_info: omit(this.ephemeral.versionInfos, ['loading']),
           logs: this.ephemeral.logs
         }, undefined, 2)], { type: mimeType })
 
