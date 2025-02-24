@@ -47,6 +47,11 @@ export default ({
         progress: {
           part: '', // e.g. 'Downloading...'
           percentage: 0 // Number: e.g. 0.75
+        },
+        versions: {
+          app: '',
+          contracts: '',
+          sw: ''
         }
       }
     }
