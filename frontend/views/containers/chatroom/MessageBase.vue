@@ -11,9 +11,11 @@
     span(v-safe-html='pinLabel')
 
   .c-message-wrapper
-    slot(name='image')
-      profile-card(:contractID='from' direction='top-left')
-        avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
+    .c-sender-or-date
+      .c-time-stamp(v-if='isSameSender') {{ formatTimeString(datetime) }}
+      slot(v-else name='image')
+        profile-card(:contractID='from' direction='top-left')
+          avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
     .c-body
       slot(name='header')
@@ -235,6 +237,16 @@ export default ({
       } else if (!this.isEditing) {
         this.openMenu()
       }
+    },
+    formatTimeString (datetime) {
+      const dateObj = new Date(datetime)
+      let hours = dateObj.getHours()
+      let minutes = dateObj.getMinutes()
+
+      hours = hours % 12 || 12 // Convert 0 to 12 for midnight
+      minutes = minutes.toString().padStart(2, '0')
+
+      return `${hours}:${minutes}`
     }
   }
 }: Object)
@@ -332,6 +344,16 @@ export default ({
   align-items: flex-start;
   gap: 0.5rem;
   max-width: 100%;
+}
+
+.c-time-stamp {
+  position: relative;
+  color: $text_1;
+  font-size: $size_5;
+  text-align: right;
+  width: 2.5rem;
+  padding: 0.2rem 0.2rem 0 0;
+  line-height: 1.5;
 }
 
 .c-avatar {
