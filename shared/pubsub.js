@@ -195,9 +195,9 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     }
   }
   // Add global event listeners before the first connection.
-  if (typeof window === 'object') {
+  if (typeof self === 'object' && self instanceof EventTarget) {
     for (const name of globalEventNames) {
-      window.addEventListener(name, client.listeners[name])
+      self.addEventListener(name, client.listeners[name])
     }
   }
   if (!client.options.manual) {
@@ -596,9 +596,9 @@ const publicMethods = {
     client.pendingUnsubscriptionSet.clear()
     client.subscriptionSet.clear()
     // Remove global event listeners.
-    if (typeof window === 'object') {
+    if (typeof self === 'object' && self instanceof EventTarget) {
       for (const name of globalEventNames) {
-        window.removeEventListener(name, client.listeners[name])
+        self.removeEventListener(name, client.listeners[name])
       }
     }
     // Remove WebSocket event listeners.

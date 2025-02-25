@@ -340,14 +340,6 @@ const setupChelonia = async (): Promise<*> => {
       'reconnection-succeeded' () {
         sbp('okTurtles.events/emit', ONLINE)
         console.info('reconnected to pubsub!')
-      },
-      'subscription-succeeded' (event) {
-        const { channelID } = event.detail
-        if (channelID in sbp('chelonia/rootState').contracts) {
-          sbp('chelonia/contract/sync', channelID).catch(err => {
-            console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
-          })
-        }
       }
     }
   }))
