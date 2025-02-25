@@ -12,7 +12,7 @@
 
   .c-message-wrapper
     .c-sender-or-date
-      .c-time-stamp(v-if='isSameSender') {{ humanTimeString(datetime, { hour: "2-digit", minute: "2-digit", hour12: false }) }}
+      .c-time-stamp(v-if='isSameSender') {{ getTimeStamp(datetime) }}
       slot(v-else name='image')
         profile-card(:contractID='from' direction='top-left')
           avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
@@ -200,7 +200,6 @@ export default ({
   },
   methods: {
     humanDate,
-    humanTimeString,
     swapMentionIDForDisplayname,
     editMessage () {
       this.isEditing = true
@@ -248,6 +247,12 @@ export default ({
       minutes = minutes.toString().padStart(2, '0')
 
       return `${hours}:${minutes}`
+    },
+    getTimeStamp (datetime) {
+      const tString = humanTimeString(datetime, { hour: '2-digit', minute: '2-digit', hour12: true })
+      // Extract only numbers and colons, removing non-numeric characters like AM/PM
+      const cleaned = tString.replace(/[^\d:]/g, '')
+      return cleaned
     }
   }
 }: Object)
