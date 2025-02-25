@@ -12,7 +12,7 @@
 
   .c-message-wrapper
     .c-sender-or-date
-      .c-time-stamp(v-if='isSameSender') {{ formatTimeString(datetime) }}
+      .c-time-stamp(v-if='isSameSender') {{ humanTimeString(datetime, { hour: "2-digit", minute: "2-digit", hour12: false }) }}
       slot(v-else name='image')
         profile-card(:contractID='from' direction='top-left')
           avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
@@ -118,7 +118,7 @@ import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
@@ -200,6 +200,7 @@ export default ({
   },
   methods: {
     humanDate,
+    humanTimeString,
     swapMentionIDForDisplayname,
     editMessage () {
       this.isEditing = true
