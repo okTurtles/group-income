@@ -26,13 +26,6 @@ $size_extra-large: $size_1;
 $radius: 3px;
 $radius-large: 5px;
 
-// Breakpoints
-// // Same as JS breakpoints at breakpoints.js
-// TODO: Redefine the breakpoints with @mmbotelho in a next task.
-$gap: 1rem;
-$tablet: 769px;
-$desktop: 1200px;
-
 $transitionSpeed: 300ms;
 
 $rightSideWidth: 16.5rem;
@@ -43,5 +36,5 @@ $rightSideWidth: 16.5rem;
 // tag of .vue components, and so those classes would end up being
 // duplicated across all the injected component CSS
 
-@import "_colors";
-@import "_mixins";
+@forward "colors";
+@forward "mixins";

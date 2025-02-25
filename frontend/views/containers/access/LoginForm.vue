@@ -80,23 +80,25 @@ export default ({
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
-
       try {
         this.$refs.formMsg.clean()
 
         const username = this.form.username
 
+        this.$emit('login-status', 'submitting')
         await sbp('gi.app/identity/login', {
           username,
           password: new Secret(this.form.password)
         })
         await this.postSubmit()
-        this.$emit('submit-succeeded')
-
-        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
+        this.$emit('login-status', 'success')
+        // Request notification permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ enableIfGranted: true })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
+        this.$emit('login-status', 'error')
       }
     },
     forgotPassword () {

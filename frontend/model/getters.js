@@ -8,7 +8,7 @@ import groupGetters from './contracts/shared/getters/group.js'
 import identityGetters from './contracts/shared/getters/identity.js'
 
 const checkedUsername = (state: Object, username: string, userID: string) => {
-  if (username && state.namespaceLookups[username] === userID) {
+  if (username && state.namespaceLookups?.[username] === userID) {
     return username
   }
 }
@@ -461,11 +461,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     Object.keys(state.contracts)
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
-        if (!state[contractID]) {
-          console.warn('[ourContactProfilesById] Missing state', contractID)
-          return
-        }
-        const attributes = state[contractID].attributes
+        const attributes = state[contractID]?.attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
           const username = checkedUsername(state, attributes.username, contractID)
           profiles[contractID] = {
@@ -473,11 +469,15 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
             username,
             contractID
           }
+        } else {
+          profiles[contractID] = {
+            contractID
+          }
         }
       })
-      // For consistency, add users that were known in the past (since those
-      // contracts will be removed). This keeps mentions working in existing
-      // devices
+    // For consistency, add users that were known in the past (since those
+    // contracts will be removed). This keeps mentions working in existing
+    // devices
     Object.keys(state.reverseNamespaceLookups).forEach((contractID) => {
       if (profiles[contractID]) return
       profiles[contractID] = {

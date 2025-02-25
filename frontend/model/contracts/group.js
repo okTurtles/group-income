@@ -4,7 +4,7 @@
 
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
 import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
@@ -189,22 +189,6 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   Object.keys(state.chatRooms).forEach((chatroomID) => {
     removeGroupChatroomProfile(state, chatroomID, memberID, ourselvesLeaving)
   })
-
-  // When a member is leaving, we need to mark the CSK and the CEK as needing
-  // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
-  // (to actually perform the rotation) and Chelonia (to unset the flag if
-  // they are rotated by somebody else)
-  // TODO: Improve this API. Developers should not modify state that is managed
-  // by Chelonia.
-  // Example: sbp('chelonia/contract/markKeyForRevocation', contractID, 'csk')
-  if (!state._volatile) state['_volatile'] = Object.create(null)
-  if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
-  const CSKid = findKeyIdByName(state, 'csk')
-  const CEKid = findKeyIdByName(state, 'cek')
-
-  state._volatile.pendingKeyRevocations[CSKid] = true
-  state._volatile.pendingKeyRevocations[CEKid] = true
 }
 
 function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object): boolean {
@@ -865,6 +849,12 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
+        // When a member is leaving, we need to mark the CSK and the CEK as needing
+        // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
+        // (to actually perform the rotation) and Chelonia (to unset the flag if
+        // they are rotated by somebody else)
+        sbp('chelonia/queueInvocation', contractID, () => sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk']))
+
         sbp('gi.contracts/group/referenceTally', contractID, memberID, 'release')
         // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
@@ -936,22 +926,14 @@ sbp('chelonia/defineContract', {
                   // If already joined, ignore this error
                   if (e?.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIGroupAlreadyJoinedError') return
                   console.error('Error while joining the #General chatroom', e)
-                  const errMsg = L("Couldn't join the #{chatroomName} in the group. An error occurred: {error}", { chatroomName: CHATROOM_GENERAL_NAME, error: e?.message || e })
-                  const promptOptions = {
-                    heading: L('Error while joining a chatroom'),
-                    question: errMsg,
-                    primaryButton: L('Close')
-                  }
 
-                  sbp('gi.ui/prompt', promptOptions)
+                  sbp('okTurtles.events/emit', ERROR_JOINING_CHATROOM, { identityContractID: userID, groupContractID: contractID, chatRoomID: generalChatRoomId })
                 })
               }
             } else {
-              // avoid blocking the main thread
-              // eslint-disable-next-line require-await
-              (async () => {
-                alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-              })()
+              console.error("Couldn't join the chatroom in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })
+
+              sbp('okTurtles.events/emit', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, { identityContractID: userID, groupContractID: contractID })
             }
 
             sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
@@ -1600,6 +1582,9 @@ sbp('chelonia/defineContract', {
 
       // Session has changed
       if (actorID !== originalActorID) {
+        console.info('[gi.contracts/group/joinGroupChatrooms] Session changed', {
+          actorID, contractID, chatRoomID, originalActorID, memberID, height
+        })
         return
       }
 
@@ -1608,7 +1593,18 @@ sbp('chelonia/defineContract', {
         state?.chatRooms?.[chatRoomID]?.members[memberID]?.status !== PROFILE_STATUS.ACTIVE ||
         state?.chatRooms?.[chatRoomID]?.members[memberID]?.joinedHeight !== height
       ) {
-        sbp('okTurtles.data/set', `gi.contracts/group/chatroom-skipped-${contractID}-${chatRoomID}-${height}`, true)
+        console.info('[gi.contracts/group/joinGroupChatrooms] Skipping outdated action', {
+          actorID,
+          contractID,
+          chatRoomID,
+          originalActorID,
+          memberID,
+          height,
+          groupStatusActor: state?.profiles?.[actorID]?.status,
+          groupSatusMember: state?.profiles?.[memberID]?.status,
+          chatRoomStatus: state?.chatRooms?.[chatRoomID]?.members[memberID]?.status,
+          chatRoomHeight: state?.chatRooms?.[chatRoomID]?.members[memberID]?.joinedHeight
+        })
         return
       }
 
@@ -1649,7 +1645,7 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          console.warn(`Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
+          console.warn(`[gi.contracts/group/joinGroupChatrooms] Unable to join ${memberID} to chatroom ${chatRoomID} for group ${contractID}`, e)
         }).finally(() => {
           sbp('chelonia/contract/release', chatRoomID, { ephemeral: true }).catch(e => console.error('[gi.contracts/group/joinGroupChatrooms] Error during release', e))
         })
@@ -1765,16 +1761,11 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
-      const state = rootState[identityContractID]
 
-      if (!state._volatile) state['_volatile'] = Object.create(null)
-      if (!state._volatile.pendingKeyRevocations) state._volatile['pendingKeyRevocations'] = Object.create(null)
-
-      const PEKid = findKeyIdByName(state, 'pek')
-
-      state._volatile.pendingKeyRevocations[PEKid] = true
-
-      sbp('chelonia/queueInvocation', identityContractID, ['gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK']).catch(e => {
+      sbp('chelonia/queueInvocation', identityContractID, async () => {
+        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'])
+        await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
+      }).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },

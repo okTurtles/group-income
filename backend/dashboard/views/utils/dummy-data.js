@@ -1,7 +1,7 @@
 /* eslint-disable */
 
 // dummy placeholder data to be used in various pages
-import { createCID } from '@common/functions.js'
+import { createCID } from '~/shared/functions.js'
 import { addTimeToDate, MONTHS_MILLIS } from '@common/cdTimeUtils.js'
 import L from '@common/translations.js'
 

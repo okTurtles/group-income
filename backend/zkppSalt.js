@@ -50,10 +50,10 @@ let hashUpdateSecret: string
 //         records. This requires user interaction to create new salt records
 //         on the new server.
 export const initZkpp = async () => {
-  const IKM = await sbp('chelonia/db/get', '_private_immutable_zkpp_ikm').then((IKM) => {
+  const IKM = await sbp('chelonia.db/get', '_private_immutable_zkpp_ikm').then((IKM) => {
     if (!IKM) {
       const secret = randomBytes(33).toString('base64')
-      return sbp('chelonia/db/set', '_private_immutable_zkpp_ikm', secret).then(() => {
+      return sbp('chelonia.db/set', '_private_immutable_zkpp_ikm', secret).then(() => {
         return secret
       })
     }
@@ -70,7 +70,7 @@ const maxAge = 30
 
 const computeZkppSaltRecordId = async (contractID: string) => {
   const recordId = `_private_rid_${contractID}`
-  const record = await sbp('chelonia/db/get', recordId)
+  const record = await sbp('chelonia.db/get', recordId)
 
   if (!record) {
     return null
@@ -82,7 +82,7 @@ const computeZkppSaltRecordId = async (contractID: string) => {
 
 const getZkppSaltRecord = async (contractID: string) => {
   const recordId = `_private_rid_${contractID}`
-  const record = await sbp('chelonia/db/get', recordId)
+  const record = await sbp('chelonia.db/get', recordId)
 
   if (record) {
     const encryptionKey = hashStringArray('REK', contractID, recordSecret).slice(0, nacl.secretbox.keyLength)
@@ -105,7 +105,7 @@ const getZkppSaltRecord = async (contractID: string) => {
         !Array.isArray(recordObj) ||
         (recordObj.length !== 3 && recordObj.length !== 4) ||
         recordObj.slice(0, 3).some((r) => !r || typeof r !== 'string') ||
-        (recordObj[3] !== null && typeof recordObj[3] !== 'string')
+        (recordObj[3] != null && typeof recordObj[3] !== 'string')
       ) {
         console.error('Error validating encrypted JSON object ' + recordId)
         return null
@@ -135,7 +135,7 @@ const setZkppSaltRecord = async (contractID: string, hashedPassword: string, aut
   const recordCiphertext = nacl.secretbox(Buffer.from(recordPlaintext), nonce, encryptionKey)
   const recordBuf = Buffer.concat([nonce, recordCiphertext])
   const record = base64ToBase64url(recordBuf.toString('base64'))
-  await sbp('chelonia/db/set', recordId, record)
+  await sbp('chelonia.db/set', recordId, record)
 }
 
 export const getChallenge = async (contract: string, b: string): Promise<false | {authSalt: string; s: string; sig: string;}> => {

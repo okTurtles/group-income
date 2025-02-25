@@ -8,6 +8,7 @@ import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGE
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { SETTING_CHELONIA_STATE } from '@model/database.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
@@ -348,9 +349,9 @@ export default (sbp('sbp/selectors/register', {
             const loginCompleteHandler = ({ identityContractID: id }) => {
               removeLoginErrorHandler()
               if (id === identityContractID) {
-              // Before the promise resolves, we need to save the state
-              // by calling 'state/vuex/save' to ensure that refreshing the page
-              // results in a page with the same state.
+                // Before the promise resolves, we need to save the state
+                // by calling 'state/vuex/save' to ensure that refreshing the page
+                // results in a page with the same state.
                 resolve(sbp('state/vuex/save'))
               } else {
                 reject(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${id}`))
@@ -424,16 +425,23 @@ export default (sbp('sbp/selectors/register', {
           const errMessage = e?.message || String(e)
           console.error('[gi.app/identity] Error during login contract sync', e)
 
+          const wipeOut = (e && (e.name === 'ChelErrorForkedChain' || e.cause?.name === 'ChelErrorForkedChain'))
+
           const promptOptions = {
             heading: L('Login error'),
-            question: L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-            primaryButton: L('No'),
-            secondaryButton: L('Yes')
+            question: wipeOut
+              ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
+              : L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
+            primaryButton: L('Yes'),
+            secondaryButton: L('No'),
+            primaryButtonStyle: 'primary', // make primary button 'filled' style
+            isContentCentered: !wipeOut
           }
 
           const result = await sbp('gi.ui/prompt', promptOptions)
-          if (!result) {
-            return sbp('gi.app/identity/_private/logout', state)
+          if (result) {
+            sbp('gi.ui/clearBanner')
+            return sbp('gi.app/identity/_private/logout', state, wipeOut)
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
@@ -462,23 +470,34 @@ export default (sbp('sbp/selectors/register', {
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
-  'gi.app/identity/_private/logout': async function (errorState: ?Object) {
+  'gi.app/identity/_private/logout': async function (errorState: ?Object, wipeOut?: boolean) {
     try {
       const state = errorState || cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return
 
       const cheloniaState = await sbp('gi.actions/identity/logout')
 
-      const { encryptionParams } = state.loggedIn
+      const { identityContractID, encryptionParams } = state.loggedIn
       if (encryptionParams) {
         // If we're logging out, save the current Chelonia state under the
         // `.cheloniaState` key. This will be used later when logging in
         // to restore both the Vuex and Chelonia states
-        state.cheloniaState = cheloniaState
+        if (!wipeOut) {
+          state.cheloniaState = cheloniaState
 
-        await sbp('state/vuex/save', true, state)
+          await sbp('state/vuex/save', true, state)
+        }
         await sbp('gi.db/settings/deleteStateEncryptionKey', encryptionParams)
         await sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+      }
+      // These should already be deleted, but we attempt to delete them again,
+      // just in case.
+      if (wipeOut) {
+        await Promise.all([
+          sbp('gi.db/settings/delete', identityContractID),
+          sbp('gi.db/settings/deleteEncrypted', identityContractID),
+          sbp('gi.db/settings/delete', SETTING_CHELONIA_STATE)
+        ])
       }
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

@@ -3,13 +3,71 @@
 import { L } from '@common/common.js'
 import {
   INVITE_INITIAL_CREATOR,
-  MAX_GROUP_MEMBER_COUNT
+  MAX_GROUP_MEMBER_COUNT,
+  PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
-import { JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import type { GIActionParams } from '../actions/types.js'
+
+sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ identityContractID, groupContractID }) => {
+  if (process.env.CI) {
+    // Force a Cypress error
+    console.error('Error ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST', { identityContractID, groupContractID })
+    Promise.reject(new Error('ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST'))
+  }
+  const rootState = sbp('state/vuex/state')
+  if (rootState.loggedIn?.identityContractID !== identityContractID) return
+  if (!rootState[groupContractID]) return
+
+  sbp('chelonia/contract/wait', groupContractID).then(() => {
+    const ourGroups = sbp('state/vuex/getters').ourGroups
+    if (!ourGroups.includes(groupContractID)) return
+
+    const rootState = sbp('state/vuex/state')
+    if (!rootState[groupContractID].generalChatRoomId) {
+      sbp('gi.ui/prompt', {
+        heading: L('Error joining the #general chatroom'),
+        question: L('There was an error joining the #general chatroom because it doesn\'t exist'),
+        primaryButton: L('Close')
+      })
+    }
+  })
+})
+
+sbp('okTurtles.events/on', ERROR_JOINING_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+  if (process.env.CI) {
+    // Force a Cypress error
+    console.error('Error ERROR_JOINING_CHATROOM', { identityContractID, groupContractID, chatRoomID })
+    Promise.reject(new Error('ERROR_JOINING_CHATROOM'))
+  }
+  const rootState = sbp('state/vuex/state')
+  if (rootState.loggedIn?.identityContractID !== identityContractID) return
+  if (!rootState[groupContractID]) return
+
+  sbp('chelonia/contract/wait', groupContractID).then(() => {
+    const ourGroups = sbp('state/vuex/getters').ourGroups
+    if (!ourGroups.includes(groupContractID)) return
+
+    const rootState = sbp('state/vuex/state')
+    if (
+      rootState[groupContractID].chatRooms[chatRoomID]?.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
+      !rootState[chatRoomID]?.members[identityContractID]
+    ) {
+      sbp('gi.ui/prompt', {
+        heading: L('Error joining chatroom'),
+        question: L('There was an error joining the {chatRoomName} chatroom', {
+          chatRoomName: rootState[groupContractID].chatRooms[chatRoomID]?.name
+            ? `#${rootState[groupContractID].chatRooms[chatRoomID].name}`
+            : L('(unknown)')
+        }),
+        primaryButton: L('Close')
+      })
+    }
+  })
+})
 
 // handle incoming group-related events that are sent from the service worker
 sbp('okTurtles.events/on', JOINED_GROUP, ({ identityContractID, groupContractID }) => {

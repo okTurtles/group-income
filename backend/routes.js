@@ -71,6 +71,12 @@ const route = new Proxy({}, {
   }
 })
 
+// helper function that returns 404 and prevents client from caching the 404 response
+// which can sometimes break things: https://github.com/okTurtles/group-income/issues/2608
+function notFoundNoCache (h) {
+  return h.response().code(404).header('Cache-Control', 'no-store')
+}
+
 // RESTful API routes
 
 // TODO: Update this regex once `chel` uses prefixed manifests
@@ -98,7 +104,7 @@ route.POST('/event', {
       const credentials = request.auth.credentials
       // Only allow identity contracts to be created without attribution
       if (!credentials?.billableContractID && deserializedHEAD.isFirstMessage) {
-        const manifest = await sbp('chelonia/db/get', deserializedHEAD.head.manifest)
+        const manifest = await sbp('chelonia.db/get', deserializedHEAD.head.manifest)
         const parsedManifest = JSON.parse(manifest)
         const { name } = JSON.parse(parsedManifest.body)
         if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
@@ -277,7 +283,7 @@ route.GET('/latestHEADinfo/{contractID}', {
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
-      return Boom.notFound()
+      return notFoundNoCache(h)
     }
     return HEADinfo
   } catch (err) {
@@ -340,7 +346,7 @@ if (process.env.NODE_ENV === 'development') {
         console.error(`hash(${hash}) != ourHash(${ourHash})`)
         return Boom.badRequest('bad hash!')
       }
-      await sbp('chelonia/db/set', hash, data)
+      await sbp('chelonia.db/set', hash, data)
       return '/file/' + hash
     } catch (err) {
       return logger(err)
@@ -430,19 +436,19 @@ route.POST('/file', {
     // different file F2) and then request to delete their file F1, which would
     // result in corrupting F2.
     // Ensure that the manifest doesn't exist
-    if (await sbp('chelonia/db/get', manifestHash)) {
+    if (await sbp('chelonia.db/get', manifestHash)) {
       throw new Error(`Manifest ${manifestHash} already exists`)
     }
     // Ensure that the chunks do not exist
     await Promise.all(chunks.map(async ([cid]) => {
-      const exists = !!(await sbp('chelonia/db/get', cid))
+      const exists = !!(await sbp('chelonia.db/get', cid))
       if (exists) {
         throw new Error(`Chunk ${cid} already exists`)
       }
     }))
     // Now, store all chunks and the manifest
-    await Promise.all(chunks.map(([cid, data]) => sbp('chelonia/db/set', cid, data)))
-    await sbp('chelonia/db/set', manifestHash, manifestMeta.payload)
+    await Promise.all(chunks.map(([cid, data]) => sbp('chelonia.db/set', cid, data)))
+    await sbp('chelonia.db/set', manifestHash, manifestMeta.payload)
     // Store attribution information
     await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
@@ -458,24 +464,19 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {
-  cache: {
-    // Do not set other cache options here, to make sure the 'otherwise' option
-    // will be used so that the 'immutable' directive gets included.
-    otherwise: 'public,max-age=31536000,immutable'
-  }
-}, async function (request, h) {
+route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
   if (hash.startsWith('_private')) {
     return Boom.notFound()
   }
 
-  const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
+  const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
   if (!blobOrString) {
-    return Boom.notFound()
+    return notFoundNoCache(h)
   }
-  return h.response(blobOrString).etag(hash)
+  return h.response(blobOrString).code(200).etag(hash)
+    .header('Cache-Control', 'public,max-age=31536000,immutable')
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -489,7 +490,7 @@ route.POST('/deleteFile/{hash}', {
   const { hash } = request.params
   const strategy = request.auth.strategy
   if (!hash || hash.startsWith('_private')) return Boom.notFound()
-  const owner = await sbp('chelonia/db/get', `_private_owner_${hash}`)
+  const owner = await sbp('chelonia.db/get', `_private_owner_${hash}`)
   if (!owner) {
     return Boom.notFound()
   }
@@ -500,7 +501,7 @@ route.POST('/deleteFile/{hash}', {
       let count = 0
       // Walk up the ownership tree
       do {
-        const owner = await sbp('chelonia/db/get', `_private_owner_${ultimateOwner}`)
+        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
         if (owner) {
           ultimateOwner = owner
           count++
@@ -517,7 +518,7 @@ route.POST('/deleteFile/{hash}', {
       break
     }
     case 'chel-bearer': {
-      const expectedToken = await sbp('chelonia/db/get', `_private_deletionToken_${hash}`)
+      const expectedToken = await sbp('chelonia.db/get', `_private_deletionToken_${hash}`)
       if (!expectedToken) {
         return Boom.notFound()
       }
@@ -535,7 +536,7 @@ route.POST('/deleteFile/{hash}', {
 
   // Authentication passed, now proceed to delete the file and its associated
   // keys
-  const rawManifest = await sbp('chelonia/db/get', hash)
+  const rawManifest = await sbp('chelonia.db/get', hash)
   if (!rawManifest) return Boom.notFound()
   try {
     const manifest = JSON.parse(rawManifest)
@@ -543,29 +544,29 @@ route.POST('/deleteFile/{hash}', {
     if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
     if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
     // Delete all chunks
-    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia/db/delete', cid)))
+    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))
   } catch (e) {
     console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
     return Boom.notFound()
   }
   // The keys to be deleted are not read from or updated, so they can be deleted
   // without using a queue
-  await sbp('chelonia/db/delete', hash)
-  await sbp('chelonia/db/delete', `_private_owner_${hash}`)
-  await sbp('chelonia/db/delete', `_private_size_${hash}`)
-  await sbp('chelonia/db/delete', `_private_deletionToken_${hash}`)
+  await sbp('chelonia.db/delete', hash)
+  await sbp('chelonia.db/delete', `_private_owner_${hash}`)
+  await sbp('chelonia.db/delete', `_private_size_${hash}`)
+  await sbp('chelonia.db/delete', `_private_deletionToken_${hash}`)
   const resourcesKey = `_private_resources_${owner}`
   // Use a queue for atomicity
   await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-    const existingResources = await sbp('chelonia/db/get', resourcesKey)
+    const existingResources = await sbp('chelonia.db/get', resourcesKey)
     if (!existingResources) return
     if (existingResources.endsWith(hash)) {
-      await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
+      await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
       return
     }
     const hashIndex = existingResources.indexOf(hash + '\x00')
     if (hashIndex === -1) return
-    await sbp('chelonia/db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
+    await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
   })
 
   return h.response()
@@ -592,7 +593,7 @@ route.POST('/kv/{contractID}/{key}', {
     return Boom.unauthorized(null, 'shelter')
   }
 
-  const existing = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+  const existing = await sbp('chelonia.db/get', `_private_kv_${contractID}_${key}`)
 
   // Some protection against accidental overwriting by implementing the if-match
   // header
@@ -649,7 +650,7 @@ route.POST('/kv/{contractID}/{key}', {
   }
 
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
-  await sbp('chelonia/db/set', `_private_kv_${contractID}_${key}`, request.payload)
+  await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
   await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
@@ -673,9 +674,9 @@ route.GET('/kv/{contractID}/{key}', {
     return Boom.unauthorized(null, 'shelter')
   }
 
-  const result = await sbp('chelonia/db/get', `_private_kv_${contractID}_${key}`)
+  const result = await sbp('chelonia.db/get', `_private_kv_${contractID}_${key}`)
   if (!result) {
-    return Boom.notFound()
+    return notFoundNoCache(h)
   }
 
   return h.response(result).etag(createCID(result))
@@ -804,7 +805,7 @@ route.GET('/zkpp/{name}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
-    return challenge || Boom.notFound()
+    return challenge || notFoundNoCache(h)
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)

@@ -10,7 +10,7 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
@@ -62,8 +62,8 @@ const setupChelonia = async (): Promise<*> => {
   })
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: GIMessage) => {
-    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message })
+  const errorNotification = (activity: string, error: Error, message: GIMessage, msgMeta?: Object) => {
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
       console.error('Error saving logs during error notification', e)
@@ -110,6 +110,7 @@ const setupChelonia = async (): Promise<*> => {
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
+          'chelonia/contract/setPendingKeyRevocation',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',
           'chelonia/contract/waitingForKeyShareTo',
@@ -139,16 +140,22 @@ const setupChelonia = async (): Promise<*> => {
       }
     },
     hooks: {
+      syncContractError: (e: Error, contractID: string) => {
+        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
+          sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID })
+        }
+      },
       handleEventError: (e: Error, message: GIMessage) => {
-        if (e.name === 'ChelErrorUnrecoverable') {
-          sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
+        if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
+          const contractID = message.contractID()
+          sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
           // Avoid duplicate notifications for the same message.
           errorNotification('handleEvent', e, message)
         }
       },
-      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }) => {
+      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string, index?: number }) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
           sbp('okTurtles.eventQueue/queueEvent', message.contractID(), [
             'gi.actions/group/autobanUser', message, e, msgMeta
@@ -158,10 +165,16 @@ const setupChelonia = async (): Promise<*> => {
         if (e.name === 'ChelErrorDecryptionKeyNotFound') {
           return
         }
-        errorNotification('process', e, message)
+        // We also ignore errors related to outgoing messages
+        if (message.direction() === 'outgoing') {
+          console.warn('Ignoring error on outgoing message', message, e)
+          return
+        }
+        errorNotification('process', e, message, msgMeta)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        sbp('okTurtles.events/emit', SERIOUS_ERROR, e)
+        const contractID = message.contractID()
+        sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
@@ -190,9 +203,12 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
+  sbp('okTurtles.events/on', LOGGING_OUT, () => {
+    logoutInProgress = true
+  })
+
   sbp('okTurtles.events/on', LOGOUT, () => {
     // TODO: [SW] This is to be done by the SW
-    logoutInProgress = true
     saveCheloniaDebounced.clear()
     Promise.all([
       sbp('chelonia/reset'),
@@ -273,19 +289,15 @@ const setupChelonia = async (): Promise<*> => {
       'reconnection-succeeded' () {
         sbp('okTurtles.events/emit', ONLINE)
         console.info('reconnected to pubsub!')
-      },
-      'subscription-succeeded' (event) {
-        const { channelID } = event.detail
-        if (channelID in sbp('chelonia/rootState').contracts) {
-          sbp('chelonia/contract/sync', channelID).catch(err => {
-            console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
-          })
-        }
       }
     }
   }))
 
-  await sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
+  // this should be done here and not in LOGIN_COMPLETE because:
+  // If the SW awakens but it's not a navigation event, you'll skip the code syncing all
+  // contracts, which will remove all contracts from the push subscription. So, the second
+  // time the SW wakes up it'll have no contracts
+  sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
     // This loads CHELONIA_STATE when _not_ running as a service worker
     const cheloniaState = await sbp('chelonia/rootState')
     if (!cheloniaState || !identityContractID) return

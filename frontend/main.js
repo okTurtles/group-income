@@ -23,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -44,9 +44,20 @@ import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
 console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
+
+if (process.env.CI) {
+  const originalFetch = self.fetch
+  self.fetch = (...args) => {
+    return originalFetch.apply(self, args).catch(e => {
+      console.error('FETCH FAILED', args, new Error().stack, e)
+      throw e
+    })
+  }
+}
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
@@ -70,8 +81,8 @@ async function startApp () {
     ].reduce(reducer, {})
     // Selectors for which debug logging won't be enabled.
     const selectorBlacklist = [
-      'chelonia/db/get',
-      'chelonia/db/set',
+      'chelonia.db/get',
+      'chelonia.db/set',
       'chelonia/rootState',
       'chelonia/haveSecretKey',
       'chelonia/private/enqueuePostSyncOps',
@@ -104,8 +115,38 @@ async function startApp () {
     Vue.set(reverseCache, value, name)
   })
 
-  sbp('okTurtles.events/on', SERIOUS_ERROR, (error) => {
+  sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {
+    console.error('Serious error', contractID, error)
     sbp('gi.ui/seriousErrorBanner', error)
+    if (error?.name === 'ChelErrorForkedChain') {
+      const rootState = sbp('state/vuex/state')
+      if (!rootState.contracts[contractID]) {
+        // If `rootState.contracts[contractID]` doesn't exist, it means we're no
+        // longer subscribed to the contract. This could happen, e.g., if the
+        // contract has since been released. In any case, the absence of
+        // `rootState.contracts[contractID]` means that there's nothing to
+        // left to recover.
+        console.error('Forked chain detected. However, there is no contract entry.', { contractID }, error)
+        return
+      }
+      const type = rootState.contracts[contractID].type || '(unknown)'
+      console.error('Forked chain detected', { contractID, type }, error)
+
+      const retry = confirm(L("The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)", { type }))
+
+      if (retry) {
+        sbp('gi.ui/clearBanner')
+        // If it's our identity contract, we need to log in again to be able
+        // to propery decrypt all data, since that requires the user password
+        ;((rootState.loggedIn?.identityContractID === contractID)
+          ? sbp('gi.actions/identity/logout', null, true)
+          : sbp('chelonia/contract/sync', contractID, { resync: true }))
+          .catch((e) => {
+            console.error('Error during re-sync', contractID, e)
+            alert(L('There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.', { errMsg: e?.message || e }))
+          })
+      }
+    }
     if (process.env.CI) {
       Promise.reject(error)
     }
@@ -148,7 +189,7 @@ async function startApp () {
 
   // register service-worker
   await Promise.race(
-    [sbp('service-workers/setup'),
+    [sbp('service-worker/setup'),
       new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error('Timed out setting up service worker'))
@@ -156,15 +197,10 @@ async function startApp () {
       })]
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
-    alert(L('Error while setting up service worker'))
+    alert(L('Error while setting up service worker: {err}', { err: e.message }))
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
-  // Call `setNotificationEnabled` after the service worker setup, because it
-  // calls `service-worker/setup-push-subscription`.
-  if (typeof Notification === 'function') {
-    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
-  }
 
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
@@ -192,6 +228,7 @@ async function startApp () {
       }
     },
     mounted () {
+      let oldIdentityContractID = null // lets us know if there's a previously logged in user
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -216,6 +253,8 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+        setupNativeNotificationsListeners()
+
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) {
           console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
@@ -227,7 +266,6 @@ async function startApp () {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
@@ -251,7 +289,8 @@ async function startApp () {
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/once', LOGIN_ERROR, () => {
-        // Remove the loading animation that sits on top of the Vue app, so that users can properly interact with the app for a follow-up action.
+        // Remove the loading animation that sits on top of the Vue app, so that
+        // users can properly interact with the app for a follow-up action.
         this.removeLoadingAnimation()
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, ({ contractID, isNewlyCreated }) => {
@@ -259,6 +298,12 @@ async function startApp () {
         this.checkAndEmitOneTimeNotifications()
       })
       sbp('okTurtles.events/on', ONLINE, () => {
+        const state = sbp('state/vuex/state')
+        if (state.loggedIn) {
+          sbp('service-worker/setup-push-subscription').catch(e => {
+            console.error('came back online, tried to report push subscription, but got:', e)
+          })
+        }
         sbp('gi.ui/clearBanner')
       })
       sbp('okTurtles.events/on', OFFLINE, () => {
@@ -311,53 +356,37 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      let oldIdentityContractID = null
-      sbp('gi.db/settings/load', SETTING_CURRENT_USER).then(async (identityContractID) => {
-        oldIdentityContractID = identityContractID
-        if (!identityContractID || this.ephemeral.finishedLogin === 'yes') return
-        await sbp('gi.app/identity/login', { identityContractID })
-        await sbp('chelonia/contract/wait', identityContractID)
-      }).catch(async e => {
-        this.removeLoadingAnimation()
-        oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
-          console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
-        }) // https://github.com/okTurtles/group-income/issues/2194
-        console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-        await sbp('gi.app/identity/logout')
-        await sbp('gi.ui/prompt', {
-          heading: L('Failed to login'),
-          question: L('Error details: {reportError}', LError(e)),
-          primaryButton: L('Close')
-        })
-      }).finally(() => {
-        // Wait for SW to be ready
-        console.debug('[app] Waiting for SW to be ready')
-        const sw = ((navigator.serviceWorker: any): ServiceWorkerContainer)
-        Promise.race([
-          sw.ready,
-          new Promise((resolve, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 10000))
-        ]).then(() => {
-          const onready = () => {
-            this.ephemeral.ready = true
-            this.removeLoadingAnimation()
-            setupNativeNotificationsListeners()
+      ;(async () => {
+        try {
+          const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+          oldIdentityContractID = identityContractID
+          if (identityContractID && this.ephemeral.finishedLogin !== 'yes') {
+            // Calling login could result in a prompt in case of an error; if the
+            // loading animation is visible, it'll hide the prompt. We remove it,
+            // so that it's possible to interact with the prompt.
+            const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
+              this.removeLoadingAnimation()
+            })
+            await sbp('gi.app/identity/login', { identityContractID })
+            removeHandler()
+            await sbp('chelonia/contract/wait', identityContractID)
           }
-          if (!sw.controller) {
-            const listener = (ev: Event) => {
-              sw.removeEventListener('controllerchange', listener, false)
-              onready()
-            }
-            sw.addEventListener('controllerchange', listener, false)
-          } else {
-            onready()
-          }
-        }).catch(e => {
-          console.error('[app] Service worker failed to become ready:', e)
-          // Fallback behavior
+          this.ephemeral.ready = true
           this.removeLoadingAnimation()
-          alert(L('Error while setting up service worker'))
-        })
-      })
+        } catch (e) {
+          this.removeLoadingAnimation()
+          oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
+            console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
+          }) // https://github.com/okTurtles/group-income/issues/2194
+          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
+          await sbp('gi.app/identity/logout')
+          await sbp('gi.ui/prompt', {
+            heading: L('Failed to login'),
+            question: L('Error details: {reportError}', LError(e)),
+            primaryButton: L('Close')
+          })
+        }
+      })()
     },
     computed: {
       ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),

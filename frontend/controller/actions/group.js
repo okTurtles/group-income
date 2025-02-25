@@ -268,6 +268,30 @@ export default (sbp('sbp/selectors/register', {
       // Using ephemeral retain-release to wait until the newly created group
       // is synced, which includes creating the #general chatroom
       await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
+      // The #general chatroom is created as a side-effect, which could take
+      // a bit to be done
+      await Promise.race([
+        (async () => {
+          for (let i = 0; i < 10; i++) {
+            // Wait for outgoing actions to be sent (e.g., to the new chatroom
+            // or to the group)
+            await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+            await sbp('chelonia/contract/wait', contractID)
+            const rootState = sbp('chelonia/rootState')
+            if (rootState[contractID]?.generalChatRoomId) {
+              return
+            }
+            // Extra wait to account for network delays
+            await new Promise(resolve => setTimeout(resolve, 50))
+          }
+          throw new Error('#General still not found')
+        })(),
+        new Promise((resolve, reject) => {
+          setTimeout(() => reject(new Error('Waiting for chatroom creation is taking too long')), 5000)
+        })
+      ]).catch((e) => {
+        console.error('Error waiting for new group contract to be ready', e)
+      })
       try {
         await sbp('gi.actions/identity/joinGroup', {
           contractID: userID,
@@ -626,9 +650,10 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
+    const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // $FlowFixMe
     return Promise.all(
@@ -638,22 +663,26 @@ export default (sbp('sbp/selectors/register', {
           const CEKid = await sbp('chelonia/contract/currentKeyIdByName', rootState[pContractID], 'cek')
           if (!CEKid) {
             console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
-            return Promise.resolve()
+            return
           }
-          return {
-            contractID,
-            foreignContractID: pContractID,
-            // $FlowFixMe
-            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-              id: newId,
-              meta: {
-                private: {
-                  content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
-                }
-              }
-            }))
-          }
-        }))
+          return [
+            'chelonia/out/keyShare',
+            {
+              data: encryptedOutgoingData(contractID, mainCEKid, {
+                contractID,
+                foreignContractID: pContractID,
+                // $FlowFixMe
+                keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+                  id: newId,
+                  meta: {
+                    private: {
+                      content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
+                    }
+                  }
+                }))
+              })
+            }]
+        })).then((keys) => [keys.filter(Boolean)])
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')

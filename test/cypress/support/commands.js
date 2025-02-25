@@ -91,8 +91,8 @@ const cySbpCheckCommand = (name, customCheckFn) => {
         sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
 
         // We also run the test manually in case there are no events
-        check()
         const x = setInterval(check, 1000)
+        check()
       })
     })
   })
@@ -113,8 +113,8 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 cySbpCheckCommand('giNoPendingGroupKeyShares', (sbp) => {
   const state = sbp('state/vuex/state')
   const pending = Object.keys(state.contracts)
-    .filter(contractID => state[contractID]._vm.type === 'gi.contracts/group')
-    .filter(contractID => Object.keys(state[contractID]._vm?.pendingKeyShares || {}).length)
+    .filter(contractID => state[contractID]?._vm?.type === 'gi.contracts/group')
+    .filter(contractID => Object.keys(state[contractID]._vm.pendingKeyShares || {}).length)
 
   console.info('giNoPendingGroupKeyShares', pending, pending.length === 0)
   return pending.length === 0
@@ -874,7 +874,11 @@ Cypress.Commands.add('giSendMessage', (sender, message) => {
   // The following is to ensure the chatroom has finished loading (no spinner)
   cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
+    // NOTE: Cypress bug: for some reason this {enter} thing is causing the tests to fail
+    //       Instead we manually click the send button.
+    // cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
+    cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    cy.getByDT('sendMessageButton').click()
     cy.get('textarea').should('be.empty')
   })
   cy.getByDT('conversationWrapper').within(() => {

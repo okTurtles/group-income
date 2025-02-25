@@ -26,26 +26,43 @@ const localforage = {
               reject(new Error('Unsupported characters in name: -'))
               return
             }
-            const request = self.indexedDB.open(name + '--' + storeName)
 
-            // Create the object store if it doesn't exist
-            request.onupgradeneeded = (event) => {
-              const db = event.target.result
-              db.createObjectStore(storeName)
+            const openDB = (version?: number) => {
+              // By default `version` is the latest DB version. Initially, we
+              // try to open that, but in some cases (e.g., when manually
+              // deleting the DBs), the schema will be wrong and miss the object
+              // store. In these cases, we need to upgrade the DB by
+              // incrementing the version number to re-create the schema, which
+              // can only be done when the DB is being 'upgraded'.
+              const request = self.indexedDB.open(name + '--' + storeName, version)
+
+              // Create the object store if it doesn't exist
+              request.onupgradeneeded = (event) => {
+                const db = event.target.result
+                db.createObjectStore(storeName)
+              }
+
+              request.onsuccess = (event) => {
+                const db = event.target.result
+                if (!db.objectStoreNames.contains(storeName)) {
+                  return openDB(db.version + 1)
+                }
+
+                resolve(db)
+              }
+
+              request.onerror = (error) => {
+                reject(error)
+              }
+
+              // If this happens, closing all tabs and stopping the SW could
+              // help.
+              request.onblocked = (event) => {
+                reject(new Error('DB is blocked'))
+              }
             }
 
-            request.onsuccess = (event) => {
-              const db = event.target.result
-              resolve(db)
-            }
-
-            request.onerror = (error) => {
-              reject(error)
-            }
-
-            request.onblocked = (event) => {
-              reject(new Error('DB is blocked'))
-            }
+            openDB()
           })
         }
         return promise
@@ -156,12 +173,12 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   })
   // use localforage for storage
   sbp('sbp/selectors/overwrite', {
-    'chelonia/db/get': key => log.getItem(key),
+    'chelonia.db/get': key => log.getItem(key),
     // TODO: handle QuotaExceededError
-    'chelonia/db/set': (key, value) => log.setItem(key, value),
-    'chelonia/db/delete': (key: string) => log.removeItem(key)
+    'chelonia.db/set': (key, value) => log.setItem(key, value),
+    'chelonia.db/delete': (key: string) => log.removeItem(key)
   })
-  sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+  sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
 }
 
 // =======================
@@ -183,21 +200,21 @@ sbp('sbp/selectors/register', {
   'gi.db/ready': function () {
     return localforage.ready()
   },
-  'gi.db/settings/save': function (user: string, value: any): Promise<*> {
+  'gi.db/settings/save': function (key: string, value: any): Promise<*> {
   // Items in the DB have a prefix to disambiguate their type.
   //  'u' means unencrypted data
   //  'e' means encrypted data
   //  'k' means that it's a cryptographic key (used for encrypted data)
-  // This allows us to store encrypted and unencrypted states for the same user
-    return appSettings.setItem('u' + user, value)
+  // This allows us to store encrypted and unencrypted states for the same key
+    return appSettings.setItem('u' + key, value)
   },
-  'gi.db/settings/load': function (user: string): Promise<any> {
-    return appSettings.getItem('u' + user)
+  'gi.db/settings/load': function (key: string): Promise<any> {
+    return appSettings.getItem('u' + key)
   },
-  'gi.db/settings/delete': function (user: string): Promise<Object> {
-    return appSettings.removeItem('u' + user)
+  'gi.db/settings/delete': function (key: string): Promise<Object> {
+    return appSettings.removeItem('u' + key)
   },
-  'gi.db/settings/saveEncrypted': async function (user: string, value: any, encryptionParams: any): Promise<*> {
+  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<*> {
     const {
       stateEncryptionKeyId,
       salt,
@@ -207,24 +224,24 @@ sbp('sbp/selectors/register', {
     const stateEncryptionKeyP = await appSettings.getItem('k' + stateEncryptionKeyId)
     if (!stateEncryptionKeyP) throw new Error(`Unable to retrieve the key corresponding to key ID ${stateEncryptionKeyId}`)
     // Encrypt the current state
-    const encryptedState = encrypt(stateEncryptionKeyP, JSON.stringify(value), user)
+    const encryptedState = encrypt(stateEncryptionKeyP, JSON.stringify(value), key)
     // Save the four fields of the encrypted state. We use base64 encoding to
     // allow saving any incoming data.
     //   (1) stateEncryptionKeyId
     //   (2) salt
     //   (3) encryptedStateEncryptionKey (used for recovery when re-logging in)
     //   (4) encryptedState
-    return appSettings.setItem('e' + user, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
+    return appSettings.setItem('e' + key, `${btoa(stateEncryptionKeyId)}.${btoa(salt)}.${btoa(encryptedStateEncryptionKey)}.${btoa(encryptedState)}`).finally(() => {
       // Delete the unencypted setting key, if it exists
-      sbp('gi.db/settings/delete', user).catch(e => {
-        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for user', user, e)
+      sbp('gi.db/settings/delete', key).catch(e => {
+        console.error('[gi.db/settings/saveEncrypted] Error deleting unencrypted data for key', key, e)
       })
     })
   },
-  'gi.db/settings/loadEncrypted': function (user: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
-    return appSettings.getItem('e' + user).then(async (encryptedValue) => {
+  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
+    return appSettings.getItem('e' + key).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
-        throw new EmptyValue(`Unable to retrive state for ${user || ''}`)
+        throw new EmptyValue(`Unable to retrive state for ${key || ''}`)
       }
       // Split the encrypted state into its constituent parts
       const [stateEncryptionKeyId, salt, encryptedStateEncryptionKey, data] = encryptedValue.split('.').map(x => atob(x))
@@ -244,7 +261,7 @@ sbp('sbp/selectors/register', {
       }
 
       // Now, attempt to decrypt the state
-      const value = JSON.parse(decrypt(stateEncryptionKeyS, data, user || ''))
+      const value = JSON.parse(decrypt(stateEncryptionKeyS, data, key || ''))
 
       // Saving the state encryption key in appSettings is necessary for
       // functionality such as refreshing the page to work
@@ -282,8 +299,8 @@ sbp('sbp/selectors/register', {
   'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<Object> {
     return appSettings.removeItem('k' + stateEncryptionKeyId)
   },
-  'gi.db/settings/deleteEncrypted': function (user: string): Promise<Object> {
-    return appSettings.removeItem('e' + user)
+  'gi.db/settings/deleteEncrypted': function (key: string): Promise<Object> {
+    return appSettings.removeItem('e' + key)
   }
 })
 

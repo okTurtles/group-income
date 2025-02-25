@@ -12,13 +12,17 @@ import { deserializeKey, keyId, verifySignature } from './crypto.js'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed } from './errors.js'
+import { ChelErrorKeyAlreadyExists, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
-const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
+// Used for temporarily storing the missing decryption key IDs in a given
+// message
+const missingDecryptionKeyIdsMap = new WeakMap()
+
+const getMsgMeta = (message: GIMessage, contractID: string, state: Object, index?: number) => {
   const signingKeyId = message.signingKeyId()
   let innerSigningKeyId: ?string = null
 
@@ -41,7 +45,8 @@ const getMsgMeta = (message: GIMessage, contractID: string, state: Object) => {
     },
     get innerSigningContractID () {
       return getContractIDfromKeyId(contractID, result.innerSigningKeyId, state)
-    }
+    },
+    index
   }
 
   return result
@@ -65,7 +70,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
     key._notBeforeHeight = height
     if (authorizedKeys?.[key.id]) {
       if (authorizedKeys[key.id]._notAfterHeight == null) {
-        throw new Error(`Cannot set existing unrevoked key: ${key.id}`)
+        throw new ChelErrorKeyAlreadyExists(`Cannot set existing unrevoked key: ${key.id}`)
       }
       // If the key was get previously, preserve its _notBeforeHeight
       // NOTE: (SECURITY) This may allow keys for periods for which it wasn't
@@ -663,7 +668,7 @@ export default (sbp('sbp/selectors/register', {
       )
     )
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[], contractName?: string) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const height = message.height()
@@ -681,13 +686,56 @@ export default (sbp('sbp/selectors/register', {
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void | Promise<void> } = {
+      /*
+        There are two types of "errors" that we need to consider:
+        1. "Ignoring" errors
+        2. "Failure" errors
+        Example: OP_KEY_ADD
+        1. IGNORING: an error is thrown because we wanted to add a key but the key we wanted to add is already there. This is not a hard error, it's an ignoring error. We don't care that the operation failed in this case because the intent was accomplished.
+        2. FAILURE: an error is thrown while attempting to add a key that doesn't exist.
+        Example: OP_ACTION_ENCRYPTED
+        1. IGNORING: An error is thrown because we don't have the key to decrypt the action. We ignore it.
+        2. FAILURE: An error is thrown by the process function during processing.
+        Handling these in OP_ATOMIC
+        • ALL errors of class "IGNORING" should be ignored. They should not impact our ability to process the rest of the operations in the OP_ATOMIC. No matter how many of these are thrown, it doesn't affect the rest of the operations.
+        • ANY error of class "FAILURE" will call the rest of the operations to fail and the state to be reverted to prior to the OP_ATOMIC. No side-effects should be run. Because an intention failed.
+      */
       async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
-        for (const u of v) {
-          if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
-          if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
-            throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
+        for (let i = 0; i < v.length; i++) {
+          const u = v[i]
+          try {
+            if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
+            if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
+              throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
+            }
+            await opFns[u[0]](u[1])
+          } catch (e) {
+            if (e && typeof e === 'object') {
+              if (e.name === 'ChelErrorDecryptionKeyNotFound') {
+                console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMessage for ${message.description()}: ${e.message}`, e, message.serialize())
+                if (e.cause) {
+                  const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
+                  if (missingDecryptionKeyIds) {
+                    missingDecryptionKeyIds.add(e.cause)
+                  } else {
+                    missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+                  }
+                }
+                continue
+              } else {
+                console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
+              }
+              console.warn(`[chelonia] [OP_ATOMIC] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
+              if (config.strictProcessing) {
+                throw e
+              }
+              config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+              if (e.name === 'ChelErrorWarning') continue
+            } else {
+              console.error('Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
+            }
+            throw e
           }
-          await opFns[u[0]](u[1])
         }
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
@@ -786,6 +834,7 @@ export default (sbp('sbp/selectors/register', {
           const cheloniaState = sbp(self.config.stateSelector)
 
           const targetState = cheloniaState[v.contractID]
+          const missingDecryptionKeyIds = cheloniaState.contracts[v.contractID]?.missingDecryptionKeyIds
 
           let newestEncryptionKeyHeight = Number.POSITIVE_INFINITY
           for (const key of v.keys) {
@@ -801,7 +850,14 @@ export default (sbp('sbp/selectors/register', {
                     key: deserializeKey(decrypted),
                     transient
                   }]))
-                  if (
+                  // If we've just received a known missing key (i.e., a key
+                  // that previously resulted in a decryption error), we know
+                  // our state is outdated and we need to re-sync the contract
+                  if (missingDecryptionKeyIds?.includes(key.id)) {
+                    newestEncryptionKeyHeight = Number.NEGATIVE_INFINITY
+                  } else if (
+                  // Otherwise, we make an educated guess on whether a re-sync
+                  // is needed based on the height.
                     targetState?._vm?.authorizedKeys?.[key.id]?._notBeforeHeight != null &&
                       Array.isArray(targetState._vm.authorizedKeys[key.id].purpose) &&
                       targetState._vm.authorizedKeys[key.id].purpose.includes('enc')
@@ -1175,11 +1231,13 @@ export default (sbp('sbp/selectors/register', {
       // Having rootState.contracts[contractID] is not enough to determine we
       // have previously synced this contract, as reference counts are also
       // stored there. Hence, we check for the presence of 'type'
-      const contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
-        ? rootState.contracts[contractID].type
-        : opT === GIMessage.OP_CONTRACT
-          ? ((opV: any): GIOpContract).type
-          : ''
+      if (!contractName) {
+        contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
+          ? rootState.contracts[contractID].type
+          : opT === GIMessage.OP_CONTRACT
+            ? ((opV: any): GIOpContract).type
+            : ''
+      }
       if (!contractName) {
         throw new Error(`Unable to determine the name for a contract and refusing to load it (contract ID was ${contractID} and its manifest hash was ${manifestHash})`)
       }
@@ -1286,7 +1344,7 @@ export default (sbp('sbp/selectors/register', {
           const { done, value: event } = await eventReader.read()
           if (done) {
             if (!latestHashFound) {
-              throw new ChelErrorUnrecoverable(`expected hash ${latestHEAD} in list of events for contract ${contractID}`)
+              throw new ChelErrorForkedChain(`expected hash ${latestHEAD} in list of events for contract ${contractID}`)
             }
             break
           }
@@ -1848,11 +1906,20 @@ export default (sbp('sbp/selectors/register', {
       //            contract's 'process' function must be synchronous! The only
       //            reason we 'await' here is to dynamically load any new contract
       //            source / definitions specified by the GIMessage
+      missingDecryptionKeyIdsMap.delete(message)
       try {
         await handleEvent.processMutation.call(this, message, contractStateCopy, internalSideEffectStack)
       } catch (e) {
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+          if (e.cause) {
+            const missingDecryptionKeyIds = missingDecryptionKeyIdsMap.get(message)
+            if (missingDecryptionKeyIds) {
+              missingDecryptionKeyIds.add(e.cause)
+            } else {
+              missingDecryptionKeyIdsMap.set(message, new Set([e.cause]))
+            }
+          }
         } else {
           console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
         }
@@ -1862,9 +1929,15 @@ export default (sbp('sbp/selectors/register', {
           throw e
         }
         processingErrored = e?.name !== 'ChelErrorWarning'
-        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
+        this.config.hooks.processError?.(e, message, getMsgMeta(message, contractID, contractStateCopy))
         // special error that prevents the head from being updated, effectively killing the contract
-        if (e.name === 'ChelErrorUnrecoverable' || message.isFirstMessage()) throw e
+        if (
+          e.name === 'ChelErrorUnrecoverable' ||
+          e.name === 'ChelErrorForkedChain' ||
+          message.isFirstMessage()
+        ) {
+          throw e
+        }
       }
 
       // process any side-effects (these must never result in any mutation to the contract state!)
@@ -1909,6 +1982,10 @@ export default (sbp('sbp/selectors/register', {
         console.error('[chelonia] Ignoring user error in handleEventError hook:', e2)
       }
       throw e
+    } finally {
+      if (message) {
+        missingDecryptionKeyIdsMap.delete(message)
+      }
     }
   }
 }): string[])
@@ -2000,7 +2077,9 @@ const handleEvent = {
     const signingKeyId = message.signingKeyId()
 
     const callSideEffect = async (field) => {
-      let v = field.valueOf()
+      let v = unwrapMaybeEncryptedData(field)
+      if (!v) return
+      v = v.data
       let innerSigningKeyId: string | typeof undefined
       if (isSignedData(v)) {
         innerSigningKeyId = (v: any).signingKeyId
@@ -2045,6 +2124,7 @@ const handleEvent = {
     return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
       const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
       if (errors.length > 0) {
+        console.error('Side-effect errors', contractID, errors)
         // $FlowFixMe[cannot-resolve-name]
         throw new AggregateError(errors, `Error at side effects for ${contractID}`)
       }
@@ -2085,6 +2165,25 @@ const handleEvent = {
     }
     this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
     this.config.reactiveSet(state.contracts[contractID], 'height', height)
+    // If there were decryption errors due to missing encryption keys, we store
+    // those key IDs. If those key IDs are later shared with us, we can re-sync
+    // the contract. Without this information, we can only guess whether a
+    // re-sync is needed or not.
+    // We do it here because the property is stored under `.contracts` instead
+    // of in the contract state itself, and this is where `.contracts` gets
+    // updated after handling a message.
+    const missingDecryptionKeyIdsForMessage = missingDecryptionKeyIdsMap.get(message)
+    if (missingDecryptionKeyIdsForMessage) {
+      let missingDecryptionKeyIds = state.contracts[contractID].missingDecryptionKeyIds
+      if (!missingDecryptionKeyIds) {
+        missingDecryptionKeyIds = []
+        this.config.reactiveSet(state.contracts[contractID], 'missingDecryptionKeyIds', missingDecryptionKeyIds)
+      }
+      missingDecryptionKeyIdsForMessage.forEach(keyId => {
+        if (missingDecryptionKeyIds.includes(keyId)) return
+        missingDecryptionKeyIds.push(keyId)
+      })
+    }
 
     if (!this.subscriptionSet.has(contractID)) {
       const entry = this.pending.find((entry) => entry?.contractID === contractID)

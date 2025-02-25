@@ -71,46 +71,47 @@ modal-base-template.has-background(
                     @click.stop='addToChannel(contractID, true)'
                   ) {{L("Undo")}}
 
-        .is-subtitle.c-second-section
-          i18n(
-            tag='h3'
-            :args='{ nbMembers: filteredOthers.length }'
-          ) Others ({nbMembers})
+        template(v-if='isJoined')
+          .is-subtitle.c-second-section
+            i18n(
+              tag='h3'
+              :args='{ nbMembers: filteredOthers.length }'
+            ) Others ({nbMembers})
 
-      transition-group(
-        name='slide-list'
-        tag='ul'
-        data-test='unjoinedChannelMembersList'
-      )
-        li.c-search-member(
-          v-for='{contractID, username, displayName, joinedDate} in filteredOthers'
-          :key='contractID'
-        )
-          profile-card(:contractID='contractID' direction='top-left')
-            .c-identity
-              avatar-user(:contractID='contractID' size='sm')
-              .c-name(data-test='username')
-                span
-                  strong {{ localizedName(contractID, username, displayName) }}
-                  .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
+          transition-group(
+            name='slide-list'
+            tag='ul'
+            data-test='unjoinedChannelMembersList'
+          )
+            li.c-search-member(
+              v-for='{contractID, username, displayName, joinedDate} in filteredOthers'
+              :key='contractID'
+            )
+              profile-card(:contractID='contractID' direction='top-left')
+                .c-identity
+                  avatar-user(:contractID='contractID' size='sm')
+                  .c-name(data-test='username')
+                    span
+                      strong {{ localizedName(contractID, username, displayName) }}
+                      .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-            .c-actions(v-if='isJoined')
-              button-submit.button.is-outlined.is-small(
-                v-if='!joinedDate'
-                type='button'
-                @click.stop='addToChannel(contractID)'
-                :data-test='"addToChannel-" + username'
-              )
-                i18n(:args='LTags("span")') Add {span_}to channel{_span}
+                .c-actions
+                  button-submit.button.is-outlined.is-small(
+                    v-if='!joinedDate'
+                    type='button'
+                    @click.stop='addToChannel(contractID)'
+                    :data-test='"addToChannel-" + username'
+                  )
+                    i18n(:args='LTags("span")') Add {span_}to channel{_span}
 
-              .has-text-success(v-else)
-                i.icon-check
-                i18n Added.
-                button-submit.is-unstyled.c-action-undo(
-                  v-if='!isGroupDirectMessage()'
-                  @click.stop='removeMember(contractID, true)'
-                )
-                  i18n Undo
+                  .has-text-success(v-else)
+                    i.icon-check
+                    i18n Added.
+                    button-submit.is-unstyled.c-action-undo(
+                      v-if='!isGroupDirectMessage()'
+                      @click.stop='removeMember(contractID, true)'
+                    )
+                      i18n Undo
 </template>
 
 <script>
@@ -125,6 +126,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
@@ -210,7 +212,7 @@ export default ({
       return this.isJoined
         ? this.chatRoomMembersInSort
         : this.groupMembersSorted
-          .filter(member => this.groupChatRooms[this.currentChatRoomId].members[member.username]?.status === PROFILE_STATUS.ACTIVE)
+          .filter(member => this.groupChatRooms[this.currentChatRoomId].members[member.contractID]?.status === PROFILE_STATUS.ACTIVE)
           .map(member => ({ contractID: member.contractID, username: member.username, displayName: member.displayName }))
     }
   },
@@ -281,6 +283,12 @@ export default ({
         console.log(`${contractID} is not part of this chatroom`)
         return
       }
+
+      if (contractID === this.ourIdentityContractId && !undoing) {
+        // If it's the current user,open the 'Leave-channel' modal instead.
+        return sbp('okTurtles.events/emit', REPLACE_MODAL, 'LeaveChannelModal')
+      }
+
       try {
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,

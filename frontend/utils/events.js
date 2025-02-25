@@ -8,6 +8,7 @@
 export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGIN_COMPLETE = 'login-complete'
+export const LOGGING_OUT = 'logging-out'
 export const LOGOUT = 'logout'
 
 export const ONLINE = 'online'
@@ -21,12 +22,14 @@ export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
 export const LEFT_GROUP = 'left-group'
+export const ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST = 'error-group-non-existent-#general'
 
 export const JOINED_CHATROOM = 'joined-chatroom'
 export const LEFT_CHATROOM = 'left-chatroom'
 export const DELETED_CHATROOM = 'deleted-chatroom'
 export const DELETE_ATTACHMENT = 'delete-attachment'
 export const DELETE_ATTACHMENT_FEEDBACK = 'delete-attachment-complete'
+export const ERROR_JOINING_CHATROOM = 'error-joining-chatroom'
 
 export const REPLACED_STATE = 'replaced-state'
 

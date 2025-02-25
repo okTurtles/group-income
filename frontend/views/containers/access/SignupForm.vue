@@ -125,17 +125,20 @@ export default ({
         return
       }
       try {
+        this.$emit('signup-status', 'submitting')
         await sbp('gi.app/identity/signupAndLogin', {
           username: this.form.username,
           password: new Secret(this.form.password)
         })
         await this.postSubmit()
-        this.$emit('submit-succeeded')
-
-        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
+        this.$emit('signup-status', 'success')
+        // Request notification permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ enableIfGranted: true })
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg?.danger(e.message)
+        this.$emit('signup-status', 'error')
       }
     }
   },
