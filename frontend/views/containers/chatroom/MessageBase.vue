@@ -304,6 +304,10 @@ export default ({
       ::v-deep .c-actions {
         display: flex;
       }
+
+      .c-time-stamp {
+        opacity: 1;
+      }
     }
   }
 
@@ -348,12 +352,16 @@ export default ({
 
 .c-time-stamp {
   position: relative;
+  display: block;
   color: $text_1;
   font-size: $size_5;
   text-align: right;
   width: 2.5rem;
   padding: 0.2rem 0.2rem 0 0;
   line-height: 1.5;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
 }
 
 .c-avatar {
