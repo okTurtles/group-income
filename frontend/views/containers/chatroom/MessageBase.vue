@@ -238,16 +238,6 @@ export default ({
         this.openMenu()
       }
     },
-    formatTimeString (datetime) {
-      const dateObj = new Date(datetime)
-      let hours = dateObj.getHours()
-      let minutes = dateObj.getMinutes()
-
-      hours = hours % 12 || 12 // Convert 0 to 12 for midnight
-      minutes = minutes.toString().padStart(2, '0')
-
-      return `${hours}:${minutes}`
-    },
     getTimeStamp (datetime) {
       const tString = humanTimeString(datetime, { hour: '2-digit', minute: '2-digit', hour12: true })
       // Extract only numbers and colons, removing non-numeric characters like AM/PM
