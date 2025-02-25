@@ -80,9 +80,11 @@ async function messageReceivePostEffect ({
     // This may not be 100% reliable, but `firstSync` should make it work in
     // most cases.
     const isSyncing = sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })
-    // TODO: This could be an issue (false negative for emitting a native
-    // notification) for very large (over 4 KiB) push events, which are
-    // handled using a sync.
+    // TODO: This could be an issue (false positive for emitting a native
+    // notification) when the initial sync gets interrupted (e.g., network issues)
+    // and then resumed.
+    // In this case, we may get sound notifications for old events that we
+    // should not, because technically it's not the first sync.
     if (isSyncing) return
 
     const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
