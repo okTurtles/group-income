@@ -76,8 +76,10 @@ async function messageReceivePostEffect ({
 
     // If the contract is syncing (meaning we're loading the app, joining a
     // chatroom, etc.), don't use a native notification or sound. Do this only
-    // for messages coming over the WS
-    const isSyncing = sbp('chelonia/contract/isSyncing', contractID)
+    // for messages coming over the WS.
+    // This may not be 100% reliable, but `firstSync` should make it work in
+    // most cases.
+    const isSyncing = sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })
     // TODO: This could be an issue (false negative for emitting a native
     // notification) for very large (over 4 KiB) push events, which are
     // handled using a sync.
