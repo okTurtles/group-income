@@ -80,6 +80,8 @@ page.c-page
           data-test='saveBtn'
         ) {{ L('Save changes') }}
 
+  roles-and-permissions
+
   invitations-table
 
   page-section(
@@ -145,6 +147,7 @@ import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
+import RolesAndPermissions from '@containers/group-settings/roles-and-permissions/RolesAndPermissions.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -161,6 +164,7 @@ export default ({
     ButtonSubmit,
     GroupRulesSettings,
     InvitationsTable,
+    RolesAndPermissions,
     CharLengthIndicator,
     Page,
     PageSection
