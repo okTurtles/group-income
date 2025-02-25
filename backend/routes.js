@@ -267,7 +267,10 @@ route.POST('/name', {
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
-    return await sbp('backend/db/lookupName', name)
+    // TODO: conflict with PR 2494
+    const r = await sbp('backend/db/lookupName', name)
+    if (typeof r !== 'string') return r
+    return h.response(r).header('content-type', 'text/plain')
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
@@ -293,7 +296,8 @@ route.GET('/latestHEADinfo/{contractID}', {
 })
 
 route.GET('/time', {}, function (request, h) {
-  return new Date().toISOString()
+  return h.response(new Date().toISOString())
+    .header('Cache-Control', 'no-store')
 })
 
 // TODO: if the browser deletes our cache then not everyone
@@ -475,8 +479,10 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   if (!blobOrString) {
     return notFoundNoCache(h)
   }
-  return h.response(blobOrString).code(200).etag(hash)
+  // TODO: conflict with PR 2494
+  return h.response(blobOrString).etag(hash)
     .header('Cache-Control', 'public,max-age=31536000,immutable')
+    .header('content-type', 'application/octet-stream')
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -679,7 +685,8 @@ route.GET('/kv/{contractID}/{key}', {
     return notFoundNoCache(h)
   }
 
-  return h.response(result).etag(createCID(result))
+  // TODO: conflict with PR 2494
+  return h.response(result).etag(createCID(result)).header('content-type', 'application/json')
 })
 
 // SPA routes
@@ -714,9 +721,13 @@ route.GET('/assets/{subpath*}', {
       .etag(basename)
       .header('Cache-Control', 'public,max-age=31536000,immutable')
   }
-  // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
+  // Files like `main.js` or `main.css` should be revalidated before use.
+  // We set a short 'stale-while-revalidate' value instead of 'no-cache' to
+  // signal to the app that it's fine to use old versions when offline or over
+  // unreliable connections.
   // This should also be suitable for serving unversioned fonts and images.
   return h.file(subpath)
+    .header('Cache-Control', 'public,max-age=604800,stale-while-revalidate=86400')
 })
 
 route.GET(staticServeConfig.routePath, {}, {
@@ -805,7 +816,13 @@ route.GET('/zkpp/{name}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
-    return challenge || notFoundNoCache(h)
+    if (!challenge) {
+      return Boom.notFound()
+    }
+
+    return h.response(challenge)
+      .header('Cache-Control', 'no-store')
+      .header('Content-Type', 'text/plain')
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)
@@ -829,7 +846,9 @@ route.GET('/zkpp/{name}/contract_hash', {
     const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
-      return salt
+      return h.response(salt)
+        .header('Cache-Control', 'no-store')
+        .header('Content-Type', 'text/plain')
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
@@ -855,7 +874,8 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
-      return result
+      return h.response(result)
+        .header('Content-type', 'text/plain')
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
