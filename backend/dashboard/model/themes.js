@@ -24,6 +24,12 @@ const light = {
   text_0: '#1C1C1C',
   text_1: 'rgba(0, 0, 0, 0.4)',
   border: 'rgba(0, 0, 0, 0.1)',
+  success: '#40854F',
+  success_bg: '#E4F1E7',
+  highlight: '#FF6F00',
+  highlight_bg: '#FFEEE0',
+  neautral: '#1C1C1C',
+  neautral_bg: '#DBDBDB',
   emphasis: '#1C1C1C',
   helper: '#9747FF'
 }
@@ -35,6 +41,12 @@ const dark = {
   background_active: 'rgba(255, 255, 255, 0.1)',
   text_0: '#FFFFFF',
   text_1: 'rgba(255, 255, 255, 0.45)',
+  success: '#7BD199',
+  success_bg: '#29593A',
+  highlight: '#FF6F00',
+  highlight_bg: '#FFEEE0',
+  neautral: '#1C1C1C',
+  neautral_bg: '#DBDBDB',
   border: 'rgba(255, 255, 255, 0.15)',
   emphasis: '#C6C7F8',
   helper: '#9747FF'

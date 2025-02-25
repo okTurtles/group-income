@@ -1,0 +1,18 @@
+@use "./variables" as *;
+
+$types: "success", "highlight", "neautral";
+
+.pill {
+  border-radius: $radius;
+  padding: 0.125rem 0.25rem;
+  line-height: 1;
+  display: inline-block;
+  font-size: $size_5;
+
+  @each $type in $types {
+    &.is-#{$type} {
+      color: var(--#{$type});
+      background-color: var(--#{$type}_bg);
+    }
+  }
+}
