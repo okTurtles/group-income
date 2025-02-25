@@ -188,9 +188,12 @@ export function humanDate (
   options?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
 ): string {
   const dateObj = new Date(date)
+  // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+  const locale = getLocale()
 
   // Avoid returning 'Invalid Date'
-  if (!isNaN(dateObj.valueOf())) return dateObj.toLocaleDateString(getLocale(), options)
+  if (!isNaN(dateObj.valueOf())) return dateObj.toLocaleDateString(locale, options)
   return ''
 }
 
@@ -199,10 +202,7 @@ export function humanTimeString (
   options?: any = { hour: '2-digit', minute: '2-digit' }
 ): string {
   const dateObj = new Date(date)
-  return dateObj.toLocaleTimeString(
-    'en-US', // getLocale(),
-    options
-  )
+  return dateObj.toLocaleTimeString(getLocale(), options)
 }
 
 export function isPeriodStamp (arg: string): boolean {
