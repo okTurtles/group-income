@@ -32,7 +32,8 @@ const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
 
 const saveSubscription = (server, subscriptionId) => {
   return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
-    subscription: server.pushSubscriptions[subscriptionId],
+    settings: server.pushSubscriptions[subscriptionId].settings,
+    subscriptionInfo: server.pushSubscriptions[subscriptionId],
     channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
   })).catch(e => {
     console.error(e, 'Error saving subscription', subscriptionId)
@@ -76,8 +77,9 @@ const removeSubscription = async (subscriptionId) => {
   }
 }
 
-// Wrap a SubscriptionInfo object to include a subscription ID and encryption keys
-export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, channelIDs: ?string[]): Object => {
+// Wrap a SubscriptionInfo object to include a subscription ID and encryption
+// keys
+export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, extra: { channelIDs?: string[], settings?: Object }): Object => {
   subscriptionInfo.endpoint = new URL(subscriptionInfo.endpoint)
 
   Object.defineProperties(subscriptionInfo, {
@@ -126,11 +128,14 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
         }
       })()
     },
+    'settings': {
+      value: extra.settings || {}
+    },
     'sockets': {
       value: new Set()
     },
     'subscriptions': {
-      value: new Set(channelIDs)
+      value: new Set(extra.channelIDs)
     }
   })
 
@@ -222,18 +227,18 @@ export const pushServerActionhandlers: any = {
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
     const { server } = socket
-    const subscription = payload
+    const { settings, subscriptionInfo } = payload
     let subscriptionId = null
     let host = ''
     let subscriptionWrapper = null
     try {
-      subscriptionId = await getSubscriptionId(subscription)
+      subscriptionId = await getSubscriptionId(subscriptionInfo)
       subscriptionWrapper = server.pushSubscriptions[subscriptionId]
 
       if (!subscriptionWrapper) {
-        console.debug(`saving new push subscription '${subscriptionId}':`, subscription)
+        console.debug(`saving new push subscription '${subscriptionId}':`, subscriptionInfo)
         // If this is a new subscription, we call `subscriptionInfoWrapper` and store it in memory.
-        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo, { settings })
         subscriptionWrapper = server.pushSubscriptions[subscriptionId]
         host = subscriptionWrapper.endpoint.host
         await addSubscriptionToIndex(subscriptionId)
