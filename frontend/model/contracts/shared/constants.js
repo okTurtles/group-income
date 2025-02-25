@@ -59,6 +59,49 @@ export const STREAK_MISSED_PAYMENTS = 1
 export const STREAK_MISSED_PROPSAL_VOTE = 2
 export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
+// group-permissions related
+
+export const GROUP_ROLES = {
+  ADMIN: 'admin',
+  MODERATOR: 'moderator',
+  MODERATOR_DELEGATOR: 'moderator-delegator',
+  CUSTOM: 'custom'
+}
+
+export const GROUP_PERMISSIONS = {
+  VIEW_PERMISSIONS: 'view-permissions',
+  ASSIGN_DELEGATOR: 'assign-delegator',
+  DELEGATE_PERMISSIONS: 'delegate-permissions', // add/edit/remove permissions
+  REMOVE_MEMBER: 'remove-member',
+  REVOKE_INVITE: 'revoke-invite',
+  DELETE_CHANNEL: 'delete-channel'
+}
+const GP = GROUP_PERMISSIONS
+
+export const GROUP_PERMISSIONS_PRESET = {
+  ADMIN: [
+    GP.VIEW_PERMISSIONS,
+    GP.ASSIGN_DELEGATOR,
+    GP.DELEGATE_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
+  ],
+  MODERATOR_DELEGATOR: [
+    GP.VIEW_PERMISSIONS,
+    GP.DELEGATE_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
+  ],
+  MODERATOR: [
+    GP.VIEW_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
+  ]
+}
+
 // chatroom.js related
 
 export const CHATROOM_GENERAL_NAME = 'general' // Chatroom name must be lowercase-only.

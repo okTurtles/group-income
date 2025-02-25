@@ -11,9 +11,11 @@
     span(v-safe-html='pinLabel')
 
   .c-message-wrapper
-    slot(name='image')
-      profile-card(:contractID='from' direction='top-left')
-        avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
+    .c-sender-or-date
+      .c-time-stamp(v-if='isSameSender') {{ getTimeStamp(datetime) }}
+      slot(v-else name='image')
+        profile-card(:contractID='from' direction='top-left')
+          avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
     .c-body
       slot(name='header')
@@ -116,7 +118,7 @@ import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
@@ -235,6 +237,12 @@ export default ({
       } else if (!this.isEditing) {
         this.openMenu()
       }
+    },
+    getTimeStamp (datetime) {
+      const tString = humanTimeString(datetime, { hour: '2-digit', minute: '2-digit', hour12: true })
+      // Extract only numbers and colons, removing non-numeric characters like AM/PM
+      const cleaned = tString.replace(/[^\d:]/g, '')
+      return cleaned
     }
   }
 }: Object)
@@ -292,6 +300,10 @@ export default ({
       ::v-deep .c-actions {
         display: flex;
       }
+
+      .c-time-stamp {
+        opacity: 1;
+      }
     }
   }
 
@@ -332,6 +344,20 @@ export default ({
   align-items: flex-start;
   gap: 0.5rem;
   max-width: 100%;
+}
+
+.c-time-stamp {
+  position: relative;
+  display: block;
+  color: $text_1;
+  font-size: $size_5;
+  text-align: right;
+  width: 2.5rem;
+  padding: 0.2rem 0.2rem 0 0;
+  line-height: 1.5;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
 }
 
 .c-avatar {
