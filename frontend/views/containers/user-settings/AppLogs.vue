@@ -156,7 +156,7 @@ export default ({
       try {
         swVersion = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
       } catch (e) {
-        console.error('TroubleShooting.vue caught: ', e)
+        console.error('AppLogs.vue caught:', e)
       } finally {
         this.ephemeral.versionInfos = {
           loading: false,
