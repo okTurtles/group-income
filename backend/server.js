@@ -42,7 +42,7 @@ const { CONTRACTS_VERSION, GI_VERSION } = process.env
 const hapi = new Hapi.Server({
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
-  debug: { log: ['error'], request: ['error'] },
+  // debug: { log: ['error'], request: ['error'] },
   port: process.env.API_PORT,
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
   routes: {
@@ -272,7 +272,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
           await handler.call(socket, payload)
         } catch (error) {
           const message = error?.message || `push server failed to perform [${action}] action`
-          console.warn(`Handler '${REQUEST_TYPE.PUSH_ACTION}' failed: ${message}`)
+          console.warn(error, `[${socket.ip}] Action '${action}' for '${REQUEST_TYPE.PUSH_ACTION}' handler failed: ${message}`)
           socket.send(createPushErrorResponse({ actionType: action, message }))
         }
       } else {
@@ -351,7 +351,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     await Promise.all(savedWebPushIndex.split('\x00').map(async (subscriptionId) => {
       const subscriptionSerialized = await sbp('chelonia.db/get', `_private_webpush_${subscriptionId}`)
       if (!subscriptionSerialized) {
-        console.warn(`[server] missing state for subscriptionId ${subscriptionId} - skipping setup for this subscription`)
+        console.warn(`[server] missing state for subscriptionId '${subscriptionId}' - skipping setup for this subscription`)
+        // TODO: implement removing the missing subscriptionId from the index
         return
       }
       const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)

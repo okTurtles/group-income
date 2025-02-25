@@ -8,6 +8,7 @@
 export const LOGIN = 'login'
 export const LOGIN_ERROR = 'login-error'
 export const LOGIN_COMPLETE = 'login-complete'
+export const LOGGING_OUT = 'logging-out'
 export const LOGOUT = 'logout'
 
 export const ONLINE = 'online'

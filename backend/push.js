@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
+import { getSubscriptionId } from '~/shared/functions.js'
 
 // const pushController = require('web-push')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
@@ -35,72 +36,47 @@ const saveSubscription = (server, subscriptionId) => {
     channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
   })).catch(e => {
     console.error(e, 'Error saving subscription', subscriptionId)
+    throw e // rethrow
   })
 }
 
 export const addChannelToSubscription = (server: Object, subscriptionId: string, channelID: string): void => {
   server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
-  saveSubscription(server, subscriptionId)
+  return saveSubscription(server, subscriptionId)
 }
 
 export const deleteChannelFromSubscription = (server: Object, subscriptionId: string, channelID: string): void => {
   server.pushSubscriptions[subscriptionId].subscriptions.delete(channelID)
-  saveSubscription(server, subscriptionId)
+  return saveSubscription(server, subscriptionId)
 }
 
-// Generate an UUID from a `PushSubscription'
-export const getSubscriptionId = async (subscriptionInfo: Object): Promise<string> => {
-  const textEncoder = new TextEncoder()
-  // <https://w3c.github.io/push-api/#pushsubscription-interface>
-  const endpoint = textEncoder.encode(subscriptionInfo.endpoint)
-  // <https://w3c.github.io/push-api/#pushencryptionkeyname-enumeration>
-  const p256dh = textEncoder.encode(subscriptionInfo.keys.p256dh)
-  const auth = textEncoder.encode(subscriptionInfo.keys.auth)
-
-  const canonicalForm = new ArrayBuffer(
-    8 +
-      (4 + endpoint.byteLength) + (2 + p256dh.byteLength) +
-      (2 + auth.byteLength)
-  )
-  const canonicalFormU8 = new Uint8Array(canonicalForm)
-  const canonicalFormDV = new DataView(canonicalForm)
-  let offset = 0
-  canonicalFormDV.setFloat64(
-    offset,
-    subscriptionInfo.expirationTime == null
-      ? NaN
-      : subscriptionInfo.expirationTime,
-    false
-  )
-  offset += 8
-  canonicalFormDV.setUint32(offset, endpoint.byteLength, false)
-  offset += 4
-  canonicalFormU8.set(endpoint, offset)
-  offset += endpoint.byteLength
-  canonicalFormDV.setUint16(offset, p256dh.byteLength, false)
-  offset += 2
-  canonicalFormU8.set(p256dh, offset)
-  offset += p256dh.byteLength
-  canonicalFormDV.setUint16(offset, auth.byteLength, false)
-  offset += 2
-  canonicalFormU8.set(auth, offset)
-
-  const digest = await crypto.subtle.digest('SHA-384', canonicalForm)
-  const id = Buffer.from(digest.slice(0, 16))
-  id[6] = 0x80 | (id[6] & 0x0F)
-  id[8] = 0x80 | (id[8] & 0x3F)
-
-  return [
-    id.slice(0, 4),
-    id.slice(4, 6),
-    id.slice(6, 8),
-    id.slice(8, 10),
-    id.slice(10, 16)
-  ].map((p) => p.toString('hex')).join('-')
+const removeSubscription = async (subscriptionId) => {
+  try {
+    const server = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const subscription = server.pushSubscriptions[subscriptionId]
+    if (subscription) {
+      delete server.pushSubscriptions[subscriptionId]
+      if (server.subscribersByChannelID) {
+        subscription.subscriptions.forEach((channelID) => {
+          server.subscribersByChannelID[channelID]?.delete(subscription)
+        })
+      }
+    } else {
+      // this can happen for example when a new subscription is added but then
+      // immediately removed because postEvent got a 401 Unauthorized when adding
+      // the new subscription. In this case removeSubscription could be later called
+      // again by the client but it's already been removed
+      console.warn(`removeSubscription: non-existent subscription '${subscriptionId}'`)
+    }
+    await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
+    await deleteSubscriptionFromIndex(subscriptionId)
+  } catch (e) {
+    console.error(e, 'Error removing subscription', subscriptionId)
+    // swallow error
+  }
 }
 
-// Wrap a SubscriptionInfo object to include a subscription ID and encryption
-// keys
+// Wrap a SubscriptionInfo object to include a subscription ID and encryption keys
 export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, channelIDs: ?string[]): Object => {
   subscriptionInfo.endpoint = new URL(subscriptionInfo.endpoint)
 
@@ -163,27 +139,6 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
   return subscriptionInfo
 }
 
-const removeSubscription = async (server, subscriptionId) => {
-  try {
-    const subscription = server.pushSubscriptions[subscriptionId]
-    delete server.pushSubscriptions[subscriptionId]
-    if (server.subscribersByChannelID) {
-      subscription.subscriptions.forEach((channelID) => {
-        server.subscribersByChannelID[channelID].delete(subscription)
-      })
-    }
-    await deleteSubscriptionFromIndex(subscriptionId)
-    await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
-  } catch (e) {
-    console.error(e, 'Error removing subscription', subscriptionId)
-  }
-}
-
-const deleteClient = (subscriptionId) => {
-  const server = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-  return removeSubscription(server, subscriptionId)
-}
-
 // Web push subscriptions (that contain a body) are mandatorily encrypted. The
 // encryption method and keys used are described by RFC 8188 and RFC 8291.
 // The encryption keys used are derived from a EC key pair (browser-generated),
@@ -219,6 +174,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   // Note: web push notifications can be 'bodyless' or they can contain a body
   // If there's no body, there isn't anything to encrypt, so we skip both the
   // encryption and the encryption headers.
+  // console.debug(`postEvent to ${subscription.id}:`, event)
   const body = event
     ? await encryptPayload(subscription, event)
     : undefined
@@ -242,21 +198,19 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   })
 
   if (!req.ok) {
-    console.warn('Error sending push notification', subscription.id, req.status)
+    const endpointHost = new URL(subscription.endpoint).host
+    console.warn(`Error ${req.status} sending push notification to '${subscription.id}' via ${endpointHost}`)
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
-      console.warn(
-        new Date().toISOString(),
-        'Removing subscription',
-        subscription.id
-      )
-      deleteClient(subscription.id)
-      return
+      console.warn(new Date().toISOString(), 'Removing subscription', subscription.id)
+      removeSubscription(subscription.id)
+      throw new Error(`Error sending push: ${req.status}`)
     }
     if (req.status === 413) {
       throw new Error('Payload too large')
     }
+    // ignore other errors as they might be temporary server configuration errors
   }
 }
 
@@ -269,88 +223,95 @@ export const pushServerActionhandlers: any = {
     const socket = this
     const { server } = socket
     const subscription = payload
-    const subscriptionId = await getSubscriptionId(subscription)
+    let subscriptionId = null
+    let host = ''
+    let subscriptionWrapper = null
+    try {
+      subscriptionId = await getSubscriptionId(subscription)
+      subscriptionWrapper = server.pushSubscriptions[subscriptionId]
 
-    if (!server.pushSubscriptions[subscriptionId]) {
-      console.debug(`saving new push subscription '${subscriptionId}':`, subscription)
-      // If this is a new subscription, we call `subscriptionInfoWrapper` and
-      // store it in memory.
-      server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
-      addSubscriptionToIndex(subscriptionId).then(() => {
-        return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({ subscription: subscription, channelIDs: [] }))
-          .catch(async e => {
-            console.error(e, 'removing subscription from index because of error saving subscription', subscriptionId)
-            await deleteSubscriptionFromIndex(subscriptionId)
-            throw e
+      if (!subscriptionWrapper) {
+        console.debug(`saving new push subscription '${subscriptionId}':`, subscription)
+        // If this is a new subscription, we call `subscriptionInfoWrapper` and store it in memory.
+        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+        subscriptionWrapper = server.pushSubscriptions[subscriptionId]
+        host = subscriptionWrapper.endpoint.host
+        await addSubscriptionToIndex(subscriptionId)
+        await saveSubscription(server, subscriptionId)
+        // Send an initial push notification to verify that the endpoint works
+        // This is mostly for testing to be able to auto-remove invalid or expired
+        // endpoints. This doesn't need more error handling than any other failed
+        // call to `postEvent`.
+        await postEvent(subscriptionWrapper, JSON.stringify({ type: 'initial' }))
+      } else {
+        // Otherwise, if this is an _existing_ push subscription, we don't need
+        // to call `subscriptionInfoWrapper` but we need to stop sending messages
+        // over the push subscription (since we now have a WS to use, the one
+        // over which the message came).
+        // We expect `server.pushSubscriptions[subscriptionId].sockets.size` to
+        // be `0` when the WS connection has been closed and has since reconnected
+        // If it's not 0, we've already run this code at least once and we don't
+        // need to run it again.
+        host = subscriptionWrapper.endpoint.host // seems like a DRY violation but is actually necessary
+        if (subscriptionWrapper.sockets.size === 0) {
+          subscriptionWrapper.subscriptions.forEach((channelID) => {
+            if (!server.subscribersByChannelID[channelID]) return
+            server.subscribersByChannelID[channelID].delete(subscriptionWrapper)
           })
-      }).catch((e) => console.error(e, 'Error saving subscription', subscriptionId))
-      // Send an initial push notification to verify that the endpoint works
-      // This is mostly for testing to be able to auto-remove invalid or expired
-      // endpoints. This doesn't need more error handling than any other failed
-      // call to `postEvent`.
-      postEvent(server.pushSubscriptions[subscriptionId], JSON.stringify({ type: 'initial' })).catch(e => console.warn(e, 'Error sending initial push notification'))
-    } else {
-      // Otherwise, if this is an _existing_ push subscription, we don't need
-      // to call `subscriptionInfoWrapper` but we need to stop sending messages
-      // over the push subscription (since we now have a WS to use, the one
-      // over which the message came).
-      // We expect `server.pushSubscriptions[subscriptionId].sockets.size` to
-      // be `0` when the WS connection has been closed and has since reconnected
-      // If it's not 0, we've already run this code at least once and we don't
-      // need to run it again.
-      if (server.pushSubscriptions[subscriptionId].sockets.size === 0) {
-        server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
-          if (!server.subscribersByChannelID[channelID]) return
-          server.subscribersByChannelID[channelID].delete(server.pushSubscriptions[subscriptionId])
-        })
+        }
       }
-    }
-    // If the WS has an associated push subscription that's different from the
-    // one we've received, we need to 'switch' the WS to be associated  with the
-    // new push subscription instead.
-    if (socket.pushSubscriptionId) {
-      if (socket.pushSubscriptionId === subscriptionId) return
-      // Since the subscription has been updated, remove the old one on the
-      // assumption that it's no longer valid
-      removeSubscription(server, subscriptionId)
-      /*
-      // The code below is an alternative to removing the subscription, which is
-      // safer but can result in accumulating old subscriptions forever. What it
-      // does is treat it as a closed WS, meaning that the current WS will be
-      // associated with the subscription info we've just received, but we'll
-      // start sending messages to the old subscription as if it had been closed.
-      const oldSubscriptionId = socket.pushSubscriptionId
-      server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
-      if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
-        server.pushSubscriptions[oldSubscriptionId].subscriptions.forEach((channelID) => {
-          if (!server.subscribersByChannelID[channelID]) {
-            server.subscribersByChannelID[channelID] = new Set()
-          }
-          server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
-        })
+      // If the WS has an associated push subscription that's different from the
+      // one we've received, we need to 'switch' the WS to be associated  with the
+      // new push subscription instead.
+      if (socket.pushSubscriptionId) {
+        if (socket.pushSubscriptionId === subscriptionId) return
+        // Since the subscription has been updated, remove the old one on the
+        // assumption that it's no longer valid
+        await removeSubscription(socket.pushSubscriptionId)
+        /*
+        // The code below is an alternative to removing the subscription, which is
+        // safer but can result in accumulating old subscriptions forever. What it
+        // does is treat it as a closed WS, meaning that the current WS will be
+        // associated with the subscription info we've just received, but we'll
+        // start sending messages to the old subscription as if it had been closed.
+        const oldSubscriptionId = socket.pushSubscriptionId
+        server.pushSubscriptions[oldSubscriptionId].sockets.delete(socket)
+        if (server.pushSubscriptions[oldSubscriptionId].sockets.size === 0) {
+          server.pushSubscriptions[oldSubscriptionId].subscriptions.forEach((channelID) => {
+            if (!server.subscribersByChannelID[channelID]) {
+              server.subscribersByChannelID[channelID] = new Set()
+            }
+            server.subscribersByChannelID[channelID].add(server.pushSubscriptions[oldSubscriptionId])
+          })
+        }
+        */
       }
-      */
+      // Now, we're almost done setting things up. We'll link together the push
+      // subscription and the WS and add all existing channel subscriptions to the
+      // web push subscription (so that we can easily switch over if / when the
+      // WS is closed, see the `close` () function in socketHandlers in server.js)
+      socket.pushSubscriptionId = subscriptionId
+      subscriptionWrapper.subscriptions.forEach((channelID) => {
+        server.subscribersByChannelID[channelID]?.delete(subscriptionWrapper)
+      })
+      subscriptionWrapper.sockets.add(socket)
+      socket.subscriptions?.forEach(channelID => {
+        // $FlowFixMe[incompatible-use]
+        subscriptionWrapper.subscriptions.add(channelID)
+      })
+      await saveSubscription(server, subscriptionId)
+    } catch (e) {
+      console.error(e, `[${socket.ip}] Failed to store subscription '${subscriptionId || '??'}' (${host}), removing it!`)
+      subscriptionId && removeSubscription(subscriptionId)
+      throw e // rethrow
     }
-    // Now, we're almost done setting things up. We'll link together the push
-    // subscription and the WS and add all existing channel subscriptions to the
-    // web push subscription (so that we can easily switch over if / when the
-    // WS is closed, see the `close` () function in socketHandlers in server.js)
-    socket.pushSubscriptionId = subscriptionId
-    server.pushSubscriptions[subscriptionId].subscriptions.forEach((channelID) => {
-      server.subscribersByChannelID?.[channelID].delete(server.pushSubscriptions[subscriptionId])
-    })
-    server.pushSubscriptions[subscriptionId].sockets.add(socket)
-    socket.subscriptions?.forEach(channelID => {
-      server.pushSubscriptions[subscriptionId].subscriptions.add(channelID)
-    })
-    saveSubscription(server, subscriptionId)
   },
   [PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION] () {
     const socket = this
-    const { server, pushSubscriptionId: subscriptionId } = socket
+    const { pushSubscriptionId: subscriptionId } = socket
 
     if (subscriptionId) {
-      removeSubscription(server, subscriptionId)
+      return removeSubscription(subscriptionId)
     }
   }
 }

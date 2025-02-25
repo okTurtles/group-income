@@ -1,61 +1,68 @@
 <template lang='pug'>
   .settings-container
     section.card
-      .c-header
-        p.c-instructions
-          i18n(
-            v-if='errorMsg'
-            :args='{ a_: issuePageTag, _a: "</a>", errorMsg }'
-          ) Recent error: "{errorMsg}". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.
-          i18n(
-            v-else
-            :args='{ a_: issuePageTag, _a: "</a>" }'
-          ) If you encounter problems, please download the logs and {a_}send them to us{_a}.
+      .c-loader-container(v-if='ephemeral.versionInfos.loading')
+        .loading-box
+        .loading-box
+        .loading-box
+        .loading-box
 
-        fieldset.c-filters
-          .c-filters-inner
-            legend.c-filters-legend Optional logs:
-            label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
-              i18n Debug
-            label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
-              i18n Info
-            label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
-              i18n Log
+      template(v-else)
+        .c-header
+          p.c-instructions
+            i18n(
+              v-if='errorMsg'
+              :args='{ a_: issuePageTag, _a: "</a>", errorMsg }'
+            ) Recent error: "{errorMsg}". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.
+            i18n(
+              v-else
+              :args='{ a_: issuePageTag, _a: "</a>" }'
+            ) If you encounter problems, please download the logs and {a_}send them to us{_a}.
 
-        fieldset.c-source(:aria-label='L("Source:")')
-          .c-source-inner
-            label.c-label
-              i18n.c-source-legend Log source:
-              .selectbox
-                select.select(v-model='form.source')
-                  option(value='combined')
-                    i18n Combined
-                  option(value='browser')
-                    i18n Browser
-                  option(value='serviceworker')
-                    i18n Service worker
+          fieldset.c-filters
+            .c-filters-inner
+              legend.c-filters-legend Optional logs:
+              label.checkbox
+                input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
+                i18n Debug
+              label.checkbox
+                input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
+                i18n Info
+              label.checkbox
+                input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
+                i18n Log
 
-        button-submit.is-small.c-download(@click='downloadOrShareLogs')
-          template(v-if='ephemeral.useWebShare')
-            i.icon-share-alt.is-prefix
-            i18n Share
-          template(v-else)
-            i.icon-download.is-prefix
-            i18n Download
+          fieldset.c-source(:aria-label='L("Source:")')
+            .c-source-inner
+              label.c-label
+                i18n.c-source-legend Log source:
+                .selectbox
+                  select.select(v-model='form.source')
+                    option(value='combined')
+                      i18n Combined
+                    option(value='browser')
+                      i18n Browser
+                    option(value='serviceworker')
+                      i18n Service worker
 
-        a(ref='linkDownload' hidden)
+          button-submit.is-small.c-download(@click='downloadOrShareLogs')
+            template(v-if='ephemeral.useWebShare')
+              i.icon-share-alt.is-prefix
+              i18n Share
+            template(v-else)
+              i.icon-download.is-prefix
+              i18n Download
 
-      banner-scoped.c-err-banner(ref='errBanner')
+          a(ref='linkDownload' hidden)
 
-      textarea.textarea.c-logs(ref='textarea' rows='12' v-if='ephemeral.ready' readonly)
-        | {{ prettyLogs }}
-      div(v-else)
-        i18n Loading
+        banner-scoped.c-err-banner(ref='errBanner')
 
-      i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
+        textarea.textarea.c-logs(ref='textarea' rows='12' v-if='ephemeral.ready' readonly)
+          | {{ prettyLogs }}
+        div(v-else)
+          i18n Loading
+
+        i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
 
 </template>
 
@@ -66,6 +73,7 @@ import { CAPTURED_LOGS } from '@utils/events.js'
 import { MAX_LOG_ENTRIES } from '@utils/constants.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
 import { L, LError } from '@common/common.js'
+import { omit } from '@model/contracts/shared/giLodash.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
@@ -84,13 +92,20 @@ export default ({
       ephemeral: {
         ready: false,
         logs: [],
-        useWebShare: false
+        useWebShare: false,
+        versionInfos: {
+          loading: true,
+          app_version: '',
+          contracts_version: '',
+          service_worker_version: ''
+        }
       }
     }
   },
   created () {
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
     this.getLogs()
+    this.loadVersionInfo()
   },
   mounted () {
     window.addEventListener('resize', this.checkWebShareAvailable)
@@ -135,6 +150,22 @@ export default ({
     ...mapMutations([
       'setAppLogsFilter'
     ]),
+    async loadVersionInfo () {
+      let swVersion = ''
+
+      try {
+        swVersion = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+      } catch (e) {
+        console.error('AppLogs.vue caught:', e)
+      } finally {
+        this.ephemeral.versionInfos = {
+          loading: false,
+          app_version: process.env.GI_VERSION.split('@')[0],
+          contracts_version: process.env.CONTRACTS_VERSION,
+          service_worker_version: swVersion
+        }
+      }
+    },
     addLog (entry: Object) {
       if (entry) {
         if (this.form.source === 'browser' && entry.source !== 'browser') return
@@ -172,6 +203,7 @@ export default ({
         // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
+          version_info: omit(this.ephemeral.versionInfos, ['loading']),
           logs: this.ephemeral.logs
         }, undefined, 2)], { type: mimeType })
 
@@ -268,6 +300,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .settings-container {
+  width: 100%;
+
   @include desktop {
     padding-top: 1.5rem;
   }
@@ -331,6 +365,31 @@ export default ({
 
   ::v-deep .c-banner {
     margin-top: 0;
+  }
+}
+
+.c-loader-container {
+  position: relative;
+  width: 100%;
+
+  .loading-box {
+    display: block;
+    width: 100%;
+    min-height: unset;
+
+    &:first-child {
+      height: 1.25rem;
+      max-width: 20rem;
+    }
+
+    &:nth-child(2),
+    &:nth-child(3) {
+      height: 1.25rem;
+    }
+
+    &:nth-child(2) { max-width: 31.25rem; }
+
+    &:last-child { height: 16.25rem; }
   }
 }
 </style>

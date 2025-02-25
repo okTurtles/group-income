@@ -13,6 +13,11 @@ import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js
 import type { GIActionParams } from '../actions/types.js'
 
 sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ identityContractID, groupContractID }) => {
+  if (process.env.CI) {
+    // Force a Cypress error
+    console.error('Error ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST', { identityContractID, groupContractID })
+    Promise.reject(new Error('ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST'))
+  }
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return
   if (!rootState[groupContractID]) return
@@ -33,6 +38,11 @@ sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ ident
 })
 
 sbp('okTurtles.events/on', ERROR_JOINING_CHATROOM, ({ identityContractID, groupContractID, chatRoomID }) => {
+  if (process.env.CI) {
+    // Force a Cypress error
+    console.error('Error ERROR_JOINING_CHATROOM', { identityContractID, groupContractID, chatRoomID })
+    Promise.reject(new Error('ERROR_JOINING_CHATROOM'))
+  }
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return
   if (!rootState[groupContractID]) return

@@ -151,7 +151,7 @@
 "Error setting up push notifications" = "Error setting up push notifications";
 
 /* MISSING TRANSLATION - controller/service-worker.js */
-"Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again." = "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try toggling the push notifications toggle in the Notifications settings in the app to try again.";
+"Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings." = "Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.";
 
 /* MISSING TRANSLATION - controller/serviceworkers/push.js */
 "Chatroom activity" = "Chatroom activity";
@@ -1333,7 +1333,13 @@
 "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Once set, the notification permission can only be adjusted by the browser in the browser settings." = "Once set, the notification permission can only be adjusted by the browser in the browser settings.";
+"Push notifications are disabled because your browser settings have disabled them." = "Push notifications are disabled because your browser settings have disabled them.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"There was a problem requesting notifications permission" = "There was a problem requesting notifications permission";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Try granting notifications permissions in your browser settings first" = "Try granting notifications permissions in your browser settings first";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
 "Your browser doesn't support push notifications" = "Your browser doesn't support push notifications";
@@ -3088,9 +3094,6 @@
 "Congratulations" = "Toutes nos félicitations";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
-
-/* views/containers/user-settings/NotificationSettings.vue */
 "You have granted browser notification!" = "Vous avez autorisé la notification du navigateur!";
 
 /* views/containers/user-settings/Troubleshooting.vue */
@@ -3692,6 +3695,9 @@
 
 /* Not currently used */
 "Show payment menu" = "Afficher le menu de paiement";
+
+/* Not currently used */
+"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
 
 /* Not currently used */
 "Status" = "Statut";

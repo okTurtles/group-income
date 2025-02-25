@@ -80,7 +80,6 @@ export default ({
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
-
       try {
         this.$refs.formMsg.clean()
 
@@ -93,8 +92,9 @@ export default ({
         })
         await this.postSubmit()
         this.$emit('login-status', 'success')
-
-        requestNotificationPermission().catch(e => console.error('[SignupForm.vue] Error requesting notification permission', e))
+        // Request notification permissions now (within short time window of user action:
+        // https://github.com/whatwg/notifications/issues/108 )
+        requestNotificationPermission({ enableIfGranted: true })
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

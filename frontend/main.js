@@ -201,11 +201,6 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
-  // Call `setNotificationEnabled` after the service worker setup, because it
-  // calls `service-worker/setup-push-subscription`.
-  if (typeof Notification === 'function') {
-    sbp('state/vuex/commit', 'setNotificationEnabled', Notification.permission === 'granted')
-  }
 
   sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
@@ -233,6 +228,7 @@ async function startApp () {
       }
     },
     mounted () {
+      let oldIdentityContractID = null // lets us know if there's a previously logged in user
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -257,6 +253,8 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+        setupNativeNotificationsListeners()
+
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) {
           console.warn('Received LOGIN_COMPLETE event but there state.loggedIn is not an object')
@@ -268,7 +266,6 @@ async function startApp () {
           this.initOrResetPeriodicNotifications()
           this.checkAndEmitOneTimeNotifications()
         }
-
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
         Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
       })
@@ -301,6 +298,12 @@ async function startApp () {
         this.checkAndEmitOneTimeNotifications()
       })
       sbp('okTurtles.events/on', ONLINE, () => {
+        const state = sbp('state/vuex/state')
+        if (state.loggedIn) {
+          sbp('service-worker/setup-push-subscription').catch(e => {
+            console.error('came back online, tried to report push subscription, but got:', e)
+          })
+        }
         sbp('gi.ui/clearBanner')
       })
       sbp('okTurtles.events/on', OFFLINE, () => {
@@ -353,7 +356,6 @@ async function startApp () {
       // to ensure that we don't override user interactions that have already
       // happened (an example where things can happen this quickly is in the
       // tests).
-      let oldIdentityContractID = null
       ;(async () => {
         try {
           const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
@@ -371,7 +373,6 @@ async function startApp () {
           }
           this.ephemeral.ready = true
           this.removeLoadingAnimation()
-          setupNativeNotificationsListeners()
         } catch (e) {
           this.removeLoadingAnimation()
           oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {

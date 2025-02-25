@@ -527,6 +527,10 @@ p.error {
   &:disabled:not(:checked)::after {
     opacity: 0.6;
   }
+
+  &:disabled {
+    background: $general_0;
+  }
 }
 
 .is-dark-theme {
