@@ -584,21 +584,25 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/private/stopClockSync')
     }
     sbp('chelonia/private/startClockSync')
+    const resyncOnOnline = () => {
+      // Some messages could have been lost between the time the subscription
+      // was requested and it was actually set up. In these cases, force sync
+      // contracts to get them updated.
+      sbp('chelonia/private/out/sync', Array.from(this.subscriptionSet), { force: true }).catch(err => {
+        console.warn(`[chelonia] Syncing contracts failed: ${err.message}`)
+      })
+    }
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       handlers: {
         ...options.handlers,
-        'subscription-succeeded': (event) => {
-          const { channelID } = event.detail
-          if (this.subscriptionSet.has(channelID)) {
-            // For new subscriptions, some messages could have been lost
-            // between the time the subscription was requested and it was
-            // actually set up. In these cases, force sync contracts to get them
-            // updated.
-            sbp('chelonia/private/out/sync', channelID, { force: true }).catch(err => {
-              console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
-            })
-          }
+        online () {
+          resyncOnOnline()
+          options.handlers?.['online']?.()
+        },
+        'reconnection-succeeded' () {
+          resyncOnOnline()
+          options.handlers?.['reconnection-succeeded']?.()
         }
       },
       // Map message handlers to transparently handle encryption and signatures
