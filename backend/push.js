@@ -199,14 +199,8 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
 
   if (!req.ok) {
     const endpointHost = new URL(subscription.endpoint).host
-    console.warn(
-      await req.text().catch(e => `ERR: ${e.message}`).then(text => {
-        try {
-          return (text && JSON.parse(text)) || '(empty response)'
-        } catch {
-          return text
-        }
-      }),
+    console.info(
+      await req.text().then(response => ({ response })).catch(e => `ERR: ${e?.message}`),
       `[${new Date().toISOString().replace('T', ' ').slice(0, 19)}] Error ${req.status} sending push notification to '${subscription.id}' via ${endpointHost}`
     )
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
