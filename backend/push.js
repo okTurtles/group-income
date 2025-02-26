@@ -200,7 +200,7 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
   if (!req.ok) {
     const endpointHost = new URL(subscription.endpoint).host
     console.warn(
-      await req.text().then(text => {
+      await req.text().catch(e => `ERR: ${e.message}`).then(text => {
         try {
           return (text && JSON.parse(text)) || '(empty response)'
         } catch {
