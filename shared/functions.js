@@ -7,7 +7,15 @@ import { blake2b256 } from '~/shared/multiformats/blake2b.js'
 import { CID } from '~/shared/multiformats/cid.js'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
-const multicodes = { JSON: 0x0200, RAW: 0x00 }
+export const multicodes: { [x: string]: number } = {
+  RAW: 0x00,
+  JSON: 0x0200,
+  SHELTER_CONTRACT_MANIFEST: 0x511e00,
+  SHELTER_CONTRACT_TEXT: 0x511e01,
+  SHELTER_CONTRACT_DATA: 0x511e02,
+  SHELTER_FILE_MANIFEST: 0x511e03,
+  SHELTER_FILE_CHUNK: 0x511e04
+}
 
 // Makes the `Buffer` global available in the browser if needed.
 // $FlowFixMe[cannot-resolve-name]

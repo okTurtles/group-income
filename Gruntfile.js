@@ -261,11 +261,11 @@ module.exports = (grunt) => {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle'
     ]),
-    // format: 'esm',
+    // Format must be 'iife' because we don't want 'import' in the output
     format: 'iife',
-    // banner: {
+    banner: {
     //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
+    },
     splitting: false,
     outdir: distContracts,
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],

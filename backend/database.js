@@ -8,6 +8,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
+import { CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX } from '~/shared/domains/chelonia/utils.js'
 import LRU from 'lru-cache'
 import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
@@ -109,9 +110,9 @@ sbp('sbp/selectors/register', {
     await sbp('chelonia.db/set', namespaceKey(name), value)
     return { name, value }
   },
-  'backend/db/lookupName': async function (name: string): Promise<string | Error> {
+  'backend/db/lookupName': async function (name: string): Promise<string> {
     const value = await sbp('chelonia.db/get', namespaceKey(name))
-    return value || Boom.notFound()
+    return value
   }
 })
 
@@ -173,9 +174,8 @@ export default async () => {
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
-    const HASH_LENGTH = 52
-    const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
-    const CONTRACT_SOURCE_MAGIC = '"use strict";'
+    const HASH_LENGTH = 56
+
     // Preload contract source files and contract manifests into Chelonia DB.
     // Note: the data folder may contain other files if the `fs` persistence mode
     // has been used before. We won't load them here; that's the job of `chel migrate`.
@@ -184,7 +184,10 @@ export default async () => {
     // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
-      .filter(k => k.length === HASH_LENGTH)
+      .filter(k =>
+        k.length === HASH_LENGTH &&
+        (CONTRACT_MANIFEST_REGEX.test(k) || CONTRACT_SOURCE_REGEX.test(k))
+      )
     const numKeys = keys.length
     let numVisitedKeys = 0
     let numNewKeys = 0
@@ -196,7 +199,10 @@ export default async () => {
       if (!persistence || !await sbp('chelonia.db/get', key)) {
         const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
-        if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
+        if (
+          CONTRACT_MANIFEST_REGEX.test(key) ||
+          CONTRACT_SOURCE_REGEX.test(key)
+        ) {
           await sbp('chelonia.db/set', key, value)
           numNewKeys++
         }
