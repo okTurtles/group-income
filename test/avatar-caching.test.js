@@ -114,18 +114,20 @@ describe('avatar file serving', function () {
     assert.match(headers.get('cache-control'), /immutable/)
     assert.doesNotMatch(headers.get('cache-control'), /no-cache/)
     assert.equal(headers.get('content-length'), '183')
-    assert.equal(headers.get('content-type'), 'application/octet-stream')
+    assert.equal(headers.get('content-type'), 'application/vnd.shelter.filemanifest+json')
     assert.equal(headers.get('etag'), `"${manifestCid}"`)
     // Not checking for a `last-modified` header.
+    assert.equal(headers.get('x-content-type-options'), 'nosniff')
     assert.equal(headers.get('x-frame-options'), 'deny')
 
     const { headers: cHeaders } = await fetch(`${apiURL}/file/${chunkCid}`)
     assert.match(cHeaders.get('cache-control'), /immutable/)
     assert.doesNotMatch(cHeaders.get('cache-control'), /no-cache/)
     assert.equal(cHeaders.get('content-length'), '113')
-    assert.equal(cHeaders.get('content-type'), 'application/octet-stream')
+    assert.equal(cHeaders.get('content-type'), 'application/vnd.shelter.filechunk+octet-stream')
     assert.equal(cHeaders.get('etag'), `"${chunkCid}"`)
     // Not checking for a `last-modified` header.
+    assert.equal(cHeaders.get('x-content-type-options'), 'nosniff')
     assert.equal(cHeaders.get('x-frame-options'), 'deny')
   })
 })

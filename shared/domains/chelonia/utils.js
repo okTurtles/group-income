@@ -852,5 +852,5 @@ export const collectEventStream = async (s: ReadableStream): Promise<any[]> => {
 export const CONTRACT_MANIFEST_REGEX: RegExp = /^zL7mM9d4Xb4T[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
 export const CONTRACT_SOURCE_REGEX: RegExp = /^zLAeVmpcc88g[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
 export const CONTRACT_DATA_REGEX: RegExp = /^zLDXeQ2AgfCu[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
-export const FILE_MANIFEST_REGEX: RegExp = /^zLGQo2DimCH8{44}$/
-export const FILE_CHUNK_REGEX: RegExp = /^zLKHweRGqjMM{44}$/
+export const FILE_MANIFEST_REGEX: RegExp = /^zLGQo2DimCH8[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
+export const FILE_CHUNK_REGEX: RegExp = /^zLKHweRGqjMM[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/

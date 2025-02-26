@@ -288,11 +288,6 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
     }
-    // We add `for(;;)"use shelter";` as a banner to the source to make type
-    // detection easier and to prevent accidental execution
-    const activeSource = /^("use strict";(\r\n|\r|\n))?for\(;;\)"use shelter";/.test(source.slice(0, 36))
-      ? source.replace('for(;;)"use shelter";', '')
-      : source
     // const saferEval: Function = new FERAL_FUNCTION(`
     // eslint-disable-next-line no-new-func
     const saferEval: Function = new Function(`
@@ -309,7 +304,7 @@ export default (sbp('sbp/selectors/register', {
         })) {
           (function () {
             'use strict'
-            ${activeSource}
+            ${source}
           })()
         }
       }

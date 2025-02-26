@@ -264,9 +264,6 @@ module.exports = (grunt) => {
     // Format must be 'iife' because we don't want 'import' in the output
     format: 'iife',
     banner: {
-      // This banner makes contracts easy to detect and harmless in the event
-      // of accidental execution
-      js: 'for(;;)"use shelter";'
     //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
     },
     splitting: false,
