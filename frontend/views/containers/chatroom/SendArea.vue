@@ -70,7 +70,7 @@
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
       @keyup='handleKeyup'
-      @input='config.debounceHandleInput'
+      @input='config.debouncedHandleInput'
       @paste='handlePaste'
       v-bind='$attrs'
     )
@@ -359,7 +359,7 @@ export default ({
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
-        debounceHandleInput: debounce(this.updateTextArea, 250) // NOTE: This is a fix for the issue #2369 and #2577
+        debouncedHandleInput: debounce(this.updateTextArea, 250) // NOTE: This is a fix for the issue #2369 and #2577
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
