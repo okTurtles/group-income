@@ -620,7 +620,7 @@ export default ({
       return true
     },
     updateTextArea () {
-      if (!this.updateTextWithLines()) {
+      if (!this.$refs.textarea || !this.updateTextWithLines()) {
         // dont calculate again when the value is the same (ex: happens on shift+enter)
         return false
       }
