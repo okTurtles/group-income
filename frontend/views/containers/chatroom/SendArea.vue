@@ -70,6 +70,7 @@
       @keydown.ctrl='isNextLine'
       @keydown='handleKeydown'
       @keyup='handleKeyup'
+      @input='config.debounceHandleInput'
       @paste='handlePaste'
       v-bind='$attrs'
     )
@@ -282,7 +283,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle, cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import {
   injectOrStripSpecialChar,
   injectOrStripLink,
@@ -357,7 +358,8 @@ export default ({
         typingUsers: []
       },
       config: {
-        messageMaxChar: CHATROOM_MAX_MESSAGE_LEN
+        messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
+        debounceHandleInput: debounce(this.updateTextArea, 250) // NOTE: This is a fix for the issue #2369 and #2577
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
@@ -565,18 +567,6 @@ export default ({
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files, true)
-        return
-      }
-
-      // fix for the edge-case related to 'paste' action when nothing has been typed
-      // (reference: https://github.com/okTurtles/group-income/issues/2369)
-      const currVal = this.$refs.textarea.value
-
-      if (!currVal) {
-        e.preventDefault()
-        const pastedText = e.clipboardData.getData('text')
-        this.$refs.textarea.value = pastedText
-        this.updateTextArea()
       }
     },
     addSelectedMention (index) {
