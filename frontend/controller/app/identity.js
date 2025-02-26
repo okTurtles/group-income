@@ -311,7 +311,13 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', 'APP-LOGIN', async () => {
       console.debug('[gi.app/identity/login] Scheduled call starting', identityContractID, username)
       if (username) {
-        identityContractID = await sbp('namespace/lookup', username)
+        const nsIdentityContractID = await sbp('namespace/lookup', username, { skipCache: process.env.CI || process.env.NODE_ENV !== 'production' })
+        if (!identityContractID) {
+          identityContractID = nsIdentityContractID
+        } else if (nsIdentityContractID !== identityContractID) {
+          console.error(new Error(`Identity contract ID mismatch during login: ${identityContractID} != ${nsIdentityContractID}`))
+          throw new GIErrorUIRuntimeError(L('Identity contract ID mismatch during login'))
+        }
       }
 
       if (!identityContractID) {
@@ -463,9 +469,9 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.app/identity/signupAndLogin': async function ({ username, email, password }) {
-    const contractIDs = await sbp('gi.app/identity/signup', { username, email, password })
-    await sbp('gi.app/identity/login', { username, password })
-    return contractIDs
+    const contractID = await sbp('gi.app/identity/signup', { username, email, password })
+    await sbp('gi.app/identity/login', { username, password, identityContractID: contractID })
+    return contractID
   },
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
