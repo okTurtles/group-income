@@ -222,8 +222,8 @@ sbp('sbp/selectors/register', {
           if (subscription && !bufferEq(subscription.options.applicationServerKey, subscriptionOptions?.applicationServerKey)) {
             // This is a public key that belongs to the server
             console.warn('VAPID server key changed; removing existing subscription and setting up a new one', {
-              oldPubKey: subscription.options.applicationServerKey,
-              newPubKey: subscriptionOptions.applicationServerKey
+              oldApplicationServerPublicKey: subscription.options.applicationServerKey,
+              newApplicationServerPublicKey: subscriptionOptions.applicationServerKey
             })
             await subscription.unsubscribe()
             subscription = null
