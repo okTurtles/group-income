@@ -221,7 +221,10 @@ sbp('sbp/selectors/register', {
           subscription = await registration.pushManager.getSubscription()
           if (subscription && !bufferEq(subscription.options.applicationServerKey, subscriptionOptions?.applicationServerKey)) {
             // This is a public key that belongs to the server
-            console.warn('VAPID server key changed; removing existing subscription and setting up a new one', { oldKey: subscription.options.applicationServerKey, newKey: subscriptionOptions.applicationServerKey })
+            console.warn('VAPID server key changed; removing existing subscription and setting up a new one', {
+              oldPubKey: subscription.options.applicationServerKey,
+              newPubKey: subscriptionOptions.applicationServerKey
+            })
             await subscription.unsubscribe()
             subscription = null
           }
