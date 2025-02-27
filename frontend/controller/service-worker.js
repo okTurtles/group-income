@@ -11,7 +11,8 @@ import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
 const bufferEq = (a?: ArrayBuffer | Uint8Array, b?: ArrayBuffer | Uint8Array) => {
-  if (a == null && b == null) return true
+  // eslint-disable-next-line eqeqeq
+  if (a == null || b == null) return a == b
   if (a.byteLength !== b.byteLength) return false
 
   const ab = new Uint8Array(a)
@@ -219,6 +220,7 @@ sbp('sbp/selectors/register', {
           const subscriptionOptions = await sbp('push/getSubscriptionOptions')
           subscription = await registration.pushManager.getSubscription()
           if (subscription && !bufferEq(subscription.options.applicationServerKey, subscriptionOptions?.applicationServerKey)) {
+            // This is a public key that belongs to the server
             console.warn('VAPID server key changed; removing existing subscription and setting up a new one', { oldKey: subscription.options.applicationServerKey, newKey: subscriptionOptions.applicationServerKey })
             await subscription.unsubscribe()
             subscription = null
