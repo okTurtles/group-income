@@ -10,6 +10,19 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
+const bufferEq = (a?: ArrayBuffer | Uint8Array, b?: ArrayBuffer | Uint8Array) => {
+  // eslint-disable-next-line eqeqeq
+  if (a == null || b == null) return a == b
+  if (a.byteLength !== b.byteLength) return false
+
+  const ab = new Uint8Array(a)
+  const bb = new Uint8Array(b)
+  for (let i = ab.byteLength - 1; i >= 0; i--) {
+    if (ab[i] !== bb[i]) return false
+  }
+  return true
+}
+
 const pwa = {
   deferredInstallPrompt: null,
   installed: false
@@ -204,11 +217,21 @@ sbp('sbp/selectors/register', {
         let subID = null
         // get a real push subscription only if both browser permissions allow and user wants us to
         if (notificationEnabled && granted) {
+          const subscriptionOptions = await sbp('push/getSubscriptionOptions')
           subscription = await registration.pushManager.getSubscription()
+          if (subscription && !bufferEq(subscription.options.applicationServerKey, subscriptionOptions?.applicationServerKey)) {
+            // This is a public key that belongs to the server
+            console.warn('VAPID server key changed; removing existing subscription and setting up a new one', {
+              oldApplicationServerPublicKey: subscription.options.applicationServerKey,
+              newApplicationServerPublicKey: subscriptionOptions.applicationServerKey
+            })
+            await subscription.unsubscribe()
+            subscription = null
+          }
           let newSub = false
           let endpoint = null
           if (!subscription || (subscription.expirationTime != null && subscription.expirationTime <= Date.now())) {
-            subscription = await registration.pushManager.subscribe(await sbp('push/getSubscriptionOptions'))
+            subscription = await registration.pushManager.subscribe(subscriptionOptions)
             newSub = true
           }
           if (subscription?.endpoint) {
