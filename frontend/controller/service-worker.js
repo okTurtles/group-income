@@ -10,16 +10,35 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
+// The application server (public) key could be either an ArrayBuffer (which is
+// what we get from fetching the current subscription), or it could be a
+// base64url-encoded string (which is what we usually get from the server)
+// This string coerces both of these into an `Uint8Array` instance.
+const strOrBufToBuf = (v: string | Uint8Array | ArrayBuffer) => {
+  if (typeof v === 'string') {
+    v = Buffer.from(
+      // Convert from base64url to base64
+      v.replace(/_/g, '/').replace(/-/g, '+') + '='.repeat((4 - v.length % 4) % 4),
+      'base64'
+    )
+    return v
+  }
+  return new Uint8Array(v)
+}
+
 const bufferEq = (a?: ArrayBuffer | Uint8Array, b?: ArrayBuffer | Uint8Array) => {
   // eslint-disable-next-line eqeqeq
   if (a == null || b == null) return a == b
-  if (a.byteLength !== b.byteLength) return false
 
-  const ab = new Uint8Array(a)
-  const bb = new Uint8Array(b)
+  const ab = strOrBufToBuf(a)
+  const bb = strOrBufToBuf(b)
+
+  if (ab.byteLength !== bb.byteLength) return false
+
   for (let i = ab.byteLength - 1; i >= 0; i--) {
     if (ab[i] !== bb[i]) return false
   }
+
   return true
 }
 
