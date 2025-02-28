@@ -359,7 +359,11 @@ export default ({
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
-        debouncedHandleInput: debounce(this.updateTextArea, 250) // NOTE: This is a fix for the issue #2369 and #2577.
+        // NOTE: Below is a fix for the issue #2369 and #2577, which are issues related to paste action on mobile devices.
+        //       <textarea /> in this component handles two-way binding of the entered text using 'keydown' and 'keyup' events instead of the traditional v-model due to
+        //       various functional requirements. But 'paste' action on mobile is not detected by them because they are done via touching the menu on the screen instead, not by pressing keyboard keys.
+        //       We can detect this pasted content by running this.updateTextWithLines() for 'input' event. But this does not need to be done for every key stroke, hence the debounce.
+        debouncedHandleInput: debounce(this.updateTextArea, 250)
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
