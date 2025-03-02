@@ -67,7 +67,7 @@ const removeSubscription = async (subscriptionId) => {
       // immediately removed because postEvent got a 401 Unauthorized when adding
       // the new subscription. In this case removeSubscription could be later called
       // again by the client but it's already been removed
-      console.warn(`removeSubscription: non-existent subscription '${subscriptionId}'`)
+      // console.warn(`removeSubscription: non-existent subscription '${subscriptionId}'`)
     }
     await sbp('chelonia.db/delete', `_private_webpush_${subscriptionId}`)
     await deleteSubscriptionFromIndex(subscriptionId)
@@ -204,11 +204,13 @@ export const postEvent = async (subscription: Object, event: ?string): Promise<v
 
   if (!req.ok) {
     const endpointHost = new URL(subscription.endpoint).host
-    console.warn(`Error ${req.status} sending push notification to '${subscription.id}' via ${endpointHost}`)
+    console.info(
+      await req.text().then(response => ({ response })).catch(e => `ERR: ${e?.message}`),
+      `Error ${req.status} sending push notification to '${subscription.id}' via ${endpointHost}`
+    )
     // If the response was 401 (Unauthorized), 404 (Not found) or 410 (Gone),
     // it likely means that the subscription no longer exists.
     if ([401, 404, 410].includes(req.status)) {
-      console.warn(new Date().toISOString(), 'Removing subscription', subscription.id)
       removeSubscription(subscription.id)
       throw new Error(`Error sending push: ${req.status}`)
     }

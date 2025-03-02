@@ -510,11 +510,6 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.actions/identity/signupAndLogin': async function ({ username, email, passwordFn }) {
-    const contractIDs = await sbp('gi.actions/identity/signup', { username, email, passwordFn })
-    await sbp('gi.actions/identity/login', { username, passwordFn })
-    return contractIDs
-  },
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
