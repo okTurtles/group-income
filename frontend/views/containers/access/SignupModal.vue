@@ -53,7 +53,7 @@ export default ({
           break
         }
         default: // 'error' status
-          this.ephemeral.isSigningUp = true
+          this.ephemeral.isSigningUp = false
       }
     },
     showLoginModal () {
