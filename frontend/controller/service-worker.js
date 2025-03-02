@@ -1,5 +1,6 @@
 'use strict'
 
+import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
@@ -7,7 +8,6 @@ import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
 // The application server (public) key could be either an ArrayBuffer (which is

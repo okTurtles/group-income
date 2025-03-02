@@ -2,6 +2,7 @@
 
 // TODO: rename GIMessage to ChelMessage
 
+import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '@chelonia/serdes'
 import { has } from '~/frontend/model/contracts/shared/giLodash.js'
 import { createCID } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
@@ -10,7 +11,6 @@ import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
-import { serdesTagSymbol, serdesSerializeSymbol, serdesDeserializeSymbol } from '~/shared/serdes/index.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 

@@ -1,5 +1,6 @@
 'use strict'
 
+import { deserializer, serializer } from '@chelonia/serdes'
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
@@ -16,12 +17,11 @@ import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
+import { CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { deserializer, serializer } from '~/shared/serdes/index.js'
 import {
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
