@@ -196,7 +196,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   // Add global event listeners before the first connection.
   if (typeof self === 'object' && self instanceof EventTarget) {
     for (const name of globalEventNames) {
-      self.addEventListener(name, client.listeners[name])
+      globalEventMap.set(name, client.listeners[name])
     }
   }
   if (!client.options.manual) {
@@ -501,6 +501,20 @@ const defaultMessageHandlers = {
 
 const globalEventNames = ['offline', 'online']
 const socketEventNames = ['close', 'error', 'message', 'open']
+const globalEventMap = new Map()
+
+if (typeof self === 'object' && self instanceof EventTarget) {
+  // We need to do things in this roundabout way because Chrome doesn't like
+  // these events handlers not being top-level.
+  // `Event handler of 'online' event must be added on the initial evaluation of worker script.`
+  for (const name of globalEventNames) {
+    const handler = (ev) => {
+      const h = globalEventMap.get(name)
+      return h?.(ev)
+    }
+    self.addEventListener(name, handler, false)
+  }
+}
 
 // `navigator.onLine` can give confusing false positives when `true`,
 // so we'll define `isDefinetelyOffline()` rather than `isOnline()` or `isOffline()`.
@@ -597,7 +611,7 @@ const publicMethods = {
     // Remove global event listeners.
     if (typeof self === 'object' && self instanceof EventTarget) {
       for (const name of globalEventNames) {
-        self.removeEventListener(name, client.listeners[name])
+        globalEventMap.delete(name)
       }
     }
     // Remove WebSocket event listeners.

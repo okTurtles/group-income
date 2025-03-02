@@ -325,7 +325,7 @@ const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
-  event.waitUntil(Promise.all([setupPromise, self.skipWaiting()]))
+  event.waitUntil(setupPromise.then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', function (event) {
@@ -392,6 +392,9 @@ self.addEventListener('message', function (event) {
             clients.forEach(client => client.navigate(client.url))
           })
         break
+      case 'skip-waiting':
+        self.skipWaiting()
+        break
       case 'event':
         sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
@@ -407,7 +410,11 @@ self.addEventListener('message', function (event) {
             }, 30e3)
           })
         ]).then(() => {
-          port.postMessage({ type: 'ready', GI_VERSION: process.env.GI_VERSION })
+          port.postMessage({
+            type: 'ready',
+            currentSyncs: sbp('chelonia/contract/currentSyncs'),
+            GI_VERSION: process.env.GI_VERSION
+          })
         }, (e) => {
           port.postMessage({ type: 'error', error: e })
         }).finally(() => {

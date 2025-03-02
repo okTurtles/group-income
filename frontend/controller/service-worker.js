@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, NEW_CURRENT_SYNCS, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -68,6 +68,8 @@ const waitUntilSwReady = () => {
     const messageChannel = new MessageChannel()
     messageChannel.port1.onmessage = (event) => {
       if (event.data.type === 'ready') {
+        if (!event.data.currentSyncs) return
+        sbp('okTurtles.events/emit', NEW_CURRENT_SYNCS, event.data.currentSyncs)
         resolve()
       } else {
         reject(event.data.error)
@@ -171,7 +173,7 @@ sbp('sbp/selectors/register', {
       // This way we ensure that Chelonia has been set up
       await waitUntilSwReady()
 
-      if (typeof PeriodicSyncManager === 'function') {
+      if (!process.env.CI && typeof PeriodicSyncManager === 'function') {
         navigator.permissions.query({
           name: 'periodic-background-sync'
         }).then((status) => {
@@ -190,6 +192,19 @@ sbp('sbp/selectors/register', {
           console.error('[service-workers/setup] Error setting up periodic background sync events', e)
         })
       }
+
+      swRegistration.addEventListener('updatefound', (e) => {
+        const handler = (e) => {
+          if (['activated', 'redundant'].includes(e.target.state)) {
+            e.target.removeEventListener('statechange', handler)
+            return
+          }
+          if (e.target.state === 'installed') {
+            e.target.postMessage({ type: 'skip-waiting' })
+          }
+        }
+        e.target.installing.addEventListener('statechange', handler, false)
+      })
 
       // Keep the service worker alive while the window is open
       // The default idle timeout on Chrome and Firefox is 30 seconds. We send
