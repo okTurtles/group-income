@@ -108,11 +108,18 @@ async function startApp () {
   // [SW] The following is be needed to keep namespace registrations in sync
   // between the SW and each tab. It is not needed if everything is running in
   // the same context
-  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value }) => {
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value, deletedValue }) => {
     const cache = sbp('state/vuex/state').namespaceLookups
     const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
-    Vue.set(cache, name, value)
-    Vue.set(reverseCache, value, name)
+    if (deletedValue) {
+      Vue.delete(cache, name)
+      if (reverseCache[deletedValue] === name) {
+        Vue.delete(reverseCache, deletedValue)
+      }
+    } else {
+      Vue.set(cache, name, value)
+      Vue.set(reverseCache, value, name)
+    }
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {

@@ -44,6 +44,20 @@ sbp('sbp/selectors/register', {
         reactiveSet(cache, name, value)
         reactiveSet(reverseCache, value, name)
         sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, { name, value })
+      } else {
+        const rootState = sbp('chelonia/rootState')
+        const cache = rootState.namespaceLookups
+        const currentValue = cache?.[name]
+        if (currentValue) {
+          const reactiveDel = sbp('chelonia/config').reactiveDel
+          const reverseCache = rootState.reverseNamespaceLookups
+
+          reactiveDel(cache, name)
+          if (reverseCache[currentValue] === name) {
+            reactiveDel(cache, currentValue)
+          }
+          sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, { name, deletedValue: currentValue })
+        }
       }
       return value
     })
