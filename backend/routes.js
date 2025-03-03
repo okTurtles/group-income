@@ -4,8 +4,7 @@
 
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { CONTRACT_DATA_REGEX, CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX, FILE_CHUNK_REGEX, FILE_MANIFEST_REGEX } from '~/shared/domains/chelonia/utils.js'
-import { createCID, multicodes } from '~/shared/functions.js'
+import { createCID, multicodes, maybeParseCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
@@ -100,7 +99,8 @@ route.POST('/event', {
   try {
     const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
     try {
-      if (!CONTRACT_MANIFEST_REGEX.test(deserializedHEAD.head.manifest)) {
+      const parsed = maybeParseCID(deserializedHEAD.head.manifest)
+      if (parsed?.code !== multicodes.SHELTER_CONTRACT_MANIFEST) {
         return Boom.badData('Invalid manifest')
       }
       const credentials = request.auth.credentials
@@ -199,11 +199,14 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   try {
     if (
       !contractID ||
-      !CONTRACT_DATA_REGEX.test(contractID) ||
       contractID.startsWith('_private') ||
       !/^[0-9]+$/.test(since) ||
       (limit && !/^[0-9]+$/.test(limit))
     ) {
+      return Boom.notFound()
+    }
+    const parsed = maybeParseCID(contractID)
+    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
       return Boom.notFound()
     }
 
@@ -292,9 +295,10 @@ route.GET('/latestHEADinfo/{contractID}', {
   try {
     if (
       !contractID ||
-      !CONTRACT_DATA_REGEX.test(contractID) ||
       contractID.startsWith('_private')
     ) return Boom.notFound()
+    const parsed = maybeParseCID(contractID)
+    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.notFound()
 
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
@@ -493,18 +497,27 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   }
   let type = 'application/octet-stream'
 
-  if (CONTRACT_DATA_REGEX.test(hash)) {
-    type = 'application/vnd.shelter.contractdata+json'
-  } else if (CONTRACT_MANIFEST_REGEX.test(hash)) {
-    type = 'application/vnd.shelter.contractmanifest+json'
-  } else if (CONTRACT_SOURCE_REGEX.test(hash)) {
-    type = 'application/vnd.shelter.contracttext'
-  } else if (FILE_MANIFEST_REGEX.test(hash)) {
-    type = 'application/vnd.shelter.filemanifest+json'
-  } else if (FILE_CHUNK_REGEX.test(hash)) {
-    type = 'application/vnd.shelter.filechunk+octet-stream'
-  } else if (hash.startsWith('name=')) {
+  if (hash.startsWith('name=')) {
     type = 'text/plain'
+  } else {
+    const parsed = maybeParseCID(hash)
+    switch (parsed?.code) {
+      case multicodes.SHELTER_CONTRACT_MANIFEST:
+        type = 'application/vnd.shelter.contractmanifest+json'
+        break
+      case multicodes.SHELTER_CONTRACT_TEXT:
+        type = 'application/vnd.shelter.contracttext'
+        break
+      case multicodes.SHELTER_CONTRACT_DATA:
+        type = 'application/vnd.shelter.contractdata+json'
+        break
+      case multicodes.SHELTER_FILE_MANIFEST:
+        type = 'application/vnd.shelter.filemanifest+json'
+        break
+      case multicodes.SHELTER_FILE_CHUNK:
+        type = 'application/vnd.shelter.filechunk+octet-stream'
+        break
+    }
   }
 
   return h
@@ -528,7 +541,11 @@ route.POST('/deleteFile/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || !FILE_MANIFEST_REGEX.test(hash) || hash.startsWith('_private')) {
+  if (!hash || hash.startsWith('_private')) {
+    return Boom.notFound()
+  }
+  const parsed = maybeParseCID(hash)
+  if (parsed?.code !== multicodes.SHELTER_FILE_MANIFEST) {
     return Boom.notFound()
   }
 
@@ -628,7 +645,11 @@ route.POST('/kv/{contractID}/{key}', {
   const { contractID, key } = request.params
 
   // The key is mandatory and we don't allow NUL in it as it's used for indexing
-  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
+  if (!key || key.includes('\x00') || key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+  const parsed = maybeParseCID(contractID)
+  if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.notFound()
   }
 
@@ -709,7 +730,11 @@ route.GET('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (!CONTRACT_DATA_REGEX.test(contractID) || !key || key.includes('\x00') || key.startsWith('_private')) {
+  if (!key || key.includes('\x00') || key.startsWith('_private')) {
+    return Boom.notFound()
+  }
+  const parsed = maybeParseCID(contractID)
+  if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.notFound()
   }
 

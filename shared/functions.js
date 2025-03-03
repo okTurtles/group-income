@@ -17,6 +17,39 @@ export const multicodes: { [x: string]: number } = {
   SHELTER_FILE_CHUNK: 0x511e04
 }
 
+export const parseCID = (cid: string): Object => {
+  if (!cid || cid.length < 52 || cid.length > 64) {
+    throw new RangeError('CID length too short or too long')
+  }
+  const parsed = CID.parse(cid, base58btc)
+  if (
+    parsed.version !== 1 ||
+    parsed.multihash.code !== blake2b256.code ||
+    !Object.values(multicodes).includes(parsed.code)
+  ) {
+    console.error('@@@XXXX', parsed.version, 1, parsed.multihash.code, blake2b256.code, parsed.code)
+    throw new Error('Invalid CID')
+  }
+
+  return parsed
+}
+
+export const maybeParseCID = (cid: string) => {
+  try {
+    return parseCID(cid)
+  } catch (e) {
+    // We ignore errors
+    console.error(e, '@@@XXXX')
+    return null
+  }
+}
+
+export const verifyCID = (cid: string) => {
+  // const parsedCid = parseCID(cid)
+  // parsedCid.code
+  // parsedCid.bytes
+}
+
 // Makes the `Buffer` global available in the browser if needed.
 // $FlowFixMe[cannot-resolve-name]
 if (typeof globalThis === 'object' && !has(globalThis, 'Buffer')) {

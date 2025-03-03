@@ -1,14 +1,13 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { strToB64 } from '~/shared/functions.js'
+import { maybeParseCID, multicodes, strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
-import { CONTRACT_MANIFEST_REGEX, CONTRACT_SOURCE_REGEX } from '~/shared/domains/chelonia/utils.js'
 import LRU from 'lru-cache'
 import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
@@ -184,10 +183,14 @@ export default async () => {
     // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
-      .filter(k =>
-        k.length === HASH_LENGTH &&
-        (CONTRACT_MANIFEST_REGEX.test(k) || CONTRACT_SOURCE_REGEX.test(k))
-      )
+      .filter(k => {
+        if (k.length !== HASH_LENGTH) return false
+        const parsed = maybeParseCID(k)
+        return ([
+          multicodes.SHELTER_CONTRACT_MANIFEST,
+          multicodes.SHELTER_CONTRACT_TEXT].includes(parsed?.code)
+        )
+      })
     const numKeys = keys.length
     let numVisitedKeys = 0
     let numNewKeys = 0
@@ -197,15 +200,10 @@ export default async () => {
     for (const key of keys) {
       // Skip keys which are already in the DB.
       if (!persistence || !await sbp('chelonia.db/get', key)) {
-        const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
-        if (
-          CONTRACT_MANIFEST_REGEX.test(key) ||
-          CONTRACT_SOURCE_REGEX.test(key)
-        ) {
-          await sbp('chelonia.db/set', key, value)
-          numNewKeys++
-        }
+        const value = await readFile(path.join(dataFolder, key), 'utf8')
+        await sbp('chelonia.db/set', key, value)
+        numNewKeys++
       }
       numVisitedKeys++
       const progress = numVisitedKeys === numKeys ? 100 : Math.floor(100 * numVisitedKeys / numKeys)
