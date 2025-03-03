@@ -770,7 +770,6 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
-
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
 
       // If user has since switched to another chatroom, no need to update 'this.messageState'
@@ -1123,23 +1122,21 @@ export default ({
       }
     },
     async processSwitchQueue () {
-      console.log('!@# here -aaa : ', this.ephemeral.chatroomSwitchQueue)
       if (this.ephemeral.chatroomSwitchQueue.length === 0) return
 
-      // Take the most recent chatroom entry on the queue and discard everything else.
+      // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
       const targetChatroomId = this.ephemeral.chatroomSwitchQueue.pop()
       this.ephemeral.chatroomSwitchQueue = []
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
       await this.initializeState(true)
       if (this.ephemeral.chatroomSwitchQueue.length > 0) {
-        // If the user has since switched to another chatroom, stop here and
-        // go back to initializing that switched chatroom.
+        // If the user has since switched to another chatroom while initializing this chatroom, stop here
+        // and care about the switched chatroom.
         return this.processSwitchQueue()
       } else {
         this.ephemeral.messagesInitiated = false
         this.ephemeral.unprocessedEvents = []
-
         this.ephemeral.infiniteLoading?.reset()
       }
     }
@@ -1159,7 +1156,7 @@ export default ({
       const fromIsJoined = from.isJoined
 
       const initAfterSynced = (toChatRoomId) => {
-        if (toChatRoomId !== this.summary.chatRoomID || // If switched to another chatroom during syncing, just return.
+        if (toChatRoomId !== this.summary.chatRoomID || // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
           this.ephemeral.messagesInitiated) return
         this.processSwitchQueue()
       }
