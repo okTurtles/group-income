@@ -290,7 +290,6 @@ export default ({
     window.addEventListener('resize', this.resizeEventHandler)
 
     if (this.summary.chatRoomID) {
-      console.log('!@# here : ', this.summary.chatRoomID)
       this.ephemeral.chatroomSwitchQueue.push(this.summary.chatRoomID)
       this.processSwitchQueue()
     }
@@ -332,7 +331,7 @@ export default ({
       return this.messageState.contract?.messages || []
     },
     isGroupCreator () {
-      if (!this.isGroupDirectMessage(this.summary.chatRoomID)) {
+      if (!this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)) {
         return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
@@ -562,7 +561,7 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        const contractID = this.summary.chatRoomID
+        const contractID = this.ephemeral.renderingChatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
@@ -584,7 +583,7 @@ export default ({
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
-      const contractID = this.summary.chatRoomID
+      const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
           // force conversation viewport to be at the bottom (most recent messages)
