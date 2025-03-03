@@ -239,16 +239,6 @@ export default ({
         isPhone: null
       },
       latestEvents: [],
-      // keys here are meant to be used without Vue.set as they're not directly
-      // connected to rendering
-      nonReactive: {
-      // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
-      //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomID
-      //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
-      //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
-      //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
-        renderingChatroomId: null
-      },
       ephemeral: {
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
