@@ -7,7 +7,6 @@ import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
-import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
@@ -275,7 +274,7 @@ sbp('chelonia/defineContract', {
             sbp('gi.contracts/chatroom/rotateKeys', contractID)
           }
 
-          sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state)
+          await sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state)
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect', e?.message || e)
         })
@@ -674,13 +673,13 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/chatroom/removeForeignKeys': (contractID, memberID, state) => {
-      const keyIds = findForeignKeysByContractID(state, memberID)
+    'gi.contracts/chatroom/removeForeignKeys': async (contractID, memberID, state) => {
+      const keyIds = await sbp('chelonia/contract/foreignKeysByContractID', state, memberID)
 
       if (!keyIds?.length) return
 
-      const CSKid = findKeyIdByName(state, 'csk')
-      const CEKid = findKeyIdByName(state, 'cek')
+      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
       if (!CEKid) throw new Error('Missing encryption key')
 

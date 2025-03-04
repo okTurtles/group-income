@@ -81,6 +81,14 @@ declare module '@apeleghq/rfc8188/decrypt' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encodings' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encrypt' { declare module.exports: any }
 
+declare module '@chelonia/crypto' {
+    declare type Key = {
+        type: string;
+        secretKey?: mixed;
+        publicKey?: mixed;
+    }
+    declare module.exports: any
+}
 declare module '@chelonia/multiformats/bases/base58' { declare module.exports: any }
 declare module '@chelonia/multiformats/blake2b' { declare module.exports: any }
 declare module '@chelonia/multiformats/blake2bstream' { declare module.exports: any }

@@ -1,10 +1,12 @@
 'use strict'
 
+import type { Key } from '@chelonia/crypto'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
-  INVITE_INITIAL_CREATOR,
   INVITE_EXPIRES_IN_DAYS,
+  INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
   MESSAGE_TYPES,
   PROFILE_STATUS,
@@ -13,23 +15,24 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  STATUS_OPEN,
-  STATUS_PASSED,
-  STATUS_FAILED,
-  STATUS_EXPIRING,
+  STATUS_CANCELLED,
   STATUS_EXPIRED,
-  STATUS_CANCELLED
+  STATUS_EXPIRING,
+  STATUS_FAILED,
+  STATUS_OPEN,
+  STATUS_PASSED
 } from '@model/contracts/shared/constants.js'
 import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
-import proposals, { oneVoteToPass, oneVoteToFail } from '@model/contracts/shared/voting/proposals.js'
+import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
+import { extractProposalData } from '@model/notifications/utils.js'
 import sbp from '@sbp/sbp'
 import {
   ACCEPTED_GROUP,
-  JOINED_GROUP,
   JOINED_CHATROOM,
+  JOINED_GROUP,
   LEFT_GROUP,
   LOGOUT
 } from '@utils/events.js'
@@ -40,12 +43,8 @@ import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
-import { extractProposalData } from '@model/notifications/utils.js'
 
 sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
   const rootState = sbp('chelonia/rootState')

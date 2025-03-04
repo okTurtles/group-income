@@ -9,8 +9,7 @@ import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 
 const loadState = async (identityContractID: string, password: ?string) => {

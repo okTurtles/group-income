@@ -5,7 +5,7 @@ import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomi
 import { GIMessage } from './GIMessage.js'
 import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, serializeKey, sign, verifySignature } from './crypto.js'
+import { deserializeKey, serializeKey, sign, verifySignature } from '@chelonia/crypto'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
 import { ChelErrorForkedChain, ChelErrorWarning } from './errors.js'

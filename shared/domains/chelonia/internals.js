@@ -8,7 +8,7 @@ import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIO
 import { GIMessage } from './GIMessage.js'
 import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
-import { deserializeKey, keyId, verifySignature } from './crypto.js'
+import { deserializeKey, keyId, verifySignature } from '@chelonia/crypto'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
