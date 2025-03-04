@@ -99,12 +99,7 @@ sbp('sbp/selectors/register', {
   'backend/db/registerName': async function (name: string, value: string): Promise<*> {
     const exists = await sbp('backend/db/lookupName', name)
     if (exists) {
-      if (!Boom.isBoom(exists)) {
-        return Boom.conflict('exists')
-      } else if (exists.output.statusCode !== 404) {
-        throw exists // throw if this is an error other than "not found"
-      }
-      // otherwise it is a Boom.notFound(), proceed ahead
+      throw Boom.conflict('exists')
     }
     await sbp('chelonia.db/set', namespaceKey(name), value)
     return { name, value }
