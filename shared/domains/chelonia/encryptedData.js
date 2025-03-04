@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { has } from 'turtledash'
 import type { Key } from '@chelonia/crypto'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from '@chelonia/crypto'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected } from './errors.js'

@@ -31,7 +31,7 @@ import {
   referenceTally
 } from './shared/functions.js'
 import chatroomGetters from './shared/getters/chatroom.js'
-import { cloneDeep, merge } from './shared/giLodash.js'
+import { cloneDeep, merge } from 'turtledash'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 
 export const GIChatroomAlreadyMemberError: typeof Error = ChelErrorGenerator('GIChatroomAlreadyMemberError')

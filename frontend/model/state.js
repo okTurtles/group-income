@@ -10,7 +10,7 @@ import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 import getters from './getters.js'
 

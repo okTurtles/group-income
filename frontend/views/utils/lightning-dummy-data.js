@@ -1,4 +1,4 @@
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
+import { randomHexString } from 'turtledash'
 
 export const dummyLightningUsers = [
   {

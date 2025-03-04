@@ -38,7 +38,7 @@ import {
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
 import groupGetters from './shared/getters/group.js'
-import { cloneDeep, deepEqualJSONType, merge, omit } from './shared/giLodash.js'
+import { cloneDeep, deepEqualJSONType, merge, omit } from 'turtledash'
 import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
 import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp, isPeriodStamp, plusOnePeriodLength } from './shared/time.js'
 import { chatRoomAttributesType, inviteType } from './shared/types.js'

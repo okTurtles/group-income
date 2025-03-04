@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { has } from 'turtledash'
 import { blake32Hash } from '~/shared/functions.js'
 import type { Key } from '@chelonia/crypto'
 import { deserializeKey, keyId, serializeKey, sign, verifySignature } from '@chelonia/crypto'

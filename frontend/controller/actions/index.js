@@ -1,4 +1,4 @@
-import { has, pick } from '@model/contracts/shared/giLodash.js'
+import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'

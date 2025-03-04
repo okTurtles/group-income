@@ -14,7 +14,7 @@ import {
 } from './shared/constants.js'
 import { referenceTally } from './shared/functions.js'
 import identityGetters from './shared/getters/identity.js'
-import { has, merge } from './shared/giLodash.js'
+import { has, merge } from 'turtledash'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,

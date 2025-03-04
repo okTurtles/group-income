@@ -6,7 +6,7 @@ import {
   CHATROOM_TYPES,
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
-import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, has, omit } from 'turtledash'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'

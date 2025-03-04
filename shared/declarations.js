@@ -95,6 +95,7 @@ declare module '@chelonia/multiformats/blake2bstream' { declare module.exports: 
 declare module '@chelonia/multiformats/bytes' { declare module.exports: any }
 declare module '@chelonia/multiformats/cid' { declare module.exports: any }
 declare module '@chelonia/serdes' { declare module.exports: any }
+declare module 'turtledash' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
@@ -107,8 +108,8 @@ declare module '@model/contracts/shared/time.js' { declare module.exports: Objec
 declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
-declare module '~/frontend/model/contracts/shared/giLodash.js' { declare module.exports: any }
-declare module '@model/contracts/shared/giLodash.js' { declare module.exports: any }
+declare module 'turtledash' { declare module.exports: any }
+declare module 'turtledash' { declare module.exports: any }
 declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
 declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
 declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }

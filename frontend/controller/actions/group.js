@@ -23,7 +23,7 @@ import {
   STATUS_PASSED
 } from '@model/contracts/shared/constants.js'
 import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
-import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
+import { merge, omit, randomIntFromRange } from 'turtledash'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
 import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'

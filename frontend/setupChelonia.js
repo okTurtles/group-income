@@ -1,7 +1,7 @@
 'use strict'
 
 import * as Common from '@common/common.js'
-import { debounce, has } from '@model/contracts/shared/giLodash.js'
+import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'

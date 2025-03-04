@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
 import getters from './getters.js'
 import * as keys from './mutationKeys.js'

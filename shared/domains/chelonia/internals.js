@@ -2,7 +2,7 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from 'turtledash'
 import { createCID } from '~/shared/functions.js'
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'

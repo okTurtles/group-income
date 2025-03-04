@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { has } from 'turtledash'
 import { b64ToStr } from '~/shared/functions.js'
 import type { GIKey, GIKeyPurpose, GIKeyUpdate, GIOpActionUnencrypted, GIOpAtomic, GIOpKeyAdd, GIOpKeyUpdate, GIOpValue, ProtoGIOpActionUnencrypted } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'

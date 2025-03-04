@@ -4,7 +4,7 @@
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from '@chelonia/crypto'
 import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '@chelonia/serdes'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { has } from 'turtledash'
 import { createCID } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import type { EncryptedData } from './encryptedData.js'

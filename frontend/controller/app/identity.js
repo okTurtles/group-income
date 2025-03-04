@@ -1,7 +1,7 @@
 'use strict'
 
 import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'

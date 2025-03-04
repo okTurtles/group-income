@@ -5,7 +5,7 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, ke
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
-import { has, omit } from '@model/contracts/shared/giLodash.js'
+import { has, omit } from 'turtledash'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'

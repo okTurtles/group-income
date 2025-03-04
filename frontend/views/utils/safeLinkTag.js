@@ -1,5 +1,5 @@
 import allowedUrlsByKey from '@view-utils/allowedUrls.js'
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
+import { has } from 'turtledash'
 
 export default function safeLinkTag (key: string): string {
   if (!has(allowedUrlsByKey, key)) {
