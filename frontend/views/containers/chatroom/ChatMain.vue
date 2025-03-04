@@ -123,7 +123,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { L } from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -329,6 +329,11 @@ export default ({
   },
   methods: {
     proximityDate,
+    chatroomHasSwitchedFrom (chatroomID) {
+      // Some async operations (eg. this.rerenderEvents) are time-consuming, and user could switch away from the chatroom until the operation is not completed.
+      // This method checks if that has happened.
+      return chatroomID !== this.ephemeral.renderingChatRoomId
+    },
     messageType (message) {
       return {
         [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
@@ -559,6 +564,8 @@ export default ({
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
+
+        if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
           const msgIndex = findMessageIdx(messageHash, this.messages)
@@ -819,6 +826,8 @@ export default ({
         const shouldLoadMoreEvents = messageHashToScroll && this.messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
         if (shouldLoadMoreEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
+
+          if (this.chatroomHasSwitchedFrom(chatRoomID)) return false
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
@@ -830,6 +839,8 @@ export default ({
         if (this.messages.length) {
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
+
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return false
         events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
       }
 
@@ -851,15 +862,14 @@ export default ({
         this.latestEvents.unshift(...events)
       }
 
-      const chatroomHasSwitched = () => this.summary.chatRoomID !== this.ephemeral.renderingChatRoomId
-
       if (this.latestEvents.length > 0) {
         const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
         let state = await this.generateNewChatRoomState(true, entryHeight)
 
+        const chatroomID = this.ephemeral.renderingChatRoomId
         for (const event of this.latestEvents) {
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
-          if (chatroomHasSwitched()) return
+          if (this.chatroomHasSwitchedFrom(chatroomID)) return
           state = await sbp('chelonia/in/processMessage', event, state)
         }
 
@@ -1032,8 +1042,9 @@ export default ({
 
       if (this.ephemeral.messagesInitiated === undefined) return
 
+      const targetChatroomID = this.ephemeral.renderingChatRoomId
       sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-        if (this.summary.chatRoomID !== this.ephemeral.renderingChatRoomId) return
+        if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
 
         // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
         try {
@@ -1096,7 +1107,7 @@ export default ({
       e.preventDefault()
       // handler function for 'dragstart', 'dragover' events.
 
-      if (!this.dndState.isActive) this.dndState.isActive = true
+      this.dndState.isActive = true
       // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
       e.dataTransfer.dropEffect = 'copy'
     },
@@ -1119,15 +1130,27 @@ export default ({
       this.ephemeral.chatroomSwitchQueue = []
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
-      await this.initializeState(true)
-      if (this.ephemeral.chatroomSwitchQueue.length > 0) {
-        // If the user has since switched to another chatroom while initializing this chatroom, stop here
-        // and care about the switched chatroom.
-        return this.processSwitchQueue()
-      } else {
-        this.ephemeral.messagesInitiated = false
-        this.ephemeral.unprocessedEvents = []
-        this.ephemeral.infiniteLoading?.reset()
+      try {
+        await this.initializeState(true)
+        if (this.ephemeral.chatroomSwitchQueue.length > 0) {
+          // If the user has since switched to another chatroom while initializing this chatroom, stop here
+          // and care about the switched chatroom.
+          return this.processSwitchQueue()
+        } else {
+          this.ephemeral.messagesInitiated = false
+          this.ephemeral.unprocessedEvents = []
+          this.ephemeral.infiniteLoading?.reset()
+        }
+      } catch (e) {
+        console.error('ChatMain.vue processSwitchQueue() error:', e)
+
+        if (!this.chatroomHasSwitchedFrom(targetChatroomId)) {
+          sbp('gi.ui/prompt', {
+            heading: L('Failed to initialize chatroom'),
+            question: L('Error details: {reportError}', LError(e)),
+            primaryButton: L('Close')
+          })
+        }
       }
     }
   },
@@ -1146,7 +1169,8 @@ export default ({
       const fromIsJoined = from.isJoined
 
       const initAfterSynced = (toChatRoomId) => {
-        if (toChatRoomId !== this.summary.chatRoomID || // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
+        // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
+        if (toChatRoomId !== this.summary.chatRoomID ||
           this.ephemeral.messagesInitiated) return
         this.processSwitchQueue()
       }
@@ -1160,17 +1184,9 @@ export default ({
         this.ephemeral.scrolledDistance = 0
         this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
 
-        // Coerce 'chelonia/contract/isSyncing' into a Promise
-        // This may seem weird, but it's needed because the result may be a
-        // boolean when Chelonia is running in the browsing context, or it may
-        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
-        // like when using a SW.
-        // We also don't use `await`, which would be more straightforward because
-        // that'd require this entire function to be `async`, which could result
-        // in race conditions as this is a watcher.
-        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
+        sbp('chelonia/contract/isSyncing', toChatRoomId).then(isSyncing => {
           if (isSyncing) {
-            sbp('chelonia/queueInvocation', initAfterSynced)
+            sbp('chelonia/queueInvocation', toChatRoomId, initAfterSynced)
           } else {
             this.processSwitchQueue()
           }
