@@ -27,27 +27,19 @@ export const parseCID = (cid: string): Object => {
     parsed.multihash.code !== blake2b256.code ||
     !Object.values(multicodes).includes(parsed.code)
   ) {
-    console.error('@@@XXXX', parsed.version, 1, parsed.multihash.code, blake2b256.code, parsed.code)
     throw new Error('Invalid CID')
   }
 
   return parsed
 }
 
-export const maybeParseCID = (cid: string) => {
+export const maybeParseCID = (cid: string): Object | null => {
   try {
     return parseCID(cid)
   } catch (e) {
-    // We ignore errors
-    console.error(e, '@@@XXXX')
+    // Ignore errors if the CID couldn't be parsed
     return null
   }
-}
-
-export const verifyCID = (cid: string) => {
-  // const parsedCid = parseCID(cid)
-  // parsedCid.code
-  // parsedCid.bytes
 }
 
 // Makes the `Buffer` global available in the browser if needed.

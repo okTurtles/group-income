@@ -42,6 +42,14 @@ const limiterPerDay = new Bottleneck.Group({
   reservoirRefreshAmount: SIGNUP_LIMIT_DAY
 })
 
+const cidLookupTable = {
+  [multicodes.SHELTER_CONTRACT_MANIFEST]: 'application/vnd.shelter.contractmanifest+json',
+  [multicodes.SHELTER_CONTRACT_TEXT]: 'application/vnd.shelter.contracttext',
+  [multicodes.SHELTER_CONTRACT_DATA]: 'application/vnd.shelter.contractdata+json',
+  [multicodes.SHELTER_FILE_MANIFEST]: 'application/vnd.shelter.filemanifest+json',
+  [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
+}
+
 // Constant-time equal
 const ctEq = (expected: string, actual: string) => {
   let r = actual.length ^ expected.length
@@ -203,11 +211,11 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
       !/^[0-9]+$/.test(since) ||
       (limit && !/^[0-9]+$/.test(limit))
     ) {
-      return Boom.notFound()
+      return Boom.badRequest()
     }
     const parsed = maybeParseCID(contractID)
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
-      return Boom.notFound()
+      return Boom.badRequest()
     }
 
     const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
@@ -281,7 +289,7 @@ route.GET('/name/{name}', {}, async function (request, h) {
     const lookupResult = await sbp('backend/db/lookupName', name)
     return lookupResult
       ? h.response(lookupResult).type('text/plain')
-      : Boom.notFound()
+      : notFoundNoCache(h)
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
@@ -296,9 +304,9 @@ route.GET('/latestHEADinfo/{contractID}', {
     if (
       !contractID ||
       contractID.startsWith('_private')
-    ) return Boom.notFound()
+    ) return Boom.badRequest()
     const parsed = maybeParseCID(contractID)
-    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.notFound()
+    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.badRequest()
 
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
@@ -313,7 +321,10 @@ route.GET('/latestHEADinfo/{contractID}', {
 })
 
 route.GET('/time', {}, function (request, h) {
-  return h.response(new Date().toISOString()).type('text/plain')
+  return h
+    .response(new Date().toISOString())
+    .header('cache-control', 'no-store')
+    .type('text/plain')
 })
 
 // TODO: if the browser deletes our cache then not everyone
@@ -361,9 +372,13 @@ if (process.env.NODE_ENV === 'development') {
       const { hash, data } = request.payload
       if (!hash) return Boom.badRequest('missing hash')
       if (!data) return Boom.badRequest('missing data')
-      const ourHashes = Object.values(multicodes).map((multicode) => createCID(data, ((multicode: any): number)))
-      if (ourHashes.includes(hash)) {
-        console.error(`hash(${hash}) != ourHash(${ourHashes.join(',')})`)
+
+      const parsed = maybeParseCID(hash)
+      if (!parsed) return Boom.badRequest('invalid hash')
+
+      const ourHash = createCID(data, parsed.code)
+      if (ourHash !== hash) {
+        console.error(`hash(${hash}) != ourHash(${ourHash})`)
         return Boom.badRequest('bad hash!')
       }
       await sbp('chelonia.db/set', hash, data)
@@ -488,37 +503,19 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
   if (!hash || hash.startsWith('_private')) {
-    return Boom.notFound()
+    return Boom.badRequest()
+  }
+  const parsed = maybeParseCID(hash)
+  if (!parsed) {
+    return Boom.badRequest()
   }
 
   const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
   if (!blobOrString) {
     return notFoundNoCache(h)
   }
-  let type = 'application/octet-stream'
 
-  if (hash.startsWith('name=')) {
-    type = 'text/plain'
-  } else {
-    const parsed = maybeParseCID(hash)
-    switch (parsed?.code) {
-      case multicodes.SHELTER_CONTRACT_MANIFEST:
-        type = 'application/vnd.shelter.contractmanifest+json'
-        break
-      case multicodes.SHELTER_CONTRACT_TEXT:
-        type = 'application/vnd.shelter.contracttext'
-        break
-      case multicodes.SHELTER_CONTRACT_DATA:
-        type = 'application/vnd.shelter.contractdata+json'
-        break
-      case multicodes.SHELTER_FILE_MANIFEST:
-        type = 'application/vnd.shelter.filemanifest+json'
-        break
-      case multicodes.SHELTER_FILE_CHUNK:
-        type = 'application/vnd.shelter.filechunk+octet-stream'
-        break
-    }
-  }
+  const type = cidLookupTable[parsed.code] || 'application/octet-stream'
 
   return h
     .response(blobOrString)
@@ -526,6 +523,9 @@ route.GET('/file/{hash}', {}, async function (request, h) {
     .header('Cache-Control', 'public,max-age=31536000,immutable')
     // CSP to disable everything -- this only affects direct navigation to the
     // `/file` URL.
+    // The CSP below prevents any sort of resource loading or script execution
+    // on direct navigation. The `nosniff` header instructs the browser to
+    // honour the provided content-type.
     .header('content-security-policy', "default-src 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests; sandbox")
     .header('x-content-type-options', 'nosniff')
     .type(type)
@@ -542,11 +542,11 @@ route.POST('/deleteFile/{hash}', {
   const { hash } = request.params
   const strategy = request.auth.strategy
   if (!hash || hash.startsWith('_private')) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
   const parsed = maybeParseCID(hash)
   if (parsed?.code !== multicodes.SHELTER_FILE_MANIFEST) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
 
   const owner = await sbp('chelonia.db/get', `_private_owner_${hash}`)
@@ -646,11 +646,11 @@ route.POST('/kv/{contractID}/{key}', {
 
   // The key is mandatory and we don't allow NUL in it as it's used for indexing
   if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
 
   if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
@@ -731,11 +731,11 @@ route.GET('/kv/{contractID}/{key}', {
   const { contractID, key } = request.params
 
   if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
-    return Boom.notFound()
+    return Boom.badRequest()
   }
 
   if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
@@ -830,7 +830,7 @@ route.POST('/zkpp/register/{name}', {
     if (!credentials?.billableContractID) {
       return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
     }
-    if (req.params['name'].startsWith('_private')) return Boom.notFound()
+    if (req.params['name'].startsWith('_private')) return Boom.badRequest()
     const contractID = await sbp('backend/db/lookupName', req.params['name'])
     if (contractID !== credentials.billableContractID) {
       // This ensures that only the owner of the contract can set a salt for it,
@@ -869,7 +869,7 @@ route.GET('/zkpp/{name}/auth_hash', {
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
@@ -892,7 +892,7 @@ route.GET('/zkpp/{name}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
@@ -918,7 +918,7 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
