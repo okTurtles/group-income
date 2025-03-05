@@ -53,7 +53,7 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
 <script>
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { uniq } from '@model/contracts/shared/giLodash.js'
+import { uniq } from 'turtledash'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { L } from '@common/common.js'
 

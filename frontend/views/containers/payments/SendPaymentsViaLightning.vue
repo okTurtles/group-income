@@ -88,7 +88,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import QrCode from '@components/QrCode.vue'
 import CopyableInput from '@components/CopyableInput.vue'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'SendPayemntsViaLightning',

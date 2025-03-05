@@ -1,4 +1,4 @@
-import { throttle } from '@model/contracts/shared/giLodash.js'
+import { throttle } from 'turtledash'
 export const PINCH_ZOOM_THRESHOLD = 2.5
 
 const PINCH_GESTURE = {

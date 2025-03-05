@@ -6,8 +6,7 @@ import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import type { GIActionParams } from './types.js'
 
 const enqueueDeferredPromise = (queue) => {

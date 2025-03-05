@@ -87,7 +87,7 @@ modal-base-template.has-background(
 <script>
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
-import { difference } from '@model/contracts/shared/giLodash.js'
+import { difference } from 'turtledash'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UsersSelector from '@components/UsersSelector.vue'

@@ -1,6 +1,6 @@
 // @flow
 
-import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '../../serdes/index.js'
+import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '@chelonia/serdes'
 
 /* Wrapper class for secrets, which identifies them as such and prevents them
 from being logged */
