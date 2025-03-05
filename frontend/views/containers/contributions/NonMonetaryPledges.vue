@@ -50,7 +50,7 @@ import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { maxLength } from 'vuelidate/lib/validators'
 import { GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
+import { randomHexString } from 'turtledash'
 
 export default {
   name: 'NonMonetaryPledges',

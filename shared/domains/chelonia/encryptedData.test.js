@@ -2,7 +2,7 @@
 
 import should from 'should'
 import 'should-sinon'
-import { CURVE25519XSALSA20POLY1305, keygen, keyId, serializeKey } from './crypto.js'
+import { CURVE25519XSALSA20POLY1305, keygen, keyId, serializeKey } from '@chelonia/crypto'
 import { encryptedIncomingData, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from './encryptedData.js'
 
 describe('Encrypted data API', () => {

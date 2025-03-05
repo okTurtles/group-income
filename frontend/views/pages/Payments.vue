@@ -173,7 +173,7 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, dateFromPeriodStamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString, deepEqualJSONType, omit, uniq } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType, omit, uniq } from 'turtledash'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,

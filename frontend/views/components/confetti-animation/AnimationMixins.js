@@ -1,5 +1,5 @@
 import { confettiComponents, confettiNames } from './confettiComponents/index.js'
-import { randomIntFromRange, linearScale } from '@model/contracts/shared/giLodash.js'
+import { randomIntFromRange, linearScale } from 'turtledash'
 
 const canvas = {
   width: null, height: null

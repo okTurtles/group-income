@@ -4,8 +4,7 @@ import sbp from '@sbp/sbp'
 import manifests from '~/frontend/model/contracts/manifests.json'
 import '~/shared/domains/chelonia/chelonia.js'
 import { Secret } from '../shared/domains/chelonia/Secret.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 const assert = require('node:assert')
 // Remove this when dropping support for Node versions lower than v20.

@@ -1,13 +1,13 @@
 'use strict'
 
+import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, CONTRACT_SYNCS_RESET, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { deserializer, serializer } from '~/shared/serdes/index.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
 // The application server (public) key could be either an ArrayBuffer (which is
@@ -68,6 +68,11 @@ const waitUntilSwReady = () => {
     const messageChannel = new MessageChannel()
     messageChannel.port1.onmessage = (event) => {
       if (event.data.type === 'ready') {
+        // For backward- and forward-compatibility (`currentSyncs` may not be
+        // defined in a different SW version)
+        if (event.data.currentSyncs) {
+          sbp('okTurtles.events/emit', CONTRACT_SYNCS_RESET, event.data.currentSyncs)
+        }
         resolve()
       } else {
         reject(event.data.error)
@@ -171,7 +176,7 @@ sbp('sbp/selectors/register', {
       // This way we ensure that Chelonia has been set up
       await waitUntilSwReady()
 
-      if (typeof PeriodicSyncManager === 'function') {
+      if (!process.env.CI && typeof PeriodicSyncManager === 'function') {
         navigator.permissions.query({
           name: 'periodic-background-sync'
         }).then((status) => {
@@ -190,6 +195,26 @@ sbp('sbp/selectors/register', {
           console.error('[service-workers/setup] Error setting up periodic background sync events', e)
         })
       }
+
+      // Set up an event listener to have SW call `skipWaiting` after
+      // installation is complete. The SW already does this, but we had some
+      // issues with the SW being installed but not activated after an update
+      // for yet-unknown reasons. This logic attemps to force a new call to
+      // `skipWaiting`, increasing the odds of the new SW replacing the old
+      // version. (When a SW updates, both versions exist simultaneously,
+      // although only one is connected to a page at a time.)
+      swRegistration.addEventListener('updatefound', (e) => {
+        const handler = (e) => {
+          if (['activated', 'redundant'].includes(e.target.state)) {
+            e.target.removeEventListener('statechange', handler)
+            return
+          }
+          if (e.target.state === 'installed') {
+            e.target.postMessage({ type: 'skip-waiting' })
+          }
+        }
+        e.target.installing.addEventListener('statechange', handler, false)
+      })
 
       // Keep the service worker alive while the window is open
       // The default idle timeout on Chrome and Firefox is 30 seconds. We send

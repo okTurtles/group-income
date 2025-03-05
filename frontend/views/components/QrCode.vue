@@ -7,7 +7,7 @@
 <script>
 import QRious from 'qrious'
 import { mapGetters } from 'vuex'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'QrCode',

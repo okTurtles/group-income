@@ -54,7 +54,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import currencies from '@model/contracts/shared/currencies.js'
 import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 
 export default ({
   name: 'PaymentDetail',

@@ -1,5 +1,6 @@
 'use strict'
 
+import { deserializer, serializer } from '@chelonia/serdes'
 import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
@@ -16,12 +17,11 @@ import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { CHELONIA_STATE_MODIFIED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
+import { CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { deserializer, serializer } from '~/shared/serdes/index.js'
 import {
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
@@ -326,7 +326,10 @@ const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
-  event.waitUntil(Promise.all([setupPromise, self.skipWaiting()]))
+  // `skipWaiting` tells the browser that the SW should immediately move from
+  // installed to activated (or from waiting to activated). We only want to do
+  // this after setup is complete, hence the `.then`.
+  event.waitUntil(setupPromise.then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', function (event) {
@@ -389,6 +392,9 @@ self.addEventListener('message', function (event) {
             clients.forEach(client => client.navigate(client.url))
           })
         break
+      case 'skip-waiting':
+        self.skipWaiting()
+        break
       case 'event':
         sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
         break
@@ -404,7 +410,11 @@ self.addEventListener('message', function (event) {
             }, 30e3)
           })
         ]).then(() => {
-          port.postMessage({ type: 'ready', GI_VERSION: process.env.GI_VERSION })
+          port.postMessage({
+            type: 'ready',
+            currentSyncs: sbp('chelonia/contract/currentSyncs'),
+            GI_VERSION: process.env.GI_VERSION
+          })
         }, (e) => {
           port.postMessage({ type: 'error', error: e })
         }).finally(() => {
