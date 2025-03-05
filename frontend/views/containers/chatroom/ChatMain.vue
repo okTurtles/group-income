@@ -1173,8 +1173,6 @@ export default ({
     'summary' (to, from) {
       const toChatRoomId = to.chatRoomID
       const fromChatRoomId = from.chatRoomID
-      const toIsJoined = to.isJoined
-      const fromIsJoined = from.isJoined
 
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
@@ -1191,8 +1189,6 @@ export default ({
         this.ephemeral.scrolledDistance = 0
         this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
 
-        sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-      } else if (toIsJoined && !fromIsJoined) {
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
     }
