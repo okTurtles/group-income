@@ -1,7 +1,7 @@
 'use strict'
 
 import * as Common from '@common/common.js'
-import { debounce, has } from '@model/contracts/shared/giLodash.js'
+import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -110,6 +110,7 @@ const setupChelonia = async (): Promise<*> => {
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/rootState', 'chelonia/contract/state', 'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'chelonia/contract/retain', 'chelonia/contract/release', 'controller/router',
           'chelonia/contract/suitableSigningKey', 'chelonia/contract/currentKeyIdByName',
+          'chelonia/contract/foreignKeysByContractID',
           'chelonia/contract/setPendingKeyRevocation',
           'chelonia/storeSecretKeys', 'chelonia/crypto/keyId',
           'chelonia/queueInvocation', 'chelonia/contract/wait',

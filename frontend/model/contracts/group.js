@@ -7,7 +7,6 @@ import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
-import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   MAX_HASH_LEN,
   MAX_MEMO_LEN,
@@ -39,7 +38,7 @@ import {
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
 import groupGetters from './shared/getters/group.js'
-import { cloneDeep, deepEqualJSONType, merge, omit } from './shared/giLodash.js'
+import { cloneDeep, deepEqualJSONType, merge, omit } from 'turtledash'
 import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
 import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp, isPeriodStamp, plusOnePeriodLength } from './shared/time.js'
 import { chatRoomAttributesType, inviteType } from './shared/types.js'
@@ -469,8 +468,8 @@ sbp('chelonia/defineContract', {
             const state = await sbp('chelonia/contract/state', contractID)
             if (!state || state.generalChatRoomId) return
 
-            const CSKid = findKeyIdByName(state, 'csk')
-            const CEKid = findKeyIdByName(state, 'cek')
+            const CSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+            const CEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
             // create a 'General' chatroom contract
             sbp('gi.actions/group/addChatRoom', {
@@ -1741,7 +1740,7 @@ sbp('chelonia/defineContract', {
               console.warn(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
 
-          sbp('gi.contracts/group/removeForeignKeys', contractID, memberID, state)
+          await sbp('gi.contracts/group/removeForeignKeys', contractID, memberID, state)
         }
       }
 
@@ -1769,12 +1768,12 @@ sbp('chelonia/defineContract', {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
       })
     },
-    'gi.contracts/group/removeForeignKeys': (contractID, userID, state) => {
-      const keyIds = findForeignKeysByContractID(state, userID)
+    'gi.contracts/group/removeForeignKeys': async (contractID, userID, state) => {
+      const keyIds = await sbp('chelonia/contract/foreignKeysByContractID', state, userID)
 
       if (!keyIds?.length) return
 
-      const CSKid = findKeyIdByName(state, 'csk')
+      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
       sbp('chelonia/out/keyDel', {
         contractID,

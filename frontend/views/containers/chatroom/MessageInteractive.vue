@@ -42,7 +42,7 @@ import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { get } from '@model/contracts/shared/giLodash.js'
+import { get } from 'turtledash'
 
 export const interactiveMessage = (proposal, baseOptions = {}) => {
   const { status, creatorID, proposalType, proposalData } = proposal

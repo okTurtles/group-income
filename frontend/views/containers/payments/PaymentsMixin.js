@@ -3,7 +3,7 @@ import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
 import { humanDate, dateFromPeriodStamp, periodStampsForDate } from '@model/contracts/shared/time.js'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 
 // NOTE: this mixin combines payment information
 // from both the current in-memory state and the archived payments on disk

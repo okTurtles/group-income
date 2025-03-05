@@ -1,6 +1,6 @@
 'use strict'
 
-import { merge, union } from '@model/contracts/shared/giLodash.js'
+import { merge, union } from 'turtledash'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
