@@ -293,7 +293,10 @@ route.GET('/latestHEADinfo/{contractID}', {
 })
 
 route.GET('/time', {}, function (request, h) {
-  return new Date().toISOString()
+  return h
+    .response(new Date().toISOString())
+    .header('cache-control', 'no-store')
+    .type('text/plain')
 })
 
 // TODO: if the browser deletes our cache then not everyone
