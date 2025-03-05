@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 import getters from './getters.js'
 import Vue from 'vue'
 

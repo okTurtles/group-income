@@ -109,7 +109,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin } from '@view-utils/misc.js'
 import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'Navigation',

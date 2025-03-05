@@ -4,11 +4,11 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
+import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from 'turtledash'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
-import type { Key } from './crypto.js'
-import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from './crypto.js'
+import type { Key } from '@chelonia/crypto'
+import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
@@ -877,6 +877,9 @@ export default (sbp('sbp/selectors/register', {
     return firstSync
       ? isSyncing && this.currentSyncs[contractID].firstSync
       : isSyncing
+  },
+  'chelonia/contract/currentSyncs': function () {
+    return Object.keys(this.currentSyncs)
   },
   // Because `/remove` is done asynchronously and a contract might be removed
   // much later than when the call to remove was made, an optional callback

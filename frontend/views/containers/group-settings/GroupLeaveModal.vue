@@ -63,7 +63,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { normalizeString } from '@model/contracts/shared/giLodash.js'
+import { normalizeString } from 'turtledash'
 
 export default ({
   name: 'GroupLeaveModal',

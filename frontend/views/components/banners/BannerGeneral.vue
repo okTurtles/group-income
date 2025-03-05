@@ -12,7 +12,7 @@
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'BannerGeneral',

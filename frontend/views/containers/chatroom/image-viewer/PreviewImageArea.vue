@@ -57,7 +57,7 @@
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
 import pointerEventsMixinFactory from '@view-utils/pointerEventsMixins.js'
-import { linearScale, debounce } from '@model/contracts/shared/giLodash.js'
+import { linearScale, debounce } from 'turtledash'
 
 const linearScaler = {
   deltaToZoom: linearScale([0, 5], [0, 12]), // maps deltaY value of 'scroll' event to zoom value
