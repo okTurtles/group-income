@@ -878,6 +878,9 @@ export default (sbp('sbp/selectors/register', {
       ? isSyncing && this.currentSyncs[contractID].firstSync
       : isSyncing
   },
+  'chelonia/contract/currentSyncs': function () {
+    return Object.keys(this.currentSyncs)
+  },
   // Because `/remove` is done asynchronously and a contract might be removed
   // much later than when the call to remove was made, an optional callback
   // can be passed to verify whether to proceed with removal. This is used as
