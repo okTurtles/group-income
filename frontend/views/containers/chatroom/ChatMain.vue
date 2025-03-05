@@ -568,6 +568,8 @@ export default ({
         if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
+
+          if (this.chatroomHasSwitchedFrom(contractID)) return
           const msgIndex = findMessageIdx(messageHash, this.messages)
           if (msgIndex >= 0) {
             scrollAndHighlight(msgIndex)
@@ -586,6 +588,7 @@ export default ({
           // force conversation viewport to be at the bottom (most recent messages)
           setTimeout(async () => {
             if (scrollTargetMessage) {
+              if (this.chatroomHasSwitchedFrom(contractID)) return
               await this.scrollToMessage(scrollTargetMessage, effect)
             } else {
               this.jumpToLatest()
@@ -767,10 +770,11 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
+      const chatRoomID = this.ephemeral.renderingChatRoomId
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
 
       // If user has since switched to another chatroom, no need to update 'this.messageState'
-      if (this.summary.chatRoomID !== this.ephemeral.renderingChatRoomId) return
+      if (this.chatroomHasSwitchedFrom(chatRoomID)) return
 
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
@@ -827,7 +831,7 @@ export default ({
         if (shouldLoadMoreEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
 
-          if (this.chatroomHasSwitchedFrom(chatRoomID)) return false
+          if (this.chatroomHasSwitchedFrom(chatRoomID)) return
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
@@ -840,8 +844,8 @@ export default ({
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
 
-        if (this.chatroomHasSwitchedFrom(chatRoomID)) return false
         events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
       }
 
       if (events.length) {
@@ -1049,6 +1053,7 @@ export default ({
         // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
         try {
           const completed = await this.renderMoreMessages()
+          if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
 
           if (completed === true) {
             // If there's messages, call $state.loaded. This has the effect that
@@ -1122,7 +1127,7 @@ export default ({
           this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
       }
     },
-    async processSwitchQueue () {
+    async _processSwitchQueue () {
       if (this.ephemeral.chatroomSwitchQueue.length === 0) return
 
       // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
@@ -1152,7 +1157,10 @@ export default ({
           })
         }
       }
-    }
+    },
+    processSwitchQueue: debounce(function () {
+      this._processSwitchQueue()
+    }, 250)
   },
   provide () {
     return {
@@ -1170,8 +1178,7 @@ export default ({
 
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
-        if (toChatRoomId !== this.summary.chatRoomID ||
-          this.ephemeral.messagesInitiated) return
+        if (toChatRoomId !== this.summary.chatRoomID) return
         this.processSwitchQueue()
       }
 
@@ -1184,15 +1191,9 @@ export default ({
         this.ephemeral.scrolledDistance = 0
         this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
 
-        sbp('chelonia/contract/isSyncing', toChatRoomId).then(isSyncing => {
-          if (isSyncing) {
-            sbp('chelonia/queueInvocation', toChatRoomId, initAfterSynced)
-          } else {
-            this.processSwitchQueue()
-          }
-        })
-      } else if (toIsJoined && toIsJoined !== fromIsJoined) {
-        sbp('chelonia/queueInvocation', toChatRoomId, initAfterSynced)
+        sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+      } else if (toIsJoined && !fromIsJoined) {
+        sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
     }
   }
