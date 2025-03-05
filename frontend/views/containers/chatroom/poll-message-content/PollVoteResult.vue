@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import { uniq } from '@model/contracts/shared/giLodash.js'
+import { uniq } from 'turtledash'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'

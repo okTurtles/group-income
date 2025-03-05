@@ -6,7 +6,7 @@ import {
   CHATROOM_TYPES,
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
-import { cloneDeep, has, omit } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, has, omit } from 'turtledash'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
@@ -18,9 +18,8 @@ import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoi
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import type { Key } from '../../../shared/domains/chelonia/crypto.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import type { Key } from '@chelonia/crypto'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 

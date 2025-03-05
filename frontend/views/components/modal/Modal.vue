@@ -6,7 +6,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import { omit } from '@model/contracts/shared/giLodash.js'
+import { omit } from 'turtledash'
 
 export default ({
   name: 'Modal',

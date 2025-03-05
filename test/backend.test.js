@@ -15,8 +15,7 @@ import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { createCID } from '~/shared/functions.js'
 import { Secret } from '../shared/domains/chelonia/Secret.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../shared/domains/chelonia/crypto.js'
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')

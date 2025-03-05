@@ -1,10 +1,10 @@
 'use strict'
 
-import { has } from '~/frontend/model/contracts/shared/giLodash.js'
-import { blake2b256stream } from '~/shared/blake2bstream.js'
-import { base58btc } from '~/shared/multiformats/bases/base58.js'
-import { blake2b256 } from '~/shared/multiformats/blake2b.js'
-import { CID } from '~/shared/multiformats/cid.js'
+import { base58btc } from '@chelonia/multiformats/bases/base58'
+import { blake2b256 } from '@chelonia/multiformats/blake2b'
+import { blake2b256stream } from '@chelonia/multiformats/blake2bstream'
+import { CID } from '@chelonia/multiformats/cid'
+import { has } from 'turtledash'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
 const multicodes = { JSON: 0x0200, RAW: 0x00 }
