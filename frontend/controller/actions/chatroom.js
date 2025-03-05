@@ -3,15 +3,15 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { makeMentionFromUserID } from '@model/chatroom/utils.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { has, omit } from 'turtledash'
-import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
+import { makeMentionFromUserID } from '@model/chatroom/utils.js'
+import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 
 sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   contractID,
