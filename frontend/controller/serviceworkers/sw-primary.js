@@ -325,6 +325,9 @@ const setupPromise = setupChelonia()
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
+  // `skipWaiting` tells the browser that the SW should immediately move from
+  // installed to activated (or from waiting to activated). We only want to do
+  // this after setup is complete, hence the `.then`.
   event.waitUntil(setupPromise.then(() => self.skipWaiting()))
 })
 
