@@ -61,8 +61,7 @@ import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { keyId } from '../../../shared/domains/chelonia/crypto.js'
+import { keyId } from '@chelonia/crypto'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })

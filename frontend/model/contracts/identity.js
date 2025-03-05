@@ -5,7 +5,6 @@ import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { findForeignKeysByContractID, findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
   IDENTITY_BIO_MAX_CHARS,
   IDENTITY_EMAIL_MAX_CHARS,
@@ -15,7 +14,7 @@ import {
 } from './shared/constants.js'
 import { referenceTally } from './shared/functions.js'
 import identityGetters from './shared/getters/identity.js'
-import { has, merge } from './shared/giLodash.js'
+import { has, merge } from 'turtledash'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -337,7 +336,7 @@ sbp('chelonia/defineContract', {
             delete sbp('state/vuex/state').lastLoggedIn[contractID]
           }
 
-          sbp('gi.contracts/identity/revokeGroupKeyAndRotateOurPEK', contractID, state, data.groupContractID)
+          await sbp('gi.contracts/identity/revokeGroupKeyAndRotateOurPEK', contractID, state, data.groupContractID)
           sbp('okTurtles.events/emit', LEFT_GROUP, { identityContractID: contractID, groupContractID: data.groupContractID })
         }).catch(e => {
           console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e)
@@ -403,11 +402,11 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
-    'gi.contracts/identity/revokeGroupKeyAndRotateOurPEK': (identityContractID, state, groupContractID) => {
-      const CSKid = findKeyIdByName(state, 'csk')
-      const CEKid = findKeyIdByName(state, 'cek')
+    'gi.contracts/identity/revokeGroupKeyAndRotateOurPEK': async (identityContractID, state, groupContractID) => {
+      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
-      const groupCSKids = findForeignKeysByContractID(state, groupContractID)
+      const groupCSKids = await sbp('chelonia/contract/foreignKeysByContractID', state, groupContractID)
 
       if (groupCSKids?.length) {
         if (!CEKid) {

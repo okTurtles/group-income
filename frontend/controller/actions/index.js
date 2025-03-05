@@ -1,11 +1,10 @@
-import { has, pick } from '@model/contracts/shared/giLodash.js'
+import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'

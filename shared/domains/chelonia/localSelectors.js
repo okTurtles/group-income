@@ -1,7 +1,7 @@
 // This file provides utility functions that are local regardless of whether
 // Chelonia is running in a different context and calls are being forwarded
 // using `chelonia/*`
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import { CONTRACTS_MODIFIED, CONTRACTS_MODIFIED_READY, EVENT_HANDLED, EVENT_HANDLED_READY } from './events.js'
 

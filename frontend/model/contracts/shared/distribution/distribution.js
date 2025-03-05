@@ -1,9 +1,9 @@
 'use strict'
 
+import { cloneDeep } from 'turtledash'
+import { DECIMALS_MAX, saferFloat } from '../currencies.js'
 import mincomeProportional from './mincome-proportional.js'
 import minimizeTotalPaymentsCount from './payments-minimizer.js'
-import { cloneDeep } from '../giLodash.js'
-import { saferFloat, DECIMALS_MAX } from '../currencies.js'
 
 type Distribution = Array<Object>;
 

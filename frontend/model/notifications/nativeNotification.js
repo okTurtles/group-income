@@ -1,6 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { throttle } from '@model/contracts/shared/giLodash.js'
+import { throttle } from 'turtledash'
 
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.

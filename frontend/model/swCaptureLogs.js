@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.js'
 import { createLogger } from './logger.js'
