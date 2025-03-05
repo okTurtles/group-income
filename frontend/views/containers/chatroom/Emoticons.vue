@@ -11,7 +11,7 @@ import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
 import data from 'emoji-mart-vue-fast/data/apple.json'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
-import { debounce } from '@model/contracts/shared/giLodash.js'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'Emoticons',

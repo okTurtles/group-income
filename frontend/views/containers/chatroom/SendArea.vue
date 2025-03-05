@@ -283,7 +283,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
 import {
   injectOrStripSpecialChar,
   injectOrStripLink,

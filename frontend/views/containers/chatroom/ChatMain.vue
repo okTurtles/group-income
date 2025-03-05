@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-chat-main(
-  v-if='summary.chatRoomID'
+  v-if='ephemeral.renderingChatRoomId'
   :class='{ "is-dnd-active": dndState && dndState.isActive }'
   @dragover='dragStartHandler'
 )
@@ -123,7 +123,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { L } from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -141,7 +141,7 @@ import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_ME
 import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, throttle, delay } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
 
@@ -184,7 +184,7 @@ const onChatScroll = function () {
     }
   }
 
-  if (!this.ephemeral.messagesInitiated && this.nonReactive.renderingChatRoomId) {
+  if (!this.ephemeral.messagesInitiated && this.ephemeral.renderingChatRoomId) {
     return
   }
 
@@ -197,7 +197,7 @@ const onChatScroll = function () {
       const scrollMarginTop = parseFloat(window.getComputedStyle(this.$refs[msg.hash][0].$el).scrollMarginTop || 0)
       if (offsetTop - scrollMarginTop > curScrollTop) {
         sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
-          chatRoomID: this.nonReactive.renderingChatRoomId,
+          chatRoomID: this.ephemeral.renderingChatRoomId,
           messageHash: msg.hash
         })
         break
@@ -205,7 +205,7 @@ const onChatScroll = function () {
     }
   } else if (this.currentChatRoomScrollPosition) {
     sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, {
-      chatRoomID: this.nonReactive.renderingChatRoomId,
+      chatRoomID: this.ephemeral.renderingChatRoomId,
       messageHash: null
     })
   }
@@ -239,16 +239,6 @@ export default ({
         isPhone: null
       },
       latestEvents: [],
-      // keys here are meant to be used without Vue.set as they're not directly
-      // connected to rendering
-      nonReactive: {
-      // NOTE: Since the this.currentChatRoomId is a getter which can be changed anytime.
-      //       We can not use this.currentChatRoomId to point the current-rendering-chatRoomID
-      //       because it takes some time to render the chatroom which is enough for this.currentChatRoomId to be changed
-      //       We initiate the chatroom state when we open or switch a chatroom, so we can say that
-      //       the current-rendering-chatroom is the chatroom whose state is initiated for the last time.
-        renderingChatRoomId: null
-      },
       ephemeral: {
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
@@ -260,7 +250,11 @@ export default ({
         scrollHashOnInitialLoad: null, // Message hash to scroll to on chatroom's initial load
         replyingMessage: null,
         replyingTo: null,
-        unprocessedEvents: []
+        unprocessedEvents: [],
+
+        // Related to switching chatrooms
+        chatroomSwitchQueue: [],
+        renderingChatRoomId: null
       },
       messageState: {
         contract: {}
@@ -280,22 +274,20 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    // Bind debounced methods
+    // setup various event listeners.
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
-    if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
-      // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
-      //       after the first opening the Group Income application
-      this.setInitMessages().catch(e => {
-        console.error('[ChatMain.vue] mounted error', e)
-      })
-    }
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
+
+    if (this.summary.chatRoomID) {
+      this.ephemeral.chatroomSwitchQueue.push(this.summary.chatRoomID)
+      this.processSwitchQueue()
+    }
   },
   beforeDestroy () {
+    // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
-    // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
   },
   computed: {
@@ -329,7 +321,7 @@ export default ({
       return this.messageState.contract?.messages || []
     },
     isGroupCreator () {
-      if (!this.isGroupDirectMessage(this.summary.chatRoomID)) {
+      if (!this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)) {
         return this.currentUserAttr.id === this.currentGroupOwnerID
       }
       return false
@@ -337,13 +329,10 @@ export default ({
   },
   methods: {
     proximityDate,
-    checkEventSourceConsistency (contractID) {
-      if (contractID !== this.summary.chatRoomID) {
-        console.info(`Received an event for contract ID ${contractID}, but we're currently in chatroom ID ${this.summary.chatRoomID}; avoiding any further processing`)
-        return false
-      }
-
-      return true
+    chatroomHasSwitchedFrom (chatroomID) {
+      // Some async operations (eg. this.rerenderEvents) are time-consuming, and user could switch away from the chatroom until the operation is not completed.
+      // This method checks if that has happened.
+      return chatroomID !== this.ephemeral.renderingChatRoomId
     },
     messageType (message) {
       return {
@@ -396,7 +385,7 @@ export default ({
     },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
@@ -414,10 +403,7 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
-          if (!this.checkEventSourceConsistency(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-            if (!this.checkEventSourceConsistency(contractID)) return
-
             beforePrePublish?.()
 
             // IMPORTANT: This is executed *BEFORE* the message is received over
@@ -570,7 +556,7 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        const contractID = this.summary.chatRoomID
+        const contractID = this.ephemeral.renderingChatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
@@ -578,11 +564,12 @@ export default ({
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
-        if (!this.checkEventSourceConsistency(contractID)) return
+
+        if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
           await this.rerenderEvents(events)
 
-          if (!this.checkEventSourceConsistency(contractID)) return
+          if (this.chatroomHasSwitchedFrom(contractID)) return
           const msgIndex = findMessageIdx(messageHash, this.messages)
           if (msgIndex >= 0) {
             scrollAndHighlight(msgIndex)
@@ -595,13 +582,13 @@ export default ({
       }
     },
     updateScroll (scrollTargetMessage = null, effect = false) {
-      const contractID = this.summary.chatRoomID
+      const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
           // force conversation viewport to be at the bottom (most recent messages)
           setTimeout(async () => {
             if (scrollTargetMessage) {
-              if (!this.checkEventSourceConsistency(contractID)) return
+              if (this.chatroomHasSwitchedFrom(contractID)) return
               await this.scrollToMessage(scrollTargetMessage, effect)
             } else {
               this.jumpToLatest()
@@ -647,7 +634,7 @@ export default ({
     editMessage (message, newMessage) {
       message.text = newMessage
       message.pending = true
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
@@ -660,7 +647,7 @@ export default ({
       })
     },
     pinToChannel (message) {
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
       sbp('gi.actions/chatroom/pinMessage', {
         contractID,
         data: { message }
@@ -669,7 +656,7 @@ export default ({
       })
     },
     async unpinFromChannel (hash) {
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
 
       const promptConfig = {
         heading: L('Remove pinned message'),
@@ -690,7 +677,7 @@ export default ({
       }
     },
     async deleteMessage (message) {
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
       const question = message.attachments?.length
         ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
@@ -760,7 +747,7 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
-      const contractID = this.nonReactive.renderingChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID,
         data: { hash: message.hash, emoticon }
@@ -769,7 +756,7 @@ export default ({
       })
     },
     async generateNewChatRoomState (shouldClearMessages = false, height) {
-      const state = await sbp('chelonia/contract/state', this.nonReactive.renderingChatRoomId, height) || {}
+      const state = await sbp('chelonia/contract/state', this.ephemeral.renderingChatRoomId, height) || {}
       return {
         settings: state.settings || {},
         attributes: state.attributes || {},
@@ -783,9 +770,12 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
-      const chatroomID = this.nonReactive.renderingChatRoomId
+      const chatRoomID = this.ephemeral.renderingChatRoomId
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
-      if (!this.checkEventSourceConsistency(chatroomID)) return
+
+      // If user has since switched to another chatroom, no need to update 'this.messageState'
+      if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
@@ -816,13 +806,11 @@ export default ({
      *            when user switches channels very fast.
     */
     async renderMoreMessages () {
-      // NOTE: 'this.nonReactive.renderingChatRoomId' can be changed while running this function
+      // NOTE: 'this.ephemeral.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
-      const chatRoomID = this.nonReactive.renderingChatRoomId
-      if (!this.checkEventSourceConsistency(chatRoomID)) return
-
+      const chatRoomID = this.ephemeral.renderingChatRoomId
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
        * if the removed message was the first unread messages(currentChatRoomReadUntil)
@@ -842,7 +830,8 @@ export default ({
         const shouldLoadMoreEvents = messageHashToScroll && this.messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
         if (shouldLoadMoreEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
-          if (!this.checkEventSourceConsistency(chatRoomID)) return
+
+          if (this.chatroomHasSwitchedFrom(chatRoomID)) return
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
@@ -854,10 +843,10 @@ export default ({
         if (this.messages.length) {
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
-        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
-      }
 
-      if (!this.checkEventSourceConsistency(chatRoomID)) return
+        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+      }
 
       if (events.length) {
         await this.rerenderEvents(events)
@@ -877,35 +866,18 @@ export default ({
         this.latestEvents.unshift(...events)
       }
 
-      const contractID = this.summary.chatRoomID
-      if (!this.checkEventSourceConsistency(contractID)) return
-
       if (this.latestEvents.length > 0) {
         const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
         let state = await this.generateNewChatRoomState(true, entryHeight)
 
+        const chatroomID = this.ephemeral.renderingChatRoomId
         for (const event of this.latestEvents) {
+          // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
+          if (this.chatroomHasSwitchedFrom(chatroomID)) return
           state = await sbp('chelonia/in/processMessage', event, state)
         }
-        if (!this.checkEventSourceConsistency(contractID)) return
+
         Vue.set(this.messageState, 'contract', state)
-      }
-    },
-    async setInitMessages () {
-      if (this.nonReactive.renderingChatRoomId === this.currentChatRoomId) {
-        return
-      }
-      // NOTE: since the state is initialized based on the renderingChatRoomId
-      //       need to set renderingChatRoomId here, before calling initializeState
-      this.nonReactive.renderingChatRoomId = this.currentChatRoomId
-      await this.initializeState()
-      if (this.nonReactive.renderingChatRoomId !== this.currentChatRoomId) {
-        return
-      }
-      this.ephemeral.messagesInitiated = false
-      this.ephemeral.unprocessedEvents = []
-      if (this.ephemeral.infiniteLoading) {
-        this.ephemeral.infiniteLoading.reset()
       }
     },
     setStartNewMessageIndex () {
@@ -930,7 +902,7 @@ export default ({
       }
     },
     updateReadUntilMessageHash ({ messageHash, createdHeight }) {
-      const chatRoomID = this.nonReactive.renderingChatRoomId
+      const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
           // NOTE: skip adding useless invocations in KV_QUEUE queue
@@ -944,23 +916,11 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
-      // We must check this.summary.chatRoomID and not this.currentChatRoomId
-      // because they might be different, as this.summary is computed from
-      // this.currentChatRoomId.
-      // The watch below will ensure that this.messageState.contract is correct
-      // for the current contract, which is needed for signature verification
-      // when calling processMessage.
-      // The watch is setup for this.summary and not for this.currentChatRoomId,
-      // which is why this check must also check for this.summary.chatRoomID
-      if (!this.checkEventSourceConsistency(contractID)) return
+      if (this.chatroomHasSwitchedFrom(contractID)) return
 
-      if (message) {
-        this.ephemeral.unprocessedEvents.push(message)
-      }
+      if (message) this.ephemeral.unprocessedEvents.push(message)
 
-      if (!this.ephemeral.messagesInitiated) {
-        return
-      }
+      if (!this.ephemeral.messagesInitiated) return
 
       this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
         // TODO: The next line will _not_ get information about any inner signatures,
@@ -1007,7 +967,7 @@ export default ({
         // This ensures that `this.latestEvents.push(serializedMessage)` below
         // happens in order
         sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-          if (!this.checkEventSourceConsistency(contractID)) return
+          if (this.chatroomHasSwitchedFrom(contractID)) return
 
           // Messages are processed twice: before sending (outgoing direction,
           // pending status) and then again when received from the server
@@ -1037,8 +997,6 @@ export default ({
 
           const serializedMessage = message.serialize()
           const newContractState = await sbp('chelonia/in/processMessage', serializedMessage, this.messageState.contract)
-
-          if (!this.checkEventSourceConsistency(contractID)) return
           Vue.set(this.messageState, 'contract', newContractState)
 
           this.latestEvents.push(serializedMessage)
@@ -1082,32 +1040,27 @@ export default ({
       _this.jumpToLatest('instant')
     }, 40),
     infiniteHandler ($state) {
+      // NOTE: this infinite handler is being called once which should be ignored
+      //       before calling the 'initializeState' function
       this.ephemeral.infiniteLoading = $state
 
-      if (this.ephemeral.messagesInitiated === undefined) {
-        // NOTE: this infinite handler is being called once which should be ignored
-        //       before calling the setInitMessages function
-        return
-      } else if (this.currentChatRoomId !== this.nonReactive.renderingChatRoomId) {
-        // NOTE: should ignore to render messages before chatroom state is initiated
-        return
-      }
-      const chatRoomID = this.currentChatRoomId
-      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-        // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
-        if (!this.checkEventSourceConsistency(chatRoomID)) return
+      if (this.ephemeral.messagesInitiated === undefined) return
 
+      const targetChatroomID = this.ephemeral.renderingChatRoomId
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
+        if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
+
+        // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
         try {
           const completed = await this.renderMoreMessages()
-          if (!this.checkEventSourceConsistency(chatRoomID)) return
+          if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
 
           if (completed === true) {
             // If there's messages, call $state.loaded. This has the effect that
             // the no-more message will be shown instead of the no-results message
-            if (this.messages.length) {
-              $state.loaded()
-            }
+            if (this.messages.length) $state.loaded()
             $state.complete()
+
             if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
               // updateReadUntilMessageHash should only use messages that exist
@@ -1123,6 +1076,7 @@ export default ({
           } else if (completed === false) {
             $state.loaded()
           }
+
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
@@ -1153,24 +1107,12 @@ export default ({
       // NOTE: We need this method wrapper to avoid ephemeral.onChatScroll being null
       this.ephemeral.onChatScroll?.()
     },
-    // This debounced method is debounced precisely while switching groups
-    // to avoid unnecessary re-rendering, and therefore is fine as is and
-    // doesn't need to be flushed
-    refreshContent: debounce(function () {
-      // NOTE: using debounce we can skip unnecessary rendering contents
-      this.setInitMessages().catch(e => {
-        console.error('[ChatMain.vue] refreshContent error', e)
-      })
-    }, 250),
     // Handlers for file-upload via drag & drop action
     dragStartHandler (e) {
       e.preventDefault()
       // handler function for 'dragstart', 'dragover' events.
 
-      if (!this.dndState.isActive) {
-        this.dndState.isActive = true
-      }
-
+      this.dndState.isActive = true
       // give user a correct feedback about what happens upon 'drop' action. (https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
       e.dataTransfer.dropEffect = 'copy'
     },
@@ -1184,7 +1126,38 @@ export default ({
         e?.dataTransfer.files?.length &&
           this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
       }
-    }
+    },
+    processSwitchQueue: debounce(async function () {
+      if (this.ephemeral.chatroomSwitchQueue.length === 0) return
+
+      // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
+      const targetChatroomId = this.ephemeral.chatroomSwitchQueue.pop()
+      this.ephemeral.chatroomSwitchQueue = []
+      this.ephemeral.renderingChatRoomId = targetChatroomId
+
+      try {
+        await this.initializeState(true)
+        if (this.ephemeral.chatroomSwitchQueue.length > 0) {
+          // If the user has since switched to another chatroom while initializing this chatroom, stop here
+          // and care about the switched chatroom.
+          return this.processSwitchQueue()
+        } else {
+          this.ephemeral.messagesInitiated = false
+          this.ephemeral.unprocessedEvents = []
+          this.ephemeral.infiniteLoading?.reset()
+        }
+      } catch (e) {
+        console.error('ChatMain.vue processSwitchQueue() error:', e)
+
+        if (!this.chatroomHasSwitchedFrom(targetChatroomId)) {
+          sbp('gi.ui/prompt', {
+            heading: L('Failed to initialize chatroom'),
+            question: L('Error details: {reportError}', LError(e)),
+            primaryButton: L('Close')
+          })
+        }
+      }
+    }, 250)
   },
   provide () {
     return {
@@ -1197,39 +1170,22 @@ export default ({
     'summary' (to, from) {
       const toChatRoomId = to.chatRoomID
       const fromChatRoomId = from.chatRoomID
-      const toIsJoined = to.isJoined
-      const fromIsJoined = from.isJoined
 
       const initAfterSynced = (toChatRoomId) => {
-        if (toChatRoomId !== this.summary.chatRoomID || this.ephemeral.messagesInitiated) return
-        return this.setInitMessages()
+        // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
+        if (toChatRoomId !== this.summary.chatRoomID) return
+        this.processSwitchQueue()
       }
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.onChatScroll?.flush()
-        // Skeleton state is to render what basic information we can get
-        // synchronously.
+        // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
+
         this.ephemeral.messagesInitiated = false
         this.ephemeral.scrolledDistance = 0
-        // Coerce 'chelonia/contract/isSyncing' into a Promise
-        // This may seem weird, but it's needed because the result may be a
-        // boolean when Chelonia is running in the browsing context, or it may
-        // be a promise when Chelonia is proxied using the 'chelonia/*' selector,
-        // like when using a SW.
-        // We also don't use `await`, which would be more straightforward because
-        // that'd require this entire function to be `async`, which could result
-        // in race conditions as this is a watcher.
-        Promise.resolve(sbp('chelonia/contract/isSyncing', toChatRoomId)).then((isSyncing) => {
-          // If the chatroom has changed since, return
-          if (this.summary.chatRoomID !== toChatRoomId) return
-          if (isSyncing) {
-            toIsJoined && sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
-          } else {
-            this.refreshContent()
-          }
-        })
-      } else if (toIsJoined && toIsJoined !== fromIsJoined) {
+        this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
+
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
     }

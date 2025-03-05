@@ -81,6 +81,22 @@ declare module '@apeleghq/rfc8188/decrypt' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encodings' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encrypt' { declare module.exports: any }
 
+declare module '@chelonia/crypto' {
+    declare type Key = {
+        type: string;
+        secretKey?: mixed;
+        publicKey?: mixed;
+    }
+    declare module.exports: any
+}
+declare module '@chelonia/multiformats/bases/base58' { declare module.exports: any }
+declare module '@chelonia/multiformats/blake2b' { declare module.exports: any }
+declare module '@chelonia/multiformats/blake2bstream' { declare module.exports: any }
+declare module '@chelonia/multiformats/bytes' { declare module.exports: any }
+declare module '@chelonia/multiformats/cid' { declare module.exports: any }
+declare module '@chelonia/serdes' { declare module.exports: any }
+declare module 'turtledash' { declare module.exports: any }
+
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
@@ -92,8 +108,6 @@ declare module '@model/contracts/shared/time.js' { declare module.exports: Objec
 declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
-declare module '~/frontend/model/contracts/shared/giLodash.js' { declare module.exports: any }
-declare module '@model/contracts/shared/giLodash.js' { declare module.exports: any }
 declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
 declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
 declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }
@@ -104,8 +118,3 @@ declare module './model/contracts/manifests.json' { declare module.exports: any 
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
 declare module '@controller/instance-keys.js' { declare module.exports: any }
-declare module '~/shared/multiformats/bases/base58.js' { declare module.exports: any }
-declare module '~/shared/multiformats/blake2b.js' { declare module.exports: any }
-declare module '~/shared/multiformats/bytes.js' { declare module.exports: any }
-declare module '~/shared/multiformats/cid.js' { declare module.exports: any }
-declare module '~/shared/blake2bstream.js' { declare module.exports: any }
