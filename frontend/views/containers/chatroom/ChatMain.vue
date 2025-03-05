@@ -916,7 +916,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: GIMessage) {
-      if (contractID !== this.ephemeral.renderingChatRoomId) return
+      if (this.chatroomHasSwitchedFrom(contractID)) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
 
@@ -967,7 +967,7 @@ export default ({
         // This ensures that `this.latestEvents.push(serializedMessage)` below
         // happens in order
         sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
-          if (contractID !== this.ephemeral.renderingChatRoomId) return
+          if (this.chatroomHasSwitchedFrom(contractID)) return
 
           // Messages are processed twice: before sending (outgoing direction,
           // pending status) and then again when received from the server
@@ -1127,7 +1127,7 @@ export default ({
           this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
       }
     },
-    async _processSwitchQueue () {
+    processSwitchQueue: debounce(async function () {
       if (this.ephemeral.chatroomSwitchQueue.length === 0) return
 
       // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
@@ -1157,9 +1157,6 @@ export default ({
           })
         }
       }
-    },
-    processSwitchQueue: debounce(function () {
-      this._processSwitchQueue()
     }, 250)
   },
   provide () {
