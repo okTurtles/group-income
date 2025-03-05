@@ -108,8 +108,6 @@ declare module '@model/contracts/shared/time.js' { declare module.exports: Objec
 declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
-declare module 'turtledash' { declare module.exports: any }
-declare module 'turtledash' { declare module.exports: any }
 declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
 declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
 declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }
