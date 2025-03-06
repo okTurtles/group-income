@@ -1143,6 +1143,9 @@ export default ({
         if (this.ephemeral.chatroomSwitchQueue.length > 0) {
           // If the user has since switched to another chatroom while initializing this chatroom, stop here
           // and care about the switched chatroom.
+
+          // NOTE: 'return this.processSwitchQueue()' below would make it more clear that we don't proceed with anything else, but
+          //       having return here creates an occasional error saying 'TypeError: Chaining cycle detected for promise'.
           this.processSwitchQueue()
         } else {
           this.ephemeral.messagesInitiated = false
