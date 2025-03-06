@@ -50,7 +50,11 @@ console.error = logger.error.bind(logger)
 
 console.info('NODE_ENV =', process.env.NODE_ENV)
 
-const dontLog = { 'backend/server/broadcastEntry': true, 'backend/server/broadcastKV': true }
+const dontLog = {
+  'backend/server/broadcastEntry': true,
+  'backend/server/broadcastDeletion': true,
+  'backend/server/broadcastKV': true
+}
 
 function logSBP (domain, selector, data: Array<*>) {
   if (!dontLog[selector]) {
