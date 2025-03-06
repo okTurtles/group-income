@@ -1143,7 +1143,7 @@ export default ({
         if (this.ephemeral.chatroomSwitchQueue.length > 0) {
           // If the user has since switched to another chatroom while initializing this chatroom, stop here
           // and care about the switched chatroom.
-          return this.processSwitchQueue()
+          this.processSwitchQueue()
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
