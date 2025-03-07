@@ -224,18 +224,27 @@ export const pushServerActionhandlers: any = {
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
     const { server } = socket
-    const subscription = payload
+    const { applicationServerKey, subscriptionInfo } = payload
+    if (applicationServerKey) {
+      const ourVapidPublicKey = getVapidPublicKey()
+      const theirVapidPublicKey = Buffer.from(applicationServerKey, 'base64').toString('base64url')
+      if (ourVapidPublicKey !== theirVapidPublicKey) {
+        socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
+        console.warn({ ourVapidPublicKey, theirVapidPublicKey }, 'Refusing to store subscription because the associated public VAPID key does not match ours')
+        return
+      }
+    }
     let subscriptionId = null
     let host = ''
     let subscriptionWrapper = null
     try {
-      subscriptionId = await getSubscriptionId(subscription)
+      subscriptionId = await getSubscriptionId(subscriptionInfo)
       subscriptionWrapper = server.pushSubscriptions[subscriptionId]
 
       if (!subscriptionWrapper) {
-        console.debug(`saving new push subscription '${subscriptionId}':`, subscription)
+        console.debug(`saving new push subscription '${subscriptionId}':`, subscriptionInfo)
         // If this is a new subscription, we call `subscriptionInfoWrapper` and store it in memory.
-        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription)
+        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo)
         subscriptionWrapper = server.pushSubscriptions[subscriptionId]
         host = subscriptionWrapper.endpoint.host
         await addSubscriptionToIndex(subscriptionId)
