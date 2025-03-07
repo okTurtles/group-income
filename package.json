@@ -143,6 +143,7 @@
     "multihashes": "0.4.15",
     "pino": "8.19.0",
     "pino-pretty": "10.3.1",
+    "portal-vue": "2.1.7",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
     "sqlite3": "5.1.7",

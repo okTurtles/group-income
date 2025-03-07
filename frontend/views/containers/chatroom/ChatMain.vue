@@ -117,6 +117,8 @@
       :joined='summary.isJoined'
       :title='summary.title'
     )
+
+  portal-target(name='chat-overlay-target' class='chat-overlay-target')
 </template>
 
 <script>
@@ -1315,5 +1317,10 @@ export default ({
     color: $general_0;
     animation: loadSpin 1.75s infinite linear;
   }
+}
+
+::v-deep .chat-overlay-target {
+  position: relative;
+  z-index: 1;
 }
 </style>
