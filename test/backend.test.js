@@ -13,7 +13,7 @@ import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import '~/shared/domains/chelonia/chelonia.js'
-import { createCID } from '~/shared/functions.js'
+import { createCID, multicodes } from '~/shared/functions.js'
 import { Secret } from '../shared/domains/chelonia/Secret.js'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
@@ -362,7 +362,7 @@ describe('Full walkthrough', function () {
       // })
       // since we're just saving the buffer now, we might as well use the simpler readFileSync API
       const buffer = fs.readFileSync(filepath)
-      const hash = createCID(buffer)
+      const hash = createCID(buffer, multicodes.SHELTER_FILE_CHUNK)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       const manifest = {
         version: '1.0.0',
@@ -375,7 +375,7 @@ describe('Full walkthrough', function () {
         chunks: [[buffer.byteLength, hash]]
       }
       const manifestBuffer = Buffer.from(JSON.stringify(manifest))
-      const manifestCid = createCID(manifestBuffer)
+      const manifestCid = createCID(manifestBuffer, multicodes.SHELTER_FILE_MANIFEST)
       form.append(
         '0',
         new File(

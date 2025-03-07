@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { strToB64 } from '~/shared/functions.js'
+import { maybeParseCID, multicodes, strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
 import { readdir, readFile } from 'node:fs/promises'
@@ -99,19 +99,14 @@ sbp('sbp/selectors/register', {
   'backend/db/registerName': async function (name: string, value: string): Promise<*> {
     const exists = await sbp('backend/db/lookupName', name)
     if (exists) {
-      if (!Boom.isBoom(exists)) {
-        return Boom.conflict('exists')
-      } else if (exists.output.statusCode !== 404) {
-        throw exists // throw if this is an error other than "not found"
-      }
-      // otherwise it is a Boom.notFound(), proceed ahead
+      throw Boom.conflict('exists')
     }
     await sbp('chelonia.db/set', namespaceKey(name), value)
     return { name, value }
   },
-  'backend/db/lookupName': async function (name: string): Promise<string | Error> {
+  'backend/db/lookupName': async function (name: string): Promise<string> {
     const value = await sbp('chelonia.db/get', namespaceKey(name))
-    return value || Boom.notFound()
+    return value
   }
 })
 
@@ -173,9 +168,8 @@ export default async () => {
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
-    const HASH_LENGTH = 52
-    const CONTRACT_MANIFEST_MAGIC = '{"head":"{\\"manifestVersion\\"'
-    const CONTRACT_SOURCE_MAGIC = '"use strict";'
+    const HASH_LENGTH = 56
+
     // Preload contract source files and contract manifests into Chelonia DB.
     // Note: the data folder may contain other files if the `fs` persistence mode
     // has been used before. We won't load them here; that's the job of `chel migrate`.
@@ -184,7 +178,14 @@ export default async () => {
     // TODO: Update this code when `chel deploy` no longer generates unprefixed keys.
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
-      .filter(k => k.length === HASH_LENGTH)
+      .filter(k => {
+        if (k.length !== HASH_LENGTH) return false
+        const parsed = maybeParseCID(k)
+        return ([
+          multicodes.SHELTER_CONTRACT_MANIFEST,
+          multicodes.SHELTER_CONTRACT_TEXT].includes(parsed?.code)
+        )
+      })
     const numKeys = keys.length
     let numVisitedKeys = 0
     let numNewKeys = 0
@@ -194,12 +195,10 @@ export default async () => {
     for (const key of keys) {
       // Skip keys which are already in the DB.
       if (!persistence || !await sbp('chelonia.db/get', key)) {
-        const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
-        if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
-          await sbp('chelonia.db/set', key, value)
-          numNewKeys++
-        }
+        const value = await readFile(path.join(dataFolder, key), 'utf8')
+        await sbp('chelonia.db/set', key, value)
+        numNewKeys++
       }
       numVisitedKeys++
       const progress = numVisitedKeys === numKeys ? 100 : Math.floor(100 * numVisitedKeys / numKeys)
