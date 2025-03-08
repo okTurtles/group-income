@@ -50,6 +50,13 @@ menu-parent.c-message-menu(ref='menu')
     )
       i.icon-ellipsis-h
 
+  portal(
+    v-if='chatMainConfig.isPhone'
+    to='chat-overlay-target'
+  )
+    .c-temp-container
+      | Hello world!
+
   menu-content.c-responsive-menu(
     :class='{ "is-to-down": isToDown }'
   )
@@ -73,6 +80,7 @@ import { L } from '@common/common.js'
 
 export default ({
   name: 'MessageActions',
+  inject: ['chatMainConfig'],
   components: {
     MenuParent,
     MenuTrigger,

@@ -269,7 +269,7 @@ export default ({
   },
   created () {
     // TODO: #492 create a global Vue Responsive just for media queries.
-    this.matchMediaPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.matchMediaPhone = window.matchMedia('screen and (max-width: 768px)')
     this.matchMediaPhone.onchange = (e) => {
       this.config.isPhone = e.matches
     }
@@ -1169,9 +1169,7 @@ export default ({
   },
   provide () {
     return {
-      chatMessageUtils: {
-        scrollToMessage: this.scrollToMessage
-      }
+      chatMainConfig: this.config
     }
   },
   watch: {
