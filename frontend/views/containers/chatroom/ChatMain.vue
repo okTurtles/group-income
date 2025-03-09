@@ -253,7 +253,7 @@ export default ({
         unprocessedEvents: [],
 
         // Related to switching chatrooms
-        chatroomSwitchQueue: [],
+        targetChatroomId: null,
         renderingChatRoomId: null
       },
       messageState: {
@@ -280,7 +280,7 @@ export default ({
     window.addEventListener('resize', this.resizeEventHandler)
 
     if (this.summary.chatRoomID) {
-      this.ephemeral.chatroomSwitchQueue.push(this.summary.chatRoomID)
+      this.ephemeral.targetChatroomId = this.summary.chatRoomID
       this.processSwitchQueue()
     }
   },
@@ -1131,16 +1131,17 @@ export default ({
       }
     },
     processSwitchQueue: debounce(async function () {
-      if (this.ephemeral.chatroomSwitchQueue.length === 0) return
+      if (!this.ephemeral.targetChatroomId) return
 
-      // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
-      const targetChatroomId = this.ephemeral.chatroomSwitchQueue.pop()
-      this.ephemeral.chatroomSwitchQueue = []
+      const targetChatroomId = this.ephemeral.targetChatroomId
+      this.ephemeral.targetChatroomId = null
+
+      if (targetChatroomId === this.ephemeral.renderingChatRoomId) return
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
       try {
         await this.initializeState()
-        if (this.ephemeral.chatroomSwitchQueue.length > 0) {
+        if (this.ephemeral.targetChatroomId) {
           // If the user has since switched to another chatroom while initializing this chatroom, stop here
           // and care about the switched chatroom.
 
@@ -1188,9 +1189,10 @@ export default ({
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
-        this.ephemeral.messagesInitiated = false
+        // Prevent the infinite scroll handler from rendering more messages
+        this.ephemeral.messagesInitiated = undefined
         this.ephemeral.scrolledDistance = 0
-        this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
+        this.ephemeral.targetChatroomId = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
