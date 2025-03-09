@@ -183,9 +183,6 @@ async function startApp () {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
   }
-  sbp('okTurtles.events/on', CONTRACT_SYNCS_RESET, (currentSyncs) => {
-    this.ephemeral.syncs = currentSyncs
-  })
 
   const initialSyncFn = syncFn.bind(initialSyncs)
   try {
@@ -236,6 +233,11 @@ async function startApp () {
           ready: false
         }
       }
+    },
+    created () {
+      sbp('okTurtles.events/on', CONTRACT_SYNCS_RESET, (currentSyncs) => {
+        this.ephemeral.syncs = currentSyncs
+      })
     },
     mounted () {
       let oldIdentityContractID = null // lets us know if there's a previously logged in user

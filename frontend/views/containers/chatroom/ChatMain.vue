@@ -403,7 +403,10 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
+          if (this.chatroomHasSwitchedFrom(contractID)) return
           sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
+            if (this.chatroomHasSwitchedFrom(contractID)) return
+
             beforePrePublish?.()
 
             // IMPORTANT: This is executed *BEFORE* the message is received over
@@ -1136,11 +1139,14 @@ export default ({
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
       try {
-        await this.initializeState(true)
+        await this.initializeState()
         if (this.ephemeral.chatroomSwitchQueue.length > 0) {
           // If the user has since switched to another chatroom while initializing this chatroom, stop here
           // and care about the switched chatroom.
-          return this.processSwitchQueue()
+
+          // NOTE: 'return this.processSwitchQueue()' below would make it more clear that we don't proceed with anything else, but
+          //       having return here creates an occasional error saying 'TypeError: Chaining cycle detected for promise'.
+          this.processSwitchQueue()
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
