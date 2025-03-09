@@ -66,13 +66,17 @@ const limiterKey = (ip: string) => {
     for (let i = 0; i < segments.length - 1; i++) {
       // Compressed form address
       if (!isCompressed && segments[i] === '') {
+        const requiredSegments = 8 - (segments.length - 1)
+        if (requiredSegments < 0) {
+          throw new Error('Invalid IPv6 address: too many segments')
+        }
         if ((i === 0 || i === segments.length - 2) && segments[i + 1] === '') {
           segments[i + 1] = '0'
         }
         if (i === 0 && segments.length === 3 && segments[i + 2] === '') {
           segments[i + 2] = '0'
         }
-        segments.splice(i, 1, ...new Array(9 - segments.length).fill('0'))
+        segments.splice(i, 1, ...new Array(requiredSegments).fill('0'))
         isCompressed = true
         continue
       }
@@ -83,11 +87,11 @@ const limiterKey = (ip: string) => {
       segments[i] = segments[i].replace(/^0+/, '0')
     }
 
-    if (IPV4_ADDR_REGEX.test(segments[7])) {
+    if (segments.length === 8 && IPV4_ADDR_REGEX.test(segments[7])) {
       // IPv4-embedded, IPv4-mapped and IPv4-translated addresses are returned
       // as IPv4
       return segments[7]
-    } else if (IPV6_SEGMENT_REGEX.test(segments[7])) {
+    } else if (segments.length === 8 && IPV6_SEGMENT_REGEX.test(segments[7])) {
       if (zoneIdx) {
         segments[7] = segments[7].replace(/^0+/, '0')
         // Use tagged (link-local) addresses in full
