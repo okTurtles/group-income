@@ -4,7 +4,7 @@ import * as Common from '@common/common.js'
 import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import type { SPMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '../shared/pubsub.js'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -62,7 +62,7 @@ const setupChelonia = async (): Promise<*> => {
   })
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: GIMessage, msgMeta?: Object) => {
+  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Object) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
@@ -146,7 +146,7 @@ const setupChelonia = async (): Promise<*> => {
           sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID })
         }
       },
-      handleEventError: (e: Error, message: GIMessage) => {
+      handleEventError: (e: Error, message: SPMessage) => {
         if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e?.name)) {
           const contractID = message.contractID()
           sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
@@ -156,7 +156,7 @@ const setupChelonia = async (): Promise<*> => {
           errorNotification('handleEvent', e, message)
         }
       },
-      processError: (e: Error, message: GIMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string, index?: number }) => {
+      processError: (e: Error, message: SPMessage, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string, index?: number }) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
           sbp('okTurtles.eventQueue/queueEvent', message.contractID(), [
             'gi.actions/group/autobanUser', message, e, msgMeta
@@ -173,7 +173,7 @@ const setupChelonia = async (): Promise<*> => {
         }
         errorNotification('process', e, message, msgMeta)
       },
-      sideEffectError: (e: Error, message: GIMessage) => {
+      sideEffectError: (e: Error, message: SPMessage) => {
         const contractID = message.contractID()
         sbp('okTurtles.events/emit', SERIOUS_ERROR, e, { contractID, message })
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())

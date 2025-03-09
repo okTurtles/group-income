@@ -1,4 +1,4 @@
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import type {
   NewProposalType,
   NotificationTemplate
@@ -16,16 +16,16 @@ import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import { findContractIDByForeignKeyId } from '~/shared/domains/chelonia/utils.js'
 
 export default ({
-  CHELONIA_ERROR (data: { activity: string, error: Error, message: GIMessage, msgMeta?: Object }) {
+  CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {
     const { activity, error, message, msgMeta } = data
     const contractID = message.contractID()
     const opType = message.opType()
     const value = message.decryptedValue()
     let action
     if (value) {
-      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opType)) {
+      if ([SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED].includes(opType)) {
         action = value.action
-      } else if (msgMeta && opType === GIMessage.OP_ATOMIC && Number.isFinite(msgMeta.index) && [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(value[msgMeta.index][0])) {
+      } else if (msgMeta && opType === SPMessage.OP_ATOMIC && Number.isFinite(msgMeta.index) && [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED].includes(value[msgMeta.index][0])) {
         action = value[msgMeta.index][1].action
       }
     }

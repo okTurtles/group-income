@@ -341,7 +341,7 @@ const publicMethods = {
 
     const msg = typeof message === 'string' ? message : JSON.stringify(message)
     let shortMsg
-    // Utility function to remove `data` (i.e., the GIMessage data) from a
+    // Utility function to remove `data` (i.e., the SPMessage data) from a
     // message. We need this for push notifications, which may have a certain
     // maximum size (usually around 4 KiB)
     const shortenPayload = () => {

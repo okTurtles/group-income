@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, LOGIN_COMPLETE, NEW_CHATROOM_UNREAD_POSITION, CONTRACT_SYNCS_RESET, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
@@ -47,7 +47,7 @@ const pwa = {
   installed: false
 }
 
-deserializer.register(GIMessage)
+deserializer.register(SPMessage)
 deserializer.register(Secret)
 
 // How to provide your own in-app PWA install experience:

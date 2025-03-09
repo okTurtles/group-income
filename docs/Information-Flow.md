@@ -18,14 +18,14 @@ await sbp('gi.actions/group/updateSettings', {
 
 This action accomplishes two things at once:
 
-1. It creates the event — an *action* — and wraps it in a [`GIMessage`](../shared/GIMessage.js) object.
-2. It sends this `GIMessage` to the server - appending it to the contract `contractID` (in this case, the current group we're in)
+1. It creates the event — an *action* — and wraps it in a [`SPMessage`](../shared/SPMessage.js) object.
+2. It sends this `SPMessage` to the server - appending it to the contract `contractID` (in this case, the current group we're in)
 
 > _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`frontend/model/contracts/`](../frontend/model/contracts/).
 
 ##### Data Representation
 
-`GIMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work, except much simpler (no [DHT](https://en.wikipedia.org/wiki/Distributed_hash_table) is used).
+`SPMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work, except much simpler (no [DHT](https://en.wikipedia.org/wiki/Distributed_hash_table) is used).
 
 ##### Actions
 
@@ -33,7 +33,7 @@ All of the contract actions for all the contracts used in Group Income are defin
 
 ##### Client <-> Server Communication Details
 
-When a client sends a `GIMessage` to a contract stored on the server, that message is sent back (via websockets) to everyone who is subscribed to that contract, including the client that sent the message. Upon receiving this message/event, each client uses it to update their local copy of the contract state, per the `process` function that is defined for that action. All of these `process` functions can be found in [`frontend/model/contracts/`](../frontend/model/contracts/).
+When a client sends a `SPMessage` to a contract stored on the server, that message is sent back (via websockets) to everyone who is subscribed to that contract, including the client that sent the message. Upon receiving this message/event, each client uses it to update their local copy of the contract state, per the `process` function that is defined for that action. All of these `process` functions can be found in [`frontend/model/contracts/`](../frontend/model/contracts/).
 
 ##### Vuex Integration
 

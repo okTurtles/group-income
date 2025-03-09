@@ -1,7 +1,5 @@
 'use strict'
 
-// TODO: rename GIMessage to ChelMessage
-
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from '@chelonia/crypto'
 import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '@chelonia/serdes'
 import { has } from 'turtledash'
@@ -12,14 +10,14 @@ import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedInco
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
-export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
+export type SPOpKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
-export type GIKeyPurpose = 'enc' | 'sig'
+export type SPOpKeyPurpose = 'enc' | 'sig'
 
-export type GIKey = {
+export type SPOpKey = {
   id: string;
   name: string;
-  purpose: GIKeyPurpose[],
+  purpose: SPOpKeyPurpose[],
   ringLevel: number;
   permissions: '*' | string[];
   allowedActions?: '*' | string[];
@@ -32,17 +30,17 @@ export type GIKey = {
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keys: (GIKey | EncryptedData<GIKey>)[]; parentContract?: string }
-export type ProtoGIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
-export type GIOpActionUnencrypted = ProtoGIOpActionUnencrypted | SignedData<ProtoGIOpActionUnencrypted>
-export type GIOpActionEncrypted = EncryptedData<GIOpActionUnencrypted> // encrypted version of GIOpActionUnencrypted
-export type GIOpKeyAdd = (GIKey | EncryptedData<GIKey>)[]
-export type GIOpKeyDel = (string | EncryptedData<string>)[]
-export type GIOpPropSet = { key: string; value: JSONType }
-export type ProtoGIOpKeyShare = { contractID: string; keys: GIKey[]; foreignContractID?: string; keyRequestHash?: string, keyRequestHeight?: number }
-export type GIOpKeyShare = ProtoGIOpKeyShare | EncryptedData<ProtoGIOpKeyShare>
-// TODO encrypted GIOpKeyRequest
-export type ProtoGIOpKeyRequest = {
+export type SPOpOpContract = { type: string; keys: (SPOpKey | EncryptedData<SPOpKey>)[]; parentContract?: string }
+export type ProtoSPOpOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type SPOpOpActionUnencrypted = ProtoSPOpOpActionUnencrypted | SignedData<ProtoSPOpOpActionUnencrypted>
+export type SPOpOpActionEncrypted = EncryptedData<SPOpOpActionUnencrypted> // encrypted version of SPOpOpActionUnencrypted
+export type SPOpOpKeyAdd = (SPOpKey | EncryptedData<SPOpKey>)[]
+export type SPOpOpKeyDel = (string | EncryptedData<string>)[]
+export type SPOpOpPropSet = { key: string; value: JSONType }
+export type ProtoSPOpOpKeyShare = { contractID: string; keys: SPOpKey[]; foreignContractID?: string; keyRequestHash?: string, keyRequestHeight?: number }
+export type SPOpOpKeyShare = ProtoSPOpOpKeyShare | EncryptedData<ProtoSPOpOpKeyShare>
+// TODO encrypted SPOpOpKeyRequest
+export type ProtoSPOpOpKeyRequest = {
   contractID: string;
   height: number;
   replyWith: SignedData<{
@@ -51,10 +49,10 @@ export type ProtoGIOpKeyRequest = {
   }>,
   request: string;
 }
-export type GIOpKeyRequest = ProtoGIOpKeyRequest | EncryptedData<ProtoGIOpKeyRequest>
-export type ProtoGIOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
-export type GIOpKeyRequestSeen = ProtoGIOpKeyRequestSeen | EncryptedData<ProtoGIOpKeyRequestSeen>;
-export type GIKeyUpdate = {
+export type SPOpOpKeyRequest = ProtoSPOpOpKeyRequest | EncryptedData<ProtoSPOpOpKeyRequest>
+export type ProtoSPOpOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
+export type SPOpOpKeyRequestSeen = ProtoSPOpOpKeyRequestSeen | EncryptedData<ProtoSPOpOpKeyRequestSeen>;
+export type SPOpKeyUpdate = {
   name: string;
   id?: string;
   oldKeyId: string;
@@ -64,32 +62,32 @@ export type GIKeyUpdate = {
   allowedActions?: '*' | string[];
   meta?: Object;
 }
-export type GIOpKeyUpdate = (GIKeyUpdate | EncryptedData<GIKeyUpdate>)[]
+export type SPOpOpKeyUpdate = (SPOpKeyUpdate | EncryptedData<SPOpKeyUpdate>)[]
 
-export type GIOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
-type ProtoGIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
-export type GIOpAtomic = [GIOpType, ProtoGIOpValue][]
-export type GIOpValue = ProtoGIOpValue | GIOpAtomic
-export type GIOpRaw = [GIOpType, SignedData<GIOpValue>]
-export type GIOp = [GIOpType, GIOpValue]
+export type SPOpOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+type ProtoSPOpOpValue = SPOpOpContract | SPOpOpActionEncrypted | SPOpOpActionUnencrypted | SPOpOpKeyAdd | SPOpOpKeyDel | SPOpOpPropSet | SPOpOpKeyShare | SPOpOpKeyRequest | SPOpOpKeyRequestSeen | SPOpOpKeyUpdate
+export type SPOpOpAtomic = [SPOpOpType, ProtoSPOpOpValue][]
+export type SPOpOpValue = ProtoSPOpOpValue | SPOpOpAtomic
+export type SPOpOpRaw = [SPOpOpType, SignedData<SPOpOpValue>]
+export type SPOp = [SPOpOpType, SPOpOpValue]
 
-export type GIMsgDirection = 'incoming' | 'outgoing'
-type GIMsgParams = { direction: GIMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<GIOpValue> }
+export type SPOpMsgDirection = 'incoming' | 'outgoing'
+type SPOpMsgParams = { direction: SPOpMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<SPOpOpValue> }
 
 // Takes a raw message and processes it so that EncryptedData and SignedData
 // attributes are defined
-const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: GIOpValue, additionalKeys?: Object, state: Object): GIOpValue => {
+const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SPOpOpValue, additionalKeys?: Object, state: Object): SPOpOpValue => {
   const op = head.op
   const height = head.height
 
-  const message: GIOpValue = op === GIMessage.OP_ACTION_ENCRYPTED
+  const message: SPOpOpValue = op === SPMessage.OP_ACTION_ENCRYPTED
     // $FlowFixMe
-    ? encryptedIncomingData<GIOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+    ? encryptedIncomingData<SPOpOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
     : parsedMessage
 
-  // If the operation is GIMessage.OP_KEY_ADD or GIMessage.OP_KEY_UPDATE,
+  // If the operation is SPMessage.OP_KEY_ADD or SPMessage.OP_KEY_UPDATE,
   // extract encrypted data from key.meta?.private?.content
-  if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(op)) {
+  if ([SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_UPDATE].includes(op)) {
     return ((message: any): any[]).map((key) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
         if (key.meta?.private?.content) {
@@ -125,9 +123,9 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     })
   }
 
-  // If the operation is GIMessage.OP_CONTRACT,
+  // If the operation is SPMessage.OP_CONTRACT,
   // extract encrypted data from keys?.[].meta?.private?.content
-  if (op === GIMessage.OP_CONTRACT) {
+  if (op === SPMessage.OP_CONTRACT) {
     (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (!key.meta?.private?.content) return
@@ -144,9 +142,9 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     })
   }
 
-  // If the operation is GIMessage.OP_KEY_SHARE,
+  // If the operation is SPMessage.OP_KEY_SHARE,
   // extract encrypted data from keys?.[].meta?.private?.content
-  if (op === GIMessage.OP_KEY_SHARE) {
+  if (op === SPMessage.OP_KEY_SHARE) {
     return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (message) => {
       (message: any).keys?.forEach((key) => {
         if (!key.meta?.private?.content) return
@@ -164,7 +162,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
 
   // If the operation is OP_KEY_REQUEST, the payload might be EncryptedData
   // The ReplyWith attribute is SignedData
-  if (op === GIMessage.OP_KEY_REQUEST) {
+  if (op === SPMessage.OP_KEY_REQUEST) {
     return maybeEncryptedIncomingData(contractID, state, (message: any), height, additionalKeys, headJSON, (msg) => {
       msg.replyWith = signedIncomingData(msg.contractID, undefined, msg.replyWith, msg.height, headJSON)
     })
@@ -173,46 +171,46 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // If the operation is OP_ACTION_UNENCRYPTED, it may contain an inner
   // signature
   // Actions must be signed using a key for the current contract
-  if (op === GIMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
+  if (op === SPMessage.OP_ACTION_UNENCRYPTED && isRawSignedData(message)) {
     return signedIncomingData(contractID, state, message, height, headJSON)
   }
 
   // Inner signatures are handled by EncryptedData
-  if (op === GIMessage.OP_ACTION_ENCRYPTED) {
+  if (op === SPMessage.OP_ACTION_ENCRYPTED) {
     return message
   }
 
-  if (op === GIMessage.OP_KEY_DEL) {
+  if (op === SPMessage.OP_KEY_DEL) {
     return ((message: any): any[]).map((key) => {
       return maybeEncryptedIncomingData(contractID, state, (key: any), height, additionalKeys, headJSON, undefined)
     })
   }
 
-  if (op === GIMessage.OP_KEY_REQUEST_SEEN) {
+  if (op === SPMessage.OP_KEY_REQUEST_SEEN) {
     return maybeEncryptedIncomingData(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
   }
 
   // If the operation is OP_ATOMIC, call this function recursively
-  if (op === GIMessage.OP_ATOMIC) {
-    return ((((message: any): GIOpAtomic)
+  if (op === SPMessage.OP_ATOMIC) {
+    return ((((message: any): SPOpOpAtomic)
       .map(([opT, opV]) =>
         [
           opT,
           decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, (opV: any), additionalKeys, state)
         ]
-      ): any): GIOpAtomic)
+      ): any): SPOpOpAtomic)
   }
 
   return message
 }
 
-export class GIMessage {
+export class SPMessage {
   // flow type annotations to make flow happy
   _mapping: Object
   _head: Object
   _message: Object
-  _signedMessageData: SignedData<GIOpValue>
-  _direction: GIMsgDirection
+  _signedMessageData: SignedData<SPOpOpValue>
+  _direction: SPOpMsgDirection
   _decryptedValue: Object
   _innerSigningKeyId: ?string
 
@@ -248,7 +246,7 @@ export class GIMessage {
       contractID: string | null,
       previousHEAD?: ?string,
       height?: ?number,
-      op: GIOpRaw,
+      op: SPOpOpRaw,
       manifest: string,
     }
   ): this {
@@ -263,11 +261,11 @@ export class GIMessage {
     return new this(messageToParams(head, op[1]))
   }
 
-  // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
+  // SPMessage.cloneWith could be used when make a SPMessage object having the same id()
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
     targetHead: Object,
-    targetOp: GIOpRaw,
+    targetOp: SPOpOpRaw,
     sources: Object
   ): this {
     const head = Object.assign({}, targetHead, sources)
@@ -278,11 +276,11 @@ export class GIMessage {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
-    const contractID = head.op === GIMessage.OP_CONTRACT ? createCID(value) : head.contractID
+    const contractID = head.op === SPMessage.OP_CONTRACT ? createCID(value) : head.contractID
 
     // Special case for OP_CONTRACT, since the keys are not yet present in the
     // state
-    if (!state?._vm?.authorizedKeys && head.op === GIMessage.OP_CONTRACT) {
+    if (!state?._vm?.authorizedKeys && head.op === SPMessage.OP_CONTRACT) {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(k => [k.id, k]))
       state = {
@@ -335,21 +333,21 @@ export class GIMessage {
     return result
   }
 
-  constructor (params: GIMsgParams) {
+  constructor (params: SPOpMsgParams) {
     this._direction = params.direction
     this._mapping = params.mapping
     this._head = params.head
-    this._signedMessageData = ((params.signedMessageData: any): SignedData<GIOpValue>)
+    this._signedMessageData = ((params.signedMessageData: any): SignedData<SPOpOpValue>)
 
     // perform basic sanity check
     const type = this.opType()
     let atomicTopLevel = true
     const validate = (type, message) => {
       switch (type) {
-        case GIMessage.OP_CONTRACT:
+        case SPMessage.OP_CONTRACT:
           if (!this.isFirstMessage() || !atomicTopLevel) throw new Error('OP_CONTRACT: must be first message')
           break
-        case GIMessage.OP_ATOMIC:
+        case SPMessage.OP_ATOMIC:
           if (!atomicTopLevel) {
             throw new Error('OP_ATOMIC not allowed inside of OP_ATOMIC')
           }
@@ -359,16 +357,16 @@ export class GIMessage {
           atomicTopLevel = false;
           (message: any[]).forEach(([t, m]) => validate(t, m))
           break
-        case GIMessage.OP_KEY_ADD:
-        case GIMessage.OP_KEY_DEL:
-        case GIMessage.OP_KEY_UPDATE:
+        case SPMessage.OP_KEY_ADD:
+        case SPMessage.OP_KEY_DEL:
+        case SPMessage.OP_KEY_UPDATE:
           if (!Array.isArray(message)) throw new TypeError('OP_KEY_{ADD|DEL|UPDATE} must be of an array type')
           break
-        case GIMessage.OP_KEY_SHARE:
-        case GIMessage.OP_KEY_REQUEST:
-        case GIMessage.OP_KEY_REQUEST_SEEN:
-        case GIMessage.OP_ACTION_ENCRYPTED:
-        case GIMessage.OP_ACTION_UNENCRYPTED:
+        case SPMessage.OP_KEY_SHARE:
+        case SPMessage.OP_KEY_REQUEST:
+        case SPMessage.OP_KEY_REQUEST_SEEN:
+        case SPMessage.OP_ACTION_ENCRYPTED:
+        case SPMessage.OP_ACTION_UNENCRYPTED:
         // nothing for now
           break
         default:
@@ -426,15 +424,15 @@ export class GIMessage {
 
   head (): Object { return this._head }
 
-  message (): GIOpValue { return this._message }
+  message (): SPOpOpValue { return this._message }
 
-  op (): GIOp { return [this.head().op, this.message()] }
+  op (): SPOp { return [this.head().op, this.message()] }
 
-  rawOp (): GIOpRaw { return [this.head().op, this._signedMessageData] }
+  rawOp (): SPOpOpRaw { return [this.head().op, this._signedMessageData] }
 
-  opType (): GIOpType { return this.head().op }
+  opType (): SPOpOpType { return this.head().op }
 
-  opValue (): GIOpValue { return this.message() }
+  opValue (): SPOpOpValue { return this.message() }
 
   signingKeyId (): string { return this._signedMessageData.signingKeyId }
 
@@ -443,7 +441,7 @@ export class GIMessage {
   description (): string {
     const type = this.opType()
     let desc = `<op_${type}`
-    if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
+    if (type === SPMessage.OP_ACTION_UNENCRYPTED) {
       const value = this.opValue()
       if (typeof value.type === 'string') {
         desc += `|${value.type}`
@@ -464,7 +462,7 @@ export class GIMessage {
 
   id (): string {
     // TODO: Schedule for later removal
-    throw new Error('GIMessage.id() was called but it has been removed')
+    throw new Error('SPMessage.id() was called but it has been removed')
   }
 
   direction (): 'incoming' | 'outgoing' {
@@ -473,17 +471,17 @@ export class GIMessage {
 
   // $FlowFixMe[unsupported-syntax]
   static get [serdesTagSymbol] () {
-    return 'GIMessage'
+    return 'SPMessage'
   }
 
   // $FlowFixMe[unsupported-syntax]
-  static [serdesSerializeSymbol] (m: GIMessage) {
+  static [serdesSerializeSymbol] (m: SPMessage) {
     return [m.serialize(), m.direction(), m.decryptedValue(), m.innerSigningKeyId()]
   }
 
   // $FlowFixMe[unsupported-syntax]
   static [serdesDeserializeSymbol] ([serialized, direction, decryptedValue, innerSigningKeyId]) {
-    const m = GIMessage.deserialize(serialized)
+    const m = SPMessage.deserialize(serialized)
     m._direction = direction
     m._decryptedValue = decryptedValue
     m._innerSigningKeyId = innerSigningKeyId
@@ -491,7 +489,7 @@ export class GIMessage {
   }
 }
 
-function messageToParams (head: Object, message: SignedData<GIOpValue>): GIMsgParams {
+function messageToParams (head: Object, message: SignedData<SPOpOpValue>): SPOpMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using deserialize().

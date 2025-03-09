@@ -2,7 +2,7 @@
 
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
@@ -295,7 +295,7 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
       name: '#inviteKey-' + inviteKeyId,
       purpose: ['sig'],
       ringLevel: Number.MAX_SAFE_INTEGER,
-      permissions: [GIMessage.OP_KEY_REQUEST],
+      permissions: [SPMessage.OP_KEY_REQUEST],
       meta: {
         quantity,
         expires: Date.now() + DAYS_MILLIS * expires,

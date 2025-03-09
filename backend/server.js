@@ -18,7 +18,7 @@ import {
   createServer
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
 
 // Node.js version 18 and lower don't have global.crypto defined
@@ -160,7 +160,7 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
-    if (deserializedHEAD.head.op === GIMessage.OP_CONTRACT) {
+    if (deserializedHEAD.head.op === SPMessage.OP_CONTRACT) {
       sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
     }
     await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)

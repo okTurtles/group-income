@@ -108,7 +108,7 @@ const proposals: Object = {
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       notifyAndArchiveProposal({ state, proposalHash, proposal, contractID, meta, height })
       // TODO: for now, generate the link and send it to the user's inbox
-      //       however, we cannot send GIMessages in any way from here
+      //       however, we cannot send SPMessages in any way from here
       //       because that means each time someone synchronizes this contract
       //       a new invite would be sent...
       //       which means the voter who casts the deciding ballot needs to
