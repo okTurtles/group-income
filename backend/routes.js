@@ -61,6 +61,20 @@ const staticServeConfig = {
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
 }
 
+const errorMapper = (e: Error) => {
+  switch (e?.name) {
+    case 'BackendErrorNotFound':
+      return Boom.notFound()
+    case 'BackendErrorGone':
+      return Boom.resourceGone()
+    case 'BackendErrorBadData':
+      return Boom.badData(e.message)
+    default:
+      console.error(e, 'Unexpected backend error')
+      return Boom.internal(e.message ?? 'internal error')
+  }
+}
+
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
@@ -552,17 +566,7 @@ route.POST('/deleteFile/{hash}', {
     await sbp('backend/deleteFile', hash)
     return h.response()
   } catch (e) {
-    switch (e.name) {
-      case 'BackendErrorNotFound':
-        return Boom.notFound()
-      case 'BackendErrorGone':
-        return Boom.resourceGone()
-      case 'BackendErrorBadData':
-        return Boom.badData(e.message)
-      default:
-        console.error(e, 'Error during deletion')
-        return Boom.internal(e.message ?? 'internal error')
-    }
+    return errorMapper(e)
   }
 })
 
@@ -628,17 +632,7 @@ route.POST('/deleteContract/{hash}', {
     const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
     return h.response({ id }).code(202)
   } catch (e) {
-    switch (e.name) {
-      case 'BackendErrorNotFound':
-        return Boom.notFound()
-      case 'BackendErrorGone':
-        return Boom.resourceGone()
-      case 'BackendErrorBadData':
-        return Boom.badData(e.message)
-      default:
-        console.error(e, 'Error during deletion')
-        return Boom.internal(e.message ?? 'internal error')
-    }
+    return errorMapper(e)
   }
 })
 
