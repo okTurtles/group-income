@@ -1,7 +1,7 @@
 import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { SPOpKey } from '~/shared/domains/chelonia/SPMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
@@ -38,7 +38,7 @@ sbp('sbp/selectors/register', {
       const state = await sbp('chelonia/latestContractState', contractID)
 
       const CEKid = findKeyIdByName(state, 'cek')
-      const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_SHARE], ['sig'])
+      const signingKeyId = findSuitableSecretKeyId(state, [SPMessage.OP_KEY_SHARE], ['sig'])
 
       if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
         throw new Error('Missing CEK; unable to proceed sharing keys')
@@ -52,7 +52,7 @@ sbp('sbp/selectors/register', {
         : keyIds === '*'
           ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
             .filter(([, key]) => {
-              return !!((key: any): GIKey).meta?.private?.content
+              return !!((key: any): SPOpKey).meta?.private?.content
             })
             .map(([id]) => id)
           )
@@ -108,7 +108,7 @@ sbp('sbp/selectors/register', {
     let ringLevel = Number.MAX_SAFE_INTEGER
 
     // $FlowFixMe
-    const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
+    const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, SPOpKey]) => {
       return !!data.meta?.private?.content && data._notAfterHeight == null && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
@@ -116,7 +116,7 @@ sbp('sbp/selectors/register', {
             ? true
             // $FlowFixMe
             : state._volatile?.pendingKeyRevocations && has(state._volatile.pendingKeyRevocations, id))
-    }).map(([id, data]: [string, GIKey]) => {
+    }).map(([id, data]: [string, SPOpKey]) => {
       const newKey = keygenOfSameType(data.data)
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
@@ -165,7 +165,7 @@ sbp('sbp/selectors/register', {
       }
     })
 
-    const signingKeyId = findSuitableSecretKeyId(state, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
+    const signingKeyId = findSuitableSecretKeyId(state, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
       throw new Error('No suitable signing key found')

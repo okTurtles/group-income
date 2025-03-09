@@ -4,8 +4,8 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from 'turtledash'
 import { createCID } from '~/shared/functions.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType, ProtoGIOpKeyRequestSeen, ProtoGIOpKeyShare } from './GIMessage.js'
-import { GIMessage } from './GIMessage.js'
+import type { SPOpKey, SPOpOpActionEncrypted, SPOpOpActionUnencrypted, SPOpOpAtomic, SPOpOpContract, SPOpOpKeyAdd, SPOpOpKeyDel, SPOpOpKeyRequest, SPOpOpKeyRequestSeen, SPOpOpKeyShare, SPOpOpKeyUpdate, SPOpOpPropSet, SPOpOpType, ProtoSPOpOpKeyRequestSeen, ProtoSPOpOpKeyShare } from './SPMessage.js'
+import { SPMessage } from './SPMessage.js'
 import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey, keyId, verifySignature } from '@chelonia/crypto'
@@ -22,7 +22,7 @@ import { isSignedData, signedIncomingData } from './signedData.js'
 // message
 const missingDecryptionKeyIdsMap = new WeakMap()
 
-const getMsgMeta = (message: GIMessage, contractID: string, state: Object, index?: number) => {
+const getMsgMeta = (message: SPMessage, contractID: string, state: Object, index?: number) => {
   const signingKeyId = message.signingKeyId()
   let innerSigningKeyId: ?string = null
 
@@ -52,9 +52,9 @@ const getMsgMeta = (message: GIMessage, contractID: string, state: Object, index
   return result
 }
 
-const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, authorizedKeys?: Object): Object => {
+const keysToMap = (keys: (SPOpKey | EncryptedData<SPOpKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
-  // Keys in a GIMessage may not be serializable (i.e., supported by the
+  // Keys in a SPMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
   keys = keys.map((key) => {
     const data = unwrapMaybeEncryptedData(key)
@@ -62,7 +62,7 @@ const keysToMap = (keys: (GIKey | EncryptedData<GIKey>)[], height: number, autho
     if (data.encryptionKeyId) {
       data.data._private = data.encryptionKeyId
     }
-    return ((data.data: any): GIKey)
+    return ((data.data: any): SPOpKey)
   }).filter(Boolean)
 
   const keysCopy = cloneDeep(keys)
@@ -97,7 +97,7 @@ const keyRotationHelper = (contractID: string, state: Object, config: Object, up
       return
     }
     if (!watchMap[cID]) {
-      if (!rootState.contracts[cID]?.type || !findSuitableSecretKeyId(rootState[cID], [GIMessage.OP_KEY_UPDATE], ['sig'])) {
+      if (!rootState.contracts[cID]?.type || !findSuitableSecretKeyId(rootState[cID], [SPMessage.OP_KEY_UPDATE], ['sig'])) {
         watchMap[cID] = null
         return
       }
@@ -471,7 +471,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }))
   },
-  'chelonia/private/out/publishEvent': function (entry: GIMessage, { maxAttempts = 5, headers, billableContractID, bearer } = {}, hooks) {
+  'chelonia/private/out/publishEvent': function (entry: SPMessage, { maxAttempts = 5, headers, billableContractID, bearer } = {}, hooks) {
     const contractID = entry.contractID()
     const originalEntry = entry
 
@@ -482,7 +482,7 @@ export default (sbp('sbp/selectors/register', {
       // different contracts
       await hooks?.prepublish?.(entry)
 
-      const onreceivedHandler = (contractID: string, message: GIMessage) => {
+      const onreceivedHandler = (contractID: string, message: SPMessage) => {
         if (entry.hash() === message.hash()) {
           sbp('okTurtles.events/off', EVENT_HANDLED, onreceivedHandler)
           hooks.onprocessed(entry)
@@ -524,7 +524,7 @@ export default (sbp('sbp/selectors/register', {
           // of actions, by also calling both the `validate` method (which
           // doesn't mutate the state) and the `process` method (which could
           // mutate the state).
-          // `GIMessage` objects have an implicit `direction` field that's set
+          // `SPMessage` objects have an implicit `direction` field that's set
           // based on how the object was constructed. For messages that will be
           // sent to the server (this case), `direction` is set to `outgoing`.
           // This `direction` affects how certain errors are reported during
@@ -668,7 +668,7 @@ export default (sbp('sbp/selectors/register', {
       )
     )
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object, internalSideEffectStack?: any[], contractName?: string) {
+  'chelonia/private/in/processMessage': async function (message: SPMessage, state: Object, internalSideEffectStack?: any[], contractName?: string) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const height = message.height()
@@ -678,14 +678,14 @@ export default (sbp('sbp/selectors/register', {
     const direction = message.direction()
     const config = this.config
     const self = this
-    const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
+    const opName = Object.entries(SPMessage).find(([x, y]) => y === opT)?.[0]
     console.debug('PROCESSING OPCODE:', opName, 'to', contractID)
     if (state?._volatile?.dirty) {
       console.debug('IGNORING OPCODE BECAUSE CONTRACT STATE IS MARKED AS DIRTY.', 'OPCODE:', opName, 'CONTRACT:', contractID)
       return
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
-    const opFns: { [GIOpType]: (any) => void | Promise<void> } = {
+    const opFns: { [SPOpOpType]: (any) => void | Promise<void> } = {
       /*
         There are two types of "errors" that we need to consider:
         1. "Ignoring" errors
@@ -700,11 +700,11 @@ export default (sbp('sbp/selectors/register', {
         • ALL errors of class "IGNORING" should be ignored. They should not impact our ability to process the rest of the operations in the OP_ATOMIC. No matter how many of these are thrown, it doesn't affect the rest of the operations.
         • ANY error of class "FAILURE" will call the rest of the operations to fail and the state to be reverted to prior to the OP_ATOMIC. No side-effects should be run. Because an intention failed.
       */
-      async [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
+      async [SPMessage.OP_ATOMIC] (v: SPOpOpAtomic) {
         for (let i = 0; i < v.length; i++) {
           const u = v[i]
           try {
-            if (u[0] === GIMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
+            if (u[0] === SPMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
             if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
               throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
             }
@@ -738,7 +738,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       },
-      [GIMessage.OP_CONTRACT] (v: GIOpContract) {
+      [SPMessage.OP_CONTRACT] (v: SPOpOpContract) {
         state._vm.type = v.type
         const keys = keysToMap(v.keys, height)
         config.reactiveSet(state._vm, 'authorizedKeys', keys)
@@ -750,16 +750,16 @@ export default (sbp('sbp/selectors/register', {
         // the encrypted versions of the CSK and CEK.
         keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
+      [SPMessage.OP_ACTION_ENCRYPTED] (v: SPOpOpActionEncrypted) {
         if (config.skipActionProcessing) {
           if (process.env.BUILD === 'web') {
             console.log('OP_ACTION_ENCRYPTED: skipped action processing')
           }
           return
         }
-        return opFns[GIMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
+        return opFns[SPMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
-      async [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
+      async [SPMessage.OP_ACTION_UNENCRYPTED] (v: SPOpOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
           let innerSigningKeyId: string | typeof undefined
           if (isSignedData(v)) {
@@ -795,12 +795,12 @@ export default (sbp('sbp/selectors/register', {
           )
         }
       },
-      [GIMessage.OP_KEY_SHARE] (wv: GIOpKeyShare) {
+      [SPMessage.OP_KEY_SHARE] (wv: SPOpOpKeyShare) {
         // TODO: Prompt to user if contract not in pending
 
         const data = unwrapMaybeEncryptedData(wv)
         if (!data) return
-        const v = (data.data: ProtoGIOpKeyShare)
+        const v = (data.data: ProtoSPOpOpKeyShare)
 
         for (const key of v.keys) {
           if (key.id && key.meta?.private?.content) {
@@ -977,7 +977,7 @@ export default (sbp('sbp/selectors/register', {
             })
         })
       },
-      [GIMessage.OP_KEY_REQUEST] (wv: GIOpKeyRequest) {
+      [SPMessage.OP_KEY_REQUEST] (wv: SPOpOpKeyRequest) {
         const data = unwrapMaybeEncryptedData(wv)
 
         // If we're unable to decrypt the OP_KEY_REQUEST, then still
@@ -1046,7 +1046,7 @@ export default (sbp('sbp/selectors/register', {
           })
         }
       },
-      [GIMessage.OP_KEY_REQUEST_SEEN] (wv: GIOpKeyRequestSeen) {
+      [SPMessage.OP_KEY_REQUEST_SEEN] (wv: SPOpOpKeyRequestSeen) {
         if (config.skipActionProcessing) {
           return
         }
@@ -1054,7 +1054,7 @@ export default (sbp('sbp/selectors/register', {
 
         const data = unwrapMaybeEncryptedData(wv)
         if (!data) return
-        const v = (data.data: ProtoGIOpKeyRequestSeen)
+        const v = (data.data: ProtoSPOpOpKeyRequestSeen)
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
@@ -1083,14 +1083,14 @@ export default (sbp('sbp/selectors/register', {
           })
         }
       },
-      [GIMessage.OP_PROP_DEL]: notImplemented,
-      [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
+      [SPMessage.OP_PROP_DEL]: notImplemented,
+      [SPMessage.OP_PROP_SET] (v: SPOpOpPropSet) {
         if (!state._vm.props) state._vm.props = {}
         state._vm.props[v.key] = v.value
       },
-      [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
+      [SPMessage.OP_KEY_ADD] (v: SPOpOpKeyAdd) {
         const keys = keysToMap(v, height, state._vm.authorizedKeys)
-        const keysArray = ((Object.values(v): any): GIKey[])
+        const keysArray = ((Object.values(v): any): SPOpKey[])
         keysArray.forEach((k) => {
           if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
             throw new ChelErrorWarning('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
@@ -1100,7 +1100,7 @@ export default (sbp('sbp/selectors/register', {
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
         keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey, internalSideEffectStack)
       },
-      [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
+      [SPMessage.OP_KEY_DEL] (v: SPOpOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
@@ -1181,10 +1181,10 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId, internalSideEffectStack)
+          keyRotationHelper(contractID, state, config, updatedKeysMap, [SPMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId, internalSideEffectStack)
         }
       },
-      [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
+      [SPMessage.OP_KEY_UPDATE] (v: SPOpOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
@@ -1216,7 +1216,7 @@ export default (sbp('sbp/selectors/register', {
             }
           })
 
-          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_UPDATE], 'chelonia/out/keyUpdate', (name) => ({
+          keyRotationHelper(contractID, state, config, updatedKeysMap, [SPMessage.OP_KEY_UPDATE], 'chelonia/out/keyUpdate', (name) => ({
             name: name[1],
             oldKeyId: updatedKeysMap[name[0]].oldKeyId,
             id: updatedKeysMap[name[0]].id,
@@ -1224,7 +1224,7 @@ export default (sbp('sbp/selectors/register', {
           }), internalSideEffectStack)
         }
       },
-      [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
+      [SPMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
     if (!this.config.skipActionProcessing && !this.manifestToContract[manifestHash]) {
       const rootState = sbp(this.config.stateSelector)
@@ -1234,8 +1234,8 @@ export default (sbp('sbp/selectors/register', {
       if (!contractName) {
         contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
           ? rootState.contracts[contractID].type
-          : opT === GIMessage.OP_CONTRACT
-            ? ((opV: any): GIOpContract).type
+          : opT === SPMessage.OP_CONTRACT
+            ? ((opV: any): SPOpOpContract).type
             : ''
       }
       if (!contractName) {
@@ -1248,7 +1248,7 @@ export default (sbp('sbp/selectors/register', {
       processOp = config.preOp(message, state) !== false && processOp
     }
 
-    let signingKey: GIKey
+    let signingKey: SPOpKey
     // Signature verification
     {
       // This sync code has potential issues
@@ -1258,10 +1258,10 @@ export default (sbp('sbp/selectors/register', {
       // The difficulty of this is how to securely determine the message ID to use.
       // The server can assist with this.
 
-      const stateForValidation = opT === GIMessage.OP_CONTRACT && !state?._vm?.authorizedKeys
+      const stateForValidation = opT === SPMessage.OP_CONTRACT && !state?._vm?.authorizedKeys
         ? {
             _vm: {
-              authorizedKeys: keysToMap(((opV: any): GIOpContract).keys, height)
+              authorizedKeys: keysToMap(((opV: any): SPOpOpContract).keys, height)
             }
           }
         : state
@@ -1349,7 +1349,7 @@ export default (sbp('sbp/selectors/register', {
             break
           }
           if (!latestHashFound) {
-            latestHashFound = GIMessage.deserializeHEAD(event).hash === latestHEAD
+            latestHashFound = SPMessage.deserializeHEAD(event).hash === latestHEAD
           }
           if (skip) continue
           // this must be called directly, instead of via enqueueHandleEvent
@@ -1407,7 +1407,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (!pendingWatch || !Object.keys(pendingWatch).length) return
 
-    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'])
+    const signingKey = findSuitableSecretKeyId(externalContractState, [SPMessage.OP_KEY_DEL], ['sig'])
     const canMirrorOperations = !!signingKey
 
     // Only sync contract if we are actually able to mirror key operations
@@ -1572,7 +1572,7 @@ export default (sbp('sbp/selectors/register', {
         })
         return [currentRingLevel, currentSigningKeyId, currentKeyArgs]
       } else if (Number.isFinite(ringLevel)) {
-        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
+        const signingKeyId = findSuitableSecretKeyId(contractState, [SPMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
         if (signingKeyId) {
           (currentKeyArgs: any).push({
             name: key.name,
@@ -1607,7 +1607,7 @@ export default (sbp('sbp/selectors/register', {
         (currentKeyIds: any).push(keyId)
         return [currentRingLevel, currentSigningKeyId, currentKeyIds]
       } else if (Number.isFinite(ringLevel)) {
-        const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_DEL], ['sig'], ringLevel)
+        const signingKeyId = findSuitableSecretKeyId(contractState, [SPMessage.OP_KEY_DEL], ['sig'], ringLevel)
         if (signingKeyId) {
           (currentKeyIds: any).push(keyId)
           return [ringLevel, signingKeyId, currentKeyIds]
@@ -1633,7 +1633,7 @@ export default (sbp('sbp/selectors/register', {
     const pending = contractState?._vm?.pendingKeyshares
     if (!pending) return
 
-    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE], ['sig'])
+    const signingKeyId = findSuitableSecretKeyId(contractState, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE], ['sig'])
 
     if (!signingKeyId) {
       console.log('Unable to respond to key request because there is no suitable secret key with OP_KEY_REQUEST_SEEN permission')
@@ -1743,7 +1743,7 @@ export default (sbp('sbp/selectors/register', {
         data: keyShareEncryption
           ? encryptedOutgoingData(
             originatingContractID,
-            findSuitablePublicKeyIds(originatingState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
+            findSuitablePublicKeyIds(originatingState, [SPMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
             keySharePayload
           )
           : keySharePayload,
@@ -1760,7 +1760,7 @@ export default (sbp('sbp/selectors/register', {
               id: responseKeyId,
               meta: {
                 private: {
-                  content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
+                  content: encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [SPMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', responseKey),
                   shareable: true
                 }
               }
@@ -1782,7 +1782,7 @@ export default (sbp('sbp/selectors/register', {
                 krsEncryption
                   ? encryptedOutgoingData(
                     contractID,
-                    findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
+                    findSuitablePublicKeyIds(contractState, [SPMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '',
                     payload
                   )
                   : payload
@@ -1796,7 +1796,7 @@ export default (sbp('sbp/selectors/register', {
                 data: keyShareEncryption
                   ? encryptedOutgoingData(
                     contractID,
-                    findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
+                    findSuitablePublicKeyIds(contractState, [SPMessage.OP_KEY_SHARE], ['enc'])?.[0] || '',
                     connectionKeyPayload
                   )
                   : connectionKeyPayload
@@ -1824,7 +1824,7 @@ export default (sbp('sbp/selectors/register', {
         contractName,
         signingKeyId,
         data: krsEncryption
-          ? encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
+          ? encryptedOutgoingData(contractID, findSuitablePublicKeyIds(contractState, [SPMessage.OP_KEY_REQUEST_SEEN], ['enc'])?.[0] || '', payload)
           : payload
       }).catch((e) => {
         console.error('Error at respondToKeyRequest while sending keyRequestResponse in error handler', e)
@@ -1873,7 +1873,7 @@ export default (sbp('sbp/selectors/register', {
       // as we wouldn't know that the key is valid from that state, and the
       // state copy (contractStateCopy) is only written to the root state after
       // all processing has completed.
-      message = GIMessage.deserialize(rawMessage, this.transientSecretKeys, contractStateCopy)
+      message = SPMessage.deserialize(rawMessage, this.transientSecretKeys, contractStateCopy)
       if (message.contractID() !== contractID) {
         throw new Error(`[chelonia] Wrong contract ID. Expected ${contractID} but got ${message.contractID()}`)
       }
@@ -1905,7 +1905,7 @@ export default (sbp('sbp/selectors/register', {
       // IMPORTANT: even though we 'await' processMutation, everything in your
       //            contract's 'process' function must be synchronous! The only
       //            reason we 'await' here is to dynamically load any new contract
-      //            source / definitions specified by the GIMessage
+      //            source / definitions specified by the SPMessage
       missingDecryptionKeyIdsMap.delete(message)
       try {
         await handleEvent.processMutation.call(this, message, contractStateCopy, internalSideEffectStack)
@@ -1996,7 +1996,7 @@ const reprocessDebounced = debounce((contractID) => sbp('chelonia/private/out/sy
 }), 1000)
 
 const handleEvent = {
-  checkMessageOrdering (message: GIMessage) {
+  checkMessageOrdering (message: SPMessage) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
@@ -2053,7 +2053,7 @@ const handleEvent = {
       eventsToReingest.splice(reprocessIdx, 1)
     }
   },
-  async processMutation (message: GIMessage, state: Object, internalSideEffectStack?: any[]) {
+  async processMutation (message: SPMessage, state: Object, internalSideEffectStack?: any[]) {
     const contractID = message.contractID()
     if (message.isFirstMessage()) {
       // Allow having _volatile but nothing else if this is the first message,
@@ -2064,9 +2064,9 @@ const handleEvent = {
     }
     await sbp('chelonia/private/in/processMessage', message, state, internalSideEffectStack)
   },
-  processSideEffects (message: GIMessage, state: Object) {
+  processSideEffects (message: SPMessage, state: Object) {
     const opT = message.opType()
-    if (![GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+    if (![SPMessage.OP_ATOMIC, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
       return
     }
 
@@ -2108,18 +2108,18 @@ const handleEvent = {
     }
     const msg = Object(message.message())
 
-    if (opT !== GIMessage.OP_ATOMIC) {
+    if (opT !== SPMessage.OP_ATOMIC) {
       return callSideEffect(msg)
     }
 
     const reducer = (acc, [opT, opV]) => {
-      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+      if ([SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
         acc.push(Object(opV))
       }
       return acc
     }
 
-    const actionsOpV = ((msg: any): GIOpAtomic).reduce(reducer, [])
+    const actionsOpV = ((msg: any): SPOpOpAtomic).reduce(reducer, [])
 
     return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
       const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
@@ -2130,7 +2130,7 @@ const handleEvent = {
       }
     })
   },
-  async applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: GIMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
+  async applyProcessResult ({ message, state, contractState, processingErrored, postHandleEvent }: { message: SPMessage, state: Object, contractState: Object, processingErrored: boolean, postHandleEvent: ?Function }) {
     const contractID = message.contractID()
     const hash = message.hash()
     const height = message.height()
@@ -2156,7 +2156,7 @@ const handleEvent = {
     // whether or not there was an exception, we proceed ahead with updating the head
     // you can prevent this by throwing an exception in the processError hook
     if (message.isFirstMessage()) {
-      const { type } = ((message.opValue(): any): GIOpContract)
+      const { type } = ((message.opValue(): any): SPOpOpContract)
       if (!has(state.contracts, contractID)) {
         this.config.reactiveSet(state.contracts, contractID, Object.create(null))
       }

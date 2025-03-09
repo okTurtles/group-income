@@ -122,7 +122,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
@@ -838,7 +838,7 @@ export default ({
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit, { stream: false })
         }
       } else if (this.latestEvents.length) {
-        const beforeHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
+        const beforeHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
         events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
       } else {
         let sinceHeight = 0
@@ -860,7 +860,7 @@ export default ({
         this.ephemeral.scrollHashOnInitialLoad = messageHashToScroll
       }
 
-      return events.length > 0 && GIMessage.deserializeHEAD(events[0]).head.height === 0
+      return events.length > 0 && SPMessage.deserializeHEAD(events[0]).head.height === 0
     },
     async rerenderEvents (events) {
       if (!this.latestEvents.length) {
@@ -870,7 +870,7 @@ export default ({
       }
 
       if (this.latestEvents.length > 0) {
-        const entryHeight = GIMessage.deserializeHEAD(this.latestEvents[0]).head.height
+        const entryHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
         let state = await this.generateNewChatRoomState(true, entryHeight)
 
         const chatroomID = this.ephemeral.renderingChatRoomId
@@ -918,7 +918,7 @@ export default ({
         })
       }
     },
-    listenChatRoomActions (contractID: string, message?: GIMessage) {
+    listenChatRoomActions (contractID: string, message?: SPMessage) {
       if (this.chatroomHasSwitchedFrom(contractID)) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
@@ -928,14 +928,14 @@ export default ({
       this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
         // TODO: The next line will _not_ get information about any inner signatures,
         // which is used for determininng the sender of a message. Update with
-        // another call to GIMessage to get signature information
+        // another call to SPMessage to get signature information
         const value = message.decryptedValue()
         if (!value) throw new Error('Unable to decrypt message')
 
-        const isMessageAddedOrDeleted = (message: GIMessage) => {
-          const allowedActionType = [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED]
+        const isMessageAddedOrDeleted = (message: SPMessage) => {
+          const allowedActionType = [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED]
           const getAllowedMessageAction = (opType, opValue) => {
-            if (opType === GIMessage.OP_ATOMIC) {
+            if (opType === SPMessage.OP_ATOMIC) {
               const actions = opValue
                 .map(([t, v]) => getAllowedMessageAction(t, v.valueOf().valueOf()))
                 .filter(Boolean)
