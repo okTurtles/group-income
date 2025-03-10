@@ -5,7 +5,7 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, ke
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { has, omit } from 'turtledash'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import type { GIRegParams } from './types.js'
@@ -143,7 +143,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 0,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
@@ -156,7 +156,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-csk',
                   purpose: ['sig'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[0].foreignKey,
                   meta: params.options.groupKeys[0].meta,
@@ -167,7 +167,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-cek',
                   purpose: ['enc'],
                   ringLevel: 2,
-                  permissions: [GIMessage.OP_ATOMIC, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED],
                   allowedActions: ['gi.contracts/chatroom/join', 'gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[1].foreignKey,
                   meta: params.options.groupKeys[1].meta,
@@ -337,7 +337,7 @@ export default (sbp('sbp/selectors/register', {
                 foreignKey: `shelter:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
                 id: cskID,
                 data: rootState[cID]._vm.authorizedKeys[cskID].data,
-                permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                permissions: [SPMessage.OP_ACTION_ENCRYPTED + '#inner'],
                 allowedActions: '*',
                 purpose: ['sig'],
                 ringLevel: Number.MAX_SAFE_INTEGER,

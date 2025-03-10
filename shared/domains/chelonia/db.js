@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head='
@@ -104,16 +104,16 @@ export default ((sbp('sbp/selectors/register', {
   'chelonia/db/deleteLatestHEADinfo': (contractID: string): Promise<void> => {
     return sbp('chelonia.db/set', getLogHead(contractID), '')
   },
-  'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
+  'chelonia/db/getEntry': async function (hash: string): Promise<SPMessage> {
     try {
       const value: string = await sbp('chelonia.db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
-      return GIMessage.deserialize(value, this.transientSecretKeys)
+      return SPMessage.deserialize(value, this.transientSecretKeys)
     } catch (e) {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }
   },
-  'chelonia/db/addEntry': function (entry: GIMessage): Promise<string> {
+  'chelonia/db/addEntry': function (entry: SPMessage): Promise<string> {
     // because addEntry contains multiple awaits - we want to make sure it gets executed
     // "atomically" to minimize the chance of a contract fork
     return sbp('okTurtles.eventQueue/queueEvent', `chelonia/db/${entry.contractID()}`, [
@@ -121,7 +121,7 @@ export default ((sbp('sbp/selectors/register', {
     ])
   },
   // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
-  'chelonia/private/db/addEntry': async function (entry: GIMessage): Promise<string> {
+  'chelonia/private/db/addEntry': async function (entry: SPMessage): Promise<string> {
     try {
       const { previousHEAD: entryPreviousHEAD, height: entryHeight } = entry.head()
       const contractID: string = entry.contractID()
@@ -163,7 +163,7 @@ export default ((sbp('sbp/selectors/register', {
       throw new ChelErrorDBConnection(`${e.name} during addEntry: ${e.message}`)
     }
   },
-  'chelonia/db/lastEntry': async function (contractID: string): Promise<GIMessage> {
+  'chelonia/db/lastEntry': async function (contractID: string): Promise<SPMessage> {
     try {
       const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
       if (!latestHEADinfo) throw new Error(`contract ${contractID} has no latest hash!`)

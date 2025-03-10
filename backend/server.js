@@ -3,10 +3,11 @@
 import Hapi from '@hapi/hapi'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
+import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
 import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
@@ -163,7 +164,7 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
-    if (deserializedHEAD.head.op === GIMessage.OP_CONTRACT) {
+    if (deserializedHEAD.head.op === SPMessage.OP_CONTRACT) {
       sbp('okTurtles.data/get', PUBSUB_INSTANCE).channels.add(contractID)
     }
     await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)
@@ -266,17 +267,16 @@ sbp('sbp/selectors/register', {
       const resourcesKey = `_private_resources_${cid}`
       const resources = await sbp('chelonia.db/get', resourcesKey)
       if (resources) {
-        await Promise.allSettled(resources.split('\x00').map(async (resourceCid) => {
-        // TODO: Temporary logic until we can figure out the resource type
-        // directly from a CID
-          const resource = Buffer.from(await sbp('chelonia.db/get', resourceCid)).toString()
-          if (resource) {
-            if (resource.includes('previousHEAD') && resource.includes('contractID') && resource.includes('op') && resource.includes('height')) {
-              return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
-            } else {
-              return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
-            }
+        await Promise.allSettled(resources.split('\x00').map((resourceCid) => {
+          const parsed = parseCID(resourceCid)
+
+          if (parsed.code === multicodes.SHELTER_CONTRACT_DATA) {
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
+          } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
           }
+
+          return undefined
         }))
       }
       await sbp('chelonia/db/delete', resourcesKey)

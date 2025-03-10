@@ -695,7 +695,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectOf({
         proposalHash: stringMax(MAX_HASH_LEN, 'proposalHash'),
         vote: voteType,
-        passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
+        passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD SPMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       })),
       async process (message, { state, getters }) {
         const { data, hash, meta, innerSigningContractID } = message
