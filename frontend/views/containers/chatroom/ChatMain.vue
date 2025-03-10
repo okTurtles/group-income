@@ -253,7 +253,7 @@ export default ({
         unprocessedEvents: [],
 
         // Related to switching chatrooms
-        chatroomSwitchQueue: [],
+        chatroomIdToSwitchTo: null,
         renderingChatRoomId: null
       },
       messageState: {
@@ -280,8 +280,8 @@ export default ({
     window.addEventListener('resize', this.resizeEventHandler)
 
     if (this.summary.chatRoomID) {
-      this.ephemeral.chatroomSwitchQueue.push(this.summary.chatRoomID)
-      this.processSwitchQueue()
+      this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
+      this.processChatroomSwitch()
     }
   },
   beforeDestroy () {
@@ -1130,30 +1130,31 @@ export default ({
           this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
       }
     },
-    processSwitchQueue: debounce(async function () {
-      if (this.ephemeral.chatroomSwitchQueue.length === 0) return
+    processChatroomSwitch: debounce(async function () {
+      if (!this.ephemeral.chatroomIdToSwitchTo) return
 
-      // Take the most recent chatroom entry on the queue and discard everything else. This way we can speed up the process of switching chatrooms.
-      const targetChatroomId = this.ephemeral.chatroomSwitchQueue.pop()
-      this.ephemeral.chatroomSwitchQueue = []
+      const targetChatroomId = this.ephemeral.chatroomIdToSwitchTo
+      this.ephemeral.chatroomIdToSwitchTo = null
+
+      if (targetChatroomId === this.ephemeral.renderingChatRoomId) return
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
       try {
         await this.initializeState()
-        if (this.ephemeral.chatroomSwitchQueue.length > 0) {
+        if (this.ephemeral.chatroomIdToSwitchTo) {
           // If the user has since switched to another chatroom while initializing this chatroom, stop here
           // and care about the switched chatroom.
 
-          // NOTE: 'return this.processSwitchQueue()' below would make it more clear that we don't proceed with anything else, but
+          // NOTE: 'return this.processChatroomSwitch()' below would make it more clear that we don't proceed with anything else, but
           //       having return here creates an occasional error saying 'TypeError: Chaining cycle detected for promise'.
-          this.processSwitchQueue()
+          this.processChatroomSwitch()
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
           this.ephemeral.infiniteLoading?.reset()
         }
       } catch (e) {
-        console.error('ChatMain.vue processSwitchQueue() error:', e)
+        console.error('ChatMain.vue processChatroomSwitch() error:', e)
 
         if (!this.chatroomHasSwitchedFrom(targetChatroomId)) {
           sbp('gi.ui/prompt', {
@@ -1180,7 +1181,7 @@ export default ({
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
         if (toChatRoomId !== this.summary.chatRoomID) return
-        this.processSwitchQueue()
+        this.processChatroomSwitch()
       }
 
       if (toChatRoomId !== fromChatRoomId) {
@@ -1188,9 +1189,10 @@ export default ({
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
-        this.ephemeral.messagesInitiated = false
+        // Prevent the infinite scroll handler from rendering more messages
+        this.ephemeral.messagesInitiated = undefined
         this.ephemeral.scrolledDistance = 0
-        this.ephemeral.chatroomSwitchQueue.push(toChatRoomId)
+        this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
