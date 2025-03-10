@@ -36,7 +36,7 @@ import {
   LOGOUT
 } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
@@ -186,7 +186,7 @@ export default (sbp('sbp/selectors/register', {
             name: '#inviteKey-' + inviteKeyId,
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
-            permissions: [GIMessage.OP_KEY_REQUEST],
+            permissions: [SPMessage.OP_KEY_REQUEST],
             meta: {
               quantity: MAX_GROUP_MEMBER_COUNT,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
@@ -442,7 +442,7 @@ export default (sbp('sbp/selectors/register', {
           await sbp('chelonia/out/keyRequest', {
             ...omit(params, ['options']),
             innerEncryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
             allowedActions: ['gi.contracts/identity/joinDirectMessage'],
             reference: params.reference,
             encryptKeyRequestMetadata: true,
@@ -501,7 +501,7 @@ export default (sbp('sbp/selectors/register', {
                       foreignKey: `shelter:${encodeURIComponent(userID)}?keyName=${encodeURIComponent('csk')}`,
                       id: userCSKid,
                       data: userCSKdata,
-                      permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+                      permissions: [SPMessage.OP_ACTION_ENCRYPTED + '#inner'],
                       allowedActions: '*',
                       purpose: ['sig'],
                       ringLevel: Number.MAX_SAFE_INTEGER,
@@ -887,7 +887,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }),
-  'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
+  'gi.actions/group/autobanUser': async function (message: SPMessage, error: Object, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
     try {
       if (attempt === 1) {
         // to decrease likelihood of multiple proposals being created at the same time, wait
@@ -1027,7 +1027,7 @@ export default (sbp('sbp/selectors/register', {
         name: '#inviteKey-' + inviteKeyId,
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
-        permissions: [GIMessage.OP_KEY_REQUEST],
+        permissions: [SPMessage.OP_KEY_REQUEST],
         meta: {
           quantity,
           ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
