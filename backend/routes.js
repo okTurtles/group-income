@@ -3,7 +3,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { createCID, multicodes, maybeParseCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
@@ -105,7 +105,7 @@ route.POST('/event', {
   // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
+    const deserializedHEAD = SPMessage.deserializeHEAD(request.payload)
     try {
       const parsed = maybeParseCID(deserializedHEAD.head.manifest)
       if (parsed?.code !== multicodes.SHELTER_CONTRACT_MANIFEST) {
