@@ -14,12 +14,12 @@ import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import type { Key } from '@chelonia/crypto'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
@@ -193,6 +193,8 @@ export default (sbp('sbp/selectors/register', {
     const IPK = typeof wIPK === 'string' ? deserializeKey(wIPK) : wIPK
     const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
 
+    const deletionToken = 'deletionToken' + generateSalt()
+
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
@@ -220,6 +222,7 @@ export default (sbp('sbp/selectors/register', {
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
+    const encryptedDeletionToken = encryptedOutgoingDataWithRawKey(IEK, deletionToken)
 
     // Before creating the contract, put all keys into transient store
     await sbp('chelonia/storeSecretKeys',
@@ -231,7 +234,13 @@ export default (sbp('sbp/selectors/register', {
     try {
       await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
-        publishOptions,
+        publishOptions: {
+          ...publishOptions,
+          headers: {
+            ...publishOptions?.headers,
+            'shelter-deletion-token': deletionToken
+          }
+        },
         signingKeyId: IPKid,
         actionSigningKeyId: CSKid,
         actionEncryptionKeyId: PEKid,
@@ -366,7 +375,12 @@ export default (sbp('sbp/selectors/register', {
           // finalPicture is set after OP_CONTRACT is sent, which is after
           // calling 'chelonia/out/registerContract' here. We use a getter for
           // `picture` so that the action sent has the correct value
-          attributes: { username, email, get picture () { return finalPicture } }
+          attributes: {
+            username,
+            email,
+            get picture () { return finalPicture },
+            encryptedDeletionToken: encryptedDeletionToken.serialize('encryptedDeletionToken')
+          }
         },
         namespaceRegistration: username
       })
@@ -786,7 +800,7 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('gi.actions/identity/saveFileDeleteToken', {
         contractID: identityContractID,
-        data: { tokensByManifestCid }
+        data: { billableContractID, tokensByManifestCid }
       })
 
       return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
@@ -813,7 +827,7 @@ export default (sbp('sbp/selectors/register', {
           return [cid, null]
         };
         const credential = shouldDeleteToken
-          ? { token: currentIdentityState.fileDeleteTokens[cid] }
+          ? { token: currentIdentityState.fileDeleteTokens[cid].token }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
@@ -977,6 +991,43 @@ export default (sbp('sbp/selectors/register', {
     // And remove transient keys, which require a user password
     sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])
   },
+  'gi.actions/identity/delete': async ({
+    contractID,
+    transientSecretKeys,
+    oldKeysAnchorCid
+  }: {
+    contractID: string,
+    transientSecretKeys: Secret<string[]>,
+    oldKeysAnchorCid: string
+  }) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state?.attributes?.encryptedDeletionToken) {
+      throw new Error('Missing encrypted deletion token')
+    }
+
+    const transientSecretKeysEntries = transientSecretKeys.valueOf().map(
+      k => ([keyId(k), deserializeKey(k)])
+    )
+    const encryptedDeletionToken = state.attributes.encryptedDeletionToken
+
+    if (oldKeysAnchorCid) {
+      const IEK = transientSecretKeysEntries[0][1]
+      await processOldIekList(contractID, oldKeysAnchorCid, IEK)
+    }
+
+    const token = encryptedIncomingData(contractID, state, encryptedDeletionToken, NaN, Object.fromEntries(transientSecretKeysEntries), 'encryptedDeletionToken')
+    await sbp('chelonia/out/deleteContract', contractID, {
+      [contractID]: { token: new Secret(token.valueOf()) }
+    })
+  },
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
+    const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
+
+    if (contractID === ourIdentityContractId) {
+      await sbp('gi.actions/identity/logout')
+    }
+  },
+  ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
