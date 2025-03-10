@@ -69,7 +69,7 @@ type ProtoSPOpValue = SPOpContract | SPOpActionEncrypted | SPOpActionUnencrypted
 export type SPOpAtomic = [SPOpType, ProtoSPOpValue][]
 export type SPOpValue = ProtoSPOpValue | SPOpAtomic
 export type SPOpRaw = [SPOpType, SignedData<SPOpValue>]
-export type SP = [SPOpType, SPOpValue]
+export type SPOp = [SPOpType, SPOpValue]
 
 export type SPMsgDirection = 'incoming' | 'outgoing'
 type SPMsgParams = { direction: SPMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<SPOpValue> }
@@ -426,7 +426,7 @@ export class SPMessage {
 
   message (): SPOpValue { return this._message }
 
-  op (): SP { return [this.head().op, this.message()] }
+  op (): SPOp { return [this.head().op, this.message()] }
 
   rawOp (): SPOpRaw { return [this.head().op, this._signedMessageData] }
 
