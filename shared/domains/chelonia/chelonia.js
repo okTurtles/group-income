@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from 'turtledash'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
-import type { SPOpKey, SPOpOpActionUnencrypted, SPOpOpContract, SPOpOpKeyAdd, SPOpOpKeyDel, SPOpOpKeyRequest, SPOpOpKeyRequestSeen, SPOpOpKeyShare, SPOpOpKeyUpdate } from './SPMessage.js'
+import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
@@ -32,7 +32,7 @@ export type ChelRegParams = {
   signingKeyId: string;
   actionSigningKeyId: string;
   actionEncryptionKeyId: ?string;
-  keys: (SPOpKey | EncryptedData<SPOpKey>)[];
+  keys: (SPKey | EncryptedData<SPKey>)[];
   namespaceRegistration: ?string;
   hooks?: {
     prepublishContract?: (SPMessage) => void;
@@ -67,7 +67,7 @@ export type ChelActionParams = {
 export type ChelKeyAddParams = {
   contractName: string;
   contractID: string;
-  data: SPOpOpKeyAdd;
+  data: SPOpKeyAdd;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (SPMessage) => void;
@@ -81,7 +81,7 @@ export type ChelKeyAddParams = {
 export type ChelKeyDelParams = {
   contractName: string;
   contractID: string;
-  data: SPOpOpKeyDel;
+  data: SPOpKeyDel;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (SPMessage) => void;
@@ -95,7 +95,7 @@ export type ChelKeyDelParams = {
 export type ChelKeyUpdateParams = {
   contractName: string;
   contractID: string;
-  data: SPOpOpKeyUpdate;
+  data: SPOpKeyUpdate;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (SPMessage) => void;
@@ -111,7 +111,7 @@ export type ChelKeyShareParams = {
   originatingContractName?: string;
   contractID: string;
   contractName: string;
-  data: SPOpOpKeyShare;
+  data: SPOpKeyShare;
   signingKeyId?: string;
   signingKey?: Key;
   hooks?: {
@@ -150,7 +150,7 @@ export type ChelKeyRequestParams = {
 export type ChelKeyRequestResponseParams = {
   contractName: string;
   contractID: string;
-  data: SPOpOpKeyRequestSeen;
+  data: SPOpKeyRequestSeen;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (SPMessage) => void;
@@ -1161,7 +1161,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = ({
       type: contractName,
       keys: keys
-    }: SPOpOpContract)
+    }: SPOpContract)
     const contractMsg = SPMessage.createV1_0({
       contractID: null,
       height: 0,
@@ -1217,7 +1217,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
 
-    const payload = (data: SPOpOpKeyShare)
+    const payload = (data: SPOpKeyShare)
 
     if (!params.signingKeyId && !params.signingKey) {
       throw new TypeError('Either signingKeyId or signingKey must be specified')
@@ -1251,8 +1251,8 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
 
-    const payload = (data: SPOpOpKeyAdd).filter((wk) => {
-      const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): SPOpKey)
+    const payload = (data: SPOpKeyAdd).filter((wk) => {
+      const k = (((isEncryptedData(wk) ? wk.valueOf() : wk): any): SPKey)
       if (has(state._vm.authorizedKeys, k.id)) {
         if (state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
           // Can't add a key that exists
@@ -1284,7 +1284,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
-    const payload = (data: SPOpOpKeyDel).map((keyId) => {
+    const payload = (data: SPOpKeyDel).map((keyId) => {
       if (isEncryptedData(keyId)) return keyId
       // $FlowFixMe
       if (!has(state._vm.authorizedKeys, keyId) || state._vm.authorizedKeys[keyId]._notAfterHeight != null) return undefined
@@ -1315,7 +1315,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const state = contract.state(contractID)
-    const payload = (data: SPOpOpKeyUpdate).map((key) => {
+    const payload = (data: SPOpKeyUpdate).map((key) => {
       if (isEncryptedData(key)) return key
       // $FlowFixMe
       const { oldKeyId } = key
@@ -1415,7 +1415,7 @@ export default (sbp('sbp/selectors/register', {
           responseKey: encryptedOutgoingData(contractID, innerEncryptionKeyId, keyRequestReplyKeyS)
         }, this.transientSecretKeys),
         request: '*'
-      }: SPOpOpKeyRequest)
+      }: SPOpKeyRequest)
       let msg = SPMessage.createV1_0({
         contractID,
         op: [
@@ -1447,7 +1447,7 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
-    const payload = (data: SPOpOpKeyRequestSeen)
+    const payload = (data: SPOpKeyRequestSeen)
     let message = SPMessage.createV1_0({
       contractID,
       op: [
@@ -1768,7 +1768,7 @@ async function outEncryptedOrUnencryptedAction (
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const meta = await contract.metadata.create()
-  const unencMessage = ({ action, data, meta }: SPOpOpActionUnencrypted)
+  const unencMessage = ({ action, data, meta }: SPOpActionUnencrypted)
   const signedMessage = params.innerSigningKeyId
     ? (state._vm.authorizedKeys[params.innerSigningKeyId] && state._vm.authorizedKeys[params.innerSigningKeyId]?._notAfterHeight == null)
         ? signedOutgoingData(contractID, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)

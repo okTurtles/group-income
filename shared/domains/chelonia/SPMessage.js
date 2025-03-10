@@ -1,23 +1,23 @@
 'use strict'
 
+import { createCID, multicodes } from '~/shared/functions.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from '@chelonia/crypto'
 import { serdesDeserializeSymbol, serdesSerializeSymbol, serdesTagSymbol } from '@chelonia/serdes'
 import { has } from 'turtledash'
-import { createCID } from '~/shared/functions.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 import type { EncryptedData } from './encryptedData.js'
 import { encryptedIncomingData, encryptedIncomingForeignData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { SignedData } from './signedData.js'
 import { isRawSignedData, isSignedData, rawSignedIncomingData, signedIncomingData } from './signedData.js'
 
-export type SPOpKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
+export type SPKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
-export type SPOpKeyPurpose = 'enc' | 'sig'
+export type SPKeyPurpose = 'enc' | 'sig'
 
-export type SPOpKey = {
+export type SPKey = {
   id: string;
   name: string;
-  purpose: SPOpKeyPurpose[],
+  purpose: SPKeyPurpose[],
   ringLevel: number;
   permissions: '*' | string[];
   allowedActions?: '*' | string[];
@@ -30,17 +30,17 @@ export type SPOpKey = {
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type SPOpOpContract = { type: string; keys: (SPOpKey | EncryptedData<SPOpKey>)[]; parentContract?: string }
-export type ProtoSPOpOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
-export type SPOpOpActionUnencrypted = ProtoSPOpOpActionUnencrypted | SignedData<ProtoSPOpOpActionUnencrypted>
-export type SPOpOpActionEncrypted = EncryptedData<SPOpOpActionUnencrypted> // encrypted version of SPOpOpActionUnencrypted
-export type SPOpOpKeyAdd = (SPOpKey | EncryptedData<SPOpKey>)[]
-export type SPOpOpKeyDel = (string | EncryptedData<string>)[]
-export type SPOpOpPropSet = { key: string; value: JSONType }
-export type ProtoSPOpOpKeyShare = { contractID: string; keys: SPOpKey[]; foreignContractID?: string; keyRequestHash?: string, keyRequestHeight?: number }
-export type SPOpOpKeyShare = ProtoSPOpOpKeyShare | EncryptedData<ProtoSPOpOpKeyShare>
-// TODO encrypted SPOpOpKeyRequest
-export type ProtoSPOpOpKeyRequest = {
+export type SPOpContract = { type: string; keys: (SPKey | EncryptedData<SPKey>)[]; parentContract?: string }
+export type ProtoSPOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type SPOpActionUnencrypted = ProtoSPOpActionUnencrypted | SignedData<ProtoSPOpActionUnencrypted>
+export type SPOpActionEncrypted = EncryptedData<SPOpActionUnencrypted> // encrypted version of SPOpActionUnencrypted
+export type SPOpKeyAdd = (SPKey | EncryptedData<SPKey>)[]
+export type SPOpKeyDel = (string | EncryptedData<string>)[]
+export type SPOpPropSet = { key: string; value: JSONType }
+export type ProtoSPOpKeyShare = { contractID: string; keys: SPKey[]; foreignContractID?: string; keyRequestHash?: string, keyRequestHeight?: number }
+export type SPOpKeyShare = ProtoSPOpKeyShare | EncryptedData<ProtoSPOpKeyShare>
+// TODO encrypted SPOpKeyRequest
+export type ProtoSPOpKeyRequest = {
   contractID: string;
   height: number;
   replyWith: SignedData<{
@@ -49,10 +49,10 @@ export type ProtoSPOpOpKeyRequest = {
   }>,
   request: string;
 }
-export type SPOpOpKeyRequest = ProtoSPOpOpKeyRequest | EncryptedData<ProtoSPOpOpKeyRequest>
-export type ProtoSPOpOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
-export type SPOpOpKeyRequestSeen = ProtoSPOpOpKeyRequestSeen | EncryptedData<ProtoSPOpOpKeyRequestSeen>;
-export type SPOpKeyUpdate = {
+export type SPOpKeyRequest = ProtoSPOpKeyRequest | EncryptedData<ProtoSPOpKeyRequest>
+export type ProtoSPOpKeyRequestSeen = { keyRequestHash: string; keyShareHash?: string; success: boolean };
+export type SPOpKeyRequestSeen = ProtoSPOpKeyRequestSeen | EncryptedData<ProtoSPOpKeyRequestSeen>;
+export type SPKeyUpdate = {
   name: string;
   id?: string;
   oldKeyId: string;
@@ -62,27 +62,27 @@ export type SPOpKeyUpdate = {
   allowedActions?: '*' | string[];
   meta?: Object;
 }
-export type SPOpOpKeyUpdate = (SPOpKeyUpdate | EncryptedData<SPOpKeyUpdate>)[]
+export type SPOpKeyUpdate = (SPKeyUpdate | EncryptedData<SPKeyUpdate>)[]
 
-export type SPOpOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
-type ProtoSPOpOpValue = SPOpOpContract | SPOpOpActionEncrypted | SPOpOpActionUnencrypted | SPOpOpKeyAdd | SPOpOpKeyDel | SPOpOpPropSet | SPOpOpKeyShare | SPOpOpKeyRequest | SPOpOpKeyRequestSeen | SPOpOpKeyUpdate
-export type SPOpOpAtomic = [SPOpOpType, ProtoSPOpOpValue][]
-export type SPOpOpValue = ProtoSPOpOpValue | SPOpOpAtomic
-export type SPOpOpRaw = [SPOpOpType, SignedData<SPOpOpValue>]
-export type SPOp = [SPOpOpType, SPOpOpValue]
+export type SPOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+type ProtoSPOpValue = SPOpContract | SPOpActionEncrypted | SPOpActionUnencrypted | SPOpKeyAdd | SPOpKeyDel | SPOpPropSet | SPOpKeyShare | SPOpKeyRequest | SPOpKeyRequestSeen | SPOpKeyUpdate
+export type SPOpAtomic = [SPOpType, ProtoSPOpValue][]
+export type SPOpValue = ProtoSPOpValue | SPOpAtomic
+export type SPOpRaw = [SPOpType, SignedData<SPOpValue>]
+export type SPOp = [SPOpType, SPOpValue]
 
-export type SPOpMsgDirection = 'incoming' | 'outgoing'
-type SPOpMsgParams = { direction: SPOpMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<SPOpOpValue> }
+export type SPMsgDirection = 'incoming' | 'outgoing'
+type SPMsgParams = { direction: SPMsgDirection, mapping: Object; head: Object; signedMessageData: SignedData<SPOpValue> }
 
 // Takes a raw message and processes it so that EncryptedData and SignedData
 // attributes are defined
-const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SPOpOpValue, additionalKeys?: Object, state: Object): SPOpOpValue => {
+const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string, contractID: string, parsedMessage: SPOpValue, additionalKeys?: Object, state: Object): SPOpValue => {
   const op = head.op
   const height = head.height
 
-  const message: SPOpOpValue = op === SPMessage.OP_ACTION_ENCRYPTED
+  const message: SPOpValue = op === SPMessage.OP_ACTION_ENCRYPTED
     // $FlowFixMe
-    ? encryptedIncomingData<SPOpOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
+    ? encryptedIncomingData<SPOpActionUnencrypted>(contractID, state, (parsedMessage: any), height, additionalKeys, headJSON, undefined)
     : parsedMessage
 
   // If the operation is SPMessage.OP_KEY_ADD or SPMessage.OP_KEY_UPDATE,
@@ -192,13 +192,13 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
 
   // If the operation is OP_ATOMIC, call this function recursively
   if (op === SPMessage.OP_ATOMIC) {
-    return ((((message: any): SPOpOpAtomic)
+    return ((((message: any): SPOpAtomic)
       .map(([opT, opV]) =>
         [
           opT,
           decryptedAndVerifiedDeserializedMessage({ ...head, op: opT }, headJSON, contractID, (opV: any), additionalKeys, state)
         ]
-      ): any): SPOpOpAtomic)
+      ): any): SPOpAtomic)
   }
 
   return message
@@ -209,8 +209,8 @@ export class SPMessage {
   _mapping: Object
   _head: Object
   _message: Object
-  _signedMessageData: SignedData<SPOpOpValue>
-  _direction: SPOpMsgDirection
+  _signedMessageData: SignedData<SPOpValue>
+  _direction: SPMsgDirection
   _decryptedValue: Object
   _innerSigningKeyId: ?string
 
@@ -246,7 +246,7 @@ export class SPMessage {
       contractID: string | null,
       previousHEAD?: ?string,
       height?: ?number,
-      op: SPOpOpRaw,
+      op: SPOpRaw,
       manifest: string,
     }
   ): this {
@@ -265,7 +265,7 @@ export class SPMessage {
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
     targetHead: Object,
-    targetOp: SPOpOpRaw,
+    targetOp: SPOpRaw,
     sources: Object
   ): this {
     const head = Object.assign({}, targetHead, sources)
@@ -276,7 +276,7 @@ export class SPMessage {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
-    const contractID = head.op === SPMessage.OP_CONTRACT ? createCID(value) : head.contractID
+    const contractID = head.op === SPMessage.OP_CONTRACT ? createCID(value, multicodes.SHELTER_CONTRACT_DATA) : head.contractID
 
     // Special case for OP_CONTRACT, since the keys are not yet present in the
     // state
@@ -297,7 +297,7 @@ export class SPMessage {
 
     return new this({
       direction: 'incoming',
-      mapping: { key: createCID(value), value },
+      mapping: { key: createCID(value, multicodes.SHELTER_CONTRACT_DATA), value },
       head,
       signedMessageData
     })
@@ -315,7 +315,7 @@ export class SPMessage {
       },
       get hash () {
         if (!hash) {
-          hash = createCID(value)
+          hash = createCID(value, multicodes.SHELTER_CONTRACT_DATA)
         }
         return hash
       },
@@ -333,11 +333,11 @@ export class SPMessage {
     return result
   }
 
-  constructor (params: SPOpMsgParams) {
+  constructor (params: SPMsgParams) {
     this._direction = params.direction
     this._mapping = params.mapping
     this._head = params.head
-    this._signedMessageData = ((params.signedMessageData: any): SignedData<SPOpOpValue>)
+    this._signedMessageData = ((params.signedMessageData: any): SignedData<SPOpValue>)
 
     // perform basic sanity check
     const type = this.opType()
@@ -424,15 +424,15 @@ export class SPMessage {
 
   head (): Object { return this._head }
 
-  message (): SPOpOpValue { return this._message }
+  message (): SPOpValue { return this._message }
 
   op (): SPOp { return [this.head().op, this.message()] }
 
-  rawOp (): SPOpOpRaw { return [this.head().op, this._signedMessageData] }
+  rawOp (): SPOpRaw { return [this.head().op, this._signedMessageData] }
 
-  opType (): SPOpOpType { return this.head().op }
+  opType (): SPOpType { return this.head().op }
 
-  opValue (): SPOpOpValue { return this.message() }
+  opValue (): SPOpValue { return this.message() }
 
   signingKeyId (): string { return this._signedMessageData.signingKeyId }
 
@@ -489,7 +489,7 @@ export class SPMessage {
   }
 }
 
-function messageToParams (head: Object, message: SignedData<SPOpOpValue>): SPOpMsgParams {
+function messageToParams (head: Object, message: SignedData<SPOpValue>): SPMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using deserialize().
@@ -511,7 +511,7 @@ function messageToParams (head: Object, message: SignedData<SPOpOpValue>): SPOpM
         const value = JSON.stringify(messageJSON)
 
         mapping = {
-          key: createCID(value),
+          key: createCID(value, multicodes.SHELTER_CONTRACT_DATA),
           value
         }
       }

@@ -7,7 +7,7 @@ import { blake32Hash, bytesToB64 } from '~/shared/functions.js'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
-import type { SPOpKey, SPOpKeyType } from '~/shared/domains/chelonia/SPMessage.js'
+import type { SPKey, SPKeyType } from '~/shared/domains/chelonia/SPMessage.js'
 
 function genSeed (): string {
   return bytesToB64(nacl.randomBytes(nacl.box.secretKeyLength))
@@ -40,7 +40,7 @@ function contextStrToDeviceObj (
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
     { type = '' }: {
-      type: SPOpKeyType
+      type: SPKeyType
     }) {
 
   },

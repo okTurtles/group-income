@@ -2,9 +2,9 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import { createCID, multicodes } from '~/shared/functions.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from 'turtledash'
-import { createCID } from '~/shared/functions.js'
-import type { SPOpKey, SPOpOpActionEncrypted, SPOpOpActionUnencrypted, SPOpOpAtomic, SPOpOpContract, SPOpOpKeyAdd, SPOpOpKeyDel, SPOpOpKeyRequest, SPOpOpKeyRequestSeen, SPOpOpKeyShare, SPOpOpKeyUpdate, SPOpOpPropSet, SPOpOpType, ProtoSPOpOpKeyRequestSeen, ProtoSPOpOpKeyShare } from './SPMessage.js'
+import type { SPKey, SPOpActionEncrypted, SPOpActionUnencrypted, SPOpAtomic, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate, SPOpPropSet, SPOpType, ProtoSPOpKeyRequestSeen, ProtoSPOpKeyShare } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
 import { Secret } from './Secret.js'
 import { INVITE_STATUS } from './constants.js'
@@ -52,7 +52,7 @@ const getMsgMeta = (message: SPMessage, contractID: string, state: Object, index
   return result
 }
 
-const keysToMap = (keys: (SPOpKey | EncryptedData<SPOpKey>)[], height: number, authorizedKeys?: Object): Object => {
+const keysToMap = (keys: (SPKey | EncryptedData<SPKey>)[], height: number, authorizedKeys?: Object): Object => {
   // Using cloneDeep to ensure that the returned object is serializable
   // Keys in a SPMessage may not be serializable (i.e., supported by the
   // structured clone algorithm) when they contain encryptedIncomingData
@@ -62,7 +62,7 @@ const keysToMap = (keys: (SPOpKey | EncryptedData<SPOpKey>)[], height: number, a
     if (data.encryptionKeyId) {
       data.data._private = data.encryptionKeyId
     }
-    return ((data.data: any): SPOpKey)
+    return ((data.data: any): SPKey)
   }).filter(Boolean)
 
   const keysCopy = cloneDeep(keys)
@@ -253,7 +253,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     const manifestSource = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('text'))
-    const manifestHashOurs = createCID(manifestSource)
+    const manifestHashOurs = createCID(manifestSource, multicodes.SHELTER_CONTRACT_MANIFEST)
     if (manifestHashOurs !== manifestHash) {
       throw new Error(`expected manifest hash ${manifestHash}. Got: ${manifestHashOurs}`)
     }
@@ -266,7 +266,7 @@ export default (sbp('sbp/selectors/register', {
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
       .then(handleFetchResult('text'))
-    const sourceHash = createCID(source)
+    const sourceHash = createCID(source, multicodes.SHELTER_CONTRACT_TEXT)
     if (sourceHash !== contractInfo.hash) {
       throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
     }
@@ -685,7 +685,7 @@ export default (sbp('sbp/selectors/register', {
       return
     }
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
-    const opFns: { [SPOpOpType]: (any) => void | Promise<void> } = {
+    const opFns: { [SPOpType]: (any) => void | Promise<void> } = {
       /*
         There are two types of "errors" that we need to consider:
         1. "Ignoring" errors
@@ -700,7 +700,7 @@ export default (sbp('sbp/selectors/register', {
         • ALL errors of class "IGNORING" should be ignored. They should not impact our ability to process the rest of the operations in the OP_ATOMIC. No matter how many of these are thrown, it doesn't affect the rest of the operations.
         • ANY error of class "FAILURE" will call the rest of the operations to fail and the state to be reverted to prior to the OP_ATOMIC. No side-effects should be run. Because an intention failed.
       */
-      async [SPMessage.OP_ATOMIC] (v: SPOpOpAtomic) {
+      async [SPMessage.OP_ATOMIC] (v: SPOpAtomic) {
         for (let i = 0; i < v.length; i++) {
           const u = v[i]
           try {
@@ -738,7 +738,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       },
-      [SPMessage.OP_CONTRACT] (v: SPOpOpContract) {
+      [SPMessage.OP_CONTRACT] (v: SPOpContract) {
         state._vm.type = v.type
         const keys = keysToMap(v.keys, height)
         config.reactiveSet(state._vm, 'authorizedKeys', keys)
@@ -750,7 +750,7 @@ export default (sbp('sbp/selectors/register', {
         // the encrypted versions of the CSK and CEK.
         keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
-      [SPMessage.OP_ACTION_ENCRYPTED] (v: SPOpOpActionEncrypted) {
+      [SPMessage.OP_ACTION_ENCRYPTED] (v: SPOpActionEncrypted) {
         if (config.skipActionProcessing) {
           if (process.env.BUILD === 'web') {
             console.log('OP_ACTION_ENCRYPTED: skipped action processing')
@@ -759,7 +759,7 @@ export default (sbp('sbp/selectors/register', {
         }
         return opFns[SPMessage.OP_ACTION_UNENCRYPTED](v.valueOf())
       },
-      async [SPMessage.OP_ACTION_UNENCRYPTED] (v: SPOpOpActionUnencrypted) {
+      async [SPMessage.OP_ACTION_UNENCRYPTED] (v: SPOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
           let innerSigningKeyId: string | typeof undefined
           if (isSignedData(v)) {
@@ -795,12 +795,12 @@ export default (sbp('sbp/selectors/register', {
           )
         }
       },
-      [SPMessage.OP_KEY_SHARE] (wv: SPOpOpKeyShare) {
+      [SPMessage.OP_KEY_SHARE] (wv: SPOpKeyShare) {
         // TODO: Prompt to user if contract not in pending
 
         const data = unwrapMaybeEncryptedData(wv)
         if (!data) return
-        const v = (data.data: ProtoSPOpOpKeyShare)
+        const v = (data.data: ProtoSPOpKeyShare)
 
         for (const key of v.keys) {
           if (key.id && key.meta?.private?.content) {
@@ -977,7 +977,7 @@ export default (sbp('sbp/selectors/register', {
             })
         })
       },
-      [SPMessage.OP_KEY_REQUEST] (wv: SPOpOpKeyRequest) {
+      [SPMessage.OP_KEY_REQUEST] (wv: SPOpKeyRequest) {
         const data = unwrapMaybeEncryptedData(wv)
 
         // If we're unable to decrypt the OP_KEY_REQUEST, then still
@@ -1046,7 +1046,7 @@ export default (sbp('sbp/selectors/register', {
           })
         }
       },
-      [SPMessage.OP_KEY_REQUEST_SEEN] (wv: SPOpOpKeyRequestSeen) {
+      [SPMessage.OP_KEY_REQUEST_SEEN] (wv: SPOpKeyRequestSeen) {
         if (config.skipActionProcessing) {
           return
         }
@@ -1054,7 +1054,7 @@ export default (sbp('sbp/selectors/register', {
 
         const data = unwrapMaybeEncryptedData(wv)
         if (!data) return
-        const v = (data.data: ProtoSPOpOpKeyRequestSeen)
+        const v = (data.data: ProtoSPOpKeyRequestSeen)
 
         if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
           const hash = v.keyRequestHash
@@ -1084,13 +1084,13 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [SPMessage.OP_PROP_DEL]: notImplemented,
-      [SPMessage.OP_PROP_SET] (v: SPOpOpPropSet) {
+      [SPMessage.OP_PROP_SET] (v: SPOpPropSet) {
         if (!state._vm.props) state._vm.props = {}
         state._vm.props[v.key] = v.value
       },
-      [SPMessage.OP_KEY_ADD] (v: SPOpOpKeyAdd) {
+      [SPMessage.OP_KEY_ADD] (v: SPOpKeyAdd) {
         const keys = keysToMap(v, height, state._vm.authorizedKeys)
-        const keysArray = ((Object.values(v): any): SPOpKey[])
+        const keysArray = ((Object.values(v): any): SPKey[])
         keysArray.forEach((k) => {
           if (has(state._vm.authorizedKeys, k.id) && state._vm.authorizedKeys[k.id]._notAfterHeight == null) {
             throw new ChelErrorWarning('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
@@ -1100,7 +1100,7 @@ export default (sbp('sbp/selectors/register', {
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
         keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey, internalSideEffectStack)
       },
-      [SPMessage.OP_KEY_DEL] (v: SPOpOpKeyDel) {
+      [SPMessage.OP_KEY_DEL] (v: SPOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
@@ -1184,7 +1184,7 @@ export default (sbp('sbp/selectors/register', {
           keyRotationHelper(contractID, state, config, updatedKeysMap, [SPMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId, internalSideEffectStack)
         }
       },
-      [SPMessage.OP_KEY_UPDATE] (v: SPOpOpKeyUpdate) {
+      [SPMessage.OP_KEY_UPDATE] (v: SPOpKeyUpdate) {
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
@@ -1235,7 +1235,7 @@ export default (sbp('sbp/selectors/register', {
         contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
           ? rootState.contracts[contractID].type
           : opT === SPMessage.OP_CONTRACT
-            ? ((opV: any): SPOpOpContract).type
+            ? ((opV: any): SPOpContract).type
             : ''
       }
       if (!contractName) {
@@ -1248,7 +1248,7 @@ export default (sbp('sbp/selectors/register', {
       processOp = config.preOp(message, state) !== false && processOp
     }
 
-    let signingKey: SPOpKey
+    let signingKey: SPKey
     // Signature verification
     {
       // This sync code has potential issues
@@ -1261,7 +1261,7 @@ export default (sbp('sbp/selectors/register', {
       const stateForValidation = opT === SPMessage.OP_CONTRACT && !state?._vm?.authorizedKeys
         ? {
             _vm: {
-              authorizedKeys: keysToMap(((opV: any): SPOpOpContract).keys, height)
+              authorizedKeys: keysToMap(((opV: any): SPOpContract).keys, height)
             }
           }
         : state
@@ -2119,7 +2119,7 @@ const handleEvent = {
       return acc
     }
 
-    const actionsOpV = ((msg: any): SPOpOpAtomic).reduce(reducer, [])
+    const actionsOpV = ((msg: any): SPOpAtomic).reduce(reducer, [])
 
     return Promise.allSettled(actionsOpV.map((action) => callSideEffect(action))).then((results) => {
       const errors = results.filter((r) => r.status === 'rejected').map((r) => (r: any).reason)
@@ -2156,7 +2156,7 @@ const handleEvent = {
     // whether or not there was an exception, we proceed ahead with updating the head
     // you can prevent this by throwing an exception in the processError hook
     if (message.isFirstMessage()) {
-      const { type } = ((message.opValue(): any): SPOpOpContract)
+      const { type } = ((message.opValue(): any): SPOpContract)
       if (!has(state.contracts, contractID)) {
         this.config.reactiveSet(state.contracts, contractID, Object.create(null))
       }

@@ -1,6 +1,6 @@
 import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
-import type { SPOpKey } from '~/shared/domains/chelonia/SPMessage.js'
+import type { SPKey } from '~/shared/domains/chelonia/SPMessage.js'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
@@ -52,7 +52,7 @@ sbp('sbp/selectors/register', {
         : keyIds === '*'
           ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
             .filter(([, key]) => {
-              return !!((key: any): SPOpKey).meta?.private?.content
+              return !!((key: any): SPKey).meta?.private?.content
             })
             .map(([id]) => id)
           )
@@ -108,7 +108,7 @@ sbp('sbp/selectors/register', {
     let ringLevel = Number.MAX_SAFE_INTEGER
 
     // $FlowFixMe
-    const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, SPOpKey]) => {
+    const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, SPKey]) => {
       return !!data.meta?.private?.content && data._notAfterHeight == null && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
@@ -116,7 +116,7 @@ sbp('sbp/selectors/register', {
             ? true
             // $FlowFixMe
             : state._volatile?.pendingKeyRevocations && has(state._volatile.pendingKeyRevocations, id))
-    }).map(([id, data]: [string, SPOpKey]) => {
+    }).map(([id, data]: [string, SPKey]) => {
       const newKey = keygenOfSameType(data.data)
       return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
