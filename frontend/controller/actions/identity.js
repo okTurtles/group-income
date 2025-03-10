@@ -12,7 +12,7 @@ import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
@@ -74,19 +74,19 @@ const processOldIekList = async (identityContractID: string, oldKeysAnchorCid: s
       if (head.contractID !== identityContractID) {
         throw new Error('Unexpected contract ID.')
       }
-      if (![GIMessage.OP_ATOMIC, GIMessage.OP_KEY_UPDATE].includes(head.op)) {
+      if (![SPMessage.OP_ATOMIC, SPMessage.OP_KEY_UPDATE].includes(head.op)) {
         throw new Error('Unsupported opcode: ' + head.op)
       }
 
       // Normalize the payload as if it were `OP_ATOMIC`
-      const payload = (head.op === GIMessage.OP_KEY_UPDATE)
-        ? [[GIMessage.OP_KEY_UPDATE, data.valueOf()]]
+      const payload = (head.op === SPMessage.OP_KEY_UPDATE)
+        ? [[SPMessage.OP_KEY_UPDATE, data.valueOf()]]
         : data.valueOf()
 
       // Find the key with the name 'iek', and the `meta.private.oldKeys` field
       // within it
       return payload
-        .filter(([op]) => op === GIMessage.OP_KEY_UPDATE)
+        .filter(([op]) => op === SPMessage.OP_KEY_UPDATE)
         .flatMap(([, keys]) => keys)
         .find((key) => key.name === 'iek' && key.meta?.private?.oldKeys)
         ?.meta.private.oldKeys
@@ -156,7 +156,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   // If the message isn't for our identity contract or it's not `OP_KEY_UPDATE`
   // (possibly within `OP_ATOMIC`), we return early
-  if (contractID !== identityContractID || ![GIMessage.OP_ATOMIC, GIMessage.OP_KEY_UPDATE].includes(message.opType())) return
+  if (contractID !== identityContractID || ![SPMessage.OP_ATOMIC, SPMessage.OP_KEY_UPDATE].includes(message.opType())) return
 
   // If this could have changed our CSK, let's try to get the key ID and see if
   // we have the corresponding secret key
@@ -275,7 +275,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE, GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+            permissions: [SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_UNENCRYPTED, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ATOMIC, SPMessage.OP_CONTRACT_AUTH, SPMessage.OP_CONTRACT_DEAUTH, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE, SPMessage.OP_ACTION_ENCRYPTED + '#inner'],
             allowedActions: '*',
             meta: {
               private: {
@@ -289,7 +289,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_KEY_REQUEST, GIMessage.OP_KEY_REQUEST_SEEN, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_DEL, SPMessage.OP_KEY_REQUEST, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE],
             allowedActions: '*',
             meta: {
               private: {
@@ -303,7 +303,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'pek',
             purpose: ['enc'],
             ringLevel: 2,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
             allowedActions: ['gi.actions/identity/setAttributes'],
             meta: {
               private: {
@@ -574,13 +574,13 @@ export default (sbp('sbp/selectors/register', {
         data: foreignContractState._vm.authorizedKeys[keyId].data,
         // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
         // that a chatroom has just been created
-        permissions: [GIMessage.OP_ACTION_ENCRYPTED + '#inner'],
+        permissions: [SPMessage.OP_ACTION_ENCRYPTED + '#inner'],
         allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
         purpose: ['sig'],
         ringLevel: Number.MAX_SAFE_INTEGER,
         name: `${foreignContractID}/${keyId}`
       })],
-      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [GIMessage.OP_KEY_ADD], ['sig'])
+      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [SPMessage.OP_KEY_ADD], ['sig'])
     })
   },
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
@@ -729,7 +729,7 @@ export default (sbp('sbp/selectors/register', {
         },
         // For now, we assume that we're messaging someone which whom we
         // share a group
-        signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [GIMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
         innerSigningContractID: currentGroupId,
         hooks
       })

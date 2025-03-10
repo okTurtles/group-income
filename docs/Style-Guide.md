@@ -33,7 +33,7 @@ For this project we've made the very conscious decision to avoid Object Oriented
 
 You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions unless it makes sense when dealing with special types. Here are some examples of exceptions to the "avoid classes" rule:
 
-- `GIMessage`. This is an example of a very important type for wrapping and handling [`SPMessage`](https://shelterprotocol.net/en/spmessage/) types.
+- `SPMessage`. This is an example of a very important type for wrapping and handling [`SPMessage`](https://shelterprotocol.net/en/spmessage/) types.
 - `GIErrorUIRuntimeError`. A special error type for dealing with exceptions containing user-facing error strings when attempting to perform an action.
 
 ### See Also: "Embrace the SBP way of doing things"
@@ -321,7 +321,7 @@ Since every contract represents a _log of events_, you can run through the _acti
 
 In Group Income, the client runs chains through [Vuex](https://vuex.vuejs.org/en/) to build up the application state via the `handleEvent()` function in `frontend/simple/state.js`.
 
-There is a direct one-to-one mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/GIMessage.js`, and their Vuex mappings are defined in `frontend/simple/model/contracts/events.js`.
+There is a direct one-to-one mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/SPMessage.js`, and their Vuex mappings are defined in `frontend/simple/model/contracts/events.js`.
 
 ### Persistent State vs. Ephemeral State
 

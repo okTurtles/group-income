@@ -7,7 +7,40 @@ import { CID } from '@chelonia/multiformats/cid'
 import { has } from 'turtledash'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
-const multicodes = { JSON: 0x0200, RAW: 0x00 }
+export const multicodes: { [x: string]: number } = {
+  RAW: 0x00,
+  JSON: 0x0200,
+  SHELTER_CONTRACT_MANIFEST: 0x511e00,
+  SHELTER_CONTRACT_TEXT: 0x511e01,
+  SHELTER_CONTRACT_DATA: 0x511e02,
+  SHELTER_FILE_MANIFEST: 0x511e03,
+  SHELTER_FILE_CHUNK: 0x511e04
+}
+
+export const parseCID = (cid: string): Object => {
+  if (!cid || cid.length < 52 || cid.length > 64) {
+    throw new RangeError('CID length too short or too long')
+  }
+  const parsed = CID.parse(cid, base58btc)
+  if (
+    parsed.version !== 1 ||
+    parsed.multihash.code !== blake2b256.code ||
+    !Object.values(multicodes).includes(parsed.code)
+  ) {
+    throw new Error('Invalid CID')
+  }
+
+  return parsed
+}
+
+export const maybeParseCID = (cid: string): Object | null => {
+  try {
+    return parseCID(cid)
+  } catch (e) {
+    // Ignore errors if the CID couldn't be parsed
+    return null
+  }
+}
 
 // Makes the `Buffer` global available in the browser if needed.
 // $FlowFixMe[cannot-resolve-name]

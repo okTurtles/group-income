@@ -261,7 +261,7 @@ module.exports = (grunt) => {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle'
     ]),
-    // format: 'esm',
+    // Format must be 'iife' because we don't want 'import' in the output
     format: 'iife',
     // banner: {
     //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
