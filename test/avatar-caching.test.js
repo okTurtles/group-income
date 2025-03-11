@@ -59,8 +59,8 @@ async function createIdentity (username) {
 
 describe('avatar file serving', function () {
   const apiURL = process.env.API_URL
-  const manifestCid = 'z9brRu3VKCKeHshQtQfeLjY9j9kMdSbxMtr3nMPgKeGatsDwL2Mn'
-  const chunkCid = 'z9brRu3VMBeyzyewfFt4b6HdJhtxxXnC66mKWqJ2bpa3B1FmjuH8'
+  const manifestCid = 'zLGQo2DimCH8QptCVN5kpvZTMZnWWtjnSrmaYMW9ptNozFcrr5kouP6u'
+  const chunkCid = 'zLKHweRGqjMMYdqKhWhbRv17S84wVLeBoeaEhZvdYxoBMTTYnUmJ5CVn'
   let retPath = ''
 
   before('manually upload a test avatar to the file database', async () => {
@@ -112,19 +112,21 @@ describe('avatar file serving', function () {
 
     assert.match(headers.get('cache-control'), /immutable/)
     assert.doesNotMatch(headers.get('cache-control'), /no-cache/)
-    assert.equal(headers.get('content-length'), '179')
-    assert.equal(headers.get('content-type'), 'application/octet-stream')
+    assert.equal(headers.get('content-length'), '183')
+    assert.equal(headers.get('content-type'), 'application/vnd.shelter.filemanifest+json')
     assert.equal(headers.get('etag'), `"${manifestCid}"`)
     // Not checking for a `last-modified` header.
+    assert.equal(headers.get('x-content-type-options'), 'nosniff')
     assert.equal(headers.get('x-frame-options'), 'deny')
 
     const { headers: cHeaders } = await fetch(`${apiURL}/file/${chunkCid}`)
     assert.match(cHeaders.get('cache-control'), /immutable/)
     assert.doesNotMatch(cHeaders.get('cache-control'), /no-cache/)
-    assert.equal(cHeaders.get('content-length'), '468')
-    assert.equal(cHeaders.get('content-type'), 'application/octet-stream')
+    assert.equal(cHeaders.get('content-length'), '113')
+    assert.equal(cHeaders.get('content-type'), 'application/vnd.shelter.filechunk+octet-stream')
     assert.equal(cHeaders.get('etag'), `"${chunkCid}"`)
     // Not checking for a `last-modified` header.
+    assert.equal(cHeaders.get('x-content-type-options'), 'nosniff')
     assert.equal(cHeaders.get('x-frame-options'), 'deny')
   })
 })
