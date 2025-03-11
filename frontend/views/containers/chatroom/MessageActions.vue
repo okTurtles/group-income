@@ -229,11 +229,6 @@ export default ({
         this.isToDown = true
       }
     }
-  },
-  watch: {
-    isMoreOptionsActive (newVal) {
-      console.log('!@# isMoreOptionsActive: ', newVal)
-    }
   }
 }: Object)
 </script>
