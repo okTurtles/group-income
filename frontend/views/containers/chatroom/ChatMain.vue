@@ -118,6 +118,10 @@
       :title='summary.title'
     )
 
+  //-  portal-target that can be used as a container for various overlay UI components in chat. (eg. MessageActions.vue in mobile-screen)
+  //-  In iOS safari, css 'position: fixed' does not behave consistently when the element is placed deep in the DOM tree, where one of the ancestor has css 'transform' property.
+  //-  We use 'portal-vue' plugin(https://v2.portal-vue.linusb.org/guide/getting-started.html) to resolve this issue by teleporting the UI here, so that 'position: fixed' works as expected.
+  //-  (Reference issue: https://github.com/okTurtles/group-income/issues/2476)
   portal-target(name='chat-overlay-target' class='chat-overlay-target')
 </template>
 

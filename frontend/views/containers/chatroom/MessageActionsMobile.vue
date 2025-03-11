@@ -1,4 +1,10 @@
 <template lang='pug'>
+//-  Instead of mounting this component where it is positioned in the component tree,
+//-  We teleport it to '<portal-target />' in ChatMain.vue.
+//-  This is to avoid an uncanny bug related to 'position: fixed' detailed in https://github.com/okTurtles/group-income/issues/2476
+//-  Reference-1: https://dev.to/salilnaik/the-uncanny-relationship-between-position-fixed-and-transform-property-32f6
+//-  Reference-2: https://v2.portal-vue.linusb.org/
+
 portal(
   v-if='isActive && options.length'
   to='chat-overlay-target'
