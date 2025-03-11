@@ -244,7 +244,6 @@ describe('Group - Removing a member', () => {
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.log('Fill the form incorrectly...')
       cy.getByDT('username').type('u3')
-      cy.getByDT('password').type('123456789')
       cy.getByDT('confirmation').type('LEAVE X')
 
       cy.log('Assert the errors...')
