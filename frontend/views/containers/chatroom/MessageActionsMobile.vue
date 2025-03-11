@@ -3,17 +3,18 @@ portal(
   v-if='isActive && options.length'
   to='chat-overlay-target'
 )
-  .c-message-actions-mobile
-    ul.c-content-wrapper(v-on-clickaway='closeMenu')
-      list-item.is-icon-small.c-menu-item(
-        v-for='(option, index) in options'
-        :key='index'
-        tag='button'
-        :data-test='option.action'
-        @click.stop='onMenuItemClick(option.action, $event)'
-      )
-        i(:class='`icon-${option.icon}`')
-        span {{ option.name }}
+  transition(name='fade' appear)
+    .c-message-actions-mobile
+      ul.c-content-wrapper(v-on-clickaway='closeMenu')
+        list-item.is-icon-small.c-menu-item(
+          v-for='(option, index) in options'
+          :key='index'
+          tag='button'
+          :data-test='option.action'
+          @click.stop='onMenuItemClick(option.action, $event)'
+        )
+          i(:class='`icon-${option.icon}`')
+          span {{ option.name }}
 </template>
 
 <script>
@@ -41,7 +42,7 @@ export default ({
     }
   },
   computed: {
-    isActive ()  {
+    isActive () {
       return this.Menu.isActive
     }
   },
@@ -70,20 +71,22 @@ export default ({
   background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column-reverse;
-  z-index: 40;
+  z-index: $zindex-modal;
 }
 
 .c-content-wrapper {
   position: relative;
-  border-radius: $radius $radius 0 0;
+  border-radius: $radius-large $radius-large 0 0;
   background-color: $background;
   z-index: 2;
-  padding-bottom: 2rem;
+  padding-top: 0.5rem;
+  padding-bottom: 1.25rem;
 }
 
 .c-menu-item {
   ::v-deep .c-item-link {
-    height: 2rem;
+    height: 3.43rem;
+    width: 100%;
     font-family: "Lato";
 
     i {

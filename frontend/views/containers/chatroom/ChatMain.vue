@@ -1320,7 +1320,10 @@ export default ({
 }
 
 ::v-deep .chat-overlay-target {
-  position: relative;
+  position: absolute;
   z-index: 1;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 }
 </style>
