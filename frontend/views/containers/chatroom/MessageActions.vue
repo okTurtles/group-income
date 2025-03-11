@@ -50,16 +50,13 @@ menu-parent.c-message-menu(ref='menu')
     )
       i.icon-ellipsis-h
 
-  portal(
+  message-actions-mobile(
     v-if='chatMainConfig.isPhone'
-    to='chat-overlay-target'
+    :options='moreOptions'
+    @select='action'
   )
-    .c-temp-container
-      | Hello world!
 
-  menu-content.c-responsive-menu(
-    :class='{ "is-to-down": isToDown }'
-  )
+  menu-content(v-else :class='{ "is-to-down": isToDown }')
     ul
       template(v-for='(option, index) in moreOptions')
         menu-item.is-icon-small(
@@ -74,6 +71,7 @@ menu-parent.c-message-menu(ref='menu')
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
+import MessageActionsMobile from './MessageActionsMobile.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
@@ -82,6 +80,7 @@ export default ({
   name: 'MessageActions',
   inject: ['chatMainConfig'],
   components: {
+    MessageActionsMobile,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -229,6 +228,11 @@ export default ({
       if (heightOfAvailableSpace < calculatedHeightOfNeededSpace) {
         this.isToDown = true
       }
+    }
+  },
+  watch: {
+    isMoreOptionsActive (newVal) {
+      console.log('!@# isMoreOptionsActive: ', newVal)
     }
   }
 }: Object)
