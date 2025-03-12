@@ -45,7 +45,7 @@ export default ({
     background-color: $background;
     position: relative;
     z-index: 2;
-    padding-bottom: 4rem;
+    padding-bottom: 2rem;
     min-height: unset;
   }
 }
@@ -82,7 +82,7 @@ export default ({
   &.c-responsive-menu {
     @include phone {
       width: 100vw;
-      height: 100vh;
+      height: 100%;
       top: 0;
       left: 0;
       right: 0;

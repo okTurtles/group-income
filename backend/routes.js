@@ -3,8 +3,8 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { createCID } from '~/shared/functions.js'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
+import { createCID, multicodes, maybeParseCID } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
@@ -42,6 +42,14 @@ const limiterPerDay = new Bottleneck.Group({
   reservoirRefreshAmount: SIGNUP_LIMIT_DAY
 })
 
+const cidLookupTable = {
+  [multicodes.SHELTER_CONTRACT_MANIFEST]: 'application/vnd.shelter.contractmanifest+json',
+  [multicodes.SHELTER_CONTRACT_TEXT]: 'application/vnd.shelter.contracttext',
+  [multicodes.SHELTER_CONTRACT_DATA]: 'application/vnd.shelter.contractdata+json',
+  [multicodes.SHELTER_FILE_MANIFEST]: 'application/vnd.shelter.filemanifest+json',
+  [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
+}
+
 // Constant-time equal
 const ctEq = (expected: string, actual: string) => {
   let r = actual.length ^ expected.length
@@ -61,6 +69,10 @@ const staticServeConfig = {
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
 }
 
+// We define a `Proxy` for route so that we can use `route.VERB` syntax for
+// defining routes instead of calling `server.route` with an object, and to
+// dynamically get the HAPI server object from the `SERVER_INSTANCE`, which is
+// defined in `server.js`.
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
@@ -79,9 +91,6 @@ function notFoundNoCache (h) {
 
 // RESTful API routes
 
-// TODO: Update this regex once `chel` uses prefixed manifests
-const manifestRegex = /^z9brRu3V[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{44}$/
-
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
@@ -96,9 +105,10 @@ route.POST('/event', {
   // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    const deserializedHEAD = GIMessage.deserializeHEAD(request.payload)
+    const deserializedHEAD = SPMessage.deserializeHEAD(request.payload)
     try {
-      if (!manifestRegex.test(deserializedHEAD.head.manifest)) {
+      const parsed = maybeParseCID(deserializedHEAD.head.manifest)
+      if (parsed?.code !== multicodes.SHELTER_CONTRACT_MANIFEST) {
         return Boom.badData('Invalid manifest')
       }
       const credentials = request.auth.credentials
@@ -195,8 +205,17 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   const { contractID, since, limit } = request.params
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    if (contractID.startsWith('_private') || since.startsWith('_private')) {
-      return Boom.notFound()
+    if (
+      !contractID ||
+      contractID.startsWith('_private') ||
+      !/^[0-9]+$/.test(since) ||
+      (limit && !/^[0-9]+$/.test(limit))
+    ) {
+      return Boom.badRequest()
+    }
+    const parsed = maybeParseCID(contractID)
+    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
+      return Boom.badRequest()
     }
 
     const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
@@ -267,10 +286,10 @@ route.POST('/name', {
 route.GET('/name/{name}', {}, async function (request, h) {
   const { name } = request.params
   try {
-    // TODO: conflict with PR 2494
-    const r = await sbp('backend/db/lookupName', name)
-    if (typeof r !== 'string') return r
-    return h.response(r).header('content-type', 'text/plain')
+    const lookupResult = await sbp('backend/db/lookupName', name)
+    return lookupResult
+      ? h.response(lookupResult).type('text/plain')
+      : notFoundNoCache(h)
   } catch (err) {
     logger.error(err, `GET /name/${name}`, err.message)
     return err
@@ -282,7 +301,13 @@ route.GET('/latestHEADinfo/{contractID}', {
 }, async function (request, h) {
   const { contractID } = request.params
   try {
-    if (contractID.startsWith('_private')) return Boom.notFound()
+    if (
+      !contractID ||
+      contractID.startsWith('_private')
+    ) return Boom.badRequest()
+    const parsed = maybeParseCID(contractID)
+    if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.badRequest()
+
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
@@ -347,7 +372,11 @@ if (process.env.NODE_ENV === 'development') {
       const { hash, data } = request.payload
       if (!hash) return Boom.badRequest('missing hash')
       if (!data) return Boom.badRequest('missing data')
-      const ourHash = createCID(data)
+
+      const parsed = maybeParseCID(hash)
+      if (!parsed) return Boom.badRequest('invalid hash')
+
+      const ourHash = createCID(data, parsed.code)
       if (ourHash !== hash) {
         console.error(`hash(${hash}) != ourHash(${ourHash})`)
         return Boom.badRequest('bad hash!')
@@ -419,7 +448,7 @@ route.POST('/file', {
       if (!request.payload[i] || !(request.payload[i].payload instanceof Uint8Array)) {
         throw Boom.badRequest('chunk missing in submitted data')
       }
-      const ourHash = createCID(request.payload[i].payload)
+      const ourHash = createCID(request.payload[i].payload, multicodes.SHELTER_FILE_CHUNK)
       if (request.payload[i].payload.byteLength !== chunk[0]) {
         throw Boom.badRequest('bad chunk size')
       }
@@ -433,7 +462,7 @@ route.POST('/file', {
     // Finally, verify the size is correct
     if (ourSize !== manifest.size) return Boom.badRequest('Mismatched total size')
 
-    const manifestHash = createCID(manifestMeta.payload)
+    const manifestHash = createCID(manifestMeta.payload, multicodes.SHELTER_FILE_MANIFEST)
 
     // Check that we're not overwriting data. At best this is a useless operation
     // since there is no need to write things that exist. However, overwriting
@@ -473,18 +502,33 @@ route.POST('/file', {
 route.GET('/file/{hash}', {}, async function (request, h) {
   const { hash } = request.params
 
-  if (hash.startsWith('_private')) {
-    return Boom.notFound()
+  if (!hash || hash.startsWith('_private')) {
+    return Boom.badRequest()
+  }
+  const parsed = maybeParseCID(hash)
+  if (!parsed) {
+    return Boom.badRequest()
   }
 
   const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
   if (!blobOrString) {
     return notFoundNoCache(h)
   }
-  // TODO: conflict with PR 2494
-  return h.response(blobOrString).etag(hash)
+
+  const type = cidLookupTable[parsed.code] || 'application/octet-stream'
+
+  return h
+    .response(blobOrString)
+    .etag(hash)
     .header('Cache-Control', 'public,max-age=31536000,immutable')
-    .header('content-type', 'application/octet-stream')
+    // CSP to disable everything -- this only affects direct navigation to the
+    // `/file` URL.
+    // The CSP below prevents any sort of resource loading or script execution
+    // on direct navigation. The `nosniff` header instructs the browser to
+    // honour the provided content-type.
+    .header('content-security-policy', "default-src 'none'; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests; sandbox")
+    .header('x-content-type-options', 'nosniff')
+    .type(type)
 })
 
 route.POST('/deleteFile/{hash}', {
@@ -497,7 +541,14 @@ route.POST('/deleteFile/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+  if (!hash || hash.startsWith('_private')) {
+    return Boom.badRequest()
+  }
+  const parsed = maybeParseCID(hash)
+  if (parsed?.code !== multicodes.SHELTER_FILE_MANIFEST) {
+    return Boom.badRequest()
+  }
+
   const owner = await sbp('chelonia.db/get', `_private_owner_${hash}`)
   if (!owner) {
     return Boom.notFound()
@@ -593,8 +644,13 @@ route.POST('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
-    return Boom.notFound()
+  // The key is mandatory and we don't allow NUL in it as it's used for indexing
+  if (!key || key.includes('\x00') || key.startsWith('_private')) {
+    return Boom.badRequest()
+  }
+  const parsed = maybeParseCID(contractID)
+  if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
+    return Boom.badRequest()
   }
 
   if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
@@ -628,7 +684,7 @@ route.POST('/kv/{contractID}/{key}', {
       // pass through
     } else {
       // "Quote" string (to match ETag format)
-      const cid = JSON.stringify(createCID(existing))
+      const cid = JSON.stringify(createCID(existing, multicodes.RAW))
       if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
         return Boom.preconditionFailed()
       }
@@ -674,8 +730,12 @@ route.GET('/kv/{contractID}/{key}', {
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (key.startsWith('_private')) {
-    return Boom.notFound()
+  if (!key || key.includes('\x00') || key.startsWith('_private')) {
+    return Boom.badRequest()
+  }
+  const parsed = maybeParseCID(contractID)
+  if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
+    return Boom.badRequest()
   }
 
   if (!ctEq(request.auth.credentials.billableContractID, contractID)) {
@@ -687,8 +747,7 @@ route.GET('/kv/{contractID}/{key}', {
     return notFoundNoCache(h)
   }
 
-  // TODO: conflict with PR 2494
-  return h.response(result).etag(createCID(result)).header('content-type', 'application/json')
+  return h.response(result).etag(createCID(result, multicodes.RAW)).type('application/json')
 })
 
 // SPA routes
@@ -775,7 +834,7 @@ route.POST('/zkpp/register/{name}', {
     if (!credentials?.billableContractID) {
       return Boom.unauthorized('Registering a salt requires ownership information', 'shelter')
     }
-    if (req.params['name'].startsWith('_private')) return Boom.notFound()
+    if (req.params['name'].startsWith('_private')) return Boom.badRequest()
     const contractID = await sbp('backend/db/lookupName', req.params['name'])
     if (contractID !== credentials.billableContractID) {
       // This ensures that only the owner of the contract can set a salt for it,
@@ -814,7 +873,7 @@ route.GET('/zkpp/{name}/auth_hash', {
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const challenge = await getChallenge(req.params['name'], req.query['b'])
 
@@ -843,7 +902,7 @@ route.GET('/zkpp/{name}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
@@ -871,7 +930,7 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.notFound()
+  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
     const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 

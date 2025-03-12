@@ -39,7 +39,7 @@ import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
 import FaviconBadge from './utils/faviconBadge.js'
-import './utils/touchInteractions.js'
+import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.js'
 import './views/utils/vStyle.js'
 
