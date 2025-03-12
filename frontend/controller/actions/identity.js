@@ -179,10 +179,7 @@ export default (sbp('sbp/selectors/register', {
     username,
     email,
     picture,
-    r,
-    s,
-    sig,
-    Eh
+    token
   }) {
     let finalPicture = `${self.location.origin}/assets/images/user-avatar-default.png`
 
@@ -238,7 +235,9 @@ export default (sbp('sbp/selectors/register', {
           ...publishOptions,
           headers: {
             ...publishOptions?.headers,
-            'shelter-deletion-token': deletionToken
+            'shelter-deletion-token': deletionToken,
+            'shelter-namespace-registration': username,
+            'shelter-salt-registration-token': token.valueOf()
           }
         },
         signingKeyId: IPKid,
@@ -338,25 +337,6 @@ export default (sbp('sbp/selectors/register', {
             await sbp('chelonia/contract/retain', message.contractID(), { ephemeral: true })
 
             try {
-              // Register password salt
-              const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
-                method: 'POST',
-                headers: {
-                  'authorization': await sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
-                  'content-type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                  'r': r,
-                  's': s,
-                  'sig': sig,
-                  'Eh': Eh
-                })
-              })
-
-              if (!res.ok) {
-                throw new Error('Unable to register hash')
-              }
-
               userID = message.contractID()
               if (picture) {
                 try {
@@ -381,8 +361,7 @@ export default (sbp('sbp/selectors/register', {
             get picture () { return finalPicture },
             encryptedDeletionToken: encryptedDeletionToken.serialize('encryptedDeletionToken')
           }
-        },
-        namespaceRegistration: username
+        }
       })
 
       // After the contract has been created, store persistent keys
@@ -977,7 +956,6 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId: oldIPKid,
       publishOptions: {
         headers: {
-          'shelter-name': username,
           'shelter-salt-update-token': updateToken
         }
       },
