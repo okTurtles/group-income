@@ -117,6 +117,12 @@
       :joined='summary.isJoined'
       :title='summary.title'
     )
+
+  //-  portal-target that can be used as a container for various overlay UI components in chat. (eg. MessageActions.vue in mobile-screen)
+  //-  In iOS safari, css 'position: fixed' does not behave consistently when the element is placed deep in the DOM tree, where one of the ancestor has css 'transform' property.
+  //-  We use 'portal-vue' plugin(https://v2.portal-vue.linusb.org/guide/getting-started.html) to resolve this issue by teleporting the UI here, so that 'position: fixed' works as expected.
+  //-  (Reference issue: https://github.com/okTurtles/group-income/issues/2476)
+  portal-target(name='chat-overlay-target' class='chat-overlay-target')
 </template>
 
 <script>
@@ -267,7 +273,7 @@ export default ({
   },
   created () {
     // TODO: #492 create a global Vue Responsive just for media queries.
-    this.matchMediaPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.matchMediaPhone = window.matchMedia('screen and (max-width: 768px)')
     this.matchMediaPhone.onchange = (e) => {
       this.config.isPhone = e.matches
     }
@@ -1168,9 +1174,7 @@ export default ({
   },
   provide () {
     return {
-      chatMessageUtils: {
-        scrollToMessage: this.scrollToMessage
-      }
+      chatMainConfig: this.config
     }
   },
   watch: {
@@ -1317,5 +1321,13 @@ export default ({
     color: $general_0;
     animation: loadSpin 1.75s infinite linear;
   }
+}
+
+::v-deep .chat-overlay-target {
+  position: absolute;
+  z-index: 1;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 }
 </style>
