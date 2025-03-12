@@ -28,6 +28,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
   const persistences = [...new Set(Object.values(config))]
   await Promise.all(persistences.map(async (persistence) => {
     const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
+    // $FlowFixMe[invalid-computed-prop]
     backends[persistence] = { readData, writeData, deleteData }
     await initStorage()
   }))
