@@ -1,7 +1,7 @@
 'use strict'
 
 const readConfig = () => {
-  const configString = process.env.GI_PERSIST_META_CONFIG
+  const configString = process.env.GI_PERSIST_ROUTER_CONFIG
   const config = JSON.parse(configString)
 
   if (!config['*']) {
