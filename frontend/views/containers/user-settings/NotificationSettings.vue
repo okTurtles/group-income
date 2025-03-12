@@ -19,17 +19,7 @@
           )
         //- TODO: disable the checkbox and display an info field when we're offline
 
-    section.card
-      i18n.is-title-3.c-title(tag='h2') Volume
-      p.c-desc.has-text-1 {{ volumeConfig.label }}
-      slider-continuous.c-volume-slider(
-        uid='notification-volume'
-        :min='volumeConfig.sliderMin'
-        :max='volumeConfig.sliderMax'
-        :unit='volumeConfig.sliderUnit'
-        :value='ephemeral.volume'
-        @input='handleVolumeUpdate'
-      )
+    notification-volume
 </template>
 
 <script>
@@ -39,28 +29,19 @@ import {
   requestNotificationPermission,
   makeNotification
 } from '@model/notifications/nativeNotification.js'
-import SliderContinuous from '@components/SliderContinuous.vue'
+import NotificationVolume from './NotificationVolume.vue'
 
 export default ({
   name: 'NotificationSettings',
   components: {
-    SliderContinuous
+    NotificationVolume
   },
   data () {
     return {
       pushNotificationSupported: false,
       pushNotificationGranted: null,
       cancelListener: () => {},
-      checkboxValue: false,
-      volumeConfig: {
-        label: L('Adjust the volume of the notification sound.'),
-        sliderMin: 1,
-        sliderMax: 100,
-        sliderUnit: '%'
-      },
-      ephemeral: {
-        volume: 100
-      }
+      checkboxValue: false
     }
   },
   beforeMount () {
@@ -158,9 +139,6 @@ export default ({
       if (granted) {
         makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
       }
-    },
-    handleVolumeUpdate (e) {
-      this.ephemeral.volume = e.target.value
     }
   }
 }: Object)
@@ -178,10 +156,6 @@ export default ({
 
   .c-title {
     margin-bottom: 1rem;
-  }
-
-  .c-desc {
-    margin: 1rem 0;
   }
 }
 
