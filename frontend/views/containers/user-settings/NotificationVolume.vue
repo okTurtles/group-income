@@ -7,15 +7,17 @@ section.card
     :min='config.sliderMin'
     :max='config.sliderMax'
     :unit='config.sliderUnit'
-    :value='currentValue'
+    :value='ephemeral.volume'
     @input='handleVolumeUpdate'
   )
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import SliderContinuous from '@components/SliderContinuous.vue'
+import { debounce } from 'turtledash'
 
 export default ({
   name: 'NotificationVolume',
@@ -36,16 +38,22 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['notificationVolume']),
-    currentValue () {
-      return parseInt(this.notificationVolume * 100)
-    }
+    ...mapGetters(['ourPreferences'])
   },
   methods: {
-    ...mapMutations(['setNotificationVolume']),
     handleVolumeUpdate (e) {
-      this.setNotificationVolume(e.target.value / 100)
-    }
+      this.ephemeral.volume = e.target.value
+      this.debouncedStoreUpdate()
+    },
+    debouncedStoreUpdate: debounce(function () {
+      sbp(
+        'gi.actions/identity/kv/updateNotificationVolume',
+        { volume: this.ephemeral.volume / 100 }
+      )
+    }, 350)
+  },
+  created () {
+    this.ephemeral.volume = (this.ourPreferences.notificationVolume || 1) * 100
   }
 }: Object)
 </script>

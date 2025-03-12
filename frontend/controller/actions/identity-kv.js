@@ -212,6 +212,20 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
     })
   },
+  'gi.actions/identity/kv/updateNotificationVolume': ({ volume }: { volume: number }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedPreferences = async () => {
+        const currentPreferences = await sbp('gi.actions/identity/kv/fetchPreferences')
+        return {
+          ...currentPreferences,
+          notificationVolume: volume
+        }
+      }
+
+      const data = await getUpdatedPreferences()
+      await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+    })
+  },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
