@@ -10,7 +10,7 @@ let dataFolder = ''
 // Some operating systems (such as macOS and Windows) use case-insensitive
 // filesystems by default. This can be problematic for Chelonia / Group Income,
 // as we rely on keys being case-sensitive. This is especially relevant for CIDs,
-// where collissions could lead to DoS or data corruption.
+// where collisions could lead to DoS or data corruption.
 async function testCaseSensitivity () {
   const date = new Date()
   const dateString = date.toISOString()
