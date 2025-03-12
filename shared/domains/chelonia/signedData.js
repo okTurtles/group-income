@@ -110,7 +110,7 @@ const signData = function (stateOrContractID: string | Object, sKeyId: string, d
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing the
-// entire GIMessage
+// entire SPMessage
 const verifySignatureData = function (height: number, data: any, additionalData: string) {
   if (!this) {
     throw new ChelErrorSignatureError('Missing contract state')

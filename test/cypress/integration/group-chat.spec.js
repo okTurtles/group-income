@@ -449,7 +449,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.getByDT('username').type('{selectall}{del}' + user2)
-      cy.getByDT('password').type('123456789')
       cy.getByDT('confirmation').type(`{selectall}{del}LEAVE ${groupName1.toUpperCase()}`)
 
       cy.getByDT('btnSubmit').click()
