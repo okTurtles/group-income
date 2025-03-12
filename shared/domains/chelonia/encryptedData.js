@@ -91,7 +91,7 @@ const encryptData = function (stateOrContractID: string | Object, eKeyId: string
 }
 
 // TODO: Check for permissions and allowedActions; this requires passing the
-// entire GIMessage
+// entire SPMessage
 const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any, id: string) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
