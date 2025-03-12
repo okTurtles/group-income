@@ -229,7 +229,7 @@ sbp('sbp/selectors/register', {
       if (manifest.version !== '1.0.0') throw BackendErrorBadData('unsupported manifest version')
       if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) throw BackendErrorBadData('missing chunks')
       // Delete all chunks
-      await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia/db/delete', cid)))
+      await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))
     } catch (e) {
       console.warn(e, `Error parsing manifest for ${cid}. It's probably not a file manifest.`)
       throw new BackendErrorNotFound()
@@ -239,9 +239,9 @@ sbp('sbp/selectors/register', {
     const resourcesKey = `_private_resources_${owner}`
     await removeFromIndexFactory(resourcesKey)(cid)
 
-    await sbp('chelonia/db/delete', `_private_owner_${cid}`)
-    await sbp('chelonia/db/delete', `_private_size_${cid}`)
-    await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
+    await sbp('chelonia.db/delete', `_private_owner_${cid}`)
+    await sbp('chelonia.db/delete', `_private_size_${cid}`)
+    await sbp('chelonia.db/delete', `_private_deletionToken_${cid}`)
 
     await sbp('chelonia.db/set', cid, '')
   },
@@ -279,7 +279,7 @@ sbp('sbp/selectors/register', {
           return undefined
         }))
       }
-      await sbp('chelonia/db/delete', resourcesKey)
+      await sbp('chelonia.db/delete', resourcesKey)
 
       const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', cid)
       if (latestHEADinfo) {
@@ -287,8 +287,8 @@ sbp('sbp/selectors/register', {
           const eventKey = `_private_hidx=${cid}#${i}`
           const event = await sbp('chelonia.db/get', eventKey)
           if (event) {
-            await sbp('chelonia/db/delete', event)
-            await sbp('chelonia/db/delete', eventKey)
+            await sbp('chelonia.db/delete', event)
+            await sbp('chelonia.db/delete', eventKey)
           }
         }
         await sbp('chelonia/db/deleteLatestHEADinfo', cid)
@@ -298,21 +298,21 @@ sbp('sbp/selectors/register', {
       const kvKeys = await sbp('chelonia.db/get', kvIndexKey)
       if (kvKeys) {
         await kvKeys.split('\x00').map((key) => {
-          return sbp('chelonia/db/delete', `_private_kv_${cid}_${key}`)
+          return sbp('chelonia.db/delete', `_private_kv_${cid}_${key}`)
         })
       }
-      await sbp('chelonia/db/delete', kvIndexKey)
+      await sbp('chelonia.db/delete', kvIndexKey)
 
-      await sbp('chelonia/db/delete', `_private_rid_${cid}`)
-      await sbp('chelonia/db/delete', `_private_owner_${cid}`)
-      await sbp('chelonia/db/delete', `_private_size_${cid}`)
-      await sbp('chelonia/db/delete', `_private_deletionToken_${cid}`)
+      await sbp('chelonia.db/delete', `_private_rid_${cid}`)
+      await sbp('chelonia.db/delete', `_private_owner_${cid}`)
+      await sbp('chelonia.db/delete', `_private_size_${cid}`)
+      await sbp('chelonia.db/delete', `_private_deletionToken_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
-      await sbp('chelonia/db/delete', `_private_hidx=${cid}#0`)
+      await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)
       await sbp('chelonia.db/set', cid, '')
 
-      await sbp('chelonia/db/delete', `_private_cheloniaState_${cid}`)
+      await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
       await removeFromIndexFactory('_private_billable_entities')(cid)
       sbp('backend/server/broadcastDeletion', cid).catch(e => {

@@ -186,7 +186,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['groupSettings', 'groupMembersCount']),
+    ...mapGetters(['groupSettings', 'groupMembersCount', 'ourIdentityContractId']),
     currencies () {
       return currencies
     },
@@ -244,7 +244,13 @@ export default ({
     },
     handleLeaveGroup () {
       if (this.groupMembersCount === 1) {
-        alert(L("Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet."))
+        if (confirm(L("Leaving the group when you're the only person in it will delete it. Continue?"))) {
+          sbp('chelonia/out/deleteContract', this.currentGroupId, {
+            [this.currentGroupId]: {
+              billableContractID: this.ourIdentityContractId
+            }
+          })
+        }
       } else {
         this.openProposal('GroupLeaveModal')
       }

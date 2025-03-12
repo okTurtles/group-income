@@ -4,6 +4,9 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import { PERSISTENT_ACTION_FAILURE, PERSISTENT_ACTION_SUCCESS, PERSISTENT_ACTION_TOTAL_FAILURE } from './events.js'
 
+// Using `Symbol` to prevent enumeration; this avoids JSON serialization.
+const timer = Symbol('timer')
+
 type SbpInvocation = any[]
 type UUIDV4 = string
 
@@ -42,7 +45,7 @@ class PersistentAction {
   invocation: SbpInvocation
   options: PersistentActionOptions
   status: PersistentActionStatus
-  timer: TimeoutID | void
+  [timer]: TimeoutID | void
 
   constructor (invocation: SbpInvocation, options: PersistentActionOptions = {}) {
     // $FlowFixMe: Cannot resolve name `crypto`.
@@ -77,7 +80,7 @@ class PersistentAction {
   }
 
   cancel (): void {
-    this.timer && clearTimeout(this.timer)
+    this[timer] && clearTimeout(this[timer])
     this.status.nextRetry = ''
     this.status.resolved = true
   }
@@ -103,7 +106,7 @@ class PersistentAction {
     // Schedule a retry if appropriate.
     if (status.nextRetry) {
       // Note: there should be no older active timeout to clear.
-      this.timer = setTimeout(() => {
+      this[timer] = setTimeout(() => {
         this.attempt().catch((e) => {
           console.error('Error attempting persistent action', id, e)
         })
@@ -239,7 +242,7 @@ sbp('sbp/selectors/register', {
   'chelonia.persistentActions/unload' (): void {
     for (const id in this.actionsByID) {
       // Clear the action's timeout, but don't cancel it so that it can later resumed.
-      this.actionsByID[id].timer && clearTimeout(this.actionsByID[id].timer)
+      this.actionsByID[id][timer] && clearTimeout(this.actionsByID[id].timer)
       delete this.actionsByID[id]
     }
   }

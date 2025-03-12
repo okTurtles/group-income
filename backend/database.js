@@ -294,7 +294,7 @@ export const removeFromIndexFactory = (key: string): (value: string) => Promise<
 
       // Handle the case where the existing entries are exactly the value
       if (existingEntries === value) {
-        await sbp('chelonia/db/delete', key)
+        await sbp('chelonia.db/delete', key)
         return
       }
 
@@ -309,7 +309,7 @@ export const removeFromIndexFactory = (key: string): (value: string) => Promise<
       if (updatedIndex) {
         await sbp('chelonia.db/set', key, updatedIndex)
       } else {
-        await sbp('chelonia/db/delete', key)
+        await sbp('chelonia.db/delete', key)
       }
     })
   }
