@@ -28,8 +28,8 @@ async function testCaseSensitivity () {
       throw new Error('Unexpected value: original key does not have the correct value')
     }
     if (valueDifferentCase?.toString() === dateString) {
-      console.error(`Unexpected value on case-sensitivity test; expected a differently-cased key to have a value other than ${dateString}`)
-      throw new Error('Unexpected value: key with different case has the same value as the origical key')
+      console.error('Filesystem database backend only works on case-sensitive filesystems. This appears to be a case insensitive file system.')
+      throw new Error('Filesystem database backend only works on case-sensitive filesystems. This appears to be a case insensitive file system.')
     }
   } finally {
     await deleteData(originalKey)

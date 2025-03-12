@@ -14,10 +14,10 @@ let config
 const backends = Object.create(null)
 
 const lookupBackend = (key) => {
-  const keys = Object.keys(config)
-  for (let i = 0; i < keys.length; i++) {
-    if (key.slice(0, keys[i].length) === keys[i]) {
-      return config[keys[i]]
+  const keyPrefixes = Object.keys(config)
+  for (let i = 0; i < keyPrefixes.length; i++) {
+    if (key.startsWith(keyPrefixes[i])) {
+      return config[keyPrefixes[i]]
     }
   }
   return backends[config['*']]
