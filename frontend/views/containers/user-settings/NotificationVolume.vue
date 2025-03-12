@@ -7,12 +7,13 @@ section.card
     :min='config.sliderMin'
     :max='config.sliderMax'
     :unit='config.sliderUnit'
-    :value='ephemeral.volume'
+    :value='currentValue'
     @input='handleVolumeUpdate'
   )
 </template>
 
 <script>
+import { mapGetters, mapMutations } from 'vuex'
 import { L } from '@common/common.js'
 import SliderContinuous from '@components/SliderContinuous.vue'
 
@@ -34,9 +35,16 @@ export default ({
       }
     }
   },
+  computed: {
+    ...mapGetters(['notificationVolume']),
+    currentValue () {
+      return parseInt(this.notificationVolume * 100)
+    }
+  },
   methods: {
+    ...mapMutations(['setNotificationVolume']),
     handleVolumeUpdate (e) {
-      this.ephemeral.volume = e.target.value
+      this.setNotificationVolume(e.target.value / 100)
     }
   }
 }: Object)
