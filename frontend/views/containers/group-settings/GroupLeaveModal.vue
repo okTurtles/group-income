@@ -26,8 +26,6 @@
           v-error:username='{ attrs: { "data-test": "usernameError" } }'
         )
 
-      password-form(:label='L("Password")' :$v='$v')
-
       label.field
         i18n.label(:args='{ code }') Type "{code}" below
         input.input(
@@ -57,7 +55,6 @@ import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import PasswordForm from '@containers/access/PasswordForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -70,7 +67,6 @@ export default ({
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     ModalTemplate,
-    PasswordForm,
     BannerSimple,
     BannerScoped,
     ButtonSubmit
@@ -79,7 +75,6 @@ export default ({
     return {
       form: {
         username: null,
-        password: null,
         confirmation: null
       }
     }
@@ -126,9 +121,6 @@ export default ({
         [L('Your username is different')]: function (value) {
           return value === this.ourUsername
         }
-      },
-      password: {
-        [L('This field is required')]: required
       },
       confirmation: {
         [L('This field is required')]: required,

@@ -233,7 +233,7 @@ describe('Group - Removing a member', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  // ------- A member leaves the group.
+  // ------- A member leaves the group -------
 
   it('user2 leaves the groupA - is left with groupB', () => {
     cy.giLogin(`user2-${userId}`, { bypassUI: true })
@@ -244,7 +244,6 @@ describe('Group - Removing a member', () => {
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.log('Fill the form incorrectly...')
       cy.getByDT('username').type('u3')
-      cy.getByDT('password').type('123456789')
       cy.getByDT('confirmation').type('LEAVE X')
 
       cy.log('Assert the errors...')
