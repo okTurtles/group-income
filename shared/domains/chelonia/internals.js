@@ -378,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
           return handleFetchResult('text')(response)
         } catch (e) {
           if (fallback) {
-            return new Date(sbp('chelonia/time') * 1000).toISOString()
+            return new Date(sbp('chelonia/time')).toISOString()
           }
           throw new ChelErrorFetchServerTimeFailed('Can not fetch server time. Please check your internet connection.')
         }

@@ -779,7 +779,7 @@ export function buildShelterAuthorizationHeader (contractID: string, state?: Obj
   // $FlowFixMe[cannot-resolve-name]
   globalThis.crypto.getRandomValues(nonceBytes)
 
-  // <contractID> <UNIX time>.<nonce>
+  // <contractID> <UNIX ms time>.<nonce>
   const data = `${contractID} ${sbp('chelonia/time')}.${Buffer.from(nonceBytes).toString('base64')}`
 
   // shelter <contractID> <UNIX time>.<nonce>.<signature>
@@ -797,7 +797,7 @@ export function verifyShelterAuthorizationHeader (authorization: string, rootSta
   }
   // TODO: Remember nonces and reject already used ones
   const [, data, contractID, timestamp, , signature] = matches
-  if (Math.abs(parseInt(timestamp) - (Date.now() / 1e3 | 0)) > 60) {
+  if (Math.abs(parseInt(timestamp) - Date.now()) > 60e3) {
     throw new Error('Invalid signature time range')
   }
   if (!rootState) rootState = sbp('chelonia/rootState')
