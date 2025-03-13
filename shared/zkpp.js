@@ -99,7 +99,7 @@ export const saltAgreement = (publicKey: string, secretKey: Uint8Array): false |
   return [authSalt, contractSalt]
 }
 
-export const parseRegisterSalt = (publicKey: string, secretKey: Uint8Array, encryptedHashedPassword: string): false | [string, string, Uint8Array] => {
+export const parseRegisterSalt = (publicKey: string, secretKey: Uint8Array, encryptedHashedPassword: string): false | [string, string, Uint8Array, Uint8Array] => {
   const saltAgreementRes = saltAgreement(publicKey, secretKey)
   if (!saltAgreementRes) {
     return false
@@ -116,10 +116,10 @@ export const parseRegisterSalt = (publicKey: string, secretKey: Uint8Array, encr
     return false
   }
 
-  return [authSalt, contractSalt, hashedPasswordBuf]
+  return [authSalt, contractSalt, hashedPasswordBuf, encryptionKey]
 }
 
-export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uint8Array, password: string): Promise<[string, string]> => {
+export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uint8Array, password: string): Promise<[string, string, Uint8Array]> => {
   const saltAgreementRes = saltAgreement(publicKey, secretKey)
   if (!saltAgreementRes) {
     throw new Error('Invalid public or secret key')
@@ -134,7 +134,7 @@ export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uin
 
   const encryptedHashedPasswordBuf = nacl.secretbox(Buffer.from(hashedPassword), nonce, encryptionKey)
 
-  return [contractSalt, base64ToBase64url(Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64'))]
+  return [contractSalt, base64ToBase64url(Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64')), encryptionKey]
 }
 
 // Build the `E_c` (encrypted arguments) to send to the server to negotiate a
