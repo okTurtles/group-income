@@ -7,9 +7,66 @@ import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TY
 import { getSubscriptionId } from '~/shared/functions.js'
 import { DEVICE_SETTINGS } from '@utils/constants.js'
 
+// The application server (public) key could be either an ArrayBuffer (which is
+// what we get from fetching the current subscription), or it could be a
+// base64url-encoded string (which is what we usually get from the server)
+// This string coerces both of these into an `Uint8Array` instance.
+const strOrBufToBuf = (v: string | Uint8Array | ArrayBuffer) => {
+  if (typeof v === 'string') {
+    v = Buffer.from(
+      // Convert from base64url to base64
+      v.replace(/_/g, '/').replace(/-/g, '+') + '='.repeat((4 - v.length % 4) % 4),
+      'base64'
+    )
+    return v
+  }
+  return new Uint8Array(v)
+}
+
+const bufferEq = (a?: ArrayBuffer | Uint8Array, b?: ArrayBuffer | Uint8Array) => {
+  // eslint-disable-next-line eqeqeq
+  if (a == null || b == null) return a == b
+
+  const ab = strOrBufToBuf(a)
+  const bb = strOrBufToBuf(b)
+
+  if (ab.byteLength !== bb.byteLength) return false
+
+  for (let i = ab.byteLength - 1; i >= 0; i--) {
+    if (ab[i] !== bb[i]) return false
+  }
+
+  return true
+}
+
 export default (sbp('sbp/selectors/register', {
   'push/getSubscriptionOptions': (() => {
     let cachedVapidInformation
+
+    sbp('okTurtles.events/on', REQUEST_TYPE.PUSH_ACTION, ({ data }) => {
+      if (data.type !== PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY) return
+      const oldKey = cachedVapidInformation?.[1].applicationServerKey
+      cachedVapidInformation = [performance.now(), {
+        userVisibleOnly: true,
+        applicationServerKey: data.data
+      }]
+      if (oldKey === data.data) return
+      (async () => {
+        const subscription = await self.registration.pushManager.getSubscription()
+        if (!subscription) return
+        if (bufferEq(subscription.options.applicationServerKey, data.data)) return
+        console.warn('VAPID server key changed; removing existing subscription and setting up a new one', {
+          oldApplicationServerPublicKey: subscription.options.applicationServerKey && Buffer.from(subscription.options.applicationServerKey).toString('base64'),
+          newApplicationServerPublicKey: data.data
+        })
+        await subscription.unsubscribe()
+        // return b/c device settings not loaded
+        if (!sbp('chelonia/rootState').loggedIn || sbp('sw/deviceSettings/get', DEVICE_SETTINGS.DISABLE_NOTIFICATIONS)) return
+        const newSubscription = await self.registration.pushManager.subscribe(cachedVapidInformation[1])
+        await sbp('push/reportExistingSubscription', newSubscription?.toJSON(), newSubscription?.options.applicationServerKey)
+      })()
+    })
+
     return () => {
       if (
         cachedVapidInformation &&
@@ -17,7 +74,7 @@ export default (sbp('sbp/selectors/register', {
         // information should change very infrequently, if it changes at all.
         (performance.now() - cachedVapidInformation[0]) < 3600e3
       ) {
-        return cachedVapidInformation[1]
+        return Promise.resolve(cachedVapidInformation[1])
       }
 
       const result = new Promise((resolve, reject) => {
@@ -25,10 +82,8 @@ export default (sbp('sbp/selectors/register', {
           if (data.type !== PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY) return
           sbp('okTurtles.events/off', REQUEST_TYPE.PUSH_ACTION, handler)
           clearTimeout(timeoutId)
-          resolve({
-            userVisibleOnly: true,
-            applicationServerKey: data.data
-          })
+          // Set in the handler above
+          resolve(cachedVapidInformation[1])
         }
         const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
         if (!pubsub) reject(new Error('Missing pubsub instance'))
@@ -48,9 +103,6 @@ export default (sbp('sbp/selectors/register', {
           REQUEST_TYPE.PUSH_ACTION,
           { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
         ))
-      })
-      result.then((options) => {
-        cachedVapidInformation = [performance.now(), Promise.resolve(options)]
       })
       return result
     }
@@ -77,7 +129,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    return async (subscriptionInfo?: Object) => {
+    return async (subscriptionInfo?: Object, applicationServerKey?: ArrayBuffer) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 
@@ -97,7 +149,18 @@ export default (sbp('sbp/selectors/register', {
           // If the subscription has changed, report it to the server
           pubsub.socket.send(createMessage(
             REQUEST_TYPE.PUSH_ACTION,
-            { action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION, payload: subscriptionInfo }
+            {
+              action: PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION,
+              payload: {
+                applicationServerKey: applicationServerKey
+                  ? Buffer.from(applicationServerKey).toString('base64')
+                  : null,
+                settings: {
+                  heartbeatInterval: 12 * 60 * 60 * 1000
+                },
+                subscriptionInfo
+              }
+            }
           ))
         }
       } else if (reported) {
@@ -126,7 +189,7 @@ if (self.registration?.pushManager) {
       if (!disableNotifications) {
         try {
           const subscription = await self.registration.pushManager.getSubscription()
-          await sbp('push/reportExistingSubscription', subscription?.toJSON())
+          await sbp('push/reportExistingSubscription', subscription?.toJSON(), subscription?.options.applicationServerKey)
         } catch (e) {
           console.error('Error reporting subscription on reconnection', e)
         }
@@ -185,7 +248,7 @@ self.addEventListener('pushsubscriptionchange', function (event) {
       if (event.oldSubscription) {
         subscription = await self.registration.pushManager.subscribe(event.oldSubscription.options)
       }
-      await sbp('push/reportExistingSubscription', subscription?.toJSON())
+      await sbp('push/reportExistingSubscription', subscription?.toJSON(), subscription?.options.applicationServerKey)
     } catch (e) {
       console.error('[pushsubscriptionchange] Error resubscribing:', e)
     }
