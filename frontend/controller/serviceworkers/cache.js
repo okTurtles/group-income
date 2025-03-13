@@ -99,28 +99,27 @@ if (
     }
 
     event.respondWith(
-      caches.open(CURRENT_CACHES.assets).then((cache) => {
-        return cache
-          .match(cacheKey, { ignoreSearch: true, ignoreVary: true })
-          .then((cachedResponse) => {
-            // If a cached response exists, return it. Not only does this
-            // improve performance, but it also makes the app work 'offline'
-            // (`navigator.onLine` is unreliable; can be `true` even when
-            // offline). The downside of this approach is that we may return
-            // stale assets when the app is updated. Fortunately, so long as the
-            // version is updated (GI_VERSION), existing cache entries will be
-            // deleted. This will happen with SW updates, so, ideally, we won't
-            // serve stale resources for too long.
-            if (cachedResponse) {
-              return cachedResponse
-            }
+      caches.match(event.request, { ignoreSearch: true, ignoreVary: true })
+        .then((cachedResponse) => {
+          // If a cached response exists, return it. Not only does this
+          // improve performance, but it also makes the app work 'offline'
+          // (`navigator.onLine` is unreliable; can be `true` even when
+          // offline). The downside of this approach is that we may return
+          // stale assets when the app is updated. Fortunately, so long as the
+          // version is updated (GI_VERSION), existing cache entries will be
+          // deleted. This will happen with SW updates, so, ideally, we won't
+          // serve stale resources for too long.
+          if (cachedResponse) {
+            return cachedResponse
+          }
 
-            // We use the original `event.request` for the network fetch
-            // instead of the possibly re-written `request` (used as a cache
-            // key) because the re-written request makes tests fail.
+          // We use the original `event.request` for the network fetch
+          // instead of the possibly re-written `request` (used as a cache
+          // key) because the re-written request makes tests fail.
+          return caches.open(CURRENT_CACHES.assets).then((cache) => {
             return fetch(event.request).then((response) => {
               if (
-                // Save successful reponses
+              // Save successful reponses
                 response.status >= 200 &&
                 response.status < 400 &&
                 response.status !== 206 && // Partial response
@@ -132,16 +131,16 @@ if (
                   console.error('Error adding request to cache')
                 }))
               } else if (response.status < 500) {
-                // For 5xx responses (server errors, we don't delete the cache
-                // entry. This is so that, in the event of a 5xx error,
-                // the offline app still works.)
+              // For 5xx responses (server errors, we don't delete the cache
+              // entry. This is so that, in the event of a 5xx error,
+              // the offline app still works.)
                 event.waitUntil(cache.delete(cacheKey))
               }
 
               return response
             })
           })
-      })
+        })
     )
   }, false)
 }
