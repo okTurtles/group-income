@@ -51,6 +51,7 @@ export default ({
   },
   watch: {
     volumeFromStore () {
+      // Update the audio elements accordingly when the volume change in the store is detected.
       this.updateAudioVolumes()
     }
   }
