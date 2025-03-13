@@ -53,7 +53,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to update lastLoggedIn without an active session')
     }
 
-    const now = sbp('chelonia/time') * 1000
+    const now = sbp('chelonia/time')
     if (throttle) {
       const state = sbp('state/vuex/state')
       const lastLoggedInRawValue: ?string = state.lastLoggedIn?.[contractID]?.[identityContractID]
