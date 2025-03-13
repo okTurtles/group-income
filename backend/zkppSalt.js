@@ -182,18 +182,13 @@ const verifyChallenge = (contractID: string, r: string, s: string, userSig: stri
   return sig.byteLength === macBuf.byteLength && timingSafeEqual(sig, macBuf)
 }
 
-export const registrationKey = async (contractID: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
-  const record = await getZkppSaltRecord(contractID)
-  if (record) {
-    throw new Error('registrationKey: User record already exists')
-  }
-
-  const encryptionKey = hashStringArray('REG', contractID, registrationSecret).slice(0, nacl.secretbox.keyLength)
+export const registrationKey = (provisionalId: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
+  const encryptionKey = hashStringArray('REG', provisionalId, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const keyPair = boxKeyPair()
   const s = base64ToBase64url(Buffer.concat([nonce, nacl.secretbox(keyPair.secretKey, nonce, encryptionKey)]).toString('base64'))
   const now = (Date.now() / 1000 | 0).toString(16)
-  const sig = [now, base64ToBase64url(Buffer.from(hashStringArray(contractID, b, s, now, challengeSecret)).toString('base64'))].join(',')
+  const sig = [now, base64ToBase64url(Buffer.from(hashStringArray(provisionalId, b, s, now, challengeSecret)).toString('base64'))].join(',')
 
   return {
     s,
@@ -202,26 +197,19 @@ export const registrationKey = async (contractID: string, b: string): Promise<fa
   }
 }
 
-export const register = async (contractID: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<string | false> => {
-  if (!verifyChallenge(contractID, clientPublicKey, encryptedSecretKey, userSig)) {
-    console.warn('register: Error validating challenge: ' + JSON.stringify({ contract: contractID, clientPublicKey, userSig }))
+export const register = (provisionalId: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<string | false> => {
+  if (!verifyChallenge(provisionalId, clientPublicKey, encryptedSecretKey, userSig)) {
+    console.warn('register: Error validating challenge: ' + JSON.stringify({ contract: provisionalId, clientPublicKey, userSig }))
     throw new Error('register: Invalid challenge')
   }
 
-  const record = await getZkppSaltRecord(contractID)
-
-  if (record) {
-    console.warn('register: Error: ZKPP salt record for contract ID ' + contractID + ' already exists')
-    return false
-  }
-
   const encryptedSecretKeyBuf = Buffer.from(base64urlToBase64(encryptedSecretKey), 'base64')
-  const encryptionKey = hashStringArray('REG', contractID, registrationSecret).slice(0, nacl.secretbox.keyLength)
+  const encryptionKey = hashStringArray('REG', provisionalId, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const secretKeyBuf = nacl.secretbox.open(encryptedSecretKeyBuf.slice(nacl.secretbox.nonceLength), encryptedSecretKeyBuf.slice(0, nacl.secretbox.nonceLength), encryptionKey)
 
   // Likely a bad implementation on the client side
   if (!secretKeyBuf) {
-    console.warn(`register: Error decrypting arguments for contract ID ${contractID} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error decrypting arguments for contract ID ${provisionalId} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
@@ -229,7 +217,7 @@ export const register = async (contractID: string, clientPublicKey: string, encr
 
   // Likely a bad implementation on the client side
   if (!parseRegisterSaltRes) {
-    console.warn(`register: Error parsing registration salt for contract ID ${contractID} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error parsing registration salt for contract ID ${provisionalId} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
@@ -237,7 +225,7 @@ export const register = async (contractID: string, clientPublicKey: string, encr
 
   const token = encryptSaltUpdate(
     hashUpdateSecret,
-    contractID,
+    provisionalId,
     JSON.stringify([Date.now(), Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt])
   )
 
