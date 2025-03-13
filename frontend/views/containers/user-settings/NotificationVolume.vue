@@ -11,7 +11,7 @@ section.card
     @input='handleVolumeUpdate'
   )
 
-  audio(ref='audioEl'
+  audio(ref='exampleAudio'
     src='/assets/audio/msg-received.mp3'
     type='audio/mpeg'
   )
@@ -54,16 +54,17 @@ export default ({
       this.debouncedPostVolumeChange()
     },
     debouncedPostVolumeChange: debounce(function () {
-      // 1. Play the audio element for the user to hear the change.
+      // 1. Play the example sound for the user to hear the change.
       const volume = this.ephemeral.volume / 100
-      const audioEl = this.$refs.audioEl
+      const audioEl = this.$refs.exampleAudio
 
+      // In case the sound is still playing when the volume is chnaged, pause and reset the playhead first.
       audioEl.pause()
       audioEl.currentTime = 0
       audioEl.volume = volume
       setTimeout(() => { audioEl.play() }, 10)
 
-      // 2. Update the value in the store
+      // 2. Update the value in the store, so that the update propagates to the background sound.
       sbp('gi.actions/identity/kv/updateNotificationVolume', { volume })
     }, 350)
   },
@@ -72,9 +73,9 @@ export default ({
   },
   mounted () {
     // Speed up the play speed of the example sound a little bit, so that user can play it more frequently.
-    this.$refs.audioEl.playbackRate = 1.25
+    this.$refs.exampleAudio.playbackRate = 1.25
     // Init the volume of the example sound to the value in the store.
-    this.$refs.audioEl.volume = this.volumeFromStore
+    this.$refs.exampleAudio.volume = this.volumeFromStore
   }
 }: Object)
 </script>

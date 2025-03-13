@@ -42,7 +42,6 @@ export default ({
       }
     },
     updateAudioVolumes () {
-      console.log('!@# updating audio volumes in th background !!: ', this.volumeFromStore)
       this.$refs.msgReceive.volume = this.volumeFromStore
       this.$refs.msgSend.volume = this.volumeFromStore
     }
