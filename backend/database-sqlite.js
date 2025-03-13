@@ -3,6 +3,7 @@
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
+import { rebindMethods } from './db-utils.js'
 
 export default class SqliteBackend {
   dataFolder: string = ''
@@ -16,6 +17,7 @@ export default class SqliteBackend {
     const { dirname, filename } = options
     this.dataFolder = resolve(dirname)
     this.filename = filename
+    rebindMethods(this, ['init', 'clear', 'readData', 'writeData', 'deleteData'])
   }
 
   async run (sql: string) {
@@ -29,8 +31,6 @@ export default class SqliteBackend {
       })
     })
   }
-
-  // Public API //
 
   async init () {
     const { dataFolder, filename } = this

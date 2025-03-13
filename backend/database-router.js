@@ -27,7 +27,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
   config = readConfig()
   const entries = Object.values(config)
   await Promise.all(entries.map(async ([keyPrefix, { name, options }]) => {
-    const Ctor = await import(`./database-${name}.js`)
+    const Ctor = (await import(`./database-${name}.js`)).default
     const backend = new Ctor(options)
     await backend.init()
     backends[keyPrefix] = backend
