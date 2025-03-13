@@ -4,87 +4,98 @@ import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
 
-let db: any = null
-let readStatement: any = null
-let writeStatement: any = null
-let deleteStatement: any = null
+export default class SqliteBackend {
+  dataFolder: string = ''
+  db: any = null
+  filename: string = ''
+  readStatement: Object = null
+  writeStatement: Object = null
+  deleteStatement: Object = null
 
-const run = (sql, args) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, args, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
+  constructor (options: Object = {}) {
+    const { dirname, filename } = options
+    this.dataFolder = resolve(dirname)
+    this.filename = filename
+  }
+
+  async run (sql: string) {
+    await new Promise((resolve, reject) => {
+      this.db.run(sql, undefined, (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
     })
-  })
-}
+  }
 
-export async function initStorage (options: Object = {}): Promise<void> {
-  const { dirname, filename } = options
-  const dataFolder = resolve(dirname)
+  // Public API //
 
-  await mkdir(dataFolder, { mode: 0o750, recursive: true })
+  async init () {
+    const { dataFolder, filename } = this
 
-  await new Promise((resolve, reject) => {
-    if (db) {
-      reject(new Error(`The ${filename} SQLite database is already open.`))
-    }
-    db = new sqlite3.Database(join(dataFolder, filename), (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
+    await mkdir(dataFolder, { mode: 0o750, recursive: true })
+
+    await new Promise((resolve, reject) => {
+      if (this.db) {
+        reject(new Error(`The ${filename} SQLite database is already open.`))
       }
+      this.db = new sqlite3.Database(join(dataFolder, filename), (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
     })
-  })
-  await run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
-  console.info(`Connected to the ${filename} SQLite database.`)
-  readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
-  writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
-  deleteStatement = db.prepare('DELETE FROM Data WHERE key = ?')
-}
+    await this.run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
+    console.info(`Connected to the ${filename} SQLite database.`)
+    this.readStatement = this.db.prepare('SELECT value FROM Data WHERE key = ?')
+    this.writeStatement = this.db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
+    this.deleteStatement = this.db.prepare('DELETE FROM Data WHERE key = ?')
+  }
 
-// Useful in test hooks.
-export function clear (): Promise<void> {
-  return run('DELETE FROM Data')
-}
+  // Useful in test hooks.
+  async clear () {
+    await this.run('DELETE FROM Data')
+  }
 
-export function readData (key: string): Promise<Buffer | string | void> {
-  return new Promise((resolve, reject) => {
-    readStatement.get([key], (err, row) => {
-      if (err) {
-        reject(err)
-      } else {
-        // Note: sqlite remembers the type of every stored value, therefore we
-        // automatically get back the same JS value that has been inserted.
-        resolve(row?.value)
-      }
+  async readData (key: string): Promise<Buffer | string | void> {
+    return await new Promise((resolve, reject) => {
+      this.readStatement.get([key], (err, row) => {
+        if (err) {
+          reject(err)
+        } else {
+          // Note: sqlite remembers the type of every stored value, therefore we
+          // automatically get back the same JS value that has been inserted.
+          resolve(row?.value)
+        }
+      })
     })
-  })
-}
+  }
 
-export function writeData (key: string, value: Buffer | string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    writeStatement.run([key, value], (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
+  async writeData (key: string, value: Buffer | string) {
+    await new Promise((resolve, reject) => {
+      this.writeStatement.run([key, value], (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
     })
-  })
-}
+  }
 
-export function deleteData (key: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    deleteStatement.run([key], (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
+  async deleteData (key: string) {
+    await new Promise((resolve, reject) => {
+      this.deleteStatement.run([key], (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
     })
-  })
+  }
 }

@@ -7,8 +7,8 @@ const readConfig = () => {
   if (!config['*']) {
     throw new Error('Fallback storage (*) is required')
   }
-
-  return config
+  // Return a sorted copy where entries with longer keys come first.
+  return Object.fromEntries(Object.entries(config).sort((a, b) => a[0].length - b[0].length))
 }
 let config
 const backends = Object.create(null)
@@ -17,20 +17,20 @@ const lookupBackend = (key) => {
   const keyPrefixes = Object.keys(config)
   for (let i = 0; i < keyPrefixes.length; i++) {
     if (key.startsWith(keyPrefixes[i])) {
-      return config[keyPrefixes[i]]
+      return backends[keyPrefixes[i]]
     }
   }
-  return backends[config['*']]
+  return backends['*']
 }
 
 export async function initStorage (options: Object = {}): Promise<void> {
   config = readConfig()
-  const persistences = [...new Set(Object.values(config))]
-  await Promise.all(persistences.map(async (persistence) => {
-    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
-    // $FlowFixMe[invalid-computed-prop]
-    backends[persistence] = { readData, writeData, deleteData }
-    await initStorage()
+  const entries = Object.values(config)
+  await Promise.all(entries.map(async ([keyPrefix, { name, options }]) => {
+    const Ctor = await import(`./database-${name}.js`)
+    const backend = new Ctor(options)
+    await backend.init()
+    backends[keyPrefix] = backend
   }))
 }
 

@@ -22,19 +22,15 @@ const range = (n) => [...new Array(n).keys()]
 
 names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
-  const {
-    clear,
-    initStorage,
-    readData,
-    writeData
-  } = require(`~/backend/database-${lowerCaseName}.js`)
+  const Ctor = require(`~/backend/database-${lowerCaseName}.js`).default
+  const db = new Ctor(options[lowerCaseName])
 
   describe(`Test ${name} storage API`, function () {
     before('storage backend initialization', async function () {
-      await initStorage(options[lowerCaseName])
+      await db.init()
     })
     beforeEach('storage clear', async function () {
-      await clear()
+      await db.clear()
     })
 
     it('should throw if the key contains a path component', function () {
@@ -60,16 +56,16 @@ names.forEach((name) => {
     })
 
     it('Should return `undefined` if the key was not found', async function () {
-      const actual = await readData('foo')
+      const actual = await db.readData('foo')
       const expected = undefined
 
       assert.equal(actual, expected)
     })
 
     it('Should return the string that has been written', async function () {
-      await writeData('newKey', 'newValue')
+      await db.writeData('newKey', 'newValue')
 
-      const actual = await readData('newKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
+      const actual = await db.readData('newKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
       const expected = 'newValue'
 
       assert.equal(actual, expected)
@@ -78,9 +74,9 @@ names.forEach((name) => {
     it('Should return the buffer that has been written', async function () {
       const buffer = Buffer.from('contents')
       const key = 'blobkey'
-      await writeData(key, buffer)
+      await db.writeData(key, buffer)
 
-      const actual = await readData(key)
+      const actual = await db.readData(key)
       const expected = buffer
 
       assert.equal(Buffer.compare(actual, expected), 0)
@@ -91,20 +87,20 @@ names.forEach((name) => {
       const newBuffer = Buffer.from('someOtherValue')
       const key = 'blobkey'
 
-      await writeData(key, oldBuffer)
-      await writeData(key, newBuffer)
+      await db.writeData(key, oldBuffer)
+      await db.writeData(key, newBuffer)
 
-      const actual = await readData(key)
+      const actual = await db.readData(key)
       const expected = newBuffer
 
       assert.equal(Buffer.compare(actual, expected), 0)
     })
 
     it('Should return the new string after an update', async function () {
-      await writeData('someKey', 'someValue')
-      await writeData('someKey', 'someOtherValue')
+      await db.writeData('someKey', 'someValue')
+      await db.writeData('someKey', 'someOtherValue')
 
-      const actual = await readData('someKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
+      const actual = await db.readData('someKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
       const expected = 'someOtherValue'
 
       assert.strictEqual(actual, expected)
