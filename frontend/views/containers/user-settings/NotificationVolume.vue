@@ -10,6 +10,11 @@ section.card
     :value='ephemeral.volume'
     @input='handleVolumeUpdate'
   )
+
+  audio(ref='audioEl'
+    src='/assets/audio/msg-received.mp3'
+    type='audio/mpeg'
+  )
 </template>
 
 <script>
@@ -38,22 +43,38 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourPreferences'])
+    ...mapGetters(['ourPreferences']),
+    volumeFromStore () {
+      return this.ourPreferences.notificationVolume || 1
+    }
   },
   methods: {
     handleVolumeUpdate (e) {
       this.ephemeral.volume = e.target.value
-      this.debouncedStoreUpdate()
+      this.debouncedPostVolumeChange()
     },
-    debouncedStoreUpdate: debounce(function () {
-      sbp(
-        'gi.actions/identity/kv/updateNotificationVolume',
-        { volume: this.ephemeral.volume / 100 }
-      )
+    debouncedPostVolumeChange: debounce(function () {
+      // 1. Play the audio element for the user to hear the change.
+      const volume = this.ephemeral.volume / 100
+      const audioEl = this.$refs.audioEl
+
+      audioEl.pause()
+      audioEl.currentTime = 0
+      audioEl.volume = volume
+      setTimeout(() => { audioEl.play() }, 10)
+
+      // 2. Update the value in the store
+      sbp('gi.actions/identity/kv/updateNotificationVolume', { volume })
     }, 350)
   },
   created () {
-    this.ephemeral.volume = (this.ourPreferences.notificationVolume || 1) * 100
+    this.ephemeral.volume = Math.round(this.volumeFromStore * 100)
+  },
+  mounted () {
+    // Speed up the play speed of the example sound a little bit, so that user can play it more frequently.
+    this.$refs.audioEl.playbackRate = 1.25
+    // Init the volume of the example sound to the value in the store.
+    this.$refs.audioEl.volume = this.volumeFromStore
   }
 }: Object)
 </script>

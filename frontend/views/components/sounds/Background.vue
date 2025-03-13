@@ -6,6 +6,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
 import isPwa from '@utils/isPwa.js'
 
@@ -16,6 +17,10 @@ export default ({
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
   computed: {
+    ...mapGetters(['ourPreferences']),
+    volumeFromStore () {
+      return this.ourPreferences.notificationVolume || 1
+    },
     isAppIdle () {
       // NOTE: idle-vue plugin will provide this.isAppIdle
       //       but sometimes it returns undefined, so redefine here
@@ -35,6 +40,19 @@ export default ({
       if (this.shouldPlay()) {
         this.$refs.msgSend.play()
       }
+    },
+    updateAudioVolumes () {
+      console.log('!@# updating audio volumes in th background !!: ', this.volumeFromStore)
+      this.$refs.msgReceive.volume = this.volumeFromStore
+      this.$refs.msgSend.volume = this.volumeFromStore
+    }
+  },
+  mounted () {
+    this.updateAudioVolumes()
+  },
+  watch: {
+    volumeFromStore () {
+      this.updateAudioVolumes()
     }
   }
 }: Object)
