@@ -168,10 +168,10 @@ sbp('okTurtles.events/on', LOGOUT, (a) => {
 */
 
 export default (sbp('sbp/selectors/register', {
-  'gi.app/identity/retrieveSalt': async (username: string, password: Secret<string>): Promise<[string, ?string]> => {
+  'gi.app/identity/retrieveSalt': async (identityContractID: string, password: Secret<string>): Promise<[string, ?string]> => {
     const r = randomNonce()
     const b = hash(r)
-    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/auth_hash?b=${encodeURIComponent(b)}`)
       .then(handleFetchResult('json'))
 
     const { authSalt, s, sig } = authHash
@@ -180,7 +180,7 @@ export default (sbp('sbp/selectors/register', {
 
     const [c, hc] = computeCAndHc(r, s, h)
 
-    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
+    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/contract_hash?${(new URLSearchParams({
       'r': r,
       's': s,
       'sig': sig,
@@ -190,10 +190,10 @@ export default (sbp('sbp/selectors/register', {
     // [contractSalt, cid]
     return JSON.parse(decryptContractSalt(c, contractHash))
   },
-  'gi.app/identity/updateSaltRequest': async (username: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
+  'gi.app/identity/updateSaltRequest': async (identityContractID: string, oldPassword: Secret<string>, newPassword: Secret<string>) => {
     const r = randomNonce()
     const b = hash(r)
-    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/auth_hash?b=${encodeURIComponent(b)}`)
       .then(handleFetchResult('json'))
 
     const { authSalt, s, sig } = authHash
@@ -204,7 +204,7 @@ export default (sbp('sbp/selectors/register', {
 
     const [contractSalt, encryptedArgs] = await buildUpdateSaltRequestEc(newPassword.valueOf(), c)
 
-    const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(username)}/updatePasswordHash`, {
+    const response = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/updatePasswordHash`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -233,7 +233,6 @@ export default (sbp('sbp/selectors/register', {
     const keyPair = boxKeyPair()
     const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
     const b = hash(r)
-    // TODO: use the contractID instead, and move this code down below the registration
     const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
@@ -245,7 +244,27 @@ export default (sbp('sbp/selectors/register', {
 
     const { p, s, sig } = registrationRes
 
-    const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
+    const [contractSalt, Eh, encryptionKey] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
+
+    const saltRegistrationTokenReq = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'r': r,
+        's': s,
+        'sig': sig,
+        'Eh': Eh
+      })
+    })
+
+    if (!saltRegistrationTokenReq.ok) {
+      throw new Error('Unable to register hash')
+    }
+
+    const encryptedToken = await saltRegistrationTokenReq.text()
+    const token = decryptContractSalt(encryptionKey, encryptedToken)
 
     // Create the necessary keys to initialise the contract
     const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, contractSalt)
@@ -260,10 +279,7 @@ export default (sbp('sbp/selectors/register', {
         username,
         email,
         picture,
-        r,
-        s,
-        sig,
-        Eh
+        token: new Secret(token)
       })
 
       return userID
@@ -340,7 +356,7 @@ export default (sbp('sbp/selectors/register', {
       // the password) will be passed to the service worker.
       if (password) {
         try {
-          const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wpassword)
+          const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', identityContractID, wpassword)
           const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
           transientSecretKeys.push(IEK)
           oldKeysAnchorCid = cid
@@ -530,7 +546,7 @@ export default (sbp('sbp/selectors/register', {
     const oldPassword = wOldPassword.valueOf()
     const newPassword = wNewPassword.valueOf()
 
-    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', username, wOldPassword, wNewPassword)
+    const [newContractSalt, oldContractSalt, updateToken] = await sbp('gi.app/identity/updateSaltRequest', identityContractID, wOldPassword, wNewPassword)
 
     const oldIPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, oldPassword, oldContractSalt)
     const oldIEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, oldPassword, oldContractSalt)

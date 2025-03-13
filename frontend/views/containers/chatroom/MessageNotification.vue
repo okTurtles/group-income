@@ -17,7 +17,6 @@ export default ({
   components: {
     MessageBase
   },
-  inject: ['chatMessageUtils'],
   props: {
     height: Number,
     id: String,

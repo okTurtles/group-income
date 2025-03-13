@@ -65,6 +65,7 @@ declare module 'vuelidate/lib/validators/sameAs.js' { declare module.exports: an
 declare module 'vuex' { declare module.exports: any }
 declare module 'idle-vue' { declare module.exports: any }
 declare module 'vue2-touch-events' { declare module.exports: any }
+declare module 'portal-vue' { declare module.exports: any }
 declare module 'wicg-inert' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
 declare module '@sbp/sbp' { declare module.exports: any }
