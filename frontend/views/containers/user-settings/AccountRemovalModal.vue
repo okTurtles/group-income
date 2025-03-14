@@ -16,13 +16,12 @@
       banner-simple.c-banner(severity='general' v-if='!ownResources')
         i18n Loading
       banner-simple.c-banner(severity='warning' v-else-if='Array.isArray(ownResources) && ownResources.length')
-        i18n(tag='p') This will result in removing other contracts you have created, like groups and direct messages.
-        i18n(tag='p') The following contracts will be removed:
+        i18n(tag='p') This action will also delete the following groups:
         ul.c-list
           li.c-item(v-for='cid in ownResources') {{cid}}
       banner-simple.c-banner(severity='danger' v-else-if='ownResources.message')
-        i18n(tag='p') This will result in removing other contracts you have created, like groups and direct messages.
-        i18n(tag='p' :args='{message: ownResources.message}') An error occurred that prevents us from showing a full list of everything else that will be removed. The error was: {message}
+        i18n(tag='p') This action will also delete any groups you've created.
+        i18n(tag='p' :args='{message: ownResources.message}') An error occurred that prevents us from showing a list of these groups. The error was: {message}
 
       label.field
         i18n.label Username
@@ -97,7 +96,13 @@ export default ({
   },
   beforeMount () {
     sbp('chelonia/out/ownResources', this.ourIdentityContractId).then((ownResources) => {
-      this.ownResources = ownResources
+      const rootState = sbp('state/vuex/state')
+      this.ownResources = ownResources.filter((cid) => {
+        return rootState.contracts[cid]?.type === 'gi.contracts/group'
+      }).map((cid) => {
+        const rootGetters = sbp('state/vuex/getters')
+        return rootGetters.groupSettingsForGroup(rootState[cid]).groupName
+      })
     }).catch((e) => {
       this.ownResources = new Error(e?.message)
       console.error('Error fetching own resources', { contractID: this.ourIdentityContractId }, e)
