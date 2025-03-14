@@ -17,7 +17,7 @@ export default class SqliteBackend {
     const { dirname, filename } = options
     this.dataFolder = resolve(dirname)
     this.filename = filename
-    rebindMethods(this, ['init', 'clear', 'readData', 'writeData', 'deleteData'])
+    rebindMethods(this)
   }
 
   async run (sql: string) {

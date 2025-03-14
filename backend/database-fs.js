@@ -42,7 +42,7 @@ export default class FsBackend {
   constructor (options: Object = {}) {
     this.dataFolder = resolve(options.dirname)
     this.depth = options.depth ?? 0
-    rebindMethods(this, ['init', 'clear', 'readData', 'writeData', 'deleteData'])
+    rebindMethods(this)
   }
 
   // Maps a given key to a real path on the filesystem.
