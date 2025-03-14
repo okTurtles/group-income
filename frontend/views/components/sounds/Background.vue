@@ -6,7 +6,6 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
 import isPwa from '@utils/isPwa.js'
 
@@ -17,9 +16,8 @@ export default ({
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
   computed: {
-    ...mapGetters(['ourPreferences']),
     volumeFromStore () {
-      return this.ourPreferences.notificationVolume || 1
+      return this.$store.getters.notificationVolume || 1
     },
     isAppIdle () {
       // NOTE: idle-vue plugin will provide this.isAppIdle

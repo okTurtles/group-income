@@ -18,8 +18,7 @@ section.card
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapMutations } from 'vuex'
 import { L } from '@common/common.js'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import { debounce } from 'turtledash'
@@ -43,12 +42,12 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourPreferences']),
     volumeFromStore () {
-      return this.ourPreferences.notificationVolume || 1
+      return this.$store.getters.notificationVolume || 1
     }
   },
   methods: {
+    ...mapMutations(['setNotificationVolume']),
     handleVolumeUpdate (e) {
       this.ephemeral.volume = e.target.value
       this.debouncedPostVolumeChange()
@@ -65,7 +64,7 @@ export default ({
       setTimeout(() => { audioEl.play() }, 10)
 
       // 2. Update the value in the store, so that the update propagates to the background sound.
-      sbp('gi.actions/identity/kv/updateNotificationVolume', { volume })
+      this.setNotificationVolume(volume)
     }, 350)
   },
   created () {
