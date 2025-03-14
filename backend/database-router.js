@@ -1,7 +1,11 @@
 'use strict'
 
-const readConfig = () => {
-  const configString = process.env.GI_PERSIST_ROUTER_CONFIG
+import { readFile } from 'node:fs/promises'
+
+const { GI_PERSIST_ROUTER_CONFIG_PATH = './data/db-router-config.json' } = process.env
+
+const readConfig = async () => {
+  const configString = await readFile(GI_PERSIST_ROUTER_CONFIG_PATH, 'utf8')
   const config = JSON.parse(configString)
 
   if (!config['*']) {
@@ -24,8 +28,8 @@ const lookupBackend = (key) => {
 }
 
 export async function initStorage (options: Object = {}): Promise<void> {
-  config = readConfig()
-  const entries = Object.values(config)
+  config = await readConfig()
+  const entries = Object.entries(config)
   await Promise.all(entries.map(async ([keyPrefix, { name, options }]) => {
     const Ctor = (await import(`./database-${name}.js`)).default
     const backend = new Ctor(options)
