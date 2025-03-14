@@ -563,7 +563,7 @@ export default (sbp('sbp/selectors/register', {
       updateToken: new Secret(updateToken)
     })
   },
-  'gi.app/identity/delete': async (username: string, contractID: string, wPassword: Secret<string>) => {
+  'gi.app/identity/delete': async (contractID: string, wPassword: Secret<string>) => {
     const password = wPassword?.valueOf()
     const transientSecretKeys = []
     let oldKeysAnchorCid
@@ -572,7 +572,7 @@ export default (sbp('sbp/selectors/register', {
     // the password) will be passed to the service worker.
     if (password) {
       try {
-        const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', username, wPassword)
+        const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', contractID, wPassword)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
         transientSecretKeys.push(IEK)
         oldKeysAnchorCid = cid

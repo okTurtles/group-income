@@ -181,7 +181,8 @@ export default ({
         nameMaxChar: GROUP_NAME_MAX_CHAR,
         descMaxChar: GROUP_DESCRIPTION_MAX_CHAR
       },
-      allowPublicChannels: false
+      allowPublicChannels: false,
+      inProgress: false
     }
   },
   computed: {
@@ -244,13 +245,31 @@ export default ({
     },
     handleLeaveGroup () {
       if (this.groupMembersCount === 1) {
-        if (confirm(L("Leaving the group when you're the only person in it will delete it. Continue?"))) {
-          sbp('chelonia/out/deleteContract', this.currentGroupId, {
+        if (this.inProgress) return
+        this.inProgress = true
+        sbp('gi.ui/prompt', {
+          heading: L('Failed to login'),
+          question: L("Leaving the group when you're the only person in it will delete it."),
+          primaryButton: L('Delete group'),
+          secondaryButton: L('Cancel')
+        }).then((result) => {
+          if (!result) return
+          return sbp('chelonia/out/deleteContract', this.currentGroupId, {
             [this.currentGroupId]: {
               billableContractID: this.ourIdentityContractId
             }
           })
-        }
+        }).catch((e) => {
+          sbp('gi.ui/prompt', {
+            heading: L('Error removing group'),
+            question: L('Error removing group: {errMsg}.', {
+              errMsg: e?.message
+            }),
+            primaryButton: L('Close')
+          })
+        }).finally(() => {
+          this.inProgress = false
+        })
       } else {
         this.openProposal('GroupLeaveModal')
       }
