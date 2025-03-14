@@ -3,14 +3,14 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import { createCID, multicodes, maybeParseCID } from '~/shared/functions.js'
-import { SERVER_INSTANCE } from './instance-keys.js'
-import path from 'path'
-import chalk from 'chalk'
-import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
+import chalk from 'chalk'
+import path from 'path'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
+import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
+import { appendToIndexFactory } from './database.js'
+import { SERVER_INSTANCE } from './instance-keys.js'
+import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
@@ -67,6 +67,20 @@ const staticServeConfig = {
   distAssets: path.resolve(isCheloniaDashboard ? 'dist-dashboard/assets' : 'dist/assets'),
   distIndexHtml: path.resolve(isCheloniaDashboard ? './dist-dashboard/index.html' : './dist/index.html'),
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
+}
+
+const errorMapper = (e: Error) => {
+  switch (e?.name) {
+    case 'BackendErrorNotFound':
+      return Boom.notFound()
+    case 'BackendErrorGone':
+      return Boom.resourceGone()
+    case 'BackendErrorBadData':
+      return Boom.badData(e.message)
+    default:
+      console.error(e, 'Unexpected backend error')
+      return Boom.internal(e.message ?? 'internal error')
+  }
 }
 
 // We define a `Proxy` for route so that we can use `route.VERB` syntax for
@@ -172,6 +186,10 @@ route.POST('/event', {
             }
           }
         }
+        const deletionToken = request.headers['shelter-deletion-token']
+        if (deletionToken) {
+          await sbp('chelonia.db/set', `_private_deletionToken_${deserializedHEAD.contractID}`, deletionToken)
+        }
       }
       // Store size information
       await sbp('backend/server/updateSize', deserializedHEAD.contractID, Buffer.byteLength(request.payload))
@@ -234,6 +252,18 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
     logger.error(err, `GET /eventsAfter/${contractID}/${since}`, err.message)
     return err
   }
+})
+
+route.GET('/ownResources', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const billableContractID = request.auth.credentials.billableContractID
+  const resources = (await sbp('chelonia.db/get', `_private_resources_${billableContractID}`))?.split('\x00')
+
+  return resources || []
 })
 
 if (process.env.NODE_ENV === 'development') {
@@ -308,6 +338,9 @@ route.GET('/latestHEADinfo/{contractID}', {
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.badRequest()
 
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (HEADinfo === '') {
+      return Boom.resourceGone()
+    }
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
       return notFoundNoCache(h)
@@ -510,7 +543,9 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   }
 
   const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
-  if (!blobOrString) {
+  if (blobOrString === '') {
+    return Boom.resourceGone()
+  } else if (!blobOrString) {
     return notFoundNoCache(h)
   }
 
@@ -594,40 +629,78 @@ route.POST('/deleteFile/{hash}', {
 
   // Authentication passed, now proceed to delete the file and its associated
   // keys
-  const rawManifest = await sbp('chelonia.db/get', hash)
-  if (!rawManifest) return Boom.notFound()
   try {
-    const manifest = JSON.parse(rawManifest)
-    if (!manifest || typeof manifest !== 'object') return Boom.badData('manifest format is invalid')
-    if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
-    if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
-    // Delete all chunks
-    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))
+    await sbp('backend/deleteFile', hash)
+    return h.response()
   } catch (e) {
-    console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
-    return Boom.notFound()
+    return errorMapper(e)
   }
-  // The keys to be deleted are not read from or updated, so they can be deleted
-  // without using a queue
-  await sbp('chelonia.db/delete', hash)
-  await sbp('chelonia.db/delete', `_private_owner_${hash}`)
-  await sbp('chelonia.db/delete', `_private_size_${hash}`)
-  await sbp('chelonia.db/delete', `_private_deletionToken_${hash}`)
-  const resourcesKey = `_private_resources_${owner}`
-  // Use a queue for atomicity
-  await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-    const existingResources = await sbp('chelonia.db/get', resourcesKey)
-    if (!existingResources) return
-    if (existingResources.endsWith(hash)) {
-      await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
-      return
-    }
-    const hashIndex = existingResources.indexOf(hash + '\x00')
-    if (hashIndex === -1) return
-    await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
-  })
+})
 
-  return h.response()
+route.POST('/deleteContract/{hash}', {
+  auth: {
+    // Allow file deletion, and allow either the bearer of the deletion token or
+    // the file owner to delete it
+    strategies: ['chel-shelter', 'chel-bearer'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const { hash } = request.params
+  const strategy = request.auth.strategy
+  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+
+  switch (strategy) {
+    case 'chel-shelter': {
+      const owner = await sbp('chelonia.db/get', `_private_owner_${hash}`)
+      if (!owner) {
+        return Boom.notFound()
+      }
+
+      let ultimateOwner = owner
+      let count = 0
+      // Walk up the ownership tree
+      do {
+        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
+        if (owner) {
+          ultimateOwner = owner
+          count++
+        } else {
+          break
+        }
+      // Prevent an infinite loop
+      } while (count < 128)
+      // Check that the user making the request is the ultimate owner (i.e.,
+      // that they have permission to delete this file)
+      if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    case 'chel-bearer': {
+      const expectedToken = await sbp('chelonia.db/get', `_private_deletionToken_${hash}`)
+      if (!expectedToken) {
+        return Boom.notFound()
+      }
+      const token = request.auth.credentials.token
+      // Constant-time comparison
+      // Check that the token provided matches the deletion token for this contract
+      if (!ctEq(expectedToken, token)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    default:
+      return Boom.unauthorized('Missing or invalid auth strategy')
+  }
+
+  // Authentication passed, now proceed to delete the contract and its associated
+  // keys
+  try {
+    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    return h.response({ id }).code(202)
+  } catch (e) {
+    return errorMapper(e)
+  }
 })
 
 route.POST('/kv/{contractID}/{key}', {
@@ -715,6 +788,7 @@ route.POST('/kv/{contractID}/{key}', {
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+  await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
   await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
   return h.response().code(204)
