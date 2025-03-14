@@ -1200,9 +1200,30 @@ export default (sbp('sbp/selectors/register', {
     })
     return msg
   },
+  'chelonia/out/ownResources': async function (contractID: string) {
+    if (!contractID) {
+      throw new TypeError('A contract ID must be provided')
+    }
+
+    const response = await fetch(`${this.config.connectionURL}/ownResources`, {
+      method: 'GET',
+      signal: this.abortController.signal,
+      headers: new Headers([
+        [
+          'authorization',
+          buildShelterAuthorizationHeader.call(this, contractID)
+        ]
+      ])
+    })
+    if (!response.ok) {
+      throw new Error(`Unable to fetch own resources for ${contractID}`)
+    }
+
+    return response.json()
+  },
   'chelonia/out/deleteContract': async function (contractID: string | string[], credentials: { [contractID: string]: { token: ?string, billableContractID: ?string } } = {}) {
     if (!contractID) {
-      throw new TypeError('A manifest CID must be provided')
+      throw new TypeError('A contract ID must be provided')
     }
     if (!Array.isArray(contractID)) contractID = [contractID]
     return await Promise.allSettled(contractID.map(async (cid) => {
