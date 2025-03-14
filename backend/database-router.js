@@ -8,7 +8,7 @@ const readConfig = () => {
     throw new Error('Fallback storage (*) is required')
   }
   // Return a sorted copy where entries with longer keys come first.
-  return Object.fromEntries(Object.entries(config).sort((a, b) => a[0].length - b[0].length))
+  return Object.fromEntries(Object.entries(config).sort((a, b) => b[0].length - a[0].length))
 }
 let config
 const backends = Object.create(null)
