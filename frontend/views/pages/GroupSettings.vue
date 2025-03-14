@@ -248,9 +248,10 @@ export default ({
         if (this.inProgress) return
         this.inProgress = true
         sbp('gi.ui/prompt', {
-          heading: L('Failed to login'),
+          heading: L('Delete group'),
           question: L("Leaving the group when you're the only person in it will delete it."),
           primaryButton: L('Delete group'),
+          primaryButtonStyle: 'danger', // make primary button 'filled' style
           secondaryButton: L('Cancel')
         }).then((result) => {
           if (!result) return
