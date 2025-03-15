@@ -1,15 +1,18 @@
 <template lang='pug'>
-section.card
-  i18n.is-title-3.c-title(tag='h2') Volume
-  p.c-desc.has-text-1 {{ config.label }}
-  slider-continuous.c-volume-slider(
-    uid='notification-volume'
-    :min='config.sliderMin'
-    :max='config.sliderMax'
-    :unit='config.sliderUnit'
-    :value='ephemeral.volume'
-    @input='handleVolumeUpdate'
-  )
+.c-notification-volume
+  i18n.c-title Volume
+  .c-volume-slider-container
+    slider-continuous.c-volume-slider(
+      uid='notification-volume'
+      :min='config.sliderMin'
+      :max='config.sliderMax'
+      :unit='config.sliderUnit'
+      :hideText='true'
+      :value='ephemeral.volume'
+      @input='handleVolumeUpdate'
+    )
+
+    .c-volume-value {{ ephemeral.volume }}{{ config.sliderUnit }}
 
   audio(ref='exampleAudio'
     src='/assets/audio/msg-received.mp3'
@@ -19,7 +22,6 @@ section.card
 
 <script>
 import { mapMutations } from 'vuex'
-import { L } from '@common/common.js'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import { debounce } from 'turtledash'
 
@@ -31,8 +33,7 @@ export default ({
   data () {
     return {
       config: {
-        label: L('Adjust the volume of the notification sound.'),
-        sliderMin: 1,
+        sliderMin: 0,
         sliderMax: 100,
         sliderUnit: '%'
       },
@@ -82,7 +83,34 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.c-desc {
-  margin: 1rem 0;
+.c-notification-volume {
+  position: relative;
+}
+
+.c-title {
+  font-size: $size_4;
+  font-weight: bold;
+}
+
+.c-volume-slider-container {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  column-gap: 0.5rem;
+
+  .c-volume-slider {
+    flex-grow: 1;
+
+    ::v-deep .marks {
+      margin-top: 1rem;
+    }
+  }
+
+  .c-volume-value {
+    position: relative;
+    font-size: $size_4;
+    color: $text_1;
+    flex-shrink: 0;
+  }
 }
 </style>

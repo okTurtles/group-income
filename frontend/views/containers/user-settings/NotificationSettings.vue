@@ -2,7 +2,6 @@
   .settings-container
     section.card
       i18n.is-title-3.c-title(tag='h2') Browser notifications
-      .c-divider
       .c-subcontent
         .c-text-content
           i18n.c-smaller-title(tag='h3') Allow browser notifications
@@ -19,7 +18,7 @@
           )
         //- TODO: disable the checkbox and display an info field when we're offline
 
-    notification-volume
+      notification-volume
 </template>
 
 <script>
@@ -155,7 +154,7 @@ export default ({
   }
 
   .c-title {
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
   }
 }
 
@@ -163,6 +162,7 @@ export default ({
   border: none;
   display: flex;
   justify-content: space-between;
+  column-gap: 1rem;
   margin-bottom: 2.5rem;
 
   &:last-child {
