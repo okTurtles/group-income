@@ -84,7 +84,7 @@ const initialState = {
   reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
-  preferences: {},
+  preferences: {}, // { hideDistributionBanner: { [groupContractID]: boolean } }
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },

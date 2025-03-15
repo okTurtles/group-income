@@ -32,6 +32,7 @@ export const defaultSettings = {
   fontSize: 16,
   increasedContrast: false,
   notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
+  notificationVolume: 1,
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
@@ -49,6 +50,9 @@ const getters = {
   },
   isReducedMotionMode (state) {
     return state.reducedMotion === true
+  },
+  notificationVolume (state) {
+    return state.notificationVolume
   },
   theme (state) {
     return state.theme
@@ -88,6 +92,9 @@ const mutations = {
     sbp('service-worker/setup-push-subscription').catch(e => {
       console.error(`[setNotificationEnabled] Error calling setup-push-subscription (enabled=${enabled})`, e)
     })
+  },
+  setNotificationVolume (state, value) {
+    state.notificationVolume = value
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
