@@ -44,7 +44,7 @@ export default ({
   },
   computed: {
     volumeFromStore () {
-      return this.$store.getters.notificationVolume || 1
+      return this.$store.getters.notificationVolume ?? 1
     }
   },
   methods: {

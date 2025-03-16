@@ -17,7 +17,7 @@ export default ({
   },
   computed: {
     volumeFromStore () {
-      return this.$store.getters.notificationVolume || 1
+      return this.$store.getters.notificationVolume ?? 1 // The volume value in the store can be 0 too and we use it if that's the case.
     },
     isAppIdle () {
       // NOTE: idle-vue plugin will provide this.isAppIdle
