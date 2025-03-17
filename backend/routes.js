@@ -610,7 +610,7 @@ route.POST('/deleteFile/{hash}', {
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
-        return Boom.unauthorized('Invalid token', 'bearer')
+        return Boom.unauthorized('Invalid shelter auth', 'shelter')
       }
       break
     }
@@ -701,6 +701,8 @@ route.POST('/deleteContract/{hash}', {
   // keys
   try {
     const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    // We return the queue ID to allow users to track progress
+    // TODO: Tracking progress not yet implemented
     return h.response({ id }).code(202)
   } catch (e) {
     return errorMapper(e)
