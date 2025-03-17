@@ -27,8 +27,8 @@ const handleDeletedContract = async (contractID: string) => {
   // hold on to their file deletion tokens.
   if (currentIdentityState.fileDeleteTokens) {
     // $FlowFixMe[incompatible-use]
-    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billingContractID }]) => {
-      return billingContractID === contractID
+    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billableContractID }]) => {
+      return billableContractID === contractID
     }).map(([cid]) => cid)
     await sbp('gi.actions/identity/removeFiles', {
       manifestCids,

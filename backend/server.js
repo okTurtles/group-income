@@ -226,7 +226,7 @@ sbp('sbp/selectors/register', {
     try {
       const manifest = JSON.parse(rawManifest)
       if (!manifest || typeof manifest !== 'object') throw new BackendErrorBadData('manifest format is invalid')
-      if (manifest.version !== '1.0.0') throw BackendErrorBadData('unsupported manifest version')
+      if (manifest.version !== '1.0.0') throw new BackendErrorBadData('unsupported manifest version')
       if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) throw BackendErrorBadData('missing chunks')
       // Delete all chunks
       await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))

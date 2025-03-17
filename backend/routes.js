@@ -254,6 +254,10 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
   }
 })
 
+// This endpoint returns to anyone in possession of a contract's SAK all of the
+// resources that that contract owns (without recursion). This is useful for
+// APIs and for some UI actions (e.g., to warn users about resources that would
+// be (cascade) deleted following a delete)
 route.GET('/ownResources', {
   auth: {
     strategies: ['chel-shelter'],

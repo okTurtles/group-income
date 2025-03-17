@@ -374,7 +374,7 @@ export default (sbp('sbp/selectors/register', {
       const hasCredential = has(credentials, cid)
       const hasToken = has(credentials[cid], 'token') && credentials[cid].token
       const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
-      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
+      if (!hasCredential || hasToken === hasBillableContractID) {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
