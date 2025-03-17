@@ -281,7 +281,7 @@ export default ({
   },
   mounted () {
     // setup various event listeners.
-    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 300)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
 
@@ -590,7 +590,7 @@ export default ({
         }
       }
     },
-    updateScroll (scrollTargetMessage = null, effect = false) {
+    updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
@@ -604,7 +604,7 @@ export default ({
             }
 
             resolve()
-          }, 100)
+          }, delay)
         })
       }
     },
@@ -1095,7 +1095,12 @@ export default ({
               this.$nextTick(() => {
                 this.updateScroll(
                   this.ephemeral.scrollHashOnInitialLoad,
-                  scrollingToSpecificMessage // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+                  // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+                  scrollingToSpecificMessage,
+                  // NOTE: Scrolling too fast during initially rendering messages creates a bug where it looks like the chatroom does not remember the scroll position.
+                  //       Giving a bit of delay here to wait until the DOM is fully rendered fixes the issue.
+                  //       (reference issue: https://github.com/okTurtles/group-income/issues/2721)
+                  200
                 )
                 // NOTE: delete mhash in the query after scroll and highlight the message with mhash
                 if (scrollingToSpecificMessage) {
