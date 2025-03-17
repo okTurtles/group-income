@@ -52,11 +52,6 @@ export default ({
     isActive () {
       return this.Menu.isActive
     }
-  },
-  watch: {
-    isActive (newVal) {
-      console.log('!@# isActive: ', newVal)
-    }
   }
 }: Object)
 </script>
