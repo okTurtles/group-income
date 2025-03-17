@@ -887,6 +887,28 @@ export default ({
         }
 
         Vue.set(this.messageState, 'contract', state)
+
+        // After message initialization, scroll to the determined initial scroll position.
+        // (eg. particular message queried by 'mhash', remembered chatroom scroll position or the most recent message)
+        if (this.ephemeral.scrollHashOnInitialLoad) {
+          const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
+          this.$nextTick(() => {
+            this.updateScroll(
+              this.ephemeral.scrollHashOnInitialLoad,
+              // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+              scrollingToSpecificMessage
+            )
+            // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+            if (scrollingToSpecificMessage) {
+              const newQuery = { ...this.$route.query }
+              delete newQuery.mhash
+              this.$router.replace({ query: newQuery })
+            }
+
+            // This ensures that scroll-to-specific-message (or to the latest message) happens one time after the initial chatroom load.
+            this.ephemeral.scrollHashOnInitialLoad = null
+          })
+        }
       }
     },
     setStartNewMessageIndex () {
@@ -1089,28 +1111,6 @@ export default ({
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
-
-            if (this.ephemeral.scrollHashOnInitialLoad) {
-              const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
-              this.$nextTick(() => {
-                this.updateScroll(
-                  this.ephemeral.scrollHashOnInitialLoad,
-                  // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
-                  scrollingToSpecificMessage,
-                  // NOTE: Scrolling too fast during initially rendering messages creates a bug where it looks like the chatroom does not remember the scroll position.
-                  //       Giving a bit of delay here to wait until the DOM is fully rendered fixes the issue.
-                  //       (reference issue: https://github.com/okTurtles/group-income/issues/2721)
-                  200
-                )
-                // NOTE: delete mhash in the query after scroll and highlight the message with mhash
-                if (scrollingToSpecificMessage) {
-                  const newQuery = { ...this.$route.query }
-                  delete newQuery.mhash
-                  this.$router.replace({ query: newQuery })
-                }
-                this.ephemeral.scrollHashOnInitialLoad = null
-              })
-            }
           }
         } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
