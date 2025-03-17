@@ -264,6 +264,16 @@ sbp('sbp/selectors/register', {
       if (rawManifest === '') throw new BackendErrorGone()
       if (!rawManifest) throw new BackendErrorNotFound()
 
+      // Cascade delete all resources owned by this contract, such as files
+      // (attachments) and other contracts. Removing a single contract could
+      // therefore result in a large number of contracts being deleted. For
+      // example, in Group Income, deleting an identity contract will delete:
+      //   - All groups created by that contract
+      //       - This includes files like the group avatar
+      //       - And also all chatrooms
+      //           - And all attachments in chatrooms
+      //   - All DMs created by that contract
+      //       - And all attachments
       const resourcesKey = `_private_resources_${cid}`
       const resources = await sbp('chelonia.db/get', resourcesKey)
       if (resources) {
@@ -281,6 +291,11 @@ sbp('sbp/selectors/register', {
       }
       await sbp('chelonia.db/delete', resourcesKey)
 
+      // Next, loop through all the events in the contract and delete them,
+      // starting with the most recent ones.
+      // If the deletion process is interrupted, parts of the contract will
+      // still be able to be synced, but won't be to write to it (due to
+      // latestHEADinfo not being deleted).
       const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', cid)
       if (latestHEADinfo) {
         for (let i = latestHEADinfo.height; i > 0; i--) {
@@ -294,12 +309,13 @@ sbp('sbp/selectors/register', {
         await sbp('chelonia/db/deleteLatestHEADinfo', cid)
       }
 
+      // Then, delete all KV-store values associated with this contract
       const kvIndexKey = `_private_kvIdx_${cid}`
       const kvKeys = await sbp('chelonia.db/get', kvIndexKey)
       if (kvKeys) {
-        await kvKeys.split('\x00').map((key) => {
+        await Promise.all(kvKeys.split('\x00').map((key) => {
           return sbp('chelonia.db/delete', `_private_kv_${cid}_${key}`)
-        })
+        }))
       }
       await sbp('chelonia.db/delete', kvIndexKey)
 
