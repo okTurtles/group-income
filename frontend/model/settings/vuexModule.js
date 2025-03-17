@@ -32,7 +32,7 @@ export const defaultSettings = {
   fontSize: 16,
   increasedContrast: false,
   notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
-  notificationVolume: null,
+  notificationVolume: 1,
   reducedMotion: false,
   theme: defaultTheme,
   themeColor: defaultColor
