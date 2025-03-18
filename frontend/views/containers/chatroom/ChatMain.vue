@@ -1128,7 +1128,7 @@ export default ({
         }
 
         if (this.ephemeral.messagesInitiated) {
-          // Sometimes event after 'messagesInitiated' is set to 'true', infiniteHandler() is called again and loads more messages.
+          // Sometimes even after 'messagesInitiated' is set to 'true', infiniteHandler() is called again and loads more messages.
           // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
           // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
           // and calling clearTimeout() at the start of infiniteHandler().
