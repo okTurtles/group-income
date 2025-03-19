@@ -150,6 +150,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
+import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -641,7 +642,7 @@ export default ({
         }
         this.ephemeral.replyingTo = L('Proposal notification')
       } else {
-        this.ephemeral.replyingMessage = { text, hash }
+        this.ephemeral.replyingMessage = { hash, text: stripMarkdownSyntax(text, 180) } // !@#
         this.ephemeral.replyingTo = this.who(message)
       }
     },
