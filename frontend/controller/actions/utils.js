@@ -375,7 +375,7 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
             if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
               console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
               sbp('chelonia/contract/remove', contractID).catch(e => {
-                console.error('Error handling contract deletion', e)
+                console.error('[syncContractError] Error handling contract deletion', e)
               })
             } else {
               failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)

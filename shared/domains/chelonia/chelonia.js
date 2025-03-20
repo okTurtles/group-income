@@ -1216,12 +1216,18 @@ export default (sbp('sbp/selectors/register', {
       ])
     })
     if (!response.ok) {
-      throw new Error(`Unable to fetch own resources for ${contractID}`)
+      console.error('Unable to fetch own resources', contractID, response.status)
+      throw new Error(`Unable to fetch own resources for ${contractID}: ${response.status}`)
     }
 
     return response.json()
   },
-  'chelonia/out/deleteContract': async function (contractID: string | string[], credentials: { [contractID: string]: { token: ?string, billableContractID: ?string } } = {}) {
+  'chelonia/out/deleteContract': async function (
+    contractID: string | string[],
+    credentials: {
+      [contractID: string]: { token: ?string, billableContractID: ?string }
+    } = {}
+  ) {
     if (!contractID) {
       throw new TypeError('A contract ID must be provided')
     }
@@ -1248,7 +1254,8 @@ export default (sbp('sbp/selectors/register', {
         ])
       })
       if (!response.ok) {
-        throw new Error(`Unable to delete contract ${cid}`)
+        console.error('Unable to delete contract', cid, response.status)
+        throw new Error(`Unable to delete contract ${cid}: ${response.status}`)
       }
     }))
   },

@@ -40,6 +40,13 @@ const handleDeletedContract = async (contractID: string) => {
     })
   }
 
+  // Note: when multiple contracts are deleted, the order in which the `handler`
+  // is called isn't guaranteed. The `_ondeleted` handlers should be written in
+  // such a way that the order in which they're called is of no consequence.
+  // For example, a group might use `_ondeleted` to remove it from its associated
+  // identity contract, since this is safe. If the identity contract is also being
+  // removed, this is at worst redudant, but still save, since removal of the
+  // identity contract also deletes the same information.
   if (typeof handler === 'function') {
     await handler(contractID, contractState).catch(e => {
       console.error('Error handling deletion of contract', contractID)
@@ -184,7 +191,7 @@ const setupChelonia = async (): Promise<*> => {
         if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
           console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
           handleDeletedContract(contractID).catch(e => {
-            console.error('Error handling contract deletion', e)
+            console.error('[syncContractError] Error handling contract deletion', e)
           })
         }
         if (['ChelErrorUnrecoverable', 'ChelErrorForkedChain'].includes(e.name)) {
@@ -320,7 +327,7 @@ const setupChelonia = async (): Promise<*> => {
       [NOTIFICATION_TYPE.DELETION] (contractID) {
         console.error('[messageHandler] Contract ID ' + contractID + ' has been deleted')
         handleDeletedContract(contractID).catch(e => {
-          console.error('Error handling contract deletion', e)
+          console.error('[messageHandler] Error handling contract deletion', e)
         })
       }
     },

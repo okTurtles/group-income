@@ -154,6 +154,10 @@ sbp('sbp/selectors/register', {
   async 'chelonia.persistentActions/cancel' (id: UUIDV4): Promise<void> {
     if (id in this.actionsByID) {
       this.actionsByID[id].cancel()
+      // Note: this renders the `.status` update in `.cancel()` meainingless, as
+      // the action will be immediately removed. TODO: Implement as periodic
+      // prune action so that actions are removed some time after completion.
+      // This way, one could implement action status reporting to clients.
       delete this.actionsByID[id]
       return await sbp('chelonia.persistentActions/save')
     }

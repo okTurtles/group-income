@@ -18,7 +18,7 @@
       banner-simple.c-banner(severity='warning' v-else-if='Array.isArray(ownResources) && ownResources.length')
         i18n(tag='p') This action will also delete the following groups:
         ul.c-list
-          li.c-item(v-for='cid in ownResources') {{cid}}
+          li.c-item(v-for='groupName in ownResources') {{groupName}}
       banner-simple.c-banner(severity='danger' v-else-if='ownResources.message')
         i18n(tag='p') This action will also delete any groups you've created.
         i18n(tag='p' :args='{message: ownResources.message}') An error occurred that prevents us from showing a list of these groups. The error was: {message}
