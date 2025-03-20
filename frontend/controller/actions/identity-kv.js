@@ -82,14 +82,17 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
-    contractID: string, messageHash: string, createdHeight: number
+  'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight, forceUpdate = false }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    forceUpdate: boolean // In a rare case, the 'readUntil' value needs to be set to the msg with lower 'createdHeight'. (reference: https://github.com/okTurtles/group-income/issues/2729)
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
+        if (forceUpdate || currentData[contractID]?.readUntil.createdHeight < createdHeight) {
           const { unreadMessages } = currentData[contractID]
           return {
             ...currentData,
