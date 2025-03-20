@@ -373,9 +373,9 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
           } catch (e) {
             console.error(`syncContractsInOrder: failed to sync ${type}(${contractID}):`, e)
             if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
-              console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
+              console.info('[syncContractsInOrder] Contract ID ' + contractID + ' has been deleted')
               sbp('chelonia/contract/remove', contractID).catch(e => {
-                console.error('[syncContractError] Error handling contract deletion', e)
+                console.error('[syncContractsInOrder] Error handling contract deletion', e)
               })
             } else {
               failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)
