@@ -3,7 +3,7 @@ component.c-message-text(
   :is='tag'
   v-bind='$attrs'
   v-on='$listeners'
-  :class='{ "is-replying": isReplyingMessage }'
+  :class='{ "is-replying": isReplyingMessage, "has-trailing-ellipsis": showTrailingEllipsis }'
 )
   template(v-for='objText in textObjects')
     span(
@@ -36,7 +36,8 @@ import ProfileCard from '@components/ProfileCard.vue'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
-  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
+  CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
 import { TextObjectType } from '@utils/constants.js'
@@ -74,6 +75,9 @@ export default ({
         ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
         makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
       ]
+    },
+    showTrailingEllipsis () {
+      return this.isReplyingMessage && this.text.length === CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
     }
   },
   methods: {
@@ -202,6 +206,7 @@ export default ({
     font-style: italic;
     padding-left: 0.25rem;
     white-space: pre-line;
+    margin-bottom: 0.5rem;
 
     &:hover {
       cursor: pointer;
@@ -212,6 +217,13 @@ export default ({
     .c-member-mention,
     .c-channel-mention {
       background-color: transparent;
+    }
+
+    &.has-trailing-ellipsis::after {
+      content: "...";
+      position: relative;
+      display: block;
+      margin-top: 0.25rem;
     }
   }
 }
