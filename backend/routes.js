@@ -676,7 +676,7 @@ route.POST('/deleteContract/{hash}', {
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
-        return Boom.unauthorized('Invalid token', 'bearer')
+        return Boom.unauthorized('Invalid shelter auth', 'shelter')
       }
       break
     }
