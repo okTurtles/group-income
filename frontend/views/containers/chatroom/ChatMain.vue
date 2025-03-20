@@ -155,7 +155,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
-import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -640,9 +640,14 @@ export default ({
       } else if (!text && attachments.length) {
         this.ephemeral.replyingMessage = { hash, text: attachments[0].name }
       } else {
-        this.ephemeral.replyingMessage = {
-          hash, text: stripMarkdownSyntax(text, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        const sanitizeAndTruncate = text => {
+          return swapMentionIDForDisplayname(text)
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .trim()
+            .slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
         }
+
+        this.ephemeral.replyingMessage = { hash, text: sanitizeAndTruncate(text) }
       }
 
       this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
