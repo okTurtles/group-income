@@ -253,14 +253,19 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
-        scrollHashOnInitialLoad: null, // Message hash to scroll to on chatroom's initial load
         replyingMessage: null,
         replyingTo: null,
         unprocessedEvents: [],
 
         // Related to switching chatrooms
         chatroomIdToSwitchTo: null,
-        renderingChatRoomId: null
+        renderingChatRoomId: null,
+
+        // Related to auto-scrolling to initial position
+        initialScroll: {
+          hash: null,
+          timeoutId: null
+        }
       },
       messageState: {
         contract: {}
@@ -281,7 +286,7 @@ export default ({
   },
   mounted () {
     // setup various event listeners.
-    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 300)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
 
@@ -590,7 +595,7 @@ export default ({
         }
       }
     },
-    updateScroll (scrollTargetMessage = null, effect = false) {
+    updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
@@ -604,7 +609,7 @@ export default ({
             }
 
             resolve()
-          }, 100)
+          }, delay)
         })
       }
     },
@@ -863,7 +868,7 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
-        this.ephemeral.scrollHashOnInitialLoad = messageHashToScroll
+        this.ephemeral.initialScroll.hash = messageHashToScroll
       }
 
       return events.length > 0 && SPMessage.deserializeHEAD(events[0]).head.height === 0
@@ -887,6 +892,30 @@ export default ({
         }
 
         Vue.set(this.messageState, 'contract', state)
+      }
+    },
+    scrollToIntialPosition () {
+      const hashTo = this.ephemeral.initialScroll.hash
+      if (hashTo) {
+        const scrollingToSpecificMessage = this.$route.query?.mhash === hashTo
+        this.$nextTick(() => {
+          this.updateScroll(
+            hashTo,
+            // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+            scrollingToSpecificMessage,
+            0 // don't need the delay here
+          )
+          // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+          if (scrollingToSpecificMessage) {
+            const newQuery = { ...this.$route.query }
+            delete newQuery.mhash
+            this.$router.replace({ query: newQuery })
+          }
+
+          // Once scrolling is complete, reset the hash to null.
+          // This ensures that 'auto-scroll to initial position' happens only once.
+          this.ephemeral.initialScroll.hash = null
+        })
       }
     },
     setStartNewMessageIndex () {
@@ -1055,6 +1084,10 @@ export default ({
 
       if (this.ephemeral.messagesInitiated === undefined) return
 
+      if (this.ephemeral.initialScroll.hash) {
+        clearTimeout(this.ephemeral.initialScroll.timeoutId)
+      }
+
       const targetChatroomID = this.ephemeral.renderingChatRoomId
       sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
@@ -1087,28 +1120,19 @@ export default ({
           }
 
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
-          // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
+            // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
-
-            if (this.ephemeral.scrollHashOnInitialLoad) {
-              const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
-              this.$nextTick(() => {
-                this.updateScroll(
-                  this.ephemeral.scrollHashOnInitialLoad,
-                  scrollingToSpecificMessage // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
-                )
-                // NOTE: delete mhash in the query after scroll and highlight the message with mhash
-                if (scrollingToSpecificMessage) {
-                  const newQuery = { ...this.$route.query }
-                  delete newQuery.mhash
-                  this.$router.replace({ query: newQuery })
-                }
-                this.ephemeral.scrollHashOnInitialLoad = null
-              })
-            }
           }
         } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
+        }
+
+        if (this.ephemeral.messagesInitiated) {
+          // Sometimes even after 'messagesInitiated' is set to 'true', infiniteHandler() is called again and loads more messages.
+          // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
+          // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
+          // and calling clearTimeout() at the start of infiniteHandler().
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToIntialPosition, 150)
         }
       })
     },

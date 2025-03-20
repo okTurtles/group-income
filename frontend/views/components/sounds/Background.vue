@@ -16,6 +16,9 @@ export default ({
     sbp('okTurtles.events/on', MESSAGE_SEND, this.playMessageSend)
   },
   computed: {
+    volumeFromStore () {
+      return this.$store.getters.notificationVolume ?? 1 // The volume value in the store can be 0 too and we use it if that's the case.
+    },
     isAppIdle () {
       // NOTE: idle-vue plugin will provide this.isAppIdle
       //       but sometimes it returns undefined, so redefine here
@@ -35,6 +38,19 @@ export default ({
       if (this.shouldPlay()) {
         this.$refs.msgSend.play()
       }
+    },
+    updateAudioVolumes () {
+      this.$refs.msgReceive.volume = this.volumeFromStore
+      this.$refs.msgSend.volume = this.volumeFromStore
+    }
+  },
+  mounted () {
+    this.updateAudioVolumes()
+  },
+  watch: {
+    volumeFromStore () {
+      // Update the audio elements accordingly when the volume change in the store is detected.
+      this.updateAudioVolumes()
     }
   }
 }: Object)
