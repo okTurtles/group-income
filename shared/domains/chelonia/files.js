@@ -374,7 +374,7 @@ export default (sbp('sbp/selectors/register', {
       const hasCredential = has(credentials, cid)
       const hasToken = has(credentials[cid], 'token') && credentials[cid].token
       const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
-      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
+      if (!hasCredential || hasToken === hasBillableContractID) {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
@@ -385,7 +385,7 @@ export default (sbp('sbp/selectors/register', {
           ['authorization',
             hasToken
               // $FlowFixMe[incompatible-type]
-              ? `bearer ${credentials[cid].token}`
+              ? `bearer ${(credentials[cid].token: any).valueOf()}`
               // $FlowFixMe[incompatible-type]
               // $FlowFixMe[incompatible-call]
               : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]
