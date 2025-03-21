@@ -112,10 +112,10 @@ export default (sbp('sbp/selectors/register', {
   // Get an estimate of the server's current time based on the time elapsed as
   // measured locally (using a monotonic clock), which is used as an offset, and
   // a previously retrieved server time. The time value is returned as a UNIX
-  // timestamp (seconds since 1 Jan 1970 00:00:00 UTC)
+  // _millisecond_ timestamp (milliseconds since 1 Jan 1970 00:00:00 UTC)
   'chelonia/time': function (): number {
     const monotonicNow = performance.now()
     const wallNow = wallBase - monotonicBase + monotonicNow
-    return (wallNow / 1e3 | 0)
+    return Math.round(wallNow)
   }
 }): string[])
