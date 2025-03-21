@@ -22,16 +22,12 @@ const range = (n) => [...new Array(n).keys()]
 
 names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
-  const {
-    clear,
-    initStorage,
-    readData,
-    writeData
-  } = require(`~/backend/database-${lowerCaseName}.js`)
+  const Ctor = require(`~/backend/database-${lowerCaseName}.js`).default
+  const { init, clear, readData, writeData } = new Ctor(options[lowerCaseName])
 
   describe(`Test ${name} storage API`, function () {
     before('storage backend initialization', async function () {
-      await initStorage(options[lowerCaseName])
+      await init()
     })
     beforeEach('storage clear', async function () {
       await clear()

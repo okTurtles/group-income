@@ -1,36 +1,46 @@
 'use strict'
 
-const readConfig = () => {
-  const configString = process.env.GI_PERSIST_ROUTER_CONFIG
+import { readFile } from 'node:fs/promises'
+
+type Config = {
+  [string]: { name: string, options: Object }
+}
+
+const { GI_PERSIST_ROUTER_CONFIG_PATH = './data/db-router-config.json' } = process.env
+
+const readConfig = async (): Promise<Config> => {
+  const configString = await readFile(GI_PERSIST_ROUTER_CONFIG_PATH, 'utf8')
   const config = JSON.parse(configString)
 
   if (!config['*']) {
     throw new Error('Fallback storage (*) is required')
   }
-
-  return config
+  // Return a sorted copy where entries with longer keys come first.
+  // $FlowFixMe
+  return Object.fromEntries(Object.entries(config).sort((a, b) => b[0].length - a[0].length))
 }
-let config
+let config: Config
 const backends = Object.create(null)
 
-const lookupBackend = (key) => {
+const lookupBackend = (key: string): Object => {
   const keyPrefixes = Object.keys(config)
   for (let i = 0; i < keyPrefixes.length; i++) {
     if (key.startsWith(keyPrefixes[i])) {
-      return config[keyPrefixes[i]]
+      return backends[keyPrefixes[i]]
     }
   }
-  return backends[config['*']]
+  return backends['*']
 }
 
 export async function initStorage (options: Object = {}): Promise<void> {
-  config = readConfig()
-  const persistences = [...new Set(Object.values(config))]
-  await Promise.all(persistences.map(async (persistence) => {
-    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
-    // $FlowFixMe[invalid-computed-prop]
-    backends[persistence] = { readData, writeData, deleteData }
-    await initStorage()
+  config = await readConfig()
+  const entries = Object.entries(config)
+  // $FlowFixMe[incompatible-use]
+  await Promise.all(entries.map(async ([keyPrefix, { name, options }]) => {
+    const Ctor = (await import(`./database-${name}.js`)).default
+    const backend = new Ctor(options)
+    await backend.init()
+    backends[keyPrefix] = backend
   }))
 }
 

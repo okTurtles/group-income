@@ -119,9 +119,10 @@ export default async () => {
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia.db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
-
-    await initStorage(options[persistence])
+    const Ctor = (await import(`./database-${persistence}.js`)).default
+    // Destructuring is safe because these methods have been bound using rebindMethods().
+    const { init, readData, writeData, deleteData } = new Ctor(options[persistence])
+    await init()
 
     // https://github.com/isaacs/node-lru-cache#usage
     const cache = new LRU({
