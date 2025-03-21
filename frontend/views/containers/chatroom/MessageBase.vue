@@ -25,19 +25,12 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        template(v-if='replyingMessage')
-          render-message-with-markdown(
-            v-if='shouldRenderMarkdown'
-            :isReplyingMessage='true'
-            :text='replyingMessage'
-            @click='$emit("reply-message-clicked")'
-          )
-          render-message-text.c-replying(
-            v-else
-            :isReplyingMessage='true'
-            :text='replyingMessage'
-            @click='$emit("reply-message-clicked")'
-          )
+        render-message-text.c-replying(
+          v-if='replyingMessage'
+          :isReplyingMessage='true'
+          :text='replyingMessage'
+          @click='$emit("reply-message-clicked")'
+        )
 
         send-area.c-edit-send-area(
           v-if='isEditing'

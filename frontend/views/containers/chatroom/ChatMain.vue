@@ -86,7 +86,7 @@
           :isGroupCreator='isGroupCreator'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
-          @reply='replyMessage(message)'
+          @reply='replyToMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @pin-to-channel='pinToChannel(message)'
@@ -143,13 +143,19 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR } from '@model/contracts/shared/constants.js'
+import {
+  MESSAGE_TYPES, MESSAGE_VARIANTS,
+  CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
+} from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -253,14 +259,19 @@ export default ({
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
-        scrollHashOnInitialLoad: null, // Message hash to scroll to on chatroom's initial load
         replyingMessage: null,
         replyingTo: null,
         unprocessedEvents: [],
 
         // Related to switching chatrooms
         chatroomIdToSwitchTo: null,
-        renderingChatRoomId: null
+        renderingChatRoomId: null,
+
+        // Related to auto-scrolling to initial position
+        initialScroll: {
+          hash: null,
+          timeoutId: null
+        }
       },
       messageState: {
         contract: {}
@@ -281,7 +292,7 @@ export default ({
   },
   mounted () {
     // setup various event listeners.
-    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 500)
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 300)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
 
@@ -365,7 +376,9 @@ export default ({
       }
     },
     replyingMessageText (message) {
-      return message.replyingMessage?.text || ''
+      return message.replyingMessage?.text
+        ? message.replyingMessage.text.slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        : ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -395,15 +408,7 @@ export default ({
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
-        // NOTE: If not replying to a message, use original data; otherwise, append replyingMessage to data.
         data.replyingMessage = replyingMessage
-        // NOTE: for the messages with only images, the text should be updated with file name
-        if (!replyingMessage.text) {
-          const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
-          if (msg) {
-            data.replyingMessage.text = msg.attachments[0].name
-          }
-        }
       }
 
       const sendMessage = (beforePrePublish) => {
@@ -590,7 +595,7 @@ export default ({
         }
       }
     },
-    updateScroll (scrollTargetMessage = null, effect = false) {
+    updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
@@ -604,7 +609,7 @@ export default ({
             }
 
             resolve()
-          }, 100)
+          }, delay)
         })
       }
     },
@@ -624,21 +629,30 @@ export default ({
       this.messages.splice(index, 1)
       this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
-    replyMessage (message) {
-      const { text, hash, type } = message
+    replyToMessage (message) {
+      const { text, hash, type, attachments } = message
+      const isTypeInteractive = type === MESSAGE_TYPES.INTERACTIVE
 
-      if (type === MESSAGE_TYPES.INTERACTIVE) {
+      if (isTypeInteractive) {
         const proposal = message.proposal
 
         this.ephemeral.replyingMessage = {
-          text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` }),
-          hash
+          hash, text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` })
         }
-        this.ephemeral.replyingTo = L('Proposal notification')
+      } else if (!text && attachments?.length) {
+        this.ephemeral.replyingMessage = { hash, text: attachments[0].name }
       } else {
-        this.ephemeral.replyingMessage = { text, hash }
-        this.ephemeral.replyingTo = this.who(message)
+        const sanitizeAndTruncate = text => {
+          return swapMentionIDForDisplayname(text)
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .trim()
+            .slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        }
+
+        this.ephemeral.replyingMessage = { hash, text: sanitizeAndTruncate(text) }
       }
+
+      this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
     },
     editMessage (message, newMessage) {
       message.text = newMessage
@@ -863,7 +877,7 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
-        this.ephemeral.scrollHashOnInitialLoad = messageHashToScroll
+        this.ephemeral.initialScroll.hash = messageHashToScroll
       }
 
       return events.length > 0 && SPMessage.deserializeHEAD(events[0]).head.height === 0
@@ -887,6 +901,30 @@ export default ({
         }
 
         Vue.set(this.messageState, 'contract', state)
+      }
+    },
+    scrollToIntialPosition () {
+      const hashTo = this.ephemeral.initialScroll.hash
+      if (hashTo) {
+        const scrollingToSpecificMessage = this.$route.query?.mhash === hashTo
+        this.$nextTick(() => {
+          this.updateScroll(
+            hashTo,
+            // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
+            scrollingToSpecificMessage,
+            0 // don't need the delay here
+          )
+          // NOTE: delete mhash in the query after scroll and highlight the message with mhash
+          if (scrollingToSpecificMessage) {
+            const newQuery = { ...this.$route.query }
+            delete newQuery.mhash
+            this.$router.replace({ query: newQuery })
+          }
+
+          // Once scrolling is complete, reset the hash to null.
+          // This ensures that 'auto-scroll to initial position' happens only once.
+          this.ephemeral.initialScroll.hash = null
+        })
       }
     },
     setStartNewMessageIndex () {
@@ -1055,6 +1093,10 @@ export default ({
 
       if (this.ephemeral.messagesInitiated === undefined) return
 
+      if (this.ephemeral.initialScroll.hash) {
+        clearTimeout(this.ephemeral.initialScroll.timeoutId)
+      }
+
       const targetChatroomID = this.ephemeral.renderingChatRoomId
       sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
         if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
@@ -1087,28 +1129,19 @@ export default ({
           }
 
           if (completed !== undefined && !this.ephemeral.messagesInitiated) {
-          // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
+            // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
             this.ephemeral.messagesInitiated = true
-
-            if (this.ephemeral.scrollHashOnInitialLoad) {
-              const scrollingToSpecificMessage = this.$route.query?.mhash === this.ephemeral.scrollHashOnInitialLoad
-              this.$nextTick(() => {
-                this.updateScroll(
-                  this.ephemeral.scrollHashOnInitialLoad,
-                  scrollingToSpecificMessage // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
-                )
-                // NOTE: delete mhash in the query after scroll and highlight the message with mhash
-                if (scrollingToSpecificMessage) {
-                  const newQuery = { ...this.$route.query }
-                  delete newQuery.mhash
-                  this.$router.replace({ query: newQuery })
-                }
-                this.ephemeral.scrollHashOnInitialLoad = null
-              })
-            }
           }
         } catch (e) {
           console.error('ChatMain infiniteHandler() error:', e)
+        }
+
+        if (this.ephemeral.messagesInitiated) {
+          // Sometimes even after 'messagesInitiated' is set to 'true', infiniteHandler() is called again and loads more messages.
+          // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
+          // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
+          // and calling clearTimeout() at the start of infiniteHandler().
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToIntialPosition, 150)
         }
       })
     },
