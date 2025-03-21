@@ -1,5 +1,6 @@
 import { marked } from 'marked'
 import { validateURL } from './misc.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
 export type MarkdownSegment = {
   type: 'code' | 'plain',
@@ -192,4 +193,21 @@ export function combineMarkdownSegmentListIntoString (
     (concatenated: string, entry: MarkdownSegment) => concatenated + entry.text,
     ''
   )
+}
+
+export function stripMarkdownSyntax (markdownString: string, truncateTo: number = -1): string {
+  markdownString = swapMentionIDForDisplayname(markdownString) // eg. '@identityContractID' -> '@user1'
+
+  const sanitized = markdownString
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 'bold'
+    .replace(/_(.*?)_/g, '$1') // 'italic'
+    .replace(/~(.*?)~/g, '$1') // 'strike-through'
+    .replace(/```/g, '') // 'code block'
+    .replace(/`(.*?)`/g, '$1') // 'inline code'
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links ([text](url) -> text)
+    .replace(/^>\s*/gm, '') // block-quote
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .trim()
+
+  return truncateTo > 0 ? sanitized.slice(0, truncateTo) : sanitized
 }
