@@ -45,7 +45,7 @@ const handleDeletedContract = async (contractID: string) => {
   // such a way that the order in which they're called is of no consequence.
   // For example, a group might use `_ondeleted` to remove it from its associated
   // identity contract, since this is safe. If the identity contract is also being
-  // removed, this is at worst redudant, but still save, since removal of the
+  // removed, this is at worst redudant, but still safe, since removal of the
   // identity contract also deletes the same information.
   if (typeof handler === 'function') {
     await handler(contractID, contractState).catch(e => {
