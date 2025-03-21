@@ -681,7 +681,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
                   if (count === requestLimit) {
                     throw new Error('Received too many events')
                   }
-                  currentEvent = b64ToStr(JSON.parse(eventValue))
+                  currentEvent = JSON.parse(b64ToStr(JSON.parse(eventValue))).message
                   if (count === 0) {
                     const hash = SPMessage.deserializeHEAD(currentEvent).hash
                     const height = SPMessage.deserializeHEAD(currentEvent).head.height
