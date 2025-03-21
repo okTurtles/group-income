@@ -376,7 +376,9 @@ export default ({
       }
     },
     replyingMessageText (message) {
-      return message.replyingMessage?.text || ''
+      return message.replyingMessage?.text
+        ? message.replyingMessage.text.slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        : ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -637,7 +639,7 @@ export default ({
         this.ephemeral.replyingMessage = {
           hash, text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` })
         }
-      } else if (!text && attachments.length) {
+      } else if (!text && attachments?.length) {
         this.ephemeral.replyingMessage = { hash, text: attachments[0].name }
       } else {
         const sanitizeAndTruncate = text => {

@@ -222,7 +222,6 @@ export default ({
     &.has-trailing-ellipsis::after {
       content: "...";
       position: relative;
-      display: block;
       margin-top: 0.25rem;
     }
   }
