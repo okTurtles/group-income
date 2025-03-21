@@ -189,7 +189,7 @@ export default (sbp('sbp/selectors/register', {
               quantity: MAX_GROUP_MEMBER_COUNT,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
                 expires:
-                await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+                await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
               }),
               private: {
                 content: inviteKeyS
