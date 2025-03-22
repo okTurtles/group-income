@@ -26,7 +26,7 @@ import { postEvent } from './push.js'
 const { bold } = require('chalk')
 const WebSocket = require('ws')
 
-const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
+const { PING, PONG, PUB, SUB, UNSUB, KV_FILTER } = NOTIFICATION_TYPE
 const { ERROR, OK } = RESPONSE_TYPE
 
 const defaultOptions = {
@@ -170,6 +170,7 @@ const defaultServerHandlers = {
     socket.pinged = false
     socket.server = server
     socket.subscriptions = new Set()
+    socket.kvFilter = new Map()
     socket.ip = request.headers['x-real-ip'] ||
       request.headers['x-forwarded-for']?.split(',')[0].trim() ||
       request.socket.remoteAddress
@@ -280,7 +281,7 @@ const defaultMessageHandlers = {
     server.broadcast(msg, { to: subscribers ?? [] })
   },
 
-  [SUB] ({ channelID }: SubMessage) {
+  [SUB] ({ channelID, kvFilter }: SubMessage) {
     const socket = this
     const { server } = this
 
@@ -293,6 +294,9 @@ const defaultMessageHandlers = {
     if (!socket.subscriptions.has(channelID)) {
       // Add the given channel ID to our subscriptions.
       socket.subscriptions.add(channelID)
+      if (Array.isArray(kvFilter)) {
+        socket.kvFilter.set(channelID, new Set(kvFilter))
+      }
       if (!server.subscribersByChannelID[channelID]) {
         server.subscribersByChannelID[channelID] = new Set()
       }
@@ -301,7 +305,29 @@ const defaultMessageHandlers = {
     } else {
       log.debug('Already subscribed to', channelID)
     }
-    socket.send(createOkResponse({ type: SUB, channelID }))
+    socket.send(createOkResponse({ type: SUB, channelID, kvFilter }))
+  },
+
+  [KV_FILTER] ({ channelID, kvFilter }: SubMessage) {
+    const socket = this
+    const { server } = this
+
+    if (!server.channels.has(channelID)) {
+      socket.send(createErrorResponse(
+        { type: SUB, channelID, reason: `Unknown channel id: ${channelID}` }
+      ))
+      return
+    }
+    if (socket.subscriptions.has(channelID)) {
+      if (Array.isArray(kvFilter)) {
+        socket.kvFilter.set(channelID, new Set(kvFilter))
+      } else {
+        socket.kvFilter.delete(channelID)
+      }
+    } else {
+      log.debug('Not subscribed to', channelID)
+    }
+    socket.send(createOkResponse({ type: KV_FILTER, channelID, kvFilter }))
   },
 
   [UNSUB] ({ channelID }: UnsubMessage) {
@@ -316,6 +342,7 @@ const defaultMessageHandlers = {
     if (socket.subscriptions.has(channelID)) {
       // Remove the given channel ID from our subscriptions.
       socket.subscriptions.delete(channelID)
+      socket.kvFilter.delete(channelID)
       if (server.subscribersByChannelID[channelID]) {
         // Remove this socket from the channel subscribers.
         server.subscribersByChannelID[channelID].delete(socket)
@@ -395,11 +422,19 @@ const publicMethods = {
   },
 
   // Enumerates the subscribers of a given channel.
-  * enumerateSubscribers (channelID: string): Iterable<Object> {
+  * enumerateSubscribers (channelID: string, kvKey?: string): Iterable<Object> {
     const server = this
 
     if (channelID in server.subscribersByChannelID) {
-      yield * server.subscribersByChannelID[channelID]
+      const subscribers = server.subscribersByChannelID[channelID]
+      if (!kvKey) {
+        yield * subscribers
+      } else {
+        for (const subscriber of subscribers) {
+          const kvFilter = subscriber.kvFilter.get(kvKey)
+          if (!kvFilter || kvFilter.has(kvKey)) yield subscriber
+        }
+      }
     }
   },
 

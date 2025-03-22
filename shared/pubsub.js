@@ -63,6 +63,7 @@ export type PubSubClient = {
   shouldReconnect: boolean,
   socket: WebSocket | null,
   +subscriptionSet: Set<string>,
+  +kvFilter: Map<string, string[]>,
   +url: string,
   // Methods
   clearAllTimers(): void,
@@ -83,7 +84,8 @@ export type PubMessage = {
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
-  +channelID: string
+  +channelID: string,
+  +kvFilter?: string[]
 }
 
 export type UnsubMessage = {
@@ -109,7 +111,8 @@ export const REQUEST_TYPE = Object.freeze({
   PUB: 'pub',
   SUB: 'sub',
   UNSUB: 'unsub',
-  PUSH_ACTION: 'push_action'
+  PUSH_ACTION: 'push_action',
+  KV_FILTER: 'kv_filter'
 })
 
 export const RESPONSE_TYPE = Object.freeze({
@@ -170,6 +173,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     // A new one is necessary for every connection or reconnection attempt.
     socket: null,
     subscriptionSet: new Set(),
+    kvFilter: new Map(),
     connectionTimeoutID: undefined,
     url: url.replace(/^http/, 'ws'),
     ...publicMethods
@@ -379,7 +383,8 @@ const defaultClientEventHandlers = {
     }
     // Send any pending subscription request.
     client.pendingSubscriptionSet.forEach((channelID) => {
-      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
+      const kvFilter = this.kvFilter.get(channelID)
+      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID, kvFilter }))
     })
     // There should be no pending unsubscription since we just got connected.
   },
@@ -490,6 +495,11 @@ const defaultMessageHandlers = {
         console.debug(`[pubsub] Unsubscribed from ${channelID}`)
         client.pendingUnsubscriptionSet.delete(channelID)
         client.subscriptionSet.delete(channelID)
+        client.kvFilter.delete(channelID)
+        break
+      }
+      case REQUEST_TYPE.KV_FILTER: {
+        console.debug(`[pubsub] Set KV filter for ${channelID}`)
         break
       }
       default: {
@@ -698,7 +708,28 @@ const publicMethods = {
       client.pendingUnsubscriptionSet.delete(channelID)
 
       if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.SUB, { channelID }))
+        const kvFilter = client.kvFilter.get(channelID)
+        socket.send(createRequest(REQUEST_TYPE.SUB, { channelID, kvFilter }))
+      }
+    }
+  },
+
+  /**
+   * Sends a KV_FILTER request to the server as soon as possible.
+   */
+  setKvFilter (channelID: string, kvFilter?: string[]) {
+    const client = this
+    const { socket } = this
+
+    if (kvFilter) {
+      client.kvFilter.set(channelID, kvFilter)
+    } else {
+      client.kvFilter.delete(channelID)
+    }
+
+    if (client.subscriptionSet.has(channelID)) {
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(createRequest(REQUEST_TYPE.KV_FILTER, { channelID, kvFilter }))
       }
     }
   },

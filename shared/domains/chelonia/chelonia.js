@@ -427,6 +427,9 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     return !!rootState?.secretKeys && has(rootState.secretKeys, keyId)
   },
+  'chelonia/contract/setKvFilter': function (contractID: string, filter?: string[]) {
+    this.pubsub.setKvFilter(contractID, filter)
+  },
   'chelonia/contract/isResyncing': function (contractIDOrState: string | Object) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
