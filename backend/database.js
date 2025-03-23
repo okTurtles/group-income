@@ -155,6 +155,9 @@ export const initDB = async () => {
           }
         }
         await writeData(key, value)
+        Object.keys(prefixHandlers).forEach(prefix => {
+          cache.delete(prefix + key)
+        })
         cache.set(key, value)
       },
       'chelonia.db/delete': async function (key: string): Promise<void> {
@@ -163,7 +166,9 @@ export const initDB = async () => {
           throw new Error('Cannot delete immutable key')
         }
         await deleteData(key)
-        cache.delete(key)
+        Object.keys(prefixHandlers).forEach(prefix => {
+          cache.delete(prefix + key)
+        })
       }
     })
     sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])

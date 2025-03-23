@@ -205,15 +205,6 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', sizeKey, (existingSize + size).toString(10))
     })
   },
-  'backend/server/saveDeletionToken': async function (resourceID: string) {
-    const deletionTokenRaw = new Uint8Array(18)
-    // $FlowFixMe[cannot-resolve-name]
-    crypto.getRandomValues(deletionTokenRaw)
-    // $FlowFixMe[incompatible-call]
-    const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
-    await sbp('chelonia.db/set', `_private_deletionTokenDgst_${resourceID}`, deletionToken)
-    return deletionToken
-  },
   'backend/server/stop': function () {
     return hapi.stop()
   },
@@ -284,6 +275,8 @@ sbp('sbp/selectors/register', {
             return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
           } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
             return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
+          } else {
+            console.warn({ cid, resourceCid, code: parsed.code }, 'Resource should be deleted but it is of an unknown type')
           }
 
           return undefined

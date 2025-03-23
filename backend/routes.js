@@ -187,9 +187,9 @@ route.POST('/event', {
             }
           }
         }
-        const deletionToken = request.headers['shelter-deletion-token']
-        if (deletionToken) {
-          await sbp('chelonia.db/set', `_private_deletionTokenDgst_${deserializedHEAD.contractID}`, deletionToken)
+        const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
+        if (deletionTokenDgst) {
+          await sbp('chelonia.db/set', `_private_deletionTokenDgst_${deserializedHEAD.contractID}`, deletionTokenDgst)
         }
       }
       // Store size information
@@ -525,12 +525,12 @@ route.POST('/file', {
     await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
     await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
-    // Generate and store deletion token
-    const deletionToken = request.headers['shelter-deletion-token']
-    if (deletionToken) {
-      await sbp('chelonia.db/set', `_private_deletionTokenDgst_${manifestHash}`, deletionToken)
+    // Store deletion token
+    const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
+    if (deletionTokenDgst) {
+      await sbp('chelonia.db/set', `_private_deletionTokenDgst_${manifestHash}`, deletionTokenDgst)
     }
-    return h.response(manifestHash).header('shelter-deletion-token', deletionToken)
+    return h.response(manifestHash)
   } catch (err) {
     logger.error(err, 'POST /file', err.message)
     return err
@@ -551,7 +551,7 @@ route.GET('/file/{hash}', {}, async function (request, h) {
   }
 
   const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
-  if (blobOrString === '') {
+  if (blobOrString?.length === 0) {
     return Boom.resourceGone()
   } else if (!blobOrString) {
     return notFoundNoCache(h)
