@@ -2,7 +2,6 @@ import encodeMultipartMessage from '@exact-realty/multipart-parser/encodeMultipa
 import decrypt from '@apeleghq/rfc8188/decrypt'
 import { aes256gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
-import { generateSalt } from '@chelonia/crypto'
 import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream, multicodes } from '~/shared/functions.js'
 import { has } from 'turtledash'
