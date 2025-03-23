@@ -211,7 +211,7 @@ sbp('sbp/selectors/register', {
     crypto.getRandomValues(deletionTokenRaw)
     // $FlowFixMe[incompatible-call]
     const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
-    await sbp('chelonia.db/set', `_private_deletionToken_${resourceID}`, deletionToken)
+    await sbp('chelonia.db/set', `_private_deletionTokenDgst_${resourceID}`, deletionToken)
     return deletionToken
   },
   'backend/server/stop': function () {
@@ -241,7 +241,7 @@ sbp('sbp/selectors/register', {
 
     await sbp('chelonia.db/delete', `_private_owner_${cid}`)
     await sbp('chelonia.db/delete', `_private_size_${cid}`)
-    await sbp('chelonia.db/delete', `_private_deletionToken_${cid}`)
+    await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
 
     await sbp('chelonia.db/set', cid, '')
   },
@@ -322,7 +322,7 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_rid_${cid}`)
       await sbp('chelonia.db/delete', `_private_owner_${cid}`)
       await sbp('chelonia.db/delete', `_private_size_${cid}`)
-      await sbp('chelonia.db/delete', `_private_deletionToken_${cid}`)
+      await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
       await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)

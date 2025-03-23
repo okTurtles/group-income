@@ -355,7 +355,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/saveFileDeleteToken': {
       validate: objectOf({
-        billableContractID: stringMax(MAX_HASH_LEN, 'manifestCid'),
+        billableContractID: stringMax(MAX_HASH_LEN, 'billableContractID'),
         tokensByManifestCid: arrayOf(objectOf({
           manifestCid: stringMax(MAX_HASH_LEN, 'manifestCid'),
           token: string
@@ -416,8 +416,20 @@ sbp('chelonia/defineContract', {
         sbp('okTurtles.events/emit', DELETED_CHATROOM, { chatRoomID: data.contractID })
         const { identityContractID } = sbp('state/vuex/state').loggedIn
         if (identityContractID === innerSigningContractID) {
+          // This call to `/delete` isn't put in a queue like joining or leaving
+          // would be because there's no point in waiting, since a `/delete`
+          // action is final.
+          // Since this will potentially happen on every fresh sync, we expect
+          // that most of the calls will 'fail' because the action has already
+          // been issued, or the chatroom has been deleted. However, if we
+          // don't do this, we risk not deleting the contract if a previous
+          // attempt failed.
+          // It's safe to issue actions that could potentially fail or do
+          // nothing, so long as they don't propagate the error or deadlock.
+          // Sending an SPMessage to a non-existent contract will fail, as the
+          // contract can't be synced.
           sbp('gi.actions/chatroom/delete', { contractID: data.contractID, data: {} }).catch(e => {
-            console.log(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
+            console.warn(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
           })
         }
       }

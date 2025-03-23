@@ -26,7 +26,7 @@ import {
 import {
   createMessage,
   findMessageIdx,
-  leaveChatRoom,
+  postLeaveChatRoomCleanup,
   makeMentionFromUserID,
   referenceTally
 } from './shared/functions.js'
@@ -258,7 +258,7 @@ sbp('chelonia/defineContract', {
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
         if (itsMe) {
-          await leaveChatRoom(contractID, state).catch(e => {
+          await postLeaveChatRoomCleanup(contractID, state).catch(e => {
             console.error('[gi.contracts/chatroom/leave] Error at leaveChatRoom', e)
           })
         }
@@ -300,9 +300,12 @@ sbp('chelonia/defineContract', {
         // NOTE: make sure *not* to await on this, since that can cause
         //       a potential deadlock. See same warning in sideEffect for
         //       'gi.contracts/group/removeMember'
-        await leaveChatRoom(contractID, state)
+        await postLeaveChatRoomCleanup(contractID, state)
         const me = sbp('state/vuex/state').loggedIn.identityContractID
         if (me === state.attributes.creatorID || state.attributes.adminIDs.includes(me)) {
+          // The contract owner isn't part of the contract state and is managed
+          // by the server. We assume that the owner is either the creator or
+          // an admin, and issue the `deleteContract` request in this case.
           await sbp('chelonia/out/deleteContract', contractID, {
             [contractID]: {
               billableContractID: me

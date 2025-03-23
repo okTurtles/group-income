@@ -18,6 +18,7 @@ import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoi
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { blake32Hash } from '~/shared/functions.js'
 import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
@@ -191,6 +192,7 @@ export default (sbp('sbp/selectors/register', {
     const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
 
     const deletionToken = 'deletionToken' + generateSalt()
+    const deletionTokenHash = blake32Hash(deletionToken)
 
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
@@ -235,7 +237,7 @@ export default (sbp('sbp/selectors/register', {
           ...publishOptions,
           headers: {
             ...publishOptions?.headers,
-            'shelter-deletion-token': deletionToken,
+            'shelter-deletion-token-digest': deletionTokenHash,
             'shelter-namespace-registration': username,
             'shelter-salt-registration-token': token.valueOf()
           }
@@ -988,6 +990,8 @@ export default (sbp('sbp/selectors/register', {
     )
     const encryptedDeletionToken = state.attributes.encryptedDeletionToken
 
+    // If there were key rotations, we need to decrypt keys using the CID of
+    // the message where the (last) rotation happened.
     if (oldKeysAnchorCid) {
       const IEK = transientSecretKeysEntries[0][1]
       await processOldIekList(contractID, oldKeysAnchorCid, IEK)
@@ -1002,6 +1006,11 @@ export default (sbp('sbp/selectors/register', {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {
+      // If our own identity contract has been deleted, there isn't much more
+      // that we can do on the app, so we log out. We don't wait for other running
+      // _ondeleted handlers because at this point our state can no longer be
+      // used, as we're no longer able to keep our identity meaningfully in sync
+      // with things happening on the server.
       await sbp('gi.actions/identity/logout')
     }
   },

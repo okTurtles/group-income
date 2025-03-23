@@ -356,6 +356,8 @@ export default (sbp('sbp/selectors/register', {
       // the password) will be passed to the service worker.
       if (password) {
         try {
+          // Retrive the salt and the CID (hash) of the message that allows us
+          // to decrypt old rotated keys, if any
           const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', identityContractID, wpassword)
           const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
           transientSecretKeys.push(IEK)
@@ -572,6 +574,8 @@ export default (sbp('sbp/selectors/register', {
     // the password) will be passed to the service worker.
     if (password) {
       try {
+        // Retrive the salt and the CID (hash) of the message that allows us
+        // to decrypt old rotated keys, if any
         const [salt, cid] = await sbp('gi.app/identity/retrieveSalt', contractID, wPassword)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
         transientSecretKeys.push(IEK)

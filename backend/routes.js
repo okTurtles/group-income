@@ -11,6 +11,7 @@ import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
 import { appendToIndexFactory } from './database.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
+import { blake32Hash } from '../shared/functions.js'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
@@ -188,7 +189,7 @@ route.POST('/event', {
         }
         const deletionToken = request.headers['shelter-deletion-token']
         if (deletionToken) {
-          await sbp('chelonia.db/set', `_private_deletionToken_${deserializedHEAD.contractID}`, deletionToken)
+          await sbp('chelonia.db/set', `_private_deletionTokenDgst_${deserializedHEAD.contractID}`, deletionToken)
         }
       }
       // Store size information
@@ -525,7 +526,10 @@ route.POST('/file', {
     // Store size information
     await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
     // Generate and store deletion token
-    const deletionToken = await sbp('backend/server/saveDeletionToken', manifestHash)
+    const deletionToken = request.headers['shelter-deletion-token']
+    if (deletionToken) {
+      await sbp('chelonia.db/set', `_private_deletionTokenDgst_${manifestHash}`, deletionToken)
+    }
     return h.response(manifestHash).header('shelter-deletion-token', deletionToken)
   } catch (err) {
     logger.error(err, 'POST /file', err.message)
@@ -615,14 +619,14 @@ route.POST('/deleteFile/{hash}', {
       break
     }
     case 'chel-bearer': {
-      const expectedToken = await sbp('chelonia.db/get', `_private_deletionToken_${hash}`)
-      if (!expectedToken) {
+      const expectedTokenDgst = await sbp('chelonia.db/get', `_private_deletionTokenDgst_${hash}`)
+      if (!expectedTokenDgst) {
         return Boom.notFound()
       }
-      const token = request.auth.credentials.token
+      const tokenDgst = blake32Hash(request.auth.credentials.token)
       // Constant-time comparison
       // Check that the token provided matches the deletion token for this file
-      if (!ctEq(expectedToken, token)) {
+      if (!ctEq(expectedTokenDgst, tokenDgst)) {
         return Boom.unauthorized('Invalid token', 'bearer')
       }
       break
@@ -681,14 +685,14 @@ route.POST('/deleteContract/{hash}', {
       break
     }
     case 'chel-bearer': {
-      const expectedToken = await sbp('chelonia.db/get', `_private_deletionToken_${hash}`)
-      if (!expectedToken) {
+      const expectedTokenDgst = await sbp('chelonia.db/get', `_private_deletionTokenDgst_${hash}`)
+      if (!expectedTokenDgst) {
         return Boom.notFound()
       }
-      const token = request.auth.credentials.token
+      const tokenDgst = blake32Hash(request.auth.credentials.token)
       // Constant-time comparison
       // Check that the token provided matches the deletion token for this contract
-      if (!ctEq(expectedToken, token)) {
+      if (!ctEq(expectedTokenDgst, tokenDgst)) {
         return Boom.unauthorized('Invalid token', 'bearer')
       }
       break
