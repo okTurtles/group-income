@@ -2,13 +2,13 @@ import encodeMultipartMessage from '@exact-realty/multipart-parser/encodeMultipa
 import decrypt from '@apeleghq/rfc8188/decrypt'
 import { aes256gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
+import { generateSalt } from '@chelonia/crypto'
 import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream, multicodes } from '~/shared/functions.js'
 import { has } from 'turtledash'
 import { coerce } from '@chelonia/multiformats/bytes'
 import type { Secret } from './Secret.js'
 import { buildShelterAuthorizationHeader } from './utils.js'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 // Snippet from <https://github.com/WebKit/standards-positions/issues/24#issuecomment-1181821440>
 // Node.js supports request streams, but also this check isn't meant for Node.js
