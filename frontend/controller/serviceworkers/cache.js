@@ -1,6 +1,7 @@
 const CACHE_VERSION = process.env.GI_VERSION
 const CURRENT_CACHES = {
-  assets: `assets-cache_v${CACHE_VERSION}`
+  assets: `assets-cache_v${CACHE_VERSION}`,
+  contracts: `contracts-cache_v${CACHE_VERSION}`
 }
 
 if (
@@ -54,27 +55,39 @@ if (
     )
   }, false)
 
-  self.addEventListener('fetch', function (event) {
-    console.debug(`[sw] fetch : ${event.request.method} - ${event.request.url}`)
+  // eslint-disable-next-line require-await
+  const cachedFetch = async (request) => {
+    console.debug(`[sw] fetch : ${request.method} - ${request.url}`)
 
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(event.request.method)) {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
       return
     }
+    let targetCache = CURRENT_CACHES.assets
 
     // Needed mostly for Cypress
-    let cacheKey = event.request
+    let cacheKey = request
     try {
-      const url = new URL(event.request.url)
+      const url = new URL(request.url)
 
       if (url.origin !== self.location.origin) {
         return
       }
 
       if (
-        ['/eventsAfter/', '/name/', '/latestHEADinfo/', '/file/', '/kv/', '/zkpp/'].some(prefix => url.pathname.startsWith(prefix)) ||
+        ['/eventsAfter/', '/name/', '/latestHEADinfo/', '/kv/', '/zkpp/'].some(prefix => url.pathname.startsWith(prefix)) ||
         url.pathname === '/time'
       ) {
         return
+      }
+
+      if (url.pathname.startsWith('/file/')) {
+        if (
+          !url.pathname.startsWith('/file/zL7mM9d4Xb4T') &&
+          !url.pathname.startsWith('/file/zLAeVmpcc88g')
+        ) {
+          return
+        }
+        targetCache = CURRENT_CACHES.contracts
       }
 
       // If the route starts with `${routerBase}/` or `/`, redirect to
@@ -85,21 +98,20 @@ if (
         url.pathname === '/' ||
         (url.pathname.startsWith(`${routerBase}/`) && url.pathname !== `${routerBase}/`)
       ) {
-        if (window.Cypress) {
+        if (typeof window === 'object' && window.Cypress) {
           // Apparently, Cypress doesn't like redirects, so we rewrite the
           // cache key instead
           cacheKey = new Request(`${routerBase}/`)
         } else {
-          event.respondWith(Response.redirect(`${routerBase}/`, 302))
-          return
+          return Response.redirect(`${routerBase}/`, 302)
         }
       }
     } catch (e) {
       return
     }
 
-    event.respondWith(
-      caches.match(event.request, { ignoreSearch: true, ignoreVary: true })
+    return (
+      caches.match(request, { ignoreSearch: true, ignoreVary: true })
         .then((cachedResponse) => {
           // If a cached response exists, return it. Not only does this
           // improve performance, but it also makes the app work 'offline'
@@ -116,8 +128,8 @@ if (
           // We use the original `event.request` for the network fetch
           // instead of the possibly re-written `request` (used as a cache
           // key) because the re-written request makes tests fail.
-          return caches.open(CURRENT_CACHES.assets).then((cache) => {
-            return fetch(event.request).then((response) => {
+          return caches.open(targetCache).then((cache) => {
+            return fetch(request).then(async (response) => {
               if (
               // Save successful reponses
                 response.status >= 200 &&
@@ -127,14 +139,14 @@ if (
                 // Which don't have a 'no-store' directive
                 !response.headers.get('cache-control')?.split(',').some(x => x.trim() === 'no-store')
               ) {
-                event.waitUntil(cache.put(cacheKey, response.clone()).catch(e => {
+                await cache.put(cacheKey, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
-                }))
+                })
               } else if (response.status < 500) {
               // For 5xx responses (server errors, we don't delete the cache
               // entry. This is so that, in the event of a 5xx error,
               // the offline app still works.)
-                event.waitUntil(cache.delete(cacheKey))
+                await cache.delete(cacheKey)
               }
 
               return response
@@ -142,5 +154,13 @@ if (
           })
         })
     )
+  }
+
+  self.addEventListener('fetch', function (event) {
+    event.respondWith(cachedFetch(event.request).then((r) => {
+      return r || fetch(event.request)
+    }))
   }, false)
+
+  Object.defineProperty(self, 'cachedFetch', { value: cachedFetch })
 }
