@@ -50,11 +50,11 @@ const streamToUint8Array = async (s: ReadableStream) => {
 
 // Check for streaming support, as of today (Feb 2024) only Blink-
 // based browsers support this (i.e., Firefox and Safari don't).
-const ArrayBufferToUint8ArrayStream = async (connectionURL: string, s: ReadableStream) => {
+const ArrayBufferToUint8ArrayStream = async function (connectionURL: string, s: ReadableStream) {
   // Even if the browser supports streams, some browsers (e.g., Chrome) also
   // require that the server support HTTP/2
   if (supportsRequestStreams === true) {
-    await fetch(`${connectionURL}/streams-test`, {
+    await this.config.fetch(`${connectionURL}/streams-test`, {
       method: 'POST',
       body: new ReadableStream({ start (c) { c.enqueue(Buffer.from('ok')); c.close() } }),
       duplex: 'half'
@@ -115,7 +115,7 @@ const fileStream = (chelonia: Object, manifest: Object) => {
       ) {
         throw new Error('Invalid chunk descriptor')
       }
-      const chunkResponse = await fetch(`${chelonia.config.connectionURL}/file/${chunk[1]}`, {
+      const chunkResponse = await chelonia.config.fetch(`${chelonia.config.connectionURL}/file/${chunk[1]}`, {
         method: 'GET',
         signal: chelonia.abortController.signal
       })
@@ -318,10 +318,10 @@ export default (sbp('sbp/selectors/register', {
         'abcdefghijklmnopqrstuvwxyz'[(0, Math.random)() * 26 | 0]).join('')
     const stream = encodeMultipartMessage(boundary, transferParts)
 
-    const uploadResponse = await fetch(`${this.config.connectionURL}/file`, {
+    const uploadResponse = await this.config.fetch(`${this.config.connectionURL}/file`, {
       method: 'POST',
       signal: this.abortController.signal,
-      body: await ArrayBufferToUint8ArrayStream(this.config.connectionURL, stream),
+      body: await ArrayBufferToUint8ArrayStream.call(this, this.config.connectionURL, stream),
       headers: new Headers([
         ...(billableContractID ? [['authorization', buildShelterAuthorizationHeader.call(this, billableContractID)]] : []),
         ['content-type', `multipart/form-data; boundary=${boundary}`]
@@ -341,7 +341,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/fileDownload': async function (downloadOptions: Secret<{ manifestCid: string, downloadParams: Object }>, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
     // Using a function to prevent accidental logging
     const { manifestCid, downloadParams } = downloadOptions.valueOf()
-    const manifestResponse = await fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
+    const manifestResponse = await this.config.fetch(`${this.config.connectionURL}/file/${manifestCid}`, {
       method: 'GET',
       signal: this.abortController.signal
     })
@@ -378,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
-      const response = await fetch(`${this.config.connectionURL}/deleteFile/${cid}`, {
+      const response = await this.config.fetch(`${this.config.connectionURL}/deleteFile/${cid}`, {
         method: 'POST',
         signal: this.abortController.signal,
         headers: new Headers([

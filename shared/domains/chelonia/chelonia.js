@@ -5,6 +5,7 @@ import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from 'turtledash'
+import { createCID, parseCID } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
@@ -210,6 +211,7 @@ export default (sbp('sbp/selectors/register', {
       },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
+      fetch: (...args) => fetch(...args),
       reactiveDel: (obj, key) => { delete obj[key] },
       // acceptAllMessages disables checking whether we are expecting a message
       // or not for processing
@@ -317,6 +319,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/config': function () {
     return {
       ...cloneDeep(this.config),
+      fetch: this.config.fetch,
       reactiveSet: this.config.reactiveSet,
       reactiveDel: this.config.reactiveDel
     }
@@ -799,7 +802,7 @@ export default (sbp('sbp/selectors/register', {
     //
     //        // The following could take a long time. We want Chelonia
     //        // to still work and process events as normal.
-    //        return fetch(profilePictureUrl).then(doSomeWorkWithTheFile)
+    //        return this.config.fetch(profilePictureUrl).then(doSomeWorkWithTheFile)
     //      })
     //    }
     return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('chelonia/private/queueEvent', 'public:' + contractID, sbpInvocation))
@@ -1039,8 +1042,26 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
+  'chelonia/out/entry': async function (cid: string, { code }: { code?: number } = {}) {
+    const parsedCID = parseCID(cid)
+    if (Number.isInteger(code)) {
+      if (parsedCID.code !== code) {
+        throw new Error('Invalid CID content type')
+      }
+    }
+    const local = await sbp('chelonia.db/get', cid)
+    if (local) return local
+    const url = `${this.config.connectionURL}/file/${cid}`
+    const data = await this.config.fetch(url, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+    const ourHash = createCID(data, parsedCID.code)
+    if (ourHash !== cid) {
+      throw new Error(`expected hash ${cid}. Got: ${ourHash}`)
+    }
+    await sbp('chelonia.db/set', cid, data)
+    return data
+  },
   'chelonia/out/latestHEADInfo': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
+    return this.config.fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
@@ -1062,7 +1083,7 @@ export default (sbp('sbp/selectors/register', {
     let reader: ReadableStreamReader
     const s = new ReadableStream({
       start: async (controller) => {
-        const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        const first = await this.config.fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
         const deserializedHEAD = SPMessage.deserializeHEAD(first)
         if (deserializedHEAD.contractID !== contractID) {
           controller.error(new Error('chelonia/out/eventsBetween: Mismatched contract ID'))
@@ -1549,7 +1570,7 @@ export default (sbp('sbp/selectors/register', {
         data,
         meta: key
       })
-      const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+      const response = await this.config.fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
         headers: new Headers([[
           'authorization', buildShelterAuthorizationHeader.call(this, contractID)
         ]]),
@@ -1575,7 +1596,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/kv/get': async function (contractID: string, key: string) {
-    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+    const response = await this.config.fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
       headers: new Headers([[
         'authorization', buildShelterAuthorizationHeader.call(this, contractID)
       ]]),
