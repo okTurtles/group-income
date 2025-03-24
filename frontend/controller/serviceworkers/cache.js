@@ -64,8 +64,7 @@ if (
     }
     let targetCache = CURRENT_CACHES.assets
 
-    // Needed mostly for Cypress
-    let cacheKey = request
+    let cacheLookupKey = request
     try {
       const url = new URL(request.url)
 
@@ -74,7 +73,7 @@ if (
       }
 
       if (
-        ['/eventsAfter/', '/name/', '/latestHEADinfo/', '/kv/', '/zkpp/'].some(prefix => url.pathname.startsWith(prefix)) ||
+        ['/__/', '/eventsAfter/', '/name/', '/latestHEADinfo/', '/kv/', '/zkpp/'].some(prefix => url.pathname.startsWith(prefix)) ||
         url.pathname === '/time'
       ) {
         return
@@ -98,20 +97,16 @@ if (
         url.pathname === '/' ||
         (url.pathname.startsWith(`${routerBase}/`) && url.pathname !== `${routerBase}/`)
       ) {
-        if (typeof window === 'object' && window.Cypress) {
-          // Apparently, Cypress doesn't like redirects, so we rewrite the
-          // cache key instead
-          cacheKey = new Request(`${routerBase}/`)
-        } else {
-          return Response.redirect(`${routerBase}/`, 302)
-        }
+        // TODO: Tests still broken (/join on group-member-removal)
+        cacheLookupKey = new Request(`${routerBase}/`)
+        // return Response.redirect(`${routerBase}/`, 302)
       }
     } catch (e) {
       return
     }
 
     return (
-      caches.match(request, { ignoreSearch: true, ignoreVary: true })
+      caches.match(cacheLookupKey, { ignoreSearch: true, ignoreVary: true })
         .then((cachedResponse) => {
           // If a cached response exists, return it. Not only does this
           // improve performance, but it also makes the app work 'offline'
@@ -125,7 +120,7 @@ if (
             return cachedResponse
           }
 
-          // We use the original `event.request` for the network fetch
+          // We use the original `request` for the network fetch
           // instead of the possibly re-written `request` (used as a cache
           // key) because the re-written request makes tests fail.
           return caches.open(targetCache).then((cache) => {
@@ -139,14 +134,14 @@ if (
                 // Which don't have a 'no-store' directive
                 !response.headers.get('cache-control')?.split(',').some(x => x.trim() === 'no-store')
               ) {
-                await cache.put(cacheKey, response.clone()).catch(e => {
+                await cache.put(cacheLookupKey, response.clone()).catch(e => {
                   console.error('Error adding request to cache')
                 })
               } else if (response.status < 500) {
-              // For 5xx responses (server errors, we don't delete the cache
-              // entry. This is so that, in the event of a 5xx error,
-              // the offline app still works.)
-                await cache.delete(cacheKey)
+                // For 5xx responses (server errors, we don't delete the cache
+                // entry. This is so that, in the event of a 5xx error,
+                // the offline app still works.)
+                await cache.delete(cacheLookupKey)
               }
 
               return response

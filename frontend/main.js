@@ -370,7 +370,6 @@ async function startApp () {
       // tests).
       ;(async () => {
         try {
-          console.error('@@@@@@0')
           const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
           oldIdentityContractID = identityContractID
           if (identityContractID && this.ephemeral.finishedLogin !== 'yes') {
@@ -380,13 +379,10 @@ async function startApp () {
             const removeHandler = sbp('okTurtles.events/once', OPEN_MODAL, () => {
               this.removeLoadingAnimation()
             })
-            console.error('@@@@@@.5')
             await sbp('gi.app/identity/login', { identityContractID })
-            console.error('@@@@@@1')
             removeHandler()
           }
           this.ephemeral.ready = true
-          console.error('@@@@@@2')
           this.removeLoadingAnimation()
         } catch (e) {
           this.removeLoadingAnimation()
