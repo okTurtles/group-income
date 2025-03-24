@@ -42,7 +42,7 @@ export const prefixHandlers: Object = {
   '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
   'any:': value => value
   /*
-  // 2024-03-24: Commented out because it's not used; currently, only `any:`
+  // 2025-03-24: Commented out because it's not used; currently, only `any:`
   // is used in the `/file` route.
   // Throw if the value if not a buffer.
   'blob:': value => {

@@ -131,6 +131,7 @@ export const initDB = async () => {
       max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
     })
 
+    const prefixes = Object.keys(prefixHandlers)
     sbp('sbp/selectors/overwrite', {
       'chelonia.db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
         const lookupValue = cache.get(prefixableKey)
@@ -158,11 +159,15 @@ export const initDB = async () => {
         // `get` uses `prefixableKey` as key, which now that the value is updated
         // is stale. We delete all prefixed key variants from the cache to
         // avoid serving stale data. Note that because of prefixes, `cache.set`
-        // isn't sufficient.
-        Object.keys(prefixHandlers).forEach(prefix => {
+        // can't be (easily) used to set the key, as transformations could happen
+        // on the unprefixed version.
+        // Note: 2025-03-24: We benchmarked `.forEach`, `for of` and `for`.
+        // Which one was faster depended on the browser, with no clear overall
+        // winner, but `.forEach` was faster on Chrome, which uses the same
+        // engine as Node.JS (V8).
+        prefixes.forEach(prefix => {
           cache.delete(prefix + key)
         })
-        cache.set(key, value)
       },
       'chelonia.db/delete': async function (key: string): Promise<void> {
         checkKey(key)
@@ -173,7 +178,7 @@ export const initDB = async () => {
         // `get` uses `prefixableKey` as key, which now that the value is updated
         // is stale. We delete all prefixed key variants from the cache to
         // avoid serving stale data.
-        Object.keys(prefixHandlers).forEach(prefix => {
+        prefixes.forEach(prefix => {
           cache.delete(prefix + key)
         })
       }
