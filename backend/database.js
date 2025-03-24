@@ -155,6 +155,10 @@ export const initDB = async () => {
           }
         }
         await writeData(key, value)
+        // `get` uses `prefixableKey` as key, which now that the value is updated
+        // is stale. We delete all prefixed key variants from the cache to
+        // avoid serving stale data. Note that because of prefixes, `cache.set`
+        // isn't sufficient.
         Object.keys(prefixHandlers).forEach(prefix => {
           cache.delete(prefix + key)
         })
@@ -166,6 +170,9 @@ export const initDB = async () => {
           throw new Error('Cannot delete immutable key')
         }
         await deleteData(key)
+        // `get` uses `prefixableKey` as key, which now that the value is updated
+        // is stale. We delete all prefixed key variants from the cache to
+        // avoid serving stale data.
         Object.keys(prefixHandlers).forEach(prefix => {
           cache.delete(prefix + key)
         })
