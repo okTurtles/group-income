@@ -1304,7 +1304,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
     if (state.contracts[contractID] === null) {
-      throw new Error('Cannot sync permanently deleted contract ' + contractID)
+      throw new Error('410: Cannot sync permanently deleted contract ' + contractID)
     }
 
     try {
