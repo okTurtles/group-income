@@ -395,7 +395,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
-  'chelonia/private/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
+  'chelonia/private/removeImmediately': function (contractID: string, params?: { permanent?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const contractName = state.contracts[contractID]?.type
     if (!contractName) {
@@ -433,7 +433,13 @@ export default (sbp('sbp/selectors/register', {
       }
     } else {
       delete this.ephemeralReferenceCount[contractID]
-      this.config.reactiveDel(state.contracts, contractID)
+      if (params?.permanent) {
+        // Keep a 'null' state to remember permanently-deleted contracts
+        // (e.g., when they've been removed from the server)
+        this.config.reactiveSet(state.contracts, contractID, null)
+      } else {
+        this.config.reactiveDel(state.contracts, contractID)
+      }
       this.config.reactiveDel(state, contractID)
     }
 
@@ -1232,7 +1238,7 @@ export default (sbp('sbp/selectors/register', {
       // have previously synced this contract, as reference counts are also
       // stored there. Hence, we check for the presence of 'type'
       if (!contractName) {
-        contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
+        contractName = has(rootState.contracts, contractID) && rootState.contracts[contractID] && has(rootState.contracts[contractID], 'type')
           ? rootState.contracts[contractID].type
           : opT === SPMessage.OP_CONTRACT
             ? ((opV: any): SPOpContract).type
@@ -1297,6 +1303,9 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    if (state.contracts[contractID] === null) {
+      throw new Error('Cannot sync permanently deleted contract ' + contractID)
+    }
 
     try {
       this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }

@@ -41,7 +41,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click='close') Cancel
+        i18n.is-outlined(tag='button' type='button' @click='close') Cancel
         button-submit.is-danger(
           @click='submit'
           :disabled='$v.form.$invalid'

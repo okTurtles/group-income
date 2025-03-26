@@ -831,7 +831,7 @@ export const checkCanBeGarbageCollected = function (id: string): boolean {
   const rootState = sbp(this.config.stateSelector)
   return (
     // Check persistent references
-    (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
+    (!has(rootState.contracts, id) || !rootState.contracts[id] || !has(rootState.contracts[id], 'references')) &&
     // Check ephemeral references
     !has(this.ephemeralReferenceCount, id)) &&
     // Check foreign keys (i.e., that no keys from this contract are being watched)

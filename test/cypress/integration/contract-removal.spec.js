@@ -17,7 +17,8 @@ describe('Group Income - Removing contracts', () => {
       cy.window().its('sbp').then(sbp => {
         const { currentGroupId } = sbp('state/vuex/state')
         cy.request(`${API_URL}/file/${currentGroupId}`).its('status').should('eq', 200)
-        cy.getByDT('submitPrompt', '.is-danger').click()
+        cy.getByDT('confirmation').type(`{selectall}{del}DELETE ${groupName.toUpperCase()}`)
+        cy.getByDT('btnSubmit', '.is-danger').click()
 
         cy.url().should('eq', `${API_URL}/app/`)
         cy.request({ url: `${API_URL}/file/${currentGroupId}`, failOnStatusCode: false }).its('status').should('eq', 410)

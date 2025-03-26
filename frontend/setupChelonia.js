@@ -16,7 +16,7 @@ const handleDeletedContract = async (contractID: string) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
 
-  await sbp('chelonia/contract/remove', contractID)
+  await sbp('chelonia/contract/remove', contractID, { permanent: true })
 
   const type = cheloniaState.type?.replace(/^gi\.contracts\//, 'gi.actions/')
   const handler = type && sbp('sbp/selectors/fn', `${type}/_ondeleted`)
@@ -49,7 +49,7 @@ const handleDeletedContract = async (contractID: string) => {
   // identity contract also deletes the same information.
   if (typeof handler === 'function') {
     await handler(contractID, contractState).catch(e => {
-      console.error('Error handling deletion of contract', contractID)
+      console.error('[handleDeletedContract] Error handling deletion of contract', contractID, e)
     })
   } else {
     console.warn('[handleDeletedContract] Received contract deletion notification for contract without a declared deletion handler', contractID, cheloniaState.type)

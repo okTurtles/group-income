@@ -888,7 +888,13 @@ export default (sbp('sbp/selectors/register', {
   // can be passed to verify whether to proceed with removal. This is used as
   // part of the `/release` mechanism to prevent removing contracts that have
   // acquired new references since the call to `/remove`.
-  'chelonia/contract/remove': function (contractIDs: string | string[], confirmRemovalCallback?: (contractID: string) => boolean): Promise<*> {
+  'chelonia/contract/remove': function (
+    contractIDs: string | string[],
+    { confirmRemovalCallback, permanent }: {
+      confirmRemovalCallback?: (contractID: string) => boolean,
+      permanent: boolean
+    } = {}
+  ): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -917,7 +923,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }).filter(Boolean)))
 
-        sbp('chelonia/private/removeImmediately', contractID)
+        sbp('chelonia/private/removeImmediately', contractID, { permanent })
 
         if (fkContractIDs.length) {
           // Attempt to release all contracts that are being monitored for
@@ -931,10 +937,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/contract/retain': async function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    const rootState = sbp(this.config.stateSelector)
     if (listOfIds.length === 0) return Promise.resolve()
+    const checkIfDeleted = (id) => {
+      // Contract has been permanently deleted
+      if (rootState.contracts[id] === null) {
+        console.error('[chelonia/contract/retain] Called /retain on permanently deleted contract.', id)
+        throw new Error('Unable to retain permanently deleted contract ' + id)
+      }
+    }
     if (!params?.ephemeral) {
-      const rootState = sbp(this.config.stateSelector)
       listOfIds.forEach((id) => {
+        checkIfDeleted(id)
         if (!has(rootState.contracts, id)) {
           this.config.reactiveSet(rootState.contracts, id, Object.create(null))
         }
@@ -942,6 +956,7 @@ export default (sbp('sbp/selectors/register', {
       })
     } else {
       listOfIds.forEach((id) => {
+        checkIfDeleted(id)
         if (!has(this.ephemeralReferenceCount, id)) {
           this.ephemeralReferenceCount[id] = 1
         } else {
@@ -963,6 +978,11 @@ export default (sbp('sbp/selectors/register', {
     if (!params?.try) {
       if (!params?.ephemeral) {
         listOfIds.forEach((id) => {
+          // Contract has been permanently deleted
+          if (rootState.contracts[id] === null) {
+            console.warn('[chelonia/contract/release] Called /release on permanently deleted contract. This has no effect.', id)
+            return
+          }
           if (has(rootState.contracts, id) && has(rootState.contracts[id], 'references')) {
             const current = rootState.contracts[id].references
             if (current === 0) {
@@ -1013,7 +1033,7 @@ export default (sbp('sbp/selectors/register', {
     // contract is safe to remove
     const boundCheckCanBeGarbageCollected = checkCanBeGarbageCollected.bind(this)
     const idsToRemove = listOfIds.filter(boundCheckCanBeGarbageCollected)
-    return idsToRemove.length ? await sbp('chelonia/contract/remove', idsToRemove, boundCheckCanBeGarbageCollected) : undefined
+    return idsToRemove.length ? await sbp('chelonia/contract/remove', idsToRemove, { confirmRemovalCallback: boundCheckCanBeGarbageCollected }) : undefined
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)

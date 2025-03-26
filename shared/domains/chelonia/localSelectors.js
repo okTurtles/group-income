@@ -102,7 +102,7 @@ export default (sbp('sbp/selectors/register', {
     // If the current 'local' state has a height higher than or equal to the
     // Chelonia height, we've processed all events and don't need to wait any
     // longer.
-    if (cheloniaState.height <= localState.contracts[contractID]?.height) return
+    if (!cheloniaState || cheloniaState.height <= localState.contracts[contractID]?.height) return
 
     // Otherwise, listen for `EVENT_HANDLED_READY` events till we have reached
     // the necessary height.

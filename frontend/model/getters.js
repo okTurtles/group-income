@@ -441,7 +441,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourContactProfilesByUsername (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
-      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .filter(contractID => state.contracts[contractID]?.type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
@@ -459,7 +459,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourContactProfilesById (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
-      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .filter(contractID => state.contracts[contractID]?.type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID]?.attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts

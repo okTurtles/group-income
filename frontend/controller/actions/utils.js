@@ -325,17 +325,19 @@ export function groupContractsByType (contracts?: Object): Object {
     // contracts being 'watched' for foreign keys. The latter are managed
     // directly by Chelonia, so we also don't subscribe to them
     // $FlowFixMe[incompatible-use]
-    Object.entries(contracts).forEach(([id, { references, type }]) => {
+    Object.entries(contracts)
+      .filter(([id, value]) => !!value)
+      .forEach(([id, { references, type }]) => {
       // If the contract wasn't explicitly retained, skip it
       // NB! Ignoring `references` could result in an exception being thrown, as
       // as `sync` may only be called on contracts for which a reference count
       // exists.
-      if (!references) return
-      if (!contractIDs[type]) {
-        contractIDs[type] = []
-      }
-      contractIDs[type].push(id)
-    })
+        if (!references) return
+        if (!contractIDs[type]) {
+          contractIDs[type] = []
+        }
+        contractIDs[type].push(id)
+      })
   }
   return contractIDs
 }
@@ -374,7 +376,7 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
             console.error(`syncContractsInOrder: failed to sync ${type}(${contractID}):`, e)
             if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
               console.info('[syncContractsInOrder] Contract ID ' + contractID + ' has been deleted')
-              sbp('chelonia/contract/remove', contractID).catch(e => {
+              sbp('chelonia/contract/remove', contractID, { permanent: true }).catch(e => {
                 console.error('[syncContractsInOrder] Error handling contract deletion', e)
               })
             } else {

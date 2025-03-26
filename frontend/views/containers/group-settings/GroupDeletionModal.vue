@@ -4,6 +4,10 @@
       i18n Delete group
 
     form(novalidate @submit.prevent='submit')
+      p
+        i18n(v-if='groupMembersCount > 1' :args='{groupMembersCount}') This group has {groupMembersCount} active members.
+        span(v-if='groupMembersCount > 1') {{' '}}
+        i18n Leaving the group when you're the the admin will delete it and all its associated data.
       i18n.has-text-bold(tag='p') Are you sure you want to delete this group?
       i18n(
         tag='p'
@@ -25,27 +29,30 @@
             @input='debounceField("confirmation")'
             @blur='updateField("confirmation")'
             v-error:confirmation=''
+            data-test='confirmation'
           )
 
         banner-scoped(ref='formMsg')
 
         .buttons
-          i18n.is-outlined(tag='button' @click='close') Cancel
-          i18n.is-danger(
-            tag='button'
+          i18n.is-outlined(tag='button' type='button' @click='close') Cancel
+          button-submit.is-danger(
             @click='submit'
             :disabled='$v.form.$invalid'
-          ) Delete Group
+            data-test='btnSubmit'
+            ) {{ L('Delete Group') }}
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { required } from 'vuelidate/lib/validators'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({
@@ -54,7 +61,8 @@ export default ({
   components: {
     ModalTemplate,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {
@@ -64,8 +72,11 @@ export default ({
     }
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
-      'groupSettings'
+      'groupMembersCount', 'groupSettings', 'ourIdentityContractId'
     ]),
     code () {
       return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
@@ -76,7 +87,11 @@ export default ({
       this.$refs.modal.close()
     },
     submit () {
-      alert('TODO implement this')
+      return sbp('chelonia/out/deleteContract', this.currentGroupId, {
+        [this.currentGroupId]: {
+          billableContractID: this.ourIdentityContractId
+        }
+      })
     }
   },
   validations: {
