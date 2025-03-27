@@ -327,6 +327,7 @@ export function groupContractsByType (contracts?: Object): Object {
     // $FlowFixMe[incompatible-use]
     Object.entries(contracts)
       .filter(([id, value]) => !!value)
+      // $FlowFixMe[incompatible-use]
       .forEach(([id, { references, type }]) => {
       // If the contract wasn't explicitly retained, skip it
       // NB! Ignoring `references` could result in an exception being thrown, as
