@@ -267,7 +267,7 @@ export default (sbp('sbp/selectors/register', {
       })
 
       for (const cID of cIDs) {
-        const groupState = await sbp('chelonia/contract/state', cID).catch(() => {})
+        const groupState = sbp('chelonia/contract/state', cID)
         // If the chatroom isn't part of this group, continue
         if (!groupState?.chatRooms?.[contractID]) continue
 

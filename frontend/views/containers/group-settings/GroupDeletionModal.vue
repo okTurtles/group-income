@@ -79,7 +79,9 @@ export default ({
       'groupMembersCount', 'groupSettings', 'ourIdentityContractId'
     ]),
     code () {
-      return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
+      // NOTE: this.groupSettings.groupName could be undefined while leaving the group
+      const groupName = this.groupSettings.groupName || ''
+      return L('DELETE {GROUP_NAME}', { GROUP_NAME: groupName.toUpperCase() })
     }
   },
   methods: {
