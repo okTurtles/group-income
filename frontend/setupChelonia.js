@@ -188,7 +188,7 @@ const setupChelonia = async (): Promise<*> => {
     hooks: {
       syncContractError: (e, contractID) => {
         if (!e) return
-        if (e.name === 'ChelErrorUnexpectedHttpResponseCode' && e.message.startsWith('410:')) {
+        if (e.name === 'ChelErrorResourceGone') {
           console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
           handleDeletedContract(contractID).catch(e => {
             console.error('[syncContractError] Error handling contract deletion', e)
