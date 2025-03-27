@@ -325,7 +325,7 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
-        console.error('[messageHandler] Contract ID ' + contractID + ' has been deleted')
+        console.info('[messageHandler] Contract ID ' + contractID + ' has been deleted')
         handleDeletedContract(contractID).catch(e => {
           console.error('[messageHandler] Error handling contract deletion', e)
         })

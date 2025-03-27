@@ -9,7 +9,7 @@ import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { SPMessage } from './SPMessage.js'
@@ -943,7 +943,7 @@ export default (sbp('sbp/selectors/register', {
       // Contract has been permanently deleted
       if (rootState.contracts[id] === null) {
         console.error('[chelonia/contract/retain] Called /retain on permanently deleted contract.', id)
-        throw new Error('Unable to retain permanently deleted contract ' + id)
+        throw new ChelErrorResourceGone('Unable to retain permanently deleted contract ' + id)
       }
     }
     if (!params?.ephemeral) {
@@ -1009,6 +1009,11 @@ export default (sbp('sbp/selectors/register', {
         })
       } else {
         listOfIds.forEach((id) => {
+          // Contract has been permanently deleted
+          if (rootState.contracts[id] === null) {
+            console.warn('[chelonia/contract/release] Called /release on permanently deleted contract. This has no effect.', id)
+            return
+          }
           if (has(this.ephemeralReferenceCount, id)) {
             const current = this.ephemeralReferenceCount[id] ?? 0
             if (current <= 1) {
@@ -1274,6 +1279,10 @@ export default (sbp('sbp/selectors/register', {
         ])
       })
       if (!response.ok) {
+        if (response.status === 404 || response.status === 410) {
+          console.warn('Contract appears to have been deleted already', cid, response.status)
+          return
+        }
         console.error('Unable to delete contract', cid, response.status)
         throw new Error(`Unable to delete contract ${cid}: ${response.status}`)
       }

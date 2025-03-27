@@ -61,6 +61,11 @@ export const encryptedAction = (
       if (!contractID) {
         throw new Error('Missing contract ID')
       }
+      const rootState = sbp('chelonia/rootState')
+      if (rootState.contracts[contractID] === null) {
+        console.warn(`[${action}] Contract is marked as permamently deleted, aborting`, contractID)
+        throw new Error('Contract permanently deleted: ' + contractID)
+      }
 
       // The following ensures that logging out waits until all pending actions
       // are written

@@ -1196,7 +1196,7 @@ export default (sbp('sbp/selectors/register', {
     const identityContractID = rootGetters.ourIdentityContractId
     const currentIdentityState = rootGetters.currentIdentityState
 
-    if (!!currentIdentityState.groups[contractID] && !currentIdentityState.groups[contractID]?.hasLeft) {
+    if (!!currentIdentityState.groups?.[contractID] && !currentIdentityState.groups[contractID].hasLeft) {
       await sbp('gi.actions/identity/leaveGroup', {
         contractID: identityContractID,
         data: {
