@@ -524,7 +524,9 @@ route.POST('/file', {
     // Store attribution information
     await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
-    await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
+    const size = manifest.size + manifestMeta.payload.byteLength
+    await sbp('backend/server/updateSize', manifestHash, size)
+    await sbp('backend/server/updateContractFilesTotalSize', credentials.billableContractID, size)
     // Store deletion token
     const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
     if (deletionTokenDgst) {
