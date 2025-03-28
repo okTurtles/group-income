@@ -12,7 +12,7 @@ import { deserializeKey, keyId, verifySignature } from '@chelonia/crypto'
 import './db.js'
 import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import type { EncryptedData } from './encryptedData.js'
-import { ChelErrorKeyAlreadyExists, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
+import { ChelErrorKeyAlreadyExists, ChelErrorResourceGone, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
 import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
@@ -395,7 +395,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
-  'chelonia/private/removeImmediately': function (contractID: string, params?: { resync: boolean }) {
+  'chelonia/private/removeImmediately': function (contractID: string, params?: { permanent?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
     const contractName = state.contracts[contractID]?.type
     if (!contractName) {
@@ -433,13 +433,24 @@ export default (sbp('sbp/selectors/register', {
       }
     } else {
       delete this.ephemeralReferenceCount[contractID]
-      this.config.reactiveDel(state.contracts, contractID)
+      if (params?.permanent) {
+        // Keep a 'null' state to remember permanently-deleted contracts
+        // (e.g., when they've been removed from the server)
+        this.config.reactiveSet(state.contracts, contractID, null)
+      } else {
+        this.config.reactiveDel(state.contracts, contractID)
+      }
       this.config.reactiveDel(state, contractID)
     }
 
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: [contractID] })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), {
+      added: [],
+      removed: [contractID],
+      permanent: params?.permanent,
+      resync: params?.resync
+    })
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -1232,7 +1243,7 @@ export default (sbp('sbp/selectors/register', {
       // have previously synced this contract, as reference counts are also
       // stored there. Hence, we check for the presence of 'type'
       if (!contractName) {
-        contractName = has(rootState.contracts, contractID) && has(rootState.contracts[contractID], 'type')
+        contractName = has(rootState.contracts, contractID) && rootState.contracts[contractID] && has(rootState.contracts[contractID], 'type')
           ? rootState.contracts[contractID].type
           : opT === SPMessage.OP_CONTRACT
             ? ((opV: any): SPOpContract).type
@@ -1297,6 +1308,9 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string, params?: { force?: boolean, resync?: boolean }) {
     const state = sbp(this.config.stateSelector)
+    if (state.contracts[contractID] === null) {
+      throw new ChelErrorResourceGone('Cannot sync permanently deleted contract ' + contractID)
+    }
 
     try {
       this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID]?.type }
