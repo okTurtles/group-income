@@ -15,9 +15,9 @@ import Bottleneck from 'bottleneck'
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
-const CID_REGEX = /^z[1-9A-HJ-NP-Za-km-z]{1,72}$/
+const CID_REGEX = /^z[1-9A-HJ-NP-Za-km-z]{8,72}$/
 // eslint-disable-next-line no-control-regex
-const KV_KEY_REGEX = /^(?!_private)[^\x00]+$/
+const KV_KEY_REGEX = /^(?!_private)[^\x00]{1,256}$/
 const NAME_REGEX = /^\w[\w-]{0,79}$/
 
 const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
