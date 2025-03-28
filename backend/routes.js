@@ -701,12 +701,18 @@ route.POST('/deleteContract/{hash}', {
       return Boom.unauthorized('Missing or invalid auth strategy')
   }
 
+  const username = await sbp('chelonia.db/get', `_private_cid2name_${hash}`)
   // Authentication passed, now proceed to delete the contract and its associated
   // keys
   try {
     const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    if (username) {
+      const ip = request.headers['x-real-ip'] || request.info.remoteAddress
+      console.info({ contractID: hash, username, ip, taskId: id }, 'Scheduled deletion on named contract')
+    }
     // We return the queue ID to allow users to track progress
     // TODO: Tracking progress not yet implemented
+    console.info('Scheduled task for ')
     return h.response({ id }).code(202)
   } catch (e) {
     return errorMapper(e)

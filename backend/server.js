@@ -81,6 +81,8 @@ hapi.ext({
   }
 })
 
+const appendToOrphanedNamesIndex = appendToIndexFactory('_private_orphaned_names_index')
+
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
@@ -312,6 +314,12 @@ sbp('sbp/selectors/register', {
       }
       await sbp('chelonia.db/delete', kvIndexKey)
 
+      await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
+        return Promise.all([
+          sbp('chelonia.db/delete', `_private_cid2name_${cid}`),
+          appendToOrphanedNamesIndex(name)
+        ])
+      })
       await sbp('chelonia.db/delete', `_private_rid_${cid}`)
       await sbp('chelonia.db/delete', `_private_owner_${cid}`)
       await sbp('chelonia.db/delete', `_private_size_${cid}`)

@@ -516,9 +516,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   },
   seenWelcomeScreen (state, getters) {
     return (
-      (getters.currentIdentityState?.groups?.[state.currentGroupId] &&
-      getters.currentIdentityState?.groups?.[state.currentGroupId].hasLeft
-      ) ||
+      getters.currentIdentityState?.groups?.[state.currentGroupId]?.hasLeft ||
       (
         getters.ourProfileActive &&
         getters.currentIdentityState?.groups?.[state.currentGroupId]?.seenWelcomeScreen

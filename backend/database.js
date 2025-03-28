@@ -105,6 +105,9 @@ export default ((sbp('sbp/selectors/register', {
       throw Boom.conflict('exists')
     }
     await sbp('chelonia.db/set', namespaceKey(name), value)
+    await sbp('chelonia.db/set', `_private_cid2name_${value}`, name)
+    await appendToNamesIndex(name)
+
     return { name, value }
   },
   'backend/db/lookupName': async function (name: string): Promise<string> {
@@ -279,6 +282,8 @@ export const appendToIndexFactory = (key: string): (value: string) => Promise<vo
     })
   }
 }
+
+const appendToNamesIndex = appendToIndexFactory('_private_names_index')
 
 /**
  * Creates a factory function that removes a value from a string index in a
