@@ -107,6 +107,7 @@ export const GROUP_PERMISSIONS_PRESET = {
 export const CHATROOM_GENERAL_NAME = 'general' // Chatroom name must be lowercase-only.
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
+export const CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS = 180
 export const CHATROOM_MAX_MESSAGE_LEN = 20000
 export const CHATROOM_MAX_MESSAGES = 20
 export const CHATROOM_ACTIONS_PER_PAGE = 40

@@ -86,7 +86,7 @@
           :isGroupCreator='isGroupCreator'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
-          @reply='replyMessage(message)'
+          @reply='replyToMessage(message)'
           @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @pin-to-channel='pinToChannel(message)'
@@ -143,13 +143,19 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import TouchLinkHelper from './TouchLinkHelper.vue'
 import DragActiveOverlay from './file-attachment/DragActiveOverlay.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR } from '@model/contracts/shared/constants.js'
+import {
+  MESSAGE_TYPES, MESSAGE_VARIANTS,
+  CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
+  CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
+} from '@model/contracts/shared/constants.js'
 import { CHATROOM_EVENTS, NEW_CHATROOM_UNREAD_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -370,7 +376,9 @@ export default ({
       }
     },
     replyingMessageText (message) {
-      return message.replyingMessage?.text || ''
+      return message.replyingMessage?.text
+        ? message.replyingMessage.text.slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        : ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -400,15 +408,7 @@ export default ({
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
-        // NOTE: If not replying to a message, use original data; otherwise, append replyingMessage to data.
         data.replyingMessage = replyingMessage
-        // NOTE: for the messages with only images, the text should be updated with file name
-        if (!replyingMessage.text) {
-          const msg = this.messages.find(m => (m.hash === replyingMessage.hash))
-          if (msg) {
-            data.replyingMessage.text = msg.attachments[0].name
-          }
-        }
       }
 
       const sendMessage = (beforePrePublish) => {
@@ -629,21 +629,30 @@ export default ({
       this.messages.splice(index, 1)
       this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
     },
-    replyMessage (message) {
-      const { text, hash, type } = message
+    replyToMessage (message) {
+      const { text, hash, type, attachments } = message
+      const isTypeInteractive = type === MESSAGE_TYPES.INTERACTIVE
 
-      if (type === MESSAGE_TYPES.INTERACTIVE) {
+      if (isTypeInteractive) {
         const proposal = message.proposal
 
         this.ephemeral.replyingMessage = {
-          text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` }),
-          hash
+          hash, text: interactiveMessage(proposal, { from: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${proposal.creatorID}` })
         }
-        this.ephemeral.replyingTo = L('Proposal notification')
+      } else if (!text && attachments?.length) {
+        this.ephemeral.replyingMessage = { hash, text: attachments[0].name }
       } else {
-        this.ephemeral.replyingMessage = { text, hash }
-        this.ephemeral.replyingTo = this.who(message)
+        const sanitizeAndTruncate = text => {
+          return swapMentionIDForDisplayname(text)
+            .replace(/\s+/g, ' ') // Normalize spaces
+            .trim()
+            .slice(0, CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS)
+        }
+
+        this.ephemeral.replyingMessage = { hash, text: sanitizeAndTruncate(text) }
       }
+
+      this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
     },
     editMessage (message, newMessage) {
       message.text = newMessage
