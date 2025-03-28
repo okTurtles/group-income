@@ -41,7 +41,9 @@ export default ({
   async mounted () {
     if (!this.profilePicture) {
       console.debug(`Looking for ${this.contractID} profile picture`)
-      const state = await sbp('chelonia/latestContractState', this.contractID) || {}
+      const state = await sbp('chelonia/latestContractState', this.contractID).catch((e) => {
+        console.warn('[AvatarUser.vue] Error on latestContractState', e)
+      }) || {}
       this.ephemeral.url = state.attributes && state.attributes.picture
     }
   },
