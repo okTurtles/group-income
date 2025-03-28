@@ -42,24 +42,24 @@ describe('ZKPP Salt functions', () => {
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
-    const regKeyAlice1 = await registrationKey('alice', publicKeyHash)
-    const regKeyAlice2 = await registrationKey('alice', publicKeyHash)
+    const regKeyAlice1 = registrationKey('alice', publicKeyHash)
+    const regKeyAlice2 = registrationKey('alice', publicKeyHash)
     should(regKeyAlice1).be.of.type('object')
     should(regKeyAlice2).be.of.type('object')
     const [, , encryptedHashedPasswordAlice1] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
-    const res1 = await register('alice', publicKey, regKeyAlice1.s, regKeyAlice1.sig, encryptedHashedPasswordAlice1)
+    const res1 = register('alice', publicKey, regKeyAlice1.s, regKeyAlice1.sig, encryptedHashedPasswordAlice1)
     should(typeof res1).equal('string', 'register should return a token (alice)')
     const token = decryptRegistrationRedemptionToken(regKeyAlice1.p, keyPair.secretKey, res1)
     await redeemSaltRegistrationToken('alice', 'alice', token)
 
     const [, , encryptedHashedPasswordAlice2] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
-    const res2 = await register('alice', publicKey, regKeyAlice2.s, regKeyAlice2.sig, encryptedHashedPasswordAlice2)
+    const res2 = register('alice', publicKey, regKeyAlice2.s, regKeyAlice2.sig, encryptedHashedPasswordAlice2)
     should(res2).equal(false, 'register should not overwrite entry (alice)')
 
-    const regKeyBob1 = await registrationKey('bob', publicKeyHash)
+    const regKeyBob1 = registrationKey('bob', publicKeyHash)
     should(regKeyBob1).be.of.type('object')
     const [, , encryptedHashedPasswordBob1] = saltsAndEncryptedHashedPassword(regKeyBob1.p, keyPair.secretKey, 'hash')
-    const res3 = await register('bob', publicKey, regKeyBob1.s, regKeyBob1.sig, encryptedHashedPasswordBob1)
+    const res3 = register('bob', publicKey, regKeyBob1.s, regKeyBob1.sig, encryptedHashedPasswordBob1)
     should(typeof res3).equal('string', 'register should return a token (bob)')
   })
 
@@ -69,12 +69,12 @@ describe('ZKPP Salt functions', () => {
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
     const [contract, hash, r] = ['getContractSalt', 'hash', 'r']
-    const regKey = await registrationKey(contract, publicKeyHash)
+    const regKey = registrationKey(contract, publicKeyHash)
     should(regKey).be.of.type('object')
 
     const [authSalt, contractSalt, encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
 
-    const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
+    const res = register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
     should(typeof res).equal('string', 'register should allow new entry (' + contract + ')')
     const token = decryptRegistrationRedemptionToken(regKey.p, keyPair.secretKey, res)
     await redeemSaltRegistrationToken(contract, contract, token)
@@ -106,12 +106,12 @@ describe('ZKPP Salt functions', () => {
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
     const [contract, hash, r] = ['update', 'hash', 'r']
-    const regKey = await registrationKey(contract, publicKeyHash)
+    const regKey = registrationKey(contract, publicKeyHash)
     should(regKey).be.of.type('object')
 
     const [authSalt, , encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
 
-    const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
+    const res = register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
     should(typeof res).equal('string', 'register should allow new entry (' + contract + ')')
     const token = decryptRegistrationRedemptionToken(regKey.p, keyPair.secretKey, res)
     await redeemSaltRegistrationToken(contract, contract, token)
