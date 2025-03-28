@@ -85,7 +85,7 @@ export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
   +channelID: string,
-  +kvFilter?: string[]
+  +kvFilter?: Array<string>
 }
 
 export type UnsubMessage = {
@@ -100,6 +100,7 @@ export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
   DELETION: 'deletion',
   KV: 'kv',
+  KV_FILTER: 'kv_filter',
   PING: 'ping',
   PONG: 'pong',
   PUB: 'pub',
@@ -385,6 +386,7 @@ const defaultClientEventHandlers = {
     // Send any pending subscription request.
     client.pendingSubscriptionSet.forEach((channelID) => {
       const kvFilter = this.kvFilter.get(channelID)
+      // $FlowFixMe[incompatible-call]
       client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID, kvFilter }))
     })
     // There should be no pending unsubscription since we just got connected.
@@ -730,6 +732,7 @@ const publicMethods = {
 
     if (client.subscriptionSet.has(channelID)) {
       if (socket?.readyState === WebSocket.OPEN) {
+        // $FlowFixMe[incompatible-call]
         socket.send(createRequest(REQUEST_TYPE.KV_FILTER, { channelID, kvFilter }))
       }
     }

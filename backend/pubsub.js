@@ -305,6 +305,7 @@ const defaultMessageHandlers = {
     } else {
       log.debug('Already subscribed to', channelID)
     }
+    // $FlowFixMe[incompatible-call]
     socket.send(createOkResponse({ type: SUB, channelID, kvFilter }))
   },
 
@@ -327,6 +328,7 @@ const defaultMessageHandlers = {
     } else {
       log.debug('Not subscribed to', channelID)
     }
+    // $FlowFixMe[incompatible-call]
     socket.send(createOkResponse({ type: KV_FILTER, channelID, kvFilter }))
   },
 
