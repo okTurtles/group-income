@@ -998,6 +998,27 @@ export default (sbp('sbp/selectors/register', {
     }
 
     const token = encryptedIncomingData(contractID, state, encryptedDeletionToken, NaN, Object.fromEntries(transientSecretKeysEntries), 'encryptedDeletionToken')
+
+    // Before actually deleting it, leave all groups and DMs. This avoids
+    // potentially leaving the UI in a weird state.
+    const { ourDirectMessages, ourGroups } = sbp('state/vuex/getters')
+    await Promise.all([
+      ...Object.keys(ourDirectMessages).map((contractID) => {
+        return sbp('gi.actions/chatroom/leave', { contractID, data: {} }).catch((e) => {
+        // We make this a warning and we don't propagate the error because this
+        // is not a requirement for deleting the contract.
+          console.warn('Error while leaving DM before deleting identity contract', contractID, e)
+        })
+      }),
+      ...ourGroups.map((contractID) => {
+        return sbp('gi.actions/group/removeOurselves', { contractID }).catch((e) => {
+        // We make this a warning and we don't propagate the error because this
+        // is not a requirement for deleting the contract.
+          console.warn('Error while leaving group before deleting identity contract', contractID, e)
+        })
+      })
+    ])
+
     await sbp('chelonia/out/deleteContract', contractID, {
       [contractID]: { token: new Secret(token.valueOf()) }
     })
