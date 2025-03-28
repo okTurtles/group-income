@@ -3,9 +3,14 @@
 import Hapi from '@hapi/hapi'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
+import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
-import initDB from './database.js'
+import { multicodes, parseCID } from '~/shared/functions.js'
+import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
+import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
 import {
@@ -18,8 +23,6 @@ import {
   createServer
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -78,6 +81,8 @@ hapi.ext({
   }
 })
 
+const appendToOrphanedNamesIndex = appendToIndexFactory('_private_orphaned_names_index')
+
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
@@ -132,16 +137,10 @@ sbp('sbp/selectors/register', {
       // We want to ensure that the index is updated atomically (i.e., if there
       // are multiple new contracts, all of them should be added), so a queue
       // is needed for the load & store operation.
-      await sbp('okTurtles.eventQueue/queueEvent', 'update-contract-indices', async () => {
-        const currentIndex = await sbp('chelonia.db/get', '_private_cheloniaState_index')
-        // Add the current contract ID to the contract index. Entries in the
-        // index are separated by \x00 (NUL). The index itself is used to know
-        // which entries to load.
-        const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${contractID}`
-        await sbp('chelonia.db/set', '_private_cheloniaState_index', updatedIndex)
-      })
+      await sbp('backend/server/appendToContractIndex', contractID)
     }
   },
+  'backend/server/appendToContractIndex': appendToIndexFactory('_private_cheloniaState_index'),
   'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createKvMessage(contractID, key, entry)
@@ -158,6 +157,13 @@ sbp('sbp/selectors/register', {
     console.debug(chalk.blue.bold(`[pubsub] Broadcasting ${deserializedHEAD.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
+  'backend/server/broadcastDeletion': async function (contractID: string) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.DELETION, contractID)
+    const subscribers = pubsub.enumerateSubscribers(contractID)
+    console.debug(chalk.blue.bold(`[pubsub] Broadcasting deletion of ${contractID}`))
+    await pubsub.broadcast(pubsubMessage, { to: subscribers })
+  },
   'backend/server/handleEntry': async function (deserializedHEAD: Object, entry: string) {
     const contractID = deserializedHEAD.contractID
     if (deserializedHEAD.head.op === SPMessage.OP_CONTRACT) {
@@ -170,23 +176,22 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/saveOwner': async function (ownerID: string, resourceID: string) {
     // Store the owner for the current resource
-    await sbp('chelonia.db/set', `_private_owner_${resourceID}`, ownerID)
-    const resourcesKey = `_private_resources_${ownerID}`
-    // Store the resource in the resource index key
-    // This is done in a queue to handle several simultaneous requests
-    // reading and writing to the same key
-    await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-      const existingResources = await sbp('chelonia.db/get', resourcesKey)
-      await sbp('chelonia.db/set', resourcesKey, (existingResources ? existingResources + '\x00' : '') + resourceID)
+    // Use a queue to check that the owner exists, preventing the creation of
+    // orphaned resources (e.g., because the owner was just deleted)
+    await sbp('chelonia/queueInvocation', ownerID, async () => {
+      const owner = await sbp('chelonia.db/get', ownerID)
+      if (!owner) {
+        throw new Error('Owner resource does not exist')
+      }
+      await sbp('chelonia.db/set', `_private_owner_${resourceID}`, ownerID)
+      const resourcesKey = `_private_resources_${ownerID}`
+      // Store the resource in the resource index key
+      // This is done in a queue to handle several simultaneous requests
+      // reading and writing to the same key
+      await appendToIndexFactory(resourcesKey)(resourceID)
     })
   },
-  'backend/server/registerBillableEntity': async function (resourceID: string) {
-    // Use a queue to ensure atomic updates
-    await sbp('okTurtles.eventQueue/queueEvent', '_private_billable_entities', async () => {
-      const existingBillableEntities = await sbp('chelonia.db/get', '_private_billable_entities')
-      await sbp('chelonia.db/set', '_private_billable_entities', (existingBillableEntities ? existingBillableEntities + '\x00' : '') + resourceID)
-    })
-  },
+  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': async function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
     if (!Number.isSafeInteger(size)) {
@@ -202,17 +207,138 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', sizeKey, (existingSize + size).toString(10))
     })
   },
-  'backend/server/saveDeletionToken': async function (resourceID: string) {
-    const deletionTokenRaw = new Uint8Array(18)
-    // $FlowFixMe[cannot-resolve-name]
-    crypto.getRandomValues(deletionTokenRaw)
-    // $FlowFixMe[incompatible-call]
-    const deletionToken = Buffer.from(deletionTokenRaw).toString('base64url')
-    await sbp('chelonia.db/set', `_private_deletionToken_${resourceID}`, deletionToken)
-    return deletionToken
-  },
   'backend/server/stop': function () {
     return hapi.stop()
+  },
+  async 'backend/deleteFile' (cid: string): Promise<void> {
+    const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+    const rawManifest = await sbp('chelonia.db/get', cid)
+    if (rawManifest === '') throw new BackendErrorGone()
+    if (!rawManifest) throw new BackendErrorNotFound()
+
+    try {
+      const manifest = JSON.parse(rawManifest)
+      if (!manifest || typeof manifest !== 'object') throw new BackendErrorBadData('manifest format is invalid')
+      if (manifest.version !== '1.0.0') throw new BackendErrorBadData('unsupported manifest version')
+      if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) throw BackendErrorBadData('missing chunks')
+      // Delete all chunks
+      await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))
+    } catch (e) {
+      console.warn(e, `Error parsing manifest for ${cid}. It's probably not a file manifest.`)
+      throw new BackendErrorNotFound()
+    }
+    // The keys to be deleted are not read from or updated, so they can be deleted
+    // without using a queue
+    const resourcesKey = `_private_resources_${owner}`
+    await removeFromIndexFactory(resourcesKey)(cid)
+
+    await sbp('chelonia.db/delete', `_private_owner_${cid}`)
+    await sbp('chelonia.db/delete', `_private_size_${cid}`)
+    await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
+
+    await sbp('chelonia.db/set', cid, '')
+  },
+  // eslint-disable-next-line require-await
+  async 'backend/deleteContract' (cid: string): Promise<void> {
+    let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
+    if (!contractsPendingDeletion) {
+      contractsPendingDeletion = new Set()
+      sbp('okTurtles.data/set', 'contractsPendingDeletion', contractsPendingDeletion)
+    }
+    // Avoid deadlocks due to loops
+    if (contractsPendingDeletion.has(cid)) {
+      return
+    }
+    contractsPendingDeletion.add(cid)
+
+    return sbp('chelonia/queueInvocation', cid, async () => {
+      const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+      const rawManifest = await sbp('chelonia.db/get', cid)
+      if (rawManifest === '') throw new BackendErrorGone()
+      if (!rawManifest) throw new BackendErrorNotFound()
+
+      // Cascade delete all resources owned by this contract, such as files
+      // (attachments) and other contracts. Removing a single contract could
+      // therefore result in a large number of contracts being deleted. For
+      // example, in Group Income, deleting an identity contract will delete:
+      //   - All groups created by that contract
+      //       - This includes files like the group avatar
+      //       - And also all chatrooms
+      //           - And all attachments in chatrooms
+      //   - All DMs created by that contract
+      //       - And all attachments
+      const resourcesKey = `_private_resources_${cid}`
+      const resources = await sbp('chelonia.db/get', resourcesKey)
+      if (resources) {
+        await Promise.allSettled(resources.split('\x00').map((resourceCid) => {
+          const parsed = parseCID(resourceCid)
+
+          if (parsed.code === multicodes.SHELTER_CONTRACT_DATA) {
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
+          } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
+          } else {
+            console.warn({ cid, resourceCid, code: parsed.code }, 'Resource should be deleted but it is of an unknown type')
+          }
+
+          return undefined
+        }))
+      }
+      await sbp('chelonia.db/delete', resourcesKey)
+
+      // Next, loop through all the events in the contract and delete them,
+      // starting with the most recent ones.
+      // If the deletion process is interrupted, parts of the contract will
+      // still be able to be synced, but won't be to write to it (due to
+      // latestHEADinfo not being deleted).
+      const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', cid)
+      if (latestHEADinfo) {
+        for (let i = latestHEADinfo.height; i > 0; i--) {
+          const eventKey = `_private_hidx=${cid}#${i}`
+          const event = await sbp('chelonia.db/get', eventKey)
+          if (event) {
+            await sbp('chelonia.db/delete', event)
+            await sbp('chelonia.db/delete', eventKey)
+          }
+        }
+        await sbp('chelonia/db/deleteLatestHEADinfo', cid)
+      }
+
+      // Then, delete all KV-store values associated with this contract
+      const kvIndexKey = `_private_kvIdx_${cid}`
+      const kvKeys = await sbp('chelonia.db/get', kvIndexKey)
+      if (kvKeys) {
+        await Promise.all(kvKeys.split('\x00').map((key) => {
+          return sbp('chelonia.db/delete', `_private_kv_${cid}_${key}`)
+        }))
+      }
+      await sbp('chelonia.db/delete', kvIndexKey)
+
+      await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
+        if (!name) return
+        return Promise.all([
+          sbp('chelonia.db/delete', `_private_cid2name_${cid}`),
+          appendToOrphanedNamesIndex(name)
+        ])
+      })
+      await sbp('chelonia.db/delete', `_private_rid_${cid}`)
+      await sbp('chelonia.db/delete', `_private_owner_${cid}`)
+      await sbp('chelonia.db/delete', `_private_size_${cid}`)
+      await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
+      await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
+
+      await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)
+      await sbp('chelonia.db/set', cid, '')
+
+      await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
+      await removeFromIndexFactory('_private_cheloniaState_index')(cid)
+      await removeFromIndexFactory('_private_billable_entities')(cid)
+      sbp('backend/server/broadcastDeletion', cid).catch(e => {
+        console.error(e, 'Error broadcasting contract deletion', cid)
+      })
+    }).finally(() => {
+      contractsPendingDeletion.delete(cid)
+    })
   }
 })
 
@@ -321,6 +447,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 ;(async function () {
   await initDB()
   await sbp('chelonia/configure', SERVER)
+  sbp('chelonia.persistentActions/configure', {
+    databaseKey: '_private_persistent_actions'
+  })
   // Load the saved Chelonia state
   // First, get the contract index
   const savedStateIndex = await sbp('chelonia.db/get', '_private_cheloniaState_index')
@@ -363,6 +492,9 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
       })
     }))
   }
+  sbp('chelonia.persistentActions/load').catch(e => {
+    console.error(e, 'Error loading persistent actions')
+  })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: require('./auth.js') },
