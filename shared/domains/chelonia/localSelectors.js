@@ -64,7 +64,7 @@ export default (sbp('sbp/selectors/register', {
       })
     })
 
-    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet, { added, removed }) => {
+    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet, { added, removed, permanent }) => {
       sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
         const states = added.length
           ? await sbp('chelonia/contract/fullState', added)
@@ -76,7 +76,11 @@ export default (sbp('sbp/selectors/register', {
         }
 
         removed.forEach(contractID => {
-          reactiveDel(vuexState.contracts, contractID)
+          if (permanent) {
+            reactiveSet(vuexState.contracts, contractID, null)
+          } else {
+            reactiveDel(vuexState.contracts, contractID)
+          }
           reactiveDel(vuexState, contractID)
         })
         for (const contractID of added) {
@@ -102,7 +106,7 @@ export default (sbp('sbp/selectors/register', {
     // If the current 'local' state has a height higher than or equal to the
     // Chelonia height, we've processed all events and don't need to wait any
     // longer.
-    if (cheloniaState.height <= localState.contracts[contractID]?.height) return
+    if (!cheloniaState || cheloniaState.height <= localState.contracts[contractID]?.height) return
 
     // Otherwise, listen for `EVENT_HANDLED_READY` events till we have reached
     // the necessary height.

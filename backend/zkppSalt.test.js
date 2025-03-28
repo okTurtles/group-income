@@ -1,9 +1,9 @@
 /* eslint-env mocha */
 
 import should from 'should'
+import { initDB } from './database.js'
 import 'should-sinon'
 import nacl from 'tweetnacl'
-import initDB from './database.js'
 
 import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'

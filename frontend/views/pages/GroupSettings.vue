@@ -186,7 +186,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['groupSettings', 'groupMembersCount']),
+    ...mapGetters(['currentGroupOwnerID', 'groupSettings', 'ourIdentityContractId']),
     currencies () {
       return currencies
     },
@@ -243,8 +243,8 @@ export default ({
       }
     },
     handleLeaveGroup () {
-      if (this.groupMembersCount === 1) {
-        alert(L("Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet."))
+      if (this.currentGroupOwnerID === this.ourIdentityContractId) {
+        this.openProposal('GroupDeletionModal')
       } else {
         this.openProposal('GroupLeaveModal')
       }
