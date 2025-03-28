@@ -712,7 +712,6 @@ route.POST('/deleteContract/{hash}', {
     }
     // We return the queue ID to allow users to track progress
     // TODO: Tracking progress not yet implemented
-    console.info('Scheduled task for ')
     return h.response({ id }).code(202)
   } catch (e) {
     return errorMapper(e)
