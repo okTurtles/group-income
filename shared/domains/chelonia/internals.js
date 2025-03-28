@@ -445,7 +445,12 @@ export default (sbp('sbp/selectors/register', {
 
     this.subscriptionSet.delete(contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), { added: [], removed: [contractID] })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, Array.from(this.subscriptionSet), {
+      added: [],
+      removed: [contractID],
+      permanent: params?.permanent,
+      resync: params?.resync
+    })
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},

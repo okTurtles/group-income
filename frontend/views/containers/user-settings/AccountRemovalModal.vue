@@ -136,6 +136,7 @@ export default ({
       if (this.$v.form.$invalid) { return }
       try {
         await sbp('gi.app/identity/delete', this.ourIdentityContractId, new Secret(this.form.password))
+        this.close()
       } catch (e) {
         console.error('AccountRemovalModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

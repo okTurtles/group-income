@@ -108,6 +108,7 @@ export default ({
           contractID: groupContractID,
           data: {}
         })
+        this.close()
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Delete group
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='submit' data-test='deleteGroup')
       p
         i18n(v-if='groupMembersCount > 1' :args='{groupMembersCount}') This group has {groupMembersCount} active members.
         span(v-if='groupMembersCount > 1') {{' '}}
@@ -88,12 +88,19 @@ export default ({
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      return sbp('chelonia/out/deleteContract', this.currentGroupId, {
-        [this.currentGroupId]: {
-          billableContractID: this.ourIdentityContractId
-        }
-      })
+    async submit () {
+      if (this.$v.form.$invalid) { return }
+      try {
+        await sbp('chelonia/out/deleteContract', this.currentGroupId, {
+          [this.currentGroupId]: {
+            billableContractID: this.ourIdentityContractId
+          }
+        })
+        this.close()
+      } catch (e) {
+        console.error('GroupDeletionModal submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
+      }
     }
   },
   validations: {

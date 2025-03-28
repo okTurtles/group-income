@@ -479,7 +479,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     // contracts will be removed). This keeps mentions working in existing
     // devices
     Object.keys(state.reverseNamespaceLookups).forEach((contractID) => {
-      if (profiles[contractID]) return
+      if (profiles[contractID] || state.contracts[contractID] === null) return
       profiles[contractID] = {
         username: state.reverseNamespaceLookups[contractID],
         contractID
