@@ -2,6 +2,7 @@ import encodeMultipartMessage from '@exact-realty/multipart-parser/encodeMultipa
 import decrypt from '@apeleghq/rfc8188/decrypt'
 import { aes256gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
+import { generateSalt } from '@chelonia/crypto'
 import sbp from '@sbp/sbp'
 import { blake32Hash, createCID, createCIDfromStream, multicodes } from '~/shared/functions.js'
 import { has } from 'turtledash'
@@ -318,13 +319,17 @@ export default (sbp('sbp/selectors/register', {
         'abcdefghijklmnopqrstuvwxyz'[(0, Math.random)() * 26 | 0]).join('')
     const stream = encodeMultipartMessage(boundary, transferParts)
 
+    const deletionToken = 'deletionToken' + generateSalt()
+    const deletionTokenHash = blake32Hash(deletionToken)
+
     const uploadResponse = await fetch(`${this.config.connectionURL}/file`, {
       method: 'POST',
       signal: this.abortController.signal,
       body: await ArrayBufferToUint8ArrayStream(this.config.connectionURL, stream),
       headers: new Headers([
         ...(billableContractID ? [['authorization', buildShelterAuthorizationHeader.call(this, billableContractID)]] : []),
-        ['content-type', `multipart/form-data; boundary=${boundary}`]
+        ['content-type', `multipart/form-data; boundary=${boundary}`],
+        ['shelter-deletion-token-digest', deletionTokenHash]
       ]),
       duplex: 'half'
     })
@@ -335,7 +340,7 @@ export default (sbp('sbp/selectors/register', {
         manifestCid: await uploadResponse.text(),
         downloadParams: cipherHandler.downloadParams
       },
-      delete: uploadResponse.headers.get('shelter-deletion-token')
+      delete: deletionToken
     }
   },
   'chelonia/fileDownload': async function (downloadOptions: Secret<{ manifestCid: string, downloadParams: Object }>, manifestChecker?: (manifest: Object) => boolean | Promise<boolean>) {
@@ -374,7 +379,7 @@ export default (sbp('sbp/selectors/register', {
       const hasCredential = has(credentials, cid)
       const hasToken = has(credentials[cid], 'token') && credentials[cid].token
       const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
-      if (!hasCredential || (!hasToken && hasToken === hasBillableContractID)) {
+      if (!hasCredential || hasToken === hasBillableContractID) {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
@@ -385,7 +390,7 @@ export default (sbp('sbp/selectors/register', {
           ['authorization',
             hasToken
               // $FlowFixMe[incompatible-type]
-              ? `bearer ${credentials[cid].token}`
+              ? `bearer ${(credentials[cid].token: any).valueOf()}`
               // $FlowFixMe[incompatible-type]
               // $FlowFixMe[incompatible-call]
               : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]
