@@ -315,6 +315,7 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', kvIndexKey)
 
       await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
+        if (!name) return
         return Promise.all([
           sbp('chelonia.db/delete', `_private_cid2name_${cid}`),
           appendToOrphanedNamesIndex(name)
