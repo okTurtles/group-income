@@ -8,7 +8,7 @@ import { INVITE_STATUS } from './constants.js'
 import { deserializeKey, serializeKey, sign, verifySignature } from '@chelonia/crypto'
 import type { EncryptedData } from './encryptedData.js'
 import { unwrapMaybeEncryptedData } from './encryptedData.js'
-import { ChelErrorForkedChain, ChelErrorWarning } from './errors.js'
+import { ChelErrorForkedChain, ChelErrorResourceGone, ChelErrorUnexpectedHttpResponseCode, ChelErrorWarning } from './errors.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
@@ -571,7 +571,11 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
     requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
     lastUrl = `${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`
     const eventsResponse = await fetch(lastUrl, { signal })
-    if (!eventsResponse.ok) throw new Error('Unexpected status code')
+    if (!eventsResponse.ok) {
+      const msg = `${eventsResponse.status}: ${eventsResponse.statusText}`
+      if (eventsResponse.status === 410) throw new ChelErrorResourceGone(msg)
+      throw new ChelErrorUnexpectedHttpResponseCode(msg)
+    }
     if (!eventsResponse.body) throw new Error('Missing body')
     latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)
     if (!Number.isSafeInteger(latestHeight)) throw new Error('Invalid latest height')
@@ -831,7 +835,7 @@ export const checkCanBeGarbageCollected = function (id: string): boolean {
   const rootState = sbp(this.config.stateSelector)
   return (
     // Check persistent references
-    (!has(rootState.contracts, id) || !has(rootState.contracts[id], 'references')) &&
+    (!has(rootState.contracts, id) || !rootState.contracts[id] || !has(rootState.contracts[id], 'references')) &&
     // Check ephemeral references
     !has(this.ephemeralReferenceCount, id)) &&
     // Check foreign keys (i.e., that no keys from this contract are being watched)

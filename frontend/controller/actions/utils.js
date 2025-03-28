@@ -61,6 +61,11 @@ export const encryptedAction = (
       if (!contractID) {
         throw new Error('Missing contract ID')
       }
+      const rootState = sbp('chelonia/rootState')
+      if (rootState.contracts[contractID] === null) {
+        console.warn(`[${action}] Contract is marked as permamently deleted, aborting`, contractID)
+        throw new Error('Contract permanently deleted: ' + contractID)
+      }
 
       // The following ensures that logging out waits until all pending actions
       // are written
@@ -325,17 +330,20 @@ export function groupContractsByType (contracts?: Object): Object {
     // contracts being 'watched' for foreign keys. The latter are managed
     // directly by Chelonia, so we also don't subscribe to them
     // $FlowFixMe[incompatible-use]
-    Object.entries(contracts).forEach(([id, { references, type }]) => {
+    Object.entries(contracts)
+      .filter(([id, value]) => !!value)
+      // $FlowFixMe[incompatible-use]
+      .forEach(([id, { references, type }]) => {
       // If the contract wasn't explicitly retained, skip it
       // NB! Ignoring `references` could result in an exception being thrown, as
       // as `sync` may only be called on contracts for which a reference count
       // exists.
-      if (!references) return
-      if (!contractIDs[type]) {
-        contractIDs[type] = []
-      }
-      contractIDs[type].push(id)
-    })
+        if (!references) return
+        if (!contractIDs[type]) {
+          contractIDs[type] = []
+        }
+        contractIDs[type].push(id)
+      })
   }
   return contractIDs
 }
@@ -372,7 +380,14 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
             await sbp('chelonia/contract/sync', contractID)
           } catch (e) {
             console.error(`syncContractsInOrder: failed to sync ${type}(${contractID}):`, e)
-            failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)
+            if (e.name === 'ChelErrorResourceGone') {
+              console.info('[syncContractsInOrder] Contract ID ' + contractID + ' has been deleted')
+              sbp('chelonia/contract/remove', contractID, { permanent: true }).catch(e => {
+                console.error('[syncContractsInOrder] Error handling contract deletion', e)
+              })
+            } else {
+              failedSyncs.push(`${type}(…${contractID.slice(-5)}) failed sync with '${e.message}'`)
+            }
           }
         } else {
           console.warn(`syncContractsInOrder: skipping ${type}(${contractID}) as it was removed while syncing previous contracts`)

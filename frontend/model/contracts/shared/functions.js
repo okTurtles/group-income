@@ -162,7 +162,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function leaveChatRoom (contractID: string, state: Object) {
+export async function postLeaveChatRoomCleanup (contractID: string, state: Object) {
   if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
   }
