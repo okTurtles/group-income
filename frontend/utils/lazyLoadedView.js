@@ -60,6 +60,7 @@ export function lazyPage (
   })
 }
 
+lazyModal('AccountRemovalModal', () => import('../views/containers/user-settings/AccountRemovalModal.vue'))
 lazyModal('ChatMembersAllModal', () => import('../views/containers/chatroom/ChatMembersAllModal.vue'))
 lazyModal('CreateNewChannelModal', () => import('../views/containers/chatroom/CreateNewChannelModal.vue'))
 lazyModal('DeleteChannelModal', () => import('../views/containers/chatroom/DeleteChannelModal.vue'))

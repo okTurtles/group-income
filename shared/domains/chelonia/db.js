@@ -40,8 +40,10 @@ export const parsePrefixableKey = (key: string): [string, string] => {
 export const prefixHandlers: Object = {
   // Decode buffers, but don't transform other values.
   '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
-  ':': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
-  'any:': value => value,
+  'any:': value => value
+  /*
+  // 2025-03-24: Commented out because it's not used; currently, only `any:`
+  // is used in the `/file` route.
   // Throw if the value if not a buffer.
   'blob:': value => {
     if (Buffer.isBuffer(value)) {
@@ -49,6 +51,7 @@ export const prefixHandlers: Object = {
     }
     throw new ChelErrorDBConnection('Unexpected value: expected a buffer.')
   }
+  */
 }
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
@@ -111,6 +114,9 @@ export default ((sbp('sbp/selectors/register', {
   },
   'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
     return sbp('chelonia.db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
+  },
+  'chelonia/db/deleteLatestHEADinfo': (contractID: string): Promise<void> => {
+    return sbp('chelonia.db/set', getLogHead(contractID), '')
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<SPMessage> {
     try {
