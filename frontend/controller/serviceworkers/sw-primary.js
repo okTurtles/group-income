@@ -555,9 +555,9 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   const rootGetters = sbp('state/vuex/getters')
   const icon = notification.avatarUserID && rootGetters.ourContactProfilesById[notification.avatarUserID]?.picture
     ? rootGetters.ourContactProfilesById[notification.avatarUserID].picture
-    : notification.groupID
-      ? rootGetters.groupSettingsForGroup(rootState[notification.groupID]).groupPicture
-      : undefined
+    : (notification.groupID && rootState[notification.groupID])
+        ? rootGetters.groupSettingsForGroup(rootState[notification.groupID]).groupPicture
+        : undefined
 
   makeNotification({
     icon: icon || undefined,
