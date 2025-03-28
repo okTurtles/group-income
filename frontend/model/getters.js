@@ -441,7 +441,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourContactProfilesByUsername (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
-      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .filter(contractID => state.contracts[contractID]?.type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID].attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
@@ -459,7 +459,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourContactProfilesById (state, getters) {
     const profiles = {}
     Object.keys(state.contracts)
-      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .filter(contractID => state.contracts[contractID]?.type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID]?.attributes
         if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
@@ -479,7 +479,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     // contracts will be removed). This keeps mentions working in existing
     // devices
     Object.keys(state.reverseNamespaceLookups).forEach((contractID) => {
-      if (profiles[contractID]) return
+      if (profiles[contractID] || state.contracts[contractID] === null) return
       profiles[contractID] = {
         username: state.reverseNamespaceLookups[contractID],
         contractID
@@ -515,7 +515,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       })
   },
   seenWelcomeScreen (state, getters) {
-    return getters.ourProfileActive && getters.currentIdentityState?.groups?.[state.currentGroupId]?.seenWelcomeScreen
+    return (
+      getters.currentIdentityState?.groups?.[state.currentGroupId]?.hasLeft ||
+      (
+        getters.ourProfileActive &&
+        getters.currentIdentityState?.groups?.[state.currentGroupId]?.seenWelcomeScreen
+      )
+    )
   },
   ...chatroomGetters,
   ...groupGetters,
