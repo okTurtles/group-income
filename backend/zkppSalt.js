@@ -182,7 +182,7 @@ const verifyChallenge = (contractID: string, r: string, s: string, userSig: stri
   return sig.byteLength === macBuf.byteLength && timingSafeEqual(sig, macBuf)
 }
 
-export const registrationKey = (provisionalId: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
+export const registrationKey = (provisionalId: string, b: string): false | {s: string; p: string; sig: string;} => {
   const encryptionKey = hashStringArray('REG', provisionalId, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const keyPair = boxKeyPair()
@@ -197,7 +197,7 @@ export const registrationKey = (provisionalId: string, b: string): Promise<false
   }
 }
 
-export const register = (provisionalId: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<string | false> => {
+export const register = (provisionalId: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): string | false => {
   if (!verifyChallenge(provisionalId, clientPublicKey, encryptedSecretKey, userSig)) {
     console.warn('register: Error validating challenge: ' + JSON.stringify({ contract: provisionalId, clientPublicKey, userSig }))
     throw new Error('register: Invalid challenge')

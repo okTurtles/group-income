@@ -236,8 +236,8 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
   validate: {
     params: Joi.object({
       contractID: Joi.string().regex(CID_REGEX).required(),
-      since: Joi.string().regex(/^[0-9]+$/).required(),
-      limit: Joi.string().regex(/^[0-9]+$/)
+      since: Joi.string().regex(/^\d{1,16}$/).required(),
+      limit: Joi.string().regex(/^\d{1,16}$/)
     })
   }
 }, async function (request, h) {
