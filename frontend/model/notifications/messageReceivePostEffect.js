@@ -51,20 +51,21 @@ async function messageReceivePostEffect ({
     let icon
     if (isDM) {
     // NOTE: partner identity contract could not be synced yet
-      const members = Object.keys(rootState[contractID].members)
-      const isDMToMyself = members.length === 1 && members[0] === identityContractID
-      const partners = members
+      const members = rootState[contractID].members
+      const membersList = Object.keys(members)
+      const isDMToMyself = membersList.length === 1 && membersList[0] === identityContractID
+      const partnersList = membersList
         .filter(memberID => memberID !== identityContractID)
         .sort((p1, p2) => {
-          const p1JoinedDate = new Date(identityContractID.members[p1].joinedDate).getTime()
-          const p2JoinedDate = new Date(identityContractID.members[p2].joinedDate).getTime()
+          const p1JoinedDate = new Date(members[p1].joinedDate).getTime()
+          const p2JoinedDate = new Date(members[p2].joinedDate).getTime()
           return p1JoinedDate - p2JoinedDate
         })
-      const lastJoinedPartner = isDMToMyself ? identityContractID : partners[partners.length - 1]
+      const lastJoinedPartner = isDMToMyself ? identityContractID : partnersList[partnersList.length - 1]
 
       title = isDMToMyself
         ? rootGetters.userDisplayNameFromID(identityContractID)
-        : partners.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
+        : partnersList.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
       icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
     } else {
       icon = rootGetters.ourContactProfilesById[memberID]?.picture
