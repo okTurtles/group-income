@@ -484,8 +484,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         // TODO: implement removing the missing subscriptionId from the index
         return
       }
-      const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)
-      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription, channelIDs)
+      const { settings, subscriptionInfo, channelIDs } = JSON.parse(subscriptionSerialized)
+      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo, { channelIDs, settings })
       channelIDs.forEach((channelID) => {
         if (!subscribersByChannelID[channelID]) subscribersByChannelID[channelID] = new Set()
         subscribersByChannelID[channelID].add(pushSubscriptions[subscriptionId])
@@ -513,18 +513,31 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 })()
 
 // Recurring task to send messages to push clients (for periodic notifications)
-setInterval(() => {
-  const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-  // Notification text
-  const notification = JSON.stringify({ type: 'recurring' })
-  // Find push subscriptions that do _not_ have a WS open. This means clients
-  // that are 'asleep' and that might be woken up by the push event
-  Object.values(pubsub.pushSubscriptions || {})
-    .filter((pushSubscription: Object) => pushSubscription.sockets.size === 0)
-    .forEach((pushSubscription: Object) => {
-      postEvent(pushSubscription, notification).catch((e) => {
-        console.warn(e, 'Error sending recurring message to web push client', pushSubscription.id)
+;(() => {
+  const map = new WeakMap()
+
+  setInterval(() => {
+    const now = Date.now()
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    // Notification text
+    const notification = JSON.stringify({ type: 'recurring' })
+    // Find push subscriptions that do _not_ have a WS open. This means clients
+    // that are 'asleep' and that might be woken up by the push event
+    Object.values(pubsub.pushSubscriptions || {})
+      .filter((pushSubscription: Object) =>
+        !!pushSubscription.settings.heartbeatInterval &&
+        pushSubscription.sockets.size === 0
+      ).forEach((pushSubscription: Object) => {
+        const last = map.get(pushSubscription) ?? Number.NEGATIVE_INFINITY
+        // If we've recently sent a recurring notification, skip it
+        if ((now - last) < pushSubscription.settings.heartbeatInterval) return
+
+        postEvent(pushSubscription, notification).then(() => {
+          map.set(pushSubscription, now)
+        }).catch((e) => {
+          console.warn(e, 'Error sending recurring message to web push client', pushSubscription.id)
+        })
       })
-    })
-// Repeat every 12 hours
-}, 12 * 60 * 60 * 1000)
+    // Repeat every 1 hour
+  }, 1 * 60 * 60 * 1000)
+})()
