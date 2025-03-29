@@ -16,10 +16,16 @@ import { blake32Hash } from '../shared/functions.js'
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
+// Regexes validated as safe with <https://devina.io/redos-checker>
 const CID_REGEX = /^z[1-9A-HJ-NP-Za-km-z]{8,72}$/
 // eslint-disable-next-line no-control-regex
 const KV_KEY_REGEX = /^(?!_private)[^\x00]{1,256}$/
-const NAME_REGEX = /^\w[\w-]{0,79}$/
+// Rules from validateUsername:
+//   - Length: 1-80
+//   - Can't start or end with _ or -
+//   - No two consecutive - or _
+//   - Allowed characters: lowercase letters, numbers, underscore and dashes
+const NAME_REGEX = /^(?![_-])((?![_-]{2})[abcdefghijklmnopqrstuvwxyz\d_-]){1,80}(?<![_-])$/
 
 const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
 const SIGNUP_LIMIT_MIN = parseInt(process.env.SIGNUP_LIMIT_MIN) || 2
