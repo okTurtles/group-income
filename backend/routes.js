@@ -25,7 +25,8 @@ const KV_KEY_REGEX = /^(?!_private)[^\x00]{1,256}$/
 //   - Can't start or end with _ or -
 //   - No two consecutive - or _
 //   - Allowed characters: lowercase letters, numbers, underscore and dashes
-const NAME_REGEX = /^(?![_-])((?![_-]{2})[abcdefghijklmnopqrstuvwxyz\d_-]){1,80}(?<![_-])$/
+const NAME_REGEX = /^(?![_-])((?!([_-])\2)[a-z\d_-]){1,80}(?<![_-])$/
+const POSITIVE_INTEGER_REGEX = /^\d{1,16}$/
 
 const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
 const SIGNUP_LIMIT_MIN = parseInt(process.env.SIGNUP_LIMIT_MIN) || 2
@@ -242,8 +243,8 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
   validate: {
     params: Joi.object({
       contractID: Joi.string().regex(CID_REGEX).required(),
-      since: Joi.string().regex(/^\d{1,16}$/).required(),
-      limit: Joi.string().regex(/^\d{1,16}$/)
+      since: Joi.string().regex(POSITIVE_INTEGER_REGEX).required(),
+      limit: Joi.string().regex(POSITIVE_INTEGER_REGEX)
     })
   }
 }, async function (request, h) {
