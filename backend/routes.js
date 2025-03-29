@@ -979,7 +979,7 @@ route.POST('/zkpp/register/{name}', {
 route.GET('/zkpp/{contractID}/auth_hash', {
   validate: {
     params: Joi.object({
-      contractID: Joi.string().regex(NAME_REGEX).required()
+      contractID: Joi.string().regex(CID_REGEX).required()
     }),
     query: Joi.object({ b: Joi.string().required() })
   }
