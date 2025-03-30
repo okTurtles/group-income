@@ -208,7 +208,28 @@ sbp('sbp/selectors/register', {
       // This is done in a queue to handle several simultaneous requests
       // reading and writing to the same key
       await appendToIndexFactory(resourcesKey)(resourceID)
+      sbp('chelonia.persistentActions/enqueue', ['backend/server/saveIndirectResourcesIndex', resourceID])
     })
+  },
+  'backend/server/saveIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    let indirectOwnerID = ownerID
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await appendToIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(resourceID)
+    }
+  },
+  'backend/server/removeIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
+    const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
+    const allSubresources = [
+      ...(resources ? resources.split('\x00') : []),
+      ...(indirectResources ? indirectResources.split('\x00') : [])
+    ]
+    let indirectOwnerID = ownerID
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await removeFromIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(allSubresources)
+    }
   },
   'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': function (resourceID: string, size: number) {
@@ -327,6 +348,8 @@ sbp('sbp/selectors/register', {
         }))
       }
       await sbp('chelonia.db/delete', kvIndexKey)
+      await sbp('backend/server/removeIndirectResourcesIndex', cid)
+      await sbp('chelonia.db/delete', `_private_indirectResources_${cid}`)
 
       await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
         if (!name) return

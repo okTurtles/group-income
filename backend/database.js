@@ -294,42 +294,47 @@ const appendToNamesIndex = appendToIndexFactory('_private_names_index')
  * @param key - The key that identifies the index in the database.
  * @returns A function that takes a value to remove from the index.
  */
-export const removeFromIndexFactory = (key: string): (value: string) => Promise<void> => {
-  return (value: string) => {
+export const removeFromIndexFactory = (key: string): (values: string | string[]) => Promise<void> => {
+  return (values: string | string[]) => {
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the existing entries from the database using the provided key
-      const existingEntries = await sbp('chelonia.db/get', key)
+      let existingEntries = await sbp('chelonia.db/get', key)
       // Exit if there are no existing entries
       if (!existingEntries) return
 
-      // Handle the case where the value is at the end of the entries
-      if (existingEntries.endsWith('\x00' + value)) {
-        await sbp('chelonia.db/set', key, existingEntries.slice(0, -value.length - 1))
-        return
+      if (!Array.isArray(values)) {
+        values = [values]
       }
 
-      // Handle the case where the value is at the start of the entries
-      if (existingEntries.startsWith(value + '\x00')) {
-        await sbp('chelonia.db/set', key, existingEntries.slice(value.length + 1))
-        return
+      for (const value of values) {
+        // Handle the case where the value is at the end of the entries
+        if (existingEntries.endsWith('\x00' + value)) {
+          existingEntries = existingEntries.slice(0, -value.length - 1)
+          continue
+        }
+
+        // Handle the case where the value is at the start of the entries
+        if (existingEntries.startsWith(value + '\x00')) {
+          existingEntries = existingEntries.slice(value.length + 1)
+          continue
+        }
+
+        // Handle the case where the existing entries are exactly the value
+        if (existingEntries === value) {
+          existingEntries = undefined
+          break
+        }
+
+        // Find the index of the value in the existing entries
+        const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
+        if (entryIndex === -1) continue
+
+        // Create an updated index by removing the value
+        existingEntries = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
       }
-
-      // Handle the case where the existing entries are exactly the value
-      if (existingEntries === value) {
-        await sbp('chelonia.db/delete', key)
-        return
-      }
-
-      // Find the index of the value in the existing entries
-      const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
-      if (entryIndex === -1) return
-
-      // Create an updated index by removing the value
-      const updatedIndex = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
-
       // Update the index in the database or delete it if empty
-      if (updatedIndex) {
-        await sbp('chelonia.db/set', key, updatedIndex)
+      if (existingEntries) {
+        await sbp('chelonia.db/set', key, existingEntries)
       } else {
         await sbp('chelonia.db/delete', key)
       }
