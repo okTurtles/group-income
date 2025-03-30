@@ -308,13 +308,17 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
 
       for (const value of values) {
         // Handle the case where the value is at the end of the entries
+        // $FlowFixMe[incompatible-use]
         if (existingEntries.endsWith('\x00' + value)) {
+          // $FlowFixMe[incompatible-use]
           existingEntries = existingEntries.slice(0, -value.length - 1)
           continue
         }
 
         // Handle the case where the value is at the start of the entries
+        // $FlowFixMe[incompatible-use]
         if (existingEntries.startsWith(value + '\x00')) {
+          // $FlowFixMe[incompatible-use]
           existingEntries = existingEntries.slice(value.length + 1)
           continue
         }
@@ -326,10 +330,12 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
         }
 
         // Find the index of the value in the existing entries
+        // $FlowFixMe[incompatible-use]
         const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
         if (entryIndex === -1) continue
 
         // Create an updated index by removing the value
+        // $FlowFixMe[incompatible-use]
         existingEntries = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
       }
       // Update the index in the database or delete it if empty

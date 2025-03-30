@@ -42,6 +42,10 @@ if (
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
+const updatedSizeList = new Set()
+// TODO: Use something more fault tolerant, like periodic notifications
+setTimeout(sbp, 300e3, 'backend/server/computeSizeTask')
+
 const hapi = new Hapi.Server({
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
@@ -100,6 +104,7 @@ const updateSize = async (resourceID: string, sizeKey: string, size: number) => 
     if (!(updatedSize >= 0)) {
       throw new TypeError(`Invalid stored updated size ${updatedSize} for ${resourceID}`)
     }
+    updatedSizeList.add(resourceID)
     await sbp('chelonia.db/set', sizeKey, updatedSize.toString(10))
   })
 }
@@ -223,6 +228,7 @@ sbp('sbp/selectors/register', {
     const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
     const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
     const allSubresources = [
+      resourceID,
       ...(resources ? resources.split('\x00') : []),
       ...(indirectResources ? indirectResources.split('\x00') : [])
     ]
@@ -230,6 +236,40 @@ sbp('sbp/selectors/register', {
     while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
       await removeFromIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(allSubresources)
     }
+  },
+  'backend/server/computeSizeTask': async function () {
+    const contractIDs = Array.from(updatedSizeList)
+    updatedSizeList.clear()
+    const ultimateOwnersSet = new Set(await Promise.all(contractIDs.map(async (contractID) => {
+      let ownerID = contractID
+      for (;;) {
+        const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`)
+        if (!newOwnerID) break
+        ownerID = newOwnerID
+      }
+      return ownerID
+    })))
+    await Promise.all(Array.from(ultimateOwnersSet).map(async (resourceID) => {
+      const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
+      const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
+      const allSubresources = Array.from(new Set([
+        resourceID,
+        ...(resources ? resources.split('\x00') : []),
+        ...(indirectResources ? indirectResources.split('\x00') : [])
+      ]))
+      const totalSize = (await Promise.all(allSubresources.map((id) => {
+        return sbp('chelonia.db/get', `_private_size_${id}`)
+      }))).reduce((acc, cv, i) => {
+        if (cv) {
+          const parsed = parseInt(cv, 10)
+          if (parsed) return parsed + acc
+        }
+        return acc
+      }, 0)
+      await sbp('chelonia.db/set', `_private_ownerTotalSize_${resourceID}`, totalSize.toString(10))
+    }))
+    // TODO: Use something more fault tolerant, like periodic notifications
+    setTimeout(sbp, 300e3, 'backend/server/computeSizeTask')
   },
   'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': function (resourceID: string, size: number) {
