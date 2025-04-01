@@ -17,7 +17,7 @@
         profile-card(:contractID='from' direction='top-left')
           avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
-    .c-body
+    .c-body(ref='msgBody')
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
           profile-card(:contractID='from' direction='top-left')
@@ -67,7 +67,7 @@
         i18n(tag='span') Message failed to send.
         i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
-  .c-full-width-body
+  .c-full-width-body(ref='msgFullWidthBody')
     slot(name='full-width-body')
 
   message-reactions(
@@ -113,13 +113,18 @@ import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import {
+  CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE,
+  CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
+} from '~/frontend/utils/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
+  inject: ['chatMainConfig'],
   components: {
     Avatar,
     ProfileCard,
@@ -132,7 +137,10 @@ export default ({
   },
   data () {
     return {
-      isEditing: false
+      isEditing: false,
+      ephemeral: {
+        enableTruncateToggle: false
+      }
     }
   },
   props: {
@@ -189,6 +197,16 @@ export default ({
       return this.isAlreadyPinned
         ? L('Pinned by {strong_}{user}{_strong}', { user: this.pinnedUserName, ...LTags('strong') })
         : ''
+    },
+    isTypeText () {
+      return this.type === MESSAGE_TYPES.TEXT
+    },
+    isTypePoll () {
+      return this.type === MESSAGE_TYPES.POLL
+    },
+    shouldCheckToTruncate () {
+      // Should check if the message content is long enough to display 'show more/less' toggle button
+      return this.isTypeText || this.isTypePoll
     }
   },
   methods: {
@@ -236,6 +254,26 @@ export default ({
       // Extract only numbers and colons, removing non-numeric characters like AM/PM
       const cleaned = tString.replace(/[^\d:]/g, '')
       return cleaned
+    },
+    checkMessageBodyHeight () {
+      const msgBodyEl = this.isTypePoll ? this.$refs.msgFullWidthBody : this.$refs.msgBody
+      const threshold = this.chatMainConfig.isMobile
+        ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
+        : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
+
+      if (msgBodyEl) {
+        const height = msgBodyEl.clientHeight
+        console.log('!@# msgHeight: ', height)
+
+        if (height > threshold) {
+          this.ephemeral.enableTruncateToggle = true
+        }
+      }
+    }
+  },
+  mounted () {
+    if (this.shouldCheckToTruncate) {
+      this.checkMessageBodyHeight()
     }
   }
 }: Object)
