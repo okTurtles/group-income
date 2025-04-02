@@ -545,7 +545,7 @@ export default {
 }
 
 .c-invisible-link {
-  position: relative;
+  position: absolute;
   top: -10rem;
   left: -10rem;
   opacity: 0;

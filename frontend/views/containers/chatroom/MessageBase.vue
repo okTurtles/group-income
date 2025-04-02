@@ -17,7 +17,10 @@
         profile-card(:contractID='from' direction='top-left')
           avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
-    .c-body(ref='msgBody')
+    .c-body(
+      ref='msgBody'
+      :class='{ "is-truncated": ephemeral.truncateToggle.enabled && !ephemeral.truncateToggle.isShowingAll }'
+    )
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
           profile-card(:contractID='from' direction='top-left')
@@ -68,7 +71,10 @@
         i18n(tag='span') Message failed to send.
         i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
-  .c-full-width-body(ref='msgFullWidthBody')
+  .c-full-width-body(
+    ref='msgFullWidthBody'
+    :class='{ "is-truncated": ephemeral.truncateToggle.enabled && !ephemeral.truncateToggle.isShowingAll }'
+  )
     slot(name='full-width-body')
 
   message-reactions(
@@ -101,11 +107,13 @@
 
   .c-truncate-toggle-container(v-if='ephemeral.truncateToggle.enabled')
     button.is-unstyled.c-truncate-toggle(
+      :class='{ "is-showing": ephemeral.truncateToggle.isShowingAll }'
       type='button'
       @click.stop='toggleMessageTruncation'
     )
       i18n(v-if='ephemeral.truncateToggle.isShowingAll') Show less
-      i18n(v-else) Show all
+      i18n(v-else) Show more
+      i.icon-angle-down
 </template>
 
 <script>
@@ -328,7 +336,6 @@ export default ({
 
 .c-message {
   --c-bg-color: var(--background_0);
-
   padding: 0.5rem 1rem;
   scroll-margin: 20px;
 
@@ -495,8 +502,21 @@ export default ({
 // message-truncation related styles
 
 .c-message.has-truncate-toggle {
-  &.truncate-toggle__showing-all {
-    padding-bottom: 2rem;
+  padding-bottom: 2.5rem;
+  --c-container-bg: linear-gradient(to bottom, rgba(0, 0, 0, 0) 45%, var(--c-bg-color) 95%);
+  --c-container-bg-opacity: 0.57;
+
+  .is-dark-theme & {
+    --c-container-bg: linear-gradient(to bottom, rgba(0, 0, 0, 0) 27.5%, var(--c-bg-color) 87.5%);
+    --c-container-bg-opacity: 0.825;
+  }
+
+  .c-body,
+  .c-full-width-body {
+    &.is-truncated {
+      max-height: 36rem;
+      overflow-y: hidden;
+    }
   }
 
   .c-truncate-toggle-container {
@@ -504,30 +524,33 @@ export default ({
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 1.5rem;
+    height: 2.5rem;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-bottom: 0.5rem;
     pointer-events: none;
-
-    &::after {
-      content: '';
-      position: absolute;
-      z-index: 0;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 150%;
-      background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--c-bg-color) 50%);
-      opacity: 0.885;
-    }
 
     button.c-truncate-toggle {
       z-index: 1;
       pointer-events: initial;
-      color: $text_0;
+      color: $primary_0;
       font-size: $size_5;
       padding: 0 1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      column-gap: 6px;
+
+      i {
+        font-size: 1.15em;
+      }
+
+      &.is-showing {
+        i {
+          transform: rotate(180deg);
+        }
+      }
     }
   }
 }
