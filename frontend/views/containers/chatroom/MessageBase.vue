@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message.force-motion(
-  :class='[variant, isSameSender && "same-sender", "is-type-" + type, isAlreadyPinned && "pinned"]'
+  :class='componentRootClasses'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
@@ -98,6 +98,14 @@
     @pinToChannel='$emit("pin-to-channel")'
     @unpinFromChannel='$emit("unpin-from-channel")'
   )
+
+  .c-truncate-toggle-container(v-if='ephemeral.truncateToggle.enabled')
+    button.is-unstyled.c-truncate-toggle(
+      type='button'
+      @click.stop='toggleMessageTruncation'
+    )
+      i18n(v-if='ephemeral.truncateToggle.isShowingAll') Show less
+      i18n(v-else) Show all
 </template>
 
 <script>
@@ -141,7 +149,10 @@ export default ({
     return {
       isEditing: false,
       ephemeral: {
-        enableTruncateToggle: false
+        truncateToggle: {
+          enabled: false,
+          isShowingAll: false
+        }
       }
     }
   },
@@ -180,6 +191,18 @@ export default ({
   },
   computed: {
     ...mapGetters(['userDisplayNameFromID']),
+    componentRootClasses () {
+      return [
+        this.variant,
+        'is-type-' + this.type,
+        {
+          'same-sender': this.isSameSender,
+          'pinned': this.isAlreadyPinned,
+          'has-truncate-toggle': this.ephemeral.truncateToggle.enabled,
+          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll
+        }
+      ]
+    },
     hasAttachments () {
       return Boolean(this.attachments?.length)
     },
@@ -272,9 +295,12 @@ export default ({
         console.log('!@# msgHeight: ', height)
 
         if (height > threshold) {
-          this.ephemeral.enableTruncateToggle = true
+          this.ephemeral.truncateToggle.enabled = true
         }
       }
+    },
+    toggleMessageTruncation () {
+      this.ephemeral.truncateToggle.isShowingAll = !this.ephemeral.truncateToggle.isShowingAll
     }
   },
   watch: {
@@ -301,6 +327,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-message {
+  --c-bg-color: var(--background_0);
+
   padding: 0.5rem 1rem;
   scroll-margin: 20px;
 
@@ -334,15 +362,14 @@ export default ({
     margin-top: 0.25rem;
   }
 
-  .button {
-    flex-shrink: 0;
-  }
-
-  .c-avatar {
-    max-width: unset;
+  &.failed {
+    .c-failure-message-wrapper {
+      display: block;
+    }
   }
 
   &:hover {
+    --c-bg-color: var(--general_2);
     background-color: $general_2;
 
     &:not(.pending, .failed) {
@@ -356,6 +383,14 @@ export default ({
     }
   }
 
+  .button {
+    flex-shrink: 0;
+  }
+
+  .c-avatar {
+    max-width: unset;
+  }
+
   .c-failure-message-wrapper {
     display: none;
     margin-top: 0.25rem;
@@ -367,12 +402,6 @@ export default ({
       margin-left: 0.1rem;
       cursor: pointer;
       text-decoration: underline;
-    }
-  }
-
-  &.failed {
-    .c-failure-message-wrapper {
-      display: block;
     }
   }
 }
@@ -461,5 +490,45 @@ export default ({
 
 .c-edit-send-area {
   padding: 0 0 1rem;
+}
+
+// message-truncation related styles
+
+.c-message.has-truncate-toggle {
+  &.truncate-toggle__showing-all {
+    padding-bottom: 2rem;
+  }
+
+  .c-truncate-toggle-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 150%;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--c-bg-color) 50%);
+      opacity: 0.885;
+    }
+
+    button.c-truncate-toggle {
+      z-index: 1;
+      pointer-events: initial;
+      color: $text_0;
+      font-size: $size_5;
+      padding: 0 1rem;
+    }
+  }
 }
 </style>
