@@ -22,8 +22,8 @@ export const KILOBYTE = 1 << 10
 export const MEGABYTE = 1 << 20
 export const CHAT_ATTACHMENT_SIZE_LIMIT = 30 * MEGABYTE // in byte.
 export const IMAGE_ATTACHMENT_MAX_SIZE = 400 * KILOBYTE // 400KB
-export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP = 750 * 2 // in px
-export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 750 * 3 // The value of mobile is more tolerant considering smaller screen size.
+export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP = 750 * 1.5 // in px
+export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 750 * 2 // The value of mobile is more tolerant considering smaller screen size.
 
 export const TextObjectType = {
   Text: 'TEXT',

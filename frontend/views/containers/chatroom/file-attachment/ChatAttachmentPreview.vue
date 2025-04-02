@@ -25,6 +25,7 @@
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
           @click='openImageViewer(objectURLList[entryIndex])'
+          @load='onImageLoad(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -97,6 +98,7 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { L } from '@common/common.js'
+import { uniq } from 'turtledash'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -123,6 +125,7 @@ export default {
   data () {
     return {
       objectURLList: [],
+      loadedURLList: [],
       loadingBoxStyles: []
     }
   },
@@ -131,6 +134,9 @@ export default {
       return !this.attachmentList.some(attachment => {
         return this.fileType(attachment) === 'non-image'
       })
+    },
+    allImageAttachments () {
+      return this.attachmentList.filter(entry => this.fileType(entry) === 'image')
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -239,7 +245,7 @@ export default {
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
-      const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+      const imageAttachmentDetailsList = this.allImageAttachments
         .map((entry, index) => {
           const imgUrl = entry.url || this.objectURLList[index] || ''
           return {
@@ -252,17 +258,26 @@ export default {
             manifestCid: entry.downloadData?.manifestCid
           }
         })
-      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
+      const initialIndex = imageAttachmentDetailsList.findIndex(attachment => attachment.imgUrl === objectURL)
 
       sbp(
         'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
         null,
         {
-          images: allImageAttachments,
+          images: imageAttachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
           canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
         }
       )
+    },
+    onImageLoad (url) {
+      if (this.isForDownload) {
+        this.loadedURLList = uniq([...this.loadedURLList, url])
+
+        if (this.allImageAttachments.length === this.loadedURLList.length) {
+          this.$nextTick(() => this.$emit('image-attachments-render-complete'))
+        }
+      }
     }
   },
   watch: {

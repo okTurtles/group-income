@@ -61,6 +61,7 @@
           :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
+          @image-attachments-render-complete='checkMessageBodyHeight'
         )
 
       .c-failure-message-wrapper
@@ -120,6 +121,7 @@ import {
 } from '~/frontend/utils/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
+import { getFileType } from '@view-utils/filters.js'
 
 export default ({
   name: 'MessageBase',
@@ -180,6 +182,10 @@ export default ({
     ...mapGetters(['userDisplayNameFromID']),
     hasAttachments () {
       return Boolean(this.attachments?.length)
+    },
+    hasImageAttachment () {
+      return Array.isArray(this.attachments) &&
+        this.attachments.some(attachment => getFileType(attachment.mimeType) === 'image')
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
@@ -257,7 +263,7 @@ export default ({
     },
     checkMessageBodyHeight () {
       const msgBodyEl = this.isTypePoll ? this.$refs.msgFullWidthBody : this.$refs.msgBody
-      const threshold = this.chatMainConfig.isMobile
+      const threshold = this.chatMainConfig.isPhone
         ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
         : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
 
@@ -271,8 +277,20 @@ export default ({
       }
     }
   },
+  watch: {
+    'chatMainConfig.isPhone' () {
+      if (this.shouldCheckToTruncate) {
+        this.checkMessageBodyHeight()
+      }
+    }
+  },
   mounted () {
-    if (this.shouldCheckToTruncate) {
+    if (
+      this.shouldCheckToTruncate &&
+      // NOTE: If the message has any image attached, defer this check until the <img /> DOMs are rendered.
+      //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
+      !this.hasImageAttachment
+    ) {
       this.checkMessageBodyHeight()
     }
   }
