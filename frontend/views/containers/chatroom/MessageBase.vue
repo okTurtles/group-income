@@ -105,14 +105,17 @@
     @unpinFromChannel='$emit("unpin-from-channel")'
   )
 
-  .c-truncate-toggle-container(v-if='ephemeral.truncateToggle.enabled')
+  .c-truncate-toggle-container(
+    v-if='ephemeral.truncateToggle.enabled'
+    :class='{ "should-indent": isTypeText }'
+  )
     button.is-unstyled.c-truncate-toggle(
       :class='{ "is-showing": ephemeral.truncateToggle.isShowingAll }'
       type='button'
       @click.stop='toggleMessageTruncation'
     )
-      i18n(v-if='ephemeral.truncateToggle.isShowingAll') Show less
-      i18n(v-else) Show more
+      i18n.c-btn-text(v-if='ephemeral.truncateToggle.isShowingAll') Show less
+      i18n.c-btn-text(v-else) Show more
       i.icon-angle-down
 </template>
 
@@ -300,15 +303,19 @@ export default ({
 
       if (msgBodyEl) {
         const height = msgBodyEl.clientHeight
-        console.log('!@# msgHeight: ', height)
 
         if (height > threshold) {
           this.ephemeral.truncateToggle.enabled = true
         }
       }
     },
-    toggleMessageTruncation () {
-      this.ephemeral.truncateToggle.isShowingAll = !this.ephemeral.truncateToggle.isShowingAll
+    toggleMessageTruncation (e) {
+      const currentValue = this.ephemeral.truncateToggle.isShowingAll
+      this.ephemeral.truncateToggle.isShowingAll = !currentValue
+
+      if (currentValue) {
+        this.$el.scrollIntoView({ behavior: 'instant' })
+      }
     }
   },
   watch: {
@@ -503,18 +510,11 @@ export default ({
 
 .c-message.has-truncate-toggle {
   padding-bottom: 2.5rem;
-  --c-container-bg: linear-gradient(to bottom, rgba(0, 0, 0, 0) 45%, var(--c-bg-color) 95%);
-  --c-container-bg-opacity: 0.57;
-
-  .is-dark-theme & {
-    --c-container-bg: linear-gradient(to bottom, rgba(0, 0, 0, 0) 27.5%, var(--c-bg-color) 87.5%);
-    --c-container-bg-opacity: 0.825;
-  }
 
   .c-body,
   .c-full-width-body {
     &.is-truncated {
-      max-height: 36rem;
+      max-height: 28rem;
       overflow-y: hidden;
     }
   }
@@ -531,25 +531,36 @@ export default ({
     padding-bottom: 0.5rem;
     pointer-events: none;
 
+    &.should-indent {
+      padding-left: 4.25rem;
+    }
+
     button.c-truncate-toggle {
       z-index: 1;
       pointer-events: initial;
       color: $primary_0;
       font-size: $size_5;
-      padding: 0 1rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       column-gap: 6px;
 
-      i {
-        font-size: 1.15em;
+      &:hover,
+      &:focus,
+      &:focus-within {
+        .c-btn-text {
+          text-decoration: underline;
+        }
       }
 
       &.is-showing {
         i {
           transform: rotate(180deg);
         }
+      }
+
+      i {
+        font-size: 1.15em;
       }
     }
   }
