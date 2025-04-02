@@ -285,7 +285,7 @@ const setupChelonia = async (): Promise<*> => {
           if (cID === rootState.loggedIn?.identityContractID) {
             sbp('chelonia/contract/setKvFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
           }
-          return
+          break
         case 'gi.contracts/group':
           sbp('chelonia/contract/setKvFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
           return

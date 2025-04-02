@@ -433,7 +433,7 @@ const publicMethods = {
         yield * subscribers
       } else {
         for (const subscriber of subscribers) {
-          const kvFilter = subscriber.kvFilter.get(kvKey)
+          const kvFilter = subscriber.kvFilter.get(channelID)
           if (!kvFilter || kvFilter.has(kvKey)) yield subscriber
         }
       }
