@@ -120,7 +120,7 @@ function namespaceKey (name: string): string {
   return 'name=' + name
 }
 
-export const initDB = async () => {
+export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean } = {}) => {
   // If persistence must be enabled:
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia.db/get' and '-set' to use it with an LRU cache
@@ -188,6 +188,7 @@ export const initDB = async () => {
     })
     sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
   }
+  if (skipDbPreloading) return
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
