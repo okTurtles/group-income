@@ -305,6 +305,9 @@ const defaultMessageHandlers = {
     } else {
       log.debug('Already subscribed to', channelID)
     }
+    // `kvFilter` can be undefined, which is incompatible with the way JSONType
+    // is defined. Fixing this seems like it's more effort than it's worth, as
+    // we'll be transitioning to TypeScript soon.
     // $FlowFixMe[incompatible-call]
     socket.send(createOkResponse({ type: SUB, channelID, kvFilter }))
   },
@@ -326,7 +329,7 @@ const defaultMessageHandlers = {
         socket.kvFilter.delete(channelID)
       }
     } else {
-      log.debug('Not subscribed to', channelID)
+      log.debug('[KV_FILTER] Not subscribed to', channelID)
     }
     // $FlowFixMe[incompatible-call]
     socket.send(createOkResponse({ type: KV_FILTER, channelID, kvFilter }))

@@ -283,14 +283,16 @@ const setupChelonia = async (): Promise<*> => {
       switch (rootState.contracts[cID]?.type) {
         case 'gi.contracts/identity':
           if (cID === rootState.loggedIn?.identityContractID) {
-            sbp('chelonia/contract/setKvFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
+            sbp('chelonia/kv/setFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
+            return
           }
+          // Use the default case for foreign identity contracts
           break
         case 'gi.contracts/group':
-          sbp('chelonia/contract/setKvFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
+          sbp('chelonia/kv/setFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
           return
       }
-      sbp('chelonia/contract/setKvFilter', cID, [])
+      sbp('chelonia/kv/setFilter', cID, [])
     })
   })
 
