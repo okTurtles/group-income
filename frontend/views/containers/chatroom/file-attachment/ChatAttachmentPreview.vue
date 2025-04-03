@@ -275,6 +275,9 @@ export default {
         this.loadedURLList = uniq([...this.loadedURLList, url])
 
         if (this.allImageAttachments.length === this.loadedURLList.length) {
+          // Check if all image attachments are loaded in the DOM, notify the parent component.
+          // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
+          //  if this becomes useful in more places.)
           this.$nextTick(() => this.$emit('image-attachments-render-complete'))
         }
       }

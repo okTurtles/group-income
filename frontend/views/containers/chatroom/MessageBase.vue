@@ -300,7 +300,9 @@ export default ({
       return cleaned
     },
     determineToEnableTruncationToggle () {
-      const msgBodyEl = this.isTypePoll ? this.$refs.msgFullWidthBody : this.$refs.msgBody
+      const msgBodyEl = this.isTypePoll
+        ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container.
+        : this.$refs.msgBody
       const threshold = this.chatMainConfig.isPhone
         ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
         : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
@@ -317,6 +319,7 @@ export default ({
       this.ephemeral.truncateToggle.isShowingAll = !currentValue
 
       if (currentValue) {
+        // When folding the expanded message, scroll to the message so that it stays in the screen.
         this.$el.scrollIntoView({ behavior: 'instant' })
       }
     }
@@ -553,6 +556,10 @@ export default ({
       justify-content: center;
       column-gap: 6px;
 
+      i {
+        font-size: 1.15em;
+      }
+
       &:hover,
       &:focus,
       &:focus-within {
@@ -565,10 +572,6 @@ export default ({
         i {
           transform: rotate(180deg);
         }
-      }
-
-      i {
-        font-size: 1.15em;
       }
     }
   }
