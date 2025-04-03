@@ -301,7 +301,7 @@ export default ({
     },
     determineToEnableTruncationToggle () {
       const msgBodyEl = this.isTypePoll
-        ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container.
+        ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container
         : this.$refs.msgBody
       const threshold = this.chatMainConfig.isPhone
         ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
