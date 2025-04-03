@@ -19,7 +19,7 @@
 
     .c-body(
       ref='msgBody'
-      :class='{ "is-truncated": ephemeral.truncateToggle.enabled && !ephemeral.truncateToggle.isShowingAll }'
+      :class='{ "is-truncated": isMessageCropped }'
     )
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
@@ -64,7 +64,7 @@
           :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
-          @image-attachments-render-complete='checkIfTruncateToggleEnabled'
+          @image-attachments-render-complete='determineToEnableTruncationToggle'
         )
 
       .c-failure-message-wrapper
@@ -73,7 +73,7 @@
 
   .c-full-width-body(
     ref='msgFullWidthBody'
-    :class='{ "is-truncated": ephemeral.truncateToggle.enabled && !ephemeral.truncateToggle.isShowingAll }'
+    :class='{ "is-truncated": isMessageCropped }'
   )
     slot(name='full-width-body')
 
@@ -247,6 +247,10 @@ export default ({
     shouldCheckToTruncate () {
       // Should check if the message content is long enough to display 'show more/less' toggle button
       return this.isTypeText || this.isTypePoll
+    },
+    isMessageCropped () {
+      // Check if the truncate-toggle is enabled and the message is folded.
+      return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
     }
   },
   methods: {
@@ -295,17 +299,16 @@ export default ({
       const cleaned = tString.replace(/[^\d:]/g, '')
       return cleaned
     },
-    checkIfTruncateToggleEnabled () {
+    determineToEnableTruncationToggle () {
       const msgBodyEl = this.isTypePoll ? this.$refs.msgFullWidthBody : this.$refs.msgBody
       const threshold = this.chatMainConfig.isPhone
         ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
         : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
-      const { enabled, isShowingAll } = this.ephemeral.truncateToggle
 
       if (msgBodyEl) {
-        const isMsgCurrentlyTruncated = enabled && !isShowingAll
-        const height = isMsgCurrentlyTruncated ? msgBodyEl.scrollHeight : msgBodyEl.clientHeight
-
+        // If the truncate-toggle is already displayed and the message is folded,
+        // we should use scrollHeight value for the check instead of clientHeight.
+        const height = this.isMessageCropped ? msgBodyEl.scrollHeight : msgBodyEl.clientHeight
         this.ephemeral.truncateToggle.enabled = height > threshold
       }
     },
@@ -321,7 +324,7 @@ export default ({
   watch: {
     'chatMainConfig.isPhone' () {
       if (this.shouldCheckToTruncate) {
-        this.checkIfTruncateToggleEnabled()
+        this.determineToEnableTruncationToggle()
       }
     }
   },
@@ -332,7 +335,7 @@ export default ({
       //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
       !this.hasImageAttachment
     ) {
-      this.checkIfTruncateToggleEnabled()
+      this.determineToEnableTruncationToggle()
     }
   }
 }: Object)
