@@ -64,7 +64,7 @@
           :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
-          @image-attachments-render-complete='checkMessageBodyHeight'
+          @image-attachments-render-complete='checkIfTruncateToggleEnabled'
         )
 
       .c-failure-message-wrapper
@@ -295,18 +295,18 @@ export default ({
       const cleaned = tString.replace(/[^\d:]/g, '')
       return cleaned
     },
-    checkMessageBodyHeight () {
+    checkIfTruncateToggleEnabled () {
       const msgBodyEl = this.isTypePoll ? this.$refs.msgFullWidthBody : this.$refs.msgBody
       const threshold = this.chatMainConfig.isPhone
         ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
         : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
+      const { enabled, isShowingAll } = this.ephemeral.truncateToggle
 
       if (msgBodyEl) {
-        const height = msgBodyEl.clientHeight
+        const isMsgCurrentlyTruncated = enabled && !isShowingAll
+        const height = isMsgCurrentlyTruncated ? msgBodyEl.scrollHeight : msgBodyEl.clientHeight
 
-        if (height > threshold) {
-          this.ephemeral.truncateToggle.enabled = true
-        }
+        this.ephemeral.truncateToggle.enabled = height > threshold
       }
     },
     toggleMessageTruncation (e) {
@@ -321,7 +321,7 @@ export default ({
   watch: {
     'chatMainConfig.isPhone' () {
       if (this.shouldCheckToTruncate) {
-        this.checkMessageBodyHeight()
+        this.checkIfTruncateToggleEnabled()
       }
     }
   },
@@ -332,7 +332,7 @@ export default ({
       //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
       !this.hasImageAttachment
     ) {
-      this.checkMessageBodyHeight()
+      this.checkIfTruncateToggleEnabled()
     }
   }
 }: Object)
@@ -509,7 +509,7 @@ export default ({
 // message-truncation related styles
 
 .c-message.has-truncate-toggle {
-  padding-bottom: 2.5rem;
+  padding-bottom: 2.25rem;
 
   .c-body,
   .c-full-width-body {
@@ -524,12 +524,17 @@ export default ({
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 2.5rem;
+    height: 2.25rem;
     display: flex;
     align-items: flex-end;
     justify-content: flex-start;
+    padding-left: 1rem;
     padding-bottom: 0.5rem;
     pointer-events: none;
+
+    @include tablet {
+      padding-left: 3.5rem;
+    }
 
     &.should-indent {
       padding-left: 4.25rem;
