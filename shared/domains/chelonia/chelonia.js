@@ -427,17 +427,6 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     return !!rootState?.secretKeys && has(rootState.secretKeys, keyId)
   },
-  // To set filters for a contract, call with `filter` set to an array of KV
-  // keys to receive updates for over the WebSocket. An empty array means that
-  // no KV updates will be sent.
-  // Calling with a single argument (the contract ID) will remove filters,
-  // meaning that KV updates will be sent for _any_ KV key.
-  // The last call takes precedence, so, for example, calling with filter
-  // set to `['foo', 'bar']` and then with `['baz']` means that KV updates will
-  // be received for `baz` only, not for `foo`, `bar` or any other keys.
-  'chelonia/kv/setFilter': function (contractID: string, filter?: string[]) {
-    this.pubsub.setKvFilter(contractID, filter)
-  },
   'chelonia/contract/isResyncing': function (contractIDOrState: string | Object) {
     if (typeof contractIDOrState === 'string') {
       const rootState = sbp(this.config.stateSelector)
@@ -1697,6 +1686,17 @@ export default (sbp('sbp/selectors/register', {
       serializedData: data,
       meta: key
     })
+  },
+  // To set filters for a contract, call with `filter` set to an array of KV
+  // keys to receive updates for over the WebSocket. An empty array means that
+  // no KV updates will be sent.
+  // Calling with a single argument (the contract ID) will remove filters,
+  // meaning that KV updates will be sent for _any_ KV key.
+  // The last call takes precedence, so, for example, calling with filter
+  // set to `['foo', 'bar']` and then with `['baz']` means that KV updates will
+  // be received for `baz` only, not for `foo`, `bar` or any other keys.
+  'chelonia/kv/setFilter': function (contractID: string, filter?: string[]) {
+    this.pubsub.setKvFilter(contractID, filter)
   },
   'chelonia/parseEncryptedOrUnencryptedDetachedMessage': function ({ contractID, serializedData, meta }: { contractID: string, serializedData: Object, meta?: ?string }) {
     return parseEncryptedOrUnencryptedMessage.call(this, {
