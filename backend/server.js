@@ -168,7 +168,7 @@ sbp('sbp/selectors/register', {
   'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createKvMessage(contractID, key, entry)
-    const subscribers = pubsub.enumerateSubscribers(contractID)
+    const subscribers = pubsub.enumerateSubscribers(contractID, key)
     console.debug(chalk.blue.bold(`[pubsub] Broadcasting KV change on ${contractID} to key ${key}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers, wsOnly: true })
   },
