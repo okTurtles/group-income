@@ -106,7 +106,7 @@
   )
 
   .c-truncate-toggle-container(
-    v-if='ephemeral.truncateToggle.enabled'
+    v-if='!isEditing && ephemeral.truncateToggle.enabled'
     :class='{ "should-indent": isTypeText }'
   )
     button.is-unstyled.c-truncate-toggle(
@@ -180,6 +180,10 @@ export default ({
     datetime: {
       type: Date,
       required: true
+    },
+    updatedDate: {
+      type: String,
+      required: false
     },
     edited: Boolean,
     notification: Object,
@@ -263,6 +267,10 @@ export default ({
       this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
+
+        // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
+        this.ephemeral.truncateToggle.enabled = false
+        this.ephemeral.truncateToggle.isShowingAll = false
       }
     },
     deleteAttachment (manifestCid) {
@@ -311,7 +319,13 @@ export default ({
         // If the truncate-toggle is already displayed and the message is folded,
         // we should use scrollHeight value for the check instead of clientHeight.
         const height = this.isMessageCropped ? msgBodyEl.scrollHeight : msgBodyEl.clientHeight
+        const prevEnabled = this.ephemeral.truncateToggle.enabled
+
         this.ephemeral.truncateToggle.enabled = height > threshold
+        if (prevEnabled !== this.ephemeral.truncateToggle.enabled) {
+          // If 'enabled' is changed, should initialize 'isShowingAll'.
+          this.ephemeral.truncateToggle.isShowingAll = false
+        }
       }
     },
     toggleMessageTruncation (e) {
@@ -328,6 +342,14 @@ export default ({
     'chatMainConfig.isPhone' () {
       if (this.shouldCheckToTruncate) {
         this.determineToEnableTruncationToggle()
+      }
+    },
+    updatedDate (newVal) {
+      if (newVal && this.shouldCheckToTruncate) {
+        // When the messge is edited, check again if truncate-toggle is needed.
+        this.$nextTick(() => {
+          this.determineToEnableTruncationToggle()
+        })
       }
     }
   },
@@ -520,7 +542,7 @@ export default ({
   .c-body,
   .c-full-width-body {
     &.is-truncated {
-      max-height: 28rem;
+      max-height: 420px; // Using px instead of rem here to make it independent of the 'font-size' setting in the user-settings.
       overflow-y: hidden;
     }
   }

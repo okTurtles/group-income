@@ -5,7 +5,7 @@
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
-      :key='entryIndex'
+      :key='getAttachmentId(entry)'
       class='is-download-item'
       tabindex='0'
     )
@@ -281,6 +281,9 @@ export default {
           this.$nextTick(() => this.$emit('image-attachments-render-complete'))
         }
       }
+    },
+    getAttachmentId (attachment) {
+      return attachment.downloadData?.manifestCid || attachment.name.replaceAll(' ', '_')
     }
   },
   watch: {
