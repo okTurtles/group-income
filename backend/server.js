@@ -11,7 +11,7 @@ import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
+import { appendToIndexFactory, initDB, removeFromIndexFactory, updateSize as updateSize_ } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -89,23 +89,9 @@ const appendToOrphanedNamesIndex = appendToIndexFactory('_private_orphaned_names
 
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
-const updateSize = async (resourceID: string, sizeKey: string, size: number) => {
-  if (!Number.isSafeInteger(size)) {
-    throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
-  }
-  // Use a queue to ensure atomic updates
-  await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
-    // Size is stored as a decimal value
-    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, { bypassCache: true }) ?? '0', 10)
-    if (!(existingSize >= 0)) {
-      throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
-    }
-    const updatedSize = existingSize + size
-    if (!(updatedSize >= 0)) {
-      throw new TypeError(`Invalid stored updated size ${updatedSize} for ${resourceID}`)
-    }
+const updateSize = (resourceID: string, sizeKey: string, size: number) => {
+  return updateSize_(resourceID, sizeKey, size).then(() => {
     worker.postMessage(['worker/updateSizeSideEffects', { resourceID, sizeKey, size }])
-    await sbp('chelonia.db/set', sizeKey, updatedSize.toString(10))
   })
 }
 

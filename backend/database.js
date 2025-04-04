@@ -39,6 +39,25 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
+export const updateSize = async (resourceID: string, sizeKey: string, size: number) => {
+  if (!Number.isSafeInteger(size)) {
+    throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
+  }
+  // Use a queue to ensure atomic updates
+  await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
+    // Size is stored as a decimal value
+    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, { bypassCache: true }) ?? '0', 10)
+    if (!(existingSize >= 0)) {
+      throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
+    }
+    const updatedSize = existingSize + size
+    if (!(updatedSize >= 0)) {
+      throw new TypeError(`Invalid stored updated size ${updatedSize} for ${resourceID}`)
+    }
+    await sbp('chelonia.db/set', sizeKey, updatedSize.toString(10))
+  })
+}
+
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
@@ -258,7 +277,7 @@ export const appendToIndexFactory = (key: string): (value: string) => Promise<vo
     // is needed for the load & store operation.
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the current index from the database using the provided key
-      const currentIndex = await sbp('chelonia.db/get', key)
+      const currentIndex = await sbp('chelonia.db/get', key, { bypassCache: true })
 
       // If the current index exists, check if the value is already present
       if (currentIndex) {
@@ -301,7 +320,7 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
   return (values: string | string[]) => {
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the existing entries from the database using the provided key
-      let existingEntries = await sbp('chelonia.db/get', key)
+      let existingEntries = await sbp('chelonia.db/get', key, { bypassCache: true })
       // Exit if there are no existing entries
       if (!existingEntries) return
 
