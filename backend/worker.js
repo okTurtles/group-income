@@ -16,7 +16,7 @@ const updateSize = async (resourceID: string, sizeKey: string, size: number) => 
   // Use a queue to ensure atomic updates
   await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
     // Size is stored as a decimal value
-    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, 10) ?? '0')
+    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, { bypassCache: true }) ?? '0', 10)
     if (!(existingSize >= 0)) {
       throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
     }
@@ -43,7 +43,7 @@ sbp('sbp/selectors/register', {
     await Promise.all(contractIDs.map(async ([contractID, delta]) => {
       let ownerID = contractID
       for (;;) {
-        const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`)
+        const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
         if (!newOwnerID) break
         ownerID = newOwnerID
       }
@@ -79,7 +79,6 @@ sbp('sbp/selectors/register', {
       const totalSize = (await Promise.all(allSubresources.map((id) => {
         return sbp('chelonia.db/get', `_private_size_${id}`)
       }))).reduce((acc, cv, i) => {
-        console.error('@@@@xxxx', resourceID, allSubresources[i], acc, cv)
         if (cv) {
           const parsed = parseInt(cv, 10)
           if (parsed) return parsed + acc

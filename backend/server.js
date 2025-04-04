@@ -96,7 +96,7 @@ const updateSize = async (resourceID: string, sizeKey: string, size: number) => 
   // Use a queue to ensure atomic updates
   await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
     // Size is stored as a decimal value
-    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, 10) ?? '0')
+    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, { bypassCache: true }) ?? '0', 10)
     if (!(existingSize >= 0)) {
       throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
     }

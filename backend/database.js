@@ -136,10 +136,12 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
 
     const prefixes = Object.keys(prefixHandlers)
     sbp('sbp/selectors/overwrite', {
-      'chelonia.db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
-        const lookupValue = cache.get(prefixableKey)
-        if (lookupValue !== undefined) {
-          return lookupValue
+      'chelonia.db/get': async function (prefixableKey: string, { bypassCache }: { bypassCache?: boolean } = {}): Promise<Buffer | string | void> {
+        if (!bypassCache) {
+          const lookupValue = cache.get(prefixableKey)
+          if (lookupValue !== undefined) {
+            return lookupValue
+          }
         }
         const [prefix, key] = parsePrefixableKey(prefixableKey)
         let value = await readData(key)
