@@ -18,7 +18,7 @@ const addToTempIndex = (cid: string) => {
 }
 
 const removeFromTempIndex = (cids: string[]) => {
-  return Promise.all([...cids.reduce((acc: Map, cv) => {
+  return Promise.all([...cids.reduce((acc: Map<number, Set<string>>, cv: string) => {
     const bucket = fastBase58Hash(cv)
     const set = acc.get(bucket)
     if (set) {

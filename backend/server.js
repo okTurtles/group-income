@@ -100,7 +100,7 @@ const updateSize = (resourceID: string, sizeKey: string, size: number) => {
     return new Promise((resolve, reject) => {
       const mc = new MessageChannel()
       mc.port2.onmessage = (event) => {
-        const [success: boolean, result: any] = event.data
+        const [success, result] = ((event.data: any): [boolean, any])
         if (success) return resolve()
         reject(result)
       }

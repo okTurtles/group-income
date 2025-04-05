@@ -23,7 +23,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
     throw new Error(`The ${filename} SQLite database is already open.`)
   }
   db = new Sqlite3(join(dataFolder, filename))
-  await run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
+  run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
   console.info(`Connected to the ${filename} SQLite database.`)
   readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
   writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
@@ -31,20 +31,24 @@ export async function initStorage (options: Object = {}): Promise<void> {
 }
 
 // Useful in test hooks.
-export function clear (): Promise<void> {
+// eslint-disable-next-line require-await
+export async function clear (): Promise<void> {
   return run('DELETE FROM Data')
 }
 
-export function readData (key: string): Promise<Buffer | string | void> {
+// eslint-disable-next-line require-await
+export async function readData (key: string): Promise<Buffer | string | void> {
   readStatement.get(key)
   const result = readStatement.get(key)
   return result?.value
 }
 
-export function writeData (key: string, value: Buffer | string): Promise<void> {
+// eslint-disable-next-line require-await
+export async function writeData (key: string, value: Buffer | string): Promise<void> {
   writeStatement.run(key, value)
 }
 
-export function deleteData (key: string): Promise<void> {
+// eslint-disable-next-line require-await
+export async function deleteData (key: string): Promise<void> {
   deleteStatement.run(key)
 }
