@@ -3,7 +3,7 @@
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
-import DatabaseBackend from './DatabaseBackend'
+import DatabaseBackend from './DatabaseBackend.js'
 
 export default class SqliteBackend extends DatabaseBackend {
   dataFolder: string = ''

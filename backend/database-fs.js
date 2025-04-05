@@ -3,7 +3,7 @@
 import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { checkKey } from '~/shared/domains/chelonia/db.js'
-import DatabaseBackend from './DatabaseBackend'
+import DatabaseBackend from './DatabaseBackend.js'
 
 // Some operating systems (such as macOS and Windows) use case-insensitive
 // filesystems by default. This can be problematic for Chelonia / Group Income,
