@@ -6,7 +6,7 @@ type Config = {
   [string]: { name: string, options: Object }
 }
 
-const { GI_PERSIST_ROUTER_CONFIG_PATH = './data/db-router-config.json' } = process.env
+const { GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json' } = process.env
 
 const readConfig = async (): Promise<Config> => {
   const configString = await readFile(GI_PERSIST_ROUTER_CONFIG_PATH, 'utf8')

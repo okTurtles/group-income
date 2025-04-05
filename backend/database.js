@@ -22,7 +22,9 @@ const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 const dbRootPath = process.env.DB_PATH || './data'
 const options = {
   fs: {
-    dirname: dbRootPath
+    depth: 4,
+    dirname: dbRootPath,
+    keyChunkLength: 2
   },
   sqlite: {
     dirname: dbRootPath,

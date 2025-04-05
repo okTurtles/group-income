@@ -2,8 +2,8 @@
 
 import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
-import { rebindMethods } from './db-utils.js'
 import { checkKey } from '~/shared/domains/chelonia/db.js'
+import DatabaseBackend from './DatabaseBackend'
 
 // Some operating systems (such as macOS and Windows) use case-insensitive
 // filesystems by default. This can be problematic for Chelonia / Group Income,
@@ -35,20 +35,23 @@ async function testCaseSensitivity (backend: Object) {
   }
 }
 
-export default class FsBackend {
+export default class FsBackend extends DatabaseBackend {
   dataFolder: string = ''
   depth: number = 0
+  keyChunkLength: number = 2
 
   constructor (options: Object = {}) {
+    super()
     this.dataFolder = resolve(options.dirname)
-    this.depth = options.depth ?? 0
-    rebindMethods(this)
+    if (options.depth) this.depth = options.depth
+    if (options.keyChunkLength) this.keyChunkLength = options.keyChunkLength
   }
 
   // Maps a given key to a real path on the filesystem.
   mapKey (key: string): string {
     if (!this.depth) return join(this.dataFolder, key)
-    const keyChunks = key.match(/[A-Za-z]{1,3}/g) ?? []
+    // TODO: optimize if necessary.
+    const keyChunks = key.match(new RegExp('[A-Za-z=]{1,' + this.keyChunkLength + '}', 'g')) ?? []
     return join(this.dataFolder, ...keyChunks.slice(0, this.depth), keyChunks.slice(this.depth).join(''))
   }
 
