@@ -27,6 +27,12 @@ import {
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 
 const worker = new Worker(join(__dirname, 'worker.js'))
+const workerReady = new Promise((resolve, reject) => {
+  worker.on('message', (msg) => {
+    if (msg === 'ready') resolve()
+  })
+  worker.on('error', reject)
+})
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -91,7 +97,18 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 const updateSize = (resourceID: string, sizeKey: string, size: number) => {
   return updateSize_(resourceID, sizeKey, size).then(() => {
-    worker.postMessage(['worker/updateSizeSideEffects', { resourceID, sizeKey, size }])
+    return new Promise((resolve, reject) => {
+      const mc = new MessageChannel()
+      mc.port2.onmessage = (event) => {
+        const [success: boolean, result: any] = event.data
+        if (success) return resolve()
+        reject(result)
+      }
+      mc.port2.onmessageerror = () => {
+        reject(Error('Message error'))
+      }
+      worker.postMessage([mc.port1, 'worker/updateSizeSideEffects', { resourceID, sizeKey, size }], [mc.port1])
+    })
   })
 }
 
@@ -476,6 +493,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
+  await workerReady
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

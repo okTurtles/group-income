@@ -6,7 +6,6 @@ import './genericWorker.js'
 
 const updatedSizeList = new Set()
 const updatedSizeMap = new Map()
-setTimeout(sbp, 30e3, 'backend/server/computeSizeTaskDeltas')
 
 // Super-fast 8-bit hash for base58 with low standard deviation
 const fastBase58Hash = (cid: string) => {
@@ -43,17 +42,16 @@ sbp('okTurtles.eventQueue/queueEvent', 'parentPort', async () => {
     }
   }
   sbp('backend/server/computeSizeTask')
+  setTimeout(sbp, 30e3, 'backend/server/computeSizeTaskDeltas')
 })
 
 sbp('sbp/selectors/register', {
-  'worker/updateSizeSideEffects': ({ resourceID, sizeKey, size }: { resourceID: string, sizeKey: string, size: number }) => {
+  'worker/updateSizeSideEffects': async ({ resourceID, sizeKey, size }: { resourceID: string, sizeKey: string, size: number }) => {
     if (updatedSizeList.has(resourceID)) return
     if (sizeKey.startsWith('_private_size_')) {
       const current = updatedSizeMap.get(resourceID)
       if (current === undefined) {
-        addToTempIndex(resourceID).catch((e) => {
-          // TODO
-        })
+        await addToTempIndex(resourceID)
         updatedSizeMap.set(resourceID, size)
       } else {
         updatedSizeMap.set(resourceID, current + size)
