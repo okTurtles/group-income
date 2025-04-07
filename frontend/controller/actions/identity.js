@@ -14,12 +14,13 @@ import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { rawSignedIncomingData } from '~/shared/domains/chelonia/signedData.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { blake32Hash } from '~/shared/functions.js'
 import type { Key } from '@chelonia/crypto'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
 
@@ -179,10 +180,7 @@ export default (sbp('sbp/selectors/register', {
     username,
     email,
     picture,
-    r,
-    s,
-    sig,
-    Eh
+    token
   }) {
     let finalPicture = `${self.location.origin}/assets/images/user-avatar-default.png`
 
@@ -192,6 +190,9 @@ export default (sbp('sbp/selectors/register', {
 
     const IPK = typeof wIPK === 'string' ? deserializeKey(wIPK) : wIPK
     const IEK = typeof wIEK === 'string' ? deserializeKey(wIEK) : wIEK
+
+    const deletionToken = 'deletionToken' + generateSalt()
+    const deletionTokenHash = blake32Hash(deletionToken)
 
     // Create the necessary keys to initialise the contract
     const CSK = keygen(EDWARDS25519SHA512BATCH)
@@ -220,6 +221,7 @@ export default (sbp('sbp/selectors/register', {
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
+    const encryptedDeletionToken = encryptedOutgoingDataWithRawKey(IEK, deletionToken)
 
     // Before creating the contract, put all keys into transient store
     await sbp('chelonia/storeSecretKeys',
@@ -231,7 +233,15 @@ export default (sbp('sbp/selectors/register', {
     try {
       await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
-        publishOptions,
+        publishOptions: {
+          ...publishOptions,
+          headers: {
+            ...publishOptions?.headers,
+            'shelter-deletion-token-digest': deletionTokenHash,
+            'shelter-namespace-registration': username,
+            'shelter-salt-registration-token': token.valueOf()
+          }
+        },
         signingKeyId: IPKid,
         actionSigningKeyId: CSKid,
         actionEncryptionKeyId: PEKid,
@@ -329,25 +339,6 @@ export default (sbp('sbp/selectors/register', {
             await sbp('chelonia/contract/retain', message.contractID(), { ephemeral: true })
 
             try {
-              // Register password salt
-              const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/${encodeURIComponent(username)}`, {
-                method: 'POST',
-                headers: {
-                  'authorization': await sbp('chelonia/shelterAuthorizationHeader', message.contractID()),
-                  'content-type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams({
-                  'r': r,
-                  's': s,
-                  'sig': sig,
-                  'Eh': Eh
-                })
-              })
-
-              if (!res.ok) {
-                throw new Error('Unable to register hash')
-              }
-
               userID = message.contractID()
               if (picture) {
                 try {
@@ -366,9 +357,13 @@ export default (sbp('sbp/selectors/register', {
           // finalPicture is set after OP_CONTRACT is sent, which is after
           // calling 'chelonia/out/registerContract' here. We use a getter for
           // `picture` so that the action sent has the correct value
-          attributes: { username, email, get picture () { return finalPicture } }
-        },
-        namespaceRegistration: username
+          attributes: {
+            username,
+            email,
+            get picture () { return finalPicture },
+            encryptedDeletionToken: encryptedDeletionToken.serialize('encryptedDeletionToken')
+          }
+        }
       })
 
       // After the contract has been created, store persistent keys
@@ -786,7 +781,7 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('gi.actions/identity/saveFileDeleteToken', {
         contractID: identityContractID,
-        data: { tokensByManifestCid }
+        data: { billableContractID, tokensByManifestCid }
       })
 
       return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
@@ -813,7 +808,7 @@ export default (sbp('sbp/selectors/register', {
           return [cid, null]
         };
         const credential = shouldDeleteToken
-          ? { token: currentIdentityState.fileDeleteTokens[cid] }
+          ? { token: currentIdentityState.fileDeleteTokens[cid].token }
           : { billableContractID: identityContractID }
         return [cid, credential]
       }))
@@ -963,7 +958,6 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId: oldIPKid,
       publishOptions: {
         headers: {
-          'shelter-name': username,
           'shelter-salt-update-token': updateToken
         }
       },
@@ -977,6 +971,71 @@ export default (sbp('sbp/selectors/register', {
     // And remove transient keys, which require a user password
     sbp('chelonia/clearTransientSecretKeys', [oldIEKid, oldIPKid, IEKid, IPKid])
   },
+  'gi.actions/identity/delete': async ({
+    contractID,
+    transientSecretKeys,
+    oldKeysAnchorCid
+  }: {
+    contractID: string,
+    transientSecretKeys: Secret<string[]>,
+    oldKeysAnchorCid: string
+  }) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state?.attributes?.encryptedDeletionToken) {
+      throw new Error('Missing encrypted deletion token')
+    }
+
+    const transientSecretKeysEntries = transientSecretKeys.valueOf().map(
+      k => ([keyId(k), deserializeKey(k)])
+    )
+    const encryptedDeletionToken = state.attributes.encryptedDeletionToken
+
+    // If there were key rotations, we need to decrypt keys using the CID of
+    // the message where the (last) rotation happened.
+    if (oldKeysAnchorCid) {
+      const IEK = transientSecretKeysEntries[0][1]
+      await processOldIekList(contractID, oldKeysAnchorCid, IEK)
+    }
+
+    const token = encryptedIncomingData(contractID, state, encryptedDeletionToken, NaN, Object.fromEntries(transientSecretKeysEntries), 'encryptedDeletionToken')
+
+    // Before actually deleting it, leave all groups and DMs. This avoids
+    // potentially leaving the UI in a weird state.
+    const { ourDirectMessages, ourGroups } = sbp('state/vuex/getters')
+    await Promise.all([
+      ...Object.keys(ourDirectMessages).map((contractID) => {
+        return sbp('gi.actions/chatroom/leave', { contractID, data: {} }).catch((e) => {
+        // We make this a warning and we don't propagate the error because this
+        // is not a requirement for deleting the contract.
+          console.warn('Error while leaving DM before deleting identity contract', contractID, e)
+        })
+      }),
+      ...ourGroups.map((contractID) => {
+        return sbp('gi.actions/group/removeOurselves', { contractID }).catch((e) => {
+        // We make this a warning and we don't propagate the error because this
+        // is not a requirement for deleting the contract.
+          console.warn('Error while leaving group before deleting identity contract', contractID, e)
+        })
+      })
+    ])
+
+    await sbp('chelonia/out/deleteContract', contractID, {
+      [contractID]: { token: new Secret(token.valueOf()) }
+    })
+  },
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
+    const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
+
+    if (contractID === ourIdentityContractId) {
+      // If our own identity contract has been deleted, there isn't much more
+      // that we can do on the app, so we log out. We don't wait for other running
+      // _ondeleted handlers because at this point our state can no longer be
+      // used, as we're no longer able to keep our identity meaningfully in sync
+      // with things happening on the server.
+      await sbp('gi.actions/identity/logout')
+    }
+  },
+  ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
