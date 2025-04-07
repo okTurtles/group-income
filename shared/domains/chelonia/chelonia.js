@@ -9,7 +9,7 @@ import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnexpectedHttpResponseCode, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { SPMessage } from './SPMessage.js'
@@ -1634,26 +1634,74 @@ export default (sbp('sbp/selectors/register', {
     maxAttempts: ?number,
     onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<Object>,
   }) {
-    maxAttempts = maxAttempts ?? 4
+    maxAttempts = maxAttempts ?? 3
+    const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
     for (;;) {
-      const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
-        contractID,
-        innerSigningKeyId,
-        encryptionKeyId,
-        signingKeyId,
-        data,
-        meta: key
-      })
-      const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
-        headers: new Headers([[
-          'authorization', buildShelterAuthorizationHeader.call(this, contractID)
-        ], [
-          'if-match', ifMatch || '""'
-        ]]),
-        method: 'POST',
-        body: JSON.stringify(serializedData),
-        signal: this.abortController.signal
-      })
+      let response: Response
+      if (data || typeof onconflict !== 'function') {
+        const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+          contractID,
+          innerSigningKeyId,
+          encryptionKeyId,
+          signingKeyId,
+          data,
+          meta: key
+        })
+        response = await fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ], [
+            'if-match', ifMatch || '""'
+          ]
+          ]),
+          method: 'POST',
+          body: JSON.stringify(serializedData),
+          signal: this.abortController.signal
+        })
+      } else {
+        response = await fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ]]),
+          signal: this.abortController.signal
+        })
+      }
+      const resolveData = async () => {
+        let currentValue
+        if (response.ok || response.status === 409 || response.status === 412) {
+          const serializedData = await response.json()
+          currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
+            contractID,
+            serializedData,
+            meta: key
+          })
+        } else if (response.status !== 404 && response.status !== 410) {
+          throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
+        }
+        const result = await onconflict({
+          contractID,
+          key,
+          failedData: data,
+          status: response.status,
+          etag: response.headers.get('x-cid') || response.headers.get('etag'),
+          get currentData () {
+            return currentValue?.data
+          },
+          currentValue
+        })
+        if (!result) return false
+
+        data = result[0]
+        ifMatch = result[1]
+        return true
+      }
+      if (!data && typeof onconflict === 'function') {
+        if (await resolveData()) {
+          continue
+        } else {
+          break
+        }
+      }
       if (!response.ok) {
         if (response.status === 409 || response.status === 412) {
           if (--maxAttempts <= 0) {
@@ -1661,28 +1709,15 @@ export default (sbp('sbp/selectors/register', {
           }
           await delay(randomIntFromRange(0, 1500))
           if (typeof onconflict === 'function') {
-            const serializedData = await response.json()
-            const currentData = parseEncryptedOrUnencryptedMessage.call(this, {
-              contractID,
-              serializedData,
-              meta: key
-            })
-            const result = await onconflict({
-              contractID,
-              key,
-              failedData: data,
-              status: response.status,
-              etag: response.headers.get('x-cid') || response.headers.get('etag'),
-              currentData
-            })
-            if (!result) { break }
-
-            data = result[0]
-            ifMatch = result[1]
+            if (await resolveData()) {
+              continue
+            } else {
+              break
+            }
           }
           continue
         }
-        throw new Error('kv/set invalid response status: ' + response.status)
+        throw new ChelErrorUnexpectedHttpResponseCode('kv/set invalid response status: ' + response.status)
       }
       break
     }

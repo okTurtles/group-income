@@ -75,9 +75,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const data = getUpdatedUnreadMessages()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
-      }
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
@@ -98,15 +96,14 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = {}
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async ({ currentData = {}, etag } = {}) => {
-      const getUpdatedUnreadMessages = () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
         if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
           const index = currentData[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
           if (index === -1) {
@@ -117,8 +114,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = {}
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
@@ -135,8 +131,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = {}
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
@@ -149,8 +144,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = {}
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   // Preferences
@@ -191,9 +185,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const data = getUpdatedPreferences()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
-      }
+      await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
     })
   },
   // Notifications
@@ -254,9 +246,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const data = getUpdatedNotificationStatus()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
-      }
+      await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
     })
   },
   'gi.actions/identity/kv/markNotificationStatusRead': (hashes: string | string[]) => {
@@ -286,8 +276,7 @@ export default (sbp('sbp/selectors/register', {
         return isUpdated ? [currentData, etag] : null
       }
 
-      const data = {}
-      await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
+      await sbp('gi.actions/identity/kv/saveNotificationStatus', { onconflict: getUpdatedNotificationStatus })
     })
   }
 }): string[])
