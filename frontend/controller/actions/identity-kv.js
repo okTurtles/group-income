@@ -98,10 +98,8 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = getUpdatedUnreadMessages()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
-      }
+      const data = {}
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
@@ -119,10 +117,8 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = getUpdatedUnreadMessages()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
-      }
+      const data = {}
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
@@ -139,10 +135,8 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      const data = getUpdatedUnreadMessages()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
-      }
+      const data = {}
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
@@ -226,17 +220,18 @@ export default (sbp('sbp/selectors/register', {
     }
 
     const updatedOnConflict = async (...args) => {
-      if (typeof onconflict === 'function') {
-        return applyStorageRules(await onconflict(...args))
-      }
-      return null
+      const result = await onconflict(...args)
+      if (!result) return null
+
+      const [data, etag] = result
+      return [applyStorageRules(data), etag]
     }
 
     return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       data: applyStorageRules(data),
-      onconflict: updatedOnConflict
+      onconflict: onconflict ? updatedOnConflict : null
     })
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
@@ -291,10 +286,8 @@ export default (sbp('sbp/selectors/register', {
         return isUpdated ? [currentData, etag] : null
       }
 
-      const data = getUpdatedNotificationStatus()?.[0]
-      if (data) {
-        await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
-      }
+      const data = {}
+      await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
     })
   }
 }): string[])
