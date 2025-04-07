@@ -66,12 +66,11 @@ export default (sbp('sbp/selectors/register', {
 
     const nowString = new Date(now).toISOString()
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedLastLoggedIn = async (contractID) => {
-        const current = await sbp('gi.actions/group/kv/fetchLastLoggedIn', { contractID })
-        return { ...current, [identityContractID]: nowString }
+      const getUpdatedLastLoggedIn = ({ etag, currentData = {} } = {}) => {
+        return [{ ...currentData, [identityContractID]: nowString }, etag]
       }
 
-      const data = await getUpdatedLastLoggedIn(contractID)
+      const data = getUpdatedLastLoggedIn()?.[0]
       await sbp('chelonia/kv/set', contractID, KV_KEYS.LAST_LOGGED_IN, data, {
         encryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
         signingKeyId: await sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),

@@ -1620,19 +1620,21 @@ export default (sbp('sbp/selectors/register', {
   // you're building a utility library or if you have very specific needs. In
   // this case, see if `chelonia/kv/queuedSet` covers your needs.
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+    ifMatch,
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId,
     maxAttempts,
     onconflict
   }: {
+    ifMatch?: string,
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: (contractID: string, key: string, data: Object) => Promise<Object>,
+    onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<Object>,
   }) {
-    maxAttempts = maxAttempts ?? 3
+    maxAttempts = maxAttempts ?? 4
     for (;;) {
       const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
         contractID,
@@ -1645,20 +1647,38 @@ export default (sbp('sbp/selectors/register', {
       const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
         headers: new Headers([[
           'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+        ], [
+          'if-match', ifMatch || '""'
         ]]),
         method: 'POST',
         body: JSON.stringify(serializedData),
         signal: this.abortController.signal
       })
       if (!response.ok) {
-        if (response.status === 409) {
+        if (response.status === 409 || response.status === 412) {
           if (--maxAttempts <= 0) {
             throw new Error('kv/set conflict setting KV value')
           }
           await delay(randomIntFromRange(0, 1500))
           if (typeof onconflict === 'function') {
-            data = await onconflict(contractID, key, data)
-            if (!data) { break }
+            const serializedData = await response.json()
+            const currentData = parseEncryptedOrUnencryptedMessage.call(this, {
+              contractID,
+              serializedData,
+              meta: key
+            })
+            const result = await onconflict({
+              contractID,
+              key,
+              failedData: data,
+              status: response.status,
+              etag: response.headers.get('x-cid') || response.headers.get('etag'),
+              currentData
+            })
+            if (!result) { break }
+
+            data = result[0]
+            ifMatch = result[1]
           }
           continue
         }
