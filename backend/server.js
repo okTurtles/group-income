@@ -26,12 +26,19 @@ import {
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 
-const worker = new Worker(join(__dirname, 'worker.js'))
-const workerReady = new Promise((resolve, reject) => {
-  worker.on('message', (msg) => {
+const ownerSizeTotalWorker = new Worker(join(__dirname, 'ownerSizeTotalWorker.js'))
+const ownerSizeTotalWorkerReady = new Promise((resolve, reject) => {
+  ownerSizeTotalWorker.on('message', (msg) => {
     if (msg === 'ready') resolve()
   })
-  worker.on('error', reject)
+  ownerSizeTotalWorker.on('error', reject)
+})
+const creditsWorker = new Worker(join(__dirname, 'creditsWorker.js'))
+const creditsWorkerReady = new Promise((resolve, reject) => {
+  creditsWorker.on('message', (msg) => {
+    if (msg === 'ready') resolve()
+  })
+  creditsWorker.on('error', reject)
 })
 
 // Node.js version 18 and lower don't have global.crypto defined
@@ -107,7 +114,7 @@ const updateSize = (resourceID: string, sizeKey: string, size: number) => {
       mc.port2.onmessageerror = () => {
         reject(Error('Message error'))
       }
-      worker.postMessage([mc.port1, 'worker/updateSizeSideEffects', { resourceID, sizeKey, size }], [mc.port1])
+      ownerSizeTotalWorker.postMessage([mc.port1, 'worker/updateSizeSideEffects', { resourceID, sizeKey, size }], [mc.port1])
     })
   })
 }
@@ -493,7 +500,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
-  await workerReady
+  await ownerSizeTotalWorkerReady
+  await creditsWorkerReady
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

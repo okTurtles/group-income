@@ -9,7 +9,7 @@ import { createCID } from '../shared/functions.js'
 import { appendToIndexFactory, initDB, updateSize as updateSize_ } from './database.js'
 import assert from 'node:assert'
 
-let worker = new Worker(join(__dirname, 'worker.js'))
+let worker = new Worker(join(__dirname, 'ownerSizeTotalWorker.js'))
 const workerReady = new Promise((resolve, reject) => {
   worker.on('message', (msg) => {
     if (msg === 'ready') resolve()
@@ -230,7 +230,7 @@ async function * randomOp (iterations) {
         console.log('Simulating server restart')
         await new Promise(resolve => setTimeout(resolve, 250))
         await worker.terminate()
-        worker = new Worker(join(__dirname, 'worker.js'))
+        worker = new Worker(join(__dirname, 'ownerSizeTotalWorker.js'))
         await new Promise((resolve, reject) => {
           worker.on('message', (msg) => {
             if (msg === 'ready') resolve()

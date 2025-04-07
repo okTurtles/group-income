@@ -38,7 +38,6 @@ export async function clear (): Promise<void> {
 
 // eslint-disable-next-line require-await
 export async function readData (key: string): Promise<Buffer | string | void> {
-  readStatement.get(key)
   const result = readStatement.get(key)
   return result?.value
 }
