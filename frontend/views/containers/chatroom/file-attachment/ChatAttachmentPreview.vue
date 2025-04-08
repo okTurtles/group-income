@@ -25,7 +25,8 @@
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
           @click='openImageViewer(objectURLList[entryIndex])'
-          @load='onImageLoad(objectURLList[entryIndex])'
+          @load='onImageSettled(objectURLList[entryIndex])'
+          @error='onImageSettled(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -125,7 +126,7 @@ export default {
   data () {
     return {
       objectURLList: [],
-      loadedURLList: [],
+      settledURLList: [],
       loadingBoxStyles: []
     }
   },
@@ -270,11 +271,11 @@ export default {
         }
       )
     },
-    onImageLoad (url) {
+    onImageSettled (url) {
       if (this.isForDownload) {
-        this.loadedURLList = uniq([...this.loadedURLList, url])
+        this.settledURLList = uniq([...this.settledURLList, url])
 
-        if (this.allImageAttachments.length === this.loadedURLList.length) {
+        if (this.allImageAttachments.length === this.settledURLList.length) {
           // Check if all image attachments are loaded in the DOM, notify the parent component.
           // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
           //  if this becomes useful in more places.)
