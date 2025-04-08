@@ -33,10 +33,10 @@ export const TextObjectType = {
 }
 
 export const KV_KEYS = {
-  UNREAD_MESSAGES: 'unreadMessages',
-  LAST_LOGGED_IN: 'lastLoggedIn',
-  PREFERENCES: 'preferences',
-  NOTIFICATIONS: 'notifications'
+  UNREAD_MESSAGES: 'unreadMessages', // identity contract
+  LAST_LOGGED_IN: 'lastLoggedIn', // group contract
+  PREFERENCES: 'preferences', // identity contract
+  NOTIFICATIONS: 'notifications' // identity contract
 }
 
 export const MAX_LOG_ENTRIES = 2000

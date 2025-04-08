@@ -5,12 +5,14 @@ import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '~/shared/domains/chelonia/chelonia.js'
 import type { SPMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '../shared/pubsub.js'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { KV_KEYS } from './utils/constants.js'
 
 const handleDeletedContract = async (contractID: string) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
@@ -270,6 +272,27 @@ const setupChelonia = async (): Promise<*> => {
       console.error('Logout event: error deleting Chelonia state:', e)
     }).finally(() => {
       logoutInProgress = false
+    })
+  })
+
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
+    // Wait for the added contracts to be ready, then call the update function
+    if (!added.length) return
+    const rootState = sbp('chelonia/rootState')
+    added.forEach((cID) => {
+      switch (rootState.contracts[cID]?.type) {
+        case 'gi.contracts/identity':
+          if (cID === rootState.loggedIn?.identityContractID) {
+            sbp('chelonia/kv/setFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
+            return
+          }
+          // Use the default case for foreign identity contracts
+          break
+        case 'gi.contracts/group':
+          sbp('chelonia/kv/setFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
+          return
+      }
+      sbp('chelonia/kv/setFilter', cID, [])
     })
   })
 
