@@ -370,7 +370,6 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-message {
-  --c-bg-color: var(--background_0);
   padding: 0.5rem 1rem;
   scroll-margin: 20px;
 
@@ -411,7 +410,6 @@ export default ({
   }
 
   &:hover {
-    --c-bg-color: var(--general_2);
     background-color: $general_2;
 
     &:not(.pending, .failed) {
