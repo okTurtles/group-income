@@ -346,7 +346,7 @@ export default ({
       }
     }
   },
-  beforeDestory () {
+  beforeDestroy () {
     this.triggerDOM.removeEventListener('click', this.toggle)
     this.triggerDOM.removeEventListener('mouseenter', this.show)
     this.triggerDOM.removeEventListener('mouseleave', this.hide)
