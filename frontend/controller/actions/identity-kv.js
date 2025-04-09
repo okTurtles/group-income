@@ -222,7 +222,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
-      data: applyStorageRules(data),
+      data: !!data && applyStorageRules(data),
       onconflict: typeof onconflict === 'function' ? updatedOnConflict : null
     })
   },
