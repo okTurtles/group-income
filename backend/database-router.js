@@ -12,7 +12,7 @@ type ConfigEntry = { name: string, options: Object }
 const { GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json' } = process.env
 
 export default class RouterBackend extends DatabaseBackend {
-  backends: Object
+  backends: { [string]: DatabaseBackend }
   config: Config
 
   lookupBackend (key: string): Object {
@@ -62,7 +62,8 @@ export default class RouterBackend extends DatabaseBackend {
       throw new Error(`[${this.constructor.name}] ${errors.length} error(s) found in your config.`, { cause: errors })
     }
     // Init backends
-    this.backends = Object.create(null)
+    // $FlowFixMe[incompatible-cast]
+    this.backends = (Object.create(null): { [string]: DatabaseBackend })
     const entries = ((Object.entries(this.config): any): ConfigEntry[])
     await Promise.all(entries.map(async entry => {
       const [keyPrefix, { name, options }] = entry
