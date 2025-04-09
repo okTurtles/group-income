@@ -120,7 +120,7 @@ export default (sbp('sbp/selectors/register', {
   //      to update the existing push subscription and replace it with a new
   //      one.
   'push/reportExistingSubscription': (() => {
-    const map = new WeakMap()
+    const reportedSubscriptionBySocket = new WeakMap()
     async function getSubID (subscription) {
       try {
         return await getSubscriptionId(subscription)
@@ -139,8 +139,8 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const socket = pubsub.socket
-      const reported = map.get(socket)
-      map.set(socket, subscriptionInfo)
+      const reported = reportedSubscriptionBySocket.get(socket)
+      reportedSubscriptionBySocket.set(socket, subscriptionInfo)
       if (subscriptionInfo?.endpoint) {
         if (!reported || subscriptionInfo.endpoint !== reported.endpoint) {
           const subID = await getSubID(subscriptionInfo)
