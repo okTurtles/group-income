@@ -61,10 +61,9 @@ export default class FsBackend extends DatabaseBackend {
   }
 
   async clear () {
-    await Promise.all(
-      await readdir(this.dataFolder)
-        .then(names => names.map(name => join(this.dataFolder, name)))
-        .then(paths => paths.map(path => rm(path, { recursive: true })))
+    const names = await readdir(this.dataFolder)
+    const paths = names.map(name => join(this.dataFolder, name))
+    await Promise.all(paths.map(p => rm(p, { recursive: true }))
     )
   }
 
