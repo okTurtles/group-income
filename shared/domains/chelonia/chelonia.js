@@ -1619,6 +1619,8 @@ export default (sbp('sbp/selectors/register', {
   // a general rule, you shouldn't be calling this selector directly unless
   // you're building a utility library or if you have very specific needs. In
   // this case, see if `chelonia/kv/queuedSet` covers your needs.
+  // `data` is allowed to be falsy, in which case a fetch will occur first and
+  // the `onconflict` handler will be called.
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
     ifMatch,
     innerSigningKeyId,
@@ -1632,7 +1634,7 @@ export default (sbp('sbp/selectors/register', {
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<Object>,
+    onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<[Object, string]>,
   }) {
     maxAttempts = maxAttempts ?? 3
     const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
@@ -1707,6 +1709,7 @@ export default (sbp('sbp/selectors/register', {
           if (--maxAttempts <= 0) {
             throw new Error('kv/set conflict setting KV value')
           }
+          // Only retry if an onconflict handler exists to potentially resolve it
           await delay(randomIntFromRange(0, 1500))
           if (typeof onconflict === 'function') {
             if (await resolveData()) {
@@ -1714,8 +1717,10 @@ export default (sbp('sbp/selectors/register', {
             } else {
               break
             }
+          } else {
+            // Can't resolve automatically if there's no conflict handler
+            throw new Error(`kv/set failed with status ${response.status} and no onconflict handler was provided`)
           }
-          continue
         }
         throw new ChelErrorUnexpectedHttpResponseCode('kv/set invalid response status: ' + response.status)
       }

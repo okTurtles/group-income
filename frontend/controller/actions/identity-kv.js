@@ -212,7 +212,7 @@ export default (sbp('sbp/selectors/register', {
     }
 
     const updatedOnConflict = async (...args) => {
-      const result = await onconflict(...args)
+      const result = await (onconflict: Function)(...args)
       if (!result) return null
 
       const [data, etag] = result
@@ -223,7 +223,7 @@ export default (sbp('sbp/selectors/register', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       data: applyStorageRules(data),
-      onconflict: onconflict ? updatedOnConflict : null
+      onconflict: typeof onconflict === 'function' ? updatedOnConflict : null
     })
   },
   'gi.actions/identity/kv/loadNotificationStatus': () => {
