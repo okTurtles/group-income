@@ -26,20 +26,49 @@ import {
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
 
-const ownerSizeTotalWorker = new Worker(join(__dirname, 'ownerSizeTotalWorker.js'))
-const ownerSizeTotalWorkerReady = new Promise((resolve, reject) => {
-  ownerSizeTotalWorker.on('message', (msg) => {
-    if (msg === 'ready') resolve()
+const createWorker = (path: string): {
+  ready: Promise<void>,
+  rpcSbp: () => Promise<any>,
+  terminate: () => Promise<number>
+} => {
+  const worker = new Worker(path)
+  const ready = new Promise((resolve, reject) => {
+    worker.on('message', (msg) => {
+      if (msg === 'ready') resolve()
+    })
+    worker.on('error', reject)
   })
-  ownerSizeTotalWorker.on('error', reject)
-})
-const creditsWorker = new Worker(join(__dirname, 'creditsWorker.js'))
-const creditsWorkerReady = new Promise((resolve, reject) => {
-  creditsWorker.on('message', (msg) => {
-    if (msg === 'ready') resolve()
+
+  const rpcSbp_ = (...args: any) => {
+    return new Promise((resolve, reject) => {
+      const mc = new MessageChannel()
+      mc.port2.onmessage = (event) => {
+        const [success, result] = ((event.data: any): [boolean, any])
+        if (success) return resolve()
+        reject(result)
+      }
+      mc.port2.onmessageerror = () => {
+        reject(Error('Message error'))
+      }
+      worker.postMessage([mc.port1, ...args], [mc.port1])
+    })
+  }
+
+  let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
+  // Avoid unncessary `ready.then` if we already know the promise has resolved
+  ready.then(() => {
+    rpcSbp = rpcSbp_
   })
-  creditsWorker.on('error', reject)
-})
+
+  return {
+    ready,
+    rpcSbp,
+    terminate: () => worker.terminate()
+  }
+}
+
+const ownerSizeTotalWorker = createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+const creditsWorker = createWorker(join(__dirname, 'creditsWorker.js'))
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -104,18 +133,7 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 const updateSize = (resourceID: string, sizeKey: string, size: number) => {
   return updateSize_(resourceID, sizeKey, size).then(() => {
-    return new Promise((resolve, reject) => {
-      const mc = new MessageChannel()
-      mc.port2.onmessage = (event) => {
-        const [success, result] = ((event.data: any): [boolean, any])
-        if (success) return resolve()
-        reject(result)
-      }
-      mc.port2.onmessageerror = () => {
-        reject(Error('Message error'))
-      }
-      ownerSizeTotalWorker.postMessage([mc.port1, 'worker/updateSizeSideEffects', { resourceID, sizeKey, size }], [mc.port1])
-    })
+    return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, sizeKey, size })
   })
 }
 
@@ -500,8 +518,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
-  await ownerSizeTotalWorkerReady
-  await creditsWorkerReady
+  await ownerSizeTotalWorker.ready
+  await creditsWorker.ready
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

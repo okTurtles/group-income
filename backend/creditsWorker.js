@@ -5,6 +5,7 @@ import './genericWorker.js'
 
 // Rate: How many credits are charged per byte stored per second.
 // Using BigInt for precision.
+// $FlowFixMe[cannot-resolve-name]
 const CREDITS_PER_BYTESECOND = BigInt(1)
 // History Limit: How many entries to keep in the granular history log.
 const GRANULAR_HISTORY_MAX_ENTRIES = 1000
