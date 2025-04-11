@@ -1,11 +1,11 @@
 import { aes128gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
+import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
 import { getSubscriptionId } from '~/shared/functions.js'
-import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 
 // const pushController = require('web-push')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
