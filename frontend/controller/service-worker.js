@@ -10,38 +10,6 @@ import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { getSubscriptionId } from '~/shared/functions.js'
 
-// The application server (public) key could be either an ArrayBuffer (which is
-// what we get from fetching the current subscription), or it could be a
-// base64url-encoded string (which is what we usually get from the server)
-// This string coerces both of these into an `Uint8Array` instance.
-const strOrBufToBuf = (v: string | Uint8Array | ArrayBuffer) => {
-  if (typeof v === 'string') {
-    v = Buffer.from(
-      // Convert from base64url to base64
-      v.replace(/_/g, '/').replace(/-/g, '+') + '='.repeat((4 - v.length % 4) % 4),
-      'base64'
-    )
-    return v
-  }
-  return new Uint8Array(v)
-}
-
-const bufferEq = (a?: ArrayBuffer | Uint8Array, b?: ArrayBuffer | Uint8Array) => {
-  // eslint-disable-next-line eqeqeq
-  if (a == null || b == null) return a == b
-
-  const ab = strOrBufToBuf(a)
-  const bb = strOrBufToBuf(b)
-
-  if (ab.byteLength !== bb.byteLength) return false
-
-  for (let i = ab.byteLength - 1; i >= 0; i--) {
-    if (ab[i] !== bb[i]) return false
-  }
-
-  return true
-}
-
 const pwa = {
   deferredInstallPrompt: null,
   installed: false
@@ -261,20 +229,11 @@ sbp('sbp/selectors/register', {
         let subID = null
         // get a real push subscription only if both browser permissions allow and user wants us to
         if (notificationEnabled && granted) {
-          const subscriptionOptions = await sbp('push/getSubscriptionOptions')
           subscription = await registration.pushManager.getSubscription()
-          if (subscription && !bufferEq(subscription.options.applicationServerKey, subscriptionOptions?.applicationServerKey)) {
-            // This is a public key that belongs to the server
-            console.warn('VAPID server key changed; removing existing subscription and setting up a new one', {
-              oldApplicationServerPublicKey: subscription.options.applicationServerKey,
-              newApplicationServerPublicKey: subscriptionOptions.applicationServerKey
-            })
-            await subscription.unsubscribe()
-            subscription = null
-          }
           let newSub = false
           let endpoint = null
           if (!subscription || (subscription.expirationTime != null && subscription.expirationTime <= Date.now())) {
+            const subscriptionOptions = await sbp('push/getSubscriptionOptions')
             subscription = await registration.pushManager.subscribe(subscriptionOptions)
             newSub = true
           }
@@ -285,24 +244,12 @@ sbp('sbp/selectors/register', {
           console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
         }
         console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription on:', subID)
-        await sbp('push/reportExistingSubscription', subscription?.toJSON())
+        await sbp('push/reportExistingSubscription', subscription?.toJSON(), subscription?.options.applicationServerKey)
       } catch (e) {
         console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
-        if (e?.message === 'WebSocket connection is not open') {
-          if (attemptNumber >= 3) {
-            console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
-            // NOTE: we do not need to setup an ONLINE event listener here because one is already setup in main.js
-            throw e // give up
-          }
-          // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck
-          retryAttemptsPromise = new Promise((resolve, reject) => {
-            // try again in 1 second
-            setTimeout(() => {
-              sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
-            }, 1e3)
-          })
-          return // exit the event queue immediately and do not rethrow
-        } else {
+
+        if (attemptNumber >= 12) {
+          console.error('[service-worker/setup-push-subscription] maxAttempts reached, giving up')
           sbp('gi.ui/prompt', {
             heading: L('Error setting up push notifications'),
             question: L('Error setting up push notifications: {errMsg}{br_}{br_}Please make sure {a_}push services are enabled{_a} in your Browser settings, and then try reloading the app and toggling the push notifications toggle in the Notifications user settings.', {
@@ -313,8 +260,16 @@ sbp('sbp/selectors/register', {
             }),
             primaryButton: L('Close')
           })
+          // NOTE: we do not need to setup an ONLINE event listener here because one is already setup in main.js
+          throw e // give up
         }
-        throw e
+        // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck
+        retryAttemptsPromise = new Promise((resolve, reject) => {
+          // try again in 5 seconds
+          setTimeout(() => {
+            sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
+          }, 5e3)
+        })
       }
     })
     if (retryAttemptsPromise) {
