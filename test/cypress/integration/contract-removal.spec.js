@@ -67,5 +67,6 @@ describe('Group Income - Removing contracts', () => {
 
     cy.giLogin(`user2-${userId}`, { bypassUI: true, toGroupDashboardUponSuccess: false })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+    cy.giLogout({ bypassUI: true })
   })
 })
