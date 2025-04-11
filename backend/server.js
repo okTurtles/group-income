@@ -28,7 +28,7 @@ import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pus
 
 const createWorker = (path: string): {
   ready: Promise<void>,
-  rpcSbp: () => Promise<any>,
+  rpcSbp: (...args: any) => Promise<any>,
   terminate: () => Promise<number>
 } => {
   const worker = new Worker(path)

@@ -1,7 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import './genericWorker.js'
+import { readyQueueName } from './genericWorker.js'
+
+const TASK_TIME_INTERVAL = 300e3
 
 // Rate: How many credits are charged per byte stored per second.
 // Using BigInt for precision.
@@ -9,8 +11,10 @@ import './genericWorker.js'
 const CREDITS_PER_BYTESECOND = BigInt(1)
 // History Limit: How many entries to keep in the granular history log.
 const GRANULAR_HISTORY_MAX_ENTRIES = 1000
-// const COARSE_HISTORY_MAX_ENTRIES = 1000
+const COARSE_HISTORY_MAX_ENTRIES = 1000
+// 288 is about one day, if granular entries are every 5 minutes
 // const GRANULAR_ENTRIES_PER_COARSE_ENTRIES = 288
+const GRANULAR_ENTRIES_PER_COARSE_ENTRIES = 3
 
 // Timestamp when this worker instance started. Used to avoid charging while the
 // server is not running
@@ -26,15 +30,16 @@ const startTime = Date.now()
  * (direct addition).
  * @param amount - For 'charge', this is the current total size (bytes). For 'credit', the amount to add.
  */
-export const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', amount: number) => {
-  const key = `_private_ownerBalanceHistoryGranular_${billableEntity}`
+const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', amount: number) => {
+  const granularHistoryKey = `_private_ownerBalanceHistoryGranular_${billableEntity}`
   // Use a queue to ensure atomic updates
-  await sbp('okTurtles.eventQueue/queueEvent', key, async () => {
+  await sbp('okTurtles.eventQueue/queueEvent', granularHistoryKey, async () => {
     const now = new Date()
+    const date = now.toISOString()
 
     // Fetch the existing history. bypassCache ensures we get the latest state before calculating.
     // Performance concern: Reading/parsing about 1000 entries per contract
-    const granularHistoryList = await sbp('chelonia.db/get', key, { bypassCache: true }) ?? '[]'
+    const granularHistoryList = await sbp('chelonia.db/get', granularHistoryKey, { bypassCache: true }) ?? '[]'
     const granularHistory = JSON.parse(granularHistoryList)
 
     // Trim the history if it exceeds the maximum length. Remove the oldest
@@ -56,9 +61,9 @@ export const updateCredits = async (billableEntity: string, type: 'credit' | 'ch
       // 2. The time this worker process started (`startTime`).
       // This prevents charging for time before the last update or before the
       // service was running.
-      const timeElapsed = Math.max(0, now.getTime() - Math.max(previousTime, startTime)) / 1000
+      const timeElapsed = Math.max(0, now.getTime() - Math.max(previousTime, startTime))
       // Calculate credits used: size (amount) * time * rate.
-      const creditsUsed = BigInt(Math.floor(amount * timeElapsed)) * CREDITS_PER_BYTESECOND
+      const creditsUsed = BigInt(Math.floor(amount * timeElapsed / 1000)) * CREDITS_PER_BYTESECOND
 
       // Calculate new balance
       const balance = (previousBalance - creditsUsed).toString(10)
@@ -66,9 +71,10 @@ export const updateCredits = async (billableEntity: string, type: 'credit' | 'ch
       // Prepare the new history entry
       granularHistory.unshift({
         type: 'charge',
-        date: now.toISOString(),
+        date,
         sizeTotal: amount,
         credits: creditsUsed.toString(10),
+        period: `${new Date(now - timeElapsed).toISOString()}/${date}`,
         balance
       })
 
@@ -83,7 +89,7 @@ export const updateCredits = async (billableEntity: string, type: 'credit' | 'ch
       // Prepare the new history entry for credit addition.
       const newEntry = {
         type: 'credit',
-        date: now.toISOString(),
+        date,
         credits: creditsToAdd.toString(10), // Credits added
         balance: newBalanceStr
       }
@@ -97,11 +103,61 @@ export const updateCredits = async (billableEntity: string, type: 'credit' | 'ch
       return // Don't save if type is invalid
     }
 
-    await sbp('chelonia.db/set', key, JSON.stringify(granularHistory))
+    // Do we need to update the coarse history?
+    const lastCoarseSyncIdx = granularHistory.findIndex((value) => {
+      return !!(value.coarseSyncPoint)
+    })
+
+    if (lastCoarseSyncIdx >= GRANULAR_ENTRIES_PER_COARSE_ENTRIES || lastCoarseSyncIdx < 0) {
+      const coarseHistoryKey = `_private_ownerBalanceHistoryCoarse_${billableEntity}`
+      granularHistory[0].coarseSyncPoint = true
+      await sbp('chelonia.db/get', coarseHistoryKey)
+      const coarseHistoryList = await sbp('chelonia.db/get', coarseHistoryKey, { bypassCache: true }) ?? '[]'
+      const coarseHistory = JSON.parse(coarseHistoryList)
+
+      if (coarseHistory.length >= COARSE_HISTORY_MAX_ENTRIES) {
+        coarseHistory.splice(COARSE_HISTORY_MAX_ENTRIES)
+      }
+
+      const { periodStart, charges, credits, periodSize, totalPeriodLength } = granularHistory.slice(0, lastCoarseSyncIdx < 0 ? granularHistory.length : lastCoarseSyncIdx).reduce((acc, entry) => {
+        if (entry.type === 'charge') {
+          acc.charges += BigInt(entry.credits)
+          const [periodStart, periodEnd] = entry.period.split('/')
+          const [periodStartDate, periodEndDate] = [Date.parse(periodStart), Date.parse(periodEnd)]
+          const periodLength = Math.floor(periodEndDate - periodStartDate)
+          // Avoid NaN propagation
+          if (periodLength >= 0) {
+            acc.periodSize += entry.sizeTotal * periodLength
+            acc.totalPeriodLength += periodLength
+          }
+          acc.periodStart = periodStart
+        } else if (entry.type === 'credit') {
+          acc.credits += BigInt(entry.credits)
+        } else {
+          throw new Error('Invalid entry type: ' + entry.type)
+        }
+
+        return acc
+      }, { charges: BigInt(0), credits: BigInt(0), periodStart: date, periodSize: 0, totalPeriodLength: 0 })
+
+      coarseHistory.unshift({
+        type: 'aggregate',
+        date,
+        sizeTotal: Math.floor(periodSize / totalPeriodLength),
+        charges: charges.toString(10),
+        credits: credits.toString(10),
+        period: `${periodStart}/${date}`,
+        balance: granularHistory[0].balance
+      })
+
+      await sbp('chelonia.db/set', coarseHistoryKey, JSON.stringify(coarseHistory))
+    }
+
+    await sbp('chelonia.db/set', granularHistoryKey, JSON.stringify(granularHistory))
   })
 }
 
-sbp('okTurtles.eventQueue/queueEvent', 'parentPort', () => setTimeout(sbp, 30e3, 'worker/computeCredits'))
+sbp('okTurtles.eventQueue/queueEvent', readyQueueName, () => setTimeout(sbp, TASK_TIME_INTERVAL, 'worker/computeCredits'))
 
 sbp('sbp/selectors/register', {
   'worker/computeCredits': async () => {
@@ -126,12 +182,11 @@ sbp('sbp/selectors/register', {
       // Not using await to queue the call and immediately proceed with the next
       // billable entity
       updateCredits(billableEntity, 'charge', size).catch((e) => {
-        // TODO
-        console.error('@@@@@@err', billableEntity, e)
+        console.error('Error computing balance', billableEntity, e)
       })
     }))
 
     // Reschedule the task for the next interval.
-    setTimeout(sbp, 30e3, 'worker/computeCredits')
+    setTimeout(sbp, TASK_TIME_INTERVAL, 'worker/computeCredits')
   }
 })

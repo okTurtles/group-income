@@ -2,7 +2,9 @@
 
 import sbp from '@sbp/sbp'
 import { appendToIndexFactory, removeFromIndexFactory, updateSize } from './database.js'
-import './genericWorker.js'
+import { readyQueueName } from './genericWorker.js'
+
+const TASK_TIME_INTERVAL = 30e3
 
 const updatedSizeList = new Set()
 const updatedSizeMap = new Map()
@@ -57,7 +59,7 @@ const removeFromTempIndex = (cids: string[]) => {
  * These CIDs represent items needing a full recalculation (potentially from a
  * previous unclean shutdown).
  */
-sbp('okTurtles.eventQueue/queueEvent', 'parentPort', async () => {
+sbp('okTurtles.eventQueue/queueEvent', readyQueueName, async () => {
   // Iterate through all 256 possible bucket keys.
   for (let i = 0; i < 256; i++) {
     // Fetch the content of the bucket
@@ -76,7 +78,7 @@ sbp('okTurtles.eventQueue/queueEvent', 'parentPort', async () => {
   }
 
   // Schedule the recurring delta computation task
-  setTimeout(sbp, 30e3, 'backend/server/computeSizeTaskDeltas')
+  setTimeout(sbp, TASK_TIME_INTERVAL, 'backend/server/computeSizeTaskDeltas')
 })
 
 sbp('sbp/selectors/register', {
@@ -157,7 +159,7 @@ sbp('sbp/selectors/register', {
     }))
 
     // Reschedule the task for the next interval
-    setTimeout(sbp, 30e3, 'backend/server/computeSizeTaskDeltas')
+    setTimeout(sbp, TASK_TIME_INTERVAL, 'backend/server/computeSizeTaskDeltas')
   },
   /**
    * Selector: 'backend/server/computeSizeTask'
