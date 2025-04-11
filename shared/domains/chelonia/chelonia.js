@@ -9,7 +9,7 @@ import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnexpectedHttpResponseCode, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { SPMessage } from './SPMessage.js'
@@ -1619,50 +1619,110 @@ export default (sbp('sbp/selectors/register', {
   // a general rule, you shouldn't be calling this selector directly unless
   // you're building a utility library or if you have very specific needs. In
   // this case, see if `chelonia/kv/queuedSet` covers your needs.
+  // `data` is allowed to be falsy, in which case a fetch will occur first and
+  // the `onconflict` handler will be called.
   'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+    ifMatch,
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId,
     maxAttempts,
     onconflict
   }: {
+    ifMatch?: string,
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: (contractID: string, key: string, data: Object) => Promise<Object>,
+    onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<[Object, string]>,
   }) {
     maxAttempts = maxAttempts ?? 3
+    const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
     for (;;) {
-      const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
-        contractID,
-        innerSigningKeyId,
-        encryptionKeyId,
-        signingKeyId,
-        data,
-        meta: key
-      })
-      const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
-        headers: new Headers([[
-          'authorization', buildShelterAuthorizationHeader.call(this, contractID)
-        ]]),
-        method: 'POST',
-        body: JSON.stringify(serializedData),
-        signal: this.abortController.signal
-      })
+      let response: Response
+      if (data || typeof onconflict !== 'function') {
+        const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+          contractID,
+          innerSigningKeyId,
+          encryptionKeyId,
+          signingKeyId,
+          data,
+          meta: key
+        })
+        response = await fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ], [
+            'if-match', ifMatch || '""'
+          ]
+          ]),
+          method: 'POST',
+          body: JSON.stringify(serializedData),
+          signal: this.abortController.signal
+        })
+      } else {
+        response = await fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ]]),
+          signal: this.abortController.signal
+        })
+      }
+      const resolveData = async () => {
+        let currentValue
+        if (response.ok || response.status === 409 || response.status === 412) {
+          const serializedData = await response.json()
+          currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
+            contractID,
+            serializedData,
+            meta: key
+          })
+        } else if (response.status !== 404 && response.status !== 410) {
+          throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
+        }
+        const result = await onconflict({
+          contractID,
+          key,
+          failedData: data,
+          status: response.status,
+          etag: response.headers.get('x-cid') || response.headers.get('etag'),
+          get currentData () {
+            return currentValue?.data
+          },
+          currentValue
+        })
+        if (!result) return false
+
+        data = result[0]
+        ifMatch = result[1]
+        return true
+      }
+      if (!data && typeof onconflict === 'function') {
+        if (await resolveData()) {
+          continue
+        } else {
+          break
+        }
+      }
       if (!response.ok) {
-        if (response.status === 409) {
+        if (response.status === 409 || response.status === 412) {
           if (--maxAttempts <= 0) {
             throw new Error('kv/set conflict setting KV value')
           }
+          // Only retry if an onconflict handler exists to potentially resolve it
           await delay(randomIntFromRange(0, 1500))
           if (typeof onconflict === 'function') {
-            data = await onconflict(contractID, key, data)
-            if (!data) { break }
+            if (await resolveData()) {
+              continue
+            } else {
+              break
+            }
+          } else {
+            // Can't resolve automatically if there's no conflict handler
+            throw new Error(`kv/set failed with status ${response.status} and no onconflict handler was provided`)
           }
-          continue
         }
-        throw new Error('kv/set invalid response status: ' + response.status)
+        throw new ChelErrorUnexpectedHttpResponseCode('kv/set invalid response status: ' + response.status)
       }
       break
     }
