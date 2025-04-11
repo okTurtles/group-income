@@ -1,6 +1,7 @@
 import { aes128gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
+import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
@@ -9,30 +10,13 @@ import { getSubscriptionId } from '~/shared/functions.js'
 // const pushController = require('web-push')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
 
-const addSubscriptionToIndex = async (subcriptionId: string) => {
-  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
-    // Add the current subscriptionId to the subscription index. Entries in the
-    // index are separated by \x00 (NUL). The index itself is used to know
-    // which entries to load.
-    const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${subcriptionId}`
-    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
-  })
-}
-
-const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
-  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
-    const index = currentIndex.indexOf(subcriptionId)
-    if (index === -1) return
-    const updatedIndex = currentIndex.slice(0, index > 1 ? index - 1 : 0) + currentIndex.slice(index + subcriptionId.length)
-    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
-  })
-}
+const addSubscriptionToIndex = appendToIndexFactory('_private_webpush_index')
+const deleteSubscriptionFromIndex = removeFromIndexFactory('_private_webpush_index')
 
 const saveSubscription = (server, subscriptionId) => {
   return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
-    subscription: server.pushSubscriptions[subscriptionId],
+    settings: server.pushSubscriptions[subscriptionId].settings,
+    subscriptionInfo: server.pushSubscriptions[subscriptionId],
     channelIDs: [...server.pushSubscriptions[subscriptionId].subscriptions]
   })).catch(e => {
     console.error(e, 'Error saving subscription', subscriptionId)
@@ -76,14 +60,15 @@ const removeSubscription = async (subscriptionId) => {
   }
 }
 
-// Wrap a SubscriptionInfo object to include a subscription ID and encryption keys
-export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, channelIDs: ?string[]): Object => {
+// Wrap a SubscriptionInfo object to include a subscription ID and encryption
+// keys
+export const subscriptionInfoWrapper = (subscriptionId: string, subscriptionInfo: Object, extra: { channelIDs?: string[], settings?: Object }): Object => {
   subscriptionInfo.endpoint = new URL(subscriptionInfo.endpoint)
 
   Object.defineProperties(subscriptionInfo, {
     'id': {
       get () {
-        return subcriptionId
+        return subscriptionId
       }
     },
     // These encryption keys are used for encrypting push notification bodies
@@ -126,11 +111,14 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
         }
       })()
     },
+    'settings': {
+      value: extra.settings || {}
+    },
     'sockets': {
       value: new Set()
     },
     'subscriptions': {
-      value: new Set(channelIDs)
+      value: new Set(extra.channelIDs)
     }
   })
 
@@ -153,9 +141,9 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
 // push notifications that isn't already public or could be derived from other
 // public sources. The main concern if the encryption is compromised would be
 // the ability to infer which channels a client is subscribed to.
-const encryptPayload = async (subcription: Object, data: string) => {
+const encryptPayload = async (subscription: Object, data: string) => {
   const readableStream = new Response(data).body
-  const [asPublic, IKM] = await subcription.encryptionKeys
+  const [asPublic, IKM] = await subscription.encryptionKeys
 
   return encrypt(aes128gcm, readableStream, 32768, asPublic, IKM).then(async (bodyStream) => {
     const chunks = []
@@ -224,7 +212,7 @@ export const pushServerActionhandlers: any = {
   async [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION] (payload) {
     const socket = this
     const { server } = socket
-    const { applicationServerKey, subscriptionInfo } = payload
+    const { applicationServerKey, settings, subscriptionInfo } = payload
     if (applicationServerKey) {
       const ourVapidPublicKey = getVapidPublicKey()
       const theirVapidPublicKey = Buffer.from(applicationServerKey, 'base64').toString('base64url')
@@ -254,7 +242,7 @@ export const pushServerActionhandlers: any = {
       if (!subscriptionWrapper) {
         console.debug(`saving new push subscription '${subscriptionId}':`, subscriptionInfo)
         // If this is a new subscription, we call `subscriptionInfoWrapper` and store it in memory.
-        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo)
+        server.pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo, { settings })
         subscriptionWrapper = server.pushSubscriptions[subscriptionId]
         host = subscriptionWrapper.endpoint.host
         await addSubscriptionToIndex(subscriptionId)
