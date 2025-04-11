@@ -265,10 +265,10 @@ sbp('sbp/selectors/register', {
         }
         // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck
         retryAttemptsPromise = new Promise((resolve, reject) => {
-          // try again in 1 second
+          // try again in 5 seconds
           setTimeout(() => {
             sbp('service-worker/setup-push-subscription', attemptNumber + 1).then(resolve).catch(reject)
-          }, 12e3)
+          }, 5e3)
         })
       }
     })

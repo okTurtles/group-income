@@ -228,6 +228,16 @@ export const pushServerActionhandlers: any = {
     if (applicationServerKey) {
       const ourVapidPublicKey = getVapidPublicKey()
       const theirVapidPublicKey = Buffer.from(applicationServerKey, 'base64').toString('base64url')
+      // If the applicationServerKey (VAPID) key doesn't match ours, something
+      // went wrong, possibly in the client. We don't proceed because we know in
+      // advance that we won't be able to use such a subscription (since the
+      // push endpoint will fail authentication and we'll receive a 401). So, we
+      // let the client know our key so that they can retry.
+      // NOTE: The VAPID key is different from the subscription information,
+      // which is different for each client. This is exclusively a check on the
+      // VAPID public key, which is a static value derived from
+      // `_private_immutable_vapid_key`, shared by all clients and used by the
+      // server to authenticate itself when connecting to push endpoints.
       if (ourVapidPublicKey !== theirVapidPublicKey) {
         socket.send(createMessage(REQUEST_TYPE.PUSH_ACTION, { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: getVapidPublicKey() }))
         console.warn({ ourVapidPublicKey, theirVapidPublicKey }, 'Refusing to store subscription because the associated public VAPID key does not match ours')

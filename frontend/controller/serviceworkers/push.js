@@ -59,6 +59,8 @@ export default (sbp('sbp/selectors/register', {
           oldApplicationServerPublicKey: subscription.options.applicationServerKey && Buffer.from(subscription.options.applicationServerKey).toString('base64'),
           newApplicationServerPublicKey: data.data
         })
+        // If unsubscribe fails, it doesn't make much sense to proceed, as we
+        // can't really create new subscription
         await subscription.unsubscribe()
         // return b/c device settings not loaded
         if (!sbp('chelonia/rootState').loggedIn || sbp('sw/deviceSettings/get', DEVICE_SETTINGS.DISABLE_NOTIFICATIONS)) return
@@ -77,7 +79,7 @@ export default (sbp('sbp/selectors/register', {
         return Promise.resolve(cachedVapidInformation[1])
       }
 
-      const result = new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         const handler = ({ data }) => {
           if (data.type !== PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY) return
           sbp('okTurtles.events/off', REQUEST_TYPE.PUSH_ACTION, handler)
@@ -104,7 +106,6 @@ export default (sbp('sbp/selectors/register', {
           { action: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY }
         ))
       })
-      return result
     }
   })(),
   // This function reports the existing push subscription to the server
