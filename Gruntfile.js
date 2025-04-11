@@ -441,13 +441,7 @@ module.exports = (grunt) => {
   })
 
   // Useful helper task for `grunt test`.
-  grunt.registerTask('backend:launch', '[internal]', function () {
-    const done = this.async()
-    grunt.log.writeln('backend: launching...')
-    // Provides Babel support for the backend files.
-    require('@babel/register')
-    require(backendIndex).then(done).catch(done)
-  })
+  grunt.registerTask('backend:launch', ['backend:relaunch'])
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.

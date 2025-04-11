@@ -3,13 +3,15 @@
 import Hapi from '@hapi/hapi'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
+import { join } from 'node:path'
+import { Worker } from 'node:worker_threads'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
+import { appendToIndexFactory, initDB, removeFromIndexFactory, updateSize as updateSize_ } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -23,6 +25,50 @@ import {
   createServer
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
+
+const createWorker = (path: string): {
+  ready: Promise<void>,
+  rpcSbp: (...args: any) => Promise<any>,
+  terminate: () => Promise<number>
+} => {
+  const worker = new Worker(path)
+  const ready = new Promise((resolve, reject) => {
+    worker.on('message', (msg) => {
+      if (msg === 'ready') resolve()
+    })
+    worker.on('error', reject)
+  })
+
+  const rpcSbp_ = (...args: any) => {
+    return new Promise((resolve, reject) => {
+      const mc = new MessageChannel()
+      mc.port2.onmessage = (event) => {
+        const [success, result] = ((event.data: any): [boolean, any])
+        if (success) return resolve()
+        reject(result)
+      }
+      mc.port2.onmessageerror = () => {
+        reject(Error('Message error'))
+      }
+      worker.postMessage([mc.port1, ...args], [mc.port1])
+    })
+  }
+
+  let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
+  // Avoid unncessary `ready.then` if we already know the promise has resolved
+  ready.then(() => {
+    rpcSbp = rpcSbp_
+  })
+
+  return {
+    ready,
+    rpcSbp,
+    terminate: () => worker.terminate()
+  }
+}
+
+const ownerSizeTotalWorker = createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+const creditsWorker = createWorker(join(__dirname, 'creditsWorker.js'))
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -84,6 +130,12 @@ hapi.ext({
 const appendToOrphanedNamesIndex = appendToIndexFactory('_private_orphaned_names_index')
 
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
+
+const updateSize = (resourceID: string, sizeKey: string, size: number) => {
+  return updateSize_(resourceID, sizeKey, size).then(() => {
+    return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, sizeKey, size })
+  })
+}
 
 sbp('sbp/selectors/register', {
   'backend/server/persistState': async function (deserializedHEAD: Object, entry: string) {
@@ -189,23 +241,38 @@ sbp('sbp/selectors/register', {
       // This is done in a queue to handle several simultaneous requests
       // reading and writing to the same key
       await appendToIndexFactory(resourcesKey)(resourceID)
+      sbp('chelonia.persistentActions/enqueue', ['backend/server/saveIndirectResourcesIndex', resourceID])
     })
   },
-  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
-  'backend/server/updateSize': async function (resourceID: string, size: number) {
-    const sizeKey = `_private_size_${resourceID}`
-    if (!Number.isSafeInteger(size)) {
-      throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
+  'backend/server/saveIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    let indirectOwnerID = ownerID
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await appendToIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(resourceID)
     }
-    // Use a queue to ensure atomic updates
-    await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
-      // Size is stored as a decimal value
-      const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, 10) ?? '0')
-      if (!(existingSize >= 0)) {
-        throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
-      }
-      await sbp('chelonia.db/set', sizeKey, (existingSize + size).toString(10))
-    })
+  },
+  'backend/server/removeIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
+    const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
+    const allSubresources = [
+      resourceID,
+      ...(resources ? resources.split('\x00') : []),
+      ...(indirectResources ? indirectResources.split('\x00') : [])
+    ]
+    let indirectOwnerID = ownerID
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await removeFromIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(allSubresources)
+    }
+  },
+  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
+  'backend/server/updateSize': function (resourceID: string, size: number) {
+    const sizeKey = `_private_size_${resourceID}`
+    return updateSize(resourceID, sizeKey, size)
+  },
+  'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
+    const sizeKey = `_private_contractFilesTotalSize_${resourceID}`
+    return updateSize(resourceID, sizeKey, size)
   },
   'backend/server/stop': function () {
     return hapi.stop()
@@ -213,6 +280,7 @@ sbp('sbp/selectors/register', {
   async 'backend/deleteFile' (cid: string): Promise<void> {
     const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
     const rawManifest = await sbp('chelonia.db/get', cid)
+    const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
     if (rawManifest === '') throw new BackendErrorGone()
     if (!rawManifest) throw new BackendErrorNotFound()
 
@@ -237,6 +305,7 @@ sbp('sbp/selectors/register', {
     await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
 
     await sbp('chelonia.db/set', cid, '')
+    await sbp('backend/server/updateContractFilesTotalSize', owner, -Number(size))
   },
   // eslint-disable-next-line require-await
   async 'backend/deleteContract' (cid: string): Promise<void> {
@@ -313,6 +382,8 @@ sbp('sbp/selectors/register', {
         }))
       }
       await sbp('chelonia.db/delete', kvIndexKey)
+      await sbp('backend/server/removeIndirectResourcesIndex', cid)
+      await sbp('chelonia.db/delete', `_private_indirectResources_${cid}`)
 
       await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
         if (!name) return
@@ -324,6 +395,7 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_rid_${cid}`)
       await sbp('chelonia.db/delete', `_private_owner_${cid}`)
       await sbp('chelonia.db/delete', `_private_size_${cid}`)
+      await sbp('chelonia.db/delete', `_private_contractFilesTotalSize_${cid}`)
       await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
@@ -446,6 +518,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
+  await ownerSizeTotalWorker.ready
+  await creditsWorker.ready
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
