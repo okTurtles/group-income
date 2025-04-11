@@ -5,30 +5,13 @@ import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
 import { getSubscriptionId } from '~/shared/functions.js'
+import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 
 // const pushController = require('web-push')
 const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
 
-const addSubscriptionToIndex = async (subcriptionId: string) => {
-  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
-    // Add the current subscriptionId to the subscription index. Entries in the
-    // index are separated by \x00 (NUL). The index itself is used to know
-    // which entries to load.
-    const updatedIndex = `${currentIndex ? `${currentIndex}\x00` : ''}${subcriptionId}`
-    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
-  })
-}
-
-const deleteSubscriptionFromIndex = async (subcriptionId: string) => {
-  await sbp('okTurtles.eventQueue/queueEvent', 'update-webpush-indices', async () => {
-    const currentIndex = await sbp('chelonia.db/get', '_private_webpush_index')
-    const index = currentIndex.indexOf(subcriptionId)
-    if (index === -1) return
-    const updatedIndex = currentIndex.slice(0, index > 1 ? index - 1 : 0) + currentIndex.slice(index + subcriptionId.length)
-    await sbp('chelonia.db/set', '_private_webpush_index', updatedIndex)
-  })
-}
+const addSubscriptionToIndex = appendToIndexFactory('_private_webpush_index')
+const deleteSubscriptionFromIndex = removeFromIndexFactory('_private_webpush_index')
 
 const saveSubscription = (server, subscriptionId) => {
   return sbp('chelonia.db/set', `_private_webpush_${subscriptionId}`, JSON.stringify({
@@ -79,13 +62,13 @@ const removeSubscription = async (subscriptionId) => {
 
 // Wrap a SubscriptionInfo object to include a subscription ID and encryption
 // keys
-export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo: Object, extra: { channelIDs?: string[], settings?: Object }): Object => {
+export const subscriptionInfoWrapper = (subscriptionId: string, subscriptionInfo: Object, extra: { channelIDs?: string[], settings?: Object }): Object => {
   subscriptionInfo.endpoint = new URL(subscriptionInfo.endpoint)
 
   Object.defineProperties(subscriptionInfo, {
     'id': {
       get () {
-        return subcriptionId
+        return subscriptionId
       }
     },
     // These encryption keys are used for encrypting push notification bodies
@@ -158,9 +141,9 @@ export const subscriptionInfoWrapper = (subcriptionId: string, subscriptionInfo:
 // push notifications that isn't already public or could be derived from other
 // public sources. The main concern if the encryption is compromised would be
 // the ability to infer which channels a client is subscribed to.
-const encryptPayload = async (subcription: Object, data: string) => {
+const encryptPayload = async (subscription: Object, data: string) => {
   const readableStream = new Response(data).body
-  const [asPublic, IKM] = await subcription.encryptionKeys
+  const [asPublic, IKM] = await subscription.encryptionKeys
 
   return encrypt(aes128gcm, readableStream, 32768, asPublic, IKM).then(async (bodyStream) => {
     const chunks = []
