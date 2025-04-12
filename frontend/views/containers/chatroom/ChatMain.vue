@@ -979,9 +979,9 @@ export default ({
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in KV_QUEUE queue.
-          //       'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
-          //       eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
+          // NOTE-1: skip adding useless invocations in KV_QUEUE queue.
+          // NOTE-2: 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+          //         eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
           return
         }
 
