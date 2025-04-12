@@ -981,7 +981,7 @@ export default ({
         if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
           // NOTE: skip adding useless invocations in KV_QUEUE queue.
           //       'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
-          //       (reference: https://github.com/okTurtles/group-income/issues/2729)
+          //       eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
           return
         }
 
