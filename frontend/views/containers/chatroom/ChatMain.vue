@@ -75,6 +75,7 @@
           :replyingMessage='replyingMessageText(message)'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
+          :updatedDate='message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserID='currentUserAttr.id'

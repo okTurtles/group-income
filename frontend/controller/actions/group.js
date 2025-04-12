@@ -712,11 +712,11 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
+        ...params.data,
         attributes: {
           adminIDs: [contractState.groupOwnerID],
           ...params.data?.attributes
-        },
-        ...params.data
+        }
       },
       options: {
         ...params.options,
@@ -1191,6 +1191,23 @@ export default (sbp('sbp/selectors/register', {
     const response = await sendMessage(params)
     return response
   }),
+  'gi.actions/group/_ondeleted': async (contractID: string, state: Object) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const identityContractID = rootGetters.ourIdentityContractId
+    const currentIdentityState = rootGetters.currentIdentityState
+
+    if (!!currentIdentityState.groups?.[contractID] && !currentIdentityState.groups[contractID].hasLeft) {
+      await sbp('gi.actions/identity/leaveGroup', {
+        contractID: identityContractID,
+        data: {
+          groupContractID: contractID,
+          reference: state.profiles?.[identityContractID]?.reference
+        }
+      }).catch(e => {
+        console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
+      })
+    }
+  },
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),

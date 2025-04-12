@@ -77,7 +77,6 @@
           i18n.is-danger This action cannot be undone.
 
         .buttons
-          // TODO: once account-deletion is implemented, replace this with 'ButtonSubmit.vue' component to take care of the async process.
           i18n.button.error.is-outlined(
             tag='button'
             type='submit'
@@ -97,7 +96,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { L, LTags } from '@common/common.js'
+import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'UserProfile',
@@ -179,11 +178,7 @@ export default ({
       }
     },
     handleDeleteAccount () {
-      sbp('gi.ui/prompt', {
-        heading: L('Coming soon!'),
-        question: L('Sorry, this feature has not been implemented yet.{br_}Please check back later.', LTags()),
-        primaryButton: L('Close')
-      })
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     }
   }
 }: Object)
