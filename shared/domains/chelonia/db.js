@@ -99,6 +99,9 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
       }
     }
 
+// Operations that affect valid keys
+const keyOps = [SPMessage.OP_CONTRACT, SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_DEL, SPMessage.OP_KEY_UPDATE]
+
 export default ((sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
   'chelonia/db/getEntryMeta': async (contractID: string, height: number) => {
@@ -168,9 +171,20 @@ export default ((sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', entry.hash(), entry.serialize())
       await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
+      // `isKeyOp` is used to filter out non-key operations for providing an
+      // abbreviated chain fo snapshot validation
+      const isKeyOp =
+            !!(
+              keyOps.includes(entry.opType()) ||
+                // $FlowFixMe[prop-missing]
+                (entry.opType() === SPMessage.OP_ATOMIC && Array.isArray(entry.opValue()) && entry.opValue().some(([opT]) => {
+                  return keyOps.includes(opT)
+                }))
+            )
       await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
         currentHash: entry.hash(),
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        ...(isKeyOp && { isKeyOp })
       })
       return entry.hash()
     } catch (e) {
