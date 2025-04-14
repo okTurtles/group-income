@@ -236,7 +236,7 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
       return Boom.badRequest()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit, { keyOps: !!request.query['keyOps'] })
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams

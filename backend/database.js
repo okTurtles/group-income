@@ -41,7 +41,7 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number, options: { keyOps?: boolean } = {}): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (latestHEADinfo === '') {
@@ -52,9 +52,8 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let currentHeight = parseInt(height)
     let { currentHash, ...serverMeta } = (
-      await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
+      await sbp('chelonia/db/getEntryMeta', contractID, height)
     ) || {}
     let prefix = ''
     let ended = false
@@ -71,51 +70,32 @@ export default ((sbp('sbp/selectors/register', {
           return
         }
         if (!!currentHash && counter < limit) {
-          (async () => {
-            try {
-              if (options.keyOps) {
-                while (!serverMeta.isKeyOp) {
-                  const { currentHash: newCurrentHash, ...newServerMeta } = (
-                    await sbp('chelonia/db/getEntryMeta', contractID, ++currentHeight)
-                  ) || {}
-                  if (!newCurrentHash) {
-                    this.push(']')
-                    this.push(null)
-                    ended = true
-                    return
-                  }
-                  currentHash = newCurrentHash
-                  serverMeta = newServerMeta
-                }
-              }
-              const entry = await sbp('chelonia/db/getEntry', currentHash)
-              if (entry) {
-                const currentPrefix = prefix
-                prefix = ','
-                counter++
-                currentHeight = entry.height() + 1
-                const { currentHash: newCurrentHash, ...newServerMeta } = (
-                  await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
-                ) || {}
-                this.push(
+          sbp('chelonia/db/getEntry', currentHash).then(async entry => {
+            if (entry) {
+              const currentPrefix = prefix
+              prefix = ','
+              counter++
+              const { currentHash: newCurrentHash, ...newServerMeta } = (
+                await sbp('chelonia/db/getEntryMeta', contractID, entry.height() + 1)
+              ) || {}
+              this.push(
                 `${currentPrefix}"${strToB64(
                   JSON.stringify({ serverMeta, message: entry.serialize() })
                 )}"`
-                )
-                currentHash = newCurrentHash
-                serverMeta = newServerMeta
-              } else {
-                this.push(']')
-                this.push(null)
-                ended = true
-              }
-            } catch (e) {
-              console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+              )
+              currentHash = newCurrentHash
+              serverMeta = newServerMeta
+            } else {
               this.push(']')
               this.push(null)
               ended = true
             }
-          })()
+          }).catch(e => {
+            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+            this.push(']')
+            this.push(null)
+            ended = true
+          })
         } else {
           this.push(']')
           this.push(null)
