@@ -616,7 +616,7 @@ export default ({
     },
     jumpToLatest (behavior = 'smooth') {
       if (this.$refs.conversation) {
-          this.$refs.conversation.scroll({
+        this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
           // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
