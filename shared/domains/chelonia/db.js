@@ -68,7 +68,8 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         const value = (state?.HEAD
           ? JSON.stringify({
             HEAD: state.HEAD,
-            height: state.height
+            height: state.height,
+            previousKeyOp: state.previousKeyOp
           })
           : undefined)
         return Promise.resolve(value)
@@ -126,7 +127,7 @@ export default ((sbp('sbp/selectors/register', {
   // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
   'chelonia/private/db/addEntry': async function (entry: SPMessage): Promise<string> {
     try {
-      const { previousHEAD: entryPreviousHEAD, height: entryHeight } = entry.head()
+      const { previousHEAD: entryPreviousHEAD, previousKeyOp: entryPreviousKeyOp, height: entryHeight } = entry.head()
       const contractID: string = entry.contractID()
       if (await sbp('chelonia.db/get', entry.hash())) {
         console.warn(`[chelonia.db] entry exists: ${entry.hash()}`)
@@ -137,10 +138,13 @@ export default ((sbp('sbp/selectors/register', {
         if (!HEADinfo) {
           throw new Error(`No latest HEAD for ${contractID} when attempting to process entry with previous HEAD ${entryPreviousHEAD} at height ${entryHeight}`)
         }
-        const { HEAD: contractHEAD, height: contractHeight } = HEADinfo
+        const { HEAD: contractHEAD, previousKeyOp: contractPreviousKeyOp, height: contractHeight } = HEADinfo
         if (entryPreviousHEAD !== contractHEAD) {
           console.warn(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)
           throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${entryPreviousHEAD}. Expected ${contractHEAD} for contractID: ${contractID}`)
+        } else if (entryPreviousKeyOp !== contractPreviousKeyOp) {
+          console.warn(`[chelonia.db] bad previousKeyOp: ${entryPreviousKeyOp}! Expected: ${contractPreviousKeyOp} for contractID: ${contractID}`)
+          throw new ChelErrorDBBadPreviousHEAD(`bad previousKeyOp: ${entryPreviousKeyOp}. Expected ${contractPreviousKeyOp} for contractID: ${contractID}`)
         } else if (!Number.isSafeInteger(entryHeight) || entryHeight !== (contractHeight + 1)) {
           console.error(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)
           throw new ChelErrorDBBadPreviousHEAD(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)
@@ -155,7 +159,11 @@ export default ((sbp('sbp/selectors/register', {
         }
       }
       await sbp('chelonia.db/set', entry.hash(), entry.serialize())
-      await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
+      await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({
+        HEAD: entry.hash(),
+        previousKeyOp: entry.isKeyOp() ? entry.hash() : entry.previousKeyOp(),
+        height: entry.height()
+      }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       await sbp('chelonia.db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
       return entry.hash()

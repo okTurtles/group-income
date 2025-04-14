@@ -235,6 +235,7 @@ export class SPMessage {
     {
       contractID,
       previousHEAD = null,
+      previousKeyOp = null,
       // Height will be automatically set to the correct value when sending
       // The reason to set it to Number.MAX_SAFE_INTEGER is so that we can
       // temporarily process outgoing messages with signature validation
@@ -245,6 +246,7 @@ export class SPMessage {
     }: {
       contractID: string | null,
       previousHEAD?: ?string,
+      previousKeyOp?: ?string,
       height?: ?number,
       op: SPOpRaw,
       manifest: string,
@@ -253,6 +255,7 @@ export class SPMessage {
     const head = {
       version: '1.0.0',
       previousHEAD,
+      previousKeyOp,
       height,
       contractID,
       op: op[0],
@@ -458,6 +461,8 @@ export class SPMessage {
 
   hash (): string { return this._mapping.key }
 
+  previousKeyOp (): string { return this._head.previousKeyOp }
+
   height (): number { return this._head.height }
 
   id (): string {
@@ -467,6 +472,18 @@ export class SPMessage {
 
   direction (): 'incoming' | 'outgoing' {
     return this._direction
+  }
+
+  // `isKeyOp` is used to filter out non-key operations for providing an
+  // abbreviated chain fo snapshot validation
+  isKeyOp (): string {
+    return !!(
+      keyOps.includes(this.opType()) ||
+      // $FlowFixMe[prop-missing]
+      (this.opType() === SPMessage.OP_ATOMIC && Array.isArray(this.opValue()) && this.opValue().some(([opT]) => {
+        return keyOps.includes(opT)
+      }))
+    )
   }
 
   // $FlowFixMe[unsupported-syntax]
@@ -521,3 +538,6 @@ function messageToParams (head: Object, message: SignedData<SPOpValue>): SPMsgPa
     signedMessageData: message
   }
 }
+
+// Operations that affect valid keys
+const keyOps = [SPMessage.OP_CONTRACT, SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_DEL, SPMessage.OP_KEY_UPDATE]
