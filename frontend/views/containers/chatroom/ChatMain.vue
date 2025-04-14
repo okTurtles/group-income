@@ -175,7 +175,7 @@ const onChatScroll = function () {
   const curScrollTop = this.$refs.conversation.scrollTop
   const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
   const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-  this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+  this.ephemeral.scrollableDistance = scrollTopMax - curScrollTop
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
@@ -201,7 +201,7 @@ const onChatScroll = function () {
     return
   }
 
-  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+  if (this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
@@ -254,7 +254,7 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
-        scrolledDistance: 0,
+        scrollableDistance: 0,
         onChatScroll: null,
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
@@ -330,10 +330,10 @@ export default ({
       }
     },
     isScrolledUp () {
-      if (!this.ephemeral.scrolledDistance) {
+      if (!this.ephemeral.scrollableDistance) {
         return false
       }
-      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
+      return this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -619,8 +619,11 @@ export default ({
         this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
-          behavior: this.isReducedMotionMode
-            ? 'instant' // force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
+          //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
+          behavior: this.isReducedMotionMode || document.hidden
+            ? 'instant'
             : behavior
         })
       }
@@ -1049,12 +1052,13 @@ export default ({
 
           this.latestEvents.push(serializedMessage)
 
-          if (this.ephemeral.scrolledDistance < 50) {
+          // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
+          if (this.ephemeral.scrollableDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (isScrollable) {
-                // Auto-scroll to the bottom when a new message is added
+                // Scroll-query to the latest message.
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
@@ -1076,7 +1080,7 @@ export default ({
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
 
-      if (this.ephemeral.scrolledDistance < 40) {
+      if (this.ephemeral.scrollableDistance < 40) {
         // NOTE: 40px is the minimum height of a message
         //       even though user scrolled up, if he scrolled less than 40px (one message)
         //       should ignore the scroll position, and scroll to the bottom
@@ -1229,7 +1233,7 @@ export default ({
 
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
-        this.ephemeral.scrolledDistance = 0
+        this.ephemeral.scrollableDistance = 0
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
