@@ -967,7 +967,6 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
-      console.log('!@# is it here? - ', contractID, message)
       if (this.chatroomHasSwitchedFrom(contractID)) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
