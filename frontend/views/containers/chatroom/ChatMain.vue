@@ -616,11 +616,14 @@ export default ({
     },
     jumpToLatest (behavior = 'smooth') {
       if (this.$refs.conversation) {
-        this.$refs.conversation.scroll({
+          this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
-          behavior: this.isReducedMotionMode
-            ? 'instant' // force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
+          //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
+          behavior: this.isReducedMotionMode || document.hidden
+            ? 'instant'
             : behavior
         })
       }
@@ -1050,12 +1053,13 @@ export default ({
 
           this.latestEvents.push(serializedMessage)
 
+          // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (this.ephemeral.scrollableDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (isScrollable) {
-                // Auto-scroll to the bottom when a new message is added
+                // Scroll-query to the latest message.
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
