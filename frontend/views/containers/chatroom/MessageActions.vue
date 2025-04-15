@@ -10,7 +10,7 @@ menu-parent.c-message-menu(ref='menu')
         @click.stop='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
-
+  
     tooltip(
       v-if='isEditable'
       direction='top'
@@ -133,6 +133,11 @@ export default ({
         action: 'openEmoticon',
         icon: 'smile-beam',
         conditionToShow: !this.isDesktopScreen
+      }, {
+        name: L('Mark unread'),
+        action: 'markUnread',
+        icon: 'envelope',
+        conditionToShow: true
       }, {
         name: L('Edit'),
         action: 'editMessage',

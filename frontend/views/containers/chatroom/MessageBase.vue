@@ -103,6 +103,7 @@
     @retry='$emit("retry")'
     @pinToChannel='$emit("pin-to-channel")'
     @unpinFromChannel='$emit("unpin-from-channel")'
+    @markUnread='markUnread'
   )
 
   .c-truncate-toggle-container(
@@ -145,7 +146,10 @@ import { getFileType } from '@view-utils/filters.js'
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
-  inject: ['chatMainConfig'],
+  inject: [
+    'chatMainConfig',
+    'chatMainUtils'
+  ],
   components: {
     Avatar,
     ProfileCard,
@@ -336,6 +340,12 @@ export default ({
         // When folding the expanded message, scroll to the message so that it stays in the screen.
         this.$el.scrollIntoView({ behavior: 'instant' })
       }
+    },
+    markUnread () {
+      this.chatMainUtils.markAsUnread({
+        messageHash: this.messageHash,
+        createdHeight: this.height
+      })
     }
   },
   watch: {

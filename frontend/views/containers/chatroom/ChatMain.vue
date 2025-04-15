@@ -934,6 +934,7 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
+        console.log('!@# hash: ', this.currentChatRoomReadUntil?.messageHash)
         const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
         if (index >= 0) {
           // NOTE: When the user switches channel before the message is not fully processed,
@@ -964,6 +965,21 @@ export default ({
         }).catch(e => {
           console.error('[ChatMain.vue] Error setting read until', e)
         })
+      }
+    },
+    async markAsUnread ({ messageHash, createdHeight }) {
+      const chatRoomID = this.ephemeral.renderingChatRoomId
+      if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
+
+      try {
+        console.log('!@# here - aaa: ', messageHash)
+        await sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
+          contractID: chatRoomID, messageHash, createdHeight
+        })
+
+        this.$nextTick(this.setStartNewMessageIndex)
+      } catch (e) {
+        console.error('[ChatMain.vue] Error while marking message unread', e)
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1212,7 +1228,10 @@ export default ({
   },
   provide () {
     return {
-      chatMainConfig: this.config
+      chatMainConfig: this.config,
+      chatMainUtils: {
+        markAsUnread: this.markAsUnread
+      }
     }
   },
   watch: {
