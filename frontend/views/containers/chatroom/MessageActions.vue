@@ -10,7 +10,7 @@ menu-parent.c-message-menu(ref='menu')
         @click.stop='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
-  
+
     tooltip(
       v-if='isEditable'
       direction='top'
@@ -303,7 +303,7 @@ export default ({
   }
 
   .c-menuItem ::v-deep .c-item-link {
-    @extend %floating-panel-item;
+    height: 2.31rem;
   }
 }
 

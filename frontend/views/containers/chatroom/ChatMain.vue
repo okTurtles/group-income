@@ -48,7 +48,7 @@
             :name='summary.title'
             :description='summary.attributes.description'
           )
-
+      .c-readuntil-helper(:key='ephemeral.startedUnreadMessageHash || 1') {{ ephemeral.startedUnreadMessageHash }}
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
@@ -254,6 +254,7 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
+        messageHashToMarkUnread: null,
         scrollableDistance: 0,
         onChatScroll: null,
         infiniteLoading: null,
@@ -272,7 +273,7 @@ export default ({
         initialScroll: {
           hash: null,
           timeoutId: null
-        }
+        },
       },
       messageState: {
         contract: {}
@@ -1002,13 +1003,13 @@ export default ({
 
       try {
         console.log('!@# here - aaa: ', messageHash)
+        this.ephemeral.messageHashToMarkUnread = messageHash
         await sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight
+          contractID: chatRoomID, messageHash, createdHeight, forceUpdate: true
         })
-
-        this.$nextTick(this.setStartNewMessageIndex)
       } catch (e) {
         console.error('[ChatMain.vue] Error while marking message unread', e)
+        this.ephemeral.messageHashToMarkUnread = null
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1285,6 +1286,12 @@ export default ({
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+      }
+    },
+    'currentChatRoomReadUntil' (newReadUntil) {
+      const msgHash = newReadUntil?.messageHash
+      if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
+        this.$nextTick(this.setStartNewMessageIndex)
       }
     }
   }
