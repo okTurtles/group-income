@@ -704,8 +704,14 @@ export default ({
       }
     },
     async deleteMessage (message) {
+      const msgHash = message.hash
       const contractID = this.ephemeral.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
+
+      const lastMsg = this.messages[this.messages.length - 1]
+      const secondLastMsg = this.messages[this.messages.length - 2]
+      const isDeletingLastMsg = msgHash === lastMsg?.hash
+
       const question = message.attachments?.length
         ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
         : L('Are you sure you want to delete this message permanently?')
@@ -717,13 +723,33 @@ export default ({
         secondaryButton: L('Cancel')
       }
 
-      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-      if (primaryButtonSelected) {
-        sbp('gi.actions/chatroom/deleteMessage', {
-          contractID,
-          data: { hash: message.hash, manifestCids, messageSender: message.from }
-        }).catch((e) => {
-          console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
+      try {
+        const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+        if (primaryButtonSelected) {
+          await sbp('gi.actions/chatroom/deleteMessage', {
+            contractID,
+            data: { hash: msgHash, manifestCids, messageSender: message.from }
+          })
+
+          // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
+          // it needs to be updated to the second most recent one.
+          if (isDeletingLastMsg &&
+            this.currentChatRoomReadUntil?.messageHash === msgHash &&
+            secondLastMsg) {
+            this.updateReadUntilMessageHash({
+              messageHash: secondLastMsg.hash,
+              createdHeight: secondLastMsg.height,
+              forceUpdate: true
+            })
+          }
+        }
+      } catch (e) {
+        console.error(`Error while deleting message(${msgHash}) for chatroom(${contractID})`, e)
+
+        sbp('gi.ui/prompt', {
+          heading: L('Error while deleting a message'),
+          question: L('Error details: {reportError}', LError(e)),
+          primaryButton: L('Close')
         })
       }
     },
@@ -952,15 +978,18 @@ export default ({
         }
       }
     },
-    updateReadUntilMessageHash ({ messageHash, createdHeight }) {
+    updateReadUntilMessageHash ({ messageHash, createdHeight, forceUpdate = false }) {
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in KV_QUEUE queue
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE-1: skip adding useless invocations in KV_QUEUE queue.
+          // NOTE-2: 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+          //         eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
           return
         }
+
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight
+          contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
           console.error('[ChatMain.vue] Error setting read until', e)
         })
