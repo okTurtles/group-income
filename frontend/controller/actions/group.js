@@ -191,7 +191,7 @@ export default (sbp('sbp/selectors/register', {
               quantity: MAX_GROUP_MEMBER_COUNT,
               ...(INVITE_EXPIRES_IN_DAYS.ON_BOARDING && {
                 expires:
-                await sbp('chelonia/time') * 1000 + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+                await sbp('chelonia/time') + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING
               }),
               private: {
                 content: inviteKeyS
@@ -712,11 +712,11 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
+        ...params.data,
         attributes: {
           adminIDs: [contractState.groupOwnerID],
           ...params.data?.attributes
-        },
-        ...params.data
+        }
       },
       options: {
         ...params.options,
@@ -997,7 +997,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/fixAnyoneCanJoinLink': function ({ contractID }) {
     // Queue ensures that the update happens as atomically as possible
     return sbp('chelonia/queueInvocation', `${contractID}-FIX-ANYONE-CAN-JOIN`, async () => {
-      const now = await sbp('chelonia/time') * 1000
+      const now = await sbp('chelonia/time')
       const state = await sbp('chelonia/contract/wait', contractID).then(() => sbp('chelonia/contract/state', contractID))
 
       const quantity = doesGroupAnyoneCanJoinNeedUpdating(state)
@@ -1191,6 +1191,23 @@ export default (sbp('sbp/selectors/register', {
     const response = await sendMessage(params)
     return response
   }),
+  'gi.actions/group/_ondeleted': async (contractID: string, state: Object) => {
+    const rootGetters = sbp('state/vuex/getters')
+    const identityContractID = rootGetters.ourIdentityContractId
+    const currentIdentityState = rootGetters.currentIdentityState
+
+    if (!!currentIdentityState.groups?.[contractID] && !currentIdentityState.groups[contractID].hasLeft) {
+      await sbp('gi.actions/identity/leaveGroup', {
+        contractID: identityContractID,
+        data: {
+          groupContractID: contractID,
+          reference: state.profiles?.[identityContractID]?.reference
+        }
+      }).catch(e => {
+        console.warn(`[handleDeletedContract] ${e.name} thrown by gi.actions/identity/leaveGroup ${identityContractID} for ${contractID}:`, e)
+      })
+    }
+  },
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),

@@ -14,7 +14,7 @@ key.pub.json
 .stylelintcache
 
 # Configs
-/backend/database-router-config.json
+/database-router-config.json
 
 # Database
 /sqlite.db

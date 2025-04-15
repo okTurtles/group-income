@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import { doesGroupAnyoneCanJoinNeedUpdating } from '@model/contracts/shared/functions.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
@@ -18,7 +18,6 @@ import getters from './getters.js'
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED } from '../../shared/domains/chelonia/events.js'
 
 // Wrapper function for performing contract upgrades and migrations
 // TODO: Consider moving this function into a different file
@@ -84,7 +83,7 @@ const initialState = {
   reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
-  preferences: {},
+  preferences: {}, // { hideDistributionBanner: { [groupContractID]: boolean } }
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },
