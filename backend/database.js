@@ -41,7 +41,7 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (latestHEADinfo === '') {
