@@ -77,7 +77,7 @@ export default {
       this.ephemeral.contractFilter = item
     },
     viewManifest (item) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'ViewContractManifestModal', { contract: item })
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', { contract: item })
     }
   }
 }
@@ -125,6 +125,7 @@ export default {
   left: 0;
   padding: 0 0.8rem 0 0.2rem;
   background-color: var(--summary-list-bg-color);
+  overflow: hidden;
 }
 
 .c-cell-contract-id {

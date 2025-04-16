@@ -30,7 +30,7 @@ export default {
       this.currentModal = modalName
       if (childData) this.childData = childData
     },
-    close () {
+    close (modalName = null) {
       this.currentModal = null
       this.childData = null
 

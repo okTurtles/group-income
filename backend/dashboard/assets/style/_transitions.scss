@@ -10,28 +10,12 @@
   opacity: 0;
 }
 
-.slide-left-enter-active,
-.slide-left-leave-active {
-  transition: transform 0.3s;
+.zoom-enter {
+  animation: zoom 0.3s;
 }
 
-.slide-left-enter,
-.slide-left-leave-to {
-  transform: translate3d(100%, 0, 0);
-
-  @include tablet {
-    transform: none;
-  }
-}
-
-@include tablet {
-  .slide-left-enter {
-    animation: zoom 0.3s;
-  }
-
-  .slide-left-leave-to {
-    animation: zoom 0.3s reverse;
-  }
+.zoom-leave-to {
+  animation: zoom 0.3s reverse;
 }
 
 @keyframes zoom {
