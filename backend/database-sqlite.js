@@ -31,23 +31,19 @@ export async function initStorage (options: Object = {}): Promise<void> {
 }
 
 // Useful in test hooks.
-// eslint-disable-next-line require-await
 export async function clear (): Promise<void> {
-  return run('DELETE FROM Data')
+  return await run('DELETE FROM Data')
 }
 
-// eslint-disable-next-line require-await
 export async function readData (key: string): Promise<Buffer | string | void> {
-  const result = readStatement.get(key)
+  const result = await readStatement.get(key)
   return result?.value
 }
 
-// eslint-disable-next-line require-await
 export async function writeData (key: string, value: Buffer | string): Promise<void> {
-  writeStatement.run(key, value)
+  await writeStatement.run(key, value)
 }
 
-// eslint-disable-next-line require-await
 export async function deleteData (key: string): Promise<void> {
-  deleteStatement.run(key)
+  await deleteStatement.run(key)
 }

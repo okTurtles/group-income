@@ -44,7 +44,7 @@ const createWorker = (path: string): {
       const mc = new MessageChannel()
       mc.port2.onmessage = (event) => {
         const [success, result] = ((event.data: any): [boolean, any])
-        if (success) return resolve()
+        if (success) return resolve(result)
         reject(result)
       }
       mc.port2.onmessageerror = () => {
@@ -299,6 +299,7 @@ sbp('sbp/selectors/register', {
     // without using a queue
     const resourcesKey = `_private_resources_${owner}`
     await removeFromIndexFactory(resourcesKey)(cid)
+    await sbp('backend/server/removeIndirectResourcesIndex', cid)
 
     await sbp('chelonia.db/delete', `_private_owner_${cid}`)
     await sbp('chelonia.db/delete', `_private_size_${cid}`)

@@ -13,8 +13,7 @@ const CREDITS_PER_BYTESECOND = BigInt(1)
 const GRANULAR_HISTORY_MAX_ENTRIES = 1000
 const COARSE_HISTORY_MAX_ENTRIES = 1000
 // 288 is about one day, if granular entries are every 5 minutes
-// const GRANULAR_ENTRIES_PER_COARSE_ENTRIES = 288
-const GRANULAR_ENTRIES_PER_COARSE_ENTRIES = 3
+const GRANULAR_ENTRIES_PER_COARSE_ENTRIES = 288
 
 // Timestamp when this worker instance started. Used to avoid charging while the
 // server is not running
@@ -143,7 +142,7 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
       coarseHistory.unshift({
         type: 'aggregate',
         date,
-        sizeTotal: Math.floor(periodSize / totalPeriodLength),
+        sizeTotal: totalPeriodLength > 0 ? Math.floor(periodSize / totalPeriodLength) : 0,
         charges: charges.toString(10),
         credits: credits.toString(10),
         period: `${periodStart}/${date}`,
