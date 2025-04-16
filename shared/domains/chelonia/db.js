@@ -105,8 +105,7 @@ export default ((sbp('sbp/selectors/register', {
     const entryMetaJson = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${height}`)
     if (!entryMetaJson) return
 
-    const entryMeta = JSON.parse(entryMetaJson)
-    return entryMeta
+    return JSON.parse(entryMetaJson)
   },
   'chelonia/db/setEntryMeta': async (contractID: string, height: number, entryMeta: Object) => {
     const entryMetaJson = JSON.stringify(entryMeta)
@@ -169,7 +168,7 @@ export default ((sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
-        currentHash: entry.hash(),
+        hash: entry.hash(),
         date: new Date().toISOString()
       })
       return entry.hash()

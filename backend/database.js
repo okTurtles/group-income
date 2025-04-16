@@ -52,7 +52,7 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let { currentHash, ...serverMeta } = (
+    let { hash: currentHash, ...serverMeta } = (
       await sbp('chelonia/db/getEntryMeta', contractID, height)
     ) || {}
     let prefix = ''
@@ -69,13 +69,13 @@ export default ((sbp('sbp/selectors/register', {
           this.destroy()
           return
         }
-        if (!!currentHash && counter < limit) {
+        if (currentHash && counter < limit) {
           sbp('chelonia/db/getEntry', currentHash).then(async entry => {
             if (entry) {
               const currentPrefix = prefix
               prefix = ','
               counter++
-              const { currentHash: newCurrentHash, ...newServerMeta } = (
+              const { hash: newCurrentHash, ...newServerMeta } = (
                 await sbp('chelonia/db/getEntryMeta', contractID, entry.height() + 1)
               ) || {}
               this.push(
