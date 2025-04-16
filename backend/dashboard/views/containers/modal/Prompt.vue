@@ -1,7 +1,7 @@
 <template lang='pug'>
 ModalSimpleTemplate(ref='modal')
   .c-prompt-body
-    h2.c-prompt-heading Prompt title
+    h2.is-title-2.c-prompt-heading Prompt title
     p.c-prompt-content
       | Prompt content line 1 bla bla bla bla
       br
@@ -30,5 +30,27 @@ export default {
   position: relative;
   display: block;
   width: 100%;
+
+  .c-prompt-heading {
+    text-align: left;
+    margin-bottom: 2rem;
+
+    @include tablet {
+      text-align: center;
+    }
+  }
+
+  .c-prompt-content {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .c-buttons-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    column-gap: 1.25rem;
+    justify-content: center;
+  }
 }
 </style>

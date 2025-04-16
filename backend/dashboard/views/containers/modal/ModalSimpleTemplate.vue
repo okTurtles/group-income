@@ -69,9 +69,9 @@ export default {
   &-content {
     position: relative;
     display: block;
-    padding: 1.6rem 2rem;
-    width: 46rem;
-    max-width: calc(100vw - 4rem);
+    padding: 1.2rem 2rem;
+    width: 38rem;
+    max-width: calc(100vw - 2rem);
     height: auto;
     max-height: calc(100% - 4rem);
     overflow: hidden;
@@ -79,7 +79,11 @@ export default {
     border-radius: 0.375rem;
 
     @include tablet {
-      padding: 2.4rem 3.2rem;
+      padding: 2rem 3.2rem;
+    }
+
+    @include desktop {
+      max-width: 46rem;
     }
   }
 
@@ -91,10 +95,10 @@ export default {
 
 .c-close-btn {
   position: absolute;
-  right: 1.25rem;
-  top: 1.25rem;
-  width: 2.25rem;
-  height: 2.25rem;
+  right: 0.75rem;
+  top: 0.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
   border-radius: 50%;
   z-index: 1;
   background: var(--modal-bg-color);
@@ -103,6 +107,18 @@ export default {
     display: inline-block;
     line-height: 1;
     transform: translate(1px, 1px);
+    font-size: 1rem;
+  }
+
+  @include tablet {
+    right: 1rem;
+    top: 1rem;
+    width: 2rem;
+    height: 2rem;
+
+    i {
+      font-size: 1.125rem;
+    }
   }
 }
 </style>
