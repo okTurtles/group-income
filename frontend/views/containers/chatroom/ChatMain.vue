@@ -48,7 +48,6 @@
             :name='summary.title'
             :description='summary.attributes.description'
           )
-      .c-readuntil-helper(:key='ephemeral.startedUnreadMessageHash || 1') {{ ephemeral.startedUnreadMessageHash }}
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
@@ -273,7 +272,7 @@ export default ({
         initialScroll: {
           hash: null,
           timeoutId: null
-        },
+        }
       },
       messageState: {
         contract: {}
@@ -961,7 +960,6 @@ export default ({
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        console.log('!@# hash: ', this.currentChatRoomReadUntil?.messageHash)
         const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
         if (index >= 0) {
           // NOTE: When the user switches channel before the message is not fully processed,
@@ -1002,7 +1000,6 @@ export default ({
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
       try {
-        console.log('!@# here - aaa: ', messageHash)
         this.ephemeral.messageHashToMarkUnread = messageHash
         await sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate: true
@@ -1010,6 +1007,12 @@ export default ({
       } catch (e) {
         console.error('[ChatMain.vue] Error while marking message unread', e)
         this.ephemeral.messageHashToMarkUnread = null
+      }
+    },
+    markUnreadPostActions () {
+      this.ephemeral.startedUnreadMessageHash = null
+      if (this.currentChatRoomReadUntil) {
+        this.ephemeral.startedUnreadMessageHash = this.currentChatRoomReadUntil.messageHash
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1291,7 +1294,7 @@ export default ({
     'currentChatRoomReadUntil' (newReadUntil) {
       const msgHash = newReadUntil?.messageHash
       if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
-        this.$nextTick(this.setStartNewMessageIndex)
+        this.$nextTick(this.markUnreadPostActions)
       }
     }
   }

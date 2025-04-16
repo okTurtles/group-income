@@ -103,7 +103,7 @@
     @retry='$emit("retry")'
     @pinToChannel='$emit("pin-to-channel")'
     @unpinFromChannel='$emit("unpin-from-channel")'
-    @markUnread='markUnread'
+    @markAsUnread='markAsUnread'
   )
 
   .c-truncate-toggle-container(
@@ -341,7 +341,7 @@ export default ({
         this.$el.scrollIntoView({ behavior: 'instant' })
       }
     },
-    markUnread () {
+    markAsUnread () {
       this.chatMainUtils.markAsUnread({
         messageHash: this.messageHash,
         createdHeight: this.height

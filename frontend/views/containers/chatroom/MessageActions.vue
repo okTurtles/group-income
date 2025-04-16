@@ -135,7 +135,7 @@ export default ({
         conditionToShow: !this.isDesktopScreen
       }, {
         name: L('Mark unread'),
-        action: 'markUnread',
+        action: 'markAsUnread',
         icon: 'envelope',
         conditionToShow: true
       }, {
