@@ -177,7 +177,8 @@ export default ((sbp('sbp/selectors/register', {
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
         hash: entry.hash(),
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        ...(entry.isKeyOp() && { isKeyOp: true })
       })
       return entry.hash()
     } catch (e) {

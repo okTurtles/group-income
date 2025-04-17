@@ -41,7 +41,7 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number, options: { keyOps?: boolean } = {}): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (latestHEADinfo === '') {
@@ -52,11 +52,33 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let { hash: currentHash, ...serverMeta } = (
-      await sbp('chelonia/db/getEntryMeta', contractID, height)
-    ) || {}
+    let currentHeight = parseInt(height)
+    let currentHash, serverMeta
     let prefix = ''
     let ended = false
+    const nextKeyOp = (() => {
+      let index
+
+      return async () => {
+        if (!index) {
+          index = (await sbp('chelonia.db/get', `_private_keyop_idx_${contractID}_${currentHeight - currentHeight % 10000}`))?.split('\x00')
+        }
+        const value = index?.find((h, i) => {
+          if (Number(h) >= currentHeight) {
+            index = ((index: any): any[]).splice(i + 1)
+            return true
+          } else {
+            return false
+          }
+        })
+        if (value != null) {
+          currentHeight = Number(value)
+        } else {
+          currentHeight = currentHeight - currentHeight % 10000 + 10000
+          index = undefined
+        }
+      }
+    })()
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     const stream = new Readable({
@@ -69,37 +91,62 @@ export default ((sbp('sbp/selectors/register', {
           this.destroy()
           return
         }
-        if (currentHash && counter < limit) {
-          sbp('chelonia/db/getEntry', currentHash).then(async entry => {
-            if (entry) {
-              const currentPrefix = prefix
-              prefix = ','
-              counter++
-              const { hash: newCurrentHash, ...newServerMeta } = (
-                await sbp('chelonia/db/getEntryMeta', contractID, entry.height() + 1)
-              ) || {}
-              this.push(
-                `${currentPrefix}"${strToB64(
-                  JSON.stringify({ serverMeta, message: entry.serialize() })
-                )}"`
-              )
-              currentHash = newCurrentHash
-              serverMeta = newServerMeta
-            } else {
-              this.push(']')
-              this.push(null)
-              ended = true
-            }
-          }).catch(e => {
-            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
-            this.push(']')
-            this.push(null)
-            ended = true
-          })
-        } else {
+        const end = () => {
           this.push(']')
           this.push(null)
           ended = true
+        }
+        const fetchMeta = async () => {
+          if (currentHeight > latestHEADinfo.height) {
+            end()
+            return false
+          }
+          const { hash: newCurrentHash, ...newServerMeta } = (
+            await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
+          ) || {}
+          if (!newCurrentHash) {
+            end()
+            return false
+          }
+          currentHash = newCurrentHash
+          serverMeta = newServerMeta
+
+          return true
+        }
+        if (counter < limit) {
+          (async () => {
+            try {
+              if (options.keyOps) {
+                while (!serverMeta?.isKeyOp) {
+                  await nextKeyOp()
+                  if (!fetchMeta()) return
+                }
+              } else {
+                if (!fetchMeta()) return
+              }
+              const entry = await sbp('chelonia/db/getEntry', currentHash)
+              if (entry) {
+                const currentPrefix = prefix
+                prefix = ','
+                counter++
+                this.push(
+                `${currentPrefix}"${strToB64(
+                  JSON.stringify({ serverMeta, message: entry.serialize() })
+                )}"`
+                )
+                currentHeight++
+                currentHash = undefined
+                serverMeta = undefined
+              } else {
+                end()
+              }
+            } catch (e) {
+              console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+              end()
+            }
+          })()
+        } else {
+          end()
         }
       }
     })

@@ -476,7 +476,7 @@ export class SPMessage {
 
   // `isKeyOp` is used to filter out non-key operations for providing an
   // abbreviated chain fo snapshot validation
-  isKeyOp (): string {
+  isKeyOp (): boolean {
     return !!(
       keyOps.includes(this.opType()) ||
       // $FlowFixMe[prop-missing]

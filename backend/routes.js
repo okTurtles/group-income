@@ -245,6 +245,9 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
       contractID: Joi.string().regex(CID_REGEX).required(),
       since: Joi.string().regex(POSITIVE_INTEGER_REGEX).required(),
       limit: Joi.string().regex(POSITIVE_INTEGER_REGEX)
+    }),
+    query: Joi.object({
+      keyOps: Joi.string()
     })
   }
 }, async function (request, h) {
@@ -256,7 +259,7 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
       return Boom.badRequest()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, Number(since), limit == null ? undefined : Number(limit))
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, Number(since), limit == null ? undefined : Number(limit), { keyOps: !!request.query['keyOps'] })
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
