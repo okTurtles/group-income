@@ -86,7 +86,8 @@ export default (sbp('sbp/selectors/register', {
     contractID: string,
     messageHash: string,
     createdHeight: number,
-    // In some cases, such as when the latest message is deleted, the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+    // In a rare case, such as when the latest message is deleted,
+    // the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
     // 'forceUpdate' flag is used to override the 'createdHeight' check below to allow this kind of update.
     // (reference: https://github.com/okTurtles/group-income/issues/2729)
     forceUpdate: boolean
