@@ -253,6 +253,7 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
+        // Below contains the message hash on which the user manually marked as unread
         messageHashToMarkUnread: null,
         scrollableDistance: 0,
         onChatScroll: null,
@@ -1008,32 +1009,43 @@ export default ({
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
-      try {
-        const getUpdatedUnreadMessages = () => {
-          // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
-          // which are reflected as the unread-count badge in the UI.
-          const index = this.messages.findIndex(msg => msg.hash === messageHash)
-          const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
-          const mentions = makeMentionFromUserID(this.ourIdentityContractId)
-          const messageMentionsMe = msg => {
-            return msg.type === MESSAGE_TYPES.TEXT &&
-              msg.text &&
-              (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
-          }
-
-          return this.messages.slice(index)
-            .filter(msg => {
-              return [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
-                isInDM ||
-                messageMentionsMe(msg)
-            }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
+      // helper functions
+      const getUpdatedUnreadMessages = () => {
+        // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
+        // which are reflected as the unread-count badge in the UI.
+        const index = this.messages.findIndex(msg => msg.hash === messageHash)
+        const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
+        const mentions = makeMentionFromUserID(this.ourIdentityContractId)
+        const messageMentionsMe = msg => {
+          return msg.type === MESSAGE_TYPES.TEXT &&
+            msg.text &&
+            (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
         }
 
-        this.ephemeral.messageHashToMarkUnread = messageHash
+        return this.messages.slice(index)
+          .filter(msg => {
+            if (this.isMsgSender(msg.from)) { return false }
+
+            return isInDM ||
+              [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
+              messageMentionsMe(msg)
+          }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
+      }
+
+      const index = this.messages.findIndex(msg => msg.hash === messageHash)
+      const isFirstMessage = index === 0
+      const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
+
+      try {
+        this.ephemeral.messageHashToMarkUnread = targetMsg.hash
         await sbp('gi.actions/identity/kv/markAsUnread', {
           contractID: chatRoomID,
-          messageHash,
-          createdHeight,
+          messageHash: targetMsg.hash,
+          // NOTE: 'createdHeight' field stores the 'msg.height' value of the previous message of the target message and
+          //       then later used in the UI to determine on which message to display 'is-new' UI Element [1].
+          //       But in the case where the target is the first message of the chatroom, meaning there is no previous message,
+          //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
+          createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
           unreadMessages: getUpdatedUnreadMessages()
         })
       } catch (e) {
@@ -1044,7 +1056,11 @@ export default ({
     markUnreadPostActions () {
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
-        this.ephemeral.startedUnreadMessageHash = this.currentChatRoomReadUntil.messageHash
+        const foundIndex = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
+        if (foundIndex >= 0) {
+          this.ephemeral.startedUnreadMessageHash = this.messages[foundIndex].hash
+        }
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1318,6 +1334,7 @@ export default ({
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
         this.ephemeral.scrollableDistance = 0
+        this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
