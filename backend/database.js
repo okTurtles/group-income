@@ -79,6 +79,21 @@ export default ((sbp('sbp/selectors/register', {
         }
       }
     })()
+    const fetchMeta = async () => {
+      if (currentHeight > latestHEADinfo.height) {
+        return false
+      }
+      const meta = await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
+      if (!meta) {
+        return false
+      }
+
+      const { hash: newCurrentHash, ...newServerMeta } = meta
+      currentHash = newCurrentHash
+      serverMeta = newServerMeta
+
+      return true
+    }
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     const stream = new Readable({
@@ -96,33 +111,16 @@ export default ((sbp('sbp/selectors/register', {
           this.push(null)
           ended = true
         }
-        const fetchMeta = async () => {
-          if (currentHeight > latestHEADinfo.height) {
-            end()
-            return false
-          }
-          const { hash: newCurrentHash, ...newServerMeta } = (
-            await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
-          ) || {}
-          if (!newCurrentHash) {
-            end()
-            return false
-          }
-          currentHash = newCurrentHash
-          serverMeta = newServerMeta
-
-          return true
-        }
         if (counter < limit) {
           (async () => {
             try {
               if (options.keyOps) {
                 while (!serverMeta?.isKeyOp) {
                   await nextKeyOp()
-                  if (!fetchMeta()) return
+                  if (!await fetchMeta()) return end()
                 }
               } else {
-                if (!fetchMeta()) return
+                if (!await fetchMeta()) return end()
               }
               const entry = await sbp('chelonia/db/getEntry', currentHash)
               if (entry) {
