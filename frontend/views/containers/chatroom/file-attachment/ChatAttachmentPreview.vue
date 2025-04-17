@@ -5,7 +5,7 @@
   template(v-if='isForDownload')
     .c-attachment-preview(
       v-for='(entry, entryIndex) in attachmentList'
-      :key='entryIndex'
+      :key='getAttachmentId(entry)'
       class='is-download-item'
       tabindex='0'
     )
@@ -25,6 +25,8 @@
           :src='objectURLList[entryIndex]'
           :alt='entry.name'
           @click='openImageViewer(objectURLList[entryIndex])'
+          @load='onImageSettled(objectURLList[entryIndex])'
+          @error='onImageSettled(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -97,6 +99,7 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { L } from '@common/common.js'
+import { uniq } from 'turtledash'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -123,6 +126,7 @@ export default {
   data () {
     return {
       objectURLList: [],
+      settledURLList: [],
       loadingBoxStyles: []
     }
   },
@@ -131,6 +135,9 @@ export default {
       return !this.attachmentList.some(attachment => {
         return this.fileType(attachment) === 'non-image'
       })
+    },
+    allImageAttachments () {
+      return this.attachmentList.filter(entry => this.fileType(entry) === 'image')
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -239,7 +246,7 @@ export default {
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
-      const allImageAttachments = this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+      const imageAttachmentDetailsList = this.allImageAttachments
         .map((entry, index) => {
           const imgUrl = entry.url || this.objectURLList[index] || ''
           return {
@@ -252,17 +259,32 @@ export default {
             manifestCid: entry.downloadData?.manifestCid
           }
         })
-      const initialIndex = allImageAttachments.findIndex(attachment => attachment.imgUrl === objectURL)
+      const initialIndex = imageAttachmentDetailsList.findIndex(attachment => attachment.imgUrl === objectURL)
 
       sbp(
         'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
         null,
         {
-          images: allImageAttachments,
+          images: imageAttachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
           canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
         }
       )
+    },
+    onImageSettled (url) {
+      if (this.isForDownload) {
+        this.settledURLList = uniq([...this.settledURLList, url])
+
+        if (this.allImageAttachments.length === this.settledURLList.length) {
+          // Check if all image attachments are loaded in the DOM, notify the parent component.
+          // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
+          //  if this becomes useful in more places.)
+          this.$nextTick(() => this.$emit('image-attachments-render-complete'))
+        }
+      }
+    },
+    getAttachmentId (attachment) {
+      return attachment.downloadData?.manifestCid || attachment.name.replace(/\s+/g, '_')
     }
   },
   watch: {
@@ -271,10 +293,19 @@ export default {
         // NOTE: this will be caught when user tries to delete attachments
         const oldObjectURLMapping = {}
         if (from.length === this.objectURLList.length) {
+          const currentObjectURLList = this.objectURLList.slice()
+
           from.forEach((attachment, index) => {
-            oldObjectURLMapping[attachment.downloadData.manifestCid] = this.objectURLList[index]
+            oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
           })
           this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+
+          // revoke object URL of a deleted attachment.
+          Object.values(oldObjectURLMapping).forEach(oldUrl => {
+            if (!this.objectURLList.includes(oldUrl)) {
+              URL.revokeObjectURL(oldUrl)
+            }
+          })
         } else {
           // NOTE: this should not be caught, but considered for the error handler
           Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
@@ -530,7 +561,7 @@ export default {
 }
 
 .c-invisible-link {
-  position: relative;
+  position: absolute;
   top: -10rem;
   left: -10rem;
   opacity: 0;

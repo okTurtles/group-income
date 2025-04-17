@@ -61,6 +61,10 @@ export default ({
       type: Date,
       required: true
     },
+    updatedDate: {
+      type: String,
+      required: false
+    },
     variant: {
       type: String,
       validator (value) {

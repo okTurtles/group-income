@@ -101,6 +101,16 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default ((sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
+  'chelonia/db/getEntryMeta': async (contractID: string, height: number) => {
+    const entryMetaJson = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${height}`)
+    if (!entryMetaJson) return
+
+    return JSON.parse(entryMetaJson)
+  },
+  'chelonia/db/setEntryMeta': async (contractID: string, height: number, entryMeta: Object) => {
+    const entryMetaJson = JSON.stringify(entryMeta)
+    await sbp('chelonia.db/set', `_private_hidx=${contractID}#${height}`, entryMetaJson)
+  },
   'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
     return sbp('chelonia.db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
   },
@@ -157,7 +167,10 @@ export default ((sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', entry.hash(), entry.serialize())
       await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
-      await sbp('chelonia.db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
+      await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
+        hash: entry.hash(),
+        date: new Date().toISOString()
+      })
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {

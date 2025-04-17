@@ -31,11 +31,17 @@ export const defaultConfig = {
 const transform = (el, binding) => {
   if (binding.oldValue !== binding.value) {
     let config = defaultConfig
-    if (binding.arg === 'a') {
-      config = cloneDeep(config)
-      config.ALLOWED_ATTR.push('href', 'target')
-      config.ALLOWED_TAGS.push('a')
+    const tagAllowedAttrs = {
+      'a': ['href', 'target'],
+      'button': ['type']
     }
+
+    if (Object.keys(tagAllowedAttrs).includes(binding.arg)) {
+      config = cloneDeep(config)
+      config.ALLOWED_TAGS.push(binding.arg)
+      config.ALLOWED_ATTR.push(...(tagAllowedAttrs[binding.arg] || []))
+    }
+
     el.textContent = ''
     el.appendChild(dompurify.sanitize(binding.value, config))
   }
