@@ -155,7 +155,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
-import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -978,15 +978,24 @@ export default ({
         }
       }
     },
-    updateReadUntilMessageHash ({ messageHash, createdHeight, forceUpdate = false }) {
+    updateReadUntilMessageHash ({
+      messageHash,
+      createdHeight,
+      // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+      // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
+      forceUpdate = false,
+      // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
+      // So if user has used this functionality at least once, the chatroom should stop auto-updating the 'readUntil' data in the store (eg. while scrolling),
+      // So that the message that has been marked unread is kept until user leaves the chatroom and re-enter in the future.
+      // Hence, setting below flag to 'true' by default.
+      noUpdateWhenMarkUnreadIsUsed = true
+    }) {
+      if (noUpdateWhenMarkUnreadIsUsed && this.ephemeral.messageHashToMarkUnread) { return }
+
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE-1: skip adding useless invocations in KV_QUEUE queue.
-          // NOTE-2: 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
-          //         eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
-          return
-        }
+        // NOTE: skip adding useless invocations in KV_QUEUE queue.
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
 
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
@@ -1000,12 +1009,32 @@ export default ({
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
       try {
+        const getUpdatedUnreadMessages = () => {
+          // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
+          // which are reflected as the unread-count badge in the UI.
+          const index = this.messages.findIndex(msg => msg.hash === messageHash)
+          const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
+          const mentions = makeMentionFromUserID(this.ourIdentityContractId)
+          const messageMentionsMe = msg => {
+            return msg.type === MESSAGE_TYPES.TEXT &&
+              msg.text &&
+              (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
+          }
+
+          return this.messages.slice(index)
+            .filter(msg => {
+              return [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
+                isInDM ||
+                messageMentionsMe(msg)
+            }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
+        }
+
         this.ephemeral.messageHashToMarkUnread = messageHash
         await sbp('gi.actions/identity/kv/markAsUnread', {
           contractID: chatRoomID,
           messageHash,
           createdHeight,
-          unreadMessages: [] // TODO: implement here!
+          unreadMessages: getUpdatedUnreadMessages()
         })
       } catch (e) {
         console.error('[ChatMain.vue] Error while marking message unread', e)
