@@ -139,6 +139,11 @@ sbp('sbp/selectors/register', {
       // is needed for the load & store operation.
       await sbp('backend/server/appendToContractIndex', contractID)
     }
+    // If this was a key op, add it to a keyop index. To prevent the index from
+    // growing too large, the index is segmented for every 10000 height values
+    if (cheloniaState.contracts[contractID].previousKeyOp === deserializedHEAD.hash) {
+      await appendToIndexFactory(`_private_keyop_idx_${contractID}_${deserializedHEAD.head.height - deserializedHEAD.head.height % 10000}`)(String(deserializedHEAD.head.height))
+    }
   },
   'backend/server/appendToContractIndex': appendToIndexFactory('_private_cheloniaState_index'),
   'backend/server/broadcastKV': async function (contractID: string, key: string, entry: string) {
@@ -299,6 +304,9 @@ sbp('sbp/selectors/register', {
           if (event) {
             await sbp('chelonia.db/delete', event)
             await sbp('chelonia.db/delete', eventKey)
+          }
+          if (i % 10000 === 0) {
+            await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_${i}`)
           }
         }
         await sbp('chelonia/db/deleteLatestHEADinfo', cid)

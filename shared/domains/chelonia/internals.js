@@ -2177,6 +2177,9 @@ const handleEvent = {
       this.config.reactiveSet(state.contracts[contractID], 'type', type)
       console.debug(`contract ${type} registered for ${contractID}`)
     }
+    if (message.isKeyOp()) {
+      this.config.reactiveSet(state.contracts[contractID], 'previousKeyOp', hash)
+    }
     this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
     this.config.reactiveSet(state.contracts[contractID], 'height', height)
     // If there were decryption errors due to missing encryption keys, we store
