@@ -24,7 +24,7 @@
             .c-item-copy
               //- Todo: discuss if tooltip better than toggle
               sentence-with-member-tooltip(:members='onTimePayments' :noEllpsis='true')
-                .member-count-sentence(v-safe-html='memberCountSentences["onTimePayments"]')
+                .member-count-sentence(v-safe-html:button='memberCountSentences["onTimePayments"]')
 
     .c-column
       i18n.is-title-3(tag='h2') Inactivity
@@ -36,28 +36,28 @@
             .icon-user.icon-round.has-background-general
             .c-item-copy
               sentence-with-member-tooltip(:members='haventLoggedIn')
-                .member-count-sentence(v-safe-html='memberCountSentences["haventLoggedIn"]')
+                .member-count-sentence(v-safe-html:button='memberCountSentences["haventLoggedIn"]')
 
         li.c-item-wrapper
           .c-item
             .icon-comment-dollar.icon-round.has-background-general
             .c-item-copy
               sentence-with-member-tooltip(:members='noIncomeDetails')
-                .member-count-sentence(v-safe-html='memberCountSentences["noIncomeDetails"]')
+                .member-count-sentence(v-safe-html:button='memberCountSentences["noIncomeDetails"]')
 
         li.c-item-wrapper
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
               sentence-with-member-tooltip(:members='missedPayments')
-                .member-count-sentence(v-safe-html='memberCountSentences["missedPayments"]')
+                .member-count-sentence(v-safe-html:button='memberCountSentences["missedPayments"]')
 
         li.c-item-wrapper
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
               sentence-with-member-tooltip(:members='noVotes')
-                .member-count-sentence(v-safe-html='memberCountSentences["noVotes"]')
+                .member-count-sentence(v-safe-html:button='memberCountSentences["noVotes"]')
 
 </template>
 
@@ -142,8 +142,8 @@ export default ({
     memberCountSentences () {
       const argsCommon = {
         ...this.LTags('strong'),
-        'span_': '<span class="link t-trigger">',
-        '_span': '</span>'
+        'btn_': '<button type="button" class="is-unstyled link t-trigger">',
+        '_btn': '</button>'
       }
       const argsMap = {
         'onTimePayments': { ...argsCommon, membercount: this.onTimePayments.length },
@@ -155,20 +155,20 @@ export default ({
 
       return {
         'onTimePayments': this.onTimePayments.length === 1
-          ? L('{span_}1 member{_span} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
-          : L('{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
+          ? L('{btn_}1 member{_btn} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
+          : L('{btn_}{membercount} members{_btn} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
         'haventLoggedIn': this.haventLoggedIn.length === 1
-          ? L('{span_}1 member{_span} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
-          : L('{span_}{membercount} members{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
+          ? L('{btn_}1 member{_btn} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
+          : L('{btn_}{membercount} members{_btn} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
         'noIncomeDetails': this.noIncomeDetails.length === 1
-          ? L('{span_}1 member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
-          : L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
+          ? L('{btn_}1 member{_btn} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
+          : L('{btn_}{membercount} members{_btn} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
         'missedPayments': this.missedPayments.length === 1
-          ? L('{span_}1 member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
-          : L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
+          ? L('{btn_}1 member{_btn} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
+          : L('{btn_}{membercount} members{_btn} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
         'noVotes': this.noVotes.length === 1
-          ? L('{span_}1 member{_span} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
-          : L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+          ? L('{btn_}1 member{_btn} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+          : L('{btn_}{membercount} members{_btn} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
       }
     }
   }

@@ -38,6 +38,10 @@ export default ({
       type: Date,
       required: true
     },
+    updatedDate: {
+      type: String,
+      required: false
+    },
     edited: Boolean,
     variant: {
       type: String,
