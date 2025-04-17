@@ -78,12 +78,19 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
-  'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight }: {
-    contractID: string, messageHash: string, createdHeight: number
+  'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight, forceUpdate = false }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    // In a rare case, such as when the latest message is deleted,
+    // the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+    // 'forceUpdate' flag is used to override the 'createdHeight' check below to allow this kind of update.
+    // (reference: https://github.com/okTurtles/group-income/issues/2729)
+    forceUpdate: boolean
   }) => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
+        if (forceUpdate || currentData[contractID]?.readUntil.createdHeight < createdHeight) {
           const { unreadMessages } = currentData[contractID]
           return [{
             ...currentData,

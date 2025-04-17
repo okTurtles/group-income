@@ -52,7 +52,7 @@ export default ({
     window.addEventListener('online', this.onlineHandler)
     window.addEventListener('offline', this.offlineHandler)
   },
-  beforeDestory () {
+  beforeDestroy () {
     window.removeEventListener('online', this.onlineHandler)
     window.removeEventListener('offline', this.offlineHandler)
   }

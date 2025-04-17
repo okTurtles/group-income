@@ -41,7 +41,7 @@ if (!fs.existsSync(dataFolder)) {
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: string, requestedLimit: ?number): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (latestHEADinfo === '') {
@@ -52,12 +52,18 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let currentHash = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${height}`)
-    let prefix = '['
+    let { hash: currentHash, ...serverMeta } = (
+      await sbp('chelonia/db/getEntryMeta', contractID, height)
+    ) || {}
+    let prefix = ''
     let ended = false
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     const stream = new Readable({
+      construct (cb) {
+        this.push('[')
+        cb()
+      },
       read (): void {
         if (ended) {
           this.destroy()
@@ -69,21 +75,29 @@ export default ((sbp('sbp/selectors/register', {
               const currentPrefix = prefix
               prefix = ','
               counter++
-              currentHash = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${entry.height() + 1}`)
-              this.push(`${currentPrefix}"${strToB64(entry.serialize())}"`)
+              const { hash: newCurrentHash, ...newServerMeta } = (
+                await sbp('chelonia/db/getEntryMeta', contractID, entry.height() + 1)
+              ) || {}
+              this.push(
+                `${currentPrefix}"${strToB64(
+                  JSON.stringify({ serverMeta, message: entry.serialize() })
+                )}"`
+              )
+              currentHash = newCurrentHash
+              serverMeta = newServerMeta
             } else {
-              this.push(counter > 0 ? ']' : '[]')
+              this.push(']')
               this.push(null)
               ended = true
             }
           }).catch(e => {
-            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e)
-            this.push(counter > 0 ? ']' : '[]')
+            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+            this.push(']')
             this.push(null)
             ended = true
           })
         } else {
-          this.push(counter > 0 ? ']' : '[]')
+          this.push(']')
           this.push(null)
           ended = true
         }

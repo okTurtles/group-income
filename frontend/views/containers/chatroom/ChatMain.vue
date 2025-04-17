@@ -75,6 +75,7 @@
           :replyingMessage='replyingMessageText(message)'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
+          :updatedDate='message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserID='currentUserAttr.id'
@@ -174,7 +175,7 @@ const onChatScroll = function () {
   const curScrollTop = this.$refs.conversation.scrollTop
   const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
   const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-  this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+  this.ephemeral.scrollableDistance = scrollTopMax - curScrollTop
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
@@ -200,7 +201,7 @@ const onChatScroll = function () {
     return
   }
 
-  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+  if (this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
@@ -253,7 +254,7 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
-        scrolledDistance: 0,
+        scrollableDistance: 0,
         onChatScroll: null,
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
@@ -329,10 +330,10 @@ export default ({
       }
     },
     isScrolledUp () {
-      if (!this.ephemeral.scrolledDistance) {
+      if (!this.ephemeral.scrollableDistance) {
         return false
       }
-      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
+      return this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -618,8 +619,11 @@ export default ({
         this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
-          behavior: this.isReducedMotionMode
-            ? 'instant' // force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
+          //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
+          behavior: this.isReducedMotionMode || document.hidden
+            ? 'instant'
             : behavior
         })
       }
@@ -700,8 +704,14 @@ export default ({
       }
     },
     async deleteMessage (message) {
+      const msgHash = message.hash
       const contractID = this.ephemeral.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
+
+      const lastMsg = this.messages[this.messages.length - 1]
+      const secondLastMsg = this.messages[this.messages.length - 2]
+      const isDeletingLastMsg = msgHash === lastMsg?.hash
+
       const question = message.attachments?.length
         ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
         : L('Are you sure you want to delete this message permanently?')
@@ -713,13 +723,33 @@ export default ({
         secondaryButton: L('Cancel')
       }
 
-      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-      if (primaryButtonSelected) {
-        sbp('gi.actions/chatroom/deleteMessage', {
-          contractID,
-          data: { hash: message.hash, manifestCids, messageSender: message.from }
-        }).catch((e) => {
-          console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
+      try {
+        const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+        if (primaryButtonSelected) {
+          await sbp('gi.actions/chatroom/deleteMessage', {
+            contractID,
+            data: { hash: msgHash, manifestCids, messageSender: message.from }
+          })
+
+          // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
+          // it needs to be updated to the second most recent one.
+          if (isDeletingLastMsg &&
+            this.currentChatRoomReadUntil?.messageHash === msgHash &&
+            secondLastMsg) {
+            this.updateReadUntilMessageHash({
+              messageHash: secondLastMsg.hash,
+              createdHeight: secondLastMsg.height,
+              forceUpdate: true
+            })
+          }
+        }
+      } catch (e) {
+        console.error(`Error while deleting message(${msgHash}) for chatroom(${contractID})`, e)
+
+        sbp('gi.ui/prompt', {
+          heading: L('Error while deleting a message'),
+          question: L('Error details: {reportError}', LError(e)),
+          primaryButton: L('Close')
         })
       }
     },
@@ -948,15 +978,18 @@ export default ({
         }
       }
     },
-    updateReadUntilMessageHash ({ messageHash, createdHeight }) {
+    updateReadUntilMessageHash ({ messageHash, createdHeight, forceUpdate = false }) {
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in KV_QUEUE queue
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          // NOTE-1: skip adding useless invocations in KV_QUEUE queue.
+          // NOTE-2: 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+          //         eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
           return
         }
+
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight
+          contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
           console.error('[ChatMain.vue] Error setting read until', e)
         })
@@ -1048,12 +1081,13 @@ export default ({
 
           this.latestEvents.push(serializedMessage)
 
-          if (this.ephemeral.scrolledDistance < 50) {
+          // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
+          if (this.ephemeral.scrollableDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (isScrollable) {
-                // Auto-scroll to the bottom when a new message is added
+                // Scroll-query to the latest message.
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
@@ -1075,7 +1109,7 @@ export default ({
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
 
-      if (this.ephemeral.scrolledDistance < 40) {
+      if (this.ephemeral.scrollableDistance < 40) {
         // NOTE: 40px is the minimum height of a message
         //       even though user scrolled up, if he scrolled less than 40px (one message)
         //       should ignore the scroll position, and scroll to the bottom
@@ -1228,7 +1262,7 @@ export default ({
 
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
-        this.ephemeral.scrolledDistance = 0
+        this.ephemeral.scrollableDistance = 0
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
