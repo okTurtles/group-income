@@ -1001,8 +1001,11 @@ export default ({
 
       try {
         this.ephemeral.messageHashToMarkUnread = messageHash
-        await sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight, forceUpdate: true
+        await sbp('gi.actions/identity/kv/markAsUnread', {
+          contractID: chatRoomID,
+          messageHash,
+          createdHeight,
+          unreadMessages: [] // TODO: implement here!
         })
       } catch (e) {
         console.error('[ChatMain.vue] Error while marking message unread', e)

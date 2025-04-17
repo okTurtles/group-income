@@ -86,8 +86,7 @@ export default (sbp('sbp/selectors/register', {
     contractID: string,
     messageHash: string,
     createdHeight: number,
-    // In some cases, such as when the latest message is deleted or the user uses the 'mark-unread' feature,
-    // the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+    // In some cases, such as when the latest message is deleted, the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
     // 'forceUpdate' flag is used to override the 'createdHeight' check below to allow this kind of update.
     // (reference: https://github.com/okTurtles/group-income/issues/2729)
     forceUpdate: boolean
@@ -107,6 +106,30 @@ export default (sbp('sbp/selectors/register', {
           }
         }
         return null
+      }
+
+      const data = await getUpdatedUnreadMessages()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      }
+    })
+  },
+  'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    unreadMessages: Array<{ messageHash: string, createdHeight: number }>
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedUnreadMessages = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+
+        return {
+          ...currentData,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight }, unreadMessages
+          }
+        }
       }
 
       const data = await getUpdatedUnreadMessages()
