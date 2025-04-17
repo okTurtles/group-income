@@ -48,7 +48,6 @@
             :name='summary.title'
             :description='summary.attributes.description'
           )
-
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
@@ -156,7 +155,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
-import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -254,6 +253,8 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
+        // Below contains the message hash on which the user manually marked as unread
+        messageHashToMarkUnread: null,
         scrollableDistance: 0,
         onChatScroll: null,
         infiniteLoading: null,
@@ -978,21 +979,88 @@ export default ({
         }
       }
     },
-    updateReadUntilMessageHash ({ messageHash, createdHeight, forceUpdate = false }) {
+    updateReadUntilMessageHash ({
+      messageHash,
+      createdHeight,
+      // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+      // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
+      forceUpdate = false,
+      // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
+      // So if user has used this functionality at least once, the chatroom should stop auto-updating the 'readUntil' data in the store (eg. while scrolling),
+      // So that the message that has been marked unread is kept until user leaves the chatroom and re-enter in the future.
+      // Hence, setting below flag to 'true' by default.
+      noUpdateWhenMarkUnreadIsUsed = true
+    }) {
+      if (noUpdateWhenMarkUnreadIsUsed && this.ephemeral.messageHashToMarkUnread) { return }
+
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE-1: skip adding useless invocations in KV_QUEUE queue.
-          // NOTE-2: 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
-          //         eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
-          return
-        }
+        // NOTE: skip adding useless invocations in KV_QUEUE queue.
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
 
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
           console.error('[ChatMain.vue] Error setting read until', e)
         })
+      }
+    },
+    async markAsUnread ({ messageHash, createdHeight }) {
+      const chatRoomID = this.ephemeral.renderingChatRoomId
+      if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
+
+      // helper functions
+      const getUpdatedUnreadMessages = () => {
+        // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
+        // which are reflected as the unread-count badge in the UI.
+        const index = this.messages.findIndex(msg => msg.hash === messageHash)
+        const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
+        const mentions = makeMentionFromUserID(this.ourIdentityContractId)
+        const messageMentionsMe = msg => {
+          return msg.type === MESSAGE_TYPES.TEXT &&
+            msg.text &&
+            (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
+        }
+
+        return this.messages.slice(index)
+          .filter(msg => {
+            if (this.isMsgSender(msg.from)) { return false }
+
+            return isInDM ||
+              [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
+              messageMentionsMe(msg)
+          }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
+      }
+
+      const index = this.messages.findIndex(msg => msg.hash === messageHash)
+      const isFirstMessage = index === 0
+      const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
+
+      try {
+        this.ephemeral.messageHashToMarkUnread = targetMsg.hash
+        await sbp('gi.actions/identity/kv/markAsUnread', {
+          contractID: chatRoomID,
+          messageHash: targetMsg.hash,
+          // NOTE: 'createdHeight' field stores the 'msg.height' value of the previous message of the target message and
+          //       then later used in the UI to determine on which message to display 'is-new' UI Element [1].
+          //       But in the case where the target is the first message of the chatroom, meaning there is no previous message,
+          //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
+          createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
+          unreadMessages: getUpdatedUnreadMessages()
+        })
+      } catch (e) {
+        console.error('[ChatMain.vue] Error while marking message unread', e)
+        this.ephemeral.messageHashToMarkUnread = null
+      }
+    },
+    markUnreadPostActions () {
+      this.ephemeral.startedUnreadMessageHash = null
+      if (this.currentChatRoomReadUntil) {
+        const foundIndex = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
+        if (foundIndex >= 0) {
+          this.ephemeral.startedUnreadMessageHash = this.messages[foundIndex].hash
+        }
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1241,7 +1309,10 @@ export default ({
   },
   provide () {
     return {
-      chatMainConfig: this.config
+      chatMainConfig: this.config,
+      chatMainUtils: {
+        markAsUnread: this.markAsUnread
+      }
     }
   },
   watch: {
@@ -1263,9 +1334,16 @@ export default ({
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
         this.ephemeral.scrollableDistance = 0
+        this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+      }
+    },
+    'currentChatRoomReadUntil' (newReadUntil) {
+      const msgHash = newReadUntil?.messageHash
+      if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
+        this.$nextTick(this.markUnreadPostActions)
       }
     }
   }

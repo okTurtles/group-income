@@ -115,6 +115,30 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
+  'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    unreadMessages: Array<{ messageHash: string, createdHeight: number }>
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedUnreadMessages = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+
+        return {
+          ...currentData,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight }, unreadMessages
+          }
+        }
+      }
+
+      const data = await getUpdatedUnreadMessages()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      }
+    })
+  },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
