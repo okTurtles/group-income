@@ -441,7 +441,7 @@ module.exports = (grunt) => {
   })
 
   // Useful helper task for `grunt test`.
-  grunt.registerTask('backend:launch', ['backend:relaunch'])
+  grunt.registerTask('backend:launch', '[internal]', ['backend:relaunch'])
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.

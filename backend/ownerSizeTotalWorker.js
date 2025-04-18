@@ -12,8 +12,10 @@ const updatedSizeMap = new Map()
 // Super-fast 8-bit hash for base58 with low bucket size standard deviation
 //  (i.e., the 256 buckets get about the same number of elements)
 const fastBase58Hash = (cid: string) => {
-  const hash = ((cid.codePointAt(cid.length - 2) * 19) + (cid.codePointAt(cid.length - 1) + 19)) & 0xFF
-  return hash
+  const len = cid.length
+  const a = cid.codePointAt(len - 2) || 0
+  const b = cid.codePointAt(len - 1) || 0
+  return ((a * 19) + (b + 19)) & 0xFF
 }
 
 /**
@@ -63,7 +65,9 @@ sbp('okTurtles.eventQueue/queueEvent', readyQueueName, async () => {
   // Iterate through all 256 possible bucket keys.
   for (let i = 0; i < 256; i++) {
     // Fetch the content of the bucket
-    const data = await sbp('chelonia.db/get', `_private_pendingIdx_ownerTotalSize_${i}`)
+    // (bypassCache isn't really needed here as the cache should be empty, but
+    // it's added for clarity.)
+    const data = await sbp('chelonia.db/get', `_private_pendingIdx_ownerTotalSize_${i}`, { bypassCache: true })
     if (data) {
       // Split the string and add mark each CID as requiring full recalculation
       data.split('\x00').forEach((cid) => {

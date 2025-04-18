@@ -110,7 +110,6 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
     if (lastCoarseSyncIdx >= GRANULAR_ENTRIES_PER_COARSE_ENTRIES || lastCoarseSyncIdx < 0) {
       const coarseHistoryKey = `_private_ownerBalanceHistoryCoarse_${billableEntity}`
       granularHistory[0].coarseSyncPoint = true
-      await sbp('chelonia.db/get', coarseHistoryKey)
       const coarseHistoryList = await sbp('chelonia.db/get', coarseHistoryKey, { bypassCache: true }) ?? '[]'
       const coarseHistory = JSON.parse(coarseHistoryList)
 
