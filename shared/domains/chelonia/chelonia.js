@@ -10,7 +10,7 @@ import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { SPMessage } from './SPMessage.js'
@@ -652,6 +652,8 @@ export default (sbp('sbp/selectors/register', {
                     console.error(`[chelonia] Error processing kv event for ${msg.channelID} and key ${msg.key}`, msg, e)
                   })
                 }]
+              case NOTIFICATION_TYPE.DELETION:
+                return [k, (msg) => (v: Function)(msg.data)]
               default:
                 return [k, v]
             }
@@ -889,7 +891,13 @@ export default (sbp('sbp/selectors/register', {
   // can be passed to verify whether to proceed with removal. This is used as
   // part of the `/release` mechanism to prevent removing contracts that have
   // acquired new references since the call to `/remove`.
-  'chelonia/contract/remove': function (contractIDs: string | string[], confirmRemovalCallback?: (contractID: string) => boolean): Promise<*> {
+  'chelonia/contract/remove': function (
+    contractIDs: string | string[],
+    { confirmRemovalCallback, permanent }: {
+      confirmRemovalCallback?: (contractID: string) => boolean,
+      permanent: boolean
+    } = {}
+  ): Promise<*> {
     const rootState = sbp(this.config.stateSelector)
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -918,7 +926,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }).filter(Boolean)))
 
-        sbp('chelonia/private/removeImmediately', contractID)
+        sbp('chelonia/private/removeImmediately', contractID, { permanent })
 
         if (fkContractIDs.length) {
           // Attempt to release all contracts that are being monitored for
@@ -932,10 +940,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/contract/retain': async function (contractIDs: string | string[], params?: { ephemeral?: boolean}): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    const rootState = sbp(this.config.stateSelector)
     if (listOfIds.length === 0) return Promise.resolve()
+    const checkIfDeleted = (id) => {
+      // Contract has been permanently deleted
+      if (rootState.contracts[id] === null) {
+        console.error('[chelonia/contract/retain] Called /retain on permanently deleted contract.', id)
+        throw new ChelErrorResourceGone('Unable to retain permanently deleted contract ' + id)
+      }
+    }
     if (!params?.ephemeral) {
-      const rootState = sbp(this.config.stateSelector)
       listOfIds.forEach((id) => {
+        checkIfDeleted(id)
         if (!has(rootState.contracts, id)) {
           this.config.reactiveSet(rootState.contracts, id, Object.create(null))
         }
@@ -943,6 +959,7 @@ export default (sbp('sbp/selectors/register', {
       })
     } else {
       listOfIds.forEach((id) => {
+        checkIfDeleted(id)
         if (!has(this.ephemeralReferenceCount, id)) {
           this.ephemeralReferenceCount[id] = 1
         } else {
@@ -964,6 +981,11 @@ export default (sbp('sbp/selectors/register', {
     if (!params?.try) {
       if (!params?.ephemeral) {
         listOfIds.forEach((id) => {
+          // Contract has been permanently deleted
+          if (rootState.contracts[id] === null) {
+            console.warn('[chelonia/contract/release] Called /release on permanently deleted contract. This has no effect.', id)
+            return
+          }
           if (has(rootState.contracts, id) && has(rootState.contracts[id], 'references')) {
             const current = rootState.contracts[id].references
             if (current === 0) {
@@ -990,6 +1012,11 @@ export default (sbp('sbp/selectors/register', {
         })
       } else {
         listOfIds.forEach((id) => {
+          // Contract has been permanently deleted
+          if (rootState.contracts[id] === null) {
+            console.warn('[chelonia/contract/release] Called /release on permanently deleted contract. This has no effect.', id)
+            return
+          }
           if (has(this.ephemeralReferenceCount, id)) {
             const current = this.ephemeralReferenceCount[id] ?? 0
             if (current <= 1) {
@@ -1014,7 +1041,7 @@ export default (sbp('sbp/selectors/register', {
     // contract is safe to remove
     const boundCheckCanBeGarbageCollected = checkCanBeGarbageCollected.bind(this)
     const idsToRemove = listOfIds.filter(boundCheckCanBeGarbageCollected)
-    return idsToRemove.length ? await sbp('chelonia/contract/remove', idsToRemove, boundCheckCanBeGarbageCollected) : undefined
+    return idsToRemove.length ? await sbp('chelonia/contract/remove', idsToRemove, { confirmRemovalCallback: boundCheckCanBeGarbageCollected }) : undefined
   },
   'chelonia/contract/disconnect': async function (contractID, contractIDToDisconnect) {
     const state = sbp(this.config.stateSelector)
@@ -1116,6 +1143,9 @@ export default (sbp('sbp/selectors/register', {
     const rootState = sbp(this.config.stateSelector)
     // return a copy of the state if we already have it, unless the only key that's in it is _volatile,
     // in which case it means we should sync the contract to get more info.
+    if (rootState.contracts[contractID] === null) {
+      throw new ChelErrorResourceGone('Permanently deleted contract ' + contractID)
+    }
     if (!options.forceSync && rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
@@ -1218,6 +1248,69 @@ export default (sbp('sbp/selectors/register', {
       publishOptions
     })
     return msg
+  },
+  'chelonia/out/ownResources': async function (contractID: string) {
+    if (!contractID) {
+      throw new TypeError('A contract ID must be provided')
+    }
+
+    const response = await fetch(`${this.config.connectionURL}/ownResources`, {
+      method: 'GET',
+      signal: this.abortController.signal,
+      headers: new Headers([
+        [
+          'authorization',
+          buildShelterAuthorizationHeader.call(this, contractID)
+        ]
+      ])
+    })
+    if (!response.ok) {
+      console.error('Unable to fetch own resources', contractID, response.status)
+      throw new Error(`Unable to fetch own resources for ${contractID}: ${response.status}`)
+    }
+
+    return response.json()
+  },
+  'chelonia/out/deleteContract': async function (
+    contractID: string | string[],
+    credentials: {
+      [contractID: string]: { token: ?string, billableContractID: ?string }
+    } = {}
+  ) {
+    if (!contractID) {
+      throw new TypeError('A contract ID must be provided')
+    }
+    if (!Array.isArray(contractID)) contractID = [contractID]
+    return await Promise.allSettled(contractID.map(async (cid) => {
+      const hasCredential = has(credentials, cid)
+      const hasToken = has(credentials[cid], 'token') && credentials[cid].token
+      const hasBillableContractID = has(credentials[cid], 'billableContractID') && credentials[cid].billableContractID
+      if (!hasCredential || hasToken === hasBillableContractID) {
+        throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
+      }
+
+      const response = await fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
+        method: 'POST',
+        signal: this.abortController.signal,
+        headers: new Headers([
+          ['authorization',
+            hasToken
+              // $FlowFixMe[incompatible-type]
+              ? `bearer ${(credentials[cid].token: any).valueOf()}`
+              // $FlowFixMe[incompatible-type]
+              // $FlowFixMe[incompatible-call]
+              : buildShelterAuthorizationHeader.call(this, credentials[cid].billableContractID)]
+        ])
+      })
+      if (!response.ok) {
+        if (response.status === 404 || response.status === 410) {
+          console.warn('Contract appears to have been deleted already', cid, response.status)
+          return
+        }
+        console.error('Unable to delete contract', cid, response.status)
+        throw new Error(`Unable to delete contract ${cid}: ${response.status}`)
+      }
+    }))
   },
   // all of these functions will do both the creation of the SPMessage
   // and the sending of it via 'chelonia/private/out/publishEvent'
@@ -1614,6 +1707,17 @@ export default (sbp('sbp/selectors/register', {
       serializedData: data,
       meta: key
     })
+  },
+  // To set filters for a contract, call with `filter` set to an array of KV
+  // keys to receive updates for over the WebSocket. An empty array means that
+  // no KV updates will be sent.
+  // Calling with a single argument (the contract ID) will remove filters,
+  // meaning that KV updates will be sent for _any_ KV key.
+  // The last call takes precedence, so, for example, calling with filter
+  // set to `['foo', 'bar']` and then with `['baz']` means that KV updates will
+  // be received for `baz` only, not for `foo`, `bar` or any other keys.
+  'chelonia/kv/setFilter': function (contractID: string, filter?: string[]) {
+    this.pubsub.setKvFilter(contractID, filter)
   },
   'chelonia/parseEncryptedOrUnencryptedDetachedMessage': function ({ contractID, serializedData, meta }: { contractID: string, serializedData: Object, meta?: ?string }) {
     return parseEncryptedOrUnencryptedMessage.call(this, {

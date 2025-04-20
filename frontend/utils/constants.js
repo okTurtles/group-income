@@ -22,6 +22,8 @@ export const KILOBYTE = 1 << 10
 export const MEGABYTE = 1 << 20
 export const CHAT_ATTACHMENT_SIZE_LIMIT = 30 * MEGABYTE // in byte.
 export const IMAGE_ATTACHMENT_MAX_SIZE = 400 * KILOBYTE // 400KB
+export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP = 500 * 1.25 // in px
+export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value of mobile is more tolerant considering smaller screen size.
 
 export const TextObjectType = {
   Text: 'TEXT',
@@ -31,10 +33,10 @@ export const TextObjectType = {
 }
 
 export const KV_KEYS = {
-  UNREAD_MESSAGES: 'unreadMessages',
-  LAST_LOGGED_IN: 'lastLoggedIn',
-  PREFERENCES: 'preferences',
-  NOTIFICATIONS: 'notifications'
+  UNREAD_MESSAGES: 'unreadMessages', // identity contract
+  LAST_LOGGED_IN: 'lastLoggedIn', // group contract
+  PREFERENCES: 'preferences', // identity contract
+  NOTIFICATIONS: 'notifications' // identity contract
 }
 
 export const MAX_LOG_ENTRIES = 2000

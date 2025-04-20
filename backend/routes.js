@@ -3,17 +3,30 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import { createCID, multicodes, maybeParseCID } from '~/shared/functions.js'
-import { SERVER_INSTANCE } from './instance-keys.js'
-import path from 'path'
-import chalk from 'chalk'
-import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken } from './zkppSalt.js'
 import Bottleneck from 'bottleneck'
+import chalk from 'chalk'
+import path from 'path'
+import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
+import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
+import { appendToIndexFactory } from './database.js'
+import { SERVER_INSTANCE } from './instance-keys.js'
+import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
+import { blake32Hash } from '../shared/functions.js'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
+
+// Regexes validated as safe with <https://devina.io/redos-checker>
+const CID_REGEX = /^z[1-9A-HJ-NP-Za-km-z]{8,72}$/
+// eslint-disable-next-line no-control-regex
+const KV_KEY_REGEX = /^(?!_private)[^\x00]{1,256}$/
+// Rules from validateUsername:
+//   - Length: 1-80
+//   - Can't start or end with _ or -
+//   - No two consecutive - or _
+//   - Allowed characters: lowercase letters, numbers, underscore and dashes
+const NAME_REGEX = /^(?![_-])((?!([_-])\2)[a-z\d_-]){1,80}(?<![_-])$/
+const POSITIVE_INTEGER_REGEX = /^\d{1,16}$/
 
 const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
 const SIGNUP_LIMIT_MIN = parseInt(process.env.SIGNUP_LIMIT_MIN) || 2
@@ -69,6 +82,20 @@ const staticServeConfig = {
   redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
 }
 
+const errorMapper = (e: Error) => {
+  switch (e?.name) {
+    case 'BackendErrorNotFound':
+      return Boom.notFound()
+    case 'BackendErrorGone':
+      return Boom.resourceGone()
+    case 'BackendErrorBadData':
+      return Boom.badData(e.message)
+    default:
+      console.error(e, 'Unexpected backend error')
+      return Boom.internal(e.message ?? 'internal error')
+  }
+}
+
 // We define a `Proxy` for route so that we can use `route.VERB` syntax for
 // defining routes instead of calling `server.route` with an object, and to
 // dynamically get the HAPI server object from the `SERVER_INSTANCE`, which is
@@ -99,7 +126,15 @@ route.POST('/event', {
     strategy: 'chel-shelter',
     mode: 'optional'
   },
-  validate: { payload: Joi.string().required() }
+  validate: {
+    headers: Joi.object({
+      'shelter-namespace-registration': Joi.string().regex(NAME_REGEX)
+    }),
+    options: {
+      allowUnknown: true
+    },
+    payload: Joi.string().required()
+  }
 }, async function (request, h) {
   // IMPORTANT: IT IS A REQUIREMENT THAT ANY PROXY SERVERS (E.G. nginx) IN FRONT OF US SET THE
   // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
@@ -156,7 +191,7 @@ route.POST('/event', {
         // `shelter-namespace-registration` header is present, proceed with also
         // registering a name for the new contract
         const name = request.headers['shelter-namespace-registration']
-        if (name && !name.startsWith('_private')) {
+        if (name) {
         // Name registation is enabled only for identity contracts
           const cheloniaState = sbp('chelonia/rootState')
           if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
@@ -171,6 +206,10 @@ route.POST('/event', {
               await redeemSaltRegistrationToken(name, deserializedHEAD.contractID, saltRegistrationToken)
             }
           }
+        }
+        const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
+        if (deletionTokenDgst) {
+          await sbp('chelonia.db/set', `_private_deletionTokenDgst_${deserializedHEAD.contractID}`, deletionTokenDgst)
         }
       }
       // Store size information
@@ -200,24 +239,24 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
+route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      since: Joi.string().regex(POSITIVE_INTEGER_REGEX).required(),
+      limit: Joi.string().regex(POSITIVE_INTEGER_REGEX)
+    })
+  }
+}, async function (request, h) {
   const { contractID, since, limit } = request.params
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    if (
-      !contractID ||
-      contractID.startsWith('_private') ||
-      !/^[0-9]+$/.test(since) ||
-      (limit && !/^[0-9]+$/.test(limit))
-    ) {
-      return Boom.badRequest()
-    }
     const parsed = maybeParseCID(contractID)
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
       return Boom.badRequest()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, Number(since), limit == null ? undefined : Number(limit))
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -234,6 +273,22 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (requ
     logger.error(err, `GET /eventsAfter/${contractID}/${since}`, err.message)
     return err
   }
+})
+
+// This endpoint returns to anyone in possession of a contract's SAK all of the
+// resources that that contract owns (without recursion). This is useful for
+// APIs and for some UI actions (e.g., to warn users about resources that would
+// be (cascade) deleted following a delete)
+route.GET('/ownResources', {
+  auth: {
+    strategies: ['chel-shelter'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const billableContractID = request.auth.credentials.billableContractID
+  const resources = (await sbp('chelonia.db/get', `_private_resources_${billableContractID}`))?.split('\x00')
+
+  return resources || []
 })
 
 if (process.env.NODE_ENV === 'development') {
@@ -282,7 +337,13 @@ route.POST('/name', {
 })
 */
 
-route.GET('/name/{name}', {}, async function (request, h) {
+route.GET('/name/{name}', {
+  validate: {
+    params: Joi.object({
+      name: Joi.string().regex(NAME_REGEX).required()
+    })
+  }
+}, async function (request, h) {
   const { name } = request.params
   try {
     const lookupResult = await sbp('backend/db/lookupName', name)
@@ -296,18 +357,22 @@ route.GET('/name/{name}', {}, async function (request, h) {
 })
 
 route.GET('/latestHEADinfo/{contractID}', {
-  cache: { otherwise: 'no-store' }
+  cache: { otherwise: 'no-store' },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    })
+  }
 }, async function (request, h) {
   const { contractID } = request.params
   try {
-    if (
-      !contractID ||
-      contractID.startsWith('_private')
-    ) return Boom.badRequest()
     const parsed = maybeParseCID(contractID)
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.badRequest()
 
     const HEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
+    if (HEADinfo === '') {
+      return Boom.resourceGone()
+    }
     if (!HEADinfo) {
       console.warn(`[backend] latestHEADinfo not found for ${contractID}`)
       return notFoundNoCache(h)
@@ -487,9 +552,12 @@ route.POST('/file', {
     await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
     await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
-    // Generate and store deletion token
-    const deletionToken = await sbp('backend/server/saveDeletionToken', manifestHash)
-    return h.response(manifestHash).header('shelter-deletion-token', deletionToken)
+    // Store deletion token
+    const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
+    if (deletionTokenDgst) {
+      await sbp('chelonia.db/set', `_private_deletionTokenDgst_${manifestHash}`, deletionTokenDgst)
+    }
+    return h.response(manifestHash)
   } catch (err) {
     logger.error(err, 'POST /file', err.message)
     return err
@@ -498,19 +566,24 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {}, async function (request, h) {
+route.GET('/file/{hash}', {
+  validate: {
+    params: Joi.object({
+      hash: Joi.string().regex(CID_REGEX).required()
+    })
+  }
+}, async function (request, h) {
   const { hash } = request.params
 
-  if (!hash || hash.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(hash)
   if (!parsed) {
     return Boom.badRequest()
   }
 
   const blobOrString = await sbp('chelonia.db/get', `any:${hash}`)
-  if (!blobOrString) {
+  if (blobOrString?.length === 0) {
+    return Boom.resourceGone()
+  } else if (!blobOrString) {
     return notFoundNoCache(h)
   }
 
@@ -536,13 +609,15 @@ route.POST('/deleteFile/{hash}', {
     // the file owner to delete it
     strategies: ['chel-shelter', 'chel-bearer'],
     mode: 'required'
+  },
+  validate: {
+    params: Joi.object({
+      hash: Joi.string().regex(CID_REGEX).required()
+    })
   }
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || hash.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(hash)
   if (parsed?.code !== multicodes.SHELTER_FILE_MANIFEST) {
     return Boom.badRequest()
@@ -571,19 +646,19 @@ route.POST('/deleteFile/{hash}', {
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
-        return Boom.unauthorized('Invalid token', 'bearer')
+        return Boom.unauthorized('Invalid shelter auth', 'shelter')
       }
       break
     }
     case 'chel-bearer': {
-      const expectedToken = await sbp('chelonia.db/get', `_private_deletionToken_${hash}`)
-      if (!expectedToken) {
+      const expectedTokenDgst = await sbp('chelonia.db/get', `_private_deletionTokenDgst_${hash}`)
+      if (!expectedTokenDgst) {
         return Boom.notFound()
       }
-      const token = request.auth.credentials.token
+      const tokenDgst = blake32Hash(request.auth.credentials.token)
       // Constant-time comparison
       // Check that the token provided matches the deletion token for this file
-      if (!ctEq(expectedToken, token)) {
+      if (!ctEq(expectedTokenDgst, tokenDgst)) {
         return Boom.unauthorized('Invalid token', 'bearer')
       }
       break
@@ -594,40 +669,85 @@ route.POST('/deleteFile/{hash}', {
 
   // Authentication passed, now proceed to delete the file and its associated
   // keys
-  const rawManifest = await sbp('chelonia.db/get', hash)
-  if (!rawManifest) return Boom.notFound()
   try {
-    const manifest = JSON.parse(rawManifest)
-    if (!manifest || typeof manifest !== 'object') return Boom.badData('manifest format is invalid')
-    if (manifest.version !== '1.0.0') return Boom.badData('unsupported manifest version')
-    if (!Array.isArray(manifest.chunks) || !manifest.chunks.length) return Boom.badData('missing chunks')
-    // Delete all chunks
-    await Promise.all(manifest.chunks.map(([, cid]) => sbp('chelonia.db/delete', cid)))
+    await sbp('backend/deleteFile', hash)
+    return h.response()
   } catch (e) {
-    console.warn(e, `Error parsing manifest for ${hash}. It's probably not a file manifest.`)
-    return Boom.notFound()
+    return errorMapper(e)
   }
-  // The keys to be deleted are not read from or updated, so they can be deleted
-  // without using a queue
-  await sbp('chelonia.db/delete', hash)
-  await sbp('chelonia.db/delete', `_private_owner_${hash}`)
-  await sbp('chelonia.db/delete', `_private_size_${hash}`)
-  await sbp('chelonia.db/delete', `_private_deletionToken_${hash}`)
-  const resourcesKey = `_private_resources_${owner}`
-  // Use a queue for atomicity
-  await sbp('okTurtles.eventQueue/queueEvent', resourcesKey, async () => {
-    const existingResources = await sbp('chelonia.db/get', resourcesKey)
-    if (!existingResources) return
-    if (existingResources.endsWith(hash)) {
-      await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, -hash.length - 1))
-      return
-    }
-    const hashIndex = existingResources.indexOf(hash + '\x00')
-    if (hashIndex === -1) return
-    await sbp('chelonia.db/set', resourcesKey, existingResources.slice(0, hashIndex) + existingResources.slice(hashIndex + hash.length + 1))
-  })
+})
 
-  return h.response()
+route.POST('/deleteContract/{hash}', {
+  auth: {
+    // Allow file deletion, and allow either the bearer of the deletion token or
+    // the file owner to delete it
+    strategies: ['chel-shelter', 'chel-bearer'],
+    mode: 'required'
+  }
+}, async function (request, h) {
+  const { hash } = request.params
+  const strategy = request.auth.strategy
+  if (!hash || hash.startsWith('_private')) return Boom.notFound()
+
+  switch (strategy) {
+    case 'chel-shelter': {
+      const owner = await sbp('chelonia.db/get', `_private_owner_${hash}`)
+      if (!owner) {
+        return Boom.notFound()
+      }
+
+      let ultimateOwner = owner
+      let count = 0
+      // Walk up the ownership tree
+      do {
+        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
+        if (owner) {
+          ultimateOwner = owner
+          count++
+        } else {
+          break
+        }
+      // Prevent an infinite loop
+      } while (count < 128)
+      // Check that the user making the request is the ultimate owner (i.e.,
+      // that they have permission to delete this file)
+      if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
+        return Boom.unauthorized('Invalid shelter auth', 'shelter')
+      }
+      break
+    }
+    case 'chel-bearer': {
+      const expectedTokenDgst = await sbp('chelonia.db/get', `_private_deletionTokenDgst_${hash}`)
+      if (!expectedTokenDgst) {
+        return Boom.notFound()
+      }
+      const tokenDgst = blake32Hash(request.auth.credentials.token)
+      // Constant-time comparison
+      // Check that the token provided matches the deletion token for this contract
+      if (!ctEq(expectedTokenDgst, tokenDgst)) {
+        return Boom.unauthorized('Invalid token', 'bearer')
+      }
+      break
+    }
+    default:
+      return Boom.unauthorized('Missing or invalid auth strategy')
+  }
+
+  const username = await sbp('chelonia.db/get', `_private_cid2name_${hash}`)
+  // Authentication passed, now proceed to delete the contract and its associated
+  // keys
+  try {
+    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    if (username) {
+      const ip = request.headers['x-real-ip'] || request.info.remoteAddress
+      console.info({ contractID: hash, username, ip, taskId: id }, 'Scheduled deletion on named contract')
+    }
+    // We return the queue ID to allow users to track progress
+    // TODO: Tracking progress not yet implemented
+    return h.response({ id }).code(202)
+  } catch (e) {
+    return errorMapper(e)
+  }
 })
 
 route.POST('/kv/{contractID}/{key}', {
@@ -639,14 +759,16 @@ route.POST('/kv/{contractID}/{key}', {
     parse: false,
     maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
     timeout: 10 * SECOND // TODO: make this a configurable setting
+  },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      key: Joi.string().regex(KV_KEY_REGEX).required()
+    })
   }
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  // The key is mandatory and we don't allow NUL in it as it's used for indexing
-  if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.badRequest()
@@ -715,6 +837,7 @@ route.POST('/kv/{contractID}/{key}', {
   const existingSize = existing ? Buffer.from(existing).byteLength : 0
   await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
   await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+  await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
   await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
   return h.response().code(204)
@@ -725,13 +848,16 @@ route.GET('/kv/{contractID}/{key}', {
     strategies: ['chel-shelter'],
     mode: 'required'
   },
-  cache: { otherwise: 'no-store' }
+  cache: { otherwise: 'no-store' },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      key: Joi.string().regex(KV_KEY_REGEX).required()
+    })
+  }
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.badRequest()
@@ -800,6 +926,9 @@ route.GET('/', {}, function (req, h) {
 
 route.POST('/zkpp/register/{name}', {
   validate: {
+    params: Joi.object({
+      name: Joi.string().regex(NAME_REGEX).required()
+    }),
     payload: Joi.alternatives([
       {
         // b is a hash of a random public key (`g^r`) with secret key `r`,
@@ -824,15 +953,20 @@ route.POST('/zkpp/register/{name}', {
     ])
   }
 }, async function (req, h) {
+  const lookupResult = await sbp('backend/db/lookupName', req.params['name'])
+  if (lookupResult) {
+    // If the username is already registered, abort
+    return Boom.conflict()
+  }
   try {
     if (req.payload['b']) {
-      const result = await registrationKey(req.params['name'], req.payload['b'])
+      const result = registrationKey(req.params['name'], req.payload['b'])
 
       if (result) {
         return result
       }
     } else {
-      const result = await register(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+      const result = register(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
 
       if (result) {
         return result
@@ -846,14 +980,16 @@ route.POST('/zkpp/register/{name}', {
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{name}/auth_hash', {
+route.GET('/zkpp/{contractID}/auth_hash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const challenge = await getChallenge(req.params['name'], req.query['b'])
+    const challenge = await getChallenge(req.params['contractID'], req.query['b'])
 
     if (!challenge) {
       return Boom.notFound()
@@ -864,14 +1000,17 @@ route.GET('/zkpp/{name}/auth_hash', {
       .header('Content-Type', 'text/plain')
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)
+    console.error(e, 'Error at GET /zkpp/{contractID}/auth_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{name}/contract_hash', {
+route.GET('/zkpp/{contractID}/contract_hash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     query: Joi.object({
       r: Joi.string().required(),
       s: Joi.string().required(),
@@ -880,9 +1019,8 @@ route.GET('/zkpp/{name}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+    const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
       return h.response(salt)
@@ -891,14 +1029,17 @@ route.GET('/zkpp/{name}/contract_hash', {
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message)
+    console.error(e, 'Error at GET /zkpp/{contractID}/contract_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/{name}/updatePasswordHash', {
+route.POST('/zkpp/{contractID}/updatePasswordHash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     payload: Joi.object({
       r: Joi.string().required(),
       s: Joi.string().required(),
@@ -908,9 +1049,8 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+    const result = await updateContractSalt(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
       return h.response(result)
@@ -918,7 +1058,7 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/{name}/updatePasswordHash: ' + e.message)
+    console.error(e, 'Error at POST /zkpp/{contractID}/updatePasswordHash: ' + e.message)
   }
 
   return Boom.internal('internal error')

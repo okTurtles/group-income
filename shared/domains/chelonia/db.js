@@ -40,8 +40,10 @@ export const parsePrefixableKey = (key: string): [string, string] => {
 export const prefixHandlers: Object = {
   // Decode buffers, but don't transform other values.
   '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
-  ':': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
-  'any:': value => value,
+  'any:': value => value
+  /*
+  // 2025-03-24: Commented out because it's not used; currently, only `any:`
+  // is used in the `/file` route.
   // Throw if the value if not a buffer.
   'blob:': value => {
     if (Buffer.isBuffer(value)) {
@@ -49,6 +51,7 @@ export const prefixHandlers: Object = {
     }
     throw new ChelErrorDBConnection('Unexpected value: expected a buffer.')
   }
+  */
 }
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
@@ -98,8 +101,21 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default ((sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
+  'chelonia/db/getEntryMeta': async (contractID: string, height: number) => {
+    const entryMetaJson = await sbp('chelonia.db/get', `_private_hidx=${contractID}#${height}`)
+    if (!entryMetaJson) return
+
+    return JSON.parse(entryMetaJson)
+  },
+  'chelonia/db/setEntryMeta': async (contractID: string, height: number, entryMeta: Object) => {
+    const entryMetaJson = JSON.stringify(entryMeta)
+    await sbp('chelonia.db/set', `_private_hidx=${contractID}#${height}`, entryMetaJson)
+  },
   'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
     return sbp('chelonia.db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
+  },
+  'chelonia/db/deleteLatestHEADinfo': (contractID: string): Promise<void> => {
+    return sbp('chelonia.db/set', getLogHead(contractID), '')
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<SPMessage> {
     try {
@@ -151,7 +167,10 @@ export default ((sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', entry.hash(), entry.serialize())
       await sbp('chelonia.db/set', getLogHead(contractID), JSON.stringify({ HEAD: entry.hash(), height: entry.height() }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
-      await sbp('chelonia.db/set', `_private_hidx=${contractID}#${entryHeight}`, entry.hash())
+      await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
+        hash: entry.hash(),
+        date: new Date().toISOString()
+      })
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {
