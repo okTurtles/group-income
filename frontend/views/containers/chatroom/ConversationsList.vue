@@ -27,7 +27,9 @@
         size='sm'
       )
 
-      span.c-channel-name {{list.channels[id].displayName || list.channels[id].name}}
+      span.c-channel-name(
+        :class='{ "has-text-bold": list.channels[id].unreadMessagesCount > 0 }'
+      ) {{list.channels[id].displayName || list.channels[id].name}}
 
       .c-unreadcount-wrapper
         .pill.is-danger(

@@ -962,20 +962,9 @@ export default ({
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
         const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
         if (index >= 0) {
-          // NOTE: When the user switches channel before the message is not fully processed,
-          //       (in other words, until this.variant(msg) === 'sent')
-          //       the chatroomReadUntil position would not be saved correctly
-          //       because the pending messages could not be saved in state.
-          //       Considering those such cases, we shoud set 'isNew' position for the messages
-          //       only whose sender is not ourselves.
-          for (let i = index; i < this.messages.length; i++) {
-            const message = this.messages[i]
-            if (!this.isMsgSender(message.from)) {
-              this.ephemeral.startedUnreadMessageHash = message.hash
-              break
-            }
-          }
+          this.ephemeral.startedUnreadMessageHash = this.messages[index].hash
         }
       }
     },
@@ -984,14 +973,15 @@ export default ({
       createdHeight,
       // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
-      forceUpdate = false,
-      // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
-      // So if user has used this functionality at least once, the chatroom should stop auto-updating the 'readUntil' data in the store (eg. while scrolling),
-      // So that the message that has been marked unread is kept until user leaves the chatroom and re-enter in the future.
-      // Hence, setting below flag to 'true' by default.
-      noUpdateWhenMarkUnreadIsUsed = true
+      forceUpdate = false
     }) {
-      if (noUpdateWhenMarkUnreadIsUsed && this.ephemeral.messageHashToMarkUnread) { return }
+      if (this.ephemeral.messageHashToMarkUnread) {
+        // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
+        // So if user has used this functionality at least once in the current chatroom,
+        // the chatroom should stop auto-updating the 'readUntil' data in various situations (eg. while scrolling),
+        // So that the message that has been marked unread is kept until user leaves and re-enter the chatroom in the future.
+        return
+      }
 
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
@@ -1009,11 +999,14 @@ export default ({
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
+      const index = this.messages.findIndex(msg => msg.hash === messageHash)
+      const isFirstMessage = index === 0
+      const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
+
       // helper functions
       const getUpdatedUnreadMessages = () => {
         // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
         // which are reflected as the unread-count badge in the UI.
-        const index = this.messages.findIndex(msg => msg.hash === messageHash)
         const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
         const mentions = makeMentionFromUserID(this.ourIdentityContractId)
         const messageMentionsMe = msg => {
@@ -1031,11 +1024,6 @@ export default ({
               messageMentionsMe(msg)
           }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
       }
-
-      const index = this.messages.findIndex(msg => msg.hash === messageHash)
-      const isFirstMessage = index === 0
-      const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
-
       try {
         this.ephemeral.messageHashToMarkUnread = targetMsg.hash
         await sbp('gi.actions/identity/kv/markAsUnread', {
@@ -1046,6 +1034,7 @@ export default ({
           //       But in the case where the target is the first message of the chatroom, meaning there is no previous message,
           //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
           createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
+          // When marked as unread, all the messages after the target message are stored in 'unreadMessages' property.
           unreadMessages: getUpdatedUnreadMessages()
         })
       } catch (e) {

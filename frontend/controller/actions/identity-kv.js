@@ -124,13 +124,17 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+        const existingMessageHash = currentData[contractID]?.readUntil?.messageHash
 
-        return {
-          ...currentData,
-          [contractID]: {
-            readUntil: { messageHash, createdHeight }, unreadMessages
+        if (existingMessageHash !== messageHash) {
+          return {
+            ...currentData,
+            [contractID]: {
+              readUntil: { messageHash, createdHeight },
+              unreadMessages
+            }
           }
-        }
+        } else { return null }
       }
 
       const data = await getUpdatedUnreadMessages()

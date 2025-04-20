@@ -137,7 +137,7 @@ export default ({
         name: L('Mark unread'),
         action: 'markAsUnread',
         icon: 'envelope',
-        conditionToShow: !this.isMsgSender
+        conditionToShow: true
       }, {
         name: L('Edit'),
         action: 'editMessage',
