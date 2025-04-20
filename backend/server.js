@@ -302,7 +302,7 @@ sbp('sbp/selectors/register', {
           const eventKey = `_private_hidx=${cid}#${i}`
           const event = await sbp('chelonia.db/get', eventKey)
           if (event) {
-            await sbp('chelonia.db/delete', event)
+            await sbp('chelonia.db/delete', JSON.parse(event).hash)
             await sbp('chelonia.db/delete', eventKey)
           }
           if (i % 10000 === 0) {
