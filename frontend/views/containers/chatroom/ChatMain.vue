@@ -155,7 +155,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
-import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -1003,27 +1003,6 @@ export default ({
       const isFirstMessage = index === 0
       const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
 
-      // helper functions
-      const getUpdatedUnreadMessages = () => {
-        // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
-        // which are reflected as the unread-count badge in the UI.
-        const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
-        const mentions = makeMentionFromUserID(this.ourIdentityContractId)
-        const messageMentionsMe = msg => {
-          return msg.type === MESSAGE_TYPES.TEXT &&
-            msg.text &&
-            (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
-        }
-
-        return this.messages.slice(index)
-          .filter(msg => {
-            if (this.isMsgSender(msg.from)) { return false }
-
-            return isInDM ||
-              [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
-              messageMentionsMe(msg)
-          }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
-      }
       try {
         this.ephemeral.messageHashToMarkUnread = targetMsg.hash
         await sbp('gi.actions/identity/kv/markAsUnread', {
@@ -1035,7 +1014,8 @@ export default ({
           //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
           createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
           // When marked as unread, all the messages after the target message are stored in 'unreadMessages' property.
-          unreadMessages: getUpdatedUnreadMessages()
+          unreadMessages: this.messages.slice(index)
+            .map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
         })
       } catch (e) {
         console.error('[ChatMain.vue] Error while marking message unread', e)
