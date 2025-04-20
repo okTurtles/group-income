@@ -1254,7 +1254,7 @@ export default (sbp('sbp/selectors/register', {
       throw new TypeError('A contract ID must be provided')
     }
 
-    const response = await fetch(`${this.config.connectionURL}/ownResources`, {
+    const response = await this.config.fetch(`${this.config.connectionURL}/ownResources`, {
       method: 'GET',
       signal: this.abortController.signal,
       headers: new Headers([
@@ -1289,7 +1289,7 @@ export default (sbp('sbp/selectors/register', {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
-      const response = await fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
+      const response = await this.config.fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
         method: 'POST',
         signal: this.abortController.signal,
         headers: new Headers([
