@@ -10,10 +10,9 @@ const defaultState = {
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
+  unreadMessagesMarkedByUser: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [{ messageHash, createdHeight }]}
   chatNotificationSettings: {} // { [chatRoomID]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
-
-// getters
 
 // mutations
 const mutations = {
