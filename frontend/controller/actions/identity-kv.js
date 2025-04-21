@@ -130,7 +130,7 @@ export default (sbp('sbp/selectors/register', {
           return {
             ...currentData,
             [contractID]: {
-              readUntil: { messageHash, createdHeight },
+              readUntil: { messageHash, createdHeight, isManuallyMarked: true },
               unreadMessages
             }
           }
@@ -173,7 +173,7 @@ export default (sbp('sbp/selectors/register', {
       const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        const index = currentData[contractID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+        const index = currentData[contractID]?.unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
         // NOTE: index could be undefined if unreadMessages is not initialized
         if (Number.isInteger(index) && index >= 0) {
           currentData[contractID].unreadMessages.splice(index, 1)

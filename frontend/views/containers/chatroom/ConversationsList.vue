@@ -28,17 +28,18 @@
       )
 
       span.c-channel-name(
-        :class='{ "has-text-bold": list.channels[id].unreadMessagesCount > 0 }'
+        :class='{ "has-text-bold": shouldStyleBold(id) }'
       ) {{list.channels[id].displayName || list.channels[id].name}}
 
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='list.channels[id].unreadMessagesCount'
-        ) {{limitedUnreadCount(list.channels[id].unreadMessagesCount)}}
+          v-if='list.channels[id].unreadMessagesCount > 0'
+        ) {{ limitedUnreadCount(list.channels[id].unreadMessagesCount) }}
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
@@ -63,6 +64,9 @@ export default ({
     */
     list: Object,
     routeName: String
+  },
+  computed: {
+    ...mapGetters(['isChatRoomManuallyMarkedUnread'])
   },
   methods: {
     onClickedNewChannel () {
@@ -102,6 +106,10 @@ export default ({
       } else {
         return `${n}`
       }
+    },
+    shouldStyleBold (chatRoomID) {
+      return this.isChatRoomManuallyMarkedUnread(chatRoomID) ||
+        this.list.channels[chatRoomID].unreadMessagesCount > 0
     }
   }
 }: Object)
