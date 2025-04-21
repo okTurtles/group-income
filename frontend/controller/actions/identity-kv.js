@@ -124,17 +124,20 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
-        const existingMessageHash = currentData[contractID]?.readUntil?.messageHash
+        const existingReadUntil = currentData[contractID]?.readUntil
 
-        if (existingMessageHash !== messageHash) {
-          return {
-            ...currentData,
-            [contractID]: {
-              readUntil: { messageHash, createdHeight, isManuallyMarked: true },
-              unreadMessages
-            }
+        // If the requested mark-unread hash has already been set, ignore it.
+        if (existingReadUntil &&
+          existingReadUntil.isManuallyMarked &&
+          existingReadUntil?.messageHash === messageHash) { return null }
+
+        return {
+          ...currentData,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight, isManuallyMarked: true },
+            unreadMessages
           }
-        } else { return null }
+        }
       }
 
       const data = await getUpdatedUnreadMessages()
