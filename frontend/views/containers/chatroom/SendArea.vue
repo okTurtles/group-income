@@ -719,15 +719,12 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
-      const containsExtension = v => /.+\.\w+$/.test(v) // check if a entry name ends with a file extension.
-      const isDirectory = entry => entry.type === '' && !containsExtension(entry.name)
+      // filter out all entries whose types are unrecognisable.
+      // (eg. when a folder or Mac application is drag&dropped)
+      filesList = Array.from(filesList)
 
-      filesList = Array.from(filesList).filter(entry => !isDirectory(entry)) // filter all directories from attachments first.
-      if (!filesList.length) {
-        // NOTE: it's either that user clicked 'Cancel button' or  anything that is not a file (e.g. directory) has been attached.
-        //       no action is needed in these cases.
-        return
-      }
+      // User clicked 'Cancel button'.
+      if (!filesList.length) { return }
 
       const list = appendItems && this.hasAttachments
         ? [...this.ephemeral.attachments]

@@ -1199,8 +1199,32 @@ export default ({
       if (this.dndState.isActive) {
         this.dndState.isActive = false
 
-        e?.dataTransfer.files?.length &&
-          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+        const items = e.dataTransfer.items
+
+        if (items?.length) {
+          // 'drag-end' event of the browsers works for a folder too and turns it into a File() instance.
+          // Filtering out directories here by using .webkitGetAsEntry() method provided via DataTransferItem API.
+          // (Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
+          const detectedFiles = []
+
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            const entry = item.webkitGetAsEntry?.()
+
+            if (entry) {
+              entry.isFile && detectedFiles.push(item.getAsFile())
+            } else {
+              const file = item.getAsFile()
+
+              if (file.type !== '') {
+                detectedFiles.push(file)
+              }
+            }
+          }
+
+          detectedFiles.length &&
+            this.$refs.sendArea.fileAttachmentHandler(detectedFiles, true)
+        }
       }
     },
     processChatroomSwitch: debounce(async function () {
