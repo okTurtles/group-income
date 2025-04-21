@@ -1202,8 +1202,8 @@ export default ({
         const items = e.dataTransfer.items
 
         if (items?.length) {
-          // 'drag-end' event of the browsers works for a folder too and turns it into a File() instance.
-          // Filtering out directories here by using .webkitGetAsEntry() method provided via DataTransferItem API.
+          // 'drag-end' event of the browsers detects a folder too and turns it into a File() instance, which is an unwanted behaviour.
+          // So filtering out directories here by using .webkitGetAsEntry() method provided via DataTransferItem API.
           // (Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
           const detectedFiles = []
 
