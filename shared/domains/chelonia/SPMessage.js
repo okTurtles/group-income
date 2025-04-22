@@ -325,6 +325,8 @@ export class SPMessage {
       get contractID () {
         return result.head?.contractID ?? result.hash
       },
+      // `description` is not a getter to prevent the value from being copied
+      // if the object is cloned or serialized
       description (): string {
         const type = this.head.op
         return `<op_${type}|${this.hash} of ${this.contractID}>`
@@ -461,7 +463,7 @@ export class SPMessage {
 
   hash (): string { return this._mapping.key }
 
-  previousKeyOp (): string { return this._head.previousKeyOp }
+  previousKeyOp (): ?string { return this._head.previousKeyOp }
 
   height (): number { return this._head.height }
 

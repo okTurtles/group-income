@@ -14,7 +14,7 @@ const getContractIdFromLogHead = (key: string): ?string => {
 }
 const getLogHead = (contractID: string): string => `${headPrefix}${contractID}`
 
-type HEADInfo = { HEAD: string; height: number }
+type HEADInfo = { HEAD: string; height: number; previousKeyOp: ?string; }
 
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.

@@ -52,7 +52,7 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let currentHeight = parseInt(height)
+    let currentHeight = height
     let currentHash, serverMeta
     let prefix = ''
     let ended = false
