@@ -1202,21 +1202,23 @@ export default ({
         const items = e.dataTransfer.items
 
         if (items?.length) {
-          // 'drag-end' event of the browsers detects a folder too and turns it into a File() instance, which is an unwanted behaviour.
-          // So filtering out directories here by using .webkitGetAsEntry() method provided via DataTransferItem API.
+          // 'drag-end' event of the browsers detects files as well as folders, and we only want
+          // files. The kind field and the getAsFile() methods are not helpful at telling them
+          // apart, as both will work as a 'File'. The only quick and reliable way to detect files
+          // is using webkitGetAsEntry.
           // (Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
           const detectedFiles = []
 
           for (let i = 0; i < items.length; i++) {
             const item = items[i]
-            const entry = item.webkitGetAsEntry?.()
+            const entry = item.getAsEntry?.() || item.webkitGetAsEntry?.()
 
             if (entry) {
               entry.isFile && detectedFiles.push(item.getAsFile())
             } else {
               const file = item.getAsFile()
 
-              if (file.type !== '') {
+              if (file && file.type !== '') {
                 detectedFiles.push(file)
               }
             }
