@@ -21,7 +21,7 @@ const syncServerTime = async function () {
   // Get our current monotonic time
   const startTime = performance.now()
   // Now, ask the server for the time
-  const time = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
+  const time = await this.config.fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
   const requestTimeElapsed = performance.now()
   if (requestTimeElapsed - startTime > 8000) {
     throw new Error('Error fetching server time: request took too long')
