@@ -2,7 +2,7 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { createCID, multicodes } from '~/shared/functions.js'
+import { multicodes } from '~/shared/functions.js'
 import { cloneDeep, debounce, delay, has, pick, randomIntFromRange } from 'turtledash'
 import type { SPKey, SPOpActionEncrypted, SPOpActionUnencrypted, SPOpAtomic, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate, SPOpPropSet, SPOpType, ProtoSPOpKeyRequestSeen, ProtoSPOpKeyShare } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
@@ -251,12 +251,7 @@ export default (sbp('sbp/selectors/register', {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
       return
     }
-    const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
-    const manifestSource = await fetch(manifestURL, { signal: this.abortController.signal }).then(handleFetchResult('text'))
-    const manifestHashOurs = createCID(manifestSource, multicodes.SHELTER_CONTRACT_MANIFEST)
-    if (manifestHashOurs !== manifestHash) {
-      throw new Error(`expected manifest hash ${manifestHash}. Got: ${manifestHashOurs}`)
-    }
+    const manifestSource = await sbp('chelonia/out/fetchResource', manifestHash, { code: multicodes.SHELTER_CONTRACT_MANIFEST })
     const manifest = JSON.parse(manifestSource)
     const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
     if (body.name !== contractName) {
@@ -264,12 +259,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
-    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`, { signal: this.abortController.signal })
-      .then(handleFetchResult('text'))
-    const sourceHash = createCID(source, multicodes.SHELTER_CONTRACT_TEXT)
-    if (sourceHash !== contractInfo.hash) {
-      throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
-    }
+    const source = await sbp('chelonia/out/fetchResource', contractInfo.hash, { code: multicodes.SHELTER_CONTRACT_TEXT })
     function reduceAllow (acc, v) { acc[v] = true; return acc }
     const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract', 'chelonia/out/keyRequest']
       .concat(this.config.contracts.defaults.allowedSelectors)
@@ -374,7 +364,7 @@ export default (sbp('sbp/selectors/register', {
         // with other client's clocks.
         // See: https://github.com/okTurtles/group-income/issues/531
         try {
-          const response = await fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
+          const response = await this.config.fetch(`${this.config.connectionURL}/time`, { signal: this.abortController.signal })
           return handleFetchResult('text')(response)
         } catch (e) {
           if (fallback) {
@@ -587,7 +577,7 @@ export default (sbp('sbp/selectors/register', {
         await hooks?.beforeRequest?.(newEntry, entry)
         entry = newEntry
 
-        const r = await fetch(`${this.config.connectionURL}/event`, {
+        const r = await this.config.fetch(`${this.config.connectionURL}/event`, {
           method: 'POST',
           body: entry.serialize(),
           headers: {
@@ -644,7 +634,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'chelonia/private/out/latestHEADinfo': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
+    return this.config.fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
@@ -2282,7 +2272,7 @@ function sesImportVM (url): Promise<Object> {
       },
       // eslint-disable-next-line require-await
       async importHook (moduleSpecifier: string, ...args) {
-        const source = await fetch(moduleSpecifier).then(handleFetchResult('text'))
+        const source = await this.config.fetch(moduleSpecifier).then(handleFetchResult('text'))
         console.debug('importHook', { fetch: moduleSpecifier, args, source })
         const execute = (moduleExports, compartment, resolvedImports) => {
           console.debug('execute called with:', { moduleExports, resolvedImports })

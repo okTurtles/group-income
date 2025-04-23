@@ -570,7 +570,7 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
   const fetchEventsStreamReader = async () => {
     requestLimit = Math.min(limit ?? MAX_EVENTS_AFTER, remainingEvents)
     lastUrl = `${this.config.connectionURL}/eventsAfter/${contractID}/${sinceHeight}${Number.isInteger(requestLimit) ? `/${requestLimit}` : ''}`
-    const eventsResponse = await fetch(lastUrl, { signal })
+    const eventsResponse = await this.config.fetch(lastUrl, { signal })
     if (!eventsResponse.ok) {
       const msg = `${eventsResponse.status}: ${eventsResponse.statusText}`
       if (eventsResponse.status === 410) throw new ChelErrorResourceGone(msg)
