@@ -27,14 +27,26 @@ export default {
     hideCloseButton: {
       type: Boolean,
       default: false
+    },
+    onClose: {
+      // A handler that intercepts the default behaviour which is emitting 'CLOSE_MODAL' event.
+      type: Function,
+      required: false,
+      default: () => null
     }
   },
   methods: {
-    close () {
+    close (e) {
       if (!this.isActive) { return }
 
       this.isActive = false
-      setTimeout(() => sbp('okTurtles.events/emit', CLOSE_MODAL), 300)
+      setTimeout(() => {
+        if (this.onClose) {
+          this.onClose(e)
+        } else {
+          sbp('okTurtles.events/emit', CLOSE_MODAL)
+        }
+      }, 300)
     }
   }
 }
