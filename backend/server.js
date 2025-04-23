@@ -291,8 +291,8 @@ sbp('sbp/selectors/register', {
       }
       await sbp('chelonia.db/delete', resourcesKey)
 
-      // Next, loop through all the events in the contract and delete them,
-      // starting with the most recent ones.
+      // Next, loop through all the events, except the very first one,
+      // in the contract and delete them, starting with the most recent ones.
       // If the deletion process is interrupted, parts of the contract will
       // still be able to be synced, but won't be to write to it (due to
       // latestHEADinfo not being deleted).
@@ -335,6 +335,8 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
+      // Delete the first event and its associated keys. These were not deleted
+      // in the loop above that deletes events one by one.
       await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)
       await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_0`)
       await sbp('chelonia.db/set', cid, '')
