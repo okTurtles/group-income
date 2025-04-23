@@ -59,6 +59,12 @@ export const prefixHandlers: Object = {
 sbp('sbp/selectors/unsafe', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
 // NOTE: MAKE SURE TO CALL 'sbp/selectors/lock' after overwriting them!
 
+// When using a lightweight client, the client doesn't keep a copy of messages
+// in the DB. Therefore, `chelonia.db/*` selectors are mostly turned into no-ops.
+// The `chelonia.db/get` selector is slightly more complex than a no-op, because
+// Chelonia relies on being able to find the current contract head. To overcome
+// this, if a head is requested, 'chelonia.db/get' returns information from
+// the Chelonia contract state.
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia.db/get': function (key: string): Promise<HEADInfo | Buffer | string | void> {
@@ -153,7 +159,7 @@ export default ((sbp('sbp/selectors/register', {
           console.warn(`[chelonia.db] bad previousHEAD: ${entryPreviousHEAD}! Expected: ${contractHEAD} for contractID: ${contractID}`)
           throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${entryPreviousHEAD}. Expected ${contractHEAD} for contractID: ${contractID}`)
         } else if (entryPreviousKeyOp !== contractPreviousKeyOp) {
-          console.warn(`[chelonia.db] bad previousKeyOp: ${entryPreviousKeyOp}! Expected: ${contractPreviousKeyOp} for contractID: ${contractID}`)
+          console.error(`[chelonia.db] bad previousKeyOp: ${entryPreviousKeyOp}! Expected: ${contractPreviousKeyOp} for contractID: ${contractID}`)
           throw new ChelErrorDBBadPreviousHEAD(`bad previousKeyOp: ${entryPreviousKeyOp}. Expected ${contractPreviousKeyOp} for contractID: ${contractID}`)
         } else if (!Number.isSafeInteger(entryHeight) || entryHeight !== (contractHeight + 1)) {
           console.error(`[chelonia.db] bad height: ${entryHeight}! Expected: ${contractHeight + 1} for contractID: ${contractID}`)
@@ -176,8 +182,14 @@ export default ((sbp('sbp/selectors/register', {
       }))
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       await sbp('chelonia/db/setEntryMeta', contractID, entryHeight, {
+        // The hash is used for reverse lookups (height to CID)
         hash: entry.hash(),
+        // The date isn't currently used, but will be used for filtering messages
         date: new Date().toISOString(),
+        // isKeyOp is used for filtering messages (the actual filtering is
+        // done more efficiently a separate index key, but `isKeyOp` allows
+        // us to bootstrap this process without having to load the full message)
+        // The separate index key bears the prefix `_private_keyop_idx_`.
         ...(entry.isKeyOp() && { isKeyOp: true })
       })
       return entry.hash()

@@ -247,7 +247,7 @@ route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
       limit: Joi.string().regex(POSITIVE_INTEGER_REGEX)
     }),
     query: Joi.object({
-      keyOps: Joi.string()
+      keyOps: Joi.boolean()
     })
   }
 }, async function (request, h) {
