@@ -40,7 +40,7 @@ import Dropdown from '@forms/Dropdown.vue'
 import L from '@common/translations.js'
 import { humanDate } from '@common/cdTimeUtils.js'
 import { contractDummyData } from '@view-utils/dummy-data.js'
-import { OPEN_PROMPT } from '@view-utils/events.js'
+import { OPEN_MODAL } from '@view-utils/events.js'
 
 export default {
   name: 'Contracts',
@@ -76,15 +76,8 @@ export default {
     onFilterSelect (item) {
       this.ephemeral.contractFilter = item
     },
-    async viewManifest (item) {
-      const res = await sbp('okTurtles.events/emit', OPEN_PROMPT, {
-        title: 'Prompt title',
-        content: 'Prompt content<br/> Prompt content',
-        primaryButton: 'Primary',
-        secondaryButton: 'Secondary'
-      })
-
-      console.log('prompt response: ', res)
+    viewManifest (item) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ViewContractManifestModal', { contract: item })
     }
   }
 }

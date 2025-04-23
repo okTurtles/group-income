@@ -1,11 +1,11 @@
 <template lang='pug'>
 .c-modal-simple(role='dialog')
   transition(name='fade' appear)
-    .c-modal-simple-background(v-if='isActive' @click='close')
+    .c-modal-simple-background(v-if='isActive' @click='close()')
 
   transition(name='zoom' appear)
     .c-modal-simple-content(v-if='isActive')
-      button.is-icon.c-close-btn(@click='close')
+      button.is-icon.c-close-btn(@click='close()')
         i.icon-close
 
       section.c-modal-simple-body
@@ -14,7 +14,8 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { CLOSE_MODAL } from '@view-utils/events.js'
+import { CLOSE_MODAL, CLOSE_PROMPT, PROMPT_RESPONSE } from '@view-utils/events.js'
+import { PROMPT_ACTIONS } from '@view-utils/constants.js'
 
 export default {
   name: 'ModalSimpleTemplate',
@@ -28,23 +29,27 @@ export default {
       type: Boolean,
       default: false
     },
-    onClose: {
-      // A handler that intercepts the default behaviour which is emitting 'CLOSE_MODAL' event.
-      type: Function,
-      required: false,
-      default: () => null
+    variant: {
+      type: String,
+      validator: v => ['prompt', 'modal'].includes(v),
+      default: 'modal'
     }
   },
   methods: {
-    close (e) {
+    close (cb = null) {
       if (!this.isActive) { return }
 
       this.isActive = false
       setTimeout(() => {
-        if (this.onClose) {
-          this.onClose(e)
-        } else {
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
+        if (cb) { return cb() }
+
+        switch (this.variant) {
+          case 'modal':
+            sbp('okTurtles.events/emit', CLOSE_MODAL)
+            break
+          case 'prompt':
+            sbp('okTurtles.events/emit', PROMPT_RESPONSE, PROMPT_ACTIONS.CLOSE)
+            sbp('okTurtles.events/emit', CLOSE_PROMPT)
         }
       }, 300)
     }
