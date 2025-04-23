@@ -57,7 +57,7 @@ export default {
     onCtaClick (type = '') {
       const promptAction = ({
         'primary': PROMPT_ACTIONS.PRIMARY,
-        'secondary': PROMPT_ACTIONS.SECONDARY,
+        'secondary': PROMPT_ACTIONS.SECONDARY
       })[type]
 
       this.$refs.modal.close(() => {
