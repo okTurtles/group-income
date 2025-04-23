@@ -1216,6 +1216,7 @@ export default ({
             if (entry) {
               entry.isFile && detectedFiles.push(item.getAsFile())
             } else {
+              // NOTE: if an old browser that does not support webkitGetAsEntry (eg. Internet Explorers), this fallback might accept a directory.
               const file = item.getAsFile()
 
               if (file && file.type !== '') {
