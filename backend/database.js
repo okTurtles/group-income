@@ -55,7 +55,6 @@ export default ((sbp('sbp/selectors/register', {
     let currentHeight = height
     let currentHash, serverMeta
     let prefix = ''
-    let ended = false
     const nextKeyOp = (() => {
       let index
 
@@ -65,6 +64,7 @@ export default ((sbp('sbp/selectors/register', {
         }
         const value = index?.find((h, i) => {
           if (Number(h) >= currentHeight) {
+            // Remove values that no longer are relevant from the index
             index = ((index: any): any[]).splice(i + 1)
             return true
           } else {
@@ -72,11 +72,18 @@ export default ((sbp('sbp/selectors/register', {
           }
         })
         if (value != null) {
-          currentHeight = Number(value)
+          const newHeight = Number(value)
+          currentHeight = newHeight
         } else {
           currentHeight = currentHeight - currentHeight % 10000 + 10000
           index = undefined
+          if (currentHeight > latestHEADinfo.height) {
+            return false
+          } else {
+            return null
+          }
         }
+        return true
       }
     })()
     const fetchMeta = async () => {
@@ -96,58 +103,40 @@ export default ((sbp('sbp/selectors/register', {
     }
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    const stream = new Readable({
-      construct (cb) {
-        this.push('[')
-        cb()
-      },
-      read (): void {
-        if (ended) {
-          this.destroy()
-          return
-        }
-        const end = () => {
-          this.push(']')
-          this.push(null)
-          ended = true
-        }
-        if (counter < limit) {
-          (async () => {
-            try {
-              if (options.keyOps) {
-                while (!serverMeta?.isKeyOp) {
-                  await nextKeyOp()
-                  if (!await fetchMeta()) return end()
-                }
-              } else {
-                if (!await fetchMeta()) return end()
-              }
-              const entry = await sbp('chelonia/db/getEntry', currentHash)
-              if (entry) {
-                const currentPrefix = prefix
-                prefix = ','
-                counter++
-                this.push(
-                `${currentPrefix}"${strToB64(
-                  JSON.stringify({ serverMeta, message: entry.serialize() })
-                )}"`
-                )
-                currentHeight++
-                currentHash = undefined
-                serverMeta = undefined
-              } else {
-                end()
-              }
-            } catch (e) {
-              console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
-              end()
-            }
-          })()
-        } else {
-          end()
+    const stream = Readable.from((async function * () {
+      yield '['
+      await fetchMeta()
+      while (serverMeta && counter < limit) {
+        try {
+          const entry = await sbp('chelonia/db/getEntry', currentHash)
+          if (entry) {
+            const currentPrefix = prefix
+            prefix = ','
+            counter++
+            yield `${currentPrefix}"${strToB64(
+              JSON.stringify({ serverMeta, message: entry.serialize() })
+            )}"`
+            currentHeight++
+            currentHash = undefined
+            serverMeta = undefined
+          } else {
+            break
+          }
+          // queries with 'keyOps' always return the requested height, whether
+          // or not a keyOp.
+          if (options.keyOps) {
+            // Advance until the next key op
+            while ((await nextKeyOp()) === null);
+          }
+          await fetchMeta()
+        } catch (e) {
+          console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+          break
         }
       }
-    })
+      yield ']'
+    })(), { encoding: 'UTF-8', objectMode: false })
+
     // $FlowFixMe[prop-missing]
     stream.headers = {
       'shelter-headinfo-head': latestHEADinfo.HEAD,
