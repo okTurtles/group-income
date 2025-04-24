@@ -719,8 +719,6 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList, appendItems = false) {
-      // filter out all entries whose types are unrecognisable.
-      // (eg. when a folder or Mac application is drag&dropped)
       filesList = Array.from(filesList)
 
       // User clicked 'Cancel button'.

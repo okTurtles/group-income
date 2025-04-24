@@ -933,7 +933,7 @@ export default ({
         Vue.set(this.messageState, 'contract', state)
       }
     },
-    scrollToIntialPosition () {
+    scrollToInitialPosition () {
       const hashTo = this.ephemeral.initialScroll.hash
       if (hashTo) {
         const scrollingToSpecificMessage = this.$route.query?.mhash === hashTo
@@ -1175,7 +1175,7 @@ export default ({
           // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
           // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
           // and calling clearTimeout() at the start of infiniteHandler().
-          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToIntialPosition, 150)
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToInitialPosition, 150)
         }
       })
     },
