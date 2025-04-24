@@ -177,6 +177,10 @@ export type ChelAtomicParams = {
   publishOptions?: { maxAttempts: number };
 }
 
+export type ChelKvOnConflictCallback = (
+  args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }
+) => Promise<[Object, string]>
+
 export { SPMessage }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
@@ -1658,7 +1662,7 @@ export default (sbp('sbp/selectors/register', {
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: (args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }) => Promise<[Object, string]>,
+    onconflict: ChelKvOnConflictCallback,
   }) {
     maxAttempts = maxAttempts ?? 3
     const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
