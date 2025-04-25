@@ -30,6 +30,10 @@ const options = {
   }
 }
 
+// Segment length for keyop index. Changing this value will require rebuilding
+// this index. The value should be a power of 10 (e.g., 10, 100, 1000, 10000)
+export const KEYOP_SEGMENT_LENGTH = 10_000
+
 // Used by `throwIfFileOutsideDataDir()`.
 const dataFolder = path.resolve(options.fs.dirname)
 
@@ -55,17 +59,28 @@ export default ((sbp('sbp/selectors/register', {
     let currentHeight = height
     let currentHash, serverMeta
     let prefix = ''
+    // `nextKeyOp` is used to advance `currentHeight` when fetching keyOps, and
+    // more complex behaviour than simple 'increment by 1' is needed.
+    // It returns three possible values: `true`, indicating `currentHeight` has
+    // been set to the next `currentHeight`; `false`, indicating the end of
+    // the stream; and `null`, indicating the result is indeterminate and
+    // `nextKeyOp` should be called again (this is because key ops are indexed
+    // based on their height in segments of 10k height entries).
+    // `nextKeyOp` will do the following: if `currentHeight` points to a key op,
+    // it will leave `currentHeight` unchanged; otherwise, if `currentHeight`
+    // does _not_ point to a key op, `currentHeight` will be set to the smallest
+    // height larger than the current `currentHeight` value which is a key op.
     const nextKeyOp = (() => {
-      let index
+      let index: ?string[]
 
       return async () => {
         if (!index) {
-          index = (await sbp('chelonia.db/get', `_private_keyop_idx_${contractID}_${currentHeight - currentHeight % 10000}`))?.split('\x00')
+          index = (await sbp('chelonia.db/get', `_private_keyop_idx_${contractID}_${currentHeight - currentHeight % KEYOP_SEGMENT_LENGTH}`))?.split('\x00')
         }
         const value = index?.find((h, i) => {
           if (Number(h) >= currentHeight) {
             // Remove values that no longer are relevant from the index
-            index = ((index: any): any[]).splice(i + 1)
+            index = ((index: any): string[]).slice(i + 1)
             return true
           } else {
             return false
@@ -75,7 +90,11 @@ export default ((sbp('sbp/selectors/register', {
           const newHeight = Number(value)
           currentHeight = newHeight
         } else {
-          currentHeight = currentHeight - currentHeight % 10000 + 10000
+          // We've exhausted the current index; we'll return `null` and advance
+          // height by KEYOP_SEGMENT_LENGTH so that we can read the next index
+          // upon the next invocation (or, if we've reached the end of the
+          // contract, we return `false`).
+          currentHeight = currentHeight - currentHeight % KEYOP_SEGMENT_LENGTH + KEYOP_SEGMENT_LENGTH
           index = undefined
           if (currentHeight > latestHEADinfo.height) {
             return false
@@ -86,6 +105,16 @@ export default ((sbp('sbp/selectors/register', {
         return true
       }
     })()
+    // `fetchMeta` fetches metadata information for entries based on height.
+    // Crucially, it fetches the entry hash (i.e., height -> hash lookup), which
+    // is needed for returning the correct data.
+    // The return value isn't currently used but is left as it may be useful in
+    // the future if this code is refactored. `false` indicates that no metadata
+    // could be found (indicating the end of a contract --or some kind of data
+    // corruption) and that the stream has ended. `true` indicates that the
+    // function executed successfully and the stream continues.
+    // Currently, the return value is not used because we're relying on the
+    // truthiness of `serverMeta` as a subtitute.
     const fetchMeta = async () => {
       if (currentHeight > latestHEADinfo.height) {
         return false
@@ -109,23 +138,29 @@ export default ((sbp('sbp/selectors/register', {
       while (serverMeta && counter < limit) {
         try {
           const entry = await sbp('chelonia/db/getEntry', currentHash)
-          if (entry) {
-            const currentPrefix = prefix
-            prefix = ','
-            counter++
-            yield `${currentPrefix}"${strToB64(
-              JSON.stringify({ serverMeta, message: entry.serialize() })
-            )}"`
-            currentHeight++
-            currentHash = undefined
-            serverMeta = undefined
-          } else {
-            break
-          }
+          // If the entry doesn't exist, we may have reached the end
+          if (!entry) break
+          const currentPrefix = prefix
+          prefix = ','
+          counter++
+          yield `${currentPrefix}"${strToB64(
+            JSON.stringify({ serverMeta, message: entry.serialize() })
+          )}"`
+          // Note for future improvement: implement a generator function for
+          // advancing height, which would make this logic more general by
+          // having just something like `await height.next()` instead of this
+          // avancement here and separate logic for each special case (like the
+          // `if` below for key ops).
+          currentHeight++
+          currentHash = undefined
+          serverMeta = undefined
           // queries with 'keyOps' always return the requested height, whether
           // or not a keyOp.
           if (options.keyOps) {
-            // Advance until the next key op
+            // Advance `currentHeight` until the next key op
+            // `nextKeyOp` relies on the height advancing after an ideration and
+            // the previous currentHeight++ will not result in incorrect
+            // behaviour.
             while ((await nextKeyOp()) === null);
           }
           await fetchMeta()
