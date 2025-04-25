@@ -71,7 +71,10 @@ export default class FsBackend extends DatabaseBackend {
     // Necessary here to thwart path traversal attacks.
     checkKey(key)
     return await readFile(this.mapKey(key))
-      .catch(err => undefined) // eslint-disable-line node/handle-callback-err
+      .catch(err => {
+        // If the key was not found (ENOENT), ignore the error since in that case we want to return undefined.
+        if (err.code !== 'ENOENT') throw err
+      })
   }
 
   async writeData (key: string, value: Buffer | string) {
