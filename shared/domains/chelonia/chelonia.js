@@ -1342,7 +1342,6 @@ export default (sbp('sbp/selectors/register', {
 
     let msg = SPMessage.createV1_0({
       contractID,
-      originatingContractID,
       op: [
         SPMessage.OP_KEY_SHARE,
         params.signingKeyId
