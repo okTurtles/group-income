@@ -461,7 +461,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 // rewritten to eliminate no-longer-relevant keys. In most cases, this would
 // result in an empty payload, in which case the message is omitted entirely.
 export const recreateEvent = (entry: SPMessage, state: Object, contractsState: Object): typeof undefined | SPMessage => {
-  const { HEAD: previousHEAD, height: previousHeight } = contractsState || {}
+  const { HEAD: previousHEAD, height: previousHeight, previousKeyOp } = contractsState || {}
   if (!previousHEAD) {
     throw new Error('recreateEvent: Giving up because the contract has been removed')
   }
@@ -547,7 +547,7 @@ export const recreateEvent = (entry: SPMessage, state: Object, contractsState: O
   const newOp = [opT, newRawOpV]
 
   entry = SPMessage.cloneWith(
-    head, newOp, { previousHEAD, height: previousHeight + 1 }
+    head, newOp, { previousKeyOp, previousHEAD, height: previousHeight + 1 }
   )
 
   return entry
