@@ -3,6 +3,7 @@
 import { resolve } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import DatabaseBackend from './DatabaseBackend.js'
+import type { IDatabaseBackend } from './DatabaseBackend.js'
 
 type Config = {
   [string]: { name: string, options: Object }
@@ -11,7 +12,7 @@ type ConfigEntry = { name: string, options: Object }
 
 const { GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json' } = process.env
 
-export default class RouterBackend extends DatabaseBackend {
+export default class RouterBackend extends DatabaseBackend implements IDatabaseBackend {
   backends: { [string]: DatabaseBackend }
   config: Config
 

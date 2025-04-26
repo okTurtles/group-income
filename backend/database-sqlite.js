@@ -4,8 +4,9 @@ import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
 import DatabaseBackend from './DatabaseBackend.js'
+import type { IDatabaseBackend } from './DatabaseBackend.js'
 
-export default class SqliteBackend extends DatabaseBackend {
+export default class SqliteBackend extends DatabaseBackend implements IDatabaseBackend {
   dataFolder: string = ''
   db: any = null
   filename: string = ''

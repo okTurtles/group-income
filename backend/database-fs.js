@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promise
 import { dirname, join, resolve } from 'node:path'
 import { checkKey } from '~/shared/domains/chelonia/db.js'
 import DatabaseBackend from './DatabaseBackend.js'
+import type { IDatabaseBackend } from './DatabaseBackend.js'
 
 // Some operating systems (such as macOS and Windows) use case-insensitive
 // filesystems by default. This can be problematic for Chelonia / Group Income,
@@ -35,7 +36,7 @@ async function testCaseSensitivity (backend: Object) {
   }
 }
 
-export default class FsBackend extends DatabaseBackend {
+export default class FsBackend extends DatabaseBackend implements IDatabaseBackend {
   dataFolder: string = ''
   depth: number = 0
   keyChunkLength: number = 2
