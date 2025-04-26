@@ -30,6 +30,10 @@ const options = {
   }
 }
 
+// Segment length for keyop index. Changing this value will require rebuilding
+// this index. The value should be a power of 10 (e.g., 10, 100, 1000, 10000)
+export const KEYOP_SEGMENT_LENGTH = 10_000
+
 // Used by `throwIfFileOutsideDataDir()`.
 const dataFolder = path.resolve(options.fs.dirname)
 
@@ -60,7 +64,7 @@ export const updateSize = async (resourceID: string, sizeKey: string, size: numb
 
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number, options: { keyOps?: boolean } = {}): Promise<*> {
     const limit = Math.min(requestedLimit ?? Number.POSITIVE_INFINITY, process.env.MAX_EVENTS_BATCH_SIZE ?? 500)
     const latestHEADinfo = await sbp('chelonia/db/latestHEADinfo', contractID)
     if (latestHEADinfo === '') {
@@ -71,57 +75,122 @@ export default ((sbp('sbp/selectors/register', {
     }
     // Number of entries pushed.
     let counter = 0
-    let { hash: currentHash, ...serverMeta } = (
-      await sbp('chelonia/db/getEntryMeta', contractID, height)
-    ) || {}
+    let currentHeight = height
+    let currentHash, serverMeta
     let prefix = ''
-    let ended = false
+    // `nextKeyOp` is used to advance `currentHeight` when fetching keyOps, and
+    // more complex behaviour than simple 'increment by 1' is needed.
+    // It returns three possible values: `true`, indicating `currentHeight` has
+    // been set to the next `currentHeight`; `false`, indicating the end of
+    // the stream; and `null`, indicating the result is indeterminate and
+    // `nextKeyOp` should be called again (this is because key ops are indexed
+    // based on their height in segments of 10k height entries).
+    // `nextKeyOp` will do the following: if `currentHeight` points to a key op,
+    // it will leave `currentHeight` unchanged; otherwise, if `currentHeight`
+    // does _not_ point to a key op, `currentHeight` will be set to the smallest
+    // height larger than the current `currentHeight` value which is a key op.
+    const nextKeyOp = (() => {
+      let index: ?string[]
+
+      return async () => {
+        if (!index) {
+          index = (await sbp('chelonia.db/get', `_private_keyop_idx_${contractID}_${currentHeight - currentHeight % KEYOP_SEGMENT_LENGTH}`))?.split('\x00')
+        }
+        const value = index?.find((h, i) => {
+          if (Number(h) >= currentHeight) {
+            // Remove values that no longer are relevant from the index
+            index = ((index: any): string[]).slice(i + 1)
+            return true
+          } else {
+            return false
+          }
+        })
+        if (value != null) {
+          const newHeight = Number(value)
+          currentHeight = newHeight
+        } else {
+          // We've exhausted the current index; we'll return `null` and advance
+          // height by KEYOP_SEGMENT_LENGTH so that we can read the next index
+          // upon the next invocation (or, if we've reached the end of the
+          // contract, we return `false`).
+          currentHeight = currentHeight - currentHeight % KEYOP_SEGMENT_LENGTH + KEYOP_SEGMENT_LENGTH
+          index = undefined
+          if (currentHeight > latestHEADinfo.height) {
+            return false
+          } else {
+            return null
+          }
+        }
+        return true
+      }
+    })()
+    // `fetchMeta` fetches metadata information for entries based on height.
+    // Crucially, it fetches the entry hash (i.e., height -> hash lookup), which
+    // is needed for returning the correct data.
+    // The return value isn't currently used but is left as it may be useful in
+    // the future if this code is refactored. `false` indicates that no metadata
+    // could be found (indicating the end of a contract --or some kind of data
+    // corruption) and that the stream has ended. `true` indicates that the
+    // function executed successfully and the stream continues.
+    // Currently, the return value is not used because we're relying on the
+    // truthiness of `serverMeta` as a subtitute.
+    const fetchMeta = async () => {
+      if (currentHeight > latestHEADinfo.height) {
+        return false
+      }
+      const meta = await sbp('chelonia/db/getEntryMeta', contractID, currentHeight)
+      if (!meta) {
+        return false
+      }
+
+      const { hash: newCurrentHash, ...newServerMeta } = meta
+      currentHash = newCurrentHash
+      serverMeta = newServerMeta
+
+      return true
+    }
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
-    const stream = new Readable({
-      construct (cb) {
-        this.push('[')
-        cb()
-      },
-      read (): void {
-        if (ended) {
-          this.destroy()
-          return
-        }
-        if (currentHash && counter < limit) {
-          sbp('chelonia/db/getEntry', currentHash).then(async entry => {
-            if (entry) {
-              const currentPrefix = prefix
-              prefix = ','
-              counter++
-              const { hash: newCurrentHash, ...newServerMeta } = (
-                await sbp('chelonia/db/getEntryMeta', contractID, entry.height() + 1)
-              ) || {}
-              this.push(
-                `${currentPrefix}"${strToB64(
-                  JSON.stringify({ serverMeta, message: entry.serialize() })
-                )}"`
-              )
-              currentHash = newCurrentHash
-              serverMeta = newServerMeta
-            } else {
-              this.push(']')
-              this.push(null)
-              ended = true
-            }
-          }).catch(e => {
-            console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
-            this.push(']')
-            this.push(null)
-            ended = true
-          })
-        } else {
-          this.push(']')
-          this.push(null)
-          ended = true
+    const stream = Readable.from((async function * () {
+      yield '['
+      await fetchMeta()
+      while (serverMeta && counter < limit) {
+        try {
+          const entry = await sbp('chelonia/db/getEntry', currentHash)
+          // If the entry doesn't exist, we may have reached the end
+          if (!entry) break
+          const currentPrefix = prefix
+          prefix = ','
+          counter++
+          yield `${currentPrefix}"${strToB64(
+            JSON.stringify({ serverMeta, message: entry.serialize() })
+          )}"`
+          // Note for future improvement: implement a generator function for
+          // advancing height, which would make this logic more general by
+          // having just something like `await height.next()` instead of this
+          // avancement here and separate logic for each special case (like the
+          // `if` below for key ops).
+          currentHeight++
+          currentHash = undefined
+          serverMeta = undefined
+          // queries with 'keyOps' always return the requested height, whether
+          // or not a keyOp.
+          if (options.keyOps) {
+            // Advance `currentHeight` until the next key op
+            // `nextKeyOp` relies on the height advancing after an ideration and
+            // the previous currentHeight++ will not result in incorrect
+            // behaviour.
+            while ((await nextKeyOp()) === null);
+          }
+          await fetchMeta()
+        } catch (e) {
+          console.error(`[backend] streamEntriesAfter: read(): ${e.message}:`, e.stack)
+          break
         }
       }
-    })
+      yield ']'
+    })(), { encoding: 'UTF-8', objectMode: false })
+
     // $FlowFixMe[prop-missing]
     stream.headers = {
       'shelter-headinfo-head': latestHEADinfo.HEAD,
