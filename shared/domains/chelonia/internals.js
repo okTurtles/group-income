@@ -251,7 +251,7 @@ export default (sbp('sbp/selectors/register', {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
       return
     }
-    const manifestSource = await sbp('chelonia/out/entry', manifestHash, { code: multicodes.SHELTER_CONTRACT_MANIFEST })
+    const manifestSource = await sbp('chelonia/out/fetchResource', manifestHash, { code: multicodes.SHELTER_CONTRACT_MANIFEST })
     const manifest = JSON.parse(manifestSource)
     const body = sbp('chelonia/private/verifyManifestSignature', contractName, manifestHash, manifest)
     if (body.name !== contractName) {
@@ -259,7 +259,7 @@ export default (sbp('sbp/selectors/register', {
     }
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
-    const source = await sbp('chelonia/out/entry', contractInfo.hash, { code: multicodes.SHELTER_CONTRACT_TEXT })
+    const source = await sbp('chelonia/out/fetchResource', contractInfo.hash, { code: multicodes.SHELTER_CONTRACT_TEXT })
     function reduceAllow (acc, v) { acc[v] = true; return acc }
     const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract', 'chelonia/out/keyRequest']
       .concat(this.config.contracts.defaults.allowedSelectors)
@@ -2166,6 +2166,9 @@ const handleEvent = {
       }
       this.config.reactiveSet(state.contracts[contractID], 'type', type)
       console.debug(`contract ${type} registered for ${contractID}`)
+    }
+    if (message.isKeyOp()) {
+      this.config.reactiveSet(state.contracts[contractID], 'previousKeyOp', hash)
     }
     this.config.reactiveSet(state.contracts[contractID], 'HEAD', hash)
     this.config.reactiveSet(state.contracts[contractID], 'height', height)

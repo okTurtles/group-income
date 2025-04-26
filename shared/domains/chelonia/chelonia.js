@@ -1069,15 +1069,18 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
-  'chelonia/out/entry': async function (cid: string, { code }: { code?: number } = {}) {
+  'chelonia/out/fetchResource': async function (cid: string, { code }: { code?: number } = {}) {
     const parsedCID = parseCID(cid)
-    if (Number.isInteger(code)) {
+    if (code != null) {
       if (parsedCID.code !== code) {
-        throw new Error('Invalid CID content type')
+        throw new Error(`Invalid CID content type. Expected ${code}, got ${parsedCID.code}`)
       }
     }
+    // Note that chelonia.db/get (set) is a no-op for lightweight clients
+    // This was added for consistency (processing an event also adds it to the DB)
     const local = await sbp('chelonia.db/get', cid)
-    if (local) return local
+    // We don't verify the CID because it's already been verified when it was set
+    if (local != null) return local
     const url = `${this.config.connectionURL}/file/${cid}`
     const data = await this.config.fetch(url, { signal: this.abortController.signal }).then(handleFetchResult('text'))
     const ourHash = createCID(data, parsedCID.code)
@@ -1254,7 +1257,7 @@ export default (sbp('sbp/selectors/register', {
       throw new TypeError('A contract ID must be provided')
     }
 
-    const response = await fetch(`${this.config.connectionURL}/ownResources`, {
+    const response = await this.config.fetch(`${this.config.connectionURL}/ownResources`, {
       method: 'GET',
       signal: this.abortController.signal,
       headers: new Headers([
@@ -1289,7 +1292,7 @@ export default (sbp('sbp/selectors/register', {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
-      const response = await fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
+      const response = await this.config.fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
         method: 'POST',
         signal: this.abortController.signal,
         headers: new Headers([
@@ -1339,7 +1342,6 @@ export default (sbp('sbp/selectors/register', {
 
     let msg = SPMessage.createV1_0({
       contractID,
-      originatingContractID,
       op: [
         SPMessage.OP_KEY_SHARE,
         params.signingKeyId
