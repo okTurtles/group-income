@@ -585,3 +585,5 @@ sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) 
   const rootState = sbp('state/vuex/state')
   rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
 })
+
+export {}
