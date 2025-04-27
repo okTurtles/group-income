@@ -472,7 +472,7 @@ module.exports = (grunt) => {
     grunt.log.writeln('backend: launching...')
     // Provides Babel support for the backend files.
     require('@babel/register')
-    require(backendIndex).then(done).catch(done)
+    import(backendIndex).then(done).catch(done)
   })
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
