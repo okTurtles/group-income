@@ -39,7 +39,8 @@ declare module '@hapi/joi' { declare module.exports: any }
 declare module 'hapi-pino' { declare module.exports: any }
 declare module 'pino' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
-declare module 'buffer' { declare module.exports: any }
+declare module 'node:crypto' { declare module.exports: any }
+declare module 'node:buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
 declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
@@ -47,7 +48,9 @@ declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: a
 declare module 'form-data' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
+declare module 'node:fs' { declare module.exports: any }
 declare module 'node:fs/promises' { declare module.exports: any }
+declare module 'node:stream' { declare module.exports: any }
 declare module 'node:path' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
 declare module 'sqlite3' { declare module.exports: any }

@@ -14,14 +14,14 @@
 //
 // =======================
 
-const util = require('util')
+const util = require('node:util')
 const chalk = require('chalk')
-const crypto = require('crypto')
-const { exec, execSync, fork } = require('child_process')
+const crypto = require('node:crypto')
+const { exec, execSync, fork } = require('node:child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
-const fs = require('fs')
-const path = require('path')
+const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('node:fs/promises')
+const fs = require('node:fs')
+const path = require('node:path')
 const { resolve } = path
 const packageJSON = require('./package.json')
 
@@ -66,6 +66,7 @@ const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
 const distContracts = `${distDir}/contracts`
 const distJS = `${distDir}/assets/js`
+const distBackend = `${distDir}/backend`
 const srcDir = 'frontend'
 const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
 const contractsDir = `${srcDir}/model/contracts`
@@ -212,26 +213,28 @@ module.exports = (grunt) => {
     }
   }
 
+  const defaultDefines = {
+    'process.env.BUILD': "'web'", // Required by Vuelidate.
+    'process.env.CI': `'${CI}'`,
+    'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
+    'process.env.GI_VERSION': `'${GI_VERSION}'`,
+    'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
+    'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+    'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
+    'process.env.NODE_ENV': `'${NODE_ENV}'`,
+    'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+    'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+    'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
+  }
+
   // https://esbuild.github.io/api/
   const esbuildOptionBags = {
     // Native options that are shared between our esbuild tasks.
     default: {
       bundle: true,
       chunkNames: '[name]-[hash]-cached',
-      define: {
-        'process.env.BUILD': "'web'", // Required by Vuelidate.
-        'process.env.CI': `'${CI}'`,
-        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-        'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
-        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
-        'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
-        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
-      },
-      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+      define: defaultDefines,
+      external: ['*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
       loader: {
         '.eot': 'file',
@@ -255,6 +258,29 @@ module.exports = (grunt) => {
     // Native options used when building our service worker(s).
     serviceWorkers: {
       entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+    },
+    backend: {
+      entryPoints: [backendIndex],
+      // The following dependencies were picked manually as they have issues
+      // with bundling (because of imports needed from `node_modules`)
+      external: ['pino', 'thread-stream', 'ws'],
+      target: 'esnext',
+      platform: 'node',
+      format: 'esm',
+      define: {
+        ...defaultDefines,
+        'process.env.LIGHTWEIGHT_CLIENT': "'false'"
+      },
+      splitting: false,
+      inject: [
+        './scripts/esbuild-shims/Buffer.js',
+        './scripts/esbuild-shims/global.js',
+        './scripts/esbuild-shims/process.js',
+        './scripts/esbuild-shims/require.js',
+        './scripts/esbuild-shims/timers.js'
+      ],
+      outdir: distBackend,
+      outExtension: { '.js': '.mjs' }
     }
   }
   esbuildOptionBags.contracts = {
@@ -589,6 +615,7 @@ module.exports = (grunt) => {
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
     const aliasPlugin = createAliasPlugin(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
+    const nodeprotocolPlugin = require('./scripts/esbuild-plugins/nodeprotocol-plugin.js')
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
@@ -612,12 +639,17 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
+    const buildBackend = createEsbuildTask({
+      ...esbuildOptionBags.default,
+      ...esbuildOptionBags.backend,
+      plugins: [...defaultPlugins, nodeprotocolPlugin]
+    })
 
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
       .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
-      .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
+      .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run(), buildBackend.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)

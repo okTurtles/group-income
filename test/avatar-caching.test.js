@@ -7,8 +7,6 @@ import { Secret } from '../shared/domains/chelonia/Secret.js'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 const assert = require('node:assert')
-// Remove this when dropping support for Node versions lower than v20.
-const File = require('buffer').File
 const { readFile } = require('node:fs/promises')
 
 async function createIdentity (username) {

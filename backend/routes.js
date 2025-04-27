@@ -5,13 +5,15 @@
 import sbp from '@sbp/sbp'
 import Bottleneck from 'bottleneck'
 import chalk from 'chalk'
-import path from 'path'
+import path from 'node:path'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
 import { appendToIndexFactory } from './database.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 import { blake32Hash } from '../shared/functions.js'
+import Boom from '@hapi/boom'
+import Joi from '@hapi/joi'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
@@ -72,8 +74,6 @@ const ctEq = (expected: string, actual: string) => {
   return r === 0
 }
 
-const Boom = require('@hapi/boom')
-const Joi = require('@hapi/joi')
 const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
 const staticServeConfig = {
   routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',

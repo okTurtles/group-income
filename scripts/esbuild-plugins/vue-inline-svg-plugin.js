@@ -1,7 +1,7 @@
 'use strict'
 
-const path = require('path')
-const { readFile } = require('fs').promises
+const path = require('node:path')
+const { readFile } = require('node:fs').promises
 
 const compiler = require('vue-template-compiler')
 const transpile = require('vue-template-es2015-compiler')

@@ -5,6 +5,9 @@
  * See https://github.com/websockets/ws#api-docs
  */
 
+import { WebSocket, WebSocketServer } from 'ws'
+import { bold } from 'chalk'
+
 import {
   NOTIFICATION_TYPE,
   REQUEST_TYPE,
@@ -22,9 +25,6 @@ import type {
 
 import type { JSONType, JSONObject } from '~/shared/types.js'
 import { postEvent } from './push.js'
-
-const { bold } = require('chalk')
-const WebSocket = require('ws')
 
 const { PING, PONG, PUB, SUB, UNSUB, KV_FILTER } = NOTIFICATION_TYPE
 const { ERROR, OK } = RESPONSE_TYPE
@@ -97,7 +97,7 @@ export function createOkResponse (data: JSONType): string {
  * @returns {Object}
  */
 export function createServer (httpServer: Object, options?: Object = {}): Object {
-  const server = new WebSocket.Server({
+  const server = new WebSocketServer({
     ...defaultOptions,
     ...options,
     ...{ clientTracking: true },

@@ -8,7 +8,7 @@
  */
 'use strict'
 
-const { resolve } = require('path')
+const { resolve } = require('node:path')
 
 const { createFilterRegExpFromAliases } = require('./utils.js')
 

@@ -2,8 +2,8 @@
 // and add path aliasing support in at-import rules.
 'use strict'
 
-const { readFile } = require('fs').promises
-const { relative } = require('path')
+const { readFile } = require('node:fs').promises
+const { relative } = require('node:path')
 
 // https://github.com/vuejs/vue-component-compiler#api
 const componentCompiler = require('@vue/component-compiler')

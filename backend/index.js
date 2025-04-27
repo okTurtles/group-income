@@ -70,13 +70,13 @@ function logSBP (domain, selector, data: Array<*>) {
 // any specific selectors outside of backend namespace to log
 ;[].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
 
-module.exports = (new Promise((resolve, reject) => {
+export default (new Promise((resolve, reject) => {
   sbp('okTurtles.events/on', SERVER_RUNNING, function () {
     console.info(chalk.bold('backend startup sequence complete.'))
     resolve()
   })
   // call this after we've registered listener for SERVER_RUNNING
-  require('./server.js')
+  import('./server.js').catch(e => reject(e))
 }): Promise<void>)
 
 const shutdownFn = function (message) {

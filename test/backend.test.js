@@ -21,11 +21,9 @@ import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
 
-// Remove this when dropping support for Node versions lower than v20.
-const File = require('buffer').File
-const fs = require('fs')
-const path = require('path')
-// const { PassThrough, Readable } = require('stream')
+const fs = require('node:fs')
+const path = require('node:path')
+// const { PassThrough, Readable } = require('node:stream')
 
 chalk.level = 2 // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
