@@ -240,6 +240,10 @@ $cta-zindex: 3;
     --image-viewer-slider-bg-color: #1e2021;
     --image-viewer-btn-color_active: #2e3032;
     --image-viewer-btn-text-color_active: #e8e8e8;
+    --image-viewer-cta-bg-color: #1e2021;
+    --image-viewer-cta-text-color: #e8e8e8;
+    --image-viewer-cta-border-color: #717879;
+    --image-viewer-cta-box-shadow-color: #383c3e;
   }
 }
 
