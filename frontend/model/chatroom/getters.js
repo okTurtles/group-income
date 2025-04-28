@@ -142,6 +142,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       return getters.ourUnreadMessages[chatRoomID]?.unreadMessages || []
     }
   },
+  isChatRoomManuallyMarkedUnread (state, getters) {
+    return (chatroomID: string) => {
+      return Boolean(getters.ourUnreadMessages[chatroomID || getters.currentChatRoomId]?.readUntil?.isManuallyMarked)
+    }
+  },
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)

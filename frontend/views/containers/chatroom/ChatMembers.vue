@@ -22,7 +22,10 @@
       .profile-wrapper(v-if='isDMToMyself')
         profile-card(:contractID='ourIdentityContractId' deactivated)
           avatar-user(:contractID='ourIdentityContractId' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(:data-test='title')
+          span.is-unstyled.c-name.has-ellipsis(
+            :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
+            :data-test='title'
+          )
             span {{ title }}
             i18n.c-you (you)
 
@@ -30,18 +33,24 @@
         .profile-wrapper(v-if='partners.length === 1')
           profile-card(:contractID='partners[0].contractID' deactivated)
             avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
-            span.is-unstyled.c-name.has-ellipsis(:data-test='partners[0].username') {{ title }}
+            span.is-unstyled.c-name.has-ellipsis(
+              :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
+              :data-test='partners[0].username'
+            ) {{ title }}
 
         .group-wrapper(v-else)
           .picture-wrapper
             avatar(:src='picture' :alt='title' size='xs')
             .c-badge {{ partners.length }}
-          span.is-unstyled.c-name.has-ellipsis(:data-test='title') {{ title }}
+          span.is-unstyled.c-name.has-ellipsis(
+            :data-test='title'
+            :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
+          ) {{ title }}
 
       .c-unreadcount-wrapper
         .pill.is-danger(
           v-if='getUnreadMsgCount(chatRoomID)'
-        ) {{limitedUnreadCount(getUnreadMsgCount(chatRoomID))}}
+        ) {{ limitedUnreadCount(getUnreadMsgCount(chatRoomID)) }}
 </template>
 
 <script>
@@ -80,7 +89,8 @@ export default ({
       'groupShouldPropose',
       'ourGroupDirectMessages',
       'ourIdentityContractId',
-      'chatRoomUnreadMessages'
+      'chatRoomUnreadMessages',
+      'isChatRoomManuallyMarkedUnread'
     ])
   },
   methods: {
@@ -106,6 +116,10 @@ export default ({
     },
     getUnreadMsgCount (chatRoomID) {
       return this.chatRoomUnreadMessages(chatRoomID).length
+    },
+    shouldStyleBold (chatRoomID) {
+      return this.isChatRoomManuallyMarkedUnread(chatRoomID) ||
+        this.getUnreadMsgCount(chatRoomID) > 0
     },
     limitedUnreadCount (n) {
       const nLimit = 99
@@ -156,7 +170,6 @@ export default ({
   display: inline-block;
   margin-left: 0.25rem;
   font-size: 0.875em;
-  font-weight: normal;
 }
 
 .c-menu {

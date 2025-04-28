@@ -106,6 +106,33 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
+  'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    unreadMessages: Array<{ messageHash: string, createdHeight: number }>
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
+        const existingReadUntil = currentData[contractID]?.readUntil
+
+        // If the requested mark-unread hash has already been set, ignore it.
+        if (existingReadUntil &&
+          existingReadUntil.isManuallyMarked &&
+          existingReadUntil?.messageHash === messageHash) { return null }
+
+        return [{
+          ...currentData,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight, isManuallyMarked: true },
+            unreadMessages
+          }
+        }, etag]
+      }
+
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
+    })
+  },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
