@@ -26,6 +26,7 @@ PageTemplate
           v-error:instanceName=''
           :label='L("Instance name")'
           :placeholder='L("Enter instance name")'
+          :max='config.nameMaxChar'
           @blur='updateField("instanceName", form.instanceName)'
         )
 
@@ -38,6 +39,7 @@ PageTemplate
           v-error:displayName=''
           :label='L("Display name")'
           :placeholder='L("Enter display name")'
+          :max='config.displayNameMaxChar'
           @blur='updateField("displayName", form.displayName)'
         )
 
@@ -50,6 +52,7 @@ PageTemplate
           v-model='form.domain'
           :label='L("Domain")'
           :placeholder='L("Enter domain")'
+          :max='config.domainMaxChar'
           @blur='updateField("domain", form.domain)'
         )
 
@@ -109,6 +112,12 @@ export default {
   },
   data () {
     return {
+      config: {
+        // NOTE: Below are arbitrary values.
+        nameMaxChar: 80,
+        displayNameMaxChar: 80,
+        domainMaxChar: 320
+      },
       ephemeral: {
         fakeApplicationOptions
       },

@@ -1,11 +1,19 @@
 <template lang="pug">
 label.inputgroup
   span.input-label(v-if='label') {{ label }}
+
+  char-limit-indicator.c-char-len(
+    v-if='showLimitIndicator'
+    :max='max'
+    :current='value.length'
+  )
+
   input.input(
     ref='input'
     type='text'
     :value='value'
     :placeholder='placeholder'
+    :maxlength='max > 0 ? max : undefined'
     @input='onInput'
     @blur='$emit("blur")'
     v-focus='autofocus'
@@ -13,8 +21,13 @@ label.inputgroup
 </template>
 
 <script>
+import CharLimitIndicator from '../CharLimitIndicator.vue'
+
 export default {
   name: 'StyledInput',
+  components: {
+    CharLimitIndicator
+  },
   props: {
     value: {
       type: String,
@@ -32,6 +45,15 @@ export default {
     autofocus: {
       type: Boolean,
       default: false
+    },
+    max: {
+      type: Number,
+      required: false
+    }
+  },
+  computed: {
+    showLimitIndicator () {
+      return this.max > 0 && this.value.length > 0
     }
   },
   methods: {
@@ -44,3 +66,16 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-char-len {
+  position: absolute;
+  display: block;
+  top: 0.75rem;
+  right: 1.25rem;
+  pointer-events: none;
+  z-index: 1;
+}
+</style>

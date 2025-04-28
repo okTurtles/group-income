@@ -1,5 +1,5 @@
 <template lang="pug">
-  span.c-char-len() {{ desc }}
+  span.c-char-len(:class='{ "is-error": isError }') {{ desc }}
 </template>
 
 <script>
@@ -35,5 +35,11 @@ export default {
 
 .c-char-len {
   display: inline-block;
+  color: $text_1;
+  font-size: $size_6;
+
+  &.is-error {
+    color: $danger;
+  }
 }
 </style>
