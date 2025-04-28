@@ -1648,7 +1648,7 @@ export default (sbp('sbp/selectors/register', {
   // this case, see if `chelonia/kv/queuedSet` covers your needs.
   // `data` is allowed to be falsy, in which case a fetch will occur first and
   // the `onconflict` handler will be called.
-  'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+  'chelonia/kv/set': async function (contractID: string, key: string, data?: ?Object, {
     ifMatch,
     innerSigningKeyId,
     encryptionKeyId,
@@ -1661,7 +1661,7 @@ export default (sbp('sbp/selectors/register', {
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: ChelKvOnConflictCallback,
+    onconflict?: ?ChelKvOnConflictCallback,
   }) {
     maxAttempts = maxAttempts ?? 3
     const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
@@ -1688,6 +1688,8 @@ export default (sbp('sbp/selectors/register', {
           signal: this.abortController.signal
         })
       } else {
+        // If no initial data provided, perform a GET `fetch` to get the current
+        // data and CID
         response = await this.config.fetch(url, {
           headers: new Headers([[
             'authorization', buildShelterAuthorizationHeader.call(this, contractID)
@@ -1695,6 +1697,10 @@ export default (sbp('sbp/selectors/register', {
           signal: this.abortController.signal
         })
       }
+      // The `resolveData` function is tasked with computing merged data, as in
+      // merging the existing stored values (after a conflict or initial fetch)
+      // and new data. The return value indicates whether there should be a new
+      // attempt at storing updated data (if `true`) or not (if `false`)
       const resolveData = async () => {
         let currentValue
         if (response.ok || response.status === 409 || response.status === 412) {

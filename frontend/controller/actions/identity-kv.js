@@ -218,7 +218,7 @@ export default (sbp('sbp/selectors/register', {
         return [{ ...currentPreferences, hideDistributionBanner }, etag]
       }
 
-      const data = getUpdatedPreferences()?.[0]
+      const data = getUpdatedPreferences()[0]
       await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
     })
   },
