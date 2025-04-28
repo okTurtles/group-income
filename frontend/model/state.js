@@ -18,6 +18,8 @@ import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
 
 // Wrapper function for performing contract upgrades and migrations
+// Unused as of https://github.com/okTurtles/group-income/pull/2525. For
+// usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
 // eslint-disable-next-line no-unused-vars
 const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
