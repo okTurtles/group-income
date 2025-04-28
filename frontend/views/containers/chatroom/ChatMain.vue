@@ -933,7 +933,7 @@ export default ({
         Vue.set(this.messageState, 'contract', state)
       }
     },
-    scrollToIntialPosition () {
+    scrollToInitialPosition () {
       const hashTo = this.ephemeral.initialScroll.hash
       if (hashTo) {
         const scrollingToSpecificMessage = this.$route.query?.mhash === hashTo
@@ -1175,7 +1175,7 @@ export default ({
           // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
           // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
           // and calling clearTimeout() at the start of infiniteHandler().
-          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToIntialPosition, 150)
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToInitialPosition, 150)
         }
       })
     },
@@ -1199,8 +1199,35 @@ export default ({
       if (this.dndState.isActive) {
         this.dndState.isActive = false
 
-        e?.dataTransfer.files?.length &&
-          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+        const items = e.dataTransfer.items
+
+        if (items?.length) {
+          // 'drag-end' event of the browsers detects files as well as folders, and we only want
+          // files. The kind field and the getAsFile() methods are not helpful at telling them
+          // apart, as both will work as a 'File'. The only quick and reliable way to detect files
+          // is using webkitGetAsEntry.
+          // (Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
+          const detectedFiles = []
+
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            const entry = item.getAsEntry?.() || item.webkitGetAsEntry?.()
+
+            if (entry) {
+              entry.isFile && detectedFiles.push(item.getAsFile())
+            } else {
+              // NOTE: if an old browser that does not support webkitGetAsEntry (eg. Internet Explorers), this fallback might accept a directory.
+              const file = item.getAsFile()
+
+              if (file && file.type !== '') {
+                detectedFiles.push(file)
+              }
+            }
+          }
+
+          detectedFiles.length &&
+            this.$refs.sendArea.fileAttachmentHandler(detectedFiles, true)
+        }
       }
     },
     processChatroomSwitch: debounce(async function () {
