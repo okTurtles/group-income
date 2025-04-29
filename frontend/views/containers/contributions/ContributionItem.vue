@@ -23,9 +23,9 @@
         v-safe-html='contributionText'
       )
 
-  .c-contribution-list(
-    v-else=''
-    v-safe-html='contributionText'
+  .c-contribution-list.has-dynamic-tooltip(
+    v-else
+    v-safe-html:button='contributionText'
   )
 </template>
 
@@ -64,8 +64,8 @@ export default ({
       if (this.hasWhoElse) {
         const html = {
           service: `<span class="has-text-bold">${this.what}</span>`,
-          button_: '<button class="is-unstyled is-link-inherit link">',
           numMembers: this.otherContributor,
+          button_: '<button class="is-unstyled is-link-inherit link">',
           _button: '</button>'
         }
 
@@ -111,8 +111,14 @@ export default ({
 
     firstWho () {
       const who = this.who
-      if (!Array.isArray(who)) return who
-      return who.length === 2 ? L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
+      const btnHtml = {
+        button_: '<button class="is-unstyled is-link-inherit link">',
+        _button: '</button>'
+      }
+      if (!Array.isArray(who)) return L('{button_}{who}{_button}', { who, ...btnHtml })
+      return who.length === 2
+        ? L('{button_}{who0}{_button} and {button_}{who1}{_button}', { who0: who[0], who1: who[1], ...btnHtml })
+        : L('{button_}{who}{_button}', { who: who[0], ...btnHtml })
     },
 
     otherContributor () {
@@ -156,5 +162,9 @@ export default ({
   &:last-child {
     padding-bottom: 0.5rem;
   }
+}
+
+.c-contribution-list.has-dynamic-tooltip {
+  position: relative;
 }
 </style>
