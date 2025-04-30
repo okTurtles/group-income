@@ -5,6 +5,7 @@ tooltip(
   :manual='true'
   :opacity='1'
   :deactivated='deactivated'
+  :isVisible='isVisible'
   :aria-label='L("Show profile")'
 )
   slot
@@ -107,7 +108,8 @@ export default ({
     deactivated: {
       type: Boolean,
       default: false
-    }
+    },
+    isVisible: Boolean
   },
   mixins: [
     DMMixin

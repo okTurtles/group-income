@@ -140,7 +140,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
             return acc + payment.amount
           }, 0)
 
-        return { who, whoIds, total, pledged: ourGroupProfile.pledgeAmount  }
+        return { who, whoIds, total, pledged: ourGroupProfile.pledgeAmount }
       })(),
       receivingMonetary: (() => {
         if (!doWeNeedIncome) { return null }
