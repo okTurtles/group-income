@@ -1668,7 +1668,7 @@ export default (sbp('sbp/selectors/register', {
     const hasOnconflict = typeof onconflict === 'function'
     for (;;) {
       let response: Response
-      if (data === undefined) {
+      if (data !== undefined) {
         const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
           contractID,
           innerSigningKeyId,
@@ -1724,7 +1724,7 @@ export default (sbp('sbp/selectors/register', {
         } else if (response.status !== 404 && response.status !== 410) {
           throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
         }
-        const result = await onconflict({
+        const result = await (onconflict: Function)({
           contractID,
           key,
           failedData: data,
