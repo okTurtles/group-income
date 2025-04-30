@@ -16,25 +16,29 @@
         ul
           menu-item(tag='button' data-test='changeVote' icon='edit' @click='$emit("request-vote-change")')
             i18n Change vote
+
   .c-options-and-voters
     ul.c-options-list
       li.c-option(
-        v-for='option in list.percents'
+        v-for='option in optionsList'
         :key='option.id'
       )
-        .c-option-name-and-percent
-          .c-name {{ option.name }}
-          .c-percent {{ option.percent }}
+        .c-option-left-section
+          .c-option-name-and-percent
+            .c-name {{ option.name }}
+            .c-percent {{ option.percent }}
 
-        .c-option-bar
-          .c-option-bar-measure(
-            :class='{ "has-my-vote": option.hasMyVote }'
-            :style='{ width: option.percent }'
-          )
+          .c-option-bar
+            .c-option-bar-measure(
+              :class='{ "has-my-vote": option.hasMyVote }'
+              :style='{ width: option.percent }'
+            )
 
-    .c-voters(v-if='!isAnonymousPoll')
-      .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
-        voter-avatars(:voters='entry.users' :optionName='entry.optionName')
+        .c-option-right-section(
+          v-if='!isAnonymousPoll'
+          :style='rightSectionStyle'
+        )
+          voter-avatars(:voters='option.users' :optionName='option.name')
 </template>
 
 <script>
@@ -58,27 +62,23 @@ export default ({
     MenuItem
   },
   computed: {
-    list () {
-      const percents = []
-      const voters = []
-
-      this.pollData.options.forEach(opt => {
-        percents.push({
+    optionsList () {
+      return this.pollData.options.map(opt => {
+        return {
           id: opt.id,
           percent: this.getPercent(opt.voted),
           name: opt.value,
-          hasMyVote: opt.voted.includes(this.ourIdentityContractId)
-        })
-
-        voters.push({
-          id: opt.id,
-          users: uniq(opt.voted),
-          optionName: opt.value
-        })
+          hasMyVote: opt.voted.includes(this.ourIdentityContractId),
+          users: uniq(opt.voted)
+        }
       })
+    },
+    rightSectionStyle () {
+      const maxInList = this.optionsList.reduce((currMax, opt) => Math.max(currMax, opt.users.length), 0)
+      const maxAvatarCount = Math.min(maxInList, 3)
 
       return {
-        percents, voters
+        width: `${(maxAvatarCount * 1.5) - (maxAvatarCount - 1) * 0.375}rem`
       }
     }
   },
@@ -160,10 +160,29 @@ export default ({
 
 .c-option {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  column-gap: 0.75rem;
 
   &:not(:last-child) {
     margin-bottom: 1rem;
+  }
+
+  &-left-section,
+  &-right-section {
+    position: relative;
+    display: block;
+  }
+
+  &-left-section {
+    flex-grow: 1;
+  }
+
+  &-right-section {
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
   }
 
   &-name-and-percent {
@@ -200,22 +219,6 @@ export default ({
     &.has-my-vote {
       background-color: $primary_0;
     }
-  }
-}
-
-.c-voters {
-  position: relative;
-  margin-left: 0.75rem;
-}
-
-.c-voter-avatars-item {
-  display: flex;
-  align-items: flex-end;
-  width: max-content;
-  height: 2.4375rem;
-
-  &:not(:last-of-type) {
-    margin-bottom: 1rem;
   }
 }
 </style>
