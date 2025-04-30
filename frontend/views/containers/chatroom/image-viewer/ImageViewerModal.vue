@@ -228,8 +228,10 @@ $cta-zindex: 3;
   --image-viewer-slider-bg-color: #2e3032;
   --image-viewer-btn-color_active: #717879;
   --image-viewer-btn-text-color_active: #1e2021;
-  --image-viewer-cta-color: #aeaeae;
-  --image-viewer-cta-color_active: #ededed;
+  --image-viewer-cta-bg-color: #1e2021;
+  --image-viewer-cta-text-color: #e8e8e8;
+  --image-viewer-cta-border-color: #717879;
+  --image-viewer-cta-box-shadow-color: #383c3e;
 
   .is-dark-theme & {
     --image-viewer-bg-color: #717879;
@@ -238,8 +240,10 @@ $cta-zindex: 3;
     --image-viewer-slider-bg-color: #1e2021;
     --image-viewer-btn-color_active: #2e3032;
     --image-viewer-btn-text-color_active: #e8e8e8;
-    --image-viewer-cta-color: #aeaeae;
-    --image-viewer-cta-color_active: #ededed;
+    --image-viewer-cta-bg-color: #1e2021;
+    --image-viewer-cta-text-color: #e8e8e8;
+    --image-viewer-cta-border-color: #717879;
+    --image-viewer-cta-box-shadow-color: #383c3e;
   }
 }
 
@@ -359,15 +363,20 @@ $cta-zindex: 3;
   }
 }
 
-.c-image-nav-btn {
+button.c-image-nav-btn {
   position: absolute;
   z-index: $cta-zindex;
   top: 50%;
   transform: translateY(-50%);
-  background-color: var(--image-viewer-text-color);
-  color: var(--image-viewer-btn-color);
+  background-color: var(--image-viewer-cta-bg-color);
+  color: var(--image-viewer-cta-text-color);
+  border-color: var(--image-viewer-cta-border-color);
   width: 2.5rem;
   height: 2.5rem;
+
+  &:focus {
+    box-shadow: 0 0 0 2px var(--image-viewer-cta-box-shadow-color);
+  }
 
   &.is-prev {
     left: 1rem;
