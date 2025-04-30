@@ -5,7 +5,7 @@
 
 <script>
 export default ({
-  name: 'MenuSelect',
+  name: 'MenuParent',
   data () {
     return {
       config: {

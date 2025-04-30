@@ -115,6 +115,37 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
+  'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
+    contractID: string,
+    messageHash: string,
+    createdHeight: number,
+    unreadMessages: Array<{ messageHash: string, createdHeight: number }>
+  }) => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedUnreadMessages = async () => {
+        const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+        const existingReadUntil = currentData[contractID]?.readUntil
+
+        // If the requested mark-unread hash has already been set, ignore it.
+        if (existingReadUntil &&
+          existingReadUntil.isManuallyMarked &&
+          existingReadUntil?.messageHash === messageHash) { return null }
+
+        return {
+          ...currentData,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight, isManuallyMarked: true },
+            unreadMessages
+          }
+        }
+      }
+
+      const data = await getUpdatedUnreadMessages()
+      if (data) {
+        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
+      }
+    })
+  },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
@@ -145,7 +176,7 @@ export default (sbp('sbp/selectors/register', {
       const getUpdatedUnreadMessages = async () => {
         const currentData = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
 
-        const index = currentData[contractID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
+        const index = currentData[contractID]?.unreadMessages?.findIndex(msg => msg.messageHash === messageHash)
         // NOTE: index could be undefined if unreadMessages is not initialized
         if (Number.isInteger(index) && index >= 0) {
           currentData[contractID].unreadMessages.splice(index, 1)
