@@ -1665,9 +1665,10 @@ export default (sbp('sbp/selectors/register', {
   }) {
     maxAttempts = maxAttempts ?? 3
     const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
+    const hasOnconflict = typeof onconflict === 'function'
     for (;;) {
       let response: Response
-      if (data || typeof onconflict !== 'function') {
+      if (data === undefined) {
         const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
           contractID,
           innerSigningKeyId,
@@ -1689,7 +1690,8 @@ export default (sbp('sbp/selectors/register', {
         })
       } else {
         // If no initial data provided, perform a GET `fetch` to get the current
-        // data and CID
+        // data and CID. Then, `onconflict` will be used to merge the current
+        // and new data.
         response = await this.config.fetch(url, {
           headers: new Headers([[
             'authorization', buildShelterAuthorizationHeader.call(this, contractID)
@@ -1703,6 +1705,13 @@ export default (sbp('sbp/selectors/register', {
       // attempt at storing updated data (if `true`) or not (if `false`)
       const resolveData = async () => {
         let currentValue
+        // Rationale:
+        //  * response.ok could be the result of `GET` (no initial data)
+        //  * 409 indicates a conflict because the height used is too old
+        //  * 412 indicates a conflict (precondition failed) because the data
+        //    on the KV store have been updated / is not what we expected
+        // All of these situations should trigger parsing the respinse and
+        // conlict resolution
         if (response.ok || response.status === 409 || response.status === 412) {
           const serializedData = await response.json()
           currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
@@ -1710,6 +1719,8 @@ export default (sbp('sbp/selectors/register', {
             serializedData,
             meta: key
           })
+        // Rationale: 404 and 410 both indicate that the store key doesn't exist.
+        // These are not treated as errors since we could still set the value.
         } else if (response.status !== 404 && response.status !== 410) {
           throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
         }
@@ -1730,7 +1741,14 @@ export default (sbp('sbp/selectors/register', {
         ifMatch = result[1]
         return true
       }
-      if (!data && typeof onconflict === 'function') {
+      // Initial 'resolveData', used when the selector is called with no data,
+      // in which case a `GET` is performed before attempting to save
+      if (data === undefined) {
+        if (!hasOnconflict) {
+          throw TypeError('onconflict required with empty data')
+        }
+        // This is only for the initial case; the logic is replicated below
+        // for subsequent iterations that require conflic resolution.
         if (await resolveData()) {
           continue
         } else {
@@ -1738,13 +1756,14 @@ export default (sbp('sbp/selectors/register', {
         }
       }
       if (!response.ok) {
+        // Rationale: 409 and 412 indicate conflict resolution is needed
         if (response.status === 409 || response.status === 412) {
           if (--maxAttempts <= 0) {
             throw new Error('kv/set conflict setting KV value')
           }
           // Only retry if an onconflict handler exists to potentially resolve it
           await delay(randomIntFromRange(0, 1500))
-          if (typeof onconflict === 'function') {
+          if (hasOnconflict) {
             if (await resolveData()) {
               continue
             } else {

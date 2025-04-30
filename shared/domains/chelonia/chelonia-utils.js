@@ -1,5 +1,15 @@
 import sbp from '@sbp/sbp'
 
+// This file contains non-core parts of Chelonia, i.e., functionality that is
+// useful but optional. The threshold for something being 'optional' generally
+// is something that can be implemented externally using only public Chelonia
+// selectors.
+// Optional functionality can make certain assumptions about contracts or
+// actions to make things simpler or easier to implement.
+// Currently, a single selector is defined: 'chelonia/kv/queuedSet'.
+// TODO: Other things should be moved to this file, such as `encryptedAction`
+// (the wrapper) and 'gi.actions/out/rotateKeys'.
+
 export default (sbp('sbp/selectors/register', {
   // This selector is a wrapper for the `chelonia/kv/set` selector that uses
   // the contract queue and allows referring to keys by name, with default key
