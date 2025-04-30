@@ -151,7 +151,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
           .filter(p => p.toMemberID === ourIdentityContractId)
           .reduce((acc, payment) => {
             who.push(getters.userDisplayNameFromID(payment.fromMemberID))
-            whoIds.push(payment.toMemberID)
+            whoIds.push(payment.fromMemberID)
 
             return acc + payment.amount
           }, 0)

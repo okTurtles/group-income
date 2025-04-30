@@ -26,17 +26,19 @@
   .c-contribution-list(
     v-else
     v-safe-html:button='contributionText'
-    @click.stop='showProfileTooltip'
+    @click='showProfileTooltip'
   )
 
   .c-profile-card-container(
     v-if='ephemeral.profileTooltip.show'
     v-on-clickaway='closeProfileTooltip'
   )
-    .c-profile-card-overlay
+    .c-profile-card-overlay(
+      @click.stop='closeProfileTooltip'
+    )
 
     profile-card-content.c-card(
-      :contractID='ourIdentityContractId'
+      :contractID='ephemeral.profileTooltip.userId'
       :on-post-cta-click='closeProfileTooltip'
       @modal-close='closeProfileTooltip'
     )
@@ -56,6 +58,7 @@ export default ({
   mixins: [clickaway],
   props: {
     who: [String, Array],
+    whoIds: Array,
     what: String,
     action: {
       type: String,
@@ -79,7 +82,8 @@ export default ({
       ephemeral: {
         isVisible: false,
         profileTooltip: {
-          show: false
+          show: false,
+          userId: null
         }
       }
     }
@@ -166,20 +170,33 @@ export default ({
   },
   methods: {
     toggleVisibility () {
-      console.log('!@# toggling visibility')
       this.ephemeral.isVisible = !this.ephemeral.isVisible
     },
     showProfileTooltip (e) {
       const el = e.target
+      const isAlreadyShowing = this.ephemeral.profileTooltip.show
+
       if (el.matches('button.user-name')) {
         const displayName = el.textContent.trim()
-        console.log('!@# displayName: ', displayName)
-        this.ephemeral.profileTooltip.show = true
+        const index = !Array.isArray(this.who)
+          ? 0
+          : this.who.findIndex(name => displayName === name)
+
+        if (index >= 0) {
+          setTimeout(() => {
+            this.ephemeral.profileTooltip.userId = this.whoIds[index]
+            this.ephemeral.profileTooltip.show = true
+          },
+          // If the tooltip is already open, clicking on another username executes closeProfileTooltip() too (which is triggered via v-on-clickaway directive),
+          // So showProfileTooltip() needs a bit of delay to seemlessly update the content of the profile tooltip.
+          isAlreadyShowing ? 150 : 0)
+        }
       }
     },
     closeProfileTooltip () {
       if (this.ephemeral.profileTooltip.show) {
         this.ephemeral.profileTooltip.show = false
+        this.ephemeral.profileTooltip.userId = null
       }
     }
   }
@@ -208,8 +225,8 @@ export default ({
 
 .c-profile-card-container {
   position: absolute;
-  top: 100%;
-  left: 0;
+  top: calc(100% + 0.5rem);
+  left: -1rem;
   z-index: $zindex-tooltip;
 
   @include phone {
