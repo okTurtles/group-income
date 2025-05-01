@@ -263,6 +263,10 @@ export default ({
   z-index: 1;
   background-color: $background_0;
 
+  @include phone {
+    border-radius: 0.625rem 0.625rem 0 0;
+  }
+
   .is-dark-theme & {
     background-color: $general_1;
   }
