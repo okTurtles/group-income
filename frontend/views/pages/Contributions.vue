@@ -49,7 +49,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
         ul.spacer(
           v-if='doesReceiveAny'
-          data-test='revceivingList'
+          data-test='receivingList'
         )
           contribution(
             v-if='doesReceiveMonetary'

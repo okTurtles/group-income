@@ -29,7 +29,7 @@
     @click='showProfileTooltip'
   )
 
-  .c-profile-card-container(
+  .c-profile-card-container.is-active(
     v-if='ephemeral.profileTooltip.show'
     v-on-clickaway='closeProfileTooltip'
   )
@@ -37,6 +37,11 @@
       @click.stop='closeProfileTooltip'
     )
 
+    // NOTE: Why not ProfileCard.vue here?
+    // In here, we need to display the profile card UI when one or more text 'segments' of the sentence are hovered/focused [1].
+    // ProfileCard.vue is currently implemented with Tooltip.vue component which requires the 'entire sentence' to be the trigger [2].
+    // So instead of further complicating the ProfileCard.vue with the logic for [1] above, we are implementing the logic here and only reusing the
+    // user card UI of ProfileCard.vue (which is ProfileCardContent.vue).
     profile-card-content.c-card(
       :contractID='ephemeral.profileTooltip.userId'
       :on-post-cta-click='closeProfileTooltip'
@@ -46,7 +51,6 @@
 
 <script>
 import { L } from '@common/common.js'
-import { mapGetters } from 'vuex'
 import ProfileCardContent from '@components/ProfileCardContent.vue'
 import { mixin as clickaway } from 'vue-clickaway'
 
@@ -89,7 +93,6 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourIdentityContractId']),
     listOfName () {
       const html = {
         amount: `<span class="has-text-bold">${this.what}</span>`,

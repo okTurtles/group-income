@@ -208,6 +208,13 @@ export default {
   position: relative;
   display: flex;
   flex-direction: column;
+
+  .is-active & {
+    animation: zoom 100ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+    @include phone {
+      animation-name: enterFromBottom;
+    }
+  }
 }
 
 .c-identity {
