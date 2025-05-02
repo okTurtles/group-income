@@ -84,7 +84,10 @@ $colors_map: (
   skeleton-gradient: (
     linear-gradient(110deg, rgba(0, 0, 0, 0.05) 12%, rgba(60, 60, 60, 0.125) 25%, rgba(0, 0, 0, 0.05) 42%),
     linear-gradient(110deg, rgba(255, 255, 255, 0.1) 8%, rgba(255, 255, 255, 0.14) 29%, rgba(255, 255, 255, 0.1) 47%),
-  )
+  ),
+
+  // design-system
+  ds-menu-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65))
 );
 /* stylelint-enable */
 
