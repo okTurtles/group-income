@@ -178,7 +178,7 @@ export type ChelAtomicParams = {
 }
 
 export type ChelKvOnConflictCallback = (
-  args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object }
+  args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object, currentValue: Object }
 ) => Promise<[Object, string]>
 
 export { SPMessage }
@@ -1661,13 +1661,61 @@ export default (sbp('sbp/selectors/register', {
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict?: ?ChelKvOnConflictCallback,
+    onconflict: ?ChelKvOnConflictCallback,
   }) {
     maxAttempts = maxAttempts ?? 3
     const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
     const hasOnconflict = typeof onconflict === 'function'
+
+    let response: Response
+    // The `resolveData` function is tasked with computing merged data, as in
+    // merging the existing stored values (after a conflict or initial fetch)
+    // and new data. The return value indicates whether there should be a new
+    // attempt at storing updated data (if `true`) or not (if `false`)
+    const resolveData = async () => {
+      let currentValue
+      // Rationale:
+      //  * response.ok could be the result of `GET` (no initial data)
+      //  * 409 indicates a conflict because the height used is too old
+      //  * 412 indicates a conflict (precondition failed) because the data
+      //    on the KV store have been updated / is not what we expected
+      // All of these situations should trigger parsing the respinse and
+      // conlict resolution
+      if (response.ok || response.status === 409 || response.status === 412) {
+        const serializedData = await response.json()
+        currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
+          contractID,
+          serializedData,
+          meta: key
+        })
+      // Rationale: 404 and 410 both indicate that the store key doesn't exist.
+      // These are not treated as errors since we could still set the value.
+      } else if (response.status !== 404 && response.status !== 410) {
+        throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
+      }
+      const result = await (onconflict: Function)({
+        contractID,
+        key,
+        failedData: data,
+        status: response.status,
+        // If no x-cid or etag header was returned, `ifMatch` would likely be
+        // returned as undefined, which will then use the `''` fallback value
+        // when writing. This allows 404 / 410 responses to work even if no
+        // etag is explicitly given
+        etag: response.headers.get('x-cid') || response.headers.get('etag'),
+        get currentData () {
+          return currentValue?.data
+        },
+        currentValue
+      })
+      if (!result) return false
+
+      data = result[0]
+      ifMatch = result[1]
+      return true
+    }
+
     for (;;) {
-      let response: Response
       if (data !== undefined) {
         const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
           contractID,
@@ -1689,6 +1737,9 @@ export default (sbp('sbp/selectors/register', {
           signal: this.abortController.signal
         })
       } else {
+        if (!hasOnconflict) {
+          throw TypeError('onconflict required with empty data')
+        }
         // If no initial data provided, perform a GET `fetch` to get the current
         // data and CID. Then, `onconflict` will be used to merge the current
         // and new data.
@@ -1698,55 +1749,7 @@ export default (sbp('sbp/selectors/register', {
           ]]),
           signal: this.abortController.signal
         })
-      }
-      // The `resolveData` function is tasked with computing merged data, as in
-      // merging the existing stored values (after a conflict or initial fetch)
-      // and new data. The return value indicates whether there should be a new
-      // attempt at storing updated data (if `true`) or not (if `false`)
-      const resolveData = async () => {
-        let currentValue
-        // Rationale:
-        //  * response.ok could be the result of `GET` (no initial data)
-        //  * 409 indicates a conflict because the height used is too old
-        //  * 412 indicates a conflict (precondition failed) because the data
-        //    on the KV store have been updated / is not what we expected
-        // All of these situations should trigger parsing the respinse and
-        // conlict resolution
-        if (response.ok || response.status === 409 || response.status === 412) {
-          const serializedData = await response.json()
-          currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
-            contractID,
-            serializedData,
-            meta: key
-          })
-        // Rationale: 404 and 410 both indicate that the store key doesn't exist.
-        // These are not treated as errors since we could still set the value.
-        } else if (response.status !== 404 && response.status !== 410) {
-          throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
-        }
-        const result = await (onconflict: Function)({
-          contractID,
-          key,
-          failedData: data,
-          status: response.status,
-          etag: response.headers.get('x-cid') || response.headers.get('etag'),
-          get currentData () {
-            return currentValue?.data
-          },
-          currentValue
-        })
-        if (!result) return false
 
-        data = result[0]
-        ifMatch = result[1]
-        return true
-      }
-      // Initial 'resolveData', used when the selector is called with no data,
-      // in which case a `GET` is performed before attempting to save
-      if (data === undefined) {
-        if (!hasOnconflict) {
-          throw TypeError('onconflict required with empty data')
-        }
         // This is only for the initial case; the logic is replicated below
         // for subsequent iterations that require conflic resolution.
         if (await resolveData()) {
