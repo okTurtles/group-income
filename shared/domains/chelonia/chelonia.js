@@ -599,6 +599,9 @@ export default (sbp('sbp/selectors/register', {
         // 'new' subscriptions as well as every time the connection is reset
         'subscription-succeeded': (event) => {
           const { channelID } = event.detail
+          // The check below is needed because we could have unsubscribed since
+          // requesting a subscription from the server. In that case, we don't
+          // need to call `sync`.
           if (this.subscriptionSet.has(channelID)) {
             // For new subscriptions, some messages could have been lost
             // between the time the subscription was requested and it was
@@ -608,7 +611,7 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
             })
           }
-          options.handlers?.['subscription-succeeded']?.()
+          options.handlers?.['subscription-succeeded']?.(event)
         }
       },
       // Map message handlers to transparently handle encryption and signatures
