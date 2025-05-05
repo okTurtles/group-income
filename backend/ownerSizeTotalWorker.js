@@ -6,6 +6,20 @@ import { readyQueueName } from './genericWorker.js'
 
 const TASK_TIME_INTERVAL = 30e3
 
+// This file defines two different methods for doing size computations:
+// `backend/server/computeSizeTaskDeltas` and `backend/server/computeSizeTask`.
+// The latter does a full computation by looking at all subresources and adding
+// them up while the former does a delta-based computation and is event-driven.
+// Both are used, but at different times.
+// The delta / event-driven version is likely to be the most performant while
+// the server is running, so this is used for updates.
+// However, the full computation is less likely to give incorrect results and
+// requires fewer pieces of data to be stored. This is what's used when the
+// server starts up.
+// Because the delta version could theoretically lead to incorrect results
+// (meaning it's not self-healing), we mighr want in the future to also randomly
+// do a full computation on some contracts.
+
 const updatedSizeList = new Set()
 const updatedSizeMap = new Map()
 

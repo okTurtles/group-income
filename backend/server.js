@@ -257,7 +257,7 @@ sbp('sbp/selectors/register', {
       await appendToIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(resourceID)
     }
   },
-  'backend/server/removeIndirectResourcesIndex': async function (resourceID: string) {
+  'backend/server/removeFromIndirectResourcesIndex': async function (resourceID: string) {
     const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
     const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
     const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
@@ -305,7 +305,7 @@ sbp('sbp/selectors/register', {
     // without using a queue
     const resourcesKey = `_private_resources_${owner}`
     await removeFromIndexFactory(resourcesKey)(cid)
-    await sbp('backend/server/removeIndirectResourcesIndex', cid)
+    await sbp('backend/server/removeFromIndirectResourcesIndex', cid)
 
     await sbp('chelonia.db/delete', `_private_owner_${cid}`)
     await sbp('chelonia.db/delete', `_private_size_${cid}`)
@@ -392,7 +392,7 @@ sbp('sbp/selectors/register', {
         }))
       }
       await sbp('chelonia.db/delete', kvIndexKey)
-      await sbp('backend/server/removeIndirectResourcesIndex', cid)
+      await sbp('backend/server/removeFromIndirectResourcesIndex', cid)
       await sbp('chelonia.db/delete', `_private_indirectResources_${cid}`)
 
       await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
