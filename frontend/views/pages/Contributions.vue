@@ -49,7 +49,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
         ul.spacer(
           v-if='doesReceiveAny'
-          data-test='revceivingList'
+          data-test='receivingList'
         )
           contribution(
             v-if='doesReceiveMonetary'
@@ -57,6 +57,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             contribution-item(
               :what='withCurrency(receivingMonetary.total)'
               :who='receivingMonetary.who'
+              :whoIds='receivingMonetary.whoIds'
               type='MONETARY'
             )
 
@@ -68,6 +69,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
               contribution-item(
                 :what='contribution.what'
                 :who='contribution.who'
+                :whoIds='contribution.whoIds'
                 type='NON_MONETARY'
               )
 
@@ -104,6 +106,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             contribution-item(
               :what='withCurrency(givingMonetary.total)'
               :who='givingMonetary.who'
+              :whoIds='givingMonetary.whoIds'
               type='MONETARY'
               action='GIVING'
             )

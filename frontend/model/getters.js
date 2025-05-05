@@ -130,27 +130,33 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
       givingMonetary: (() => {
         if (doWeNeedIncome) { return null }
         const who = []
+        const whoIds = []
         const total = distribution
           .filter(p => p.fromMemberID === ourIdentityContractId)
           .reduce((acc, payment) => {
             who.push(getters.userDisplayNameFromID(payment.toMemberID))
+            whoIds.push(payment.toMemberID)
+
             return acc + payment.amount
           }, 0)
 
-        return { who, total, pledged: ourGroupProfile.pledgeAmount }
+        return { who, whoIds, total, pledged: ourGroupProfile.pledgeAmount }
       })(),
       receivingMonetary: (() => {
         if (!doWeNeedIncome) { return null }
         const needed = getters.groupSettings.mincomeAmount - ourGroupProfile.incomeAmount
         const who = []
+        const whoIds = []
         const total = distribution
           .filter(p => p.toMemberID === ourIdentityContractId)
           .reduce((acc, payment) => {
             who.push(getters.userDisplayNameFromID(payment.fromMemberID))
+            whoIds.push(payment.fromMemberID)
+
             return acc + payment.amount
           }, 0)
 
-        return { who, total, needed }
+        return { who, whoIds, total, needed }
       })(),
       receivingNonMonetary: (() => {
         const listWho = Object.keys(groupProfiles)
@@ -161,9 +167,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
 
           userContributions.forEach((what) => {
             const contributionIndex = contr.findIndex(c => c.what === what)
-            contributionIndex >= 0
-              ? contr[contributionIndex].who.push(displayName)
-              : contr.push({ who: [displayName], what })
+
+            if (contributionIndex >= 0) {
+              contr[contributionIndex].who.push(displayName)
+              contr[contributionIndex].whoIds.push(memberID)
+            } else {
+              contr.push({ who: [displayName], whoIds: [memberID], what })
+            }
           })
           return contr
         }, [])
