@@ -74,19 +74,19 @@ export default ({
     hasNotReadTheLatestMessage () {
       // This computed props check if the chatrooms in the list have any messages that are not seen by the user yet.
       const entries = Object.keys(this.list.channels).map(chatId => {
-        const chatroomLatestState = this.$store.state.contracts[chatId]
-        if (!chatroomLatestState || chatroomLatestState.type !== 'gi.contracts/chatroom') { return null }
+        const chatroomState = this.$store.state.contracts[chatId]
+        if (!chatroomState || typeof chatroomState?.height !== 'number') { return null }
 
-        const latestMsgInfo = { msgHash: chatroomLatestState.HEAD, height: chatroomLatestState.height }
+        const latestMsgHeight = chatroomState.height
         const chatReadUntilInfo = this.ourUnreadMessages?.[chatId]?.readUntil
 
         if (!chatReadUntilInfo) {
           // NOTE: If a user creates a new channel but leaves before any message is sent/received in there,
           // it's 'readUntil' data is undefined. In this case, we can determine whether the latest message is not seen yet by checking if
           // its height value is >= 3. (3 is the height value of the second message in every chatroom)
-          return [chatId, latestMsgInfo.height >= 3]
+          return [chatId, latestMsgHeight >= 3]
         } else {
-          return [chatId, latestMsgInfo.height > chatReadUntilInfo.createdHeight]
+          return [chatId, latestMsgHeight > chatReadUntilInfo.createdHeight]
         }
       }).filter(Boolean)
 
