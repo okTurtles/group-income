@@ -172,8 +172,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
           ...chatRoom.attributes,
           id: contractID,
           unreadMessagesCount: getters.chatRoomUnreadMessages(contractID).length,
-          joined: true,
-          isCreator: myIdendityId === chatRoom.attributes.creatorID
+          joined: true
         }
       } else {
         const { name, privacyLevel } = chatRoomsInDetail[contractID]
