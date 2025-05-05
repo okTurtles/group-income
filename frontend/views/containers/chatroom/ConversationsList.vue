@@ -66,7 +66,30 @@ export default ({
     routeName: String
   },
   computed: {
-    ...mapGetters(['isChatRoomManuallyMarkedUnread'])
+    ...mapGetters([
+      'isChatRoomManuallyMarkedUnread',
+      'groupChatRooms',
+      'ourUnreadMessages'
+    ]),
+    hasNotReadTheLatestMessage () {
+      const entries = Object.keys(this.groupChatRooms).map(chatId => {
+        const chatroomLatestState = this.$store.state.contracts[chatId]
+        if (!chatroomLatestState || chatroomLatestState.type !== 'gi.contracts/chatroom') { return null }
+
+        const latestMsgInfo = { msgHash: chatroomLatestState.HEAD, height: chatroomLatestState.height }
+        const chatReadUntilInfo = this.ourUnreadMessages?.[chatId]?.readUntil
+        console.log('!@# here: ', latestMsgInfo, chatReadUntilInfo)
+        if (!chatReadUntilInfo) {
+          // User has not entered the chatroom since creating it.
+          // TODO: add check for 'isCreator' flag here.
+          return [chatId, latestMsgInfo.height >= 3]
+        } else {
+          return [chatId, latestMsgInfo.height > chatReadUntilInfo.createdHeight]
+        }
+      }).filter(Boolean)
+
+      return Object.fromEntries(entries)
+    }
   },
   methods: {
     onClickedNewChannel () {
@@ -109,7 +132,8 @@ export default ({
     },
     shouldStyleBold (chatRoomID) {
       return this.isChatRoomManuallyMarkedUnread(chatRoomID) ||
-        this.list.channels[chatRoomID].unreadMessagesCount > 0
+        this.list.channels[chatRoomID].unreadMessagesCount > 0 ||
+        this.hasNotReadTheLatestMessage[chatRoomID] === true
     }
   }
 }: Object)
