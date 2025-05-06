@@ -69,7 +69,7 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
       .map((k) => k.id)
 }
 
-const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string, opV: SPOpActionUnencrypted, direction?: string) => {
+const validateActionPermissions = (msg: SPMessage, signingKey: SPKey, state: Object, opT: string, opV: SPOpActionUnencrypted) => {
   const data: ProtoSPOpActionUnencrypted = isSignedData(opV)
     ? (opV: any).valueOf()
     : (opV: any)
@@ -80,7 +80,7 @@ const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string
       !signingKey.allowedActions.includes(data.action)
     )
   ) {
-    console.error(`Signing key ${signingKey.id} is not allowed for action ${data.action}`)
+    logEvtError(msg, `Signing key ${signingKey.id} is not allowed for action ${data.action}`)
     return false
   }
 
@@ -92,7 +92,7 @@ const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string
     // available for us to see. In this case, we ignore the missing key.
     // For incoming messages, we must check permissions and a missing
     // key means no permissions.
-    if (!innerSigningKey && direction === 'outgoing') return true
+    if (!innerSigningKey && msg._direction === 'outgoing') return true
 
     if (
       !innerSigningKey ||
@@ -105,7 +105,7 @@ const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string
           )
         )
     ) {
-      console.error(`Signing key ${s.signingKeyId} is missing permissions for operation ${opT}`)
+      logEvtError(msg, `Signing key ${s.signingKeyId} is missing permissions for operation ${opT}`)
       return false
     }
 
@@ -115,7 +115,7 @@ const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string
         !innerSigningKey.allowedActions.includes(data.action + '#inner')
       )
     ) {
-      console.error(`Signing key ${innerSigningKey.id} is not allowed for action ${data.action}`)
+      logEvtError(msg, `Signing key ${innerSigningKey.id} is not allowed for action ${data.action}`)
       return false
     }
   }
@@ -123,7 +123,7 @@ const validateActionPermissions = (signingKey: SPKey, state: Object, opT: string
   return true
 }
 
-export const validateKeyPermissions = (config: Object, state: Object, signingKeyId: string, opT: string, opV: SPOpValue, direction?: string): boolean => {
+export const validateKeyPermissions = (msg: SPMessage, config: Object, state: Object, signingKeyId: string, opT: string, opV: SPOpValue): boolean => {
   const signingKey = state._vm?.authorizedKeys?.[signingKeyId]
   if (
     !signingKey ||
@@ -136,13 +136,13 @@ export const validateKeyPermissions = (config: Object, state: Object, signingKey
         )
       )
   ) {
-    console.error(`Signing key ${signingKeyId} is missing permissions for operation ${opT}`)
+    logEvtError(msg, `Signing key ${signingKeyId} is missing permissions for operation ${opT}`)
     return false
   }
 
   if (
     opT === SPMessage.OP_ACTION_UNENCRYPTED &&
-    !validateActionPermissions(signingKey, state, opT, (opV: any), direction)
+    !validateActionPermissions(msg, signingKey, state, opT, (opV: any))
   ) {
     return false
   }
@@ -150,7 +150,7 @@ export const validateKeyPermissions = (config: Object, state: Object, signingKey
   if (
     !config.skipActionProcessing &&
     opT === SPMessage.OP_ACTION_ENCRYPTED &&
-    !validateActionPermissions(signingKey, state, opT, (opV: any).valueOf(), direction)
+    !validateActionPermissions(msg, signingKey, state, opT, (opV: any).valueOf())
   ) {
     return false
   }
@@ -262,7 +262,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPK
   return [((keys: any): SPKey[]), updatedMap]
 }
 
-export const keyAdditionProcessor = function (hash: string, keys: (SPKey | EncryptedData<SPKey>)[], state: Object, contractID: string, signingKey: SPKey, internalSideEffectStack?: Function[]) {
+export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys: (SPKey | EncryptedData<SPKey>)[], state: Object, contractID: string, signingKey: SPKey, internalSideEffectStack?: Function[]) {
   const decryptedKeys = []
   const keysToPersist = []
 
@@ -392,7 +392,7 @@ export const keyAdditionProcessor = function (hash: string, keys: (SPKey | Encry
 
             this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
           }).catch((e) => {
-            console.error('Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
+            logEvtError(msg, 'Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
           })
         })
       }
@@ -851,4 +851,14 @@ export const collectEventStream = async (s: ReadableStream): Promise<any[]> => {
     r.push(value)
   }
   return r
+}
+
+// Used inside processing functions for displaying errors at the 'warn' level
+// for outgoing messages to increase the signal-to-noise error. See issue #2773.
+export const logEvtError = (msg: SPMessage, ...args: any[]) => {
+  if (msg._direction === 'outgoing') {
+    console.warn(...args)
+  } else {
+    console.error(...args)
+  }
 }

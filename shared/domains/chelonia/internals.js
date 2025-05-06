@@ -14,7 +14,7 @@ import { encryptedIncomingData, encryptedOutgoingData, unwrapMaybeEncryptedData 
 import type { EncryptedData } from './encryptedData.js'
 import { ChelErrorKeyAlreadyExists, ChelErrorResourceGone, ChelErrorUnrecoverable, ChelErrorWarning, ChelErrorDBBadPreviousHEAD, ChelErrorAlreadyProcessed, ChelErrorFetchServerTimeFailed, ChelErrorForkedChain } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from './events.js'
-import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { buildShelterAuthorizationHeader, findKeyIdByName, findSuitablePublicKeyIds, findSuitableSecretKeyId, getContractIDfromKeyId, keyAdditionProcessor, logEvtError, recreateEvent, validateKeyPermissions, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { isSignedData, signedIncomingData } from './signedData.js'
 // import 'ses'
 
@@ -706,7 +706,7 @@ export default (sbp('sbp/selectors/register', {
           const u = v[i]
           try {
             if (u[0] === SPMessage.OP_ATOMIC) throw new Error('Cannot nest OP_ATOMIC')
-            if (!validateKeyPermissions(config, state, signingKeyId, u[0], u[1], direction)) {
+            if (!validateKeyPermissions(message, config, state, signingKeyId, u[0], u[1])) {
               throw new Error('Inside OP_ATOMIC: no matching signing key was defined')
             }
             await opFns[u[0]](u[1])
@@ -724,7 +724,7 @@ export default (sbp('sbp/selectors/register', {
                 }
                 continue
               } else {
-                console.error(`[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
+                logEvtError(message, `[chelonia] [OP_ATOMIC] ERROR '${e.name}' in processMessage for ${message.description()}: ${e.message || e}`, e, message.serialize())
               }
               console.warn(`[chelonia] [OP_ATOMIC] Error processing ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
               if (config.strictProcessing) {
@@ -733,7 +733,7 @@ export default (sbp('sbp/selectors/register', {
               config.hooks.processError?.(e, message, getMsgMeta(message, contractID, state))
               if (e.name === 'ChelErrorWarning') continue
             } else {
-              console.error('Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
+              logEvtError(message, 'Inside OP_ATOMIC: Non-object or null error thrown', contractID, message, i, e)
             }
             throw e
           }
@@ -749,7 +749,7 @@ export default (sbp('sbp/selectors/register', {
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
+        keyAdditionProcessor.call(self, message, hash, v.keys, state, contractID, signingKey, internalSideEffectStack)
       },
       [SPMessage.OP_ACTION_ENCRYPTED] (v: SPOpActionEncrypted) {
         if (config.skipActionProcessing) {
@@ -870,7 +870,7 @@ export default (sbp('sbp/selectors/register', {
                     console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e.message}`,
                       e)
                   } else {
-                    console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
+                    logEvtError(message, `OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
                       e)
                   }
                 }
@@ -946,10 +946,10 @@ export default (sbp('sbp/selectors/register', {
                   }),
                   { force: true, resync: true }
                 ).catch(e => {
-                  console.error('[chelonia] Error resyncing contracts with foreign key references after key rotation', e)
+                  logEvtError(message, '[chelonia] Error resyncing contracts with foreign key references after key rotation', e)
                 })
               }).catch((e) => {
-                console.error(`[chelonia] Error during sync for ${v.contractID} during OP_KEY_SHARE for ${contractID}`)
+                logEvtError(message, `[chelonia] Error during sync for ${v.contractID} during OP_KEY_SHARE for ${contractID}`)
                 if (v.contractID === contractID) {
                   throw e
                 }
@@ -973,7 +973,7 @@ export default (sbp('sbp/selectors/register', {
               sbp('chelonia/private/queueEvent', contractID, () => {
                 sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID, sharedWithContractID: contractID, signingKeyId, get signingKeyName () { return state._vm?.authorizedKeys?.[signingKeyId]?.name } })
               }).catch(e => {
-                console.error(`[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
+                logEvtError(message, `[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
               })
             })
         })
@@ -993,14 +993,14 @@ export default (sbp('sbp/selectors/register', {
               state._vm.invites[signingKeyId].status = INVITE_STATUS.USED
             }
           } else {
-            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + originatingContractID)
+            logEvtError(message, 'Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + originatingContractID)
             return
           }
         }
 
         if (state._vm?.invites?.[signingKeyId]?.expires != null) {
           if (state._vm.invites[signingKeyId].expires < Date.now()) {
-            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[signingKeyId].expires + ': ' + originatingContractID)
+            logEvtError(message, 'Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[signingKeyId].expires + ': ' + originatingContractID)
             return
           }
         }
@@ -1013,19 +1013,19 @@ export default (sbp('sbp/selectors/register', {
 
         // Outgoing messages don't have a context attribute
         if (!has(v.replyWith, 'context')) {
-          console.error('Ignoring OP_KEY_REQUEST because it is missing the context attribute')
+          logEvtError(message, 'Ignoring OP_KEY_REQUEST because it is missing the context attribute')
           return
         }
 
         const context = v.replyWith.context
 
         if (data && (!Array.isArray(context) || (context: any)[0] !== originatingContractID)) {
-          console.error('Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
+          logEvtError(message, 'Ignoring OP_KEY_REQUEST because it is signed by the wrong contract')
           return
         }
 
         if (v.request !== '*') {
-          console.error('Ignoring OP_KEY_REQUEST because it has an unsupported request attribute', v.request)
+          logEvtError(message, 'Ignoring OP_KEY_REQUEST because it has an unsupported request attribute', v.request)
           return
         }
 
@@ -1099,7 +1099,7 @@ export default (sbp('sbp/selectors/register', {
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
-        keyAdditionProcessor.call(self, hash, v, state, contractID, signingKey, internalSideEffectStack)
+        keyAdditionProcessor.call(self, message, hash, v, state, contractID, signingKey, internalSideEffectStack)
       },
       [SPMessage.OP_KEY_DEL] (v: SPOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
@@ -1149,12 +1149,12 @@ export default (sbp('sbp/selectors/register', {
                     // reason to remain subscribed to this contract. In this
                     // case, attempt to release it.
                     sbp('chelonia/contract/release', foreignContract, { try: true }).catch(e => {
-                      console.error(`[chelonia] Error at OP_KEY_DEL internalSideEffectStack while attempting to release foreign contract ${foreignContract}`, e)
+                      logEvtError(message, `[chelonia] Error at OP_KEY_DEL internalSideEffectStack while attempting to release foreign contract ${foreignContract}`, e)
                     })
                   }
                 }
               }).catch((e) => {
-                console.error('Error stopping watching events after removing key', { contractID, foreignContract, foreignKeyName, fkUrl })
+                logEvtError(message, 'Error stopping watching events after removing key', { contractID, foreignContract, foreignKeyName, fkUrl })
               })
             })
 
@@ -1203,7 +1203,7 @@ export default (sbp('sbp/selectors/register', {
             config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
           }
         }
-        keyAdditionProcessor.call(self, hash, (updatedKeys: any), state, contractID, signingKey, internalSideEffectStack)
+        keyAdditionProcessor.call(self, message, hash, (updatedKeys: any), state, contractID, signingKey, internalSideEffectStack)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
@@ -1269,7 +1269,7 @@ export default (sbp('sbp/selectors/register', {
 
       // Verify that the signing key is found, has the correct purpose and is
       // allowed to sign this particular operation
-      if (!validateKeyPermissions(config, stateForValidation, signingKeyId, opT, opV, direction)) {
+      if (!validateKeyPermissions(message, config, stateForValidation, signingKeyId, opT, opV)) {
         throw new Error('No matching signing key was defined')
       }
 
