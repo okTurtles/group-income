@@ -1093,7 +1093,7 @@ sbp('chelonia/defineContract', {
             // 1. When the user switches from 'pledger' to receiver
             (isChagingIncomeDetailsType && data.incomeDetailsType === 'incomeAmount') ||
             // 2. The user is a 'pledger' but updates the pledge amount to 0
-            (!isChagingIncomeDetailsType && data.incomeDetailsType === 'pledgeAmount' && data.amount === 0)
+            (!isChagingIncomeDetailsType && data.incomeDetailsType === 'pledgeAmount' && data.pledgeAmount === 0)
 
           if (shouldResetPaymentStreaks) {
             delete state.streaks.onTimePayments[innerSigningContractID]

@@ -235,7 +235,6 @@ export default ({
             Boolean(nonMonetaryPledgeUpdates) && { nonMonetaryReplace: nonMonetaryPledgeUpdates }
           )
         }
-        console.log('!@# here - aaa data: ', data)
         await sbp('gi.actions/group/groupProfileUpdate', {
           contractID: this.$store.state.currentGroupId, data
         })
