@@ -1045,7 +1045,7 @@ sbp('chelonia/defineContract', {
           key => ['nonMonetaryAdd', 'nonMonetaryRemove', 'nonMonetaryEdit', 'nonMonetaryReplace'].includes(key)
         )
 
-        const isChagingIncomeDetailsType = groupProfile.incomeDetailsType !== data.incomeDetailsType
+        const isChagingIncomeDetailsType = data.incomeDetailsType && groupProfile.incomeDetailsType !== data.incomeDetailsType
         const prevNonMonetary = nonMonetary.slice() // Capturing the previous non-monetary list. (To be used for in-app notification for non-monetary updates)
 
         for (const key in data) {
