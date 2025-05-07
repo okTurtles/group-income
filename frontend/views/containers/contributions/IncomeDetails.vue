@@ -226,17 +226,18 @@ export default ({
 
       try {
         const incomeDetailsType = this.form.incomeDetailsType
+        const data = {
+          incomeDetailsType,
+          [incomeDetailsType]: normalizeCurrency(this.form.amount),
+          ...Object.assign(
+            {},
+            Boolean(paymentMethodsUpdates?.length) && { paymentMethods: paymentMethodsUpdates },
+            Boolean(nonMonetaryPledgeUpdates) && { nonMonetaryReplace: nonMonetaryPledgeUpdates }
+          )
+        }
+        console.log('!@# here - aaa data: ', data)
         await sbp('gi.actions/group/groupProfileUpdate', {
-          contractID: this.$store.state.currentGroupId,
-          data: {
-            incomeDetailsType,
-            [incomeDetailsType]: normalizeCurrency(this.form.amount),
-            ...Object.assign(
-              {},
-              Boolean(paymentMethodsUpdates?.length) && { paymentMethods: paymentMethodsUpdates },
-              Boolean(nonMonetaryPledgeUpdates) && { nonMonetaryReplace: nonMonetaryPledgeUpdates }
-            )
-          }
+          contractID: this.$store.state.currentGroupId, data
         })
 
         this.closeModal()
