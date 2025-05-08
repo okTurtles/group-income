@@ -1,8 +1,7 @@
-/* eslint-env mocha */
-
 import assert from 'node:assert'
 import RouterBackend from './database-router.js'
 import { cloneDeep, omit } from 'turtledash'
+import { describe, it } from 'node:test'
 
 const validConfig = {
   'abc': {
