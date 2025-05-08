@@ -134,6 +134,11 @@ export default ({
         icon: 'smile-beam',
         conditionToShow: !this.isDesktopScreen
       }, {
+        name: L('Mark unread'),
+        action: 'markAsUnread',
+        icon: 'envelope',
+        conditionToShow: true
+      }, {
         name: L('Edit'),
         action: 'editMessage',
         icon: 'pencil-alt',
@@ -298,7 +303,7 @@ export default ({
   }
 
   .c-menuItem ::v-deep .c-item-link {
-    @extend %floating-panel-item;
+    height: 2.31rem;
   }
 }
 

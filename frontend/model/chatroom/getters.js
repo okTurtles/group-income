@@ -142,6 +142,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       return getters.ourUnreadMessages[chatRoomID]?.unreadMessages || []
     }
   },
+  isChatRoomManuallyMarkedUnread (state, getters) {
+    return (chatroomID: string) => {
+      return Boolean(getters.ourUnreadMessages[chatroomID || getters.currentChatRoomId]?.readUntil?.isManuallyMarked)
+    }
+  },
   groupUnreadMessages (state, getters, rootState) {
     return (groupID: string) => {
       const isGroupDirectMessage = cID => Object.keys(getters.directMessagesByGroup(groupID)).includes(cID)
@@ -159,10 +164,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   chatRoomsInDetail (state, getters, rootState) {
     const chatRoomsInDetail = merge({}, getters.groupChatRooms)
+    const myIdendityId = rootState.loggedIn.identityContractID
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
-      if (chatRoom && chatRoom.attributes &&
-        chatRoom.members[rootState.loggedIn.identityContractID]) {
+      if (chatRoom && chatRoom.attributes && chatRoom.members[myIdendityId]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,

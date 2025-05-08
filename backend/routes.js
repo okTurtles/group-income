@@ -799,19 +799,19 @@ route.POST('/kv/{contractID}/{key}', {
   // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
   // To avoid this situation, A and B could use `If-Match`, which would have
   // given B a 412 response
-  if (request.headers['if-match']) {
-    if (!existing) {
-      return Boom.preconditionFailed()
-    }
-    const expectedEtag = request.headers['if-match']
-    if (expectedEtag === '*') {
-      // pass through
-    } else {
-      // "Quote" string (to match ETag format)
-      const cid = JSON.stringify(createCID(existing, multicodes.RAW))
-      if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
-        return Boom.preconditionFailed()
-      }
+  const expectedEtag = request.headers['if-match']
+  if (!expectedEtag) {
+    return Boom.badRequest('if-match is required')
+  }
+  // "Quote" string (to match ETag format)
+  const cid = existing ? createCID(existing, multicodes.RAW) : ''
+
+  if (expectedEtag === '*') {
+    // pass through
+  } else {
+    if (!expectedEtag.split(',').map(v => v.trim()).includes(`"${cid}"`)) {
+      // We need this `x-cid` because HAPI modifies Etags
+      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(412)
     }
   }
 
@@ -825,7 +825,7 @@ route.POST('/kv/{contractID}/{key}', {
     // just because it was created in the past, or if it's because someone
     // is reusing a previously good key that has since been revoked.
     if (contracts[contractID].height !== Number(serializedData.height)) {
-      return Boom.conflict()
+      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(409)
     }
     // Check that the signature is valid
     sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
@@ -875,7 +875,8 @@ route.GET('/kv/{contractID}/{key}', {
     return notFoundNoCache(h)
   }
 
-  return h.response(result).etag(createCID(result, multicodes.RAW)).type('application/json')
+  const cid = createCID(result, multicodes.RAW)
+  return h.response(result).etag(cid).header('x-cid', `"${cid}"`)
 })
 
 // SPA routes
