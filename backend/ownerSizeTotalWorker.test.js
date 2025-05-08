@@ -17,6 +17,8 @@ const workerReady = new Promise((resolve, reject) => {
   worker.on('error', reject)
 })
 
+const randInt = (upperBound: number) => Math.random() * upperBound | 0
+
 const updateSize = (resourceID: string, sizeKey: string, size: number) => {
   return updateSize_(resourceID, sizeKey, size).then(() => {
     return new Promise((resolve, reject) => {
@@ -123,7 +125,7 @@ class Contract {
     // This is done in a queue to handle several simultaneous requests
     // reading and writing to the same key
     await appendToIndexFactory(resourcesKey)(resourceID)
-    setTimeout(() => this.saveIndirectResourcesIndex(resourceID), (0, Math.random)() * 500 | 0)
+    setTimeout(() => this.saveIndirectResourcesIndex(resourceID), randInt(500))
   }
 
   async init () {
@@ -136,20 +138,22 @@ class Contract {
   }
 
   async newMessage () {
-    const size = (0, Math.random)() * 9999 | 0
+    const size = randInt(9999)
     this.ownSize += size
     await updateSize(this.id, `_private_size_${this.id}`, size)
   }
 
   async newKvValue () {
-    const val = (0, Math.random)() * 9999 | 0
-    const sign = (0, Math.random)()
-    const size = (sign < 0.5) ? Math.max(-this.kvSize, -val) : val
+    const val = randInt(9999)
+    const sign = randInt(2)
+    const size = (sign === 0) ? Math.max(-this.kvSize, -val) : val
     this.kvSize += size
     await updateSize(this.id, `_private_size_${this.id}`, size)
   }
 }
 
+// Implemented as a generator to represent a single simulation step
+// Each 'yield' means the end of a step
 async function * randomOp (iterations) {
   const mainContracts: Contract[] = []
   const allContracts: Contract[] = []
@@ -164,7 +168,7 @@ async function * randomOp (iterations) {
   }
 
   while (iterations-- > 0) {
-    const op = (0, Math.random)() * 9 | 0
+    const op = randInt(9)
     switch (op) {
       case 0: {
         const contract = new Contract()
@@ -180,9 +184,9 @@ async function * randomOp (iterations) {
       case 4:
       case 5: {
         if (!allContracts.length) break
-        const idx = (0, Math.random)() * allContracts.length | 0
+        const idx = randInt(allContracts.length)
         const contract = allContracts[idx]
-        const subop = (0, Math.random)() * 4 | 0
+        const subop = randInt(4)
         switch (subop) {
           case 0: {
             console.log('Simulated new event on', contract.id)
@@ -192,6 +196,10 @@ async function * randomOp (iterations) {
           case 1: {
             console.log('Simulated KV update on', contract.id)
             await contract.newKvValue()
+            break
+          }
+          case 2: {
+            // Do nothing (no event and no subcontract)
             break
           }
           case 3: {
@@ -205,7 +213,7 @@ async function * randomOp (iterations) {
         break
       }
       case 6: {
-        const wait = (0, Math.random)() * 100 | 0
+        const wait = randInt(100)
         console.log('Random wait', wait)
         await new Promise(resolve => setTimeout(resolve, wait))
         break
@@ -271,7 +279,7 @@ describe('Owner total size computation fuzzing', () => {
   })
 
   it('Simulated events have the expected size', async () => {
-    const iterations = (0, Math.random)() * 4096 | 512
+    const iterations = randInt(4096) | 512
     const iterator = randomOp(iterations)
     let v
     for (;;) {

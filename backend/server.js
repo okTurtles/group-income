@@ -247,12 +247,15 @@ sbp('sbp/selectors/register', {
       // This is done in a queue to handle several simultaneous requests
       // reading and writing to the same key
       await appendToIndexFactory(resourcesKey)(resourceID)
-      sbp('chelonia.persistentActions/enqueue', ['backend/server/saveIndirectResourcesIndex', resourceID])
+      // Done as a persistent action to return quickly. If one of the owners
+      // up the chain has many resources, the operation could take a while.
+      sbp('chelonia.persistentActions/enqueue', ['backend/server/addToIndirectResourcesIndex', resourceID])
     })
   },
-  'backend/server/saveIndirectResourcesIndex': async function (resourceID: string) {
+  'backend/server/addToIndirectResourcesIndex': async function (resourceID: string) {
     const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
     let indirectOwnerID = ownerID
+    // If the owner of the owner doesn't exist, there are no indirect resources.
     while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
       await appendToIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(resourceID)
     }
