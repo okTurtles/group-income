@@ -10,7 +10,14 @@ type Config = {
   [string]: ConfigEntry
 }
 
-const { GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json' } = process.env
+const {
+  // Tried first by the config lookup.
+  // Define this if your config JSON comes as a string from an envar's contents.
+  GI_PERSIST_ROUTER_CONFIG,
+  // Tried next.
+  // Define this if your config comes from a JSON file.
+  GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json'
+} = process.env
 
 export default class RouterBackend extends DatabaseBackend implements IDatabaseBackend {
   backends: { [string]: DatabaseBackend }
@@ -28,7 +35,12 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
   }
 
   async readConfig (): Promise<Config> {
-    const configString = await readFile(resolve(GI_PERSIST_ROUTER_CONFIG_PATH), 'utf8')
+    if (GI_PERSIST_ROUTER_CONFIG) {
+      console.info('[database-router] Reading config from envar GI_PERSIST_ROUTER_CONFIG')
+    } else {
+      console.info('[database-router] Reading config from path', GI_PERSIST_ROUTER_CONFIG_PATH)
+    }
+    const configString = GI_PERSIST_ROUTER_CONFIG || await readFile(resolve(GI_PERSIST_ROUTER_CONFIG_PATH), 'utf8')
     const config = JSON.parse(configString)
     // Return a sorted copy where entries with longer keys come first.
     // $FlowFixMe
