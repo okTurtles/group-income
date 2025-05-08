@@ -5,10 +5,10 @@ import { readFile } from 'node:fs/promises'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
 
-type Config = {
-  [string]: { name: string, options: Object }
-}
 type ConfigEntry = { name: string, options: Object }
+type Config = {
+  [string]: ConfigEntry
+}
 
 const { GI_PERSIST_ROUTER_CONFIG_PATH = './database-router-config.json' } = process.env
 
