@@ -660,16 +660,6 @@ sbp('chelonia/defineContract', {
           delete state.messages[msgIndex]['pinnedBy']
         }
       }
-    },
-    // Action meant to upgrade contracts missing adminIDs
-    'gi.contracts/chatroom/upgradeFrom1.0.8': {
-      validate: actionRequireInnerSignature(optional(string)),
-      process ({ data }, { state }) {
-        if (state.attributes.adminIDs) {
-          throw new Error('Upgrade can only be done once')
-        }
-        state.attributes.adminIDs = data ? [data] : []
-      }
     }
   },
   methods: {
