@@ -28,8 +28,9 @@ async function testCaseSensitivity (backend: Object) {
       throw new Error('Unexpected value: original key does not have the correct value')
     }
     if (valueDifferentCase?.toString() === dateString) {
-      console.error('Filesystem database backend only works on case-sensitive filesystems. This appears to be a case insensitive file system.')
-      throw new Error('Filesystem database backend only works on case-sensitive filesystems. This appears to be a case insensitive file system.')
+      const errStr = 'Filesystem database backend only works on case-sensitive filesystems. This appears to be a case insensitive file system. Set SKIP_DB_FS_CASE_SENSITIVITY_CHECK=true to skip.'
+      console.error(errStr)
+      throw new Error(errStr)
     }
   } finally {
     await deleteData(originalKey)
@@ -58,7 +59,9 @@ export default class FsBackend extends DatabaseBackend implements IDatabaseBacke
 
   async init () {
     await mkdir(this.dataFolder, { mode: 0o750, recursive: true })
-    await testCaseSensitivity(this)
+    if (process.env.SKIP_DB_FS_CASE_SENSITIVITY_CHECK === undefined) {
+      await testCaseSensitivity()
+    }
   }
 
   async clear () {

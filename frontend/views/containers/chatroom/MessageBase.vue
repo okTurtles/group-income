@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message.force-motion(
-  :class='[variant, isSameSender && "same-sender", "is-type-" + type, isAlreadyPinned && "pinned"]'
+  :class='componentRootClasses'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
@@ -17,7 +17,10 @@
         profile-card(:contractID='from' direction='top-left')
           avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
 
-    .c-body
+    .c-body(
+      ref='msgBody'
+      :class='{ "is-truncated": isMessageCropped }'
+    )
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
           profile-card(:contractID='from' direction='top-left')
@@ -61,13 +64,17 @@
           :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
+          @image-attachments-render-complete='determineToEnableTruncationToggle'
         )
 
       .c-failure-message-wrapper
         i18n(tag='span') Message failed to send.
         i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
-  .c-full-width-body
+  .c-full-width-body(
+    ref='msgFullWidthBody'
+    :class='{ "is-truncated": isMessageCropped }'
+  )
     slot(name='full-width-body')
 
   message-reactions(
@@ -96,7 +103,21 @@
     @retry='$emit("retry")'
     @pinToChannel='$emit("pin-to-channel")'
     @unpinFromChannel='$emit("unpin-from-channel")'
+    @markAsUnread='markAsUnread'
   )
+
+  .c-truncate-toggle-container(
+    v-if='!isEditing && ephemeral.truncateToggle.enabled'
+    :class='{ "should-indent": isTypeText }'
+  )
+    button.is-unstyled.c-truncate-toggle(
+      :class='{ "is-showing": ephemeral.truncateToggle.isShowingAll }'
+      type='button'
+      @click.stop='toggleMessageTruncation'
+    )
+      i18n.c-btn-text(v-if='ephemeral.truncateToggle.isShowingAll') Show less
+      i18n.c-btn-text(v-else) Show more
+      i.icon-angle-down
 </template>
 
 <script>
@@ -113,13 +134,22 @@ import SendArea from './SendArea.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import {
+  CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE,
+  CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
+} from '~/frontend/utils/constants.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
+import { getFileType } from '@view-utils/filters.js'
 
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
+  inject: [
+    'chatMainConfig',
+    'chatMainUtils'
+  ],
   components: {
     Avatar,
     ProfileCard,
@@ -132,7 +162,13 @@ export default ({
   },
   data () {
     return {
-      isEditing: false
+      isEditing: false,
+      ephemeral: {
+        truncateToggle: {
+          enabled: false,
+          isShowingAll: false
+        }
+      }
     }
   },
   props: {
@@ -148,6 +184,10 @@ export default ({
     datetime: {
       type: Date,
       required: true
+    },
+    updatedDate: {
+      type: String,
+      required: false
     },
     edited: Boolean,
     notification: Object,
@@ -170,8 +210,24 @@ export default ({
   },
   computed: {
     ...mapGetters(['userDisplayNameFromID']),
+    componentRootClasses () {
+      return [
+        this.variant,
+        'is-type-' + this.type,
+        {
+          'same-sender': this.isSameSender,
+          'pinned': this.isAlreadyPinned,
+          'has-truncate-toggle': this.ephemeral.truncateToggle.enabled,
+          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll
+        }
+      ]
+    },
     hasAttachments () {
       return Boolean(this.attachments?.length)
+    },
+    hasImageAttachment () {
+      return Array.isArray(this.attachments) &&
+        this.attachments.some(attachment => getFileType(attachment.mimeType) === 'image')
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
@@ -189,6 +245,20 @@ export default ({
       return this.isAlreadyPinned
         ? L('Pinned by {strong_}{user}{_strong}', { user: this.pinnedUserName, ...LTags('strong') })
         : ''
+    },
+    isTypeText () {
+      return this.type === MESSAGE_TYPES.TEXT
+    },
+    isTypePoll () {
+      return this.type === MESSAGE_TYPES.POLL
+    },
+    shouldCheckToTruncate () {
+      // Should check if the message content is long enough to display 'show more/less' toggle button
+      return this.isTypeText || this.isTypePoll
+    },
+    isMessageCropped () {
+      // Check if the truncate-toggle is enabled and the message is folded.
+      return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
     }
   },
   methods: {
@@ -201,6 +271,10 @@ export default ({
       this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
+
+        // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
+        this.ephemeral.truncateToggle.enabled = false
+        this.ephemeral.truncateToggle.isShowingAll = false
       }
     },
     deleteAttachment (manifestCid) {
@@ -236,6 +310,67 @@ export default ({
       // Extract only numbers and colons, removing non-numeric characters like AM/PM
       const cleaned = tString.replace(/[^\d:]/g, '')
       return cleaned
+    },
+    determineToEnableTruncationToggle () {
+      const msgBodyEl = this.isTypePoll
+        ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container
+        : this.$refs.msgBody
+      const threshold = this.chatMainConfig.isPhone
+        ? CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE
+        : CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
+
+      if (msgBodyEl) {
+        // If the truncate-toggle is already displayed and the message is folded,
+        // we should use scrollHeight value for the check instead of clientHeight.
+        const height = this.isMessageCropped ? msgBodyEl.scrollHeight : msgBodyEl.clientHeight
+        const prevEnabled = this.ephemeral.truncateToggle.enabled
+
+        this.ephemeral.truncateToggle.enabled = height > threshold
+        if (prevEnabled !== this.ephemeral.truncateToggle.enabled) {
+          // If 'enabled' is changed, should initialize 'isShowingAll'.
+          this.ephemeral.truncateToggle.isShowingAll = false
+        }
+      }
+    },
+    toggleMessageTruncation (e) {
+      const currentValue = this.ephemeral.truncateToggle.isShowingAll
+      this.ephemeral.truncateToggle.isShowingAll = !currentValue
+
+      if (currentValue) {
+        // When folding the expanded message, scroll to the message so that it stays in the screen.
+        this.$el.scrollIntoView({ behavior: 'instant' })
+      }
+    },
+    markAsUnread () {
+      this.chatMainUtils.markAsUnread({
+        messageHash: this.messageHash,
+        createdHeight: this.height
+      })
+    }
+  },
+  watch: {
+    'chatMainConfig.isPhone' () {
+      if (this.shouldCheckToTruncate) {
+        this.determineToEnableTruncationToggle()
+      }
+    },
+    updatedDate (newVal) {
+      if (newVal && this.shouldCheckToTruncate) {
+        // When the messge is edited, check again if truncate-toggle is needed.
+        this.$nextTick(() => {
+          this.determineToEnableTruncationToggle()
+        })
+      }
+    }
+  },
+  mounted () {
+    if (
+      this.shouldCheckToTruncate &&
+      // NOTE: If the message has any image attached, defer this check until the <img /> DOMs are rendered.
+      //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
+      !this.hasImageAttachment
+    ) {
+      this.determineToEnableTruncationToggle()
     }
   }
 }: Object)
@@ -278,12 +413,10 @@ export default ({
     margin-top: 0.25rem;
   }
 
-  .button {
-    flex-shrink: 0;
-  }
-
-  .c-avatar {
-    max-width: unset;
+  &.failed {
+    .c-failure-message-wrapper {
+      display: block;
+    }
   }
 
   &:hover {
@@ -300,6 +433,14 @@ export default ({
     }
   }
 
+  .button {
+    flex-shrink: 0;
+  }
+
+  .c-avatar {
+    max-width: unset;
+  }
+
   .c-failure-message-wrapper {
     display: none;
     margin-top: 0.25rem;
@@ -311,12 +452,6 @@ export default ({
       margin-left: 0.1rem;
       cursor: pointer;
       text-decoration: underline;
-    }
-  }
-
-  &.failed {
-    .c-failure-message-wrapper {
-      display: block;
     }
   }
 }
@@ -405,5 +540,70 @@ export default ({
 
 .c-edit-send-area {
   padding: 0 0 1rem;
+}
+
+// message-truncation related styles
+
+.c-message.has-truncate-toggle {
+  padding-bottom: 2.25rem;
+
+  .c-body,
+  .c-full-width-body {
+    &.is-truncated {
+      max-height: 420px; // Using px instead of rem here to make it independent of the 'font-size' setting in the user-settings.
+      overflow-y: hidden;
+    }
+  }
+
+  .c-truncate-toggle-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2.25rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-left: 1rem;
+    padding-bottom: 0.5rem;
+    pointer-events: none;
+
+    @include tablet {
+      padding-left: 3.5rem;
+    }
+
+    &.should-indent {
+      padding-left: 4.25rem;
+    }
+
+    button.c-truncate-toggle {
+      z-index: 1;
+      pointer-events: initial;
+      color: $primary_0;
+      font-size: $size_5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      column-gap: 6px;
+
+      i {
+        font-size: 1.15em;
+      }
+
+      &:hover,
+      &:focus,
+      &:focus-within {
+        .c-btn-text {
+          text-decoration: underline;
+        }
+      }
+
+      &.is-showing {
+        i {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
 }
 </style>

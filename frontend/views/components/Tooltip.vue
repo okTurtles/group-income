@@ -144,6 +144,19 @@ export default ({
         this.isActive = false
       }
     },
+    isIOSSafari () {
+      const ua = window.navigator.userAgent
+      return /iP(hone|od|ad)/.test(ua) && /Safari/.test(ua)
+    },
+    hideTooltipOnTouchOutside (e) {
+      // NOTE: This is a fix for the iOS-Safari-only issue https://github.com/okTurtles/group-income/issues/2492
+      //       where the tooltip does not close when the user touches outside the tooltip.
+      //       The issue happens because 'blur' event in iOS-Safari does not fire and as a workaround,
+      //       we listen for 'touchstart' event attached to the document.body and manually check if user touches outside the tooltip wrapper.
+      if (this.isActive && !this.triggerDOM.contains(e.target)) {
+        this.hide()
+      }
+    },
     adjustPosition () {
       this.trigger = (this.triggerDOM || this.$el).getBoundingClientRect()
 
@@ -325,14 +338,24 @@ export default ({
     if (this.triggerElementSelector) {
       this.triggerDOM.style.cursor = 'pointer'
       this.triggerDOM.style.position = 'relative'
+
+      if (this.isIOSSafari()) {
+        // This is a fix for the iOS-Safari-only issue https://github.com/okTurtles/group-income/issues/2492
+        // Check hideTooltipOnTouchOutside() method for more details.
+        document.body.addEventListener('touchstart', this.hideTooltipOnTouchOutside)
+      }
     }
   },
-  beforeDestory () {
+  beforeDestroy () {
     this.triggerDOM.removeEventListener('click', this.toggle)
     this.triggerDOM.removeEventListener('mouseenter', this.show)
     this.triggerDOM.removeEventListener('mouseleave', this.hide)
     this.triggerDOM.removeEventListener('focus', this.show)
     this.triggerDOM.removeEventListener('blur', this.hide)
+
+    if (this.triggerElementSelector && this.isIOSSafari()) {
+      document.body.removeEventListener('touchstart', this.hideTooltipOnTouchOutside)
+    }
   }
 }: Object)
 </script>

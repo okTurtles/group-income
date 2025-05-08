@@ -5,11 +5,12 @@ import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, delay, difference, has, intersection, merge, randomHexString, randomIntFromRange } from 'turtledash'
+import { createCID, parseCID } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
 import type { SPKey, SPOpActionUnencrypted, SPOpContract, SPOpKeyAdd, SPOpKeyDel, SPOpKeyRequest, SPOpKeyRequestSeen, SPOpKeyShare, SPOpKeyUpdate } from './SPMessage.js'
 import type { Key } from '@chelonia/crypto'
 import { EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpected, ChelErrorUnexpectedHttpResponseCode, ChelErrorUnrecoverable } from './errors.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 // TODO: rename this to ChelMessage
 import { SPMessage } from './SPMessage.js'
@@ -176,6 +177,10 @@ export type ChelAtomicParams = {
   publishOptions?: { maxAttempts: number };
 }
 
+export type ChelKvOnConflictCallback = (
+  args: { contractID: string, key: string, failedData: Object, status: number, etag: ?string, currentData: Object, currentValue: Object }
+) => Promise<[Object, string]>
+
 export { SPMessage }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
@@ -210,6 +215,7 @@ export default (sbp('sbp/selectors/register', {
       },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
+      fetch: (...args) => fetch(...args),
       reactiveDel: (obj, key) => { delete obj[key] },
       // acceptAllMessages disables checking whether we are expecting a message
       // or not for processing
@@ -317,6 +323,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/config': function () {
     return {
       ...cloneDeep(this.config),
+      fetch: this.config.fetch,
       reactiveSet: this.config.reactiveSet,
       reactiveDel: this.config.reactiveDel
     }
@@ -584,25 +591,27 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/private/stopClockSync')
     }
     sbp('chelonia/private/startClockSync')
-    const resyncOnOnline = () => {
-      // Some messages could have been lost between the time the subscription
-      // was requested and it was actually set up. In these cases, force sync
-      // contracts to get them updated.
-      sbp('chelonia/private/out/sync', Array.from(this.subscriptionSet), { force: true }).catch(err => {
-        console.warn(`[chelonia] Syncing contracts failed: ${err.message}`)
-      })
-    }
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       handlers: {
         ...options.handlers,
-        online () {
-          resyncOnOnline()
-          options.handlers?.['online']?.()
-        },
-        'reconnection-succeeded' () {
-          resyncOnOnline()
-          options.handlers?.['reconnection-succeeded']?.()
+        // Every time we get a REQUEST_TYPE.SUB response, which happens for
+        // 'new' subscriptions as well as every time the connection is reset
+        'subscription-succeeded': (event) => {
+          const { channelID } = event.detail
+          // The check below is needed because we could have unsubscribed since
+          // requesting a subscription from the server. In that case, we don't
+          // need to call `sync`.
+          if (this.subscriptionSet.has(channelID)) {
+            // For new subscriptions, some messages could have been lost
+            // between the time the subscription was requested and it was
+            // actually set up. In these cases, force sync contracts to get them
+            // updated.
+            sbp('chelonia/private/out/sync', channelID, { force: true }).catch(err => {
+              console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
+            })
+          }
+          options.handlers?.['subscription-succeeded']?.(event)
         }
       },
       // Map message handlers to transparently handle encryption and signatures
@@ -801,7 +810,7 @@ export default (sbp('sbp/selectors/register', {
     //
     //        // The following could take a long time. We want Chelonia
     //        // to still work and process events as normal.
-    //        return fetch(profilePictureUrl).then(doSomeWorkWithTheFile)
+    //        return this.config.fetch(profilePictureUrl).then(doSomeWorkWithTheFile)
     //      })
     //    }
     return sbp('chelonia/private/queueEvent', contractID, ['chelonia/private/noop']).then(() => sbp('chelonia/private/queueEvent', 'public:' + contractID, sbpInvocation))
@@ -1066,8 +1075,29 @@ export default (sbp('sbp/selectors/register', {
       return state
     })
   },
+  'chelonia/out/fetchResource': async function (cid: string, { code }: { code?: number } = {}) {
+    const parsedCID = parseCID(cid)
+    if (code != null) {
+      if (parsedCID.code !== code) {
+        throw new Error(`Invalid CID content type. Expected ${code}, got ${parsedCID.code}`)
+      }
+    }
+    // Note that chelonia.db/get (set) is a no-op for lightweight clients
+    // This was added for consistency (processing an event also adds it to the DB)
+    const local = await sbp('chelonia.db/get', cid)
+    // We don't verify the CID because it's already been verified when it was set
+    if (local != null) return local
+    const url = `${this.config.connectionURL}/file/${cid}`
+    const data = await this.config.fetch(url, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+    const ourHash = createCID(data, parsedCID.code)
+    if (ourHash !== cid) {
+      throw new Error(`expected hash ${cid}. Got: ${ourHash}`)
+    }
+    await sbp('chelonia.db/set', cid, data)
+    return data
+  },
   'chelonia/out/latestHEADInfo': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
+    return this.config.fetch(`${this.config.connectionURL}/latestHEADinfo/${contractID}`, {
       cache: 'no-store',
       signal: this.abortController.signal
     }).then(handleFetchResult('json'))
@@ -1089,7 +1119,7 @@ export default (sbp('sbp/selectors/register', {
     let reader: ReadableStreamReader
     const s = new ReadableStream({
       start: async (controller) => {
-        const first = await fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
+        const first = await this.config.fetch(`${this.config.connectionURL}/file/${startHash}`, { signal: this.abortController.signal }).then(handleFetchResult('text'))
         const deserializedHEAD = SPMessage.deserializeHEAD(first)
         if (deserializedHEAD.contractID !== contractID) {
           controller.error(new Error('chelonia/out/eventsBetween: Mismatched contract ID'))
@@ -1233,7 +1263,7 @@ export default (sbp('sbp/selectors/register', {
       throw new TypeError('A contract ID must be provided')
     }
 
-    const response = await fetch(`${this.config.connectionURL}/ownResources`, {
+    const response = await this.config.fetch(`${this.config.connectionURL}/ownResources`, {
       method: 'GET',
       signal: this.abortController.signal,
       headers: new Headers([
@@ -1268,7 +1298,7 @@ export default (sbp('sbp/selectors/register', {
         throw new TypeError(`Either a token or a billable contract ID must be provided for ${cid}`)
       }
 
-      const response = await fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
+      const response = await this.config.fetch(`${this.config.connectionURL}/deleteContract/${cid}`, {
         method: 'POST',
         signal: this.abortController.signal,
         headers: new Headers([
@@ -1318,7 +1348,6 @@ export default (sbp('sbp/selectors/register', {
 
     let msg = SPMessage.createV1_0({
       contractID,
-      originatingContractID,
       op: [
         SPMessage.OP_KEY_SHARE,
         params.signingKeyId
@@ -1619,56 +1648,144 @@ export default (sbp('sbp/selectors/register', {
   // a general rule, you shouldn't be calling this selector directly unless
   // you're building a utility library or if you have very specific needs. In
   // this case, see if `chelonia/kv/queuedSet` covers your needs.
-  'chelonia/kv/set': async function (contractID: string, key: string, data: Object, {
+  // `data` is allowed to be falsy, in which case a fetch will occur first and
+  // the `onconflict` handler will be called.
+  'chelonia/kv/set': async function (contractID: string, key: string, data?: ?Object, {
+    ifMatch,
     innerSigningKeyId,
     encryptionKeyId,
     signingKeyId,
     maxAttempts,
     onconflict
   }: {
+    ifMatch?: string,
     innerSigningKeyId: ?string,
     encryptionKeyId: ?string,
     signingKeyId: string,
     maxAttempts: ?number,
-    onconflict: (contractID: string, key: string, data: Object) => Promise<Object>,
+    onconflict: ?ChelKvOnConflictCallback,
   }) {
     maxAttempts = maxAttempts ?? 3
-    for (;;) {
-      const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+    const url = `${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`
+    const hasOnconflict = typeof onconflict === 'function'
+
+    let response: Response
+    // The `resolveData` function is tasked with computing merged data, as in
+    // merging the existing stored values (after a conflict or initial fetch)
+    // and new data. The return value indicates whether there should be a new
+    // attempt at storing updated data (if `true`) or not (if `false`)
+    const resolveData = async () => {
+      let currentValue
+      // Rationale:
+      //  * response.ok could be the result of `GET` (no initial data)
+      //  * 409 indicates a conflict because the height used is too old
+      //  * 412 indicates a conflict (precondition failed) because the data
+      //    on the KV store have been updated / is not what we expected
+      // All of these situations should trigger parsing the respinse and
+      // conlict resolution
+      if (response.ok || response.status === 409 || response.status === 412) {
+        const serializedData = await response.json()
+        currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
+          contractID,
+          serializedData,
+          meta: key
+        })
+      // Rationale: 404 and 410 both indicate that the store key doesn't exist.
+      // These are not treated as errors since we could still set the value.
+      } else if (response.status !== 404 && response.status !== 410) {
+        throw new ChelErrorUnexpectedHttpResponseCode('[kv/set] Invalid response code: ' + response.status)
+      }
+      const result = await (onconflict: Function)({
         contractID,
-        innerSigningKeyId,
-        encryptionKeyId,
-        signingKeyId,
-        data,
-        meta: key
+        key,
+        failedData: data,
+        status: response.status,
+        // If no x-cid or etag header was returned, `ifMatch` would likely be
+        // returned as undefined, which will then use the `''` fallback value
+        // when writing. This allows 404 / 410 responses to work even if no
+        // etag is explicitly given
+        etag: response.headers.get('x-cid') || response.headers.get('etag'),
+        get currentData () {
+          return currentValue?.data
+        },
+        currentValue
       })
-      const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
-        headers: new Headers([[
-          'authorization', buildShelterAuthorizationHeader.call(this, contractID)
-        ]]),
-        method: 'POST',
-        body: JSON.stringify(serializedData),
-        signal: this.abortController.signal
-      })
+      if (!result) return false
+
+      data = result[0]
+      ifMatch = result[1]
+      return true
+    }
+
+    for (;;) {
+      if (data !== undefined) {
+        const serializedData = outputEncryptedOrUnencryptedMessage.call(this, {
+          contractID,
+          innerSigningKeyId,
+          encryptionKeyId,
+          signingKeyId,
+          data,
+          meta: key
+        })
+        response = await this.config.fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ], [
+            'if-match', ifMatch || '""'
+          ]
+          ]),
+          method: 'POST',
+          body: JSON.stringify(serializedData),
+          signal: this.abortController.signal
+        })
+      } else {
+        if (!hasOnconflict) {
+          throw TypeError('onconflict required with empty data')
+        }
+        // If no initial data provided, perform a GET `fetch` to get the current
+        // data and CID. Then, `onconflict` will be used to merge the current
+        // and new data.
+        response = await this.config.fetch(url, {
+          headers: new Headers([[
+            'authorization', buildShelterAuthorizationHeader.call(this, contractID)
+          ]]),
+          signal: this.abortController.signal
+        })
+
+        // This is only for the initial case; the logic is replicated below
+        // for subsequent iterations that require conflic resolution.
+        if (await resolveData()) {
+          continue
+        } else {
+          break
+        }
+      }
       if (!response.ok) {
-        if (response.status === 409) {
+        // Rationale: 409 and 412 indicate conflict resolution is needed
+        if (response.status === 409 || response.status === 412) {
           if (--maxAttempts <= 0) {
             throw new Error('kv/set conflict setting KV value')
           }
+          // Only retry if an onconflict handler exists to potentially resolve it
           await delay(randomIntFromRange(0, 1500))
-          if (typeof onconflict === 'function') {
-            data = await onconflict(contractID, key, data)
-            if (!data) { break }
+          if (hasOnconflict) {
+            if (await resolveData()) {
+              continue
+            } else {
+              break
+            }
+          } else {
+            // Can't resolve automatically if there's no conflict handler
+            throw new Error(`kv/set failed with status ${response.status} and no onconflict handler was provided`)
           }
-          continue
         }
-        throw new Error('kv/set invalid response status: ' + response.status)
+        throw new ChelErrorUnexpectedHttpResponseCode('kv/set invalid response status: ' + response.status)
       }
       break
     }
   },
   'chelonia/kv/get': async function (contractID: string, key: string) {
-    const response = await fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
+    const response = await this.config.fetch(`${this.config.connectionURL}/kv/${encodeURIComponent(contractID)}/${encodeURIComponent(key)}`, {
       headers: new Headers([[
         'authorization', buildShelterAuthorizationHeader.call(this, contractID)
       ]]),

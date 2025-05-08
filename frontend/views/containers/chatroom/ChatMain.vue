@@ -48,7 +48,6 @@
             :name='summary.title'
             :description='summary.attributes.description'
           )
-
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
@@ -75,6 +74,7 @@
           :replyingMessage='replyingMessageText(message)'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
+          :updatedDate='message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserID='currentUserAttr.id'
@@ -155,7 +155,7 @@ import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
-import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -174,7 +174,7 @@ const onChatScroll = function () {
   const curScrollTop = this.$refs.conversation.scrollTop
   const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
   const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
-  this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+  this.ephemeral.scrollableDistance = scrollTopMax - curScrollTop
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
     const msg = this.messages[i]
@@ -200,7 +200,7 @@ const onChatScroll = function () {
     return
   }
 
-  if (this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel) {
+  if (this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel) {
     // Save the current scroll position per each chatroom
     for (let i = 0; i < this.messages.length - 1; i++) {
       const msg = this.messages[i]
@@ -253,7 +253,9 @@ export default ({
       latestEvents: [],
       ephemeral: {
         startedUnreadMessageHash: null,
-        scrolledDistance: 0,
+        // Below contains the message hash on which the user manually marked as unread
+        messageHashToMarkUnread: null,
+        scrollableDistance: 0,
         onChatScroll: null,
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
@@ -329,10 +331,10 @@ export default ({
       }
     },
     isScrolledUp () {
-      if (!this.ephemeral.scrolledDistance) {
+      if (!this.ephemeral.scrollableDistance) {
         return false
       }
-      return this.ephemeral.scrolledDistance > ignorableScrollDistanceInPixel
+      return this.ephemeral.scrollableDistance > ignorableScrollDistanceInPixel
     },
     messages () {
       return this.messageState.contract?.messages || []
@@ -618,8 +620,11 @@ export default ({
         this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
-          behavior: this.isReducedMotionMode
-            ? 'instant' // force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+          // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
+          //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
+          behavior: this.isReducedMotionMode || document.hidden
+            ? 'instant'
             : behavior
         })
       }
@@ -700,8 +705,14 @@ export default ({
       }
     },
     async deleteMessage (message) {
+      const msgHash = message.hash
       const contractID = this.ephemeral.renderingChatRoomId
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
+
+      const lastMsg = this.messages[this.messages.length - 1]
+      const secondLastMsg = this.messages[this.messages.length - 2]
+      const isDeletingLastMsg = msgHash === lastMsg?.hash
+
       const question = message.attachments?.length
         ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
         : L('Are you sure you want to delete this message permanently?')
@@ -713,13 +724,33 @@ export default ({
         secondaryButton: L('Cancel')
       }
 
-      const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
-      if (primaryButtonSelected) {
-        sbp('gi.actions/chatroom/deleteMessage', {
-          contractID,
-          data: { hash: message.hash, manifestCids, messageSender: message.from }
-        }).catch((e) => {
-          console.error(`Error while deleting message(${message.hash}) for chatroom(${contractID})`, e)
+      try {
+        const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+        if (primaryButtonSelected) {
+          await sbp('gi.actions/chatroom/deleteMessage', {
+            contractID,
+            data: { hash: msgHash, manifestCids, messageSender: message.from }
+          })
+
+          // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
+          // it needs to be updated to the second most recent one.
+          if (isDeletingLastMsg &&
+            this.currentChatRoomReadUntil?.messageHash === msgHash &&
+            secondLastMsg) {
+            this.updateReadUntilMessageHash({
+              messageHash: secondLastMsg.hash,
+              createdHeight: secondLastMsg.height,
+              forceUpdate: true
+            })
+          }
+        }
+      } catch (e) {
+        console.error(`Error while deleting message(${msgHash}) for chatroom(${contractID})`, e)
+
+        sbp('gi.ui/prompt', {
+          heading: L('Error while deleting a message'),
+          question: L('Error details: {reportError}', LError(e)),
+          primaryButton: L('Close')
         })
       }
     },
@@ -903,7 +934,7 @@ export default ({
         Vue.set(this.messageState, 'contract', state)
       }
     },
-    scrollToIntialPosition () {
+    scrollToInitialPosition () {
       const hashTo = this.ephemeral.initialScroll.hash
       if (hashTo) {
         const scrollingToSpecificMessage = this.$route.query?.mhash === hashTo
@@ -931,35 +962,94 @@ export default ({
       this.ephemeral.startedUnreadMessageHash = null
       if (this.currentChatRoomReadUntil) {
         const index = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
         if (index >= 0) {
-          // NOTE: When the user switches channel before the message is not fully processed,
-          //       (in other words, until this.variant(msg) === 'sent')
-          //       the chatroomReadUntil position would not be saved correctly
-          //       because the pending messages could not be saved in state.
-          //       Considering those such cases, we shoud set 'isNew' position for the messages
-          //       only whose sender is not ourselves.
-          for (let i = index; i < this.messages.length; i++) {
-            const message = this.messages[i]
-            if (!this.isMsgSender(message.from)) {
-              this.ephemeral.startedUnreadMessageHash = message.hash
-              break
-            }
-          }
+          this.ephemeral.startedUnreadMessageHash = this.messages[index].hash
         }
       }
     },
-    updateReadUntilMessageHash ({ messageHash, createdHeight }) {
+    updateReadUntilMessageHash ({
+      messageHash,
+      createdHeight,
+      // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
+      // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
+      forceUpdate = false
+    }) {
+      if (this.ephemeral.messageHashToMarkUnread) {
+        // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
+        // So if user has used this functionality at least once in the current chatroom,
+        // the chatroom should stop auto-updating the 'readUntil' data in various situations (eg. while scrolling),
+        // So that the message that has been marked unread is kept until user leaves and re-enter the chatroom in the future.
+        return
+      }
+
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
-        if (this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
-          // NOTE: skip adding useless invocations in KV_QUEUE queue
-          return
-        }
+        // NOTE: skip adding useless invocations in KV_QUEUE queue.
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
+
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
-          contractID: chatRoomID, messageHash, createdHeight
+          contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
           console.error('[ChatMain.vue] Error setting read until', e)
         })
+      }
+    },
+    async markAsUnread ({ messageHash, createdHeight }) {
+      const chatRoomID = this.ephemeral.renderingChatRoomId
+      if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
+
+      const index = this.messages.findIndex(msg => msg.hash === messageHash)
+      const isFirstMessage = index === 0
+      const targetMsg = isFirstMessage ? this.messages[index] : this.messages[index - 1]
+
+      const getUpdatedUnreadMessages = () => {
+        // This method filters the messages to store in 'unreadMessages' property (eg. messages that mentions me or contains '@all'),
+        // which are reflected as the unread-count badge in the UI.
+        const isInDM = this.isGroupDirectMessage(this.ephemeral.renderingChatRoomId)
+        const mentions = makeMentionFromUserID(this.ourIdentityContractId)
+        const messageMentionsMe = msg => {
+          return msg.type === MESSAGE_TYPES.TEXT &&
+            msg.text &&
+            (msg.text.includes(mentions.me) || msg.text.includes(mentions.all))
+        }
+
+        return this.messages.slice(index)
+          .filter(msg => {
+            if (this.isMsgSender(msg.from)) { return false }
+
+            return isInDM ||
+              [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(msg.type) ||
+              messageMentionsMe(msg)
+          }).map(msg => ({ messageHash: msg.hash, createdHeight: msg.height }))
+      }
+
+      try {
+        this.ephemeral.messageHashToMarkUnread = targetMsg.hash
+        await sbp('gi.actions/identity/kv/markAsUnread', {
+          contractID: chatRoomID,
+          messageHash: targetMsg.hash,
+          // NOTE: 'createdHeight' field stores the 'msg.height' value of the previous message of the target message and
+          //       then later used in the UI to determine on which message to display 'is-new' UI Element [1].
+          //       But in the case where the target is the first message of the chatroom, meaning there is no previous message,
+          //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
+          createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
+          // When marked as unread, all the messages after the target message are stored in 'unreadMessages' property.
+          unreadMessages: getUpdatedUnreadMessages()
+        })
+      } catch (e) {
+        console.error('[ChatMain.vue] Error while marking message unread', e)
+        this.ephemeral.messageHashToMarkUnread = null
+      }
+    },
+    markUnreadPostActions () {
+      this.ephemeral.startedUnreadMessageHash = null
+      if (this.currentChatRoomReadUntil) {
+        const foundIndex = this.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
+        if (foundIndex >= 0) {
+          this.ephemeral.startedUnreadMessageHash = this.messages[foundIndex].hash
+        }
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
@@ -1048,12 +1138,13 @@ export default ({
 
           this.latestEvents.push(serializedMessage)
 
-          if (this.ephemeral.scrolledDistance < 50) {
+          // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
+          if (this.ephemeral.scrollableDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (isScrollable) {
-                // Auto-scroll to the bottom when a new message is added
+                // Scroll-query to the latest message.
                 this.updateScroll()
               } else {
                 // If there are any temporary messages that do not exist in the
@@ -1068,6 +1159,17 @@ export default ({
               }
             }
           }
+
+          if (addedOrDeleted !== 'NONE' && this.ephemeral.messageHashToMarkUnread) {
+            // If user has used 'Mark unread' but then messages are either added or deleted,
+            // 'unreadMessages' data in the store should be updated accordingly.
+            const action = addedOrDeleted === 'ADDED' ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
+            sbp(`gi.actions/identity/kv/${action}`, {
+              contractID: this.ephemeral.renderingChatRoomId,
+              messageHash: value.data.hash,
+              createdHeight: value.data.height
+            })
+          }
         })
       })
     },
@@ -1075,7 +1177,7 @@ export default ({
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
 
-      if (this.ephemeral.scrolledDistance < 40) {
+      if (this.ephemeral.scrollableDistance < 40) {
         // NOTE: 40px is the minimum height of a message
         //       even though user scrolled up, if he scrolled less than 40px (one message)
         //       should ignore the scroll position, and scroll to the bottom
@@ -1141,7 +1243,7 @@ export default ({
           // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
           // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
           // and calling clearTimeout() at the start of infiniteHandler().
-          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToIntialPosition, 150)
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToInitialPosition, 150)
         }
       })
     },
@@ -1165,8 +1267,35 @@ export default ({
       if (this.dndState.isActive) {
         this.dndState.isActive = false
 
-        e?.dataTransfer.files?.length &&
-          this.$refs.sendArea.fileAttachmentHandler(e?.dataTransfer.files, true)
+        const items = e.dataTransfer.items
+
+        if (items?.length) {
+          // 'drag-end' event of the browsers detects files as well as folders, and we only want
+          // files. The kind field and the getAsFile() methods are not helpful at telling them
+          // apart, as both will work as a 'File'. The only quick and reliable way to detect files
+          // is using webkitGetAsEntry.
+          // (Reference: https://developer.mozilla.org/en-US/docs/Web/API/DataTransferItem/webkitGetAsEntry)
+          const detectedFiles = []
+
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            const entry = item.getAsEntry?.() || item.webkitGetAsEntry?.()
+
+            if (entry) {
+              entry.isFile && detectedFiles.push(item.getAsFile())
+            } else {
+              // NOTE: if an old browser that does not support webkitGetAsEntry (eg. Internet Explorers), this fallback might accept a directory.
+              const file = item.getAsFile()
+
+              if (file && file.type !== '') {
+                detectedFiles.push(file)
+              }
+            }
+          }
+
+          detectedFiles.length &&
+            this.$refs.sendArea.fileAttachmentHandler(detectedFiles, true)
+        }
       }
     },
     processChatroomSwitch: debounce(async function () {
@@ -1207,7 +1336,10 @@ export default ({
   },
   provide () {
     return {
-      chatMainConfig: this.config
+      chatMainConfig: this.config,
+      chatMainUtils: {
+        markAsUnread: this.markAsUnread
+      }
     }
   },
   watch: {
@@ -1228,10 +1360,17 @@ export default ({
 
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
-        this.ephemeral.scrolledDistance = 0
+        this.ephemeral.scrollableDistance = 0
+        this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
+      }
+    },
+    'currentChatRoomReadUntil' (newReadUntil) {
+      const msgHash = newReadUntil?.messageHash
+      if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
+        this.$nextTick(this.markUnreadPostActions)
       }
     }
   }

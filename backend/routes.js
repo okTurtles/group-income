@@ -16,6 +16,18 @@ import { blake32Hash } from '../shared/functions.js'
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
+// Regexes validated as safe with <https://devina.io/redos-checker>
+const CID_REGEX = /^z[1-9A-HJ-NP-Za-km-z]{8,72}$/
+// eslint-disable-next-line no-control-regex
+const KV_KEY_REGEX = /^(?!_private)[^\x00]{1,256}$/
+// Rules from validateUsername:
+//   - Length: 1-80
+//   - Can't start or end with _ or -
+//   - No two consecutive - or _
+//   - Allowed characters: lowercase letters, numbers, underscore and dashes
+const NAME_REGEX = /^(?![_-])((?!([_-])\2)[a-z\d_-]){1,80}(?<![_-])$/
+const POSITIVE_INTEGER_REGEX = /^\d{1,16}$/
+
 const FILE_UPLOAD_MAX_BYTES = parseInt(process.env.FILE_UPLOAD_MAX_BYTES) || 30 * MEGABYTE
 const SIGNUP_LIMIT_MIN = parseInt(process.env.SIGNUP_LIMIT_MIN) || 2
 const SIGNUP_LIMIT_HOUR = parseInt(process.env.SIGNUP_LIMIT_HOUR) || 10
@@ -114,7 +126,15 @@ route.POST('/event', {
     strategy: 'chel-shelter',
     mode: 'optional'
   },
-  validate: { payload: Joi.string().required() }
+  validate: {
+    headers: Joi.object({
+      'shelter-namespace-registration': Joi.string().regex(NAME_REGEX)
+    }),
+    options: {
+      allowUnknown: true
+    },
+    payload: Joi.string().required()
+  }
 }, async function (request, h) {
   // IMPORTANT: IT IS A REQUIREMENT THAT ANY PROXY SERVERS (E.G. nginx) IN FRONT OF US SET THE
   // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
@@ -171,7 +191,7 @@ route.POST('/event', {
         // `shelter-namespace-registration` header is present, proceed with also
         // registering a name for the new contract
         const name = request.headers['shelter-namespace-registration']
-        if (name && !name.startsWith('_private')) {
+        if (name) {
         // Name registation is enabled only for identity contracts
           const cheloniaState = sbp('chelonia/rootState')
           if (cheloniaState.contracts[deserializedHEAD.contractID]?.type === 'gi.contracts/identity') {
@@ -219,24 +239,27 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {}, async function (request, h) {
+route.GET('/eventsAfter/{contractID}/{since}/{limit?}', {
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      since: Joi.string().regex(POSITIVE_INTEGER_REGEX).required(),
+      limit: Joi.string().regex(POSITIVE_INTEGER_REGEX)
+    }),
+    query: Joi.object({
+      keyOps: Joi.boolean()
+    })
+  }
+}, async function (request, h) {
   const { contractID, since, limit } = request.params
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
   try {
-    if (
-      !contractID ||
-      contractID.startsWith('_private') ||
-      !/^[0-9]+$/.test(since) ||
-      (limit && !/^[0-9]+$/.test(limit))
-    ) {
-      return Boom.badRequest()
-    }
     const parsed = maybeParseCID(contractID)
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
       return Boom.badRequest()
     }
 
-    const stream = await sbp('backend/db/streamEntriesAfter', contractID, since, limit)
+    const stream = await sbp('backend/db/streamEntriesAfter', contractID, Number(since), limit == null ? undefined : Number(limit), { keyOps: !!request.query['keyOps'] })
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -317,7 +340,13 @@ route.POST('/name', {
 })
 */
 
-route.GET('/name/{name}', {}, async function (request, h) {
+route.GET('/name/{name}', {
+  validate: {
+    params: Joi.object({
+      name: Joi.string().regex(NAME_REGEX).required()
+    })
+  }
+}, async function (request, h) {
   const { name } = request.params
   try {
     const lookupResult = await sbp('backend/db/lookupName', name)
@@ -331,14 +360,15 @@ route.GET('/name/{name}', {}, async function (request, h) {
 })
 
 route.GET('/latestHEADinfo/{contractID}', {
-  cache: { otherwise: 'no-store' }
+  cache: { otherwise: 'no-store' },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    })
+  }
 }, async function (request, h) {
   const { contractID } = request.params
   try {
-    if (
-      !contractID ||
-      contractID.startsWith('_private')
-    ) return Boom.badRequest()
     const parsed = maybeParseCID(contractID)
     if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) return Boom.badRequest()
 
@@ -539,12 +569,15 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {}, async function (request, h) {
+route.GET('/file/{hash}', {
+  validate: {
+    params: Joi.object({
+      hash: Joi.string().regex(CID_REGEX).required()
+    })
+  }
+}, async function (request, h) {
   const { hash } = request.params
 
-  if (!hash || hash.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(hash)
   if (!parsed) {
     return Boom.badRequest()
@@ -579,13 +612,15 @@ route.POST('/deleteFile/{hash}', {
     // the file owner to delete it
     strategies: ['chel-shelter', 'chel-bearer'],
     mode: 'required'
+  },
+  validate: {
+    params: Joi.object({
+      hash: Joi.string().regex(CID_REGEX).required()
+    })
   }
 }, async function (request, h) {
   const { hash } = request.params
   const strategy = request.auth.strategy
-  if (!hash || hash.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(hash)
   if (parsed?.code !== multicodes.SHELTER_FILE_MANIFEST) {
     return Boom.badRequest()
@@ -727,14 +762,16 @@ route.POST('/kv/{contractID}/{key}', {
     parse: false,
     maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
     timeout: 10 * SECOND // TODO: make this a configurable setting
+  },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      key: Joi.string().regex(KV_KEY_REGEX).required()
+    })
   }
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  // The key is mandatory and we don't allow NUL in it as it's used for indexing
-  if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.badRequest()
@@ -762,19 +799,19 @@ route.POST('/kv/{contractID}/{key}', {
   // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
   // To avoid this situation, A and B could use `If-Match`, which would have
   // given B a 412 response
-  if (request.headers['if-match']) {
-    if (!existing) {
-      return Boom.preconditionFailed()
-    }
-    const expectedEtag = request.headers['if-match']
-    if (expectedEtag === '*') {
-      // pass through
-    } else {
-      // "Quote" string (to match ETag format)
-      const cid = JSON.stringify(createCID(existing, multicodes.RAW))
-      if (!expectedEtag.split(',').map(v => v.trim()).includes(cid)) {
-        return Boom.preconditionFailed()
-      }
+  const expectedEtag = request.headers['if-match']
+  if (!expectedEtag) {
+    return Boom.badRequest('if-match is required')
+  }
+  // "Quote" string (to match ETag format)
+  const cid = existing ? createCID(existing, multicodes.RAW) : ''
+
+  if (expectedEtag === '*') {
+    // pass through
+  } else {
+    if (!expectedEtag.split(',').map(v => v.trim()).includes(`"${cid}"`)) {
+      // We need this `x-cid` because HAPI modifies Etags
+      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(412)
     }
   }
 
@@ -788,7 +825,7 @@ route.POST('/kv/{contractID}/{key}', {
     // just because it was created in the past, or if it's because someone
     // is reusing a previously good key that has since been revoked.
     if (contracts[contractID].height !== Number(serializedData.height)) {
-      return Boom.conflict()
+      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(409)
     }
     // Check that the signature is valid
     sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
@@ -814,13 +851,16 @@ route.GET('/kv/{contractID}/{key}', {
     strategies: ['chel-shelter'],
     mode: 'required'
   },
-  cache: { otherwise: 'no-store' }
+  cache: { otherwise: 'no-store' },
+  validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required(),
+      key: Joi.string().regex(KV_KEY_REGEX).required()
+    })
+  }
 }, async function (request, h) {
   const { contractID, key } = request.params
 
-  if (!key || key.includes('\x00') || key.startsWith('_private')) {
-    return Boom.badRequest()
-  }
   const parsed = maybeParseCID(contractID)
   if (parsed?.code !== multicodes.SHELTER_CONTRACT_DATA) {
     return Boom.badRequest()
@@ -835,7 +875,8 @@ route.GET('/kv/{contractID}/{key}', {
     return notFoundNoCache(h)
   }
 
-  return h.response(result).etag(createCID(result, multicodes.RAW))
+  const cid = createCID(result, multicodes.RAW)
+  return h.response(result).etag(cid).header('x-cid', `"${cid}"`)
 })
 
 // SPA routes
@@ -885,6 +926,9 @@ route.GET('/', {}, function (req, h) {
 
 route.POST('/zkpp/register/{name}', {
   validate: {
+    params: Joi.object({
+      name: Joi.string().regex(NAME_REGEX).required()
+    }),
     payload: Joi.alternatives([
       {
         // b is a hash of a random public key (`g^r`) with secret key `r`,
@@ -909,15 +953,20 @@ route.POST('/zkpp/register/{name}', {
     ])
   }
 }, async function (req, h) {
+  const lookupResult = await sbp('backend/db/lookupName', req.params['name'])
+  if (lookupResult) {
+    // If the username is already registered, abort
+    return Boom.conflict()
+  }
   try {
     if (req.payload['b']) {
-      const result = await registrationKey(req.params['name'], req.payload['b'])
+      const result = registrationKey(req.params['name'], req.payload['b'])
 
       if (result) {
         return result
       }
     } else {
-      const result = await register(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+      const result = register(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
 
       if (result) {
         return result
@@ -931,26 +980,31 @@ route.POST('/zkpp/register/{name}', {
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{name}/auth_hash', {
+route.GET('/zkpp/{contractID}/auth_hash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const challenge = await getChallenge(req.params['name'], req.query['b'])
+    const challenge = await getChallenge(req.params['contractID'], req.query['b'])
 
     return challenge || notFoundNoCache(h)
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/auth_hash: ' + e.message)
+    console.error(e, 'Error at GET /zkpp/{contractID}/auth_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{name}/contract_hash', {
+route.GET('/zkpp/{contractID}/contract_hash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     query: Joi.object({
       r: Joi.string().required(),
       s: Joi.string().required(),
@@ -959,23 +1013,25 @@ route.GET('/zkpp/{name}/contract_hash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const salt = await getContractSalt(req.params['name'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+    const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
       return salt
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at GET /zkpp/{name}/contract_hash: ' + e.message)
+    console.error(e, 'Error at GET /zkpp/{contractID}/contract_hash: ' + e.message)
   }
 
   return Boom.internal('internal error')
 })
 
-route.POST('/zkpp/{name}/updatePasswordHash', {
+route.POST('/zkpp/{contractID}/updatePasswordHash', {
   validate: {
+    params: Joi.object({
+      contractID: Joi.string().regex(CID_REGEX).required()
+    }),
     payload: Joi.object({
       r: Joi.string().required(),
       s: Joi.string().required(),
@@ -985,16 +1041,15 @@ route.POST('/zkpp/{name}/updatePasswordHash', {
     })
   }
 }, async function (req, h) {
-  if (req.params['name'].startsWith('_private')) return Boom.badRequest()
   try {
-    const result = await updateContractSalt(req.params['name'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+    const result = await updateContractSalt(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
       return result
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
-    console.error(e, 'Error at POST /zkpp/{name}/updatePasswordHash: ' + e.message)
+    console.error(e, 'Error at POST /zkpp/{contractID}/updatePasswordHash: ' + e.message)
   }
 
   return Boom.internal('internal error')

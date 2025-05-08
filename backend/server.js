@@ -9,7 +9,7 @@ import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
+import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -138,6 +138,12 @@ sbp('sbp/selectors/register', {
       // are multiple new contracts, all of them should be added), so a queue
       // is needed for the load & store operation.
       await sbp('backend/server/appendToContractIndex', contractID)
+    }
+    // If this was a key op, add it to a keyop index. To prevent the index from
+    // growing too large, the index is segmented for every KEYOP_SEGMENT_LENGTH
+    // height values
+    if (cheloniaState.contracts[contractID].previousKeyOp === deserializedHEAD.hash) {
+      await appendToIndexFactory(`_private_keyop_idx_${contractID}_${deserializedHEAD.head.height - deserializedHEAD.head.height % KEYOP_SEGMENT_LENGTH}`)(String(deserializedHEAD.head.height))
     }
   },
   'backend/server/appendToContractIndex': appendToIndexFactory('_private_cheloniaState_index'),
@@ -286,8 +292,8 @@ sbp('sbp/selectors/register', {
       }
       await sbp('chelonia.db/delete', resourcesKey)
 
-      // Next, loop through all the events in the contract and delete them,
-      // starting with the most recent ones.
+      // Next, loop through all the events, except the very first one,
+      // in the contract and delete them, starting with the most recent ones.
       // If the deletion process is interrupted, parts of the contract will
       // still be able to be synced, but won't be to write to it (due to
       // latestHEADinfo not being deleted).
@@ -297,8 +303,11 @@ sbp('sbp/selectors/register', {
           const eventKey = `_private_hidx=${cid}#${i}`
           const event = await sbp('chelonia.db/get', eventKey)
           if (event) {
-            await sbp('chelonia.db/delete', event)
+            await sbp('chelonia.db/delete', JSON.parse(event).hash)
             await sbp('chelonia.db/delete', eventKey)
+          }
+          if (i % KEYOP_SEGMENT_LENGTH === 0) {
+            await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_${i}`)
           }
         }
         await sbp('chelonia/db/deleteLatestHEADinfo', cid)
@@ -327,7 +336,10 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
+      // Delete the first event and its associated keys. These were not deleted
+      // in the loop above that deletes events one by one.
       await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)
+      await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_0`)
       await sbp('chelonia.db/set', cid, '')
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
@@ -484,8 +496,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
         // TODO: implement removing the missing subscriptionId from the index
         return
       }
-      const { subscription, channelIDs } = JSON.parse(subscriptionSerialized)
-      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscription, channelIDs)
+      const { settings, subscriptionInfo, channelIDs } = JSON.parse(subscriptionSerialized)
+      pushSubscriptions[subscriptionId] = subscriptionInfoWrapper(subscriptionId, subscriptionInfo, { channelIDs, settings })
       channelIDs.forEach((channelID) => {
         if (!subscribersByChannelID[channelID]) subscribersByChannelID[channelID] = new Set()
         subscribersByChannelID[channelID].add(pushSubscriptions[subscriptionId])
@@ -513,18 +525,31 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 })()
 
 // Recurring task to send messages to push clients (for periodic notifications)
-setInterval(() => {
-  const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-  // Notification text
-  const notification = JSON.stringify({ type: 'recurring' })
-  // Find push subscriptions that do _not_ have a WS open. This means clients
-  // that are 'asleep' and that might be woken up by the push event
-  Object.values(pubsub.pushSubscriptions || {})
-    .filter((pushSubscription: Object) => pushSubscription.sockets.size === 0)
-    .forEach((pushSubscription: Object) => {
-      postEvent(pushSubscription, notification).catch((e) => {
-        console.warn(e, 'Error sending recurring message to web push client', pushSubscription.id)
+;(() => {
+  const map = new WeakMap()
+
+  setInterval(() => {
+    const now = Date.now()
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    // Notification text
+    const notification = JSON.stringify({ type: 'recurring' })
+    // Find push subscriptions that do _not_ have a WS open. This means clients
+    // that are 'asleep' and that might be woken up by the push event
+    Object.values(pubsub.pushSubscriptions || {})
+      .filter((pushSubscription: Object) =>
+        !!pushSubscription.settings.heartbeatInterval &&
+        pushSubscription.sockets.size === 0
+      ).forEach((pushSubscription: Object) => {
+        const last = map.get(pushSubscription) ?? Number.NEGATIVE_INFINITY
+        // If we've recently sent a recurring notification, skip it
+        if ((now - last) < pushSubscription.settings.heartbeatInterval) return
+
+        postEvent(pushSubscription, notification).then(() => {
+          map.set(pushSubscription, now)
+        }).catch((e) => {
+          console.warn(e, 'Error sending recurring message to web push client', pushSubscription.id)
+        })
       })
-    })
-// Repeat every 12 hours
-}, 12 * 60 * 60 * 1000)
+    // Repeat every 1 hour
+  }, 1 * 60 * 60 * 1000)
+})()
