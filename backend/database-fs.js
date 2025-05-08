@@ -60,7 +60,7 @@ export default class FsBackend extends DatabaseBackend implements IDatabaseBacke
   async init () {
     await mkdir(this.dataFolder, { mode: 0o750, recursive: true })
     if (process.env.SKIP_DB_FS_CASE_SENSITIVITY_CHECK === undefined) {
-      await testCaseSensitivity()
+      await testCaseSensitivity(this)
     }
   }
 
