@@ -1,5 +1,5 @@
 export interface IDatabaseBackend {
-  init (options: Object): Promise<void>;
+  init (): Promise<void>;
   clear (): Promise<void>;
   readData (key: string): Promise<Buffer | string | void>;
   writeData (key: string, value: Buffer | string): Promise<void>;

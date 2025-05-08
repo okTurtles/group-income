@@ -23,6 +23,11 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
   backends: { [string]: DatabaseBackend }
   config: Config
 
+  constructor (options: Object = {}) {
+    super()
+    this.config = options.config ?? null
+  }
+
   lookupBackend (key: string): Object {
     const { backends, config } = this
     const keyPrefixes = Object.keys(config)
@@ -66,9 +71,9 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
     return errors
   }
 
-  async init (options: Object = {}): Promise<void> {
-    // Init config
-    this.config = await this.readConfig()
+  async init (): Promise<void> {
+    // Init config if not done yet.
+    if (!this.config) this.config = await this.readConfig()
     const errors = this.validateConfig(this.config)
     if (errors.length) {
       // $FlowFixMe[extra-arg]

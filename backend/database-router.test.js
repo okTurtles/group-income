@@ -4,7 +4,8 @@ import { cloneDeep, omit } from 'turtledash'
 import { describe, it } from 'node:test'
 
 const validConfig = {
-  'abc': {
+  // CID for shelter-contract-text.
+  '\x51\x1e\x01': {
     name: 'sqlite',
     options: {
       dirname: './data'
