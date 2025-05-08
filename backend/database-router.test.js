@@ -2,7 +2,6 @@ import assert from 'node:assert'
 import crypto from 'node:crypto'
 import RouterBackend from './database-router.js'
 import { cloneDeep, omit } from 'turtledash'
-import { describe, it } from 'node:test'
 
 // CID for shelter-contract-text.
 const CID = '\x51\x1e\x01'
@@ -13,14 +12,14 @@ const validConfig = {
   [CID]: {
     name: 'sqlite',
     options: {
-      dirname: './test/data',
+      dirname: './test/temp',
       filename: 'sqlite.db'
     }
   },
   '*': {
     name: 'fs',
     options: {
-      dirname: './test/data'
+      dirname: './test/temp'
     }
   }
 }
@@ -47,27 +46,31 @@ describe('DatabaseRouter::validateConfig', () => {
   })
 })
 
-describe('DatabaseRouter::lookupBackend', async () => {
-  await db.init()
-  const { backends, config } = db
+describe('DatabaseRouter::lookupBackend', () => {
+  before('initialization', async function () {
+    await db.init()
+  })
+  after('temp storage clear', async function () {
+    await db.clear()
+  })
 
   it('should find the right backend for keys starting with configured prefixes', () => {
-    for (const keyPrefix of Object.keys(config)) {
+    for (const keyPrefix of Object.keys(db.config)) {
       if (keyPrefix === '*') continue
       const key = randomKeyWithPrefix(keyPrefix)
 
       const actual = db.lookupBackend(key)
-      const expected = backends[keyPrefix]
+      const expected = db.backends[keyPrefix]
       assert.equal(actual, expected)
     }
   })
 
   it('should find the right backend for keys equal to configured prefixes', () => {
-    for (const keyPrefix of Object.keys(config)) {
+    for (const keyPrefix of Object.keys(db.config)) {
       const key = keyPrefix
 
       const actual = db.lookupBackend(key)
-      const expected = backends[keyPrefix]
+      const expected = db.backends[keyPrefix]
       assert.equal(actual, expected)
     }
   })
@@ -76,7 +79,7 @@ describe('DatabaseRouter::lookupBackend', async () => {
     const key = 'foo'
 
     const actual = db.lookupBackend(key)
-    const expected = backends['*']
+    const expected = db.backends['*']
     assert.equal(actual, expected)
   })
 })
