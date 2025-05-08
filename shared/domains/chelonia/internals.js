@@ -870,7 +870,9 @@ export default (sbp('sbp/selectors/register', {
                     console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e.message}`,
                       e)
                   } else {
-                    logEvtError(message, `OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
+                    // Using console.error instead of logEvtError because this
+                    // is a side-effect and not relevant for outgoing messages
+                    console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
                       e)
                   }
                 }
@@ -946,10 +948,14 @@ export default (sbp('sbp/selectors/register', {
                   }),
                   { force: true, resync: true }
                 ).catch(e => {
-                  logEvtError(message, '[chelonia] Error resyncing contracts with foreign key references after key rotation', e)
+                  // Using console.error instead of logEvtError because this
+                  // is a side-effect and not relevant for outgoing messages
+                  console.error('[chelonia] Error resyncing contracts with foreign key references after key rotation', e)
                 })
               }).catch((e) => {
-                logEvtError(message, `[chelonia] Error during sync for ${v.contractID} during OP_KEY_SHARE for ${contractID}`)
+                // Using console.error instead of logEvtError because this
+                // is a side-effect and not relevant for outgoing messages
+                console.error(`[chelonia] Error during sync for ${v.contractID} during OP_KEY_SHARE for ${contractID}`)
                 if (v.contractID === contractID) {
                   throw e
                 }
@@ -973,7 +979,9 @@ export default (sbp('sbp/selectors/register', {
               sbp('chelonia/private/queueEvent', contractID, () => {
                 sbp('okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID, sharedWithContractID: contractID, signingKeyId, get signingKeyName () { return state._vm?.authorizedKeys?.[signingKeyId]?.name } })
               }).catch(e => {
-                logEvtError(message, `[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
+                // Using console.error instead of logEvtError because this
+                // is a side-effect and not relevant for outgoing messages
+                console.error(`[chelonia] Error while emitting the CONTRACT_HAS_RECEIVED_KEYS event for ${contractID}`, e)
               })
             })
         })
@@ -1149,12 +1157,16 @@ export default (sbp('sbp/selectors/register', {
                     // reason to remain subscribed to this contract. In this
                     // case, attempt to release it.
                     sbp('chelonia/contract/release', foreignContract, { try: true }).catch(e => {
-                      logEvtError(message, `[chelonia] Error at OP_KEY_DEL internalSideEffectStack while attempting to release foreign contract ${foreignContract}`, e)
+                      // Using console.error instead of logEvtError because this
+                      // is a side-effect and not relevant for outgoing messages
+                      console.error(`[chelonia] Error at OP_KEY_DEL internalSideEffectStack while attempting to release foreign contract ${foreignContract}`, e)
                     })
                   }
                 }
               }).catch((e) => {
-                logEvtError(message, 'Error stopping watching events after removing key', { contractID, foreignContract, foreignKeyName, fkUrl })
+                // Using console.error instead of logEvtError because this
+                // is a side-effect and not relevant for outgoing messages
+                console.error('Error stopping watching events after removing key', { contractID, foreignContract, foreignKeyName, fkUrl })
               })
             })
 

@@ -392,7 +392,9 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
 
             this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
           }).catch((e) => {
-            logEvtError(msg, 'Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
+            // Using console.error instead of logEvtError because this
+            // is a side-effect and not relevant for outgoing messages
+            console.error('Error while setting or updating pendingKeyRequests', { contractID, keyRequestContractID, reference }, e)
           })
         })
       }
