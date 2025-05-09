@@ -13,6 +13,9 @@ key.pub.json
 .eslintcache
 .stylelintcache
 
+# Configs
+/database-router-config.json
+
 # Database
 /sqlite.db
 /groupincome.db
