@@ -55,7 +55,9 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
   }
 
   async writeData (key: string, value: Buffer | string) {
-    await this.writeStatement.run(key, value)
+    // Explicit conversion to Buffer seems to be needed for Deno compatibility
+    // (otherwise, the key appears to be dropped)
+    await this.writeStatement.run(key, Buffer.isBuffer(value) ? value : Buffer.from(value))
   }
 
   async deleteData (key: string) {

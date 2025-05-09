@@ -769,7 +769,7 @@ route.POST('/kv/{contractID}/{key}', {
       key: Joi.string().regex(KV_KEY_REGEX).required()
     })
   }
-}, async function (request, h) {
+}, function (request, h) {
   const { contractID, key } = request.params
 
   const parsed = maybeParseCID(contractID)
@@ -781,69 +781,73 @@ route.POST('/kv/{contractID}/{key}', {
     return Boom.unauthorized(null, 'shelter')
   }
 
-  const existing = await sbp('chelonia.db/get', `_private_kv_${contractID}_${key}`)
+  // Use a queue to prevent race conditions (for example, writing to a contract
+  // that's being deleeted or updated)
+  return sbp('chelonia/queueInvocation', contractID, async () => {
+    const existing = await sbp('chelonia.db/get', `_private_kv_${contractID}_${key}`)
 
-  // Some protection against accidental overwriting by implementing the if-match
-  // header
-  // If-Match contains a list of ETags or '*'
-  // If `If-Match` contains a known ETag, allow the request through, otherwise
-  // return 412 Precondition Failed.
-  // This is useful to clients to avoid accidentally overwriting existing data
-  // For example, client A and client B want to write to key 'K', which contains
-  // an array. Let's say that the array is originally empty (`[]`) and A and B
-  // want to append `A` and `B` to it, respectively. If both write at the same
-  // time, the following could happen:
-  // t = 0: A reads `K`, gets `[]`
-  // t = 1: B reads `K`, gets `[]`
-  // t = 2: A writes `['A']` to `K`
-  // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
-  // To avoid this situation, A and B could use `If-Match`, which would have
-  // given B a 412 response
-  const expectedEtag = request.headers['if-match']
-  if (!expectedEtag) {
-    return Boom.badRequest('if-match is required')
-  }
-  // "Quote" string (to match ETag format)
-  const cid = existing ? createCID(existing, multicodes.RAW) : ''
+    // Some protection against accidental overwriting by implementing the if-match
+    // header
+    // If-Match contains a list of ETags or '*'
+    // If `If-Match` contains a known ETag, allow the request through, otherwise
+    // return 412 Precondition Failed.
+    // This is useful to clients to avoid accidentally overwriting existing data
+    // For example, client A and client B want to write to key 'K', which contains
+    // an array. Let's say that the array is originally empty (`[]`) and A and B
+    // want to append `A` and `B` to it, respectively. If both write at the same
+    // time, the following could happen:
+    // t = 0: A reads `K`, gets `[]`
+    // t = 1: B reads `K`, gets `[]`
+    // t = 2: A writes `['A']` to `K`
+    // t = 3: B writes `['B']` to `K` <-- ERROR: B should have written `['A', 'B']`
+    // To avoid this situation, A and B could use `If-Match`, which would have
+    // given B a 412 response
+    const expectedEtag = request.headers['if-match']
+    if (!expectedEtag) {
+      return Boom.badRequest('if-match is required')
+    }
+    // "Quote" string (to match ETag format)
+    const cid = existing ? createCID(existing, multicodes.RAW) : ''
 
-  if (expectedEtag === '*') {
+    if (expectedEtag === '*') {
     // pass through
-  } else {
-    if (!expectedEtag.split(',').map(v => v.trim()).includes(`"${cid}"`)) {
+    } else {
+      if (!expectedEtag.split(',').map(v => v.trim()).includes(`"${cid}"`)) {
       // We need this `x-cid` because HAPI modifies Etags
-      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(412)
+        return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(412)
+      }
     }
-  }
 
-  try {
-    const serializedData = JSON.parse(request.payload.toString())
-    const { contracts } = sbp('chelonia/rootState')
-    // Check that the height is the latest value. Not only should the height be
-    // the latest, but also enforcing this lets us check that signatures are
-    // using the latest (cryptograhpic) keys. Since the KV is detached from the
-    // contract, in isolation it's impossible to know if an old signature is
-    // just because it was created in the past, or if it's because someone
-    // is reusing a previously good key that has since been revoked.
-    if (contracts[contractID].height !== Number(serializedData.height)) {
-      return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(409)
+    try {
+      const serializedData = JSON.parse(request.payload.toString())
+      const { contracts } = sbp('chelonia/rootState')
+      // Check that the height is the latest value. Not only should the height be
+      // the latest, but also enforcing this lets us check that signatures are
+      // using the latest (cryptograhpic) keys. Since the KV is detached from the
+      // contract, in isolation it's impossible to know if an old signature is
+      // just because it was created in the past, or if it's because someone
+      // is reusing a previously good key that has since been revoked.
+      if (contracts[contractID].height !== Number(serializedData.height)) {
+        return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(409)
+      }
+      // Check that the signature is valid
+      sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
+        contractID,
+        serializedData,
+        meta: key
+      })
+    } catch (e) {
+      return Boom.badData()
     }
-    // Check that the signature is valid
-    sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
-      contractID,
-      serializedData,
-      meta: key
-    })
-  } catch (e) {
-    return Boom.badData()
-  }
 
-  const existingSize = existing ? Buffer.from(existing).byteLength : 0
-  await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
-  await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
-  await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
-  await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
+    const existingSize = existing ? Buffer.from(existing).byteLength : 0
+    await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
+    await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
+    await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
+    await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
 
-  return h.response().code(204)
+    return h.response().code(204)
+  })
 })
 
 route.GET('/kv/{contractID}/{key}', {
