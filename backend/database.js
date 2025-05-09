@@ -22,7 +22,9 @@ const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 const dbRootPath = process.env.DB_PATH || './data'
 const options = {
   fs: {
-    dirname: dbRootPath
+    depth: 4,
+    dirname: dbRootPath,
+    keyChunkLength: 2
   },
   sqlite: {
     dirname: dbRootPath,
@@ -227,9 +229,10 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia.db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readData, writeData, deleteData } = await import(`./database-${persistence}.js`)
-
-    await initStorage(options[persistence])
+    const Ctor = (await import(`./database-${persistence}.js`)).default
+    // Destructuring is safe because these methods have been bound using rebindMethods().
+    const { init, readData, writeData, deleteData } = new Ctor(options[persistence])
+    await init()
 
     // https://github.com/isaacs/node-lru-cache#usage
     const cache = new LRU({
