@@ -1,3 +1,4 @@
+/* eslint-env mocha */
 import assert from 'node:assert'
 import crypto from 'node:crypto'
 import RouterBackend from './database-router.js'

@@ -23,9 +23,9 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
   backends: { [string]: DatabaseBackend }
   config: Config
 
-  constructor (options: Object = {}) {
+  constructor (options: { config?: Config } = {}) {
     super()
-    this.config = options.config ?? null
+    if (options.config) this.config = options.config
   }
 
   lookupBackend (key: string): Object {
