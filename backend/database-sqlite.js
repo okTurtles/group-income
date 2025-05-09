@@ -2,89 +2,63 @@
 
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import sqlite3 from 'sqlite3'
+import Database from 'better-sqlite3'
+import DatabaseBackend from './DatabaseBackend.js'
+import type { IDatabaseBackend } from './DatabaseBackend.js'
 
-let db: any = null
-let readStatement: any = null
-let writeStatement: any = null
-let deleteStatement: any = null
+export default class SqliteBackend extends DatabaseBackend implements IDatabaseBackend {
+  dataFolder: string = ''
+  db: any = null
+  filename: string = ''
+  readStatement: Object = null
+  writeStatement: Object = null
+  deleteStatement: Object = null
 
-const run = (sql, args) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, args, (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
+  constructor (options: Object = {}) {
+    super()
+    const { dirname, filename } = options
+    this.dataFolder = resolve(dirname)
+    this.filename = filename
+  }
 
-export async function initStorage (options: Object = {}): Promise<void> {
-  const { dirname, filename } = options
-  const dataFolder = resolve(dirname)
+  run (sql: string) {
+    this.db.prepare(sql).run()
+  }
 
-  await mkdir(dataFolder, { mode: 0o750, recursive: true })
+  async init () {
+    const { dataFolder, filename } = this
 
-  await new Promise((resolve, reject) => {
-    if (db) {
-      reject(new Error(`The ${filename} SQLite database is already open.`))
+    await mkdir(dataFolder, { mode: 0o750, recursive: true })
+
+    if (this.db) {
+      throw new Error(`The ${filename} SQLite database is already open.`)
     }
-    db = new sqlite3.Database(join(dataFolder, filename), (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-  await run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
-  console.info(`Connected to the ${filename} SQLite database.`)
-  readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
-  writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
-  deleteStatement = db.prepare('DELETE FROM Data WHERE key = ?')
-}
+    this.db = new Database(join(dataFolder, filename))
+    this.run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
+    console.info(`Connected to the ${filename} SQLite database.`)
+    this.readStatement = this.db.prepare('SELECT value FROM Data WHERE key = ?')
+    this.writeStatement = this.db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
+    this.deleteStatement = this.db.prepare('DELETE FROM Data WHERE key = ?')
+  }
 
-// Useful in test hooks.
-export function clear (): Promise<void> {
-  return run('DELETE FROM Data')
-}
+  // Useful in test hooks.
+  async clear () {
+    await this.run('DELETE FROM Data')
+  }
 
-export function readData (key: string): Promise<Buffer | string | void> {
-  return new Promise((resolve, reject) => {
-    readStatement.get([key], (err, row) => {
-      if (err) {
-        reject(err)
-      } else {
-        // Note: sqlite remembers the type of every stored value, therefore we
-        // automatically get back the same JS value that has been inserted.
-        resolve(row?.value)
-      }
-    })
-  })
-}
+  async readData (key: string): Promise<Buffer | string | void> {
+    const row = this.readStatement.get(key)
+    // 'row' will be undefined if the key was not found.
+    // Note: sqlite remembers the type of every stored value, therefore we
+    // automatically get back the same JS value that has been inserted.
+    return await row?.value
+  }
 
-export function writeData (key: string, value: Buffer | string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    writeStatement.run([key, value], (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
-}
+  async writeData (key: string, value: Buffer | string) {
+    await this.writeStatement.run(key, value)
+  }
 
-export function deleteData (key: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    deleteStatement.run([key], (err) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve()
-      }
-    })
-  })
+  async deleteData (key: string) {
+    await this.deleteStatement.run(key)
+  }
 }
