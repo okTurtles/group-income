@@ -274,6 +274,7 @@ module.exports = (grunt) => {
       splitting: false,
       inject: [
         './scripts/esbuild-shims/Buffer.js',
+        './scripts/esbuild-shims/dirname.js',
         './scripts/esbuild-shims/global.js',
         './scripts/esbuild-shims/process.js',
         './scripts/esbuild-shims/require.js',

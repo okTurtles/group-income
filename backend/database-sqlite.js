@@ -2,7 +2,7 @@
 
 import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
-import Database from 'better-sqlite3'
+import { DatabaseSync } from 'node:sqlite'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
 
@@ -33,7 +33,7 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
     if (this.db) {
       throw new Error(`The ${filename} SQLite database is already open.`)
     }
-    this.db = new Database(join(dataFolder, filename))
+    this.db = new DatabaseSync(join(dataFolder, filename))
     this.run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
     console.info(`Connected to the ${filename} SQLite database.`)
     this.readStatement = this.db.prepare('SELECT value FROM Data WHERE key = ?')

@@ -51,7 +51,7 @@ declare module 'node:fs/promises' { declare module.exports: any }
 declare module 'node:stream' { declare module.exports: any }
 declare module 'node:path' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
-declare module 'better-sqlite3' { declare module.exports: any }
+declare module 'node:sqlite' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-clickaway' { declare module.exports: any }
