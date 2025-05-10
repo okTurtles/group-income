@@ -86,6 +86,10 @@ $colors_map: (
     linear-gradient(110deg, rgba(255, 255, 255, 0.1) 8%, rgba(255, 255, 255, 0.14) 29%, rgba(255, 255, 255, 0.1) 47%),
   ),
 
+  // misc
+  pill-text-color: (rgba(0, 0, 0, 0.5), #1c1c1c),
+  helper: (#9747FF, #9747FF),
+
   // design-system
   ds-menu-border-color: (#E5ECF6, rgb(65, 65, 65))
 );

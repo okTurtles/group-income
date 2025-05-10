@@ -29,7 +29,19 @@ content-outlet(title='Typography')
   .content-unit
     h4.unit-name Pills
 
-    .c-container TODO...
+    table-template
+      table-row(code='.pill.is-neutral')
+        span.pill.is-neutral neutral
+      table-row(code='.pill.is-danger')
+        span.pill.is-danger danger
+      table-row(code='.pill.is-warning')
+        span.pill.is-warning warning
+      table-row(code='.pill.is-purple-1')
+        span.pill.is-purple-1 purple-1
+      table-row(code='.pill.is-blue-1')
+        span.pill.is-blue-1 blue-1
+      table-row(code='.pill.is-green-1')
+        span.pill.is-green-1 green-1
 </template>
 
 <script>
