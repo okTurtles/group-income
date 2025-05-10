@@ -78,9 +78,20 @@ $track-width: $thumb-side * 2 + 0.125rem;
     }
   }
 
+  &.is-disabled {
+    opacity: 0.425;
+    pointer-events: none;
+  }
+
   &:hover,
   &:focus {
     border-color: var(--toggle-switch-border-color_focus);
+  }
+}
+
+:root[data-theme="dark"] {
+  .switch-toggle.is-disabled {
+    opacity: 0.57;
   }
 }
 </style>

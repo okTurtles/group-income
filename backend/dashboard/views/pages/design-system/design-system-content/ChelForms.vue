@@ -11,6 +11,8 @@ content-outlet(title='Forms')
     table-template
       table-row(code='<toggle-switch />')
         toggle-switch(v-model='forms.switchToggle')
+      table-row(code='<toggle-switch :disabled="true" />')
+        toggle-switch(v-model='forms.switchToggle2' :disabled='true')
 </template>
 
 <script>
@@ -30,7 +32,8 @@ export default {
   data () {
     return {
       forms: {
-        switchToggle: false
+        switchToggle: false,
+        switchToggle2: true
       }
     }
   }
