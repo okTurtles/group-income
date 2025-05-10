@@ -1,13 +1,13 @@
 @use "../variables" as *;
-@use "sass:map";
+@use "sass:list";
 
 $pill_colors: (
-  purple-1: $secondary_purple_1,
-  blue-1: $secondary_blue_1,
-  green-1: $secondary_green_1,
-  warning: $warning,
-  danger: $danger,
-  neutral: $border
+  purple-1: ($secondary_purple_2, $primary_purple),
+  blue-1: ($secondary_blue_2, $primary_blue),
+  green-1: ($secondary_green_2, $primary_green),
+  warning: ($warning_1, $warning_bg),
+  danger: ($danger, $danger_bg),
+  neutral: ($text_0, $border)
 );
 
 .pill {
@@ -19,16 +19,30 @@ $pill_colors: (
   color: var(--pill-text-color);
   border-radius: $radius;
 
-  @each $name, $color_val in $pill_colors {
+  @each $name, $colors in $pill_colors {
+    $text: list.nth($colors, 1);
+    $bg: list.nth($colors, 2);
+
     &.is-#{$name} {
-      background-color: $color_val;
+      color: $text;
+      background-color: $bg;
     }
   }
 }
 
 :root[data-theme="dark"] {
-  .pill.is-neutral,
-  .pill.is-danger {
-    color: $text-0;
+  .pill {
+    &.is-purple-1 {
+      color: $secondary_purple_1;
+      background-color: rgba(229, 236, 246, 0.2);
+    }
+
+    &.is-blue-1 {
+      background-color: rgba(227, 245, 255, 0.2);
+    }
+
+    &.is-green-1 {
+      background-color: rgba(225, 247, 239, 0.2);
+    }
   }
 }
