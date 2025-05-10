@@ -226,6 +226,7 @@ export default ({
 
       try {
         const incomeDetailsType = this.form.incomeDetailsType
+
         await sbp('gi.actions/group/groupProfileUpdate', {
           contractID: this.$store.state.currentGroupId,
           data: {
