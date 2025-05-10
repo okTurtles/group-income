@@ -592,8 +592,9 @@ route.GET('/file/{hash}', {
 
   const type = cidLookupTable[parsed.code] || 'application/octet-stream'
 
+  // Coercion to Buffer as HAPI expects Buffer and not Uint8Array
   return h
-    .response(blobOrString)
+    .response(Buffer.from(blobOrString))
     .etag(hash)
     .header('Cache-Control', 'public,max-age=31536000,immutable')
     // CSP to disable everything -- this only affects direct navigation to the
