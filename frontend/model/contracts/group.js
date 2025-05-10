@@ -1090,9 +1090,9 @@ sbp('chelonia/defineContract', {
           updateCurrentDistribution({ contractID, meta, state, getters })
 
           const shouldResetPaymentStreaks =
-            // 1. When the user switches from 'pledger' to receiver
+            // 1. When the user switches from 'pledger' to receiver.
             (isChangingIncomeDetailsType && data.incomeDetailsType === 'incomeAmount') ||
-            // 2. The user is a 'pledger' but updates the pledge amount to 0
+            // 2. The user is a 'pledger' but updates the pledge amount to 0.
             (!isChangingIncomeDetailsType && data.incomeDetailsType === 'pledgeAmount' && data.pledgeAmount === 0)
 
           if (shouldResetPaymentStreaks) {
