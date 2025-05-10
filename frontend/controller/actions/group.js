@@ -401,7 +401,7 @@ export default (sbp('sbp/selectors/register', {
             removeEventHandler()
             removeLogoutHandler()
             // The event handler recursively calls this same selector
-            // A different path should be taken, since te event handler
+            // A different path should be taken, since the event handler
             // should be called after the key request has been answered
             // and processed
             sbp('gi.actions/group/join', params).catch((e) => {

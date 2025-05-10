@@ -381,7 +381,6 @@ async function startApp () {
             })
             await sbp('gi.app/identity/login', { identityContractID })
             removeHandler()
-            await sbp('chelonia/contract/wait', identityContractID)
           }
           this.ephemeral.ready = true
           this.removeLoadingAnimation()
