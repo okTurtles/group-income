@@ -433,6 +433,9 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
 
         // Handle the case where the existing entries are exactly the value
         if (existingEntries === value) {
+          // There's nothing left after removing `value` from `existingEntries`
+          // when `existingEntries` is equal to `value`, so set
+          // `existingEntries` to undefined and end the loop.
           existingEntries = undefined
           break
         }
