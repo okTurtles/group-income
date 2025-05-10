@@ -48,6 +48,13 @@ $colors_map: (
   radio-outer-border-color_active: (#1C1C1C, #b1e3ff),
   radio-inner-bg-color: (#1C1C1C, #b1e3ff),
 
+  // forms - toggle-switch
+  toggle-switch-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
+  toggle-switch-border-color_focus: (rgba(0, 0, 0, 0.4), rgb(65, 65, 65)),
+  toggle-switch-bg-color: (rgba(0, 0, 0, 0.4), #2a2a2a),
+  toggle-switch-bg-color_active: (#9747ff, #95A4FC),
+  toggle-switch-thumb-color: (#fff, #fff),
+
   // forms - dropdown
   dropdown-bg-color: (#FFFFFF, #1c1c1c),
   dropdown-active-bg-color: (#F7F9FB, #2a2a2a),
@@ -88,7 +95,7 @@ $colors_map: (
 
   // misc
   pill-text-color: (rgba(0, 0, 0, 0.5), #1c1c1c),
-  helper: (#9747FF, #9747FF),
+  helper: (#9747FF, #b1e3ff),
 
   // design-system
   ds-menu-border-color: (#E5ECF6, rgb(65, 65, 65))

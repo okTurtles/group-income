@@ -49,7 +49,7 @@ export default {
       letter-spacing: 1px;
       color: $text-0;
       padding-bottom: 1rem;
-      margin-bottom: 2.5rem;
+      margin-bottom: 1.75rem;
 
       &:has(+ .unit-description) {
         margin-bottom: 1rem;
@@ -73,7 +73,7 @@ export default {
       padding-left: 1.25rem;
       color: $text-1;
       font-size: 0.85rem;
-      margin-bottom: 2.5rem;
+      margin-bottom: 1.75rem;
 
       &::before {
         content: "->";

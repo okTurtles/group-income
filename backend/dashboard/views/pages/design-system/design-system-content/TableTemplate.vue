@@ -52,6 +52,7 @@ export default {
 
   tr {
     height: auto;
+    vertical-align: baseline;
   }
 
   .c-table-header__mobile {

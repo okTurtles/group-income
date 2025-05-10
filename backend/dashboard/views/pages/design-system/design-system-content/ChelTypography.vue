@@ -25,11 +25,13 @@ content-outlet(title='Typography')
         span.has-text-warning has-text-warning
       table-row(code='.has-family-poppins')
         span.has-family-poppins has-family-poppins
+      table-row(code='.link')
+        a.link https://groupincome.org/
 
   .content-unit
     h4.unit-name Pills
 
-    table-template
+    table-template.mt-0
       table-row(code='.pill.is-neutral')
         span.pill.is-neutral neutral
       table-row(code='.pill.is-danger')

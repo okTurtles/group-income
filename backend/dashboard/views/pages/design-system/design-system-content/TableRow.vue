@@ -1,7 +1,7 @@
 <template lang='pug'>
 tr.c-row
   td.c-td-code
-    span(v-if='code' v-safe-html='code')
+    span(v-if='code') {{ code }}
     slot(v-else name='code')
   td.c-td-demo
     slot
@@ -31,5 +31,10 @@ export default {
 .c-td-code {
   font-size: $size-5;
   color: var(--styled-input-label-color);
+  padding-right: 0.5rem;
+
+  @include from ($tablet) {
+    width: 360px;
+  }
 }
 </style>
