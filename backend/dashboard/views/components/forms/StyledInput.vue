@@ -1,5 +1,5 @@
 <template lang="pug">
-label.inputgroup
+label.inputgroup(:class='{ "is-disabled": disabled }')
   span.input-label(v-if='label') {{ label }}
 
   char-limit-indicator.c-char-len(
@@ -13,6 +13,7 @@ label.inputgroup
     type='text'
     :value='value'
     :placeholder='placeholder'
+    :disabled='disabled'
     :maxlength='max > 0 ? max : undefined'
     @input='onInput'
     @blur='$emit("blur")'
@@ -49,6 +50,11 @@ export default {
     max: {
       type: Number,
       required: false
+    },
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   computed: {

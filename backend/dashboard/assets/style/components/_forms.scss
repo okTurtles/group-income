@@ -55,6 +55,21 @@ form {
     color: var(--styled-input-label-color);
   }
 
+  &.is-disabled {
+    opacity: 0.525;
+    cursor: not-allowed;
+  }
+
+  &.is-error {
+    .input-label {
+      color: $danger;
+    }
+
+    .input:not(:focus) {
+      border-color: $danger;
+    }
+  }
+
   .input {
     display: block;
     height: 4.125rem;
@@ -71,6 +86,10 @@ form {
       border-color: $text_0 !important;
     }
 
+    &:disabled {
+      background-color: var(--styled-input-background-color_disabled);
+    }
+
     &.no-label {
       height: 2.875rem;
       padding: 0.75rem 1.25rem;
@@ -81,10 +100,6 @@ form {
       font-style: italic;
       color: var(--styled-input-placeholder-color);
     }
-  }
-
-  &.is-error .input:not(:focus) {
-    border-color: $danger;
   }
 }
 

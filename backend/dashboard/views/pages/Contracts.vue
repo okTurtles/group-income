@@ -82,7 +82,7 @@ export default {
     },
     typeToPillMap (type) {
       const classMap = {
-        'gi.contracts/group': 'is-neutral',
+        'gi.contracts/group': 'is-neautral',
         'gi.contracts/chatroom': 'is-purple-1',
         'gi.contracts/identity': 'is-warning'
       }

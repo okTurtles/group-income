@@ -32,8 +32,8 @@ content-outlet(title='Typography')
     h4.unit-name Pills
 
     table-template.mt-0
-      table-row(code='.pill.is-neutral')
-        span.pill.is-neutral neutral
+      table-row(code='.pill.is-neautral')
+        span.pill.is-neautral neutral
       table-row(code='.pill.is-danger')
         span.pill.is-danger danger
       table-row(code='.pill.is-warning')

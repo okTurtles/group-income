@@ -83,6 +83,10 @@ export default {
         top: 0;
         left: 0;
       }
+
+      .pill {
+        margin: 0 0.25rem;
+      }
     }
   }
 }
