@@ -103,11 +103,13 @@ sbp('sbp/selectors/register', {
   /**
    * Selector: 'worker/updateSizeSideEffects'
    * Handles incoming size update events for a specific resource.
-   * If the size update is relevant (key starts with _private_size_), it adds
-   * the CID to the temporary persistent index (if not already processed or
-   * pending full recalc) and updates the in-memory delta map (`updatedSizeMap`).
+   * It adds the CID to the temporary persistent index (if not already processed
+   * or pending full recalc) and updates the in-memory delta map (`updatedSizeMap`).
+   *
+   * IMPORTANT: This should only be called for keys where this is relevant,
+   * such as `_private_size_` keys.
    */
-  'worker/updateSizeSideEffects': async ({ resourceID, sizeKey, size }: { resourceID: string, sizeKey: string, size: number }) => {
+  'worker/updateSizeSideEffects': async ({ resourceID, size }: { resourceID: string, size: number }) => {
     // Ignore if the resource is already flagged for a full recalculation.
     // Its size will be fully computed in `computeSizeTask`.
     if (updatedSizeList.has(resourceID)) return
