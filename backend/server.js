@@ -417,6 +417,7 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_hidx=${cid}#0`)
       await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_0`)
       await sbp('chelonia.db/set', cid, '')
+      sbp('chelonia/private/removeImmediately', cid)
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
