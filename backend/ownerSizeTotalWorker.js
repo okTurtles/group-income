@@ -112,24 +112,21 @@ sbp('sbp/selectors/register', {
     // Its size will be fully computed in `computeSizeTask`.
     if (updatedSizeList.has(resourceID)) return
 
-    // Process only size updates relevant to ownership calculation.
-    if (sizeKey.startsWith('_private_size_')) {
-      const current = updatedSizeMap.get(resourceID)
-      if (current === undefined) {
-        // First delta update for this resourceID since the last delta task ran.
-        // Add it to the persistent temporary index to ensure it's processed
-        // even if the worker restarts.
-        try {
-          await addToTempIndex(resourceID)
-          // Store the initial delta size.
-          updatedSizeMap.set(resourceID, size)
-        } catch (e) {
-          console.error(`Error adding ${resourceID} to temp index:`, e)
-        }
-      } else {
-        // Accumulate subsequent delta updates in memory.
-        updatedSizeMap.set(resourceID, current + size)
+    const current = updatedSizeMap.get(resourceID)
+    if (current === undefined) {
+      // First delta update for this resourceID since the last delta task ran.
+      // Add it to the persistent temporary index to ensure it's processed
+      // even if the worker restarts.
+      try {
+        await addToTempIndex(resourceID)
+        // Store the initial delta size.
+        updatedSizeMap.set(resourceID, size)
+      } catch (e) {
+        console.error(`Error adding ${resourceID} to temp index:`, e)
       }
+    } else {
+      // Accumulate subsequent delta updates in memory.
+      updatedSizeMap.set(resourceID, current + size)
     }
   },
   /**

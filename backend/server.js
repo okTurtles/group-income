@@ -11,7 +11,7 @@ import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, removeFromIndexFactory, updateSize as updateSize_ } from './database.js'
+import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, removeFromIndexFactory, updateSize } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -130,12 +130,6 @@ hapi.ext({
 const appendToOrphanedNamesIndex = appendToIndexFactory('_private_orphaned_names_index')
 
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
-
-const updateSize = (resourceID: string, sizeKey: string, size: number) => {
-  return updateSize_(resourceID, sizeKey, size).then(() => {
-    return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, sizeKey, size })
-  })
-}
 
 sbp('sbp/selectors/register', {
   'backend/server/persistState': async function (deserializedHEAD: Object, entry: string) {
@@ -277,7 +271,9 @@ sbp('sbp/selectors/register', {
   'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
   'backend/server/updateSize': function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
-    return updateSize(resourceID, sizeKey, size)
+    return updateSize(resourceID, sizeKey, size).then(() => {
+      return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, sizeKey, size })
+    })
   },
   'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
     const sizeKey = `_private_contractFilesTotalSize_${resourceID}`
