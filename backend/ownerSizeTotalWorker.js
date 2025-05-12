@@ -220,13 +220,13 @@ sbp('sbp/selectors/register', {
 
     // Phase 2: For each owner, fetch all their resources and calculate the
     // total size.
-    await Promise.all(Array.from(ultimateOwners).map(async ([resourceID, contractIDs]) => {
+    await Promise.all(Array.from(ultimateOwners).map(async ([ownerID, contractIDs]) => {
       // Fetch direct and indirect resources associated with the ultimate owner
-      const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
-      const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
+      const resources = await sbp('chelonia.db/get', `_private_resources_${ownerID}`)
+      const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${ownerID}`) : undefined
       // Combine the owner itself, direct, and indirect resources into a single unique list.
       const allSubresources = Array.from(new Set([
-        resourceID,
+        ownerID,
         ...(resources ? resources.split('\x00') : []),
         ...(indirectResources ? indirectResources.split('\x00') : [])
       ]))
@@ -247,21 +247,29 @@ sbp('sbp/selectors/register', {
       // Use event queue for atomic update and cleanup for this specific owner.
       // This prevents race conditions if multiple updates target the same owner
       // concurrently (though less likely in the full recalc).
-      await sbp('okTurtles.eventQueue/queueEvent', `_private_ownerTotalSize_${resourceID}`, async () => {
+      await sbp('okTurtles.eventQueue/queueEvent', `_private_ownerTotalSize_${ownerID}`, async () => {
         // 1. Remove processed resources from the global lists/maps.
         allSubresources.forEach((id) => {
+          // Remove from full recalc list
           updatedSizeList.delete(id)
+          // If it's since received a delta update and added to updatedSizeMap,
+          // remove it from updatedSizeMap so that no delta computation happens
+          // (as we've just finished a full calculation)
           if (updatedSizeMap.delete(id)) {
             contractIDs.add(id)
           }
         })
 
         // 2. Update the total size in the database.
-        await sbp('chelonia.db/set', `_private_ownerTotalSize_${resourceID}`, totalSize.toString(10))
+        await sbp('chelonia.db/set', `_private_ownerTotalSize_${ownerID}`, totalSize.toString(10))
 
         // 3. Remove the recalculated CIDs from the persistent temporary index
         // (unless they've been readded due to deltas)
         await removeFromTempIndex(Array.from(contractIDs).filter(id => {
+          // Since updating ownerTotalSize, a new delta update could have been
+          // received, in which case we don't want to call removeFromTempIndex
+          // on this contract, as it's a new update that wasn't part of the
+          // full computation.
           return !updatedSizeMap.has(id)
         }))
       })
