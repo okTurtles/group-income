@@ -76,7 +76,7 @@ const lookupUltimateOwner = async (resourceID: string) => {
     // Found the ultimate owner
     if (!newOwnerID) break
     if (!depth) {
-      throw new Error('Exceeded max depth looking up owner for ' + contractID)
+      throw new Error('Exceeded max depth looking up owner for ' + resourceID)
     }
     ownerID = newOwnerID
   }
