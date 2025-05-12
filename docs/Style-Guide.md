@@ -31,7 +31,7 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 
 For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) and use [Selector-based Programming (SBP)](#sbp) instead. What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
 
-However, in some cases Classes are still very useful, especially when dealing with types. Anytime you want to create something that is essentially a type, but has behavior attached to it, then it's OK to use classes.
+However, in some cases Classes are still very useful, especially when dealing with types. Any time you want to create something that is essentially a type, but has behavior attached to it, then it's OK to use classes.
 
 Here are some examples of exceptions to the "avoid classes" rule:
 
