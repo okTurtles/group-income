@@ -272,9 +272,8 @@ sbp('sbp/selectors/register', {
   'backend/server/updateSize': function (resourceID: string, size: number) {
     const sizeKey = `_private_size_${resourceID}`
     return updateSize(resourceID, sizeKey, size).then(() => {
-      // Because this is relevant key for size accounting,
-      // call updateSizeSideEffects
-      return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, sizeKey, size })
+      // Because this is relevant key for size accounting, call updateSizeSideEffects
+      return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, size })
     })
   },
   'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {

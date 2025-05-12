@@ -52,9 +52,9 @@ const removeFromTempIndex = (cids: string[]) => {
   // 1. Group CIDs by their hash bucket.
   const cidsByBucket = cids.reduce((acc: Map<number, Set<string>>, cv: string) => {
     const bucket = fastBase58Hash(cv)
-    const set = acc.get(bucket)
-    if (set) {
-      set.add(cv)
+    const ownedResourcesSet = acc.get(bucket)
+    if (ownedResourcesSet) {
+      ownedResourcesSet.add(cv)
     } else {
       acc.set(bucket, new Set([cv]))
     }
@@ -66,6 +66,21 @@ const removeFromTempIndex = (cids: string[]) => {
   return Promise.all([...cidsByBucket].map(([bucket, cids]) => {
     return removeFromIndexFactory(`_private_pendingIdx_ownerTotalSize_${bucket}`)([...cids])
   }))
+}
+
+const lookupUltimateOwner = async (resourceID: string) => {
+  let ownerID = resourceID
+  for (let depth = 128; depth >= 0; depth--) {
+    // Fetch the immediate owner.
+    const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
+    // Found the ultimate owner
+    if (!newOwnerID) break
+    if (!depth) {
+      throw new Error('Exceeded max depth looking up owner for ' + contractID)
+    }
+    ownerID = newOwnerID
+  }
+  return ownerID
 }
 
 /**
@@ -148,22 +163,12 @@ sbp('sbp/selectors/register', {
     const ultimateOwners = new Map()
     // Phase 1: Find the ultimate owner for each resource and aggregate deltas.
     await Promise.all(deltaEntries.map(async ([contractID, delta]) => {
-      let ownerID = contractID
       // --- Potentially Slow Owner Lookup Loop ---
-      for (let depth = 128; depth >= 0; depth--) {
-        // Fetch the immediate owner
-        const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
-        // Found the ultimate owner
-        if (!newOwnerID) break
-        if (!depth) {
-          throw new Error('Exceeded max depth looking up owner for ' + contractID)
-        }
-        ownerID = newOwnerID
-      }
+      const ownerID = await lookupUltimateOwner(contractID)
       // Aggregate delta for the ultimate owner.
-      const [val, set] = ultimateOwners.get(ownerID) || [0, new Set()]
-      set.add(contractID)
-      ultimateOwners.set(ownerID, [val + delta, set])
+      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set()]
+      ownedResourcesSet.add(contractID)
+      ultimateOwners.set(ownerID, [val + delta, ownedResourcesSet])
     }))
 
     // Phase 2: Apply the aggregated deltas to the database and clean up
@@ -196,18 +201,8 @@ sbp('sbp/selectors/register', {
 
     // Phase 1: Find the ultimate owner for each resource ID needing recalc
     await Promise.all(resourcesToRecalculate.map(async (contractID) => {
-      let ownerID = contractID
       // --- Potentially Slow Owner Lookup Loop ---
-      for (let depth = 128; depth >= 0; depth--) {
-        // Fetch the immediate owner.
-        const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
-        // Found the ultimate owner
-        if (!newOwnerID) break
-        if (!depth) {
-          throw new Error('Exceeded max depth looking up owner for ' + contractID)
-        }
-        ownerID = newOwnerID
-      }
+      const ownerID = await lookupUltimateOwner(contractID)
       // Group resources by their ultimate owner.
       const resources = ultimateOwners.get(ownerID)
       if (resources) {
