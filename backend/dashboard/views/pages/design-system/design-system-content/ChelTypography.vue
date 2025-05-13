@@ -4,7 +4,9 @@ content-outlet(title='Typography')
     h4.unit-name Various text styles
 
     .unit-description
-      | There are various text-style related css classes are defined.
+      | There are various text-style related css classes that are used across the app. Feel free to extend
+      span.pill.is-purple-1 _typography.scss
+      | file to define other useful text-related styles.
 
     table-template
       table-row(code='.is-title-1')
@@ -31,6 +33,11 @@ content-outlet(title='Typography')
   .content-unit
     h4.unit-name Pills
 
+    .unit-description
+      | Check out
+      span.pill.is-purple-1 _pills.scss
+      | file for the css details.
+
     table-template.mt-0
       table-row(code='.pill.is-neautral')
         span.pill.is-neautral neutral
@@ -44,6 +51,11 @@ content-outlet(title='Typography')
         span.pill.is-blue-1 blue-1
       table-row(code='.pill.is-green-1')
         span.pill.is-green-1 green-1
+
+  .content-unit
+    h4.unit-name TBD...
+
+    .unit-description TBD...
 </template>
 
 <script>

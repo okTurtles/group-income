@@ -14,7 +14,7 @@
             v-for='menu in menuList'
             :key='menu.id'
             :class='{ "is-active": currentContent.id === menu.id }'
-            @click='currentContent = menu'
+            @click='onMenuClick(menu)'
           ) {{ menu.name }}
 
     main.c-main
@@ -42,6 +42,32 @@ export default {
     return {
       currentContent: menuList[0],
       menuList
+    }
+  },
+  methods: {
+    onMenuClick (menu) {
+      this.currentContent = menu
+
+      this.$router.push({ query: { tab: menu.id } }).catch(() => {})
+    }
+  },
+  created () {
+    const tabId = this.$route.query?.tab
+
+    if (tabId) {
+      const found = menuList.find(entry => entry.id === tabId)
+      this.currentContent = found
+    }
+  },
+  watch: {
+    $route (to) {
+      const tabId = to.query?.tab
+      const menuIdList = menuList.map(m => m.id)
+
+      if (tabId && menuIdList.includes(tabId) && this.currentContent.id !== tabId) {
+        const found = menuList.find(entry => entry.id === tabId)
+        this.currentContent = found
+      }
     }
   }
 }

@@ -84,8 +84,13 @@ export default {
         left: 0;
       }
 
-      .pill {
+      .pill,
+      strong {
         margin: 0 0.25rem;
+      }
+
+      strong {
+        color: $text-0;
       }
     }
   }

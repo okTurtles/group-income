@@ -1,9 +1,9 @@
 <template lang="pug">
 content-outlet(title='Lists & Tables')
   .content-unit
-    h4.unit-name Lists
+    h4.unit-name TBD...
 
-    .unit-description list UI elements used in the app
+    .unit-description TBD...
 </template>
 
 <script>
