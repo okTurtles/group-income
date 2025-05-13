@@ -1044,6 +1044,8 @@ sbp('chelonia/defineContract', {
         const isUpdatingNonMonetary = Object.keys(data).some(
           key => ['nonMonetaryAdd', 'nonMonetaryRemove', 'nonMonetaryEdit', 'nonMonetaryReplace'].includes(key)
         )
+
+        const isChangingIncomeDetailsType = data.incomeDetailsType && groupProfile.incomeDetailsType !== data.incomeDetailsType
         const prevNonMonetary = nonMonetary.slice() // Capturing the previous non-monetary list. (To be used for in-app notification for non-monetary updates)
 
         for (const key in data) {
@@ -1086,6 +1088,17 @@ sbp('chelonia/defineContract', {
           // someone updated their income details, create a snapshot of the haveNeeds
           groupProfile['incomeDetailsLastUpdatedDate'] = meta.createdDate
           updateCurrentDistribution({ contractID, meta, state, getters })
+
+          const shouldResetPaymentStreaks =
+            // 1. When the user switches from 'pledger' to receiver.
+            (isChangingIncomeDetailsType && data.incomeDetailsType === 'incomeAmount') ||
+            // 2. The user is a 'pledger' but updates the pledge amount to 0.
+            (!isChangingIncomeDetailsType && data.incomeDetailsType === 'pledgeAmount' && data.pledgeAmount === 0)
+
+          if (shouldResetPaymentStreaks) {
+            state.streaks.onTimePayments[innerSigningContractID] = 0
+            state.streaks.missedPayments[innerSigningContractID] = 0
+          }
         }
       }
     },
