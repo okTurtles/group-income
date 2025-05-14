@@ -450,8 +450,8 @@ export default ({
 
     .c-responsive-menu {
       top: 2.5rem;
-      left: 50%;
       transform: translateX(-50%);
+      left: 50%;
     }
   }
 
