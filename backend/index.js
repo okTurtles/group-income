@@ -76,7 +76,7 @@ export default (new Promise((resolve, reject) => {
     resolve()
   })
   // call this after we've registered listener for SERVER_RUNNING
-  import('./server.js').catch(e => reject(e))
+  import('./server.js').catch(reject)
 }): Promise<void>)
 
 const shutdownFn = function (message) {
