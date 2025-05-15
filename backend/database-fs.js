@@ -54,7 +54,7 @@ export default class FsBackend extends DatabaseBackend implements IDatabaseBacke
     if (!this.depth) return join(this.dataFolder, key)
     // TODO: optimize if necessary.
     const keyChunks = key.match(new RegExp('[A-Za-z=]{1,' + this.keyChunkLength + '}', 'g')) ?? []
-    return join(this.dataFolder, ...keyChunks.slice(0, this.depth), keyChunks.slice(this.depth).join(''))
+    return join(this.dataFolder, ...keyChunks.slice(0, this.depth), key)
   }
 
   async init () {
