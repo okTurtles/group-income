@@ -4,6 +4,7 @@ import '@sbp/okturtles.eventqueue'
 import sbp from '@sbp/sbp'
 import { parentPort } from 'node:worker_threads'
 import { initDB } from './database.js'
+import './logger.js'
 
 export const readyQueueName = 'parentPort'
 

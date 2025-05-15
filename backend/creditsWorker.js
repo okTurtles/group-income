@@ -8,7 +8,7 @@ const TASK_TIME_INTERVAL = 300e3
 // Rate: How many credits are charged per byte stored per second.
 // Using BigInt for precision.
 // $FlowFixMe[cannot-resolve-name]
-const CREDITS_PER_BYTESECOND = BigInt(1)
+const PICOCREDITS_PER_BYTESECOND = BigInt(10)
 // History Limit: How many entries to keep in the granular history log.
 const GRANULAR_HISTORY_MAX_ENTRIES = 1000
 const COARSE_HISTORY_MAX_ENTRIES = 1000
@@ -43,12 +43,14 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
 
     // Trim the history if it exceeds the maximum length. Remove the oldest
     // entry (at the end)
-    if (granularHistory.length >= GRANULAR_HISTORY_MAX_ENTRIES) {
-      granularHistory.splice(GRANULAR_HISTORY_MAX_ENTRIES)
+    // Done early here to allow the allocator to free up memory
+    // Using `- 1` since a new entry will be added.
+    if (granularHistory.length >= GRANULAR_HISTORY_MAX_ENTRIES - 1) {
+      granularHistory.splice(GRANULAR_HISTORY_MAX_ENTRIES - 1)
     }
 
     // Get the balance from the most recent history entry.
-    const previousBalance = BigInt(granularHistory[0]?.balance || 0)
+    const previousBalance = BigInt(granularHistory[0]?.balancePicocreditAmount || 0)
 
     if (type === 'charge') {
       // Get timestamp of the last recorded event. Default to 'now' if there's
@@ -62,43 +64,44 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
       // service was running.
       const timeElapsed = Math.max(0, now.getTime() - Math.max(previousTime, startTime))
       // Calculate credits used: size (amount) * time * rate.
-      const creditsUsed = BigInt(Math.floor(amount * timeElapsed / 1000)) * CREDITS_PER_BYTESECOND
+      const picocreditsUsed = BigInt(Math.floor(amount * timeElapsed / 1000)) * PICOCREDITS_PER_BYTESECOND
 
       // Calculate new balance
-      const balance = (previousBalance - creditsUsed).toString(10)
+      const balance = (previousBalance - picocreditsUsed).toString(10)
 
       // Prepare the new history entry
       granularHistory.unshift({
         type: 'charge',
         date,
         sizeTotal: amount,
-        credits: creditsUsed.toString(10),
+        picocreditAmount: picocreditsUsed.toString(10),
+        // Period in ISO 8601 format, i.e., `{start}/{end}`
         period: `${new Date(now - timeElapsed).toISOString()}/${date}`,
         balance
       })
 
       // Persist the updated balance (optimization: faster reads elsewhere)
-      await sbp('chelonia.db/set', `_private_ownerCreditBalance_${billableEntity}`, balance)
+      await sbp('chelonia.db/set', `_private_ownerPicocreditBalance_${billableEntity}`, balance)
     } else if (type === 'credit') {
       // 'amount' is the credit amount here
-      const creditsToAdd = BigInt(amount)
-      const newBalance = previousBalance + creditsToAdd
+      const picocreditsToAdd = BigInt(amount)
+      const newBalance = previousBalance + picocreditsToAdd
       const newBalanceStr = newBalance.toString(10)
 
       // Prepare the new history entry for credit addition.
       const newEntry = {
         type: 'credit',
         date,
-        credits: creditsToAdd.toString(10), // Credits added
-        balance: newBalanceStr
+        picocreditAmount: picocreditsToAdd.toString(10), // Credits added
+        balancePicocreditAmount: newBalanceStr
       }
 
       granularHistory.unshift(newEntry)
 
       // Persist the updated balance
-      await sbp('chelonia.db/set', `_private_ownerCreditBalance_${billableEntity}`, newBalanceStr)
+      await sbp('chelonia.db/set', `_private_ownerPicocreditBalance_${billableEntity}`, newBalanceStr)
     } else {
-      console.error(`Invalid update type "${type}" for ${billableEntity}`)
+      console.error(`[creditsWorker] Invalid update type "${type}" for ${billableEntity}`)
       return // Don't save if type is invalid
     }
 
@@ -113,13 +116,15 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
       const coarseHistoryList = await sbp('chelonia.db/get', coarseHistoryKey, { bypassCache: true }) ?? '[]'
       const coarseHistory = JSON.parse(coarseHistoryList)
 
-      if (coarseHistory.length >= COARSE_HISTORY_MAX_ENTRIES) {
-        coarseHistory.splice(COARSE_HISTORY_MAX_ENTRIES)
+      // Trim entries. Done early here to allow the allocator to free up memory,
+      // and using `- 1` since a new entry will be added.
+      if (coarseHistory.length >= COARSE_HISTORY_MAX_ENTRIES - 1) {
+        coarseHistory.splice(COARSE_HISTORY_MAX_ENTRIES - 1)
       }
 
       const { periodStart, charges, credits, periodSize, totalPeriodLength } = granularHistory.slice(0, lastCoarseSyncIdx < 0 ? granularHistory.length : lastCoarseSyncIdx).reduce((acc, entry) => {
         if (entry.type === 'charge') {
-          acc.charges += BigInt(entry.credits)
+          acc.charges += BigInt(entry.picocreditAmount)
           const [periodStart, periodEnd] = entry.period.split('/')
           const [periodStartDate, periodEndDate] = [Date.parse(periodStart), Date.parse(periodEnd)]
           const periodLength = Math.floor(periodEndDate - periodStartDate)
@@ -130,7 +135,7 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
           }
           acc.periodStart = periodStart
         } else if (entry.type === 'credit') {
-          acc.credits += BigInt(entry.credits)
+          acc.credits += BigInt(entry.picocreditAmount)
         } else {
           throw new Error('Invalid entry type: ' + entry.type)
         }
@@ -142,10 +147,10 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
         type: 'aggregate',
         date,
         sizeTotal: totalPeriodLength > 0 ? Math.floor(periodSize / totalPeriodLength) : 0,
-        charges: charges.toString(10),
-        credits: credits.toString(10),
+        chargesPicocreditAmount: charges.toString(10),
+        creditsPicocreditAmount: credits.toString(10),
         period: `${periodStart}/${date}`,
-        balance: granularHistory[0].balance
+        balancePicocreditAmount: granularHistory[0].balancePicocreditAmount
       })
 
       await sbp('chelonia.db/set', coarseHistoryKey, JSON.stringify(coarseHistory))
@@ -172,7 +177,7 @@ sbp('sbp/selectors/register', {
 
       // Check if size is a valid number, otherwise skip (or log error)
       if (isNaN(size)) {
-        console.warn(`Invalid size fetched for entity ${billableEntity}: ${sizeString}. Skipping charge.`)
+        console.warn(`[creditsWorker] Invalid size fetched for entity ${billableEntity}: ${sizeString}. Skipping charge.`)
         return
       }
 
@@ -180,7 +185,7 @@ sbp('sbp/selectors/register', {
       // Not using await to queue the call and immediately proceed with the next
       // billable entity
       updateCredits(billableEntity, 'charge', size).catch((e) => {
-        console.error('Error computing balance', billableEntity, e)
+        console.error(e, '[creditsWorker] Error computing balance', billableEntity)
       })
     }))
 

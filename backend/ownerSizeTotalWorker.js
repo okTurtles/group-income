@@ -105,7 +105,7 @@ sbp('okTurtles.eventQueue/queueEvent', readyQueueName, async () => {
     }
   }
 
-  console.log(`Loaded ${updatedSizeList.size} CIDs for full recalculation.`)
+  console.log(`[ownerSizeTotalWorker] Loaded ${updatedSizeList.size} CIDs for full recalculation.`)
   if (updatedSizeList.size) {
     sbp('backend/server/computeSizeTask')
   }
@@ -139,7 +139,7 @@ sbp('sbp/selectors/register', {
         // Store the initial delta size.
         updatedSizeMap.set(resourceID, size)
       } catch (e) {
-        console.error(`Error adding ${resourceID} to temp index:`, e)
+        console.error(e, `[ownerSizeTotalWorker] Error adding ${resourceID} to temp index:`)
       }
     } else {
       // Accumulate subsequent delta updates in memory.
