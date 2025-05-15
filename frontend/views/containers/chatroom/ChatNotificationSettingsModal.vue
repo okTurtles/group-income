@@ -77,6 +77,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default ({
   name: 'ChatNotificationSettingsModal',
@@ -111,7 +112,7 @@ export default ({
       this.$refs.modal.close()
     },
     submit () {
-      sbp('state/vuex/commit', 'setChatroomNotificationSettings', {
+      sbp('okTurtles.events/emit', NEW_CHATROOM_NOTIFICATION_SETTINGS, {
         chatRoomID: this.currentChatRoomId,
         settings: this.form
       })
