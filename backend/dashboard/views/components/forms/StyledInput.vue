@@ -2,7 +2,7 @@
 label.inputgroup(:class='{ "is-disabled": disabled }')
   span.input-label(v-if='label') {{ label }}
 
-  char-limit-indicator.c-char-len(
+  char-limit-indicator.c-char-indicator(
     v-if='showLimitIndicator'
     :max='max'
     :current='value.length'
@@ -76,7 +76,7 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-char-len {
+.c-char-indicator {
   position: absolute;
   display: block;
   top: 0.75rem;

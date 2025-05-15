@@ -10,7 +10,7 @@ table.table.c-table
 
 <script>
 export default {
-  name: 'DSTableTemplate'
+  name: 'TableTemplate'
 }
 </script>
 

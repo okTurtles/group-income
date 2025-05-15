@@ -31,7 +31,7 @@ const light = {
   text_0: '#1C1C1C',
   text_1: 'rgba(0, 0, 0, 0.4)',
   border: 'rgba(0, 0, 0, 0.1)',
-  emphasis: '(rgba(0, 0, 0, 0.65)',
+  emphasis: 'rgba(0, 0, 0, 0.65)',
   helper: '#9747FF'
 }
 

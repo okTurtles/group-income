@@ -14,7 +14,7 @@ tr.c-row
 
 <script>
 export default {
-  name: 'DSTableRow',
+  name: 'TableRow',
   props: {
     code: {
       type: String,
@@ -34,7 +34,7 @@ export default {
 }
 
 @mixin code-style-common {
-  font-size: $size-5;
+  font-size: $size_5;
   color: var(--styled-input-label-color);
   padding-right: 0.5rem;
 }

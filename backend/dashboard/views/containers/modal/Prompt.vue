@@ -3,7 +3,6 @@ ModalSimpleTemplate(
   ref='modal'
   variant='prompt'
   :hideCloseButton='hideCloseButton'
-  :onClose='onCloseBtnClick'
 )
   .c-prompt-body
     h2.is-title-2.c-prompt-heading(v-safe-html='title')
@@ -64,10 +63,6 @@ export default {
         sbp('okTurtles.events/emit', PROMPT_RESPONSE, promptAction)
         sbp('okTurtles.events/emit', CLOSE_PROMPT)
       })
-    },
-    onCloseBtnClick () {
-      sbp('okTurtles.events/emit', PROMPT_RESPONSE, PROMPT_ACTIONS.CLOSE)
-      sbp('okTurtles.events/emit', CLOSE_PROMPT)
     }
   }
 }

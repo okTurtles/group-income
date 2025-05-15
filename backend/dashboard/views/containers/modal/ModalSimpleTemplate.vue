@@ -5,7 +5,7 @@
 
   transition(name='zoom' appear)
     .c-modal-simple-content(v-if='isActive')
-      button.is-icon.c-close-btn(@click='close()')
+      button.is-icon.c-close-btn(v-if='!hideCloseButton' @click='close()')
         i.icon-close
 
       section.c-modal-simple-body

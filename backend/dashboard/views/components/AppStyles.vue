@@ -39,11 +39,6 @@ export default {
   name: 'AppStyles',
   computed: {
     ...mapGetters(['colors'])
-  },
-  watch: {
-    colors (newVal) {
-      console.log('!@# colors update: ', newVal)
-    }
   }
 }
 </script>

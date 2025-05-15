@@ -64,7 +64,7 @@ import TableTemplate from './TableTemplate.vue'
 import TableRow from './TableRow.vue'
 
 export default {
-  name: 'ChelForms',
+  name: 'ChelTypography',
   components: {
     ContentOutlet,
     TableTemplate,

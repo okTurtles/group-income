@@ -47,7 +47,7 @@ export default {
       font-weight: bold;
       line-height: 1.275;
       letter-spacing: 1px;
-      color: $text-0;
+      color: $text_0;
       padding-bottom: 1rem;
       margin-bottom: 1.75rem;
 
@@ -61,7 +61,7 @@ export default {
         display: block;
         height: 1px;
         width: 2.75rem;
-        border-bottom: 1px solid $text-0;
+        border-bottom: 1px solid $text_0;
         left: 0;
         bottom: 0;
         opacity: 0.75;
@@ -71,13 +71,13 @@ export default {
     .unit-description {
       position: relative;
       padding-left: 1.25rem;
-      color: $text-1;
+      color: $text_1;
       font-size: 0.85rem;
       margin-bottom: 1.75rem;
 
       &::before {
         content: "->";
-        font-size: $size-5;
+        font-size: $size_5;
         display: block;
         position: absolute;
         top: 0;
@@ -90,7 +90,7 @@ export default {
       }
 
       strong {
-        color: $text-0;
+        color: $text_0;
       }
     }
   }

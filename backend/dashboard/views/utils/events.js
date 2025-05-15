@@ -1,4 +1,4 @@
-'use stricts'
+'use strict'
 
 // constants for UI-related events
 

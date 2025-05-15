@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { OPEN_PROMPT, PROMPT_RESPONSE } from './events.js'
 
-export interface PromptParams {
+export type PromptParams = {
   title: string,
   content: string,
   primaryButton?: string,
