@@ -449,9 +449,17 @@ export default ({
     position: unset;
 
     .c-responsive-menu {
+      top: 2.5rem;
+      transform: translateX(-50%);
+      left: 50%;
+    }
+  }
+
+  @include desktop {
+    .c-responsive-menu {
       left: 0;
       right: auto;
-      top: 2.5rem;
+      transform: unset;
     }
   }
 }
