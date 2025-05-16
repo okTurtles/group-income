@@ -106,7 +106,7 @@ names.forEach((name) => {
     })
 
     after('cleanup', async function () {
-      await rm(options[lowerCaseName].dirname, { recursive: true })
+      await rm(options[lowerCaseName].dirname || options[lowerCaseName].filepath, { recursive: true })
     })
   })
 })
