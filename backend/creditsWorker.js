@@ -6,7 +6,8 @@ import { readyQueueName } from './genericWorker.js'
 const TASK_TIME_INTERVAL = 300e3
 
 // Rate: How many credits are charged per byte stored per second.
-// Using BigInt for precision.
+// Using BigInt for precision. Using 'picocredits' so that ~1k 'credits' cover
+// about 100MiB for a period of one year, while allowing granularity and precision.
 // $FlowFixMe[cannot-resolve-name]
 const PICOCREDITS_PER_BYTESECOND = BigInt(10)
 // History Limit: How many entries to keep in the granular history log.
@@ -50,7 +51,7 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
     }
 
     // Get the balance from the most recent history entry.
-    const previousBalance = BigInt(granularHistory[0]?.balancePicocreditAmount || 0)
+    const previousPcBalance = BigInt(granularHistory[0]?.balancePicocreditAmount || 0)
 
     if (type === 'charge') {
       // Get timestamp of the last recorded event. Default to 'now' if there's
@@ -67,7 +68,7 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
       const picocreditsUsed = BigInt(Math.floor(amount * timeElapsed / 1000)) * PICOCREDITS_PER_BYTESECOND
 
       // Calculate new balance
-      const balance = (previousBalance - picocreditsUsed).toString(10)
+      const balancePicocreditAmount = (previousPcBalance - picocreditsUsed).toString(10)
 
       // Prepare the new history entry
       granularHistory.unshift({
@@ -77,15 +78,15 @@ const updateCredits = async (billableEntity: string, type: 'credit' | 'charge', 
         picocreditAmount: picocreditsUsed.toString(10),
         // Period in ISO 8601 format, i.e., `{start}/{end}`
         period: `${new Date(now - timeElapsed).toISOString()}/${date}`,
-        balance
+        balancePicocreditAmount
       })
 
       // Persist the updated balance (optimization: faster reads elsewhere)
-      await sbp('chelonia.db/set', `_private_ownerPicocreditBalance_${billableEntity}`, balance)
+      await sbp('chelonia.db/set', `_private_ownerPicocreditBalance_${billableEntity}`, balancePicocreditAmount)
     } else if (type === 'credit') {
       // 'amount' is the credit amount here
       const picocreditsToAdd = BigInt(amount)
-      const newBalance = previousBalance + picocreditsToAdd
+      const newBalance = previousPcBalance + picocreditsToAdd
       const newBalanceStr = newBalance.toString(10)
 
       // Prepare the new history entry for credit addition.
