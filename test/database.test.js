@@ -11,8 +11,7 @@ const options = {
     dirname: './test/data/fs'
   },
   sqlite: {
-    dirname: './test/data/sqlite',
-    filename: 'groupincome.db'
+    filepath: './test/data/sqlite/groupincome.db'
   }
 }
 
