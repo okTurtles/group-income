@@ -1,7 +1,7 @@
 /* eslint-disable require-await */
 'use strict'
 
-const { dirname, join, relative } = require('path')
+const { dirname, join, relative } = require('node:path')
 
 const chalk = require('chalk')
 const vueTemplateCompiler = require('vue-template-compiler')

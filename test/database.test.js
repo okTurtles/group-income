@@ -65,7 +65,7 @@ names.forEach((name) => {
     it('Should return the string that has been written', async function () {
       await writeData('newKey', 'newValue')
 
-      const actual = await readData('newKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
+      const actual = await readData('newKey').then(data => Buffer.from(data).toString('utf8'))
       const expected = 'newValue'
 
       assert.equal(actual, expected)
@@ -100,7 +100,7 @@ names.forEach((name) => {
       await writeData('someKey', 'someValue')
       await writeData('someKey', 'someOtherValue')
 
-      const actual = await readData('someKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
+      const actual = await readData('someKey').then(data => Buffer.from(data).toString('utf8'))
       const expected = 'someOtherValue'
 
       assert.strictEqual(actual, expected)
