@@ -77,6 +77,8 @@ export const NEW_LAST_LOGGED_IN = 'new-last-logged-in'
 export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
 export const NEW_PREFERENCES = 'new-preferences'
 
+export const NEW_CHATROOM_NOTIFICATION_SETTINGS = 'new-chatroom-notification-settings'
+
 export const CONTRACT_SYNCS_RESET = 'new-current-syncs'
 
 export const SERIOUS_ERROR = 'serious-error'
