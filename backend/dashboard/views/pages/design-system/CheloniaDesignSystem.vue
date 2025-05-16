@@ -7,22 +7,29 @@
         h2.is-title-2 Design system
 
       .c-menu
-        .section-title Menu:
+        .section-title Topics:
 
         .c-menu-btns
-          button.c-menu-btn(v-for='menu in menuList' :key='menu.id' @click='currentContent = menu') {{ menu.name }}
+          button.c-menu-btn(
+            v-for='menu in menuList'
+            :key='menu.id'
+            :class='{ "is-active": currentContent.id === menu.id }'
+            @click='onMenuClick(menu)'
+          ) {{ menu.name }}
 
     main.c-main
       component(:is='currentContent.component')
 </template>
 
 <script>
+import Typography from './design-system-content/ChelTypography.vue'
 import Forms from './design-system-content/ChelForms.vue'
 import Buttons from './design-system-content/ChelButtons.vue'
 import Icons from './design-system-content/ChelIcons.vue'
 import ListsTables from './design-system-content/ChelListsTables.vue'
 
 const menuList = [
+  { id: 'typography', name: 'Typography', component: Typography },
   { id: 'forms', name: 'Forms', component: Forms },
   { id: 'buttons', name: 'Buttons', component: Buttons },
   { id: 'icons', name: 'Icons', component: Icons },
@@ -35,6 +42,32 @@ export default {
     return {
       currentContent: menuList[0],
       menuList
+    }
+  },
+  methods: {
+    onMenuClick (menu) {
+      this.currentContent = menu
+
+      this.$router.push({ query: { tab: menu.id } }).catch(() => {})
+    }
+  },
+  created () {
+    const tabId = this.$route.query?.tab
+
+    if (tabId) {
+      const found = menuList.find(entry => entry.id === tabId)
+      this.currentContent = found
+    }
+  },
+  watch: {
+    $route (to) {
+      const tabId = to.query?.tab
+      const menuIdList = menuList.map(m => m.id)
+
+      if (tabId && menuIdList.includes(tabId) && this.currentContent.id !== tabId) {
+        const found = menuList.find(entry => entry.id === tabId)
+        this.currentContent = found
+      }
     }
   }
 }
@@ -86,34 +119,51 @@ export default {
   .c-menu {
     margin-top: 1.75rem;
 
+    .section-title {
+      font-size: $size_5;
+      color: $text_0;
+    }
+
     &-btns {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 1rem;
+      gap: 0.785rem;
     }
   }
 }
 
 button.c-menu-btn {
-  border: none;
-  font-weight: 600;
-  color: $text_black;
-  box-shadow: 0 0 10px rgba(202, 202, 202, 0.6);
-  min-height: 2.25rem;
-
-  &:nth-child(3n+1) { background-color: $secondary_purple_1; }
-  &:nth-child(3n+2) { background-color: $secondary_blue_1; }
-  &:nth-child(3n+3) { background-color: $secondary_green_1; }
+  display: inline-block;
+  border: 1px solid var(--ds-menu-border-color);
+  color: $text_0;
+  background-color: rgba(0, 0, 0, 0);
+  min-height: unset;
+  font-size: $size_6;
+  padding: 0.375rem 0.75rem;
+  border-radius: $radius;
 
   &:hover,
-  &:active,
   &:focus {
-    text-decoration: underline;
+    background-color: var(--ds-menu-border-color);
   }
 
-  &:active {
-    transform: translateY(1px);
+  &:active,
+  &.is-active {
+    background-color: var(--ds-menu-border-color);
+    font-weight: 600;
+  }
+
+  &.is-active::before {
+    content: "";
+    display: inline-block;
+    position: relative;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: currentColor;
+    margin-right: 0.25rem;
+    transform: translateY(-1px);
   }
 }
 

@@ -319,9 +319,11 @@ module.exports = (grunt) => {
             const linters = tasks.filter(task => typeof task === 'object')
             const lintingStartMs = Date.now()
 
-            await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+            try {
+              await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+            } catch (e) {
               // Don't crash the Grunt process on lint errors.
-              .catch(() => {})
+            }
 
             // Log the linting time, formatted with Chalk.
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))

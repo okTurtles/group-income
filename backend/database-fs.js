@@ -1,7 +1,7 @@
 'use strict'
 
 import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, normalize, resolve } from 'node:path'
 import { checkKey } from '~/shared/domains/chelonia/db.js'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
@@ -37,6 +37,11 @@ async function testCaseSensitivity (backend: Object) {
   }
 }
 
+const splitAndGroup = (input: string, chunkLength: number, depth: number) => input.slice(0, chunkLength * depth).split('').reduce((acc, cv, i) => {
+  acc[i / chunkLength | 0] = (acc[i / chunkLength | 0] || '') + cv
+  return acc
+}, [])
+
 export default class FsBackend extends DatabaseBackend implements IDatabaseBackend {
   dataFolder: string = ''
   depth: number = 0
@@ -51,10 +56,17 @@ export default class FsBackend extends DatabaseBackend implements IDatabaseBacke
 
   // Maps a given key to a real path on the filesystem.
   mapKey (key: string): string {
+    // The following `basepath(normalize())` check is an attempt at preventing
+    // path traversal and similar issues, accidental or intentional, by ensuring
+    // that the `key` corresponds to a file name. This is a defense-in-depth
+    // check, since `checkKey` in `chelonia/db.js` already disallows path
+    // separators. This check is platform-specific, so, for example, this check
+    // will succeed on Linux or macOS for `\\?\C:\Windows\System32\kernel32.dll`
+    // but it will fail on Windows for the same path.
+    if (basename(normalize(key)) !== key) throw new TypeError('Invalid key')
     if (!this.depth) return join(this.dataFolder, key)
-    // TODO: optimize if necessary.
-    const keyChunks = key.match(new RegExp('[A-Za-z=]{1,' + this.keyChunkLength + '}', 'g')) ?? []
-    return join(this.dataFolder, ...keyChunks.slice(0, this.depth), keyChunks.slice(this.depth).join(''))
+    const keyChunks = splitAndGroup(key, this.keyChunkLength, this.depth)
+    return join(this.dataFolder, ...keyChunks, key)
   }
 
   async init () {
