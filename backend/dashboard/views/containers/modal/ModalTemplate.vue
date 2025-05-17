@@ -7,7 +7,7 @@
   transition(name='fade' appear)
     .c-modal-background(v-if='isActive' @click='close')
 
-  transition(name='slide-left' appear @after-leave='onLeaveEnd')
+  transition(name='zoom' appear)
     .c-modal-content(v-if='isActive')
       header.c-modal-header
         template(v-if='title')
@@ -20,8 +20,9 @@
       section.c-modal-body
         slot
 
-      footer.c-modal-footer
-        i18n.has-blue-background.c-dismiss-btn(tag='button' @click='close') Close
+      slot(name='footer')
+        footer.c-modal-footer
+          i18n.has-blue-background.c-dismiss-btn(tag='button' @click='close') Close
 </template>
 
 <script>
@@ -45,11 +46,10 @@ export default {
   },
   methods: {
     close () {
+      if (!this.isActive) { return }
+
       this.isActive = false
-    },
-    onLeaveEnd () {
-      // let Modal.vue to unload currently active modal
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      setTimeout(() => sbp('okTurtles.events/emit', CLOSE_MODAL), 300)
     }
   }
 }
@@ -171,5 +171,11 @@ export default {
   border-radius: 50%;
   width: 2.25rem;
   height: 2.25rem;
+
+  i {
+    display: inline-block;
+    line-height: 1;
+    transform: translate(1px, 1px);
+  }
 }
 </style>

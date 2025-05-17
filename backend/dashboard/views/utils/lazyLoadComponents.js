@@ -33,3 +33,4 @@ export function lazyPage (lazyImport) {
 
 // register modals
 lazyComponent('ViewContractManifestModal', () => import('../containers/modal/ViewContractManifestModal.vue'))
+lazyComponent('Prompt', () => import('../containers/modal/Prompt.vue'))
