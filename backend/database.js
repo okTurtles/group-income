@@ -27,8 +27,7 @@ const options = {
     keyChunkLength: 2
   },
   sqlite: {
-    dirname: dbRootPath,
-    filename: 'groupincome.db'
+    filepath: path.join(dbRootPath, 'groupincome.db')
   }
 }
 
