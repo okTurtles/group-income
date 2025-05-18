@@ -29,12 +29,15 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 
 ### A Note On Classes: Avoid Them, Usually
 
-For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
+For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) and use [Selector-based Programming (SBP)](#sbp) instead. What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
 
-You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions unless it makes sense when dealing with special types. Here are some examples of exceptions to the "avoid classes" rule:
+However, in some cases classes are still very useful, especially when dealing with types. Any time you want to create something that is essentially a type, but has behavior attached to it, then it's OK to use classes.
+
+Here are some examples of exceptions to the "avoid classes" rule:
 
 - `SPMessage`. This is an example of a very important type for wrapping and handling [`SPMessage`](https://shelterprotocol.net/en/spmessage/) types.
 - `GIErrorUIRuntimeError`. A special error type for dealing with exceptions containing user-facing error strings when attempting to perform an action.
+- The `EncryptedData` and `SignedData` types are not classes, but they probably should have been (it's a low-priority issue to refactor them into classes)
 
 ### See Also: "Embrace the SBP way of doing things"
 

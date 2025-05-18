@@ -13,8 +13,7 @@ const validConfig = {
   [CID]: {
     name: 'sqlite',
     options: {
-      dirname: './test/temp',
-      filename: 'sqlite.db'
+      filepath: './test/temp/sqlite.db'
     }
   },
   '*': {
