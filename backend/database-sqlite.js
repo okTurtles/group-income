@@ -1,7 +1,7 @@
 'use strict'
 
 import { mkdir } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
@@ -16,9 +16,10 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
 
   constructor (options: Object = {}) {
     super()
-    const { dirname, filename } = options
-    this.dataFolder = resolve(dirname)
-    this.filename = filename
+    const { filepath } = options
+    const resolvedPath = resolve(filepath)
+    this.dataFolder = dirname(resolvedPath)
+    this.filename = basename(resolvedPath)
   }
 
   run (sql: string) {

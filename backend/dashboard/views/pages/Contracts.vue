@@ -25,7 +25,8 @@ PageTemplate.c-page-contracts
           tbody
             tr(v-for='item in filteredContracts' :key='item.contractId')
               td.c-cell-contract-id {{ item.contractId }}
-              td.c-cell-type {{ item.type }}
+              td.c-cell-type
+                span.pill(:class='typeToPillMap(item.type)') {{ item.type }}
               td.c-cell-size {{ (item.size).toFixed(2) }}
               td.c-cell-space {{ (item.spaceUsed).toFixed(2) }}%
               td.c-cell-created-date {{ transformDate(item.createdDate) }}
@@ -78,6 +79,15 @@ export default {
     },
     viewManifest (item) {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'ViewContractManifestModal', { contract: item })
+    },
+    typeToPillMap (type) {
+      const classMap = {
+        'gi.contracts/group': 'is-neautral',
+        'gi.contracts/chatroom': 'is-purple-1',
+        'gi.contracts/identity': 'is-warning'
+      }
+
+      return classMap[type]
     }
   }
 }
@@ -125,6 +135,7 @@ export default {
   left: 0;
   padding: 0 0.8rem 0 0.2rem;
   background-color: var(--summary-list-bg-color);
+  overflow: hidden;
 }
 
 .c-cell-contract-id {
