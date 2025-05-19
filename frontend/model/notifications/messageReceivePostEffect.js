@@ -100,7 +100,11 @@ async function messageReceivePostEffect ({
       path
     })
     // `MESSAGE_RECEIVE` should be forwarded to the tab
-    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
+    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {
+      contractID,
+      messageHash,
+      messageType
+    })
   } finally {
     await sbp('chelonia/contract/release', contractID, { ephemeral: true })
   }
