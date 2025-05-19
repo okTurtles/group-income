@@ -273,14 +273,11 @@ export default ({
   padding: 0 1rem;
   max-width: 31.25rem;
 
-  .c-demo-warning {
-    text-align: start;
-    margin-block-end: 1rem;
-  }
 }
 
 .c-demo-warning {
-  text-align: left;
+  text-align: start;
+  margin-block-end: 1rem;
 }
 
 .c-pwa-promo {
