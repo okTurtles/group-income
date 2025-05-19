@@ -63,12 +63,9 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
       @click='onInstallClick'
     ) {{ L('Install') }}
 
-  //- TODO: conditionally show this depending on environment variable
-  //- footer.c-footer(v-if='!isLoggedIn')
-  //-   banner-simple.c-demo-warning(severity='warning')
-  //-     i18n(
-  //-       :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
-  //-     ) This is a beta-testing site. Groups will have to be re-created once Group Income is released. {a_}Read more.{_a}
+  footer.c-footer(v-if='!isLoggedIn && ephemeral.serverMessages.length > 0')
+    banner-simple.c-demo-warning(v-for='text in ephemeral.serverMessages' severity='warning')
+      render-message-with-markdown(:text='text')
 </template>
 
 <script>
@@ -77,6 +74,7 @@ import { mapGetters, mapState } from 'vuex'
 import { ACCEPTED_GROUP, OPEN_MODAL, PWA_INSTALLABLE } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 import { ignoreWhenNavigationCancelled } from '~/frontend/views/utils/misc.js'
@@ -87,7 +85,8 @@ export default ({
     SvgJoinGroup,
     SvgCreateGroup,
     BannerSimple,
-    ButtonSubmit
+    ButtonSubmit,
+    RenderMessageWithMarkdown
   },
   computed: {
     ...mapGetters([
@@ -104,6 +103,7 @@ export default ({
   data () {
     return {
       ephemeral: {
+        serverMessages: [],
         seenWelcomeScreen: false,
         listener: ({ contractID }) => {
           if (contractID !== this.currentGroupId) return
@@ -117,6 +117,12 @@ export default ({
   beforeMount () {
     sbp('okTurtles.events/on', ACCEPTED_GROUP, this.ephemeral.listener)
     this.checkPwaInstallability()
+    fetch(`${sbp('okTurtles.data/get', 'API_URL')}/serverMessages`).then(async (r) => {
+      const data = await r.json()
+      this.ephemeral.serverMessages = data.filter((msg) => msg.type === 'giHomeWarning').map((msg) => msg.message)
+    }).catch(e => {
+      console.error('[Home.vue] Error fetching or processing server announcements', e)
+    })
   },
   mounted () {
     this.ephemeral.seenWelcomeScreen = this.seenWelcomeScreen
