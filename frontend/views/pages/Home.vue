@@ -272,7 +272,6 @@ export default ({
   margin-top: 2.25rem;
   padding: 0 1rem;
   max-width: 31.25rem;
-
 }
 
 .c-demo-warning {
