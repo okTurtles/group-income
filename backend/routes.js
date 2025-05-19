@@ -879,6 +879,11 @@ route.GET('/kv/{contractID}/{key}', {
   return h.response(result).etag(cid).header('x-cid', `"${cid}"`)
 })
 
+route.GET('/serverMessages', { cache: { otherwise: 'no-store' } }, (request, h) => {
+  if (!process.env.CHELONIA_SERVER_MESSAGES) return []
+  return h.response(process.env.CHELONIA_SERVER_MESSAGES).type('application/json')
+})
+
 // SPA routes
 
 route.GET('/assets/{subpath*}', {
