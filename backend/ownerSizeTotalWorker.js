@@ -1,10 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL as TASK_TIME_INTERVAL } from './constants.js'
 import { appendToIndexFactory, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { readyQueueName } from './genericWorker.js'
-
-const TASK_TIME_INTERVAL = 30e3
 
 // This file defines two different methods for doing size computations:
 // `backend/server/computeSizeTaskDeltas` and `backend/server/computeSizeTask`.
@@ -22,6 +21,7 @@ const TASK_TIME_INTERVAL = 30e3
 
 const updatedSizeList = new Set()
 const updatedSizeMap = new Map()
+const cachedUltimateOwnerMap = new Map()
 
 // Super-fast 8-bit hash for base58 with low bucket size standard deviation
 //  (i.e., the 256 buckets get about the same number of elements)
@@ -109,7 +109,7 @@ sbp('sbp/selectors/register', {
    * IMPORTANT: This should only be called for keys where this is relevant,
    * such as `_private_size_` keys.
    */
-  'worker/updateSizeSideEffects': async ({ resourceID, size }: { resourceID: string, size: number }) => {
+  'worker/updateSizeSideEffects': async ({ resourceID, size, ultimateOwnerID }: { resourceID: string, size: number, ultimateOwnerID?: string }) => {
     // Ignore if the resource is already flagged for a full recalculation.
     // Its size will be fully computed in `computeSizeTask`.
     if (updatedSizeList.has(resourceID)) return
@@ -120,7 +120,7 @@ sbp('sbp/selectors/register', {
       // Add it to the persistent temporary index to ensure it's processed
       // even if the worker restarts.
       try {
-        await addToTempIndex(resourceID)
+        await addToTempIndex(ultimateOwnerID || resourceID)
         // Store the initial delta size.
         updatedSizeMap.set(resourceID, size)
       } catch (e) {
@@ -129,6 +129,9 @@ sbp('sbp/selectors/register', {
     } else {
       // Accumulate subsequent delta updates in memory.
       updatedSizeMap.set(resourceID, current + size)
+    }
+    if (ultimateOwnerID) {
+      cachedUltimateOwnerMap.set(resourceID, ultimateOwnerID)
     }
   },
   /**
@@ -149,9 +152,10 @@ sbp('sbp/selectors/register', {
     // Phase 1: Find the ultimate owner for each resource and aggregate deltas.
     await Promise.all(deltaEntries.map(async ([contractID, delta]) => {
       // --- Potentially Slow Owner Lookup Loop ---
-      const ownerID = await lookupUltimateOwner(contractID)
+      const ownerID = cachedUltimateOwnerMap.get(contractID) || await lookupUltimateOwner(contractID)
+      cachedUltimateOwnerMap.delete(contractID)
       // Aggregate delta for the ultimate owner.
-      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set()]
+      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set(ownerID)]
       ownedResourcesSet.add(contractID)
       ultimateOwners.set(ownerID, [val + delta, ownedResourcesSet])
     }))

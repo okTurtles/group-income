@@ -460,7 +460,7 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
   }
 }
 
-export const lookupUltimateOwner = async (resourceID: string): string => {
+export const lookupUltimateOwner = async (resourceID: string): Promise<string> => {
   let ownerID = resourceID
   for (let depth = 128; depth >= 0; depth--) {
     // Fetch the immediate owner.

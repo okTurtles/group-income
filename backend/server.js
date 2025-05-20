@@ -11,6 +11,7 @@ import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+import { CREDITS_WORKER_TASK_TIME_INTERVAL, OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL } from './constants.js'
 import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
@@ -67,8 +68,17 @@ const createWorker = (path: string): {
   }
 }
 
-const ownerSizeTotalWorker = createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
-const creditsWorker = createWorker(join(__dirname, 'creditsWorker.js'))
+if (CREDITS_WORKER_TASK_TIME_INTERVAL && OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL > CREDITS_WORKER_TASK_TIME_INTERVAL) {
+  process.stderr.write('The size calculation worker must run more frequently than the credits worker for accurate billing')
+  process.exit(1)
+}
+
+const ownerSizeTotalWorker = process.env.CHELONIA_ARCHIVE_MODE || !OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL
+  ? undefined
+  : createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+const creditsWorker = process.env.CHELONIA_ARCHIVE_MODE || !CREDITS_WORKER_TASK_TIME_INTERVAL
+  ? undefined
+  : createWorker(join(__dirname, 'creditsWorker.js'))
 
 // Node.js version 18 and lower don't have global.crypto defined
 // by default
@@ -273,7 +283,7 @@ sbp('sbp/selectors/register', {
     const sizeKey = `_private_size_${resourceID}`
     return updateSize(resourceID, sizeKey, size).then(() => {
       // Because this is relevant key for size accounting, call updateSizeSideEffects
-      return ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID, size })
+      return ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID, size })
     })
   },
   'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
@@ -316,7 +326,7 @@ sbp('sbp/selectors/register', {
     await sbp('backend/server/updateContractFilesTotalSize', owner, -Number(size))
 
     if (ultimateOwnerID && size) {
-      ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID: ultimateOwnerID, size: -parseInt(size) })
+      await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
     }
   },
   // eslint-disable-next-line require-await
@@ -424,7 +434,7 @@ sbp('sbp/selectors/register', {
       sbp('chelonia/private/removeImmediately', cid)
 
       if (ultimateOwnerID && size) {
-        ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID: ultimateOwnerID, size: -parseInt(size) })
+        await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
       }
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
@@ -543,8 +553,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
-  await ownerSizeTotalWorker.ready
-  await creditsWorker.ready
+  await ownerSizeTotalWorker?.ready
+  await creditsWorker?.ready
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

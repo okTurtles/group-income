@@ -1,9 +1,8 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { CREDITS_WORKER_TASK_TIME_INTERVAL as TASK_TIME_INTERVAL } from './constants.js'
 import { readyQueueName } from './genericWorker.js'
-
-const TASK_TIME_INTERVAL = 300e3
 
 // Rate: How many credits are charged per byte stored per second.
 // Using BigInt for precision. Using 'picocredits' so that ~1k 'credits' cover
