@@ -257,6 +257,7 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
         return value
       },
       'chelonia.db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
@@ -279,6 +280,7 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
         })
       },
       'chelonia.db/delete': async function (key: string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           throw new Error('Cannot delete immutable key')
