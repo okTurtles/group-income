@@ -8,7 +8,7 @@ import chalk from 'chalk'
 import path from 'path'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
-import { appendToIndexFactory } from './database.js'
+import { appendToIndexFactory, lookupUltimateOwner } from './database.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 import { blake32Hash } from '../shared/functions.js'
@@ -640,19 +640,7 @@ route.POST('/deleteFile/{hash}', {
 
   switch (strategy) {
     case 'chel-shelter': {
-      let ultimateOwner = owner
-      let count = 0
-      // Walk up the ownership tree
-      do {
-        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
-        if (owner) {
-          ultimateOwner = owner
-          count++
-        } else {
-          break
-        }
-      // Prevent an infinite loop
-      } while (count < 128)
+      const ultimateOwner = await lookupUltimateOwner(owner)
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
@@ -707,19 +695,7 @@ route.POST('/deleteContract/{hash}', {
         return Boom.notFound()
       }
 
-      let ultimateOwner = owner
-      let count = 0
-      // Walk up the ownership tree
-      do {
-        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
-        if (owner) {
-          ultimateOwner = owner
-          count++
-        } else {
-          break
-        }
-      // Prevent an infinite loop
-      } while (count < 128)
+      const ultimateOwner = await lookupUltimateOwner(owner)
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {

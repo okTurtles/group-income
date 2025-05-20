@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { appendToIndexFactory, removeFromIndexFactory, updateSize } from './database.js'
+import { appendToIndexFactory, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { readyQueueName } from './genericWorker.js'
 
 const TASK_TIME_INTERVAL = 30e3
@@ -66,21 +66,6 @@ const removeFromTempIndex = (cids: string[]) => {
   return Promise.all([...cidsByBucket].map(([bucket, cids]) => {
     return removeFromIndexFactory(`_private_pendingIdx_ownerTotalSize_${bucket}`)([...cids])
   }))
-}
-
-const lookupUltimateOwner = async (resourceID: string) => {
-  let ownerID = resourceID
-  for (let depth = 128; depth >= 0; depth--) {
-    // Fetch the immediate owner.
-    const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
-    // Found the ultimate owner
-    if (!newOwnerID) break
-    if (!depth) {
-      throw new Error('Exceeded max depth looking up owner for ' + resourceID)
-    }
-    ownerID = newOwnerID
-  }
-  return ownerID
 }
 
 /**

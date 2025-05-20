@@ -459,3 +459,18 @@ export const removeFromIndexFactory = (key: string): (values: string | string[])
     })
   }
 }
+
+export const lookupUltimateOwner = async (resourceID: string): string => {
+  let ownerID = resourceID
+  for (let depth = 128; depth >= 0; depth--) {
+    // Fetch the immediate owner.
+    const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
+    // Found the ultimate owner
+    if (!newOwnerID) break
+    if (!depth) {
+      throw new Error('Exceeded max depth looking up owner for ' + resourceID)
+    }
+    ownerID = newOwnerID
+  }
+  return ownerID
+}

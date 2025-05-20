@@ -11,7 +11,7 @@ import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, removeFromIndexFactory, updateSize } from './database.js'
+import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -283,10 +283,11 @@ sbp('sbp/selectors/register', {
   'backend/server/stop': function () {
     return hapi.stop()
   },
-  async 'backend/deleteFile' (cid: string): Promise<void> {
+  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string): Promise<void> {
     const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
     const rawManifest = await sbp('chelonia.db/get', cid)
     const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
+    if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
     if (rawManifest === '') throw new BackendErrorGone()
     if (!rawManifest) throw new BackendErrorNotFound()
 
@@ -313,9 +314,13 @@ sbp('sbp/selectors/register', {
 
     await sbp('chelonia.db/set', cid, '')
     await sbp('backend/server/updateContractFilesTotalSize', owner, -Number(size))
+
+    if (ultimateOwnerID && size) {
+      ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID: ultimateOwnerID, size: -parseInt(size) })
+    }
   },
   // eslint-disable-next-line require-await
-  async 'backend/deleteContract' (cid: string): Promise<void> {
+  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string): Promise<void> {
     let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
     if (!contractsPendingDeletion) {
       contractsPendingDeletion = new Set()
@@ -329,7 +334,9 @@ sbp('sbp/selectors/register', {
 
     return sbp('chelonia/queueInvocation', cid, async () => {
       const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+      if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
       const rawManifest = await sbp('chelonia.db/get', cid)
+      const size = ultimateOwnerID && await sbp('chelonia.db/get', `_private_size_${cid}`)
       if (rawManifest === '') throw new BackendErrorGone()
       if (!rawManifest) throw new BackendErrorNotFound()
 
@@ -350,9 +357,9 @@ sbp('sbp/selectors/register', {
           const parsed = parseCID(resourceCid)
 
           if (parsed.code === multicodes.SHELTER_CONTRACT_DATA) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid, ultimateOwnerID])
           } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid, ultimateOwnerID])
           } else {
             console.warn({ cid, resourceCid, code: parsed.code }, 'Resource should be deleted but it is of an unknown type')
           }
@@ -415,6 +422,10 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_0`)
       await sbp('chelonia.db/set', cid, '')
       sbp('chelonia/private/removeImmediately', cid)
+
+      if (ultimateOwnerID && size) {
+        ownerSizeTotalWorker.rpcSbp('worker/updateSizeSideEffects', { resourceID: ultimateOwnerID, size: -parseInt(size) })
+      }
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
