@@ -22,13 +22,12 @@ const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 const dbRootPath = process.env.DB_PATH || './data'
 const options = {
   fs: {
-    depth: 4,
+    depth: 0,
     dirname: dbRootPath,
     keyChunkLength: 2
   },
   sqlite: {
-    dirname: dbRootPath,
-    filename: 'groupincome.db'
+    filepath: path.join(dbRootPath, 'groupincome.db')
   }
 }
 
@@ -237,6 +236,7 @@ export const initDB = async () => {
         return value
       },
       'chelonia.db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
@@ -259,6 +259,7 @@ export const initDB = async () => {
         })
       },
       'chelonia.db/delete': async function (key: string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           throw new Error('Cannot delete immutable key')

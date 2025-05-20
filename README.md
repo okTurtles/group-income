@@ -14,7 +14,7 @@
 
 ## Getting Started
 
-1. Install [Node.js](https://nodejs.org)
+1. Install [Node.js](https://nodejs.org) (v20 minimum required)
 2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
 3. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
 4. Install dependencies: `npm install`

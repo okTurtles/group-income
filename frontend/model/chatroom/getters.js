@@ -12,9 +12,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   chatNotificationSettings (state) {
     return Object.assign({
-      default: {
+      publicDefault: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+      },
+      privateDefault: {
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
+        messageSound: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
       }
     }, state.chatNotificationSettings || {})
   },
@@ -33,17 +37,17 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
         const chatRoomState = rootState[chatRoomID]
         const directMessageSettings = getters.ourDirectMessages[chatRoomID]
-        const myIdendityId = getters.ourIdentityContractId
+        const myIdentityId = getters.ourIdentityContractId
 
         // NOTE: skip DMs whose chatroom contracts are not synced yet
-        if (!chatRoomState || !chatRoomState.members?.[myIdendityId]) {
+        if (!chatRoomState || !chatRoomState.members?.[myIdentityId]) {
           continue
         }
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
         const members = Object.keys(chatRoomState.members)
-        const isDMToMyself = members.length === 1 && members[0] === myIdendityId
+        const isDMToMyself = members.length === 1 && members[0] === myIdentityId
         const partners = members
-          .filter(memberID => memberID !== myIdendityId)
+          .filter(memberID => memberID !== myIdentityId)
           .sort((p1, p2) => {
             const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
             const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
@@ -54,7 +58,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
           //       possibly with the badge of the number of partners.
-          const lastJoinedPartner = isDMToMyself ? myIdendityId : partners[partners.length - 1]
+          const lastJoinedPartner = isDMToMyself ? myIdentityId : partners[partners.length - 1]
           const lastMsgTimeStamp = chatRoomState.messages?.length > 0
             ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
             : 0
@@ -73,7 +77,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
             // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
             // users (e.g., 'user1' changing their display name to 'user2')
             title: isDMToMyself
-              ? getters.userDisplayNameFromID(myIdendityId)
+              ? getters.userDisplayNameFromID(myIdentityId)
               : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
             lastMsgTimeStamp,
             picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
@@ -164,10 +168,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   chatRoomsInDetail (state, getters, rootState) {
     const chatRoomsInDetail = merge({}, getters.groupChatRooms)
-    const myIdendityId = rootState.loggedIn.identityContractID
+    const myIdentityId = rootState.loggedIn.identityContractID
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
-      if (chatRoom && chatRoom.attributes && chatRoom.members[myIdendityId]) {
+      if (chatRoom && chatRoom.attributes && chatRoom.members[myIdentityId]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
