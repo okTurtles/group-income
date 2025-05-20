@@ -523,6 +523,9 @@ export default (sbp('sbp/selectors/register', {
           // These keys (contract state) will be restored from the Chelonia
           // state upon login (see `loadState`). Remove them to avoid storing
           // unnecessary data.
+          // These deletions aren't done for correctness (since they don't
+          // affect the restored state, again because `loadState` discards
+          // this information) but rather for compactness.
           Object.keys(cheloniaState.contracts || {}).forEach((contractID) => {
             delete state[contractID]
           })
