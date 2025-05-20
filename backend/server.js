@@ -288,18 +288,21 @@ sbp('sbp/selectors/register', {
   },
   'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
     const sizeKey = `_private_contractFilesTotalSize_${resourceID}`
-    return updateSize(resourceID, sizeKey, size)
+    return updateSize(resourceID, sizeKey, size, true)
   },
   'backend/server/stop': function () {
     return hapi.stop()
   },
-  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string): Promise<void> {
+  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string, skipIfDeleted?: boolean): Promise<void> {
     const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
     const rawManifest = await sbp('chelonia.db/get', cid)
     const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
     if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
-    if (rawManifest === '') throw new BackendErrorGone()
-    if (!rawManifest) throw new BackendErrorNotFound()
+    // If running in a persistent queue, already deleted contract should not
+    // result in an error, because exceptions will result in the task being
+    // re-attempted
+    if (rawManifest === '') { if (skipIfDeleted) return; throw new BackendErrorGone() }
+    if (!rawManifest) { if (skipIfDeleted) return; throw new BackendErrorNotFound() }
 
     try {
       const manifest = JSON.parse(rawManifest)
@@ -330,7 +333,7 @@ sbp('sbp/selectors/register', {
     }
   },
   // eslint-disable-next-line require-await
-  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string): Promise<void> {
+  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string, skipIfDeleted?: boolean): Promise<void> {
     let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
     if (!contractsPendingDeletion) {
       contractsPendingDeletion = new Set()
@@ -347,8 +350,11 @@ sbp('sbp/selectors/register', {
       if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
       const rawManifest = await sbp('chelonia.db/get', cid)
       const size = ultimateOwnerID && await sbp('chelonia.db/get', `_private_size_${cid}`)
-      if (rawManifest === '') throw new BackendErrorGone()
-      if (!rawManifest) throw new BackendErrorNotFound()
+      // If running in a persistent queue, already deleted contract should not
+      // result in an error, because exceptions will result in the task being
+      // re-attempted
+      if (rawManifest === '') { if (skipIfDeleted) return; throw new BackendErrorGone() }
+      if (!rawManifest) { if (skipIfDeleted) return; throw new BackendErrorNotFound() }
 
       // Cascade delete all resources owned by this contract, such as files
       // (attachments) and other contracts. Removing a single contract could
@@ -367,9 +373,9 @@ sbp('sbp/selectors/register', {
           const parsed = parseCID(resourceCid)
 
           if (parsed.code === multicodes.SHELTER_CONTRACT_DATA) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid, ultimateOwnerID])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid, ultimateOwnerID, true])
           } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid, ultimateOwnerID])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid, ultimateOwnerID, true])
           } else {
             console.warn({ cid, resourceCid, code: parsed.code }, 'Resource should be deleted but it is of an unknown type')
           }

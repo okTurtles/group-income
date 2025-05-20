@@ -44,14 +44,19 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
-export const updateSize = async (resourceID: string, sizeKey: string, size: number) => {
+export const updateSize = async (resourceID: string, sizeKey: string, size: number, skipIfDeleted?: boolean) => {
   if (!Number.isSafeInteger(size)) {
     throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
   }
   // Use a queue to ensure atomic updates
   await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
     // Size is stored as a decimal value
-    const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, { bypassCache: true }) ?? '0', 10)
+    const storedSize = await sbp('chelonia.db/get', sizeKey, { bypassCache: true })
+    // In some cases, we may want to skip updating the size if the key doesn't
+    // exist (for example, if we're updating the size of a child resource and
+    // the parent itself has been deleted).
+    if (skipIfDeleted && storedSize == null) return
+    const existingSize = parseInt(storedSize ?? '0', 10)
     if (!(existingSize >= 0)) {
       throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
     }
