@@ -30,13 +30,13 @@ const loadState = async (identityContractID: string, password: ?string) => {
       return { encryptionParams, state, cheloniaState }
     } else {
       // There's no state to restore
-      return { encryptionParams, state, cheloniaState: null }
+      return { encryptionParams, state: null, cheloniaState: null }
     }
   } else {
     const state = await sbp('gi.db/settings/load', identityContractID)
 
     // cheloniaState is only stored in settings when logging in with a password
-    // If there's an active session, then chelnoiaState is stored and
+    // If there's an active session, then cheloniaState is stored and
     // managed separately
     return { encryptionParams: null, state, cheloniaState: null }
   }
@@ -467,7 +467,7 @@ export default (sbp('sbp/selectors/register', {
               : deleted
                 ? L('Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}.', { err: errMessage, ...LTags() })
                 : L('An error occurred while logging in. Please try logging in again. {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-            primaryButton: L('Continue'),
+            primaryButton: L('Log out'),
             // secondaryButton: L('No'),
             primaryButtonStyle: 'primary', // make primary button 'filled' style
             isContentCentered: !forkedChain && !deleted
@@ -518,7 +518,15 @@ export default (sbp('sbp/selectors/register', {
         // `.cheloniaState` key. This will be used later when logging in
         // to restore both the Vuex and Chelonia states
         if (!wipeOut) {
+          // Save current Chelonia state into the state to be saved
           state.cheloniaState = cheloniaState
+          // These keys (contract state) will be restored from the Chelonia
+          // state upon login (see `loadState`). Remove them to avoid storing
+          // unnecessary data.
+          Object.keys(cheloniaState.contracts || {}).forEach((contractID) => {
+            delete state[contractID]
+          })
+          delete state.contracts
 
           await sbp('state/vuex/save', true, state)
         }

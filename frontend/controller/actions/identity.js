@@ -406,7 +406,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        if (!state) {
+        if (!cheloniaState?.contracts[identityContractID]?.references) {
           // Make sure we don't unsubscribe from our own identity contract
           // Note that this should be done _after_ calling
           // `chelonia/storeSecretKeys`: If the following line results in
