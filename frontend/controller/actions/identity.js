@@ -406,7 +406,21 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
-        if (!state) {
+        // When syncing from scratch, we need to call `retain` on our own
+        // identity contract to ensure the reference count is positive and we
+        // don't accidentally remove it.
+        // When not syncing from scratch, we call `sync` instead, since we don't
+        // want to increment the reference count every time the app is loaded.
+        // To decide what to call, we don't simply check for `state` (which
+        // would be defined when restoring from a saved state) because in some
+        // cases the reference count could be 0, resulting in an error.
+        // Instead, we check if the reference count exists. This check is
+        // correct and also ensures that, if the state gets corrupted for some
+        // reason (for example, because the contract is deleted from the server
+        // and then restored) and the reference count lost, we call `/retain`
+        // again, which will succeed and also ensure our own identity contract
+        // won't get removed.
+        if (!cheloniaState?.contracts[identityContractID]?.references) {
           // Make sure we don't unsubscribe from our own identity contract
           // Note that this should be done _after_ calling
           // `chelonia/storeSecretKeys`: If the following line results in
