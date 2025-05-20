@@ -28,6 +28,7 @@ import {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   JOINED_CHATROOM, JOINED_GROUP,
   KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
+  NEW_CHATROOM_NOTIFICATION_SETTINGS,
   NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
@@ -93,6 +94,7 @@ const setupRootState = () => {
   const rootState = sbp('chelonia/rootState')
 
   if (!rootState.chatroom) rootState.chatroom = Object.create(null)
+  if (!rootState.chatroom.chatNotificationSettings) rootState.chatroom.chatNotificationSettings = Object.create(null)
   if (!rootState.chatroom.chatRoomScrollPosition) rootState.chatroom.chatRoomScrollPosition = Object.create(null)
   if (!rootState.chatroom.unreadMessages) rootState.chatroom.unreadMessages = Object.create(null)
 
@@ -179,6 +181,17 @@ sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
   const message = {
     type: 'event',
     subtype: NEW_CHATROOM_UNREAD_POSITION,
+    data
+  }
+  broadcastMessage(message, transferables)
+})
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (args) => {
+  // Set a 'from' parameter to signal it comes from the SW
+  const argsCopy = { ...args, from: 'sw' }
+  const { data, transferables } = serializer([argsCopy])
+  const message = {
+    type: 'event',
+    subtype: NEW_CHATROOM_NOTIFICATION_SETTINGS,
     data
   }
   broadcastMessage(message, transferables)
@@ -568,6 +581,18 @@ sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
 sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
   const rootState = sbp('state/vuex/state')
   rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
+})
+
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings }) => {
+  const rootState = sbp('chelonia/rootState')
+  if (chatRoomID) {
+    if (!rootState.chatroom.chatNotificationSettings[chatRoomID]) {
+      rootState.chatroom.chatNotificationSettings[chatRoomID] = {}
+    }
+    for (const key in settings) {
+      rootState.chatroom.chatNotificationSettings[chatRoomID][key] = settings[key]
+    }
+  }
 })
 
 // Empty export declaration to tell the bundler this file has no exports, which
