@@ -149,6 +149,7 @@ export default async () => {
         return value
       },
       'chelonia.db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           const existingValue = await readData(key)
@@ -160,6 +161,7 @@ export default async () => {
         cache.set(key, value)
       },
       'chelonia.db/delete': async function (key: string): Promise<void> {
+        if (process.env.CHELONIA_ARCHIVE_MODE) throw new Error('Unable to write in archive mode')
         checkKey(key)
         if (key.startsWith('_private_immutable')) {
           throw new Error('Cannot delete immutable key')
