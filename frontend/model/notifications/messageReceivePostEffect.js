@@ -3,6 +3,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import {
+  CHATROOM_PRIVACY_LEVEL,
   MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
   MESSAGE_TYPES
@@ -72,7 +73,11 @@ async function messageReceivePostEffect ({
     }
     const path = `/group-chat/${contractID}`
 
-    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
+    const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
+      ? rootGetters.chatNotificationSettings.privateDefault
+      : rootGetters.chatNotificationSettings.publicDefault
+    )
     const { messageNotification, messageSound } = chatNotificationSettings
 
     // If the contract is syncing (meaning we're loading the app, joining a
@@ -100,7 +105,11 @@ async function messageReceivePostEffect ({
       path
     })
     // `MESSAGE_RECEIVE` should be forwarded to the tab
-    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
+    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {
+      contractID,
+      messageHash,
+      messageType
+    })
   } finally {
     await sbp('chelonia/contract/release', contractID, { ephemeral: true })
   }
