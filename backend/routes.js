@@ -195,6 +195,7 @@ route.POST('/event', {
     payload: Joi.string().required()
   }
 }, async function (request, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   // IMPORTANT: IT IS A REQUIREMENT THAT ANY PROXY SERVERS (E.G. nginx) IN FRONT OF US SET THE
   // X-Real-IP HEADER! OTHERWISE THIS IS EASILY SPOOFED!
   const ip = request.headers['x-real-ip'] || request.info.remoteAddress
@@ -369,6 +370,7 @@ if (process.env.NODE_ENV === 'development') {
       })
     }
   }, function (request, h) {
+    if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
     const ip = request.headers['x-real-ip'] || request.info.remoteAddress
     const log = levelToColor[request.payload.level]
     console.debug(chalk.bold.yellow(`REMOTE LOG (${ip}): `) + log(`[${request.payload.level}] ${request.payload.value}`))
@@ -493,6 +495,7 @@ if (process.env.NODE_ENV === 'development') {
       timeout: 10 * SECOND // TODO: make this a configurable setting
     }
   }, async function (request, h) {
+    if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
     try {
       console.log('FILE UPLOAD!')
       const { hash, data } = request.payload
@@ -535,6 +538,7 @@ route.POST('/file', {
     timeout: 10 * SECOND // TODO: make this a configurable setting
   }
 }, async function (request, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   try {
     console.info('FILE UPLOAD!')
     const credentials = request.auth.credentials
@@ -678,6 +682,7 @@ route.POST('/deleteFile/{hash}', {
     })
   }
 }, async function (request, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   const { hash } = request.params
   const strategy = request.auth.strategy
   const parsed = maybeParseCID(hash)
@@ -747,6 +752,7 @@ route.POST('/deleteContract/{hash}', {
     mode: 'required'
   }
 }, async function (request, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   const { hash } = request.params
   const strategy = request.auth.strategy
   if (!hash || hash.startsWith('_private')) return Boom.notFound()
@@ -829,6 +835,7 @@ route.POST('/kv/{contractID}/{key}', {
     })
   }
 }, async function (request, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   const { contractID, key } = request.params
 
   const parsed = maybeParseCID(contractID)
@@ -938,6 +945,11 @@ route.GET('/kv/{contractID}/{key}', {
   return h.response(result).etag(cid).header('x-cid', `"${cid}"`)
 })
 
+route.GET('/serverMessages', { cache: { otherwise: 'no-store' } }, (request, h) => {
+  if (!process.env.CHELONIA_SERVER_MESSAGES) return []
+  return h.response(process.env.CHELONIA_SERVER_MESSAGES).type('application/json')
+})
+
 // SPA routes
 
 route.GET('/assets/{subpath*}', {
@@ -1012,6 +1024,7 @@ route.POST('/zkpp/register/{name}', {
     ])
   }
 }, async function (req, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   const lookupResult = await sbp('backend/db/lookupName', req.params['name'])
   if (lookupResult) {
     // If the username is already registered, abort
@@ -1100,6 +1113,7 @@ route.POST('/zkpp/{contractID}/updatePasswordHash', {
     })
   }
 }, async function (req, h) {
+  if (process.env.CHELONIA_ARCHIVE_MODE) return Boom.notImplemented('Server in archive mode')
   try {
     const result = await updateContractSalt(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
