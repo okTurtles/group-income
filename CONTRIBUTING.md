@@ -56,19 +56,20 @@ Pull requests (PRs) must adhere to the following requirements (unless the Founat
 
 ## How to help by translating
 
-1. Clone this repository locally.
-2. Download the [`strings`](https://github.com/okTurtles/strings/releases) utility for your platform.
-3. Create a branch using git locally for your changes. If you don't know how to do this, feel free to ask ChatGPT or the Internet for help.
-4. Open the [`strings/` folder](https://github.com/okTurtles/group-income/tree/master/strings).
+You need to be somewhat familiar with how Github works (to know how to edit files and create pull requests). After that it's pretty simple:
+
+1. Either use the Github UI to edit files, or clone this repository and create a new branch using the `git` command.
+2. Look at the [`strings/` folder](https://github.com/okTurtles/group-income/tree/master/strings).
     - You will see files like `english.strings`, `english.json`, `french.strings`, `french.json`, etc.
-    - If you see your `<language>.strings`, open that file and begin adding translations for any strings marked `MISSING TRANSLATION`
+    - If you see your `<language>.strings`, edit that file and begin adding translations for any strings marked `MISSING TRANSLATION`
     - If you do not see such a file, then copy `english.strings` into another file called `<your-language>.strings`. For example, you can create `german.strings`. Then begin adding translations. Use [`french.strings`](https://github.com/okTurtles/group-income/blob/master/strings/french.strings) as an example for what to do.
-5. When you are done, save the file and run the strings command on the `frontend/` folder like this: `./strings.mac frontend/`
-6. At this point you are ready to submit a pull request.
+3. When you are done, save the file and send us a pull request with the changes.
 
-Any time strings in the app are added or modified, simply add the updated translations to `<language>.strings` and run the strings command in the same way (and then send a PR! 😄).
+We'll then use our [`strings`](https://github.com/okTurtles/strings) command to import the changes into Github.
 
-Thank you so much! Read more about the `strings` utility [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
+Thank you so much!
+
+If you're like to learn more about the `strings` utility [see this article](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
 
 ## How to submit an issue
 

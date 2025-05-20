@@ -26,11 +26,15 @@ export default ({
     }
   },
   methods: {
-    shouldPlay () {
-      return !isPwa() && (document.hidden || this.isAppIdle)
+    shouldPlay (contractID: string) {
+      return !isPwa() && !((this.$route.name === 'GroupChatConversation' && this.$route.params.chatRoomID === contractID) && !this.isAppIdle)
     },
-    playMessageReceive () {
-      if (this.shouldPlay()) {
+    playMessageReceive ({ contractID }: {
+      contractID: string,
+      messageHash: string,
+      messageType: string
+    }) {
+      if (this.shouldPlay(contractID)) {
         this.$refs.msgReceive.play()
       }
     },
