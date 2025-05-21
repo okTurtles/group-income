@@ -165,12 +165,11 @@ sbp('okTurtles.eventQueue/queueEvent', readyQueueName, () => setTimeout(sbp, TAS
 sbp('sbp/selectors/register', {
   'worker/computeCredits': async () => {
     const billableEntities = await sbp('chelonia.db/get', '_private_billable_entities', { bypassCache: true })
-    if (!billableEntities) return
 
     // Fetch the list of all entities that should be billed.
     // Using bypassCache here ensures we don't miss newly added entities at the
     // cost of performance
-    await Promise.all(billableEntities.split('\x00').map(async (billableEntity) => {
+    billableEntities && await Promise.all(billableEntities.split('\x00').map(async (billableEntity) => {
       // Fetch the current total size for the entity.
       const sizeString = await sbp('chelonia.db/get', `_private_ownerTotalSize_${billableEntity}`, { bypassCache: true })
       const size = parseInt(sizeString, 10)
