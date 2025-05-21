@@ -668,7 +668,7 @@ route.POST('/deleteFile/{hash}', {
   // Authentication passed, now proceed to delete the file and its associated
   // keys
   try {
-    await sbp('backend/deleteFile', hash, undefined, true)
+    await sbp('backend/deleteFile', hash, null, true)
     return h.response()
   } catch (e) {
     return errorMapper(e)
@@ -724,7 +724,7 @@ route.POST('/deleteContract/{hash}', {
   // Authentication passed, now proceed to delete the contract and its associated
   // keys
   try {
-    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash, undefined, true])
+    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash, null, true])
     if (username) {
       const ip = request.headers['x-real-ip'] || request.info.remoteAddress
       console.info({ contractID: hash, username, ip, taskId: id }, 'Scheduled deletion on named contract')

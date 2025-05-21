@@ -293,7 +293,7 @@ sbp('sbp/selectors/register', {
   'backend/server/stop': function () {
     return hapi.stop()
   },
-  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string, skipIfDeleted?: boolean): Promise<void> {
+  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string | null, skipIfDeleted?: boolean | null): Promise<void> {
     const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
     const rawManifest = await sbp('chelonia.db/get', cid)
     const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
@@ -333,7 +333,7 @@ sbp('sbp/selectors/register', {
     }
   },
   // eslint-disable-next-line require-await
-  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string, skipIfDeleted?: boolean): Promise<void> {
+  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string | null, skipIfDeleted?: boolean | null): Promise<void> {
     let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
     if (!contractsPendingDeletion) {
       contractsPendingDeletion = new Set()
