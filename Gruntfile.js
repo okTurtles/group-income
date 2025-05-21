@@ -467,15 +467,6 @@ module.exports = (grunt) => {
     grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
   })
 
-  // Useful helper task for `grunt test`.
-  grunt.registerTask('backend:launch', '[internal]', function () {
-    const done = this.async()
-    grunt.log.writeln('backend: launching...')
-    // Provides Babel support for the backend files.
-    require('@babel/register')
-    import(backendIndex).then(done).catch(done)
-  })
-
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
   grunt.registerTask('backend:relaunch', '[internal]', function () {
@@ -601,7 +592,7 @@ module.exports = (grunt) => {
     // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
     // contract manifests match the ones that are the dist archive. We do this in both production
     // and development environments to make sure they match when serving the site using grunt serve.
-    grunt.task.run(['exec:chelProdDeploy', 'backend:launch', 'keepalive'])
+    grunt.task.run(['exec:chelProdDeploy', 'backend:relaunch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
@@ -752,9 +743,9 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

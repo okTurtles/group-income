@@ -8,7 +8,7 @@ import chalk from 'chalk'
 import path from 'node:path'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
-import { appendToIndexFactory } from './database.js'
+import { appendToIndexFactory, lookupUltimateOwner } from './database.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 import { blake32Hash } from '../shared/functions.js'
@@ -558,7 +558,9 @@ route.POST('/file', {
     // Store attribution information
     await sbp('backend/server/saveOwner', credentials.billableContractID, manifestHash)
     // Store size information
-    await sbp('backend/server/updateSize', manifestHash, manifest.size + manifestMeta.payload.byteLength)
+    const size = manifest.size + manifestMeta.payload.byteLength
+    await sbp('backend/server/updateSize', manifestHash, size)
+    await sbp('backend/server/updateContractFilesTotalSize', credentials.billableContractID, size)
     // Store deletion token
     const deletionTokenDgst = request.headers['shelter-deletion-token-digest']
     if (deletionTokenDgst) {
@@ -639,19 +641,7 @@ route.POST('/deleteFile/{hash}', {
 
   switch (strategy) {
     case 'chel-shelter': {
-      let ultimateOwner = owner
-      let count = 0
-      // Walk up the ownership tree
-      do {
-        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
-        if (owner) {
-          ultimateOwner = owner
-          count++
-        } else {
-          break
-        }
-      // Prevent an infinite loop
-      } while (count < 128)
+      const ultimateOwner = await lookupUltimateOwner(owner)
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
@@ -679,7 +669,7 @@ route.POST('/deleteFile/{hash}', {
   // Authentication passed, now proceed to delete the file and its associated
   // keys
   try {
-    await sbp('backend/deleteFile', hash)
+    await sbp('backend/deleteFile', hash, null, true)
     return h.response()
   } catch (e) {
     return errorMapper(e)
@@ -706,19 +696,7 @@ route.POST('/deleteContract/{hash}', {
         return Boom.notFound()
       }
 
-      let ultimateOwner = owner
-      let count = 0
-      // Walk up the ownership tree
-      do {
-        const owner = await sbp('chelonia.db/get', `_private_owner_${ultimateOwner}`)
-        if (owner) {
-          ultimateOwner = owner
-          count++
-        } else {
-          break
-        }
-      // Prevent an infinite loop
-      } while (count < 128)
+      const ultimateOwner = await lookupUltimateOwner(owner)
       // Check that the user making the request is the ultimate owner (i.e.,
       // that they have permission to delete this file)
       if (!ctEq(request.auth.credentials.billableContractID, ultimateOwner)) {
@@ -747,7 +725,7 @@ route.POST('/deleteContract/{hash}', {
   // Authentication passed, now proceed to delete the contract and its associated
   // keys
   try {
-    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash])
+    const [id] = sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', hash, null, true])
     if (username) {
       const ip = request.headers['x-real-ip'] || request.info.remoteAddress
       console.info({ contractID: hash, username, ip, taskId: id }, 'Scheduled deletion on named contract')
@@ -790,7 +768,7 @@ route.POST('/kv/{contractID}/{key}', {
   }
 
   // Use a queue to prevent race conditions (for example, writing to a contract
-  // that's being deleeted or updated)
+  // that's being deleted or updated)
   return sbp('chelonia/queueInvocation', contractID, async () => {
     const existing = await sbp('chelonia.db/get', `_private_kv_${contractID}_${key}`)
 

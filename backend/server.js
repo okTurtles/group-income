@@ -3,13 +3,16 @@
 import Hapi from '@hapi/hapi'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
+import { join } from 'node:path'
+import { Worker } from 'node:worker_threads'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/persistent-actions.js'
 import { SERVER } from '~/shared/domains/chelonia/presets.js'
 import { multicodes, parseCID } from '~/shared/functions.js'
 import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
-import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, removeFromIndexFactory } from './database.js'
+import { CREDITS_WORKER_TASK_TIME_INTERVAL, OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL } from './constants.js'
+import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE, SERVER_INSTANCE } from './instance-keys.js'
@@ -23,6 +26,59 @@ import {
   createServer
 } from './pubsub.js'
 import { addChannelToSubscription, deleteChannelFromSubscription, postEvent, pushServerActionhandlers, subscriptionInfoWrapper } from './push.js'
+
+const createWorker = (path: string): {
+  ready: Promise<void>,
+  rpcSbp: (...args: any) => Promise<any>,
+  terminate: () => Promise<number>
+} => {
+  const worker = new Worker(path)
+  const ready = new Promise((resolve, reject) => {
+    worker.on('message', (msg) => {
+      if (msg === 'ready') resolve()
+    })
+    worker.on('error', reject)
+  })
+
+  const rpcSbp_ = (...args: any) => {
+    return new Promise((resolve, reject) => {
+      const mc = new MessageChannel()
+      mc.port2.onmessage = (event) => {
+        const [success, result] = ((event.data: any): [boolean, any])
+        if (success) return resolve(result)
+        reject(result)
+      }
+      mc.port2.onmessageerror = () => {
+        reject(Error('Message error'))
+      }
+      worker.postMessage([mc.port1, ...args], [mc.port1])
+    })
+  }
+
+  let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
+  // Avoid unncessary `ready.then` if we already know the promise has resolved
+  ready.then(() => {
+    rpcSbp = rpcSbp_
+  })
+
+  return {
+    ready,
+    rpcSbp,
+    terminate: () => worker.terminate()
+  }
+}
+
+if (CREDITS_WORKER_TASK_TIME_INTERVAL && OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL > CREDITS_WORKER_TASK_TIME_INTERVAL) {
+  process.stderr.write('The size calculation worker must run more frequently than the credits worker for accurate billing')
+  process.exit(1)
+}
+
+const ownerSizeTotalWorker = process.env.CHELONIA_ARCHIVE_MODE || !OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL
+  ? undefined
+  : createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+const creditsWorker = process.env.CHELONIA_ARCHIVE_MODE || !CREDITS_WORKER_TASK_TIME_INTERVAL
+  ? undefined
+  : createWorker(join(__dirname, 'creditsWorker.js'))
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -179,32 +235,58 @@ sbp('sbp/selectors/register', {
       // This is done in a queue to handle several simultaneous requests
       // reading and writing to the same key
       await appendToIndexFactory(resourcesKey)(resourceID)
+      // Done as a persistent action to return quickly. If one of the owners
+      // up the chain has many resources, the operation could take a while.
+      sbp('chelonia.persistentActions/enqueue', ['backend/server/addToIndirectResourcesIndex', resourceID])
     })
   },
-  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
-  'backend/server/updateSize': async function (resourceID: string, size: number) {
-    const sizeKey = `_private_size_${resourceID}`
-    if (!Number.isSafeInteger(size)) {
-      throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
+  'backend/server/addToIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    let indirectOwnerID = ownerID
+    // If the owner of the owner doesn't exist, there are no indirect resources.
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await appendToIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(resourceID)
     }
-    // Use a queue to ensure atomic updates
-    await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
-      // Size is stored as a decimal value
-      const existingSize = parseInt(await sbp('chelonia.db/get', sizeKey, 10) ?? '0')
-      if (!(existingSize >= 0)) {
-        throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
-      }
-      await sbp('chelonia.db/set', sizeKey, (existingSize + size).toString(10))
+  },
+  'backend/server/removeFromIndirectResourcesIndex': async function (resourceID: string) {
+    const ownerID = await sbp('chelonia.db/get', `_private_owner_${resourceID}`)
+    const resources = await sbp('chelonia.db/get', `_private_resources_${resourceID}`)
+    const indirectResources = resources ? await sbp('chelonia.db/get', `_private_indirectResources_${resourceID}`) : undefined
+    const allSubresources = [
+      resourceID,
+      ...(resources ? resources.split('\x00') : []),
+      ...(indirectResources ? indirectResources.split('\x00') : [])
+    ]
+    let indirectOwnerID = ownerID
+    while ((indirectOwnerID = await sbp('chelonia.db/get', `_private_owner_${indirectOwnerID}`))) {
+      await removeFromIndexFactory(`_private_indirectResources_${indirectOwnerID}`)(allSubresources)
+    }
+  },
+  'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
+  'backend/server/updateSize': function (resourceID: string, size: number) {
+    const sizeKey = `_private_size_${resourceID}`
+    return updateSize(resourceID, sizeKey, size).then(() => {
+      // Because this is relevant key for size accounting, call updateSizeSideEffects
+      return ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID, size })
     })
+  },
+  'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
+    const sizeKey = `_private_contractFilesTotalSize_${resourceID}`
+    return updateSize(resourceID, sizeKey, size, true)
   },
   'backend/server/stop': function () {
     return hapi.stop()
   },
-  async 'backend/deleteFile' (cid: string): Promise<void> {
+  async 'backend/deleteFile' (cid: string, ultimateOwnerID?: string | null, skipIfDeleted?: boolean | null): Promise<void> {
     const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
     const rawManifest = await sbp('chelonia.db/get', cid)
-    if (rawManifest === '') throw new BackendErrorGone()
-    if (!rawManifest) throw new BackendErrorNotFound()
+    const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
+    if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
+    // If running in a persistent queue, already deleted contract should not
+    // result in an error, because exceptions will result in the task being
+    // re-attempted
+    if (rawManifest === '') { if (skipIfDeleted) return; throw new BackendErrorGone() }
+    if (!rawManifest) { if (skipIfDeleted) return; throw new BackendErrorNotFound() }
 
     try {
       const manifest = JSON.parse(rawManifest)
@@ -221,15 +303,21 @@ sbp('sbp/selectors/register', {
     // without using a queue
     const resourcesKey = `_private_resources_${owner}`
     await removeFromIndexFactory(resourcesKey)(cid)
+    await sbp('backend/server/removeFromIndirectResourcesIndex', cid)
 
     await sbp('chelonia.db/delete', `_private_owner_${cid}`)
     await sbp('chelonia.db/delete', `_private_size_${cid}`)
     await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
 
     await sbp('chelonia.db/set', cid, '')
+    await sbp('backend/server/updateContractFilesTotalSize', owner, -Number(size))
+
+    if (ultimateOwnerID && size) {
+      await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
+    }
   },
   // eslint-disable-next-line require-await
-  async 'backend/deleteContract' (cid: string): Promise<void> {
+  async 'backend/deleteContract' (cid: string, ultimateOwnerID?: string | null, skipIfDeleted?: boolean | null): Promise<void> {
     let contractsPendingDeletion = sbp('okTurtles.data/get', 'contractsPendingDeletion')
     if (!contractsPendingDeletion) {
       contractsPendingDeletion = new Set()
@@ -243,9 +331,14 @@ sbp('sbp/selectors/register', {
 
     return sbp('chelonia/queueInvocation', cid, async () => {
       const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
+      if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
       const rawManifest = await sbp('chelonia.db/get', cid)
-      if (rawManifest === '') throw new BackendErrorGone()
-      if (!rawManifest) throw new BackendErrorNotFound()
+      const size = ultimateOwnerID && await sbp('chelonia.db/get', `_private_size_${cid}`)
+      // If running in a persistent queue, already deleted contract should not
+      // result in an error, because exceptions will result in the task being
+      // re-attempted
+      if (rawManifest === '') { if (skipIfDeleted) return; throw new BackendErrorGone() }
+      if (!rawManifest) { if (skipIfDeleted) return; throw new BackendErrorNotFound() }
 
       // Cascade delete all resources owned by this contract, such as files
       // (attachments) and other contracts. Removing a single contract could
@@ -264,9 +357,9 @@ sbp('sbp/selectors/register', {
           const parsed = parseCID(resourceCid)
 
           if (parsed.code === multicodes.SHELTER_CONTRACT_DATA) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteContract', resourceCid, ultimateOwnerID, true])
           } else if (parsed.code === multicodes.SHELTER_FILE_MANIFEST) {
-            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid])
+            return sbp('chelonia.persistentActions/enqueue', ['backend/deleteFile', resourceCid, ultimateOwnerID, true])
           } else {
             console.warn({ cid, resourceCid, code: parsed.code }, 'Resource should be deleted but it is of an unknown type')
           }
@@ -306,6 +399,8 @@ sbp('sbp/selectors/register', {
         }))
       }
       await sbp('chelonia.db/delete', kvIndexKey)
+      await sbp('backend/server/removeFromIndirectResourcesIndex', cid)
+      await sbp('chelonia.db/delete', `_private_indirectResources_${cid}`)
 
       await sbp('chelonia.db/get', `_private_cid2name_${cid}`).then((name) => {
         if (!name) return
@@ -317,6 +412,7 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_rid_${cid}`)
       await sbp('chelonia.db/delete', `_private_owner_${cid}`)
       await sbp('chelonia.db/delete', `_private_size_${cid}`)
+      await sbp('chelonia.db/delete', `_private_contractFilesTotalSize_${cid}`)
       await sbp('chelonia.db/delete', `_private_deletionTokenDgst_${cid}`)
       await removeFromIndexFactory(`_private_resources_${owner}`)(cid)
 
@@ -326,6 +422,10 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/delete', `_private_keyop_idx_${cid}_0`)
       await sbp('chelonia.db/set', cid, '')
       sbp('chelonia/private/removeImmediately', cid)
+
+      if (ultimateOwnerID && size) {
+        await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
+      }
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
@@ -443,6 +543,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 
 ;(async function () {
   await initDB()
+  await ownerSizeTotalWorker?.ready
+  await creditsWorker?.ready
   await sbp('chelonia/configure', SERVER)
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

@@ -45,11 +45,11 @@ declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }
-declare module 'localforage' { declare module.exports: any }
 declare module 'node:fs' { declare module.exports: any }
 declare module 'node:fs/promises' { declare module.exports: any }
 declare module 'node:stream' { declare module.exports: any }
 declare module 'node:path' { declare module.exports: any }
+declare module 'node:worker_threads' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
 declare module 'node:sqlite' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
