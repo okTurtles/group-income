@@ -90,7 +90,7 @@ sbp('okTurtles.eventQueue/queueEvent', readyQueueName, async () => {
     }
   }
 
-  console.log(`[ownerSizeTotalWorker] Loaded ${updatedSizeList.size} CIDs for full recalculation.`)
+  console.info(`[ownerSizeTotalWorker] Loaded ${updatedSizeList.size} CIDs for full recalculation.`)
   if (updatedSizeList.size) {
     sbp('backend/server/computeSizeTask')
   }
@@ -180,6 +180,7 @@ sbp('sbp/selectors/register', {
    * Processes resource IDs from `updatedSizeList`.
    */
   'backend/server/computeSizeTask': async function () {
+    const start = performance.now()
     // Capture the current list and clear it
     const resourcesToRecalculate = Array.from(updatedSizeList)
     // Clear should happen *after* successful processing per owner below:
@@ -257,5 +258,7 @@ sbp('sbp/selectors/register', {
         }))
       })
     }))
+
+    console.info(`[ownerSizeTotalWorker] Computed size for ${updatedSizeList.size} CIDs in ${((performance.now() - start) / 1000).toFixed(2)} seconds.`)
   }
 })
