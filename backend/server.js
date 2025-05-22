@@ -73,12 +73,14 @@ if (CREDITS_WORKER_TASK_TIME_INTERVAL && OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTER
   process.exit(1)
 }
 
+// Done to match the extension set by the bundler (e.g., .cjs, .mjs, .js, etc.)
+const [extension] = __filename.match(/(?<!^\.)(?<=\.)([^.]+)$/) || ['.js']
 const ownerSizeTotalWorker = process.env.CHELONIA_ARCHIVE_MODE || !OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL
   ? undefined
-  : createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+  : createWorker(join(__dirname, `ownerSizeTotalWorker.${extension}`))
 const creditsWorker = process.env.CHELONIA_ARCHIVE_MODE || !CREDITS_WORKER_TASK_TIME_INTERVAL
   ? undefined
-  : createWorker(join(__dirname, 'creditsWorker.js'))
+  : createWorker(join(__dirname, `creditsWorker.${extension}`))
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 

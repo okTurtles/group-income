@@ -260,7 +260,7 @@ module.exports = (grunt) => {
       entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
     },
     backend: {
-      entryPoints: [backendIndex],
+      entryPoints: [backendIndex, './backend/creditsWorker.js', './backend/ownerSizeTotalWorker.js'],
       // The following dependencies were picked manually as they have issues
       // with bundling (because of imports needed from `node_modules`)
       external: ['pino', 'thread-stream', 'ws'],
