@@ -575,8 +575,10 @@ export function eventsAfter (contractID: string, sinceHeight: number, limit?: nu
     const eventsResponse = await this.config.fetch(lastUrl, { signal })
     if (!eventsResponse.ok) {
       const msg = `${eventsResponse.status}: ${eventsResponse.statusText}`
-      if (eventsResponse.status === 410) throw new ChelErrorResourceGone(msg)
-      throw new ChelErrorUnexpectedHttpResponseCode(msg)
+      // $FlowFixMe[extra-arg]
+      if (eventsResponse.status === 404 || eventsResponse.status === 410) throw new ChelErrorResourceGone(msg, { cause: eventsResponse.status })
+      // $FlowFixMe[extra-arg]
+      throw new ChelErrorUnexpectedHttpResponseCode(msg, { cause: eventsResponse.status })
     }
     if (!eventsResponse.body) throw new Error('Missing body')
     latestHeight = parseInt(eventsResponse.headers.get('shelter-headinfo-height'), 10)

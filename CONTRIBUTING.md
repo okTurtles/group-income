@@ -63,7 +63,8 @@ You need to be somewhat familiar with how Github works (to know how to edit file
     - You will see files like `english.strings`, `english.json`, `french.strings`, `french.json`, etc.
     - If you see your `<language>.strings`, edit that file and begin adding translations for any strings marked `MISSING TRANSLATION`
     - If you do not see such a file, then copy `english.strings` into another file called `<your-language>.strings`. For example, you can create `german.strings`. Then begin adding translations. Use [`french.strings`](https://github.com/okTurtles/group-income/blob/master/strings/french.strings) as an example for what to do.
-3. When you are done, save the file and send us a pull request with the changes.
+3. Don't modify any comments in the `.strings` file, don't modify the `.json` file (if it exists), don't translate variables (marked with braces like so: `{variable}`), just update the strings to the right of the `=` sign into your language, and escape quotes (`"`) inside of the quotes like so: `\"`
+4. When you are done, save the file and send us a pull request with the changes.
 
 We'll then use our [`strings`](https://github.com/okTurtles/strings) command to import the changes into Github.
 
