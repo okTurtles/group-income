@@ -30,13 +30,13 @@ const loadState = async (identityContractID: string, password: ?string) => {
       return { encryptionParams, state, cheloniaState }
     } else {
       // There's no state to restore
-      return { encryptionParams, state, cheloniaState: null }
+      return { encryptionParams, state: null, cheloniaState: null }
     }
   } else {
     const state = await sbp('gi.db/settings/load', identityContractID)
 
     // cheloniaState is only stored in settings when logging in with a password
-    // If there's an active session, then chelnoiaState is stored and
+    // If there's an active session, then cheloniaState is stored and
     // managed separately
     return { encryptionParams: null, state, cheloniaState: null }
   }
@@ -462,23 +462,26 @@ export default (sbp('sbp/selectors/register', {
           const errMessage = e?.message || String(e)
           console.error('[gi.app/identity] Error during login contract sync', e)
 
-          const wipeOut = (e && (e.name === 'ChelErrorForkedChain' || e.cause?.name === 'ChelErrorForkedChain'))
+          const forkedChain = (e && (e.name === 'ChelErrorForkedChain' || e.cause?.name === 'ChelErrorForkedChain'))
+          const deleted = (e && (e.name === 'ChelErrorResourceGone' || e.cause?.name === 'ChelErrorResourceGone'))
 
           const promptOptions = {
             heading: L('Login error'),
-            question: wipeOut
+            question: forkedChain
               ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
-              : L('Do you want to log out? {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-            primaryButton: L('Yes'),
-            secondaryButton: L('No'),
+              : deleted
+                ? L('Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}.', { err: errMessage, ...LTags() })
+                : L('An error occurred while logging in. Please try logging in again. {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
+            primaryButton: L('Log out'),
+            // secondaryButton: L('No'),
             primaryButtonStyle: 'primary', // make primary button 'filled' style
-            isContentCentered: !wipeOut
+            isContentCentered: !forkedChain && !deleted
           }
 
           const result = await sbp('gi.ui/prompt', promptOptions)
           if (result) {
             sbp('gi.ui/clearBanner')
-            return sbp('gi.app/identity/_private/logout', state, wipeOut)
+            return sbp('gi.app/identity/_private/logout', state, forkedChain)
           } else {
             sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
             throw e
@@ -520,7 +523,18 @@ export default (sbp('sbp/selectors/register', {
         // `.cheloniaState` key. This will be used later when logging in
         // to restore both the Vuex and Chelonia states
         if (!wipeOut) {
+          // Save current Chelonia state into the state to be saved
           state.cheloniaState = cheloniaState
+          // These keys (contract state) will be restored from the Chelonia
+          // state upon login (see `loadState`). Remove them to avoid storing
+          // unnecessary data.
+          // These deletions aren't done for correctness (since they don't
+          // affect the restored state, again because `loadState` discards
+          // this information) but rather for compactness.
+          Object.keys(cheloniaState.contracts || {}).forEach((contractID) => {
+            delete state[contractID]
+          })
+          delete state.contracts
 
           await sbp('state/vuex/save', true, state)
         }

@@ -44,6 +44,30 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
+export const updateSize = async (resourceID: string, sizeKey: string, size: number, skipIfDeleted?: boolean) => {
+  if (!Number.isSafeInteger(size)) {
+    throw new TypeError(`Invalid given size ${size} for ${resourceID}`)
+  }
+  // Use a queue to ensure atomic updates
+  await sbp('okTurtles.eventQueue/queueEvent', sizeKey, async () => {
+    // Size is stored as a decimal value
+    const storedSize = await sbp('chelonia.db/get', sizeKey, { bypassCache: true })
+    // In some cases, we may want to skip updating the size if the key doesn't
+    // exist (for example, if we're updating the size of a child resource and
+    // the parent itself has been deleted).
+    if (skipIfDeleted && storedSize == null) return
+    const existingSize = parseInt(storedSize ?? '0', 10)
+    if (!(existingSize >= 0)) {
+      throw new TypeError(`Invalid stored size ${existingSize} for ${resourceID}`)
+    }
+    const updatedSize = existingSize + size
+    if (!(updatedSize >= 0)) {
+      throw new TypeError(`Invalid stored updated size ${updatedSize} for ${resourceID}`)
+    }
+    await sbp('chelonia.db/set', sizeKey, updatedSize.toString(10))
+  })
+}
+
 // Streams stored contract log entries since the given entry hash (inclusive!).
 export default ((sbp('sbp/selectors/register', {
   'backend/db/streamEntriesAfter': async function (contractID: string, height: number, requestedLimit: ?number, options: { keyOps?: boolean } = {}): Promise<*> {
@@ -204,7 +228,7 @@ function namespaceKey (name: string): string {
   return 'name=' + name
 }
 
-export const initDB = async () => {
+export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean } = {}) => {
   // If persistence must be enabled:
   // - load and initialize the selected storage backend
   // - then overwrite 'chelonia.db/get' and '-set' to use it with an LRU cache
@@ -221,10 +245,12 @@ export const initDB = async () => {
 
     const prefixes = Object.keys(prefixHandlers)
     sbp('sbp/selectors/overwrite', {
-      'chelonia.db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
-        const lookupValue = cache.get(prefixableKey)
-        if (lookupValue !== undefined) {
-          return lookupValue
+      'chelonia.db/get': async function (prefixableKey: string, { bypassCache }: { bypassCache?: boolean } = {}): Promise<Buffer | string | void> {
+        if (!bypassCache) {
+          const lookupValue = cache.get(prefixableKey)
+          if (lookupValue !== undefined) {
+            return lookupValue
+          }
         }
         const [prefix, key] = parsePrefixableKey(prefixableKey)
         let value = await readData(key)
@@ -275,6 +301,7 @@ export const initDB = async () => {
     })
     sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
   }
+  if (skipDbPreloading) return
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
     // Remember to keep these values up-to-date.
@@ -342,7 +369,7 @@ export const appendToIndexFactory = (key: string): (value: string) => Promise<vo
     // is needed for the load & store operation.
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the current index from the database using the provided key
-      const currentIndex = await sbp('chelonia.db/get', key)
+      const currentIndex = await sbp('chelonia.db/get', key, { bypassCache: true })
 
       // If the current index exists, check if the value is already present
       if (currentIndex) {
@@ -381,45 +408,74 @@ const appendToNamesIndex = appendToIndexFactory('_private_names_index')
  * @param key - The key that identifies the index in the database.
  * @returns A function that takes a value to remove from the index.
  */
-export const removeFromIndexFactory = (key: string): (value: string) => Promise<void> => {
-  return (value: string) => {
+export const removeFromIndexFactory = (key: string): (values: string | string[]) => Promise<void> => {
+  return (values: string | string[]) => {
     return sbp('okTurtles.eventQueue/queueEvent', key, async () => {
       // Retrieve the existing entries from the database using the provided key
-      const existingEntries = await sbp('chelonia.db/get', key)
+      let existingEntries = await sbp('chelonia.db/get', key, { bypassCache: true })
       // Exit if there are no existing entries
       if (!existingEntries) return
 
-      // Handle the case where the value is at the end of the entries
-      if (existingEntries.endsWith('\x00' + value)) {
-        await sbp('chelonia.db/set', key, existingEntries.slice(0, -value.length - 1))
-        return
+      if (!Array.isArray(values)) {
+        values = [values]
       }
 
-      // Handle the case where the value is at the start of the entries
-      if (existingEntries.startsWith(value + '\x00')) {
-        await sbp('chelonia.db/set', key, existingEntries.slice(value.length + 1))
-        return
+      for (const value of values) {
+        // Handle the case where the value is at the end of the entries
+        // $FlowFixMe[incompatible-use]
+        if (existingEntries.endsWith('\x00' + value)) {
+          // $FlowFixMe[incompatible-use]
+          existingEntries = existingEntries.slice(0, -value.length - 1)
+          continue
+        }
+
+        // Handle the case where the value is at the start of the entries
+        // $FlowFixMe[incompatible-use]
+        if (existingEntries.startsWith(value + '\x00')) {
+          // $FlowFixMe[incompatible-use]
+          existingEntries = existingEntries.slice(value.length + 1)
+          continue
+        }
+
+        // Handle the case where the existing entries are exactly the value
+        if (existingEntries === value) {
+          // There's nothing left after removing `value` from `existingEntries`
+          // when `existingEntries` is equal to `value`, so set
+          // `existingEntries` to undefined and end the loop.
+          existingEntries = undefined
+          break
+        }
+
+        // Find the index of the value in the existing entries
+        // $FlowFixMe[incompatible-use]
+        const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
+        if (entryIndex === -1) continue
+
+        // Create an updated index by removing the value
+        // $FlowFixMe[incompatible-use]
+        existingEntries = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
       }
-
-      // Handle the case where the existing entries are exactly the value
-      if (existingEntries === value) {
-        await sbp('chelonia.db/delete', key)
-        return
-      }
-
-      // Find the index of the value in the existing entries
-      const entryIndex = existingEntries.indexOf('\x00' + value + '\x00')
-      if (entryIndex === -1) return
-
-      // Create an updated index by removing the value
-      const updatedIndex = existingEntries.slice(0, entryIndex) + existingEntries.slice(entryIndex + value.length + 1)
-
       // Update the index in the database or delete it if empty
-      if (updatedIndex) {
-        await sbp('chelonia.db/set', key, updatedIndex)
+      if (existingEntries) {
+        await sbp('chelonia.db/set', key, existingEntries)
       } else {
         await sbp('chelonia.db/delete', key)
       }
     })
   }
+}
+
+export const lookupUltimateOwner = async (resourceID: string): Promise<string> => {
+  let ownerID = resourceID
+  for (let depth = 128; depth >= 0; depth--) {
+    // Fetch the immediate owner.
+    const newOwnerID = await sbp('chelonia.db/get', `_private_owner_${ownerID}`, { bypassCache: true })
+    // Found the ultimate owner
+    if (!newOwnerID) break
+    if (!depth) {
+      throw new Error('Exceeded max depth looking up owner for ' + resourceID)
+    }
+    ownerID = newOwnerID
+  }
+  return ownerID
 }
