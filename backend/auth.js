@@ -2,8 +2,8 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
+import Boom from '@hapi/boom'
 import { verifyShelterAuthorizationHeader } from '~/shared/domains/chelonia/utils.js'
-const Boom = require('@hapi/boom')
 
 exports.plugin = {
   name: 'chel-auth',

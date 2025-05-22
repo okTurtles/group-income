@@ -1,6 +1,6 @@
 'use strict'
 
-const assert = require('assert')
+const assert = require('node:assert')
 
 /*
  * Imports a version of Acorn which supports object rest properties,

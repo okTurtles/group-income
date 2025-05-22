@@ -582,6 +582,7 @@ sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) 
   const rootState = sbp('state/vuex/state')
   rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
 })
+
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings }) => {
   const rootState = sbp('chelonia/rootState')
   if (chatRoomID) {
@@ -593,3 +594,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
     }
   }
 })
+
+// Empty export declaration to tell the bundler this file has no exports, which
+// prevents esbuild from adding `export` statement to the output file.
+export {}

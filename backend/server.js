@@ -73,28 +73,14 @@ if (CREDITS_WORKER_TASK_TIME_INTERVAL && OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTER
   process.exit(1)
 }
 
+// Done to match the extension set by the bundler (e.g., .cjs, .mjs, .js, etc.)
+const [extension] = __filename.match(/(?<!^\.)(?<=\.)([^.]+)$/) || ['.js']
 const ownerSizeTotalWorker = process.env.CHELONIA_ARCHIVE_MODE || !OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL
   ? undefined
-  : createWorker(join(__dirname, 'ownerSizeTotalWorker.js'))
+  : createWorker(join(__dirname, `ownerSizeTotalWorker.${extension}`))
 const creditsWorker = process.env.CHELONIA_ARCHIVE_MODE || !CREDITS_WORKER_TASK_TIME_INTERVAL
   ? undefined
-  : createWorker(join(__dirname, 'creditsWorker.js'))
-
-// Node.js version 18 and lower don't have global.crypto defined
-// by default
-if (
-  !('crypto' in global) &&
-  typeof require === 'function'
-) {
-  const { webcrypto } = require('crypto')
-  if (webcrypto) {
-    Object.defineProperty(global, 'crypto', {
-      'enumerable': true,
-      'configurable': true,
-      'get': () => webcrypto
-    })
-  }
-}
+  : createWorker(join(__dirname, `creditsWorker.${extension}`))
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
@@ -612,16 +598,16 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   })
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
-    { plugin: require('./auth.js') },
-    { plugin: require('@hapi/inert') }
+    { plugin: await import('./auth.js') },
+    { plugin: await import('@hapi/inert') }
     // {
-    //   plugin: require('hapi-pino'),
+    //   plugin: await import('hapi-pino'),
     //   options: {
     //     instance: logger
     //   }
     // }
   ])
-  require('./routes.js')
+  await import('./routes.js')
   await hapi.start()
   console.info('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)

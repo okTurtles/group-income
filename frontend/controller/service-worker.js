@@ -96,7 +96,7 @@ sbp('sbp/selectors/register', {
         ['routerBase', sbp('controller/router').options.base ?? ''],
         ['standalone', isPwa() ? '1' : '0']
       ])
-      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { scope: '/' })
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { type: 'module', scope: '/' })
 
       // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
       await swRegistration.update()
