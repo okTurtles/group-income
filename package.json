@@ -191,5 +191,9 @@
     "vue-cli-plugin-pug": "2.0.0",
     "vue-template-compiler": "2.6.12",
     "vue-template-es2015-compiler": "1.9.1"
+  },
+  "engines": {
+    "node": ">= 22.0.0",
+    "npm": ">= 10.5.1"
   }
 }
