@@ -968,6 +968,34 @@ export default ({
         }
       }
     },
+    async attemptSetReadUntilWithRetries ({ contractID, messageHash, createdHeight, forceUpdate }) {
+      const delays = [1000, 3000, 5000]
+      for (let i = 0; i < delays.length + 1; i++) {
+        try {
+          await sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
+            contractID, messageHash, createdHeight, forceUpdate
+          })
+          return // Success
+        } catch (e) {
+          const isNetworkError = e instanceof TypeError && e.message === 'Failed to fetch'
+          const isServerError = e.response && [500, 503].includes(e.response.status)
+          const isUnauthorized = e.response && e.response.status === 401
+
+          if (isUnauthorized) {
+            throw e // Do not retry on 401
+          }
+
+          if ((isNetworkError || isServerError) && i < delays.length) {
+            console.warn(`[ChatMain.vue] Attempt ${i + 1} failed for setChatRoomReadUntil. Retrying in ${delays[i]}ms...`, e)
+            await delay(delays[i])
+          } else if (i === delays.length) {
+            throw e // All retries exhausted
+          } else {
+            throw e // Non-retryable error
+          }
+        }
+      }
+    },
     updateReadUntilMessageHash ({
       messageHash,
       createdHeight,
@@ -988,11 +1016,44 @@ export default ({
         // NOTE: skip adding useless invocations in KV_QUEUE queue.
         if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
 
-        sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
+        this.attemptSetReadUntilWithRetries({
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
-          console.error('[ChatMain.vue] Error setting read until', e)
+          console.error('[ChatMain.vue] Error setting read until after retries', e)
+          if (e.response && e.response.status === 401) {
+            sbp('gi.ui/snackbar', { message: 'Session issue. Please try refreshing. If the problem persists, try logging out and back in.', type: 'error' })
+          } else {
+            sbp('gi.ui/snackbar', { message: 'Could not save read status. Will attempt again later.', type: 'warning' })
+          }
         })
+      }
+    },
+    async attemptMarkAsUnreadWithRetries ({ contractID, messageHash, createdHeight, unreadMessages }) {
+      const delays = [1000, 3000, 5000]
+      for (let i = 0; i < delays.length + 1; i++) {
+        try {
+          await sbp('gi.actions/identity/kv/markAsUnread', {
+            contractID, messageHash, createdHeight, unreadMessages
+          })
+          return // Success
+        } catch (e) {
+          const isNetworkError = e instanceof TypeError && e.message === 'Failed to fetch'
+          const isServerError = e.response && [500, 503].includes(e.response.status)
+          const isUnauthorized = e.response && e.response.status === 401
+
+          if (isUnauthorized) {
+            throw e // Do not retry on 401
+          }
+
+          if ((isNetworkError || isServerError) && i < delays.length) {
+            console.warn(`[ChatMain.vue] Attempt ${i + 1} failed for markAsUnread. Retrying in ${delays[i]}ms...`, e)
+            await delay(delays[i])
+          } else if (i === delays.length) {
+            throw e // All retries exhausted
+          } else {
+            throw e // Non-retryable error
+          }
+        }
       }
     },
     async markAsUnread ({ messageHash, createdHeight }) {
@@ -1026,20 +1087,20 @@ export default ({
 
       try {
         this.ephemeral.messageHashToMarkUnread = targetMsg.hash
-        await sbp('gi.actions/identity/kv/markAsUnread', {
+        await this.attemptMarkAsUnreadWithRetries({
           contractID: chatRoomID,
           messageHash: targetMsg.hash,
-          // NOTE: 'createdHeight' field stores the 'msg.height' value of the previous message of the target message and
-          //       then later used in the UI to determine on which message to display 'is-new' UI Element [1].
-          //       But in the case where the target is the first message of the chatroom, meaning there is no previous message,
-          //       we need to manually specify the decremented 'createdHeight' value here, so that [1] above does not break in the UI.
           createdHeight: isFirstMessage ? createdHeight - 1 : targetMsg.height,
-          // When marked as unread, all the messages after the target message are stored in 'unreadMessages' property.
           unreadMessages: getUpdatedUnreadMessages()
         })
       } catch (e) {
-        console.error('[ChatMain.vue] Error while marking message unread', e)
+        console.error('[ChatMain.vue] Error while marking message unread after retries', e)
         this.ephemeral.messageHashToMarkUnread = null
+        if (e.response && e.response.status === 401) {
+          sbp('gi.ui/snackbar', { message: 'Session issue. Please try refreshing. If the problem persists, try logging out and back in.', type: 'error' })
+        } else {
+          sbp('gi.ui/snackbar', { message: 'Could not mark message as unread. Will attempt again later.', type: 'warning' })
+        }
       }
     },
     markUnreadPostActions () {
