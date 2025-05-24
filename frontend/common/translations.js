@@ -34,7 +34,7 @@ export default (sbp('sbp/selectors/register', {
     //   since we don't have culture-specific translations yet.
     if (languageCode === currentLanguageCode) return
 
-    // Avoid fetching any ressource if the requested language is the default one.
+    // Avoid fetching any resource if the requested language is the default one.
     if (languageCode === defaultLanguageCode) {
       currentLanguage = defaultLanguage
       currentLanguageCode = defaultLanguageCode
@@ -44,7 +44,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       currentTranslationTable = (await sbp('backend/translations/get', language)) || defaultTranslationTable
 
-      // Only set `currentLanguage` if there was no error fetching the ressource.
+      // Only set `currentLanguage` if there was no error fetching the resource.
       currentLanguage = language
       currentLanguageCode = languageCode
     } catch (error) {
