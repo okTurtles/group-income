@@ -49,6 +49,9 @@ console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
+// this needs to be done early
+sbp('okTurtles.data/set', 'API_URL', self.location.origin)
+
 if (process.env.CI) {
   const originalFetch = self.fetch
   self.fetch = (...args) => {
@@ -208,8 +211,6 @@ async function startApp () {
     window.location.reload() // try again, sometimes it fixes it
     throw e
   })
-
-  sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
   /* eslint-disable no-new */
   new Vue({
