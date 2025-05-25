@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from 'turtledash'
+import { has, omit } from 'turtledash'
 import { b64ToStr } from '~/shared/functions.js'
 import type { SPKey, SPKeyPurpose, SPKeyUpdate, SPOpActionUnencrypted, SPOpAtomic, SPOpKeyAdd, SPOpKeyUpdate, SPOpValue, ProtoSPOpActionUnencrypted } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
@@ -242,7 +242,7 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPK
     // `chelonia/in/processMessage`: cloning `_notAfterHeight` will break key
     // rotations, since the new key will have the same expiration value as the
     // old key (the new key is supposed to have no expiration height).
-    const { _notAfterHeight, _notBeforeHeight, ...updatedKey } = { ...existingKey }
+    const updatedKey = omit(existingKey, ['_notAfterHeight', '_notBeforeHeight'])
     // Set the corresponding updated attributes
     if (uk.permissions) {
       updatedKey.permissions = uk.permissions
