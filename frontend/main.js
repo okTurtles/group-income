@@ -49,7 +49,8 @@ console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
-// this needs to be done early
+// this needs to be done early so that any code that depends on it
+// (like translations stuff) doesn't break.
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 
 if (process.env.CI) {
