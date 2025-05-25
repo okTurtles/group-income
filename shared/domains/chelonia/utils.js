@@ -236,7 +236,9 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPK
     if (uk.id && uk.id !== uk.oldKeyId) {
       updatedMap[uk.id] = uk.oldKeyId
     }
-    const updatedKey = { ...existingKey }
+    // Discard `_notAfterHeight` and `_notBeforeHeight`, since retaining them
+    // can cause issues reprocessing messages.
+    const { _notAfterHeight, _notBeforeHeight, ...updatedKey } = { ...existingKey }
     // Set the corresponding updated attributes
     if (uk.permissions) {
       updatedKey.permissions = uk.permissions
