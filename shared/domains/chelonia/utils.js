@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from 'turtledash'
+import { has, omit } from 'turtledash'
 import { b64ToStr } from '~/shared/functions.js'
 import type { SPOpKey, SPOpKeyPurpose, SPOpKeyUpdate, SPOpOpActionUnencrypted, SPOpOpAtomic, SPOpOpKeyAdd, SPOpOpKeyUpdate, SPOpOpValue, ProtoSPOpOpActionUnencrypted } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
@@ -236,7 +236,13 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPO
     if (uk.id && uk.id !== uk.oldKeyId) {
       updatedMap[uk.id] = uk.oldKeyId
     }
-    const updatedKey = { ...existingKey }
+    // Discard `_notAfterHeight` and `_notBeforeHeight`, since retaining them
+    // can cause issues reprocessing messages.
+    // An example is reprocessing old messages in a chatroom using
+    // `chelonia/in/processMessage`: cloning `_notAfterHeight` will break key
+    // rotations, since the new key will have the same expiration value as the
+    // old key (the new key is supposed to have no expiration height).
+    const updatedKey = omit(existingKey, ['_notAfterHeight', '_notBeforeHeight'])
     // Set the corresponding updated attributes
     if (uk.permissions) {
       updatedKey.permissions = uk.permissions
