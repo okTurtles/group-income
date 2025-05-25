@@ -238,6 +238,10 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPK
     }
     // Discard `_notAfterHeight` and `_notBeforeHeight`, since retaining them
     // can cause issues reprocessing messages.
+    // An example is reprocessing old messages in a chatroom using
+    // `chelonia/in/processMessage`: cloning `_notAfterHeight` will break key
+    // rotations, since the new key will have the same expiration value as the
+    // old key (the new key is supposed to have no expiration height).
     const { _notAfterHeight, _notBeforeHeight, ...updatedKey } = { ...existingKey }
     // Set the corresponding updated attributes
     if (uk.permissions) {
