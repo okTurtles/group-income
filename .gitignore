@@ -17,6 +17,7 @@ key.pub.json
 /sqlite.db
 /groupincome.db
 /test.db
+/database-router-config.json
 
 # Logs
 *.log

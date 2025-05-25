@@ -1,6 +1,6 @@
 {
   "name": "group-income",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "contractsVersion": "1.2.16",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
@@ -147,7 +147,7 @@
     "scrypt-async": "2.0.1",
     "sqlite3": "5.1.7",
     "three": "0.151.3",
-    "turtledash": "1.0.2",
+    "turtledash": "1.0.3",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
     "uuid": "9.0.0",
