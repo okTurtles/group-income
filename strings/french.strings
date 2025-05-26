@@ -1855,7 +1855,7 @@
 "This amount will not be used until someone needs it." = "Ce montant ne sera pas utilisé avant que quelqu’un en ait besoin.";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
-"Total Pledged" = "Total Contributions";
+"Total Pledged" = "Contributions Totales";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "You'll receive" = "Vous recevrez";
