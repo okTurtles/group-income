@@ -76,18 +76,16 @@ export default ({
       const entries = Object.keys(this.list.channels).map(chatId => {
         const chatroomState = this.$store.state.contracts[chatId]
         if (!chatroomState || typeof chatroomState?.height !== 'number') { return null }
-
-        const latestMsgHeight = chatroomState.height
+        const messages = this.$store.state[chatId]?.messages
         const chatReadUntilInfo = this.ourUnreadMessages?.[chatId]?.readUntil
 
-        if (!chatReadUntilInfo) {
-          // NOTE: If a user creates a new channel but leaves before any message is sent/received in there,
-          // it's 'readUntil' data is undefined. In this case, we can determine whether the latest message is not seen yet by checking if
-          // its height value is >= 3. (3 is the height value of the second message in every chatroom)
-          return [chatId, latestMsgHeight >= 3]
-        } else {
-          return [chatId, latestMsgHeight > chatReadUntilInfo.createdHeight]
-        }
+        // If there are no messages, assume everything has been read
+        if (!messages?.length) return [chatId, false]
+        // OTOH, if `readUntil` isn't set, assume the channel is unread
+        if (!chatReadUntilInfo) return [chatId, true]
+        // Otherwise, see if some message has a height higher than that of the
+        // last read message. If so, makr the channel as having unread messsages
+        return [chatId, messages.some(({ height }) => height > chatReadUntilInfo.createdHeight)]
       }).filter(Boolean)
 
       return Object.fromEntries(entries)
