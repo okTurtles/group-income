@@ -331,20 +331,20 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
     // Is this a an invite key? If so, run logic for invite keys and invitation
     // accounting
     if (key.name.startsWith('#inviteKey-')) {
-      if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
+      if (!state._vm.invites) state._vm.invites = Object.create(null)
       const inviteSecret = decryptedKey || (
         has(this.transientSecretKeys, key.id)
           ? serializeKey(this.transientSecretKeys[key.id], true)
           : undefined
       )
-      this.config.reactiveSet(state._vm.invites, key.id, {
+      state._vm.invites[key.id] = {
         status: INVITE_STATUS.VALID,
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,
         expires: key.meta.expires,
         inviteSecret,
         responses: []
-      })
+      }
     }
 
     // Is this KEY operation the result of requesting keys for another contract?
