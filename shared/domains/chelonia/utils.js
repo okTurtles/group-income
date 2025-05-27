@@ -13,7 +13,7 @@ import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
-const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
+const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER || '', 10) || Infinity
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): SPKey[]).find((k) => k.name === name && k._notAfterHeight == null)?.id
 
@@ -274,7 +274,7 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
 
   const storeSecretKey = (key, decryptedKey) => {
     const decryptedDeserializedKey = deserializeKey(decryptedKey)
-    const transient = !!key.meta.private.transient
+    const transient = !!key.meta?.private?.transient
     sbp('chelonia/storeSecretKeys', new Secret([{
       key: decryptedDeserializedKey,
       // We always set this to true because this could be done from
@@ -357,7 +357,7 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
       if (data && internalSideEffectStack) {
         const keyRequestContractID = data.data
-        const reference = key.meta.keyRequest.reference && unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
+        const reference = unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
 
         // Since now we'll make changes to keyRequestContractID, we need to
         // do this while no other operations are running for that
