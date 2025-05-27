@@ -43,7 +43,7 @@ import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -76,7 +76,9 @@ export default ({
       const entries = Object.keys(this.list.channels).map(chatId => {
         const chatroomState = this.$store.state.contracts[chatId]
         if (!chatroomState || typeof chatroomState?.height !== 'number') { return null }
-        const messages = this.$store.state[chatId]?.messages
+        const messages = this.$store.state[chatId]?.messages?.filter((m) => {
+          return m.type !== MESSAGE_TYPES.NOTIFICATION
+        })
         const chatReadUntilInfo = this.ourUnreadMessages?.[chatId]?.readUntil
 
         // If there are no messages, assume everything has been read
@@ -84,7 +86,7 @@ export default ({
         // OTOH, if `readUntil` isn't set, assume the channel is unread
         if (!chatReadUntilInfo) return [chatId, true]
         // Otherwise, see if some message has a height higher than that of the
-        // last read message. If so, makr the channel as having unread messsages
+        // last read message. If so, make the channel as having unread messsages
         return [chatId, messages.some(({ height }) => height > chatReadUntilInfo.createdHeight)]
       }).filter(Boolean)
 
