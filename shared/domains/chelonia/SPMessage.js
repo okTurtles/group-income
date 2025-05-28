@@ -291,9 +291,9 @@ export class SPMessage {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(wk => {
         const k = unwrapMaybeEncryptedData(wk.valueOf())
-        if (!k.data) return null
+        if (!k) return null
         return [k.data.id, k.data]
-      })).filter(Boolean)
+      }).filter(Boolean))
       state = {
         _vm: {
           type: head.type,
