@@ -630,7 +630,7 @@ export default (sbp('sbp/selectors/register', {
                     return
                   }
                   sbp('chelonia/queueInvocation', msg.channelID, () => {
-                    (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
+                    (v: Function).call(this.pubsub, parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       serializedData: msg.data
                     }))
@@ -1480,8 +1480,8 @@ export default (sbp('sbp/selectors/register', {
       const originatingState = originatingContract.state(originatingContractID)
 
       const havePendingKeyRequest = Object.values(originatingState._vm.authorizedKeys).findIndex((k) => {
-      // $FlowFixMe
-        return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractID && state?._volatile?.pendingKeyRequests?.includes(k.name)
+        // $FlowFixMe
+        return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractID && state?._volatile?.pendingKeyRequests?.some(pkr => pkr.name === k.name)
       }) !== -1
 
       // If there's a pending key request for this contract, return
