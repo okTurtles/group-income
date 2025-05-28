@@ -829,7 +829,8 @@ route.POST('/kv/{contractID}/{key}', {
     await sbp('chelonia.db/set', `_private_kv_${contractID}_${key}`, request.payload)
     await sbp('backend/server/updateSize', contractID, request.payload.byteLength - existingSize)
     await appendToIndexFactory(`_private_kvIdx_${contractID}`)(key)
-    await sbp('backend/server/broadcastKV', contractID, key, request.payload.toString())
+    // No await on broadcast for faster responses
+    sbp('backend/server/broadcastKV', contractID, key, request.payload.toString()).catch(e => console.error(e, 'Error broadcasting KV update', contractID, key))
 
     return h.response().code(204)
   })
