@@ -129,6 +129,9 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
     (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (!key.meta?.private?.content) return
+        // The following two lines are commented out because this feature
+        // (using a foreign decryption contract) doesn't seem to be in use and
+        // the use case seems unclear.
         // const decryptionFn = key.meta.private.foreignContractID ? encryptedIncomingForeignData : encryptedIncomingData
         // const decryptionContract = key.meta.private.foreignContractID ? key.meta.private.foreignContractID : contractID
         const decryptionFn = encryptedIncomingData
@@ -287,9 +290,10 @@ export class SPMessage {
     if (!state?._vm?.authorizedKeys && head.op === SPMessage.OP_CONTRACT) {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(wk => {
-        const k = wk.valueOf()
-        return [k.id, k]
-      }))
+        const k = unwrapMaybeEncryptedData(wk.valueOf())
+        if (!k.data) return null
+        return [k.data.id, k.data]
+      })).filter(Boolean)
       state = {
         _vm: {
           type: head.type,
@@ -452,10 +456,14 @@ export class SPMessage {
     const type = this.opType()
     let desc = `<op_${type}`
     if (type === SPMessage.OP_ACTION_UNENCRYPTED) {
-      const value = this.opValue().valueOf()
-      // $FlowFixMe
-      if (typeof value.type === 'string') {
-        desc += `|${value.type}`
+      try {
+        const value = this.opValue().valueOf()
+        // $FlowFixMe
+        if (typeof value.action === 'string') {
+          desc += `|${value.action}`
+        }
+      } catch (e) {
+        console.warn('Error on .description()', this.hash(), e)
       }
     }
     return `${desc}|${this.hash()} of ${this.contractID()}>`
