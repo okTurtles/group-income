@@ -32,27 +32,47 @@ const createWorker = (path: string): {
   rpcSbp: (...args: any) => Promise<any>,
   terminate: () => Promise<number>
 } => {
-  const worker = new Worker(path)
-  const ready = new Promise((resolve, reject) => {
-    worker.on('message', (msg) => {
-      if (msg === 'ready') resolve()
+  let worker
+  let ready
+
+  const launchWorker = () => {
+    worker = new Worker(path)
+    ready = new Promise((resolve, reject) => {
+      worker.on('message', (msg) => {
+        if (msg === 'ready') {
+          worker.off('error', reject)
+          worker.on('error', (e) => {
+            console.error(e, 'Error on worker', path)
+            launchWorker()
+            ready.catch(e => {
+              console.error(e, 'Error on worker relaunch', path)
+              process.exit(1)
+            })
+          })
+          resolve()
+        }
+      })
+      worker.on('error', reject)
     })
-    worker.on('error', reject)
-  })
+  }
+  launchWorker()
 
   const rpcSbp_ = (...args: any) => {
-    return new Promise((resolve, reject) => {
+    return ready.then(() => new Promise((resolve, reject) => {
       const mc = new MessageChannel()
       mc.port2.onmessage = (event) => {
+        worker.off('error', reject)
         const [success, result] = ((event.data: any): [boolean, any])
         if (success) return resolve(result)
         reject(result)
       }
       mc.port2.onmessageerror = () => {
+        worker.off('error', reject)
         reject(Error('Message error'))
       }
       worker.postMessage([mc.port1, ...args], [mc.port1])
-    })
+      worker.once('error', reject)
+    }))
   }
 
   let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
