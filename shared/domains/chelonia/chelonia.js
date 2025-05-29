@@ -630,7 +630,7 @@ export default (sbp('sbp/selectors/register', {
                     return
                   }
                   sbp('chelonia/queueInvocation', msg.channelID, () => {
-                    (v: Function)(parseEncryptedOrUnencryptedMessage.call(this, {
+                    (v: Function).call(this.pubsub, parseEncryptedOrUnencryptedMessage.call(this, {
                       contractID: msg.channelID,
                       serializedData: msg.data
                     }))
@@ -1480,8 +1480,8 @@ export default (sbp('sbp/selectors/register', {
       const originatingState = originatingContract.state(originatingContractID)
 
       const havePendingKeyRequest = Object.values(originatingState._vm.authorizedKeys).findIndex((k) => {
-      // $FlowFixMe
-        return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractID && state?._volatile?.pendingKeyRequests?.includes(k.name)
+        // $FlowFixMe
+        return k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractID && state?._volatile?.pendingKeyRequests?.some(pkr => pkr.name === k.name)
       }) !== -1
 
       // If there's a pending key request for this contract, return
@@ -1684,12 +1684,20 @@ export default (sbp('sbp/selectors/register', {
       // All of these situations should trigger parsing the respinse and
       // conlict resolution
       if (response.ok || response.status === 409 || response.status === 412) {
-        const serializedData = await response.json()
-        currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
-          contractID,
-          serializedData,
-          meta: key
-        })
+        const serializedDataText = await response.text()
+        // We can get 409 even if there's no data on the server. We still need
+        // to call `onconflict` in this case, but we don't need to attempt to
+        // parse the response.
+        // This prevents this from failing in such cases, which can result in
+        // race conditions and data not being properly initialised.
+        // See <https://github.com/okTurtles/group-income/issues/2780>
+        currentValue = serializedDataText
+          ? parseEncryptedOrUnencryptedMessage.call(this, {
+            contractID,
+            serializedData: JSON.parse(serializedDataText),
+            meta: key
+          })
+          : undefined
       // Rationale: 404 and 410 both indicate that the store key doesn't exist.
       // These are not treated as errors since we could still set the value.
       } else if (response.status !== 404 && response.status !== 410) {

@@ -3,7 +3,7 @@
     data-test='modal'
     role='dialog'
     tabindex='-1'
-    :aria-label='a11yTitle'
+    :aria-label='a11yTitle || L("Modal Title Missing")'
     v-focus=''
   )
     transition(name='fade' appear)

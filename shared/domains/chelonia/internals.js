@@ -685,7 +685,7 @@ export default (sbp('sbp/selectors/register', {
       console.debug('IGNORING OPCODE BECAUSE CONTRACT STATE IS MARKED AS DIRTY.', 'OPCODE:', opName, 'CONTRACT:', contractID)
       return
     }
-    if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
+    if (!state._vm) state._vm = Object.create(null)
     const opFns: { [SPOpType]: (any) => void | Promise<void> } = {
       /*
         There are two types of "errors" that we need to consider:
@@ -742,7 +742,7 @@ export default (sbp('sbp/selectors/register', {
       [SPMessage.OP_CONTRACT] (v: SPOpContract) {
         state._vm.type = v.type
         const keys = keysToMap(v.keys, height)
-        config.reactiveSet(state._vm, 'authorizedKeys', keys)
+        state._vm.authorizedKeys = keys
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
         // When you login you have the IEK which is derived from your password, and you
@@ -805,7 +805,7 @@ export default (sbp('sbp/selectors/register', {
 
         for (const key of v.keys) {
           if (key.id && key.meta?.private?.content) {
-            if (!has(state._vm, 'sharedKeyIds')) self.config.reactiveSet(state._vm, 'sharedKeyIds', [])
+            if (!has(state._vm, 'sharedKeyIds')) state._vm.sharedKeyIds = []
             if (!state._vm.sharedKeyIds.some((sK) => sK.id === key.id)) state._vm.sharedKeyIds.push({ id: key.id, contractID: v.contractID, height, keyRequestHash: v.keyRequestHash, keyRequestHeight: v.keyRequestHeight })
           }
         }
@@ -826,7 +826,7 @@ export default (sbp('sbp/selectors/register', {
         // not be available.
         // ]
         if (has(v, 'keyRequestHash') && state._vm.authorizedKeys[signingKeyId].meta?.keyRequest) {
-          self.config.reactiveSet(state._vm.authorizedKeys[signingKeyId].meta.keyRequest, 'responded', hash)
+          state._vm.authorizedKeys[signingKeyId].meta.keyRequest.responded = hash
         }
 
         internalSideEffectStack?.push(async () => {
@@ -1037,16 +1037,16 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
-        if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
+        if (!state._vm.pendingKeyshares) state._vm.pendingKeyshares = Object.create(null)
 
-        config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
+        state._vm.pendingKeyshares[message.hash()] = [
           // Full-encryption (i.e., KRS encryption) requires that this request
           // was encrypted and that the invite is marked as private
           !!data?.encryptionKeyId,
           message.height(),
           signingKeyId,
           ...(context ? [context] : [])
-        ])
+        ]
 
         // Call 'chelonia/private/respondToAllKeyRequests' after sync
         if (data) {
@@ -1078,18 +1078,18 @@ export default (sbp('sbp/selectors/register', {
             state._vm?.invites?.[keyId]?.responses.push(originatingContractID)
           }
 
-          if (!has(state._vm, 'keyshares')) self.config.reactiveSet(state._vm, 'keyshares', Object.create(null))
+          if (!has(state._vm, 'keyshares')) state._vm.keyshares = Object.create(null)
 
           const success = v.success
 
-          self.config.reactiveSet(state._vm.keyshares, hash, {
+          state._vm.keyshares[hash] = {
             contractID: originatingContractID,
             height,
             success,
             ...(success && {
               hash: v.keyShareHash
             })
-          })
+          }
         }
       },
       [SPMessage.OP_PROP_DEL]: notImplemented,
@@ -1106,13 +1106,13 @@ export default (sbp('sbp/selectors/register', {
           }
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
-        config.reactiveSet(state._vm, 'authorizedKeys', { ...state._vm.authorizedKeys, ...keys })
+        state._vm.authorizedKeys = { ...state._vm.authorizedKeys, ...keys }
         keyAdditionProcessor.call(self, message, hash, v, state, contractID, signingKey, internalSideEffectStack)
       },
       [SPMessage.OP_KEY_DEL] (v: SPOpKeyDel) {
-        if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
-        if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
-        if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
+        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = Object.create(null)
+        if (!state._volatile) state._volatile = Object.create(null)
+        if (!state._volatile.pendingKeyRevocations) state._volatile.pendingKeyRevocations = Object.create(null)
         validateKeyDelPermissions(contractID, signingKey, state, v)
         const keyIds = ((v.map((k) => {
           const data = unwrapMaybeEncryptedData(k)
@@ -1172,7 +1172,7 @@ export default (sbp('sbp/selectors/register', {
 
             const pendingWatch = state._vm.pendingWatch?.[foreignContract]
             if (pendingWatch) {
-              config.reactiveSet(state._vm.pendingWatch, foreignContract, pendingWatch.filter(([, kId]) => kId !== keyId))
+              state._vm.pendingWatch[foreignContract] = pendingWatch.filter(([, kId]) => kId !== keyId)
             }
           }
 
@@ -1198,8 +1198,8 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [SPMessage.OP_KEY_UPDATE] (v: SPOpKeyUpdate) {
-        if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
-        if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
+        if (!state._volatile) state._volatile = Object.create(null)
+        if (!state._volatile.pendingKeyRevocations) state._volatile.pendingKeyRevocations = Object.create(null)
         const [updatedKeys, updatedMap] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
         const keysToDelete = ((Object.values(updatedMap): any): string[])
         for (const keyId of keysToDelete) {
@@ -1207,12 +1207,12 @@ export default (sbp('sbp/selectors/register', {
             delete state._volatile.pendingKeyRevocations[keyId]
           }
 
-          config.reactiveSet(state._vm.authorizedKeys[keyId], '_notAfterHeight', height)
+          state._vm.authorizedKeys[keyId]._notAfterHeight = height
         }
         for (const key of updatedKeys) {
           if (!has(state._vm.authorizedKeys, key.id)) {
             key._notBeforeHeight = height
-            config.reactiveSet(state._vm.authorizedKeys, key.id, cloneDeep(key))
+            state._vm.authorizedKeys[key.id] = cloneDeep(key)
           }
         }
         keyAdditionProcessor.call(self, message, hash, (updatedKeys: any), state, contractID, signingKey, internalSideEffectStack)
