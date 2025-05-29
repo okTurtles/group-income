@@ -54,7 +54,7 @@ if (typeof globalThis === 'object' && !has(globalThis, 'Buffer')) {
 export async function createCIDfromStream (data: string | Uint8Array | ReadableStream, multicode: number = multicodes.RAW): Promise<string> {
   const uint8array = typeof data === 'string' ? new TextEncoder().encode(data) : data
   const digest = await blake2b256stream.digest(uint8array)
-  return CID.create(1, multicode, digest).toString(base58btc.encoder)
+  return CID.create(1, multicode, digest).toString(base58btc)
 }
 
 // TODO: implement a streaming hashing function for large files.
@@ -62,7 +62,7 @@ export async function createCIDfromStream (data: string | Uint8Array | ReadableS
 export function createCID (data: string | Uint8Array, multicode: number = multicodes.RAW): string {
   const uint8array = typeof data === 'string' ? new TextEncoder().encode(data) : data
   const digest = blake2b256.digest(uint8array)
-  return CID.create(1, multicode, digest).toString(base58btc.encoder)
+  return CID.create(1, multicode, digest).toString(base58btc)
 }
 
 export function blake32Hash (data: string | Uint8Array): string {

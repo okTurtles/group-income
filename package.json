@@ -1,7 +1,7 @@
 {
   "name": "group-income",
-  "version": "1.9.1",
-  "contractsVersion": "1.9.0",
+  "version": "1.9.4",
+  "contractsVersion": "1.9.2",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {

@@ -220,7 +220,8 @@ sbp('sbp/selectors/register', {
     await sbp('chelonia/private/in/enqueueHandleEvent', contractID, entry)
     // Persist the Chelonia state after processing a message
     await sbp('backend/server/persistState', deserializedHEAD, entry)
-    await sbp('backend/server/broadcastEntry', deserializedHEAD, entry)
+    // No await on broadcast for faster responses
+    sbp('backend/server/broadcastEntry', deserializedHEAD, entry).catch(e => console.error(e, 'Error broadcasting entry', contractID, deserializedHEAD.hash))
   },
   'backend/server/saveOwner': async function (ownerID: string, resourceID: string) {
     // Store the owner for the current resource
