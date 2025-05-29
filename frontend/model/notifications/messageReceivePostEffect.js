@@ -36,7 +36,9 @@ async function messageReceivePostEffect ({
   await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
   try {
     if (shouldAddToUnreadMessages) {
-      sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height })
+      sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height }).catch(e => {
+        console.error('[messageReceivePostEffect] Error calling addChatRoomUnreadMessage', e)
+      })
     }
 
     /*
