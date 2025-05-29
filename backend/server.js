@@ -3,7 +3,7 @@
 import Hapi from '@hapi/hapi'
 import sbp from '@sbp/sbp'
 import chalk from 'chalk'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { Worker } from 'node:worker_threads'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import '~/shared/domains/chelonia/chelonia.js'
@@ -32,34 +32,60 @@ const createWorker = (path: string): {
   rpcSbp: (...args: any) => Promise<any>,
   terminate: () => Promise<number>
 } => {
-  const worker = new Worker(path)
-  const ready = new Promise((resolve, reject) => {
-    worker.on('message', (msg) => {
-      if (msg === 'ready') resolve()
-    })
-    worker.on('error', reject)
-  })
+  let worker
+  let ready: Promise<void>
 
-  const rpcSbp_ = (...args: any) => {
+  const launchWorker = () => {
+    worker = new Worker(path)
     return new Promise((resolve, reject) => {
+      const msgHandler = (msg) => {
+        if (msg === 'ready') {
+          worker.off('error', reject)
+          worker.on('error', (e) => {
+            console.error(e, `Running worker ${basename(path)} terminated. Attempting relaunch...`)
+            worker.off('message', msgHandler)
+            // This won't result in an infinite loop because of exiting and
+            // because this handler is only executed after the 'ready' event
+            // Relaunch can happen multiple times, so long as the worker doesn't
+            // immediately fail.
+            ready = launchWorker().catch(e => {
+              console.error(e, `Error on worker ${basename(path)} relaunch`)
+              process.exit(1)
+            })
+          })
+          resolve()
+        }
+      }
+      worker.on('message', msgHandler)
+      worker.once('error', reject)
+    })
+  }
+  ready = launchWorker()
+
+  const rpcSbp = (...args: any) => {
+    return ready.then(() => new Promise((resolve, reject) => {
       const mc = new MessageChannel()
+      const cleanup = ((worker) => () => {
+        worker.off('error', reject)
+        mc.port2.onmessage = null
+        mc.port2.onmessageerror = null
+      })(worker)
       mc.port2.onmessage = (event) => {
+        cleanup()
         const [success, result] = ((event.data: any): [boolean, any])
         if (success) return resolve(result)
         reject(result)
       }
       mc.port2.onmessageerror = () => {
+        cleanup()
         reject(Error('Message error'))
       }
       worker.postMessage([mc.port1, ...args], [mc.port1])
-    })
+      // If the worker itself breaks during an SBP call, we want to make sure
+      // this promise immediately rejects
+      worker.once('error', reject)
+    }))
   }
-
-  let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
-  // Avoid unncessary `ready.then` if we already know the promise has resolved
-  ready.then(() => {
-    rpcSbp = rpcSbp_
-  })
 
   return {
     ready,
