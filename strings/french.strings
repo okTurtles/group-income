@@ -51,6 +51,9 @@
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
 
+/* MISSING TRANSLATION - views/components/modal/ModalTemplate.vue */
+"Modal Title Missing" = "Modal Title Missing";
+
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to remove this pinned message?" = "Are you sure you want to remove this pinned message?";
 

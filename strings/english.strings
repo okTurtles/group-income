@@ -1542,6 +1542,9 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "Minimum Income";
 
+/* views/components/modal/ModalTemplate.vue */
+"Modal Title Missing" = "Modal Title Missing";
+
 /* views/containers/design-system/DSModalNested.vue */
 "Modal example" = "Modal example";
 
