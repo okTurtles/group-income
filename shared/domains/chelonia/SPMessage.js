@@ -290,7 +290,7 @@ export class SPMessage {
     if (!state?._vm?.authorizedKeys && head.op === SPMessage.OP_CONTRACT) {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(wk => {
-        const k = unwrapMaybeEncryptedData(wk.valueOf())
+        const k = unwrapMaybeEncryptedData(wk)
         if (!k) return null
         return [k.data.id, k.data]
       }).filter(Boolean))

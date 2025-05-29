@@ -35,6 +35,7 @@ import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
+import hasAllRequiredFeatures from '@model/featureCheck.js'
 import Vue from 'vue'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.js'
@@ -199,7 +200,7 @@ async function startApp () {
   }
 
   // register service-worker
-  await Promise.race(
+  hasAllRequiredFeatures && await Promise.race(
     [sbp('service-worker/setup'),
       new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -249,6 +250,14 @@ async function startApp () {
       }
       const { bannerGeneral } = this.$refs
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
+      if (!hasAllRequiredFeatures) {
+        this.removeLoadingAnimation()
+        sbp('gi.ui/prompt', {
+          heading: L('Unsupported browser'),
+          question: L("This browser doesn't support all features required to use Group Income. Please try a different browser.")
+        })
+        return
+      }
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
       this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({

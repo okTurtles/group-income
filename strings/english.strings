@@ -1542,6 +1542,9 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "Minimum Income";
 
+/* views/components/modal/ModalTemplate.vue */
+"Modal Title Missing" = "Modal Title Missing";
+
 /* views/containers/design-system/DSModalNested.vue */
 "Modal example" = "Modal example";
 
@@ -2550,6 +2553,9 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "This amount will not be used until someone needs it." = "This amount will not be used until someone needs it.";
 
+/* main.js */
+"This browser doesn't support all features required to use Group Income. Please try a different browser." = "This browser doesn't support all features required to use Group Income. Please try a different browser.";
+
 /* views/containers/chatroom/SendArea.vue */
 "This channel is public and everyone on the internet can see its content." = "This channel is public and everyone on the internet can see its content.";
 
@@ -2699,6 +2705,9 @@
 
 /* views/containers/chatroom/PinnedMessages.vue */
 "Unpin this message" = "Unpin this message";
+
+/* main.js */
+"Unsupported browser" = "Unsupported browser";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Update Password" = "Update Password";
