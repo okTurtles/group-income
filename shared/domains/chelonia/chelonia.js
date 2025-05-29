@@ -1684,12 +1684,14 @@ export default (sbp('sbp/selectors/register', {
       // All of these situations should trigger parsing the respinse and
       // conlict resolution
       if (response.ok || response.status === 409 || response.status === 412) {
-        const serializedData = await response.json()
-        currentValue = parseEncryptedOrUnencryptedMessage.call(this, {
-          contractID,
-          serializedData,
-          meta: key
-        })
+        const serializedDataText = await response.text()
+        currentValue = serializedDataText
+          ? parseEncryptedOrUnencryptedMessage.call(this, {
+            contractID,
+            serializedData: JSON.parse(serializedDataText),
+            meta: key
+          })
+          : undefined
       // Rationale: 404 and 410 both indicate that the store key doesn't exist.
       // These are not treated as errors since we could still set the value.
       } else if (response.status !== 404 && response.status !== 410) {

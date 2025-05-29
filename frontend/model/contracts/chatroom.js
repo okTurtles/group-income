@@ -170,7 +170,7 @@ sbp('chelonia/defineContract', {
           const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
 
           if (memberID === identityContractID) {
-            sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
+            await sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
           }
@@ -358,11 +358,21 @@ sbp('chelonia/defineContract', {
 
         const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
 
-        sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
-          contractID,
-          data,
-          innerSigningContractID,
-          newMessage
+        // Ensure that this happens after everything has been initialised
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
+          const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+
+          if (!state?.members?.[identityContractID]) {
+            return
+          }
+
+          sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
+            contractID,
+            data,
+            innerSigningContractID,
+            newMessage
+          })
         })
       }
     },
