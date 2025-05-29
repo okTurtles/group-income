@@ -167,8 +167,9 @@ export const aes256gcmHandlers: any = {
     // IKM stands for Input Keying Material, and is a random value used to
     // derive the encryption used in the chunks. See RFC 8188 for how the
     // actual encryption key gets derived from the IKM.
-    let IKM = manifestOptions['cipher-params']?.IKM
-    const recordSize = manifestOptions['cipher-params']?.rs ?? 1 << 16
+    const params = manifestOptions['cipher-params']
+    let IKM = params?.IKM
+    const recordSize = params?.rs ?? 1 << 16
     if (!IKM) {
       IKM = new Uint8Array(33)
       self.crypto.getRandomValues(IKM)

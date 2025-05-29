@@ -33,7 +33,9 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
       .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
 
     if (isAlreadyAdded && !isMentionedMe) {
-      sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+      sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash }).catch(e => {
+        console.error('[MESSAGE_RECEIVE_RAW handler] Error calling removeChatRoomUnreadMessage', e)
+      })
     }
     if (isAlreadyAdded) return
   }
