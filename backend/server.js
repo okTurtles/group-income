@@ -33,17 +33,17 @@ const createWorker = (path: string): {
   terminate: () => Promise<number>
 } => {
   let worker
-  let ready
+  let ready: Promise<void>
 
   const launchWorker = () => {
     worker = new Worker(path)
-    ready = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       worker.on('message', (msg) => {
         if (msg === 'ready') {
           worker.off('error', reject)
           worker.on('error', (e) => {
             console.error(e, 'Error on worker', path)
-            launchWorker()
+            ready = launchWorker()
             ready.catch(e => {
               console.error(e, 'Error on worker relaunch', path)
               process.exit(1)
@@ -55,9 +55,9 @@ const createWorker = (path: string): {
       worker.on('error', reject)
     })
   }
-  launchWorker()
+  ready = launchWorker()
 
-  const rpcSbp_ = (...args: any) => {
+  const rpcSbp = (...args: any) => {
     return ready.then(() => new Promise((resolve, reject) => {
       const mc = new MessageChannel()
       mc.port2.onmessage = (event) => {
@@ -74,12 +74,6 @@ const createWorker = (path: string): {
       worker.once('error', reject)
     }))
   }
-
-  let rpcSbp = (...args: any) => ready.then(() => rpcSbp_(...args))
-  // Avoid unncessary `ready.then` if we already know the promise has resolved
-  ready.then(() => {
-    rpcSbp = rpcSbp_
-  })
 
   return {
     ready,
