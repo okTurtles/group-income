@@ -1,6 +1,6 @@
 'use strict'
 
-const assert = require('assert')
+const assert = require('node:assert')
 const utils = require('pug-lint/lib/utils')
 
 const example = '`:href=\'ALLOWED_URLS.ISSUE_PAGE\'`'
