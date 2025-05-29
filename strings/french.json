@@ -8,6 +8,8 @@
   "Contributions": "Contributions",
   "The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)": "The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)",
   "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.": "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.",
+  "This browser doesn't support all features required to use Group Income. Please try a different browser.": "This browser doesn't support all features required to use Group Income. Please try a different browser.",
+  "Unsupported browser": "Unsupported browser",
   "1d": "1d",
   "<1m": "<1m",
   "{hours}h": "{hours}h",

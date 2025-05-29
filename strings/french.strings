@@ -27,6 +27,12 @@
 /* MISSING TRANSLATION - main.js */
 "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem.";
 
+/* MISSING TRANSLATION - main.js */
+"This browser doesn't support all features required to use Group Income. Please try a different browser." = "This browser doesn't support all features required to use Group Income. Please try a different browser.";
+
+/* MISSING TRANSLATION - main.js */
+"Unsupported browser" = "Unsupported browser";
+
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
 
