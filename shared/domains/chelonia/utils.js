@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { has } from 'turtledash'
+import { has, omit } from 'turtledash'
 import { b64ToStr } from '~/shared/functions.js'
 import type { SPKey, SPKeyPurpose, SPKeyUpdate, SPOpActionUnencrypted, SPOpAtomic, SPOpKeyAdd, SPOpKeyUpdate, SPOpValue, ProtoSPOpActionUnencrypted } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
@@ -13,7 +13,7 @@ import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { SignedData } from './signedData.js'
 import { isSignedData } from './signedData.js'
 
-const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER, 10) || Infinity
+const MAX_EVENTS_AFTER = Number.parseInt(process.env.MAX_EVENTS_AFTER || '', 10) || Infinity
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): SPKey[]).find((k) => k.name === name && k._notAfterHeight == null)?.id
 
@@ -236,7 +236,13 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: SPK
     if (uk.id && uk.id !== uk.oldKeyId) {
       updatedMap[uk.id] = uk.oldKeyId
     }
-    const updatedKey = { ...existingKey }
+    // Discard `_notAfterHeight` and `_notBeforeHeight`, since retaining them
+    // can cause issues reprocessing messages.
+    // An example is reprocessing old messages in a chatroom using
+    // `chelonia/in/processMessage`: cloning `_notAfterHeight` will break key
+    // rotations, since the new key will have the same expiration value as the
+    // old key (the new key is supposed to have no expiration height).
+    const updatedKey = omit(existingKey, ['_notAfterHeight', '_notBeforeHeight'])
     // Set the corresponding updated attributes
     if (uk.permissions) {
       updatedKey.permissions = uk.permissions
@@ -268,7 +274,7 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
 
   const storeSecretKey = (key, decryptedKey) => {
     const decryptedDeserializedKey = deserializeKey(decryptedKey)
-    const transient = !!key.meta.private.transient
+    const transient = !!key.meta?.private?.transient
     sbp('chelonia/storeSecretKeys', new Secret([{
       key: decryptedDeserializedKey,
       // We always set this to true because this could be done from
@@ -325,20 +331,20 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
     // Is this a an invite key? If so, run logic for invite keys and invitation
     // accounting
     if (key.name.startsWith('#inviteKey-')) {
-      if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
+      if (!state._vm.invites) state._vm.invites = Object.create(null)
       const inviteSecret = decryptedKey || (
         has(this.transientSecretKeys, key.id)
           ? serializeKey(this.transientSecretKeys[key.id], true)
           : undefined
       )
-      this.config.reactiveSet(state._vm.invites, key.id, {
+      state._vm.invites[key.id] = {
         status: INVITE_STATUS.VALID,
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,
         expires: key.meta.expires,
         inviteSecret,
         responses: []
-      })
+      }
     }
 
     // Is this KEY operation the result of requesting keys for another contract?
@@ -351,7 +357,7 @@ export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
       if (data && internalSideEffectStack) {
         const keyRequestContractID = data.data
-        const reference = key.meta.keyRequest.reference && unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
+        const reference = unwrapMaybeEncryptedData(key.meta.keyRequest.reference)
 
         // Since now we'll make changes to keyRequestContractID, we need to
         // do this while no other operations are running for that
