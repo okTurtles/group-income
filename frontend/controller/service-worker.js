@@ -98,6 +98,14 @@ sbp('sbp/selectors/register', {
       ])
       const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { type: 'module', scope: '/' })
 
+      // This probably happens if the SW immediately crashed after registration
+      // (e.g., trying to access indexedDB if it's undefined). In any case, we
+      // can't proceed when this happens and .update() below will fail. The goal
+      // of this check is to provide a more useful error message.
+      if (swRegistration.active == null && swRegistration.installing == null && swRegistration.waiting == null) {
+        throw new Error('No valid service worker found')
+      }
+
       // if an active service-worker exists, checks for the updates immediately first and then repeats it every 1hr
       await swRegistration.update()
       setInterval(() => sbp('service-worker/update'), HOURS_MILLIS)
