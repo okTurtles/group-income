@@ -1,15 +1,16 @@
-const hasFetch = typeof fetch === 'function' && typeof Request === 'function' && typeof Response === 'function'
-const hasReadableStream = typeof ReadableStream === 'function'
-const hasWebSocket = typeof WebSocket === 'function'
-const hasReflect = typeof Reflect === 'object'
-const hasNavigator = typeof Navigator === 'function' && typeof navigator === 'object' && navigator instanceof Navigator
-const hasServiceWorker = hasNavigator && typeof ServiceWorkerContainer === 'function' && navigator.serviceWorker instanceof ServiceWorkerContainer
-// $FlowFixMe[cannot-resolve-name]
-const hasIndexedDB = typeof IDBFactory === 'function' && typeof indexedDB === 'object' && indexedDB instanceof IDBFactory
-const hasSessionStorage = typeof Storage === 'function' && typeof sessionStorage === 'object' && sessionStorage instanceof Storage
+const requiredFeatures = {
+  fetch: typeof fetch === 'function' && typeof Request === 'function' && typeof Response === 'function',
+  streams: typeof ReadableStream === 'function',
+  webSocket: typeof WebSocket === 'function',
+  reflect: typeof Reflect === 'object',
+  serviceWorker: typeof Navigator === 'function' && typeof navigator === 'object' && navigator instanceof Navigator && typeof navigator === 'object' && typeof ServiceWorkerContainer === 'function' && navigator.serviceWorker instanceof ServiceWorkerContainer,
+  // $FlowFixMe[cannot-resolve-name]
+  indexedDB: typeof IDBFactory === 'function' && typeof indexedDB === 'object' && indexedDB instanceof IDBFactory,
+  sessionStorage: typeof Storage === 'function' && typeof sessionStorage === 'object' && sessionStorage instanceof Storage
+}
 
-console.info('Feature check', { hasFetch, hasReadableStream, hasWebSocket, hasReflect, hasNavigator, hasServiceWorker, hasIndexedDB, hasSessionStorage })
+console.info('Feature check', requiredFeatures)
 
-const hasAllRequiredFeatures: boolean = hasFetch && hasReadableStream && hasWebSocket && hasReflect && hasNavigator && hasServiceWorker && hasIndexedDB && hasSessionStorage
+const hasAllRequiredFeatures: boolean = Object.values(requiredFeatures).every(Boolean)
 
 export default hasAllRequiredFeatures

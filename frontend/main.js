@@ -252,7 +252,10 @@ async function startApp () {
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
       if (!hasAllRequiredFeatures) {
         this.removeLoadingAnimation()
-        sbp('gi.ui/dangerBanner', L("Your browser doesn't support all features required to use Group Income. Please try a different browser."))
+        sbp('gi.ui/prompt', {
+          heading: L('Unsupported browser'),
+          question: L("This browser doesn't support all features required to use Group Income. Please try a different browser.")
+        })
         return
       }
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
