@@ -14,6 +14,7 @@
   "{minutes}m": "{minutes}m",
   "New message": "New message",
   "The mincome has changed to {amount}.": "The mincome has changed to {amount}.",
+  "Modal Title Missing": "Modal Title Missing",
   "Are you sure you want to remove this pinned message?": "Are you sure you want to remove this pinned message?",
   "Error while deleting a message": "Error while deleting a message",
   "Failed to initialize chatroom": "Failed to initialize chatroom",
