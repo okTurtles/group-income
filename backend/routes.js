@@ -798,8 +798,8 @@ route.POST('/kv/{contractID}/{key}', {
     // pass through
     } else {
       if (!expectedEtag.split(',').map(v => v.trim()).includes(`"${cid}"`)) {
-      // We need this `x-cid` because HAPI modifies Etags
-        return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(412)
+        // We need this `x-cid` because HAPI modifies Etags
+        return h.response(existing || '').etag(cid).header('x-cid', `"${cid}"`).code(412)
       }
     }
 
@@ -813,7 +813,7 @@ route.POST('/kv/{contractID}/{key}', {
       // just because it was created in the past, or if it's because someone
       // is reusing a previously good key that has since been revoked.
       if (contracts[contractID].height !== Number(serializedData.height)) {
-        return h.response(existing).etag(cid).header('x-cid', `"${cid}"`).code(409)
+        return h.response(existing || '').etag(cid).header('x-cid', `"${cid}"`).code(409)
       }
       // Check that the signature is valid
       sbp('chelonia/parseEncryptedOrUnencryptedDetachedMessage', {
