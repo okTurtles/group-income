@@ -44,6 +44,8 @@ export const MAX_ARCHIVED_PERIODS = 100
 export const MAX_SAVED_PERIODS = 2
 export const MAX_HISTORY_PERIODS = 6
 export const MAX_GROUP_MEMBER_COUNT = 150 // Dunbar's number (https://en.wikipedia.org/wiki/Dunbar's_number)
+export const PROPOSAL_NAME_MAX_CHAR = 100
+export const PROPOSAL_REASON_MAX_CHAR = 300
 
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'

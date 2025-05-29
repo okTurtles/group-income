@@ -31,6 +31,8 @@ import {
   PROPOSAL_GENERIC,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_NAME_MAX_CHAR,
+  PROPOSAL_REASON_MAX_CHAR,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
@@ -629,7 +631,10 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
           proposalType: proposalType,
-          proposalData: object, // data for Vue widgets
+          proposalData: objectOf({
+            name: stringMax(PROPOSAL_NAME_MAX_CHAR),
+            reason: stringMax(PROPOSAL_REASON_MAX_CHAR)
+          }), // data for Vue widgets
           votingRule: ruleType,
           expires_date_ms: numberRange(0, Number.MAX_SAFE_INTEGER) // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
         })(data)

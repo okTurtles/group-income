@@ -18,9 +18,16 @@ proposal-template(
       )
         button.is-icon-smaller.c-name-tooltip-btn
           i.icon-info
+      char-length-indicator(
+        v-if='form.proposalName'
+        :current-length='form.proposalName.length || 0'
+        :max='config.proposalNameMaxChar'
+        :error='$v.form.proposalName.$error'
+      )
 
     input.input(
       :class='{error: $v.form.proposalName.$error}'
+      :maxlength='config.proposalNameMaxChar'
       name='proposalname'
       ref='proposalname'
       v-model='form.proposalName'
@@ -32,7 +39,8 @@ proposal-template(
 </template>
 
 <script>
-import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_GENERIC, PROPOSAL_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ProposalTemplate from './ProposalTemplate.vue'
@@ -50,12 +58,16 @@ export default ({
     validationsDebouncedMixins
   ],
   components: {
+    CharLengthIndicator,
     ProposalTemplate,
     Tooltip,
     BannerScoped
   },
   data () {
     return {
+      config: {
+        proposalNameMaxChar: PROPOSAL_NAME_MAX_CHAR
+      },
       form: {
         proposalName: null
       },
