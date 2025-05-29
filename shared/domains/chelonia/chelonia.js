@@ -1685,6 +1685,12 @@ export default (sbp('sbp/selectors/register', {
       // conlict resolution
       if (response.ok || response.status === 409 || response.status === 412) {
         const serializedDataText = await response.text()
+        // We can get 409 even if there's no data on the server. We still need
+        // to call `onconflict` in this case, but we don't need to attempt to
+        // parse the response.
+        // This prevents this from failing in such cases, which can result in
+        // race conditions and data not being properly initialised.
+        // See <https://github.com/okTurtles/group-income/issues/2780>
         currentValue = serializedDataText
           ? parseEncryptedOrUnencryptedMessage.call(this, {
             contractID,

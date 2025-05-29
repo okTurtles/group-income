@@ -356,17 +356,17 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
-
-        // Ensure that this happens after everything has been initialised
+        // Ensure that this happens after everything has been initialised, i.e.,
+        // after all side effects from joins and rejoins have been processed.
+        // (In particular, this should happen after `kv/initChatRoomUnreadMessages`.)
+        // See <https://github.com/okTurtles/group-income/issues/2780>
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
-
-          if (!state?.members?.[identityContractID]) {
+          if (!state?.members?.[me]) {
             return
           }
 
+          const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID })
           sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
             contractID,
             data,
@@ -409,10 +409,19 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
-          contractID,
-          data,
-          innerSigningContractID
+        // Ensure that this happens after everything has been initialised, i.e.,
+        // after all side effects from joins and rejoins have been processed.
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
+          if (!state?.members?.[me]) {
+            return
+          }
+
+          sbp('okTurtles.events/emit', MESSAGE_RECEIVE_RAW, {
+            contractID,
+            data,
+            innerSigningContractID
+          })
         })
       }
     },
@@ -479,7 +488,18 @@ sbp('chelonia/defineContract', {
 
         // NOTE: ignore to check if the existance of current message (data.hash)
         //       because if not exist, removeChatRoomUnreadMessage won't do anything
-        sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash })
+        // Ensure that this happens after everything has been initialised, i.e.,
+        // after all side effects from joins and rejoins have been processed.
+        sbp('chelonia/queueInvocation', contractID, async () => {
+          const state = await sbp('chelonia/contract/state', contractID)
+          if (!state?.members?.[me]) {
+            return
+          }
+
+          sbp('gi.actions/identity/kv/removeChatRoomUnreadMessage', { contractID, messageHash: data.hash }).catch(e => {
+            console.error('[gi.contracts/chatroom/deleteMessage/sideEffect] Error calling removeChatRoomUnreadMessage', e)
+          })
+        })
       }
     },
     'gi.contracts/chatroom/deleteAttachment': {
