@@ -114,7 +114,6 @@
     "@chelonia/crypto": "1.0.0",
     "@chelonia/multiformats": "1.0.0",
     "@chelonia/serdes": "1.0.0",
-    "@exact-realty/multipart-parser": "1.0.12",
     "@hapi/boom": "9.1.0",
     "@hapi/hapi": "20.1.2",
     "@hapi/inert": "6.0.3",
