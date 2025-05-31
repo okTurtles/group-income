@@ -5,6 +5,7 @@
 import sbp from '@sbp/sbp'
 import Bottleneck from 'bottleneck'
 import chalk from 'chalk'
+import { isIP } from 'node:net'
 import path from 'path'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
@@ -63,12 +64,11 @@ const cidLookupTable = {
   [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
 }
 
-const IPV4_ADDR_REGEX = /^(?:[3-9]\d{0,1}|1\d{0,2}|2\d{0,1}|2[0-4]\d|25[0-5])(?:\.(?:0|[3-9]\d{0,1}|1\d{0,2}|2\d{0,1}|2[0-4]\d|25[0-5])){3}$/
-const IPV6_SEGMENT_REGEX = /^[0-9a-fA-F]{1,4}$/
 const limiterKey = (ip: string) => {
-  if (IPV4_ADDR_REGEX.test(ip)) {
+  const ipVersion = isIP(ip)
+  if (ipVersion === 4) {
     return ip
-  } else if (/^(?:[0-9a-fA-F]{0,4}:){0,8}(?:[0-9a-fA-F]{0,4}|[\d.]{7,15})(?:%[0-9a-zA-Z]{1,})?$/.test(ip)) {
+  } else if (ipVersion === 6) {
     // Likely IPv6
     const [address, zoneIdx] = ip.split('%')
     const segments = address.split(':')
@@ -92,18 +92,15 @@ const limiterKey = (ip: string) => {
         isCompressed = true
         continue
       }
-      if (!IPV6_SEGMENT_REGEX.test(segments[i])) {
-        throw new Error('Invalid IPv6 address')
-      }
       // Remove leading zeroes
       segments[i] = segments[i].replace(/^0+/, '0')
     }
 
-    if (segments.length === 8 && IPV4_ADDR_REGEX.test(segments[7])) {
+    if (segments.length === 8 && isIP(segments[7]) === 4) {
       // IPv4-embedded, IPv4-mapped and IPv4-translated addresses are returned
       // as IPv4
       return segments[7]
-    } else if (segments.length === 8 && IPV6_SEGMENT_REGEX.test(segments[7])) {
+    } else if (segments.length === 8) {
       if (zoneIdx) {
         segments[7] = segments[7].replace(/^0+/, '0')
         // Use tagged (link-local) addresses in full
