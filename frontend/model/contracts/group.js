@@ -6,7 +6,7 @@ import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
+import { ChelErrorGenerator } from 'libchelonia/errors'
 import {
   MAX_HASH_LEN,
   MAX_MEMO_LEN,
