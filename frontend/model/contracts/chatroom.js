@@ -6,7 +6,7 @@ import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
+import { ChelErrorGenerator } from 'libchelonia/errors'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,

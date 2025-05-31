@@ -1,10 +1,10 @@
 'use strict'
 
-import type { JSONObject } from '~/shared/types.js'
+import type { JSONObject } from 'libchelonia/types'
 
 import sbp from '@sbp/sbp'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE } from 'libchelonia/pubsub'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 

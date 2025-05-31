@@ -6,12 +6,11 @@ import sbp from '@sbp/sbp'
 import Bottleneck from 'bottleneck'
 import chalk from 'chalk'
 import path from 'path'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import { createCID, maybeParseCID, multicodes } from '~/shared/functions.js'
+import { SPMessage } from 'libchelonia/SPMessage'
+import { blake32Hash, createCID, maybeParseCID, multicodes } from 'libchelonia/functions'
 import { appendToIndexFactory, lookupUltimateOwner } from './database.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, redeemSaltUpdateToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
-import { blake32Hash } from '../shared/functions.js'
 
 const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000

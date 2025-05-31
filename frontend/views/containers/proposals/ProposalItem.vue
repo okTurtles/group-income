@@ -85,7 +85,7 @@ import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentF
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { mapGetters, mapState } from 'vuex'
-import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { INVITE_STATUS } from 'libchelonia/constants'
 
 export default ({
   name: 'ProposalItem',

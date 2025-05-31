@@ -13,14 +13,14 @@ import {
   createMessage,
   createKvMessage,
   messageParser
-} from '~/shared/pubsub.js'
+} from 'libchelonia/pubsub'
 
 import type {
   Message, PubMessage, SubMessage, UnsubMessage,
   NotificationTypeEnum
-} from '~/shared/pubsub.js'
+} from 'libchelonia/pubsub'
 
-import type { JSONType, JSONObject } from '~/shared/types.js'
+import type { JSONType, JSONObject } from 'libchelonia/types'
 import { postEvent } from './push.js'
 
 const { bold } = require('chalk')

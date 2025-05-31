@@ -116,3 +116,197 @@ declare module './model/contracts/manifests.json' { declare module.exports: any 
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
 declare module '@controller/instance-keys.js' { declare module.exports: any }
+// Libchelonia
+declare module 'libchelonia' {
+    declare type ChelKeyRequestParams = {
+        originatingContractID: string;
+        originatingContractName: string;
+        contractName: string;
+        contractID: string;
+        signingKeyId: string;
+        innerSigningKeyId: string;
+        encryptionKeyId: string;
+        innerEncryptionKeyId: string;
+        encryptKeyRequestMetadata?: boolean;
+        permissions?: '*' | string[];
+        allowedActions?: '*' | string[];
+        // Arbitrary data the requester can use as reference (e.g., the hash
+        // of the user-initiated action that triggered this key request)
+        reference?: string;
+        hooks?: {
+          prepublishContract?: (msg: any) => void;
+          prepublish?: (msg: any) => Promise<void>;
+          postpublish?: (msg: any) => Promise<void>;
+        };
+        publishOptions?: { maxAttempts?: number };
+        atomic: boolean;
+    }
+    declare module.exports: any
+}
+declare module 'libchelonia/constants' { declare module.exports: any }
+declare module 'libchelonia/db' { declare module.exports: any }
+declare module 'libchelonia/encryptedData' { declare module.exports: any }
+declare module 'libchelonia/errors' { declare module.exports: any }
+declare module 'libchelonia/events' { declare module.exports: any }
+declare module 'libchelonia/functions' { declare module.exports: any }
+declare module 'libchelonia/local-selectors' { declare module.exports: any }
+declare module 'libchelonia/persistent-actions' { declare module.exports: any }
+declare module 'libchelonia/presets' { declare module.exports: any }
+declare module 'libchelonia/pubsub' {
+    declare type JSONType = string | number | boolean | null | JSONObject | JSONArray;
+    declare type JSONObject = { [key: string]: JSONType };
+    declare type JSONArray = Array<JSONType>;
+
+    declare type Message = {
+        [key: string]: JSONType;
+        type: string;
+    }
+    declare type PubMessage = {
+        type: 'pub',
+        channelID: string,
+        data: JSONType
+    }
+    declare type SubMessage = {
+        [key: string]: JSONType,
+        type: 'sub',
+        channelID: string
+    } & {
+        kvFilter?: Array<string>
+    };
+    declare type UnsubMessage = {
+        [key: string]: JSONType,
+        type: 'unsub',
+        channelID: string
+    }
+    declare type NotificationTypeEnum = "entry" | "deletion" | "kv" | "kv_filter" | "ping" | "pong" | "pub" | "sub" | "unsub" | "version_info"
+    declare module.exports: any
+}
+declare module 'libchelonia/Secret' {
+    declare export class Secret<T> {
+        constructor(T): Secret<T>;
+        valueOf(): T
+    }
+}
+declare module 'libchelonia/signedData' { declare module.exports: any }
+declare module 'libchelonia/SPMessage' {
+    declare interface EncryptedData<T> {}
+    declare interface SignedData<T> {}
+    declare interface Key {}
+    declare type SPOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+    declare type SPOpValue = {}
+    declare type SPOpRaw = [SPOpType, SignedData<SPOpValue>]
+    declare type SPOp = {}
+    declare export type SPKeyType = string;
+    declare export type SPKey = Object;
+    declare type ChelContractState = {}
+    declare type SPMsgDirection = 'incoming' | 'outgoing'
+    declare type SPHead = {
+        version: '1.0.0';
+        op: SPOpType;
+        height: number;
+        contractID: string | null;
+        previousKeyOp: string | null;
+        previousHEAD: string | null;
+        manifest: string;
+    };
+    declare type SPMsgParams = {
+        direction: SPMsgDirection;
+        mapping: {
+            key: string;
+            value: string;
+        };
+        head: SPHead;
+        signedMessageData: SignedData<SPOpValue>;
+    };
+    declare export class SPMessage {
+        _mapping: {
+            key: string;
+            value: string;
+        };
+        _head: SPHead;
+        _message: SPOpValue;
+        _signedMessageData: SignedData<SPOpValue>;
+        _direction: SPMsgDirection;
+        _decryptedValue?: any;
+        _innerSigningKeyId?: string;
+        static OP_CONTRACT: "c";
+        static OP_ACTION_ENCRYPTED: "ae";
+        static OP_ACTION_UNENCRYPTED: "au";
+        static OP_KEY_ADD: "ka";
+        static OP_KEY_DEL: "kd";
+        static OP_KEY_UPDATE: "ku";
+        static OP_PROTOCOL_UPGRADE: "pu";
+        static OP_PROP_SET: "ps";
+        static OP_PROP_DEL: "pd";
+        static OP_CONTRACT_AUTH: "ca";
+        static OP_CONTRACT_DEAUTH: "cd";
+        static OP_ATOMIC: "a";
+        static OP_KEY_SHARE: "ks";
+        static OP_KEY_REQUEST: "kr";
+        static OP_KEY_REQUEST_SEEN: "krs";
+        static createV1_0({
+            contractID: string | null;
+            previousHEAD?: string | null;
+            previousKeyOp?: string | null;
+            height?: number;
+            op: SPOpRaw;
+            manifest: string;
+        }): SPMessage;
+        static cloneWith(targetHead: SPHead, targetOp: SPOpRaw, sources: SPHead): SPMessage;
+        static deserialize(value: string, additionalKeys?: { [string]: Key | string }, state?: ChelContractState): SPMessage;
+        static deserializeHEAD(value: string): {
+            head: SPHead;
+            hash: string;
+            contractID: string;
+            isFirstMessage: boolean;
+            description: () => string;
+        };
+        constructor(params: SPMsgParams): SPMessage;
+        decryptedValue(): any;
+        innerSigningKeyId(): string | void;
+        head(): SPHead;
+        message(): SPOpValue;
+        op(): SPOp;
+        rawOp(): SPOpRaw;
+        opType(): SPOpType;
+        opValue(): SPOpValue;
+        signingKeyId(): string;
+        manifest(): string;
+        description(): string;
+        isFirstMessage(): boolean;
+        contractID(): string;
+        serialize(): string;
+        hash(): string;
+        previousKeyOp(): string | null;
+        height(): number;
+        id(): string;
+        direction(): 'incoming' | 'outgoing';
+        isKeyOp(): boolean;
+    }
+}
+declare module 'libchelonia/types' {
+    declare type JSONType = string | number | boolean | null | JSONObject | JSONArray;
+    declare type JSONObject = { [key: string]: JSONType };
+    declare type JSONArray = Array<JSONType>;
+
+    declare type ResType =
+    | ResTypeErr | ResTypeOK | ResTypeAlready
+    | ResTypeSub | ResTypeUnsub | ResTypeEntry | ResTypePub
+    declare type ResTypeErr = 'error'
+    declare type ResTypeOK = 'success'
+    declare type ResTypeAlready = 'already'
+    declare type ResTypeSub = 'sub'
+    declare type ResTypeUnsub = 'unsub'
+    declare type ResTypePub = 'pub'
+    declare type ResTypeEntry = 'entry'
+
+    // NOTE: If Flow isn't making any sense try changing this from a type to an interface!
+    // https://github.com/facebook/flow/issues/3041
+    declare type Response = {
+    // declare interface Response {
+      type: ResType;
+      err?: string;
+      data?: JSONType
+    }
+}
+declare module 'libchelonia/utils' { declare module.exports: any }

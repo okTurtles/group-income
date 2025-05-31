@@ -1,6 +1,6 @@
 'use strict'
 
-import { ChelErrorResourceGone, ChelErrorUnexpectedHttpResponseCode } from '~/shared/domains/chelonia/errors.js'
+import { ChelErrorResourceGone, ChelErrorUnexpectedHttpResponseCode } from 'libchelonia/errors'
 
 export function handleFetchResult (type: string): ((r: any) => any) {
   return function (r: Object) {

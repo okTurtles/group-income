@@ -5,10 +5,10 @@ import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
-import { getSubscriptionId } from '~/shared/functions.js'
+import { getSubscriptionId } from 'libchelonia/functions'
 
 // const pushController = require('web-push')
-const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
+const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('libchelonia/pubsub')
 
 const addSubscriptionToIndex = appendToIndexFactory('_private_webpush_index')
 const deleteSubscriptionFromIndex = removeFromIndexFactory('_private_webpush_index')
@@ -215,6 +215,7 @@ export const pushServerActionhandlers: any = {
     const { applicationServerKey, settings, subscriptionInfo } = payload
     if (applicationServerKey) {
       const ourVapidPublicKey = getVapidPublicKey()
+      // $FlowFixMe[incompatible-call]
       const theirVapidPublicKey = Buffer.from(applicationServerKey, 'base64').toString('base64url')
       // If the applicationServerKey (VAPID) key doesn't match ours, something
       // went wrong, possibly in the client. We don't proceed because we know in

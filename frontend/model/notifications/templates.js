@@ -1,4 +1,4 @@
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
+import { SPMessage } from 'libchelonia/SPMessage'
 import type {
   NewProposalType,
   NotificationTemplate
@@ -13,7 +13,7 @@ import {
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
-import { findContractIDByForeignKeyId } from '~/shared/domains/chelonia/utils.js'
+import { findContractIDByForeignKeyId } from 'libchelonia/utils'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {

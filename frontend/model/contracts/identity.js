@@ -4,7 +4,7 @@ import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { Secret } from 'libchelonia/Secret'
 import {
   IDENTITY_BIO_MAX_CHARS,
   IDENTITY_EMAIL_MAX_CHARS,
