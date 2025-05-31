@@ -100,7 +100,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import { L, LTags } from '@common/common.js'
-import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_REASON_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
@@ -139,7 +139,7 @@ export default ({
         reason: '' // optional field
       },
       config: {
-        reasonMaxChar: GROUP_DESCRIPTION_MAX_CHAR
+        reasonMaxChar: PROPOSAL_REASON_MAX_CHAR
       }
     }
   },

@@ -35,6 +35,7 @@ li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
           p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
           | &nbsp;
           button.link(
+            type='button'
             v-if='shouldTruncateReason'
             @click='toggleReason'
           ) {{ ephemeral.isReasonHidden ? L('Read more') : L('Hide') }}

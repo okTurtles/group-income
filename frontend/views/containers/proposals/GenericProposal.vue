@@ -9,18 +9,26 @@ proposal-template(
   banner-scoped(ref='formMsg')
 
   label.field(v-if='ephemeral.currentStep === 0' key='0')
-    .label
-      i18n Name your proposal
-      tooltip.c-name-tooltip(
-        direction='top'
-        :isTextCenter='true'
-        :text='L("Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.")'
+    .c-name-label-container
+      .label
+        i18n Name your proposal
+        tooltip.c-name-tooltip(
+          direction='top'
+          :isTextCenter='true'
+          :text='L("Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.")'
+        )
+          button.is-icon-smaller.c-name-tooltip-btn
+            i.icon-info
+      char-length-indicator(
+        v-if='form.proposalName'
+        :current-length='form.proposalName.length || 0'
+        :max='config.proposalNameMaxChar'
+        :error='$v.form.proposalName.$error'
       )
-        button.is-icon-smaller.c-name-tooltip-btn
-          i.icon-info
 
     input.input(
       :class='{error: $v.form.proposalName.$error}'
+      :maxlength='config.proposalNameMaxChar'
       name='proposalname'
       ref='proposalname'
       v-model='form.proposalName'
@@ -32,7 +40,8 @@ proposal-template(
 </template>
 
 <script>
-import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_GENERIC, PROPOSAL_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
+import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ProposalTemplate from './ProposalTemplate.vue'
@@ -50,12 +59,16 @@ export default ({
     validationsDebouncedMixins
   ],
   components: {
+    CharLengthIndicator,
     ProposalTemplate,
     Tooltip,
     BannerScoped
   },
   data () {
     return {
+      config: {
+        proposalNameMaxChar: PROPOSAL_NAME_MAX_CHAR
+      },
       form: {
         proposalName: null
       },
@@ -115,6 +128,13 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-name-label-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  column-gap: 0.5rem;
+}
 
 .c-name-tooltip {
   display: inline-block;
