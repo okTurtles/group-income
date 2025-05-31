@@ -9,15 +9,16 @@ proposal-template(
   banner-scoped(ref='formMsg')
 
   label.field(v-if='ephemeral.currentStep === 0' key='0')
-    .label
-      i18n Name your proposal
-      tooltip.c-name-tooltip(
-        direction='top'
-        :isTextCenter='true'
-        :text='L("Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.")'
-      )
-        button.is-icon-smaller.c-name-tooltip-btn
-          i.icon-info
+    .c-name-label-container
+      .label
+        i18n Name your proposal
+        tooltip.c-name-tooltip(
+          direction='top'
+          :isTextCenter='true'
+          :text='L("Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.")'
+        )
+          button.is-icon-smaller.c-name-tooltip-btn
+            i.icon-info
       char-length-indicator(
         v-if='form.proposalName'
         :current-length='form.proposalName.length || 0'
@@ -127,6 +128,13 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-name-label-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  column-gap: 0.5rem;
+}
 
 .c-name-tooltip {
   display: inline-block;

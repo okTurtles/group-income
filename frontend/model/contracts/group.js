@@ -631,7 +631,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
           proposalType: proposalType,
-          proposalData: objectOf({
+          proposalData: objectMaybeOf({
             name: stringMax(PROPOSAL_NAME_MAX_CHAR),
             reason: stringMax(PROPOSAL_REASON_MAX_CHAR)
           }), // data for Vue widgets
