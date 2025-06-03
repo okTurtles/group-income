@@ -1333,7 +1333,7 @@ export default ({
           // has a snipped for doing this (since the API otherwise doesn't
           // offer it): set the status and then manually emit the the infinite
           // event, which will result in the guard conditions being bypassed.
-          this.$refs['infinite-loading'].status = 0 // STATUS.READY
+          this.$refs['infinite-loading'].status = 1 // STATUS.LOADING
           this.$refs['infinite-loading'].$emit('infinite', this.$refs['infinite-loading'].stateChanger)
         }
       } catch (e) {
