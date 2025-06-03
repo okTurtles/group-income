@@ -64,6 +64,14 @@ const cidLookupTable = {
   [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
 }
 
+// Given an IPv4 or IPv6, extract a suitable key to be used for rate limiting.
+// For IPv4 addresses (including IPv4 addresses embedded in IPv6 addresses),
+// just use the full IPv4 address as is.
+// For IPv6 addresses, discard the least significant 64 bits. This makes DoS
+// harder and because of subnetting the discarded bits likely all represent
+// addresses belonging to the same individual.
+// Note: link-local IPv6 addresses aren't transformed and used in full.
+// See: <https://github.com/okTurtles/group-income/issues/2832>
 const limiterKey = (ip: string) => {
   const ipVersion = isIP(ip)
   if (ipVersion === 4) {
