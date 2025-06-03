@@ -23,7 +23,6 @@
 
       infinite-loading(
         direction='top'
-        slot='append'
         @infinite='infiniteHandler'
         force-use-infinite-wrapper='.c-body-conversation'
         ref='infinite-loading'
@@ -1319,7 +1318,23 @@ export default ({
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
-          this.ephemeral.infiniteLoading?.reset()
+          // We need to reset the infinite loading widget. There used to be:
+          // // this.ephemeral.infiniteLoading?.reset()
+          // However, this doesn't quite work for two reasons:
+          //   1. `this.ephemeral.infiniteLoading` is only defined after the
+          //      infinite handler has been called at least once, meaning that
+          //      some calls would be missed
+          //   2. Even if defined, `reset` only invokes the infinite handler
+          //      based on the current scroll position. In this case, we want a
+          //      full reset, regardless of position. The scroll position check
+          //      has been observed causing issues on Android, see
+          //      <https://github.com/okTurtles/group-income/issues/2822>
+          // <https://github.com/PeachScript/vue-infinite-loading/issues/303>
+          // has a snipped for doing this (since the API otherwise doesn't
+          // offer it): set the status and then manually emit the the infinite
+          // event, which will result in the guard conditions being bypassed.
+          this.$refs['infinite-loading'].status = 0 // STATUS.READY
+          this.$refs['infinite-loading'].$emit('infinite', this.$refs['infinite-loading'].stateChanger)
         }
       } catch (e) {
         console.error('ChatMain.vue processChatroomSwitch() error:', e)
