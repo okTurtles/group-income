@@ -173,6 +173,8 @@
   "Yesterday": "Hier",
   "Pending": "En attente",
   "New message": "Nouveau message",
+  "A member left your group. Contributions were updated accordingly.": "Un membre a quitté votre groupe. Les contributions ont été mises à jour en conséquence.",
+  "A member was kicked out of the group. Contributions were updated accordingly.": "Un membre a été expulsé du groupe. Les contributions ont été mises à jour en conséquence.",
   "A new distribution period ({period}) has started. Please check Payment TODOs.": "Une nouvelle période de distribution ({period}) a commencé. Veuillez vérifier les opérations de paiement à envoyer.",
   "A new distribution period ({period}) has started. Please update your income details if they have changed.": "Une nouvelle période de distribution ({period}) a commencé. Veuillez mettre à jour vos informations de revenus si elles ont changé.",
   "Contribution reminder": "Rappel de contribution",

@@ -523,6 +523,12 @@
 "New message" = "Nouveau message";
 
 /* model/notifications/templates.js */
+"A member left your group. Contributions were updated accordingly." = "Un membre a quitté votre groupe. Les contributions ont été mises à jour en conséquence.";
+
+/* model/notifications/templates.js */
+"A member was kicked out of the group. Contributions were updated accordingly." = "Un membre a été expulsé du groupe. Les contributions ont été mises à jour en conséquence.";
+
+/* model/notifications/templates.js */
 "A new distribution period ({period}) has started. Please check Payment TODOs." = "Une nouvelle période de distribution ({period}) a commencé. Veuillez vérifier les opérations de paiement à envoyer.";
 
 /* model/notifications/templates.js */

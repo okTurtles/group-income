@@ -26,6 +26,8 @@
   "500": "500",
   "<1m": "<1m",
   "A contribution is required.": "A contribution is required.",
+  "A member left your group. Contributions were updated accordingly.": "A member left your group. Contributions were updated accordingly.",
+  "A member was kicked out of the group. Contributions were updated accordingly.": "A member was kicked out of the group. Contributions were updated accordingly.",
   "A new distribution period ({period}) has started. Please check Payment TODOs.": "A new distribution period ({period}) has started. Please check Payment TODOs.",
   "A new distribution period ({period}) has started. Please update your income details if they have changed.": "A new distribution period ({period}) has started. Please update your income details if they have changed.",
   "A password is required.": "A password is required.",

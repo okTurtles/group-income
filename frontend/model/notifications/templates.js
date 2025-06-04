@@ -180,7 +180,7 @@ export default ({
         ? L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
           name: plaintextName
         })
-        : L('Someone has left your group. Contributions were updated accordingly.', {
+        : L('A member left your group. Contributions were updated accordingly.', {
           name: plaintextName
         }),
       icon: 'user-minus',
@@ -206,9 +206,9 @@ export default ({
       }),
       plaintextBody: hasPlaintextName
         ? L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
-          name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+          name: plaintextName
         })
-        : L('Someone was kicked out of the group. Contributions were updated accordingly.'),
+        : L('A member was kicked out of the group. Contributions were updated accordingly.'),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',

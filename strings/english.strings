@@ -82,6 +82,12 @@
 "A contribution is required." = "A contribution is required.";
 
 /* model/notifications/templates.js */
+"A member left your group. Contributions were updated accordingly." = "A member left your group. Contributions were updated accordingly.";
+
+/* model/notifications/templates.js */
+"A member was kicked out of the group. Contributions were updated accordingly." = "A member was kicked out of the group. Contributions were updated accordingly.";
+
+/* model/notifications/templates.js */
 "A new distribution period ({period}) has started. Please check Payment TODOs." = "A new distribution period ({period}) has started. Please check Payment TODOs.";
 
 /* model/notifications/templates.js */
