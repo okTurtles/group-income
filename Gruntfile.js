@@ -224,7 +224,6 @@ module.exports = (grunt) => {
         'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.CHEL_AVOID_DECRYPTION_ATTEMPTS': 'undefined',
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
@@ -448,7 +447,7 @@ module.exports = (grunt) => {
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork(backendIndex, process.argv, {
-        env: { CHEL_AVOID_DECRYPTION_ATTEMPTS: "'true'", NODE_ENV, ...process.env },
+        env: { NODE_ENV, ...process.env },
         execArgv: ['--require', '@babel/register']
       })
       child.on('error', (err) => {

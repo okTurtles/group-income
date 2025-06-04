@@ -279,7 +279,7 @@ export class SPMessage {
     return new this(messageToParams(head, targetOp[1]))
   }
 
-  static deserialize (value: string, additionalKeys?: Object, state?: Object): this {
+  static deserialize (value: string, additionalKeys?: Object, state?: Object, unwrapMaybeEncryptedDataOverride?: Function = unwrapMaybeEncryptedData): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
@@ -290,7 +290,7 @@ export class SPMessage {
     if (!state?._vm?.authorizedKeys && head.op === SPMessage.OP_CONTRACT) {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(wk => {
-        const k = unwrapMaybeEncryptedData(wk)
+        const k = unwrapMaybeEncryptedDataOverride(wk)
         if (!k) return null
         return [k.data.id, k.data]
       }).filter(Boolean))
