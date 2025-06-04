@@ -17,7 +17,7 @@ import { SPMessage } from './SPMessage.js'
 import type { Secret } from './Secret.js'
 import './chelonia-utils.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData } from './encryptedData.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -221,6 +221,7 @@ export default (sbp('sbp/selectors/register', {
       // or not for processing
       acceptAllMessages: false,
       skipActionProcessing: false,
+      skipDecryptionAttempts: false,
       skipSideEffects: false,
       // Strict processing will treat all processing errors as unrecoverable
       // This is useful, e.g., in the server, to prevent invalid messages from
@@ -242,7 +243,8 @@ export default (sbp('sbp/selectors/register', {
         handleEventError: null, // (e: Error, message: SPMessage) => {}
         syncContractError: null, // (e: Error, contractID: string) => {}
         pubsubError: null // (e:Error, socket: Socket)
-      }
+      },
+      unwrapMaybeEncryptedData
     }
     // Used in publishEvent to cancel sending events after reset (logout)
     this._instance = Object.create(null)
@@ -340,6 +342,19 @@ export default (sbp('sbp/selectors/register', {
       console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
       for (const contractName in manifests) {
         await sbp('chelonia/private/loadManifest', contractName, manifests[contractName])
+      }
+    }
+    if (has(config, 'skipDecryptionAttempts')) {
+      if (config.skipDecryptionAttempts) {
+        this.config.unwrapMaybeEncryptedData = (data) => {
+          if (!isEncryptedData(data)) {
+            return {
+              encryptionKeyId: null, data
+            }
+          }
+        }
+      } else {
+        this.config.unwrapMaybeEncryptedData = unwrapMaybeEncryptedData
       }
     }
   },
@@ -1069,7 +1084,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/in/processMessage': function (messageOrRawMessage: SPMessage | string, state: Object) {
     const stateCopy = cloneDeep(state)
-    const message = typeof messageOrRawMessage === 'string' ? SPMessage.deserialize(messageOrRawMessage, this.transientSecretKeys, stateCopy) : messageOrRawMessage
+    const message = typeof messageOrRawMessage === 'string' ? SPMessage.deserialize(messageOrRawMessage, this.transientSecretKeys, stateCopy, this.config.unwrapMaybeEncryptedData) : messageOrRawMessage
     return sbp('chelonia/private/in/processMessage', message, stateCopy).then(() => stateCopy).catch((e) => {
       console.warn(`chelonia/in/processMessage: reverting mutation ${message.description()}: ${message.serialize()}`, e)
       return state
@@ -1168,7 +1183,7 @@ export default (sbp('sbp/selectors/register', {
       if (done) return state
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', SPMessage.deserialize(event, this.transientSecretKeys, state), state, undefined, contractName)
+        await sbp('chelonia/private/in/processMessage', SPMessage.deserialize(event, this.transientSecretKeys, state, this.config.unwrapMaybeEncryptedData), state, undefined, contractName)
         if (!contractName && state._vm) {
           contractName = state._vm.type
         }

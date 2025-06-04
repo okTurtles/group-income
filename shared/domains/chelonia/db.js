@@ -128,7 +128,7 @@ export default ((sbp('sbp/selectors/register', {
     try {
       const value: string = await sbp('chelonia.db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
-      return SPMessage.deserialize(value, this.transientSecretKeys)
+      return SPMessage.deserialize(value, this.transientSecretKeys, undefined, this.config.unwrapMaybeEncryptedData)
     } catch (e) {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }
