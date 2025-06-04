@@ -824,6 +824,7 @@
   "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).": "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).",
   "The form is invalid.": "The form is invalid.",
   "The group has a new member. Say hi to {strong_}{name}{_strong}!": "The group has a new member. Say hi to {strong_}{name}{_strong}!",
+  "The group has a new member. Say hi!": "The group has a new member. Say hi!",
   "The group picture must be a valid url": "The group picture must be a valid url",
   "The link does not exist.": "The link does not exist.",
   "The method \"{methodName}\" is incomplete.": "The method \"{methodName}\" is incomplete.",

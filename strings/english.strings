@@ -1542,7 +1542,7 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "Minimum Income";
 
-/* views/components/modal/ModalTemplate.vue */
+/* views/components/modal/ModalMixins.js */
 "Modal Title Missing" = "Modal Title Missing";
 
 /* views/containers/design-system/DSModalNested.vue */
@@ -2474,6 +2474,9 @@
 
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {strong_}{name}{_strong}!" = "The group has a new member. Say hi to {strong_}{name}{_strong}!";
+
+/* model/notifications/templates.js */
+"The group has a new member. Say hi!" = "The group has a new member. Say hi!";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "The group picture must be a valid url" = "The group picture must be a valid url";
