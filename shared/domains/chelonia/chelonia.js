@@ -221,6 +221,7 @@ export default (sbp('sbp/selectors/register', {
       // or not for processing
       acceptAllMessages: false,
       skipActionProcessing: false,
+      skipDecryptionAttempts: false,
       skipSideEffects: false,
       // Strict processing will treat all processing errors as unrecoverable
       // This is useful, e.g., in the server, to prevent invalid messages from
