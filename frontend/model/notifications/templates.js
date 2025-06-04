@@ -153,7 +153,7 @@ export default ({
       }),
       plaintextBody: hasPlaintextName
         ? L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
-          name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+          name: plaintextName
         })
         : L('The group has a new member. Say hi!'),
       icon: 'user-plus',
@@ -165,6 +165,10 @@ export default ({
   },
   MEMBER_LEFT (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
+    const plaintextName = sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+    // Used to avoid displaying a contract ID when no name is available, see
+    // <https://github.com/okTurtles/group-income/issues/2834>
+    const hasPlaintextName = plaintextName !== data.memberID
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
       avatarUserID: data.memberID,
@@ -172,9 +176,13 @@ export default ({
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
       }),
-      plaintextBody: L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
-        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
-      }),
+      plaintextBody: hasPlaintextName
+        ? L('{strong_}{name}{_strong} has left your group. Contributions were updated accordingly.', {
+          name: plaintextName
+        })
+        : L('Someone has left your group. Contributions were updated accordingly.', {
+          name: plaintextName
+        }),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
@@ -184,6 +192,10 @@ export default ({
   },
   MEMBER_REMOVED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
+    const plaintextName = sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+    const hasPlaintextName = plaintextName !== data.memberID
+    // Used to avoid displaying a contract ID when no name is available, see
+    // <https://github.com/okTurtles/group-income/issues/2834>
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
       avatarUserID: data.memberID,
@@ -192,9 +204,11 @@ export default ({
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
       }),
-      plaintextBody: L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
-        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
-      }),
+      plaintextBody: hasPlaintextName
+        ? L('{strong_}{name}{_strong} was kicked out of the group. Contributions were updated accordingly.', {
+          name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+        })
+        : L('Someone was kicked out of the group. Contributions were updated accordingly.'),
       icon: 'user-minus',
       level: 'danger',
       linkTo: '/contributions',
