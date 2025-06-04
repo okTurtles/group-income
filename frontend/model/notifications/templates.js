@@ -140,6 +140,10 @@ export default ({
   },
   MEMBER_ADDED (data: { groupID: string, memberID: string }) {
     const rootState = sbp('state/vuex/state')
+    const plaintextName = sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+    // Used to avoid displaying a contract ID when no name is available, see
+    // <https://github.com/okTurtles/group-income/issues/2834>
+    const hasPlaintextName = plaintextName !== data.memberID
     return {
       avatarUserID: data.memberID,
       title: rootState[data.groupID]?.settings?.groupName || L('Member added'),
@@ -147,9 +151,11 @@ export default ({
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.memberID}`,
         ...LTags('strong')
       }),
-      plaintextBody: L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
-        name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
-      }),
+      plaintextBody: hasPlaintextName
+        ? L('The group has a new member. Say hi to {strong_}{name}{_strong}!', {
+          name: sbp('state/vuex/getters').userDisplayNameFromID(data.memberID)
+        })
+        : L('The group has a new member. Say hi!'),
       icon: 'user-plus',
       level: 'info',
       linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
