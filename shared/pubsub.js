@@ -191,7 +191,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     client.listeners[name] = (event) => {
       try {
         // Use `.call()` to pass the client via the 'this' binding.
-        defaultClientEventHandlers[name].call(client, event)
+        (defaultClientEventHandlers[name].call: Function)(client, event)
         client.customEventHandlers[name]?.call(client, event)
       } catch (error) {
         // Do not throw any error but emit an `error` event instead.
