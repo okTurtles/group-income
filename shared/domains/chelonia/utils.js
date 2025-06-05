@@ -36,7 +36,7 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
       purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true) &&
       (Array.isArray(allowedActions)
         ? allowedActions.reduce((acc, action) =>
-          acc && (k.allowedActions === '*' || k.allowedActions?.includes(action)), true
+          acc && (k.allowedActions === '*' || !!k.allowedActions?.includes(action)), true
         )
         : allowedActions ? allowedActions === k.allowedActions : true
       )
@@ -48,7 +48,7 @@ export const findContractIDByForeignKeyId = (state: Object, keyId: string): ?str
   if (!keyId || !state?._vm?.authorizedKeys?.[keyId]?.foreignKey) return
 
   try {
-    const fkUrl = new URL(state._vm?.authorizedKeys?.[keyId]?.foreignKey)
+    const fkUrl = new URL(state._vm.authorizedKeys[keyId].foreignKey)
     return fkUrl.pathname
   } catch {}
 }
@@ -268,7 +268,7 @@ export const validateKeyUpdatePermissions = function (contractID: string, signin
   return [((keys: any): SPKey[]), updatedMap]
 }
 
-export const keyAdditionProcessor = function (msg: SPMessage, hash: string, keys: (SPKey | EncryptedData<SPKey>)[], state: Object, contractID: string, signingKey: SPKey, internalSideEffectStack?: Function[]) {
+export const keyAdditionProcessor = function (_msg: SPMessage, hash: string, keys: (SPKey | EncryptedData<SPKey>)[], state: Object, contractID: string, _signingKey: SPKey, internalSideEffectStack?: Function[]) {
   const decryptedKeys = []
   const keysToPersist = []
 
@@ -447,7 +447,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
 
       if (!has(state._vm, 'pendingWatch')) this.config.reactiveSet(state._vm, 'pendingWatch', Object.create(null))
       if (!has(state._vm.pendingWatch, foreignContract)) this.config.reactiveSet(state._vm.pendingWatch, foreignContract, [])
-      if (!state._vm.pendingWatch[foreignContract].includes(foreignKeyName)) {
+      if (!state._vm.pendingWatch[foreignContract].find(([n]) => n === foreignKeyName)) {
         state._vm.pendingWatch[foreignContract].push([foreignKeyName, key.id])
       }
 

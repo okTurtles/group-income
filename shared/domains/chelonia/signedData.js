@@ -111,8 +111,8 @@ const signData = function (stateOrContractID: string | Object, sKeyId: string, d
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire SPMessage
-const verifySignatureData = function (height: number, data: any, additionalData: string) {
-  if (!this) {
+const verifySignatureData = function (state: Object, height: number, data: any, additionalData: string) {
+  if (!state) {
     throw new ChelErrorSignatureError('Missing contract state')
   }
 
@@ -125,7 +125,7 @@ const verifySignatureData = function (height: number, data: any, additionalData:
   }
 
   const [serializedMessage, sKeyId, signature] = data._signedData
-  const designatedKey = this._vm?.authorizedKeys?.[sKeyId]
+  const designatedKey = state._vm?.authorizedKeys?.[sKeyId]
 
   if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'sig'
@@ -201,7 +201,7 @@ export const signedOutgoingData = <T>(stateOrContractID: string | Object, sKeyId
 }
 
 // Used for OP_CONTRACT as a state does not yet exist
-export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: number): SignedData<T> => {
+export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, _height?: number): SignedData<T> => {
   const sKeyId = keyId(key)
   const state = {
     _vm: {
@@ -229,7 +229,7 @@ export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, height?: numb
       return serializefn
     },
     get toString () {
-      return (additionalData: ?string) => JSON.stringify(this.serialize(additionalData, height))
+      return (additionalData: ?string) => JSON.stringify(this.serialize(additionalData))
     },
     get valueOf () {
       return () => data
@@ -255,7 +255,7 @@ export const signedIncomingData = (contractID: string, state: ?Object, data: any
     if (verifySignedValue) {
       return verifySignedValue[1]
     }
-    verifySignedValue = verifySignatureData.call(state || rootStateFn()[contractID], height, data, additionalData)
+    verifySignedValue = verifySignatureData(state || rootStateFn()[contractID], height, data, additionalData)
     if (mapperFn) verifySignedValue[1] = mapperFn(verifySignedValue[1])
     return verifySignedValue[1]
   }

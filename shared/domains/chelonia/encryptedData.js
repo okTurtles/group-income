@@ -92,8 +92,8 @@ const encryptData = function (stateOrContractID: string | Object, eKeyId: string
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire SPMessage
-const decryptData = function (height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any, id: string) => void) {
-  if (!this) {
+const decryptData = function (state: Object, height: number, data: any, additionalKeys: Object, additionalData: string, validatorFn?: (v: any, id: string) => void) {
+  if (!state) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
 
@@ -136,7 +136,7 @@ const decryptData = function (height: number, data: any, additionalKeys: Object,
   // that OP_KEY_SHARE is meant to protect. Hence, this attack does not open up
   // any new attack vectors or venues that were not already available using
   // different means.
-  const designatedKey = this._vm?.authorizedKeys?.[eKeyId]
+  const designatedKey = state._vm?.authorizedKeys?.[eKeyId]
   if (!designatedKey || (height > designatedKey._notAfterHeight) || (height < designatedKey._notBeforeHeight) || !designatedKey.purpose.includes(
     'enc'
   )) {
@@ -223,7 +223,7 @@ export const encryptedIncomingData = <T>(contractID: string, state: Object, data
       state = state || rootState[contractID]
       additionalKeys = additionalKeys ?? rootState.secretKeys
     }
-    decryptedValue = decryptData.call(state, height, data, additionalKeys, additionalData || '', validatorFn)
+    decryptedValue = decryptData(state, height, data, additionalKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       decryptedValue = signedIncomingData(contractID, state, decryptedValue, height, additionalData || '')
@@ -259,7 +259,7 @@ export const encryptedIncomingForeignData = <T>(contractID: string, _0: any, dat
     }
     const rootState = rootStateFn()
     const state = rootState[contractID]
-    decryptedValue = decryptData.call(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
+    decryptedValue = decryptData(state, NaN, data, additionalKeys ?? rootState.secretKeys, additionalData || '', validatorFn)
 
     if (isRawSignedData(decryptedValue)) {
       // TODO: Specify height
@@ -309,7 +309,7 @@ export const encryptedIncomingDataWithRawKey = <T>(key: Key, data: any, addition
         }
       }
     }
-    decryptedValue = decryptData.call(state, NaN, data, { [eKeyId]: key }, additionalData || '')
+    decryptedValue = decryptData(state, NaN, data, { [eKeyId]: key }, additionalData || '')
 
     return decryptedValue
   }

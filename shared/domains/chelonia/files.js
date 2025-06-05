@@ -25,7 +25,7 @@ let supportsRequestStreams = typeof window !== 'object' || (() => {
       duplexAccessed = true
       return 'half'
     }
-  }).headers.has('Content-Type')
+  }).headers.has('content-type')
 
   return duplexAccessed && !hasContentType
 })()
@@ -163,7 +163,7 @@ const fileStream = (chelonia: Object, manifest: Object) => {
 }
 
 export const aes256gcmHandlers: any = {
-  upload: (chelonia: Object, manifestOptions: Object) => {
+  upload: (_chelonia: Object, manifestOptions: Object) => {
     // IKM stands for Input Keying Material, and is a random value used to
     // derive the encryption used in the chunks. See RFC 8188 for how the
     // actual encryption key gets derived from the IKM.
@@ -236,7 +236,7 @@ export const aes256gcmHandlers: any = {
 }
 
 export const noneHandlers: any = {
-  upload: (chelonia: Object, manifestOptions: Object) => {
+  upload: () => {
     return {
       cipherParams: undefined,
       streamHandler: (stream: ReadableStream) => {
@@ -245,7 +245,7 @@ export const noneHandlers: any = {
       downloadParams: undefined
     }
   },
-  download: (chelonia: Object, downloadParams: Object, manifest: Object) => {
+  download: (chelonia: Object, _downloadParams: Object, manifest: Object) => {
     return {
       payloadHandler: async () => {
         const bytes = await streamToUint8Array(fileStream(chelonia, manifest))
@@ -316,7 +316,7 @@ export default (sbp('sbp/selectors/register', {
       // The indirect call to Math.random (`(0, Math.random)`) is to explicitly
       // mark that we intend on using Math.random, even though it's not a
       // CSPRNG, so that it's not reported as a bug in by static analysis tools.
-      : new Array(36).fill('').map(v =>
+      : new Array(36).fill('').map(() =>
         'abcdefghijklmnopqrstuvwxyz'[(0, Math.random)() * 26 | 0]).join('')
     const stream = encodeMultipartMessage(boundary, transferParts)
 
