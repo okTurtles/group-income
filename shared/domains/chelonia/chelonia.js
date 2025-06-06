@@ -17,7 +17,7 @@ import { SPMessage } from './SPMessage.js'
 import type { Secret } from './Secret.js'
 import './chelonia-utils.js'
 import type { EncryptedData } from './encryptedData.js'
-import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData } from './encryptedData.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey, isEncryptedData, maybeEncryptedIncomingData, unwrapMaybeEncryptedData } from './encryptedData.js'
 import './files.js'
 import './internals.js'
 import { isSignedData, signedIncomingData, signedOutgoingData, signedOutgoingDataWithRawKey } from './signedData.js'
@@ -221,6 +221,7 @@ export default (sbp('sbp/selectors/register', {
       // or not for processing
       acceptAllMessages: false,
       skipActionProcessing: false,
+      skipDecryptionAttempts: false,
       skipSideEffects: false,
       // Strict processing will treat all processing errors as unrecoverable
       // This is useful, e.g., in the server, to prevent invalid messages from
@@ -242,7 +243,8 @@ export default (sbp('sbp/selectors/register', {
         handleEventError: null, // (e: Error, message: SPMessage) => {}
         syncContractError: null, // (e: Error, contractID: string) => {}
         pubsubError: null // (e:Error, socket: Socket)
-      }
+      },
+      unwrapMaybeEncryptedData
     }
     // Used in publishEvent to cancel sending events after reset (logout)
     this._instance = Object.create(null)
@@ -340,6 +342,19 @@ export default (sbp('sbp/selectors/register', {
       console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
       for (const contractName in manifests) {
         await sbp('chelonia/private/loadManifest', contractName, manifests[contractName])
+      }
+    }
+    if (has(config, 'skipDecryptionAttempts')) {
+      if (config.skipDecryptionAttempts) {
+        this.config.unwrapMaybeEncryptedData = (data) => {
+          if (!isEncryptedData(data)) {
+            return {
+              encryptionKeyId: null, data
+            }
+          }
+        }
+      } else {
+        this.config.unwrapMaybeEncryptedData = unwrapMaybeEncryptedData
       }
     }
   },
@@ -597,7 +612,7 @@ export default (sbp('sbp/selectors/register', {
         ...options.handlers,
         // Every time we get a REQUEST_TYPE.SUB response, which happens for
         // 'new' subscriptions as well as every time the connection is reset
-        'subscription-succeeded': (event) => {
+        'subscription-succeeded': function (event) {
           const { channelID } = event.detail
           // The check below is needed because we could have unsubscribed since
           // requesting a subscription from the server. In that case, we don't
@@ -611,7 +626,7 @@ export default (sbp('sbp/selectors/register', {
               console.warn(`[chelonia] Syncing contract ${channelID} failed: ${err.message}`)
             })
           }
-          options.handlers?.['subscription-succeeded']?.(event)
+          options.handlers?.['subscription-succeeded']?.call(this, event)
         }
       },
       // Map message handlers to transparently handle encryption and signatures
@@ -630,7 +645,7 @@ export default (sbp('sbp/selectors/register', {
                     return
                   }
                   sbp('chelonia/queueInvocation', msg.channelID, () => {
-                    (v: Function).call(this.pubsub, parseEncryptedOrUnencryptedMessage.call(this, {
+                    (v: Function).call(this.pubsub, parseEncryptedOrUnencryptedMessage(this, {
                       contractID: msg.channelID,
                       serializedData: msg.data
                     }))
@@ -649,7 +664,7 @@ export default (sbp('sbp/selectors/register', {
                     return
                   }
                   sbp('chelonia/queueInvocation', msg.channelID, () => {
-                    (v: Function)([msg.key, parseEncryptedOrUnencryptedMessage.call(this, {
+                    (v: Function).call(this.pubsub, [msg.key, parseEncryptedOrUnencryptedMessage(this, {
                       contractID: msg.channelID,
                       meta: msg.key,
                       serializedData: JSON.parse(Buffer.from(msg.data).toString())
@@ -659,7 +674,7 @@ export default (sbp('sbp/selectors/register', {
                   })
                 }]
               case NOTIFICATION_TYPE.DELETION:
-                return [k, (msg) => (v: Function)(msg.data)]
+                return [k, (msg) => (v: Function).call(this.pubsub, msg.data)]
               default:
                 return [k, v]
             }
@@ -768,7 +783,8 @@ export default (sbp('sbp/selectors/register', {
             const sideEffect = sideEffects.shift()
             try {
               await contract.sbp(...sideEffect)
-            } catch (e) {
+            } catch (e_) {
+              const e = (e_: Object)
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${mutation.description}:`, sideEffect)
               this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
@@ -1069,7 +1085,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/in/processMessage': function (messageOrRawMessage: SPMessage | string, state: Object) {
     const stateCopy = cloneDeep(state)
-    const message = typeof messageOrRawMessage === 'string' ? SPMessage.deserialize(messageOrRawMessage, this.transientSecretKeys, stateCopy) : messageOrRawMessage
+    const message = typeof messageOrRawMessage === 'string' ? SPMessage.deserialize(messageOrRawMessage, this.transientSecretKeys, stateCopy, this.config.unwrapMaybeEncryptedData) : messageOrRawMessage
     return sbp('chelonia/private/in/processMessage', message, stateCopy).then(() => stateCopy).catch((e) => {
       console.warn(`chelonia/in/processMessage: reverting mutation ${message.description()}: ${message.serialize()}`, e)
       return state
@@ -1168,7 +1184,7 @@ export default (sbp('sbp/selectors/register', {
       if (done) return state
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', SPMessage.deserialize(event, this.transientSecretKeys, state), state, undefined, contractName)
+        await sbp('chelonia/private/in/processMessage', SPMessage.deserialize(event, this.transientSecretKeys, state, this.config.unwrapMaybeEncryptedData), state, undefined, contractName)
         if (!contractName && state._vm) {
           contractName = state._vm.type
         }
@@ -1692,7 +1708,7 @@ export default (sbp('sbp/selectors/register', {
         // race conditions and data not being properly initialised.
         // See <https://github.com/okTurtles/group-income/issues/2780>
         currentValue = serializedDataText
-          ? parseEncryptedOrUnencryptedMessage.call(this, {
+          ? parseEncryptedOrUnencryptedMessage(this, {
             contractID,
             serializedData: JSON.parse(serializedDataText),
             meta: key
@@ -1806,7 +1822,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Invalid response status: ' + response.status)
     }
     const data = await response.json()
-    return parseEncryptedOrUnencryptedMessage.call(this, {
+    return parseEncryptedOrUnencryptedMessage(this, {
       contractID,
       serializedData: data,
       meta: key
@@ -1824,7 +1840,7 @@ export default (sbp('sbp/selectors/register', {
     this.pubsub.setKvFilter(contractID, filter)
   },
   'chelonia/parseEncryptedOrUnencryptedDetachedMessage': function ({ contractID, serializedData, meta }: { contractID: string, serializedData: Object, meta?: ?string }) {
-    return parseEncryptedOrUnencryptedMessage.call(this, {
+    return parseEncryptedOrUnencryptedMessage(this, {
       contractID,
       serializedData,
       meta
@@ -1858,7 +1874,7 @@ function outputEncryptedOrUnencryptedMessage ({
   const signedMessage = innerSigningKeyId
     ? (state._vm.authorizedKeys[innerSigningKeyId] && state._vm.authorizedKeys[innerSigningKeyId]?._notAfterHeight == null)
         ? signedOutgoingData(contractID, innerSigningKeyId, (data: any), this.transientSecretKeys)
-        : signedOutgoingDataWithRawKey(this.transientSecretKeys[innerSigningKeyId], (data: any), this.transientSecretKeys)
+        : signedOutgoingDataWithRawKey(this.transientSecretKeys[innerSigningKeyId], (data: any))
     : data
   const payload = !encryptionKeyId
     ? signedMessage
@@ -1870,7 +1886,7 @@ function outputEncryptedOrUnencryptedMessage ({
   return serializedData
 }
 
-function parseEncryptedOrUnencryptedMessage ({
+function parseEncryptedOrUnencryptedMessage (ctx, {
   contractID,
   serializedData,
   meta
@@ -1882,9 +1898,9 @@ function parseEncryptedOrUnencryptedMessage ({
   if (!serializedData) {
     throw new TypeError('[chelonia] parseEncryptedOrUnencryptedMessage: serializedData is required')
   }
-  const state = sbp(this.config.stateSelector)[contractID]
+  const state = sbp(ctx.config.stateSelector)[contractID]
   const numericHeight = parseInt(serializedData.height)
-  const rootState = sbp(this.config.stateSelector)
+  const rootState = sbp(ctx.config.stateSelector)
   const currentHeight = rootState.contracts[contractID].height
   if (!(numericHeight >= 0) || !(numericHeight <= currentHeight)) {
     throw new Error(`[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${serializedData.height}; it must be between 0 and ${currentHeight}`)
@@ -1894,7 +1910,7 @@ function parseEncryptedOrUnencryptedMessage ({
   const aad = (meta ?? '') + serializedData.height
 
   const v = signedIncomingData(contractID, state, serializedData, numericHeight, aad, (message) => {
-    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, this.transientSecretKeys, aad, undefined)
+    return maybeEncryptedIncomingData(contractID, state, message, numericHeight, ctx.transientSecretKeys, aad, undefined)
   })
 
   // Cached values
@@ -2001,7 +2017,7 @@ async function outEncryptedOrUnencryptedAction (
   const signedMessage = params.innerSigningKeyId
     ? (state._vm.authorizedKeys[params.innerSigningKeyId] && state._vm.authorizedKeys[params.innerSigningKeyId]?._notAfterHeight == null)
         ? signedOutgoingData(contractID, params.innerSigningKeyId, (unencMessage: any), this.transientSecretKeys)
-        : signedOutgoingDataWithRawKey(this.transientSecretKeys[params.innerSigningKeyId], (unencMessage: any), this.transientSecretKeys)
+        : signedOutgoingDataWithRawKey(this.transientSecretKeys[params.innerSigningKeyId], (unencMessage: any))
     : unencMessage
   if (opType === SPMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
     throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')
@@ -2049,7 +2065,7 @@ async function outEncryptedOrUnencryptedAction (
 // ```
 function gettersProxy (state: Object, getters: Object) {
   const proxyGetters = new Proxy({}, {
-    get (target, prop) {
+    get (_target, prop) {
       return getters[prop](state, proxyGetters)
     }
   })
