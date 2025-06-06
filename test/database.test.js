@@ -3,7 +3,7 @@
 
 import assert from 'node:assert'
 import { rm } from 'node:fs/promises'
-import { checkKey } from '~/shared/domains/chelonia/db.js'
+import { checkKey } from 'libchelonia/db'
 
 const names = ['FS', 'SQLite']
 const options = {
