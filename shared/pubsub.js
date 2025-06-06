@@ -4,6 +4,45 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
+// ====== Enums ====== //
+
+export const NOTIFICATION_TYPE = Object.freeze({
+  ENTRY: 'entry',
+  DELETION: 'deletion',
+  KV: 'kv',
+  KV_FILTER: 'kv_filter',
+  PING: 'ping',
+  PONG: 'pong',
+  PUB: 'pub',
+  SUB: 'sub',
+  UNSUB: 'unsub',
+  VERSION_INFO: 'version_info'
+})
+
+export const REQUEST_TYPE = Object.freeze({
+  PUB: 'pub',
+  SUB: 'sub',
+  UNSUB: 'unsub',
+  PUSH_ACTION: 'push_action',
+  KV_FILTER: 'kv_filter'
+})
+
+export const RESPONSE_TYPE = Object.freeze({
+  ERROR: 'error',
+  OK: 'ok'
+})
+
+export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
+  SEND_PUBLIC_KEY: 'send-public-key',
+  STORE_SUBSCRIPTION: 'store-subscription',
+  DELETE_SUBSCRIPTION: 'delete-subscription',
+  SEND_PUSH_NOTIFICATION: 'send-push-notification'
+})
+
+export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
+export type RequestTypeEnum = $Values<typeof REQUEST_TYPE>
+export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
+
 // TODO: verify these are good defaults
 const defaultOptions = {
   logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
@@ -94,45 +133,6 @@ export type UnsubMessage = {
   +channelID: string
 }
 
-// ====== Enums ====== //
-
-export const NOTIFICATION_TYPE = Object.freeze({
-  ENTRY: 'entry',
-  DELETION: 'deletion',
-  KV: 'kv',
-  KV_FILTER: 'kv_filter',
-  PING: 'ping',
-  PONG: 'pong',
-  PUB: 'pub',
-  SUB: 'sub',
-  UNSUB: 'unsub',
-  VERSION_INFO: 'version_info'
-})
-
-export const REQUEST_TYPE = Object.freeze({
-  PUB: 'pub',
-  SUB: 'sub',
-  UNSUB: 'unsub',
-  PUSH_ACTION: 'push_action',
-  KV_FILTER: 'kv_filter'
-})
-
-export const RESPONSE_TYPE = Object.freeze({
-  ERROR: 'error',
-  OK: 'ok'
-})
-
-export const PUSH_SERVER_ACTION_TYPE = Object.freeze({
-  SEND_PUBLIC_KEY: 'send-public-key',
-  STORE_SUBSCRIPTION: 'store-subscription',
-  DELETE_SUBSCRIPTION: 'delete-subscription',
-  SEND_PUSH_NOTIFICATION: 'send-push-notification'
-})
-
-export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
-export type RequestTypeEnum = $Values<typeof REQUEST_TYPE>
-export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
-
 // ====== API ====== //
 
 /**
@@ -191,11 +191,11 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     client.listeners[name] = (event) => {
       try {
         // Use `.call()` to pass the client via the 'this' binding.
-        defaultClientEventHandlers[name]?.call(client, event)
+        (defaultClientEventHandlers[name].call: Function)(client, event)
         client.customEventHandlers[name]?.call(client, event)
       } catch (error) {
         // Do not throw any error but emit an `error` event instead.
-        sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error.message)
+        sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error?.message)
       }
     }
   }
@@ -327,7 +327,7 @@ const defaultClientEventHandlers = {
       msg = messageParser(data)
     } catch (error) {
       sbp('okTurtles.events/emit', PUBSUB_ERROR, client, {
-        message: `Malformed message: ${error.message}`
+        message: `Malformed message: ${error?.message}`
       })
       return client.destroy()
     }
@@ -340,7 +340,7 @@ const defaultClientEventHandlers = {
     }
   },
 
-  offline (event: Event) {
+  offline () {
     console.info('[pubsub] Event: offline')
     const client = this
 
@@ -351,7 +351,7 @@ const defaultClientEventHandlers = {
     client.socket?.close()
   },
 
-  online (event: Event) {
+  online () {
     console.info('[pubsub] Event: online')
     const client = this
 
@@ -364,7 +364,7 @@ const defaultClientEventHandlers = {
   },
 
   // Emitted when the connection is established.
-  open (event: Event) {
+  open () {
     console.debug('[pubsub] Event: open')
     const client = this
     const { options } = this
@@ -387,20 +387,20 @@ const defaultClientEventHandlers = {
     client.pendingSubscriptionSet.forEach((channelID) => {
       const kvFilter = this.kvFilter.get(channelID)
       // $FlowFixMe[incompatible-call]
-      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { channelID, kvFilter }))
+      client.socket?.send(createRequest(REQUEST_TYPE.SUB, kvFilter ? { channelID, kvFilter } : { channelID }))
     })
     // There should be no pending unsubscription since we just got connected.
   },
 
-  'reconnection-attempt' (event: CustomEvent) {
+  'reconnection-attempt' () {
     console.info('[pubsub] Trying to reconnect...')
   },
 
-  'reconnection-succeeded' (event: CustomEvent) {
+  'reconnection-succeeded' () {
     console.info('[pubsub] Connection re-established')
   },
 
-  'reconnection-failed' (event: CustomEvent) {
+  'reconnection-failed' () {
     console.warn('[pubsub] Reconnection failed')
     const client = this
 
@@ -712,7 +712,7 @@ const publicMethods = {
 
       if (socket?.readyState === WebSocket.OPEN) {
         const kvFilter = client.kvFilter.get(channelID)
-        socket.send(createRequest(REQUEST_TYPE.SUB, { channelID, kvFilter }))
+        socket.send(createRequest(REQUEST_TYPE.SUB, kvFilter ? { channelID, kvFilter } : { channelID }))
       }
     }
   },
@@ -733,7 +733,7 @@ const publicMethods = {
     if (client.subscriptionSet.has(channelID)) {
       if (socket?.readyState === WebSocket.OPEN) {
         // $FlowFixMe[incompatible-call]
-        socket.send(createRequest(REQUEST_TYPE.KV_FILTER, { channelID, kvFilter }))
+        socket.send(createRequest(REQUEST_TYPE.KV_FILTER, kvFilter ? { channelID, kvFilter } : { channelID }))
       }
     }
   },
@@ -766,7 +766,8 @@ const publicMethods = {
 for (const name of Object.keys(defaultClientEventHandlers)) {
   if (name === 'error' || !socketEventNames.includes(name)) {
     sbp('okTurtles.events/on', `pubsub-${name}`, (target, detail?: Object) => {
-      target.listeners[name]({ type: name, target, detail })
+      const ev = new CustomEvent(name, { detail })
+      target.listeners[name].call(target, ev)
     })
   }
 }

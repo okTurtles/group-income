@@ -89,7 +89,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // extract encrypted data from key.meta?.private?.content
   if ([SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_UPDATE].includes(op)) {
     return ((message: any): any[]).map((key) => {
-      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (key.meta?.private?.content) {
           key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           // Validator function to verify the key matches its expected ID
@@ -126,7 +126,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // If the operation is SPMessage.OP_CONTRACT,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === SPMessage.OP_CONTRACT) {
-    (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
+    (message: any).keys = (message: any).keys?.map((key) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (!key.meta?.private?.content) return
         // The following two lines are commented out because this feature
@@ -279,7 +279,7 @@ export class SPMessage {
     return new this(messageToParams(head, targetOp[1]))
   }
 
-  static deserialize (value: string, additionalKeys?: Object, state?: Object): this {
+  static deserialize (value: string, additionalKeys?: Object, state?: Object, unwrapMaybeEncryptedDataFn?: Function = unwrapMaybeEncryptedData): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const { head: headJSON, ...parsedValue } = JSON.parse(value)
     const head = JSON.parse(headJSON)
@@ -290,7 +290,7 @@ export class SPMessage {
     if (!state?._vm?.authorizedKeys && head.op === SPMessage.OP_CONTRACT) {
       const value = rawSignedIncomingData(parsedValue)
       const authorizedKeys = Object.fromEntries(value.valueOf()?.keys.map(wk => {
-        const k = unwrapMaybeEncryptedData(wk)
+        const k = unwrapMaybeEncryptedDataFn(wk)
         if (!k) return null
         return [k.data.id, k.data]
       }).filter(Boolean))
@@ -407,6 +407,10 @@ export class SPMessage {
     if (this._decryptedValue) return this._decryptedValue
     try {
       const value = this.message()
+      // TODO: This uses `unwrapMaybeEncryptedData` instead of a configurable
+      // version based on `skipDecryptionAttempts`. This is fine based on current
+      // use, and also something else might be confusing based on the explicit
+      // name of this function, `decryptedValue`.
       const data = unwrapMaybeEncryptedData(value)
       // Did decryption succeed? (unwrapMaybeEncryptedData will return undefined
       // on failure)
@@ -493,11 +497,12 @@ export class SPMessage {
   // `isKeyOp` is used to filter out non-key operations for providing an
   // abbreviated chain fo snapshot validation
   isKeyOp (): boolean {
+    let value: any
     return !!(
       keyOps.includes(this.opType()) ||
-      // $FlowFixMe[prop-missing]
-      (this.opType() === SPMessage.OP_ATOMIC && Array.isArray(this.opValue()) && this.opValue().some(([opT]) => {
-        return keyOps.includes(opT)
+      // $FlowFixMe
+      (this.opType() === SPMessage.OP_ATOMIC && Array.isArray(value = this.opValue()) && (value: any[]).some(([opT]) => {
+        return (keyOps: SPOpType[]).includes(opT)
       }))
     )
   }

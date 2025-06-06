@@ -40,7 +40,7 @@ const defaultOptions = {
 }
 const tag = '[chelonia.persistentActions]'
 
-class PersistentAction {
+export class PersistentAction {
   id: UUIDV4
   invocation: SbpInvocation
   options: PersistentActionOptions
@@ -81,7 +81,7 @@ class PersistentAction {
 
   cancel (): void {
     // $FlowFixMe[prop-missing]
-    this[timer] && clearTimeout(this[timer])
+    if (this[timer]) clearTimeout(this[timer])
     this.status.nextRetry = ''
     this.status.resolved = true
   }
@@ -135,7 +135,7 @@ class PersistentAction {
 
 // SBP API
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'chelonia.persistentActions/_init' (): void {
     this.actionsByID = Object.create(null)
     this.checkDatabaseKey = () => {
@@ -248,8 +248,10 @@ sbp('sbp/selectors/register', {
   'chelonia.persistentActions/unload' (): void {
     for (const id in this.actionsByID) {
       // Clear the action's timeout, but don't cancel it so that it can later resumed.
-      this.actionsByID[id][timer] && clearTimeout(this.actionsByID[id][timer])
+      if (this.actionsByID[id][timer]) {
+        clearTimeout(this.actionsByID[id][timer])
+      }
       delete this.actionsByID[id]
     }
   }
-})
+}): string[])
