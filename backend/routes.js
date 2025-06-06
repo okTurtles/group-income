@@ -5,6 +5,7 @@
 import sbp from '@sbp/sbp'
 import Bottleneck from 'bottleneck'
 import chalk from 'chalk'
+import { isIP } from 'node:net'
 import path from 'path'
 import { SPMessage } from 'libchelonia/SPMessage'
 import { blake32Hash, createCID, maybeParseCID, multicodes } from 'libchelonia/functions'
@@ -60,6 +61,69 @@ const cidLookupTable = {
   [multicodes.SHELTER_CONTRACT_DATA]: 'application/vnd.shelter.contractdata+json',
   [multicodes.SHELTER_FILE_MANIFEST]: 'application/vnd.shelter.filemanifest+json',
   [multicodes.SHELTER_FILE_CHUNK]: 'application/vnd.shelter.filechunk+octet-stream'
+}
+
+// Given an IPv4 or IPv6, extract a suitable key to be used for rate limiting.
+// For IPv4 addresses (including IPv4 addresses embedded in IPv6 addresses),
+// just use the full IPv4 address as is.
+// For IPv6 addresses, discard the least significant 64 bits. This makes DoS
+// harder and because of subnetting the discarded bits likely all represent
+// addresses belonging to the same individual.
+// Note: link-local IPv6 addresses aren't transformed and used in full.
+// See: <https://github.com/okTurtles/group-income/issues/2832>
+const limiterKey = (ip: string) => {
+  const ipVersion = isIP(ip)
+  if (ipVersion === 4) {
+    return ip
+  } else if (ipVersion === 6) {
+    // Likely IPv6
+    const [address, zoneIdx] = ip.split('%')
+    const segments = address.split(':')
+
+    // Is this a compressed form IPv6 address?
+    let isCompressed = false
+    for (let i = 0; i < segments.length - 1; i++) {
+      // Compressed form address
+      if (!isCompressed && segments[i] === '') {
+        const requiredSegments = 8 - (segments.length - 1)
+        if (requiredSegments < 0) {
+          throw new Error('Invalid IPv6 address: too many segments')
+        }
+        if ((i === 0 || i === segments.length - 2) && segments[i + 1] === '') {
+          segments[i + 1] = '0'
+        }
+        if (i === 0 && segments.length === 3 && segments[i + 2] === '') {
+          segments[i + 2] = '0'
+        }
+        segments.splice(i, 1, ...new Array(requiredSegments).fill('0'))
+        isCompressed = true
+        continue
+      }
+      // Remove leading zeroes
+      segments[i] = segments[i].replace(/^0+/, '0')
+    }
+
+    if (segments.length === 8 && isIP(segments[7]) === 4) {
+      // IPv4-embedded, IPv4-mapped and IPv4-translated addresses are returned
+      // as IPv4
+      return segments[7]
+    } else if (segments.length === 8) {
+      if (zoneIdx) {
+        segments[7] = segments[7].replace(/^0+/, '0')
+        // Use tagged (link-local) addresses in full
+        return segments.join(':').toLowerCase() + '%' + zoneIdx
+      } else {
+        // If an IPv6 address, return the first 64 bits. This is because that's
+        // the smallest possible subnet, and spammers can easily get an entire
+        // /64
+        return segments.slice(0, 4).join(':').toLowerCase() + '::'
+      }
+    } else {
+      throw new Error('Invalid IPv6 address')
+    }
+  }
+
+  throw new Error('Invalid address format')
 }
 
 // Constant-time equal
@@ -156,11 +220,11 @@ route.POST('/event', {
         // rate limit signups in production
         if (!SIGNUP_LIMIT_DISABLED) {
           try {
-            // IMPORTANT: if the server is using IPv6 addresses, this isn't sufficient!
             // See discussion: https://github.com/okTurtles/group-income/pull/2280#pullrequestreview-2219347378
-            await limiterPerMinute.key(ip).schedule(() => Promise.resolve())
-            await limiterPerHour.key(ip).schedule(() => Promise.resolve())
-            await limiterPerDay.key(ip).schedule(() => Promise.resolve())
+            const keyedIp = limiterKey(ip)
+            await limiterPerMinute.key(keyedIp).schedule(() => Promise.resolve())
+            await limiterPerHour.key(keyedIp).schedule(() => Promise.resolve())
+            await limiterPerDay.key(keyedIp).schedule(() => Promise.resolve())
           } catch {
             console.warn('rate limit hit for IP:', ip)
             throw Boom.tooManyRequests('Rate limit exceeded')
