@@ -80,10 +80,10 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
           : undefined)
         return Promise.resolve(value)
       },
-      'chelonia.db/set': function (key: string, value: HEADInfo | Buffer | string): Promise<Error | void> {
+      'chelonia.db/set': function (): Promise<Error | void> {
         return Promise.resolve()
       },
-      'chelonia.db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
+      'chelonia.db/delete': function (): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
       // eslint-disable-next-line require-await
@@ -118,8 +118,9 @@ export default ((sbp('sbp/selectors/register', {
     const entryMetaJson = JSON.stringify(entryMeta)
     await sbp('chelonia.db/set', `_private_hidx=${contractID}#${height}`, entryMetaJson)
   },
-  'chelonia/db/latestHEADinfo': (contractID: string): Promise<HEADInfo | void> => {
-    return sbp('chelonia.db/get', getLogHead(contractID)).then((r) => r && JSON.parse(r))
+  'chelonia/db/latestHEADinfo': async (contractID: string): Promise<HEADInfo | void> => {
+    const r = await sbp('chelonia.db/get', getLogHead(contractID))
+    return r && JSON.parse(r)
   },
   'chelonia/db/deleteLatestHEADinfo': (contractID: string): Promise<void> => {
     return sbp('chelonia.db/set', getLogHead(contractID), '')

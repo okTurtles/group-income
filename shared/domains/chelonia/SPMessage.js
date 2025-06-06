@@ -89,7 +89,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // extract encrypted data from key.meta?.private?.content
   if ([SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_UPDATE].includes(op)) {
     return ((message: any): any[]).map((key) => {
-      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key, eKeyId) => {
+      return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (key.meta?.private?.content) {
           key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, height, additionalKeys, headJSON, (value) => {
           // Validator function to verify the key matches its expected ID
@@ -126,7 +126,7 @@ const decryptedAndVerifiedDeserializedMessage = (head: Object, headJSON: string,
   // If the operation is SPMessage.OP_CONTRACT,
   // extract encrypted data from keys?.[].meta?.private?.content
   if (op === SPMessage.OP_CONTRACT) {
-    (message: any).keys = (message: any).keys?.map((key, eKeyId) => {
+    (message: any).keys = (message: any).keys?.map((key) => {
       return maybeEncryptedIncomingData(contractID, state, key, height, additionalKeys, headJSON, (key) => {
         if (!key.meta?.private?.content) return
         // The following two lines are commented out because this feature
@@ -497,11 +497,12 @@ export class SPMessage {
   // `isKeyOp` is used to filter out non-key operations for providing an
   // abbreviated chain fo snapshot validation
   isKeyOp (): boolean {
+    let value: any
     return !!(
       keyOps.includes(this.opType()) ||
-      // $FlowFixMe[prop-missing]
-      (this.opType() === SPMessage.OP_ATOMIC && Array.isArray(this.opValue()) && this.opValue().some(([opT]) => {
-        return keyOps.includes(opT)
+      // $FlowFixMe
+      (this.opType() === SPMessage.OP_ATOMIC && Array.isArray(value = this.opValue()) && (value: any[]).some(([opT]) => {
+        return (keyOps: SPOpType[]).includes(opT)
       }))
     )
   }

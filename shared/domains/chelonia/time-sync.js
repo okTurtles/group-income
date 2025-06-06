@@ -89,7 +89,7 @@ export default (sbp('sbp/selectors/register', {
       const difference = Math.abs(Math.abs((wallNow - wallLast)) - Math.abs((monotonicNow - monotonicLast)))
       // Tolerate up to a 10ms difference
       if (difference > 10) {
-        clearTimeout(resyncTimeout)
+        if (resyncTimeout != null) clearTimeout(resyncTimeout)
         resyncTimeout = null
         resync(0)
       }
@@ -103,8 +103,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/stopClockSync': () => {
     if (resyncTimeout !== undefined) {
-      clearInterval(watchdog)
-      clearTimeout(resyncTimeout)
+      if (watchdog != null) clearInterval(watchdog)
+      if (resyncTimeout != null) clearTimeout(resyncTimeout)
       watchdog = undefined
       resyncTimeout = undefined
     }
