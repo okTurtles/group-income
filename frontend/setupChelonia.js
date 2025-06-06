@@ -233,7 +233,17 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
-    }
+    },
+    // $FlowFixMe[cannot-resolve-name]
+    ...(typeof cachedFetch === 'function' && {
+      fetch: async (...args) => {
+        const request = new Request(...args)
+        // eslint-disable-next-line no-undef
+        const response = await cachedFetch(request)
+        if (response) return response
+        return fetch(...args)
+      }
+    })
   })
 
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
