@@ -201,7 +201,7 @@ export const signedOutgoingData = <T>(stateOrContractID: string | Object, sKeyId
 }
 
 // Used for OP_CONTRACT as a state does not yet exist
-export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T, _height?: number): SignedData<T> => {
+export const signedOutgoingDataWithRawKey = <T>(key: Key, data: T): SignedData<T> => {
   const sKeyId = keyId(key)
   const state = {
     _vm: {

@@ -701,7 +701,7 @@ export default (sbp('sbp/selectors/register', {
   // although it can be used as a general-purpose API to process events received
   // from other external sources that are not managed by Chelonia itself (i.e. sources
   // other than the Chelonia-managed websocket connection and RESTful API).
-  'chelonia/handleEvent': async (event: string) => {
+  'chelonia/handleEvent': async function (event: string) {
     const { contractID } = SPMessage.deserializeHEAD(event)
     return await sbp('chelonia/private/in/enqueueHandleEvent', contractID, event)
   },
@@ -784,7 +784,7 @@ export default (sbp('sbp/selectors/register', {
             try {
               await contract.sbp(...sideEffect)
             } catch (e_) {
-              const e = e_
+              const e = (e_: Object)
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${mutation.description}:`, sideEffect)
               this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e

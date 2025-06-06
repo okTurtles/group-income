@@ -713,7 +713,7 @@ export default (sbp('sbp/selectors/register', {
             }
             await opFns[u[0]](u[1])
           } catch (e_) {
-            const e = e_
+            const e = (e_: Object)
             if (e && typeof e === 'object') {
               if (e.name === 'ChelErrorDecryptionKeyNotFound') {
                 console.warn(`[chelonia] [OP_ATOMIC] WARN '${e.name}' in processMessage for ${message.description()}: ${e.message}`, e, message.serialize())
@@ -868,16 +868,16 @@ export default (sbp('sbp/selectors/register', {
                   ) {
                     newestEncryptionKeyHeight = Math.min(newestEncryptionKeyHeight, targetState._vm.authorizedKeys[key.id]._notBeforeHeight)
                   }
-                } catch (e) {
-                  const e_ = e
-                  if (e_?.name === 'ChelErrorDecryptionKeyNotFound') {
-                    console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e_.message}`,
-                      e_)
+                } catch (e_) {
+                  const e = (e_: Object)
+                  if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
+                    console.warn(`OP_KEY_SHARE (${hash} of ${contractID}) missing secret key: ${e.message}`,
+                      e)
                   } else {
                     // Using console.error instead of logEvtError because this
                     // is a side-effect and not relevant for outgoing messages
-                    console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e_.message || e_}':`,
-                      e_)
+                    console.error(`OP_KEY_SHARE (${hash} of ${contractID}) error '${e.message || e}':`,
+                      e)
                   }
                 }
               }
@@ -1307,7 +1307,7 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`]?.(message, state) // hack to fix syntax highlighting `
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': (contractID: string, event: string) => {
+  'chelonia/private/in/enqueueHandleEvent': function (contractID: string, event: string) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/private/out/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
@@ -1938,7 +1938,7 @@ export default (sbp('sbp/selectors/register', {
       try {
         await handleEvent.processMutation.call(this, message, contractStateCopy, internalSideEffectStack)
       } catch (e_) {
-        const e = e_
+        const e = (e_: Object)
         if (e?.name === 'ChelErrorDecryptionKeyNotFound') {
           console.warn(`[chelonia] WARN '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
           if (e.cause) {
@@ -1974,14 +1974,14 @@ export default (sbp('sbp/selectors/register', {
         // Gets run get when skipSideEffects is false
         if (Array.isArray(internalSideEffectStack) && internalSideEffectStack.length > 0) {
           await Promise.all(internalSideEffectStack.map(fn => Promise.resolve(fn({ state: contractStateCopy, message })).catch((e_) => {
-            const e = e_
+            const e = (e_: Object)
             console.error(`[chelonia] ERROR '${e.name}' in internal side effect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
           })))
         }
 
         if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
           await handleEvent.processSideEffects.call(this, message, contractStateCopy)?.catch((e_) => {
-            const e = e_
+            const e = (e_: Object)
             console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
             // We used to revert the state and rethrow the error here, but we no longer do that
             // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
@@ -2003,11 +2003,11 @@ export default (sbp('sbp/selectors/register', {
         const state = sbp(this.config.stateSelector)
         await handleEvent.applyProcessResult.call(this, { message, state, contractState: contractStateCopy, processingErrored, postHandleEvent })
       } catch (e_) {
-        const e = e_
+        const e = (e_: Object)
         console.error(`[chelonia] ERROR '${e.name}' for ${message.description()} marking the event as processed: ${e.message}`, e, { message: message.serialize() })
       }
     } catch (e_) {
-      const e = e_
+      const e = (e_: Object)
       console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
       try {
         handleEventError?.(e, message)
@@ -2024,8 +2024,8 @@ export default (sbp('sbp/selectors/register', {
 }): string[])
 
 const eventsToReingest = []
-const reprocessDebounced = debounce((contractID) => sbp('chelonia/private/out/sync', contractID, { force: true }).catch(() => {
-  console.error(`[chelonia] Error at reprocessDebounced for ${contractID}`)
+const reprocessDebounced = debounce((contractID) => sbp('chelonia/private/out/sync', contractID, { force: true }).catch((e) => {
+  console.error(`[chelonia] Error at reprocessDebounced for ${contractID}`, e)
 }), 1000)
 
 const handleEvent = {

@@ -45,10 +45,11 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
 }
 
 export const findContractIDByForeignKeyId = (state: Object, keyId: string): ?string => {
-  if (!keyId || !state?._vm?.authorizedKeys?.[keyId]?.foreignKey) return
+  let fk: ?string
+  if (!keyId || !(fk = state?._vm?.authorizedKeys?.[keyId]?.foreignKey)) return
 
   try {
-    const fkUrl = new URL(state._vm.authorizedKeys[keyId].foreignKey)
+    const fkUrl = new URL(fk)
     return fkUrl.pathname
   } catch {}
 }
