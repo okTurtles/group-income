@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
@@ -9,7 +10,11 @@ const modalMixins = {
   props: {
     a11yTitle: {
       type: String,
-      required: true
+      // NOTE: this really should be required but I can't find
+      // where ModalTemplate is called with `undefined` for a11yTitle
+      // see: https://github.com/okTurtles/group-income/issues/2828
+      // and: https://github.com/okTurtles/group-income/pull/2820
+      default: (L('Modal Title Missing'): string)
     },
     backOnMobile: {
       type: Boolean,

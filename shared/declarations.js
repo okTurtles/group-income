@@ -39,7 +39,8 @@ declare module '@hapi/joi' { declare module.exports: any }
 declare module 'hapi-pino' { declare module.exports: any }
 declare module 'pino' { declare module.exports: any }
 declare module 'node:crypto' { declare module.exports: any }
-declare module 'node:buffer' { declare module.exports: any }
+declare module 'node:buffer' { declare module.exports: { Buffer: typeof Buffer } }
+declare module 'buffer' { declare module.exports: { Buffer: typeof Buffer } }
 declare module 'chalk' { declare module.exports: any }
 declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
@@ -50,6 +51,7 @@ declare module 'node:fs/promises' { declare module.exports: any }
 declare module 'node:stream' { declare module.exports: any }
 declare module 'node:path' { declare module.exports: any }
 declare module 'node:worker_threads' { declare module.exports: any }
+declare module 'node:net' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
 declare module 'node:sqlite' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }

@@ -82,6 +82,12 @@
 "A contribution is required." = "A contribution is required.";
 
 /* model/notifications/templates.js */
+"A member left your group. Contributions were updated accordingly." = "A member left your group. Contributions were updated accordingly.";
+
+/* model/notifications/templates.js */
+"A member was kicked out of the group. Contributions were updated accordingly." = "A member was kicked out of the group. Contributions were updated accordingly.";
+
+/* model/notifications/templates.js */
 "A new distribution period ({period}) has started. Please check Payment TODOs." = "A new distribution period ({period}) has started. Please check Payment TODOs.";
 
 /* model/notifications/templates.js */
@@ -1542,7 +1548,7 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "Minimum Income";
 
-/* views/components/modal/ModalTemplate.vue */
+/* views/components/modal/ModalMixins.js */
 "Modal Title Missing" = "Modal Title Missing";
 
 /* views/containers/design-system/DSModalNested.vue */
@@ -2474,6 +2480,9 @@
 
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {strong_}{name}{_strong}!" = "The group has a new member. Say hi to {strong_}{name}{_strong}!";
+
+/* model/notifications/templates.js */
+"The group has a new member. Say hi!" = "The group has a new member. Say hi!";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "The group picture must be a valid url" = "The group picture must be a valid url";

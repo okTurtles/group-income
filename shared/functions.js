@@ -38,7 +38,7 @@ export const parseCID = (cid: string): Object => {
 export const maybeParseCID = (cid: string): Object | null => {
   try {
     return parseCID(cid)
-  } catch (e) {
+  } catch {
     // Ignore errors if the CID couldn't be parsed
     return null
   }
@@ -47,7 +47,6 @@ export const maybeParseCID = (cid: string): Object | null => {
 // Makes the `Buffer` global available in the browser if needed.
 // $FlowFixMe[cannot-resolve-name]
 if (typeof globalThis === 'object' && !has(globalThis, 'Buffer')) {
-  // Only import `Buffer` to hopefully help treeshaking.
   globalThis.Buffer = Buffer
 }
 
