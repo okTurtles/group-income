@@ -2,8 +2,8 @@
 
 import sbp from '@sbp/sbp'
 import { maybeParseCID, multicodes, strToB64 } from '~/shared/functions.js'
-import { Readable } from 'stream'
-import fs from 'fs'
+import { Readable } from 'node:stream'
+import fs from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
@@ -11,8 +11,7 @@ import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/c
 import LRU from 'lru-cache'
 import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
-
-const Boom = require('@hapi/boom')
+import Boom from '@hapi/boom'
 
 const production = process.env.NODE_ENV === 'production'
 // Defaults to `fs` in production.

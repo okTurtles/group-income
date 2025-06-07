@@ -1,7 +1,7 @@
 'use strict'
 
-const { readFile } = require('fs').promises
-const { relative } = require('path')
+const { readFile } = require('node:fs').promises
+const { relative } = require('node:path')
 
 const flowRemoveTypes = require('flow-remove-types')
 

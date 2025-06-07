@@ -6,9 +6,7 @@ import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
 import { getSubscriptionId } from '~/shared/functions.js'
-
-// const pushController = require('web-push')
-const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('../shared/pubsub.js')
+import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '../shared/pubsub.js'
 
 const addSubscriptionToIndex = appendToIndexFactory('_private_webpush_index')
 const deleteSubscriptionFromIndex = removeFromIndexFactory('_private_webpush_index')

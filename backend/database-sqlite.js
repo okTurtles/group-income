@@ -2,7 +2,7 @@
 
 import { mkdir } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
-import Database from 'better-sqlite3'
+import { DatabaseSync } from 'node:sqlite'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
 
@@ -34,7 +34,7 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
     if (this.db) {
       throw new Error(`The ${filename} SQLite database is already open.`)
     }
-    this.db = new Database(join(dataFolder, filename))
+    this.db = new DatabaseSync(join(dataFolder, filename))
     this.run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
     console.info(`Connected to the ${filename} SQLite database.`)
     this.readStatement = this.db.prepare('SELECT value FROM Data WHERE key = ?')
@@ -52,11 +52,17 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
     // 'row' will be undefined if the key was not found.
     // Note: sqlite remembers the type of every stored value, therefore we
     // automatically get back the same JS value that has been inserted.
-    return await row?.value
+    const value = row?.value
+    if (value && (ArrayBuffer.isView(value) || value instanceof ArrayBuffer)) {
+      return Buffer.from(value)
+    }
+    return await value
   }
 
   async writeData (key: string, value: Buffer | string) {
-    await this.writeStatement.run(key, value)
+    // Explicit conversion to Buffer seems to be needed for Deno compatibility
+    // (otherwise, the key appears to be dropped)
+    await this.writeStatement.run(key, Buffer.isBuffer(value) ? value : Buffer.from(value))
   }
 
   async deleteData (key: string) {

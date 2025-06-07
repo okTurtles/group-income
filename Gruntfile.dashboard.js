@@ -4,11 +4,11 @@
 // A Gruntfile.js for chelonia-dashboard front-end
 // ========================================
 
-const path = require('path')
+const path = require('node:path')
 const chalk = require('chalk')
-const crypto = require('crypto')
-const { readFile } = require('fs/promises')
-const { fork } = require('child_process')
+const crypto = require('node:crypto')
+const { readFile } = require('node:fs/promises')
+const { fork } = require('node:child_process')
 
 const applyPortShift = (env) => {
   // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.

@@ -6,7 +6,6 @@
 // FIXME: `Error: unsafe must be called before registering selector` when Mocha reloads the file.
 
 import assert from 'node:assert'
-import crypto from 'node:crypto'
 import sbp from '@sbp/sbp'
 import sinon from 'sinon'
 
@@ -15,10 +14,6 @@ import '~/shared/domains/chelonia/db.js'
 import './persistent-actions.js'
 import { PERSISTENT_ACTION_FAILURE, PERSISTENT_ACTION_TOTAL_FAILURE, PERSISTENT_ACTION_SUCCESS } from './events.js'
 
-// Provides the 'crypto' global in the Nodejs environment.
-if (!globalThis.crypto) {
-  Object.defineProperty(globalThis, 'crypto', { value: crypto })
-}
 // Necessary to avoid 'JSON.stringify' errors since Node timeouts are circular objects, whereas browser timeouts are just integers.
 setTimeout(() => {}).constructor.prototype.toJSON = () => undefined
 
