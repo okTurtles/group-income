@@ -52,7 +52,11 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
     // 'row' will be undefined if the key was not found.
     // Note: sqlite remembers the type of every stored value, therefore we
     // automatically get back the same JS value that has been inserted.
-    return await row?.value
+    const value = row?.value
+    if (value && (ArrayBuffer.isView(value) || value instanceof ArrayBuffer)) {
+      return Buffer.from(value)
+    }
+    return await value
   }
 
   async writeData (key: string, value: Buffer | string) {

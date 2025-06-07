@@ -37,11 +37,9 @@ export const parsePrefixableKey = (key: string): [string, string] => {
   throw new ChelErrorDBConnection(`Unknown prefix in '${key}'.`)
 }
 
-const textDecoder = new TextDecoder()
-
 export const prefixHandlers: Object = {
   // Decode buffers, but don't transform other values.
-  '': value => value instanceof ArrayBuffer || ArrayBuffer.isView(value) ? textDecoder.decode(value) : value,
+  '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
   'any:': value => value
   /*
   // 2025-03-24: Commented out because it's not used; currently, only `any:`
