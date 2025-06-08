@@ -1,5 +1,6 @@
 'use strict'
 
+import { Buffer } from 'node:buffer'
 import { mkdir } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import Database from 'better-sqlite3'
