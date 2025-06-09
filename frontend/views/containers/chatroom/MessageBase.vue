@@ -24,7 +24,7 @@
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
           profile-card(:contractID='from' direction='top-left')
-            span.c-username.is-title-4 {{ who }}
+            span.c-username.is-title-4(:title='who') {{ who }}
           span.c-datetime.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
