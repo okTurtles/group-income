@@ -111,7 +111,7 @@
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.0.0",
-    "@chelonia/crypto": "1.0.0",
+    "@chelonia/crypto": "1.0.1",
     "@chelonia/multiformats": "1.0.0",
     "@chelonia/serdes": "1.0.0",
     "@exact-realty/multipart-parser": "1.0.12",

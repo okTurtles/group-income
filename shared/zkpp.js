@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from './zkppConstants.js'

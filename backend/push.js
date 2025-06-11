@@ -1,6 +1,7 @@
 import { aes128gcm } from '@apeleghq/rfc8188/encodings'
 import encrypt from '@apeleghq/rfc8188/encrypt'
 import sbp from '@sbp/sbp'
+import { Buffer } from 'node:buffer'
 import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'

@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { randomBytes, timingSafeEqual } from 'crypto'
+import { Buffer } from 'node:buffer'
 import nacl from 'tweetnacl'
 import { base64ToBase64url, base64urlToBase64, boxKeyPair, computeCAndHc, decryptSaltUpdate, encryptContractSalt, encryptSaltUpdate, hash, hashRawStringArray, hashStringArray, parseRegisterSalt, randomNonce } from '~/shared/zkpp.js'
 import { AUTHSALT, CONTRACTSALT, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
