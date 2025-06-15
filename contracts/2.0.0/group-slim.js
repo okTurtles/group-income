@@ -323,7 +323,7 @@ ${this.getErrorInfo()}`;
       super(...params);
       this.name = name;
       if (params[1]?.cause !== this.cause) {
-        Object.defineProperty(this, "cause", { configurable: true, writable: true, value: params[1].cause });
+        Object.defineProperty(this, "cause", { configurable: true, writable: true, value: params[1]?.cause });
       }
       if (Error.captureStackTrace) {
         Error.captureStackTrace(this, this.constructor);
