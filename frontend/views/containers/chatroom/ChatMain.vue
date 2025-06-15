@@ -575,7 +575,7 @@ export default ({
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
-          await sbp('chelonia/out/eventsBetween', contractID, messageHash, this.messages[0].height, limit / 2, limit, { stream: false })
+          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.messages[0].height, offset: limit / 2, limit, stream: false })
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
@@ -885,7 +885,7 @@ export default ({
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
 
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-          events = await sbp('chelonia/out/eventsBetween', chatRoomID, messageHashToScroll, latestHeight, limit / 2, limit, { stream: false })
+          events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false })
         }
       } else if (this.latestEvents.length) {
         const beforeHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
