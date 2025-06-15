@@ -14,7 +14,7 @@ li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
         )
 
       .c-main-content
-        p.has-text-bold(data-test='typeDescription')
+        p.c-proposal-title.has-text-bold(data-test='typeDescription')
           | {{typeDescription}}
           tooltip.c-tip(
             v-if='isToRemoveMe && proposal.status === statuses.STATUS_OPEN'
@@ -54,6 +54,7 @@ li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
           i18n.has-text-danger(
             v-if='isExpiredInvitationLink'
           ) Expired
+
       proposal-vote-options(
         v-if='proposal.status === statuses.STATUS_OPEN'
         :proposalHash='proposalHash'
@@ -450,5 +451,10 @@ export default ({
   &-text {
     display: inline;
   }
+}
+
+.c-proposal-title,
+.c-reason {
+  word-break: break-word;
 }
 </style>
