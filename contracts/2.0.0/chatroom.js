@@ -29,9 +29,98 @@
     mod
   ));
 
+  // frontend/common/translations.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+
+  // frontend/common/stringTemplate.js
+  var nargs = /\{([0-9a-zA-Z_]+)\}/g;
+  function template(string3, ...args) {
+    const firstArg = args[0];
+    const replacementsByKey = typeof firstArg === "object" && firstArg !== null ? firstArg : args;
+    return string3.replace(nargs, function replaceArg(match, capture, index) {
+      if (string3[index - 1] === "{" && string3[index + match.length] === "}") {
+        return capture;
+      }
+      const maybeReplacement = (
+        // Avoid accessing inherited properties of the replacement table.
+        // $FlowFixMe
+        Object.prototype.hasOwnProperty.call(replacementsByKey, capture) ? replacementsByKey[capture] : void 0
+      );
+      if (maybeReplacement === null || maybeReplacement === void 0) {
+        return "";
+      }
+      return String(maybeReplacement);
+    });
+  }
+
+  // frontend/common/translations.js
+  var defaultLanguage = "en-US";
+  var defaultLanguageCode = "en";
+  var defaultTranslationTable = {};
+  var currentLanguage = defaultLanguage;
+  var currentLanguageCode = defaultLanguage.split("-")[0];
+  var currentTranslationTable = defaultTranslationTable;
+  var translations_default = (0, import_sbp.default)("sbp/selectors/register", {
+    "translations/init": async function init(language) {
+      const [languageCode] = language.toLowerCase().split("-");
+      if (language.toLowerCase() === currentLanguage.toLowerCase()) return;
+      if (languageCode === currentLanguageCode) return;
+      if (languageCode === defaultLanguageCode) {
+        currentLanguage = defaultLanguage;
+        currentLanguageCode = defaultLanguageCode;
+        currentTranslationTable = defaultTranslationTable;
+        return;
+      }
+      try {
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language) || defaultTranslationTable;
+        currentLanguage = language;
+        currentLanguageCode = languageCode;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  });
+  function L(key, args) {
+    return template(currentTranslationTable[key] || key, args).replace(/\s(?=[;:?!])/g, "\xA0");
+  }
+
+  // shared/domains/chelonia/errors.js
+  var ChelErrorGenerator = (name, base = Error) => class extends base {
+    constructor(...params) {
+      super(...params);
+      this.name = name;
+      if (params[1]?.cause !== this.cause) {
+        Object.defineProperty(this, "cause", { configurable: true, writable: true, value: params[1]?.cause });
+      }
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
+  };
+  var ChelErrorWarning = ChelErrorGenerator("ChelErrorWarning");
+  var ChelErrorAlreadyProcessed = ChelErrorGenerator("ChelErrorAlreadyProcessed");
+  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
+  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
+  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
+  var ChelErrorKeyAlreadyExists = ChelErrorGenerator("ChelErrorKeyAlreadyExists");
+  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
+  var ChelErrorForkedChain = ChelErrorGenerator("ChelErrorForkedChain");
+  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
+  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyUnauthorized = ChelErrorGenerator("ChelErrorSignatureKeyUnauthorized", ChelErrorSignatureError);
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+  var ChelErrorFetchServerTimeFailed = ChelErrorGenerator("ChelErrorFetchServerTimeFailed");
+  var ChelErrorUnexpectedHttpResponseCode = ChelErrorGenerator("ChelErrorUnexpectedHttpResponseCode");
+  var ChelErrorResourceGone = ChelErrorGenerator("ChelErrorResourceGone", ChelErrorUnexpectedHttpResponseCode);
+
+  // frontend/common/errors.js
+  var GIErrorIgnoreAndBan = ChelErrorGenerator("GIErrorIgnoreAndBan");
+  var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
+  var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
+
   // frontend/model/contracts/chatroom.js
-  var import_common3 = __require("@common/common.js");
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // frontend/utils/events.js
   var NEW_CHATROOM_UNREAD_POSITION = "new-chatroom-unread-position";
@@ -287,36 +376,6 @@ ${this.getErrorInfo()}`;
     return next(data, props);
   };
 
-  // shared/domains/chelonia/errors.js
-  var ChelErrorGenerator = (name, base = Error) => class extends base {
-    constructor(...params) {
-      super(...params);
-      this.name = name;
-      if (params[1]?.cause !== this.cause) {
-        Object.defineProperty(this, "cause", { configurable: true, writable: true, value: params[1].cause });
-      }
-      if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, this.constructor);
-      }
-    }
-  };
-  var ChelErrorWarning = ChelErrorGenerator("ChelErrorWarning");
-  var ChelErrorAlreadyProcessed = ChelErrorGenerator("ChelErrorAlreadyProcessed");
-  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
-  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
-  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
-  var ChelErrorKeyAlreadyExists = ChelErrorGenerator("ChelErrorKeyAlreadyExists");
-  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
-  var ChelErrorForkedChain = ChelErrorGenerator("ChelErrorForkedChain");
-  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
-  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
-  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
-  var ChelErrorSignatureKeyUnauthorized = ChelErrorGenerator("ChelErrorSignatureKeyUnauthorized", ChelErrorSignatureError);
-  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
-  var ChelErrorFetchServerTimeFailed = ChelErrorGenerator("ChelErrorFetchServerTimeFailed");
-  var ChelErrorUnexpectedHttpResponseCode = ChelErrorGenerator("ChelErrorUnexpectedHttpResponseCode");
-  var ChelErrorResourceGone = ChelErrorGenerator("ChelErrorResourceGone", ChelErrorUnexpectedHttpResponseCode);
-
   // frontend/model/contracts/shared/constants.js
   var MAX_HASH_LEN = 300;
   var STATUS_OPEN = "open";
@@ -402,11 +461,9 @@ ${this.getErrorInfo()}`;
   var POLL_OPTION_MAX_CHARS = 280;
 
   // frontend/model/contracts/shared/functions.js
-  var import_sbp = __toESM(__require("@sbp/sbp"));
-  var import_common2 = __require("@common/common.js");
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
 
   // frontend/model/contracts/shared/time.js
-  var import_common = __require("@common/common.js");
   var MINS_MILLIS = 6e4;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
@@ -457,13 +514,13 @@ ${this.getErrorInfo()}`;
     return newMessage;
   }
   async function postLeaveChatRoomCleanup(contractID, state) {
-    if (await (0, import_sbp.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
+    if (await (0, import_sbp2.default)("chelonia/contract/isSyncing", contractID, { firstSync: true })) {
       return;
     }
-    (0, import_sbp.default)("gi.actions/identity/kv/deleteChatRoomUnreadMessages", { contractID }).catch((e) => {
+    (0, import_sbp2.default)("gi.actions/identity/kv/deleteChatRoomUnreadMessages", { contractID }).catch((e) => {
       console.error("[leaveChatroom] Error at deleteChatRoomUnreadMessages ", contractID, e);
     });
-    (0, import_sbp.default)("okTurtles.events/emit", NEW_CHATROOM_UNREAD_POSITION, { chatRoomID: contractID });
+    (0, import_sbp2.default)("okTurtles.events/emit", NEW_CHATROOM_UNREAD_POSITION, { chatRoomID: contractID });
   }
   function findMessageIdx(hash, messages = []) {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -490,12 +547,12 @@ ${this.getErrorInfo()}`;
         if (op !== "retain" && op !== "release") throw new Error("Invalid operation");
         for (const childContractID of childContractIDs) {
           const key = `${selector}-${parentContractID}-${childContractID}`;
-          const count = (0, import_sbp.default)("okTurtles.data/get", key);
-          (0, import_sbp.default)("okTurtles.data/set", key, (count || 0) + delta[op]);
+          const count = (0, import_sbp2.default)("okTurtles.data/get", key);
+          (0, import_sbp2.default)("okTurtles.data/set", key, (count || 0) + delta[op]);
           if (count != null) return;
-          (0, import_sbp.default)("chelonia/queueInvocation", parentContractID, () => {
-            const count2 = (0, import_sbp.default)("okTurtles.data/get", key);
-            (0, import_sbp.default)("okTurtles.data/delete", key);
+          (0, import_sbp2.default)("chelonia/queueInvocation", parentContractID, () => {
+            const count2 = (0, import_sbp2.default)("okTurtles.data/get", key);
+            (0, import_sbp2.default)("okTurtles.data/delete", key);
             if (count2 && count2 !== Math.sign(count2)) {
               console.warn(`[${selector}] Unexpected value`, parentContractID, childContractID, count2);
               if ("") {
@@ -504,12 +561,12 @@ ${this.getErrorInfo()}`;
             }
             switch (Math.sign(count2)) {
               case -1:
-                (0, import_sbp.default)("chelonia/contract/release", childContractID).catch((e) => {
+                (0, import_sbp2.default)("chelonia/contract/release", childContractID).catch((e) => {
                   console.error(`[${selector}] Error calling release`, parentContractID, childContractID, e);
                 });
                 break;
               case 1:
-                (0, import_sbp.default)("chelonia/contract/retain", childContractID).catch((e) => console.error(`[${selector}] Error calling retain`, parentContractID, childContractID, e));
+                (0, import_sbp2.default)("chelonia/contract/retain", childContractID).catch((e) => console.error(`[${selector}] Error calling retain`, parentContractID, childContractID, e));
                 break;
             }
           }).catch((e) => {
@@ -656,7 +713,7 @@ ${this.getErrorInfo()}`;
       if (!Array.isArray(manifestCids)) {
         manifestCids = [manifestCids];
       }
-      await (0, import_sbp2.default)("gi.actions/identity/removeFiles", { manifestCids, option });
+      await (0, import_sbp3.default)("gi.actions/identity/removeFiles", { manifestCids, option });
     }
   }
   function addMessage(state, message) {
@@ -668,7 +725,7 @@ ${this.getErrorInfo()}`;
       state.messages.shift();
     }
   }
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
     metadata: {
       validate: objectOf({
@@ -745,15 +802,15 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
           const memberID = data.memberID || innerSigningContractID;
-          (0, import_sbp2.default)("gi.contracts/chatroom/referenceTally", contractID, memberID, "retain");
-          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-            const state2 = await (0, import_sbp2.default)("chelonia/contract/state", contractID);
+          (0, import_sbp3.default)("gi.contracts/chatroom/referenceTally", contractID, memberID, "retain");
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
             if (!state2?.members?.[memberID]) {
               return;
             }
-            const identityContractID = (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+            const identityContractID = (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
             if (memberID === identityContractID) {
-              (0, import_sbp2.default)("gi.actions/identity/kv/initChatRoomUnreadMessages", {
+              await (0, import_sbp3.default)("gi.actions/identity/kv/initChatRoomUnreadMessages", {
                 contractID,
                 messageHash: hash,
                 createdHeight: height
@@ -768,7 +825,7 @@ ${this.getErrorInfo()}`;
         validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
           objectOf({ name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, "name") })(data);
           if (state.attributes.creatorID !== innerSigningContractID) {
-            throw new TypeError((0, import_common3.L)("Only the channel creator can rename."));
+            throw new TypeError(L("Only the channel creator can rename."));
           }
         }),
         process({ data, meta, hash, height, innerSigningContractID }, { state }) {
@@ -782,7 +839,7 @@ ${this.getErrorInfo()}`;
         validate: actionRequireInnerSignature((data, { state, message: { innerSigningContractID } }) => {
           objectOf({ description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, "description") })(data);
           if (state.attributes.creatorID !== innerSigningContractID) {
-            throw new TypeError((0, import_common3.L)("Only the channel creator can change description."));
+            throw new TypeError(L("Only the channel creator can change description."));
           }
         }),
         process({ data, meta, hash, height, innerSigningContractID }, { state }) {
@@ -830,22 +887,22 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
           const memberID = data.memberID || innerSigningContractID;
-          const itsMe = memberID === (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+          const itsMe = memberID === (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
           if (itsMe) {
             await postLeaveChatRoomCleanup(contractID, state).catch((e) => {
               console.error("[gi.contracts/chatroom/leave] Error at leaveChatRoom", e);
             });
           }
-          (0, import_sbp2.default)("gi.contracts/chatroom/referenceTally", contractID, memberID, "release");
-          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-            const state2 = await (0, import_sbp2.default)("chelonia/contract/state", contractID);
+          (0, import_sbp3.default)("gi.contracts/chatroom/referenceTally", contractID, memberID, "release");
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
             if (!state2 || !!state2.members?.[data.memberID] || !state2.attributes) {
               return;
             }
             if (!itsMe && state2.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
-              (0, import_sbp2.default)("gi.contracts/chatroom/rotateKeys", contractID);
+              (0, import_sbp3.default)("gi.contracts/chatroom/rotateKeys", contractID);
             }
-            await (0, import_sbp2.default)("gi.contracts/chatroom/removeForeignKeys", contractID, memberID, state2);
+            await (0, import_sbp3.default)("gi.contracts/chatroom/removeForeignKeys", contractID, memberID, state2);
           }).catch((e) => {
             console.error("[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect", e?.message || e);
           });
@@ -854,13 +911,13 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/delete": {
         validate: actionRequireInnerSignature((_, { state, meta, message: { innerSigningContractID } }) => {
           if (state.attributes.creatorID !== innerSigningContractID) {
-            throw new TypeError((0, import_common3.L)("Only the channel creator can delete channel."));
+            throw new TypeError(L("Only the channel creator can delete channel."));
           }
         }),
         process({ meta, contractID }, { state }) {
           if (!state.attributes) return;
           state.attributes["deletedDate"] = meta.createdDate;
-          (0, import_sbp2.default)(
+          (0, import_sbp3.default)(
             "gi.contracts/chatroom/pushSideEffect",
             contractID,
             ["gi.contracts/chatroom/referenceTally", contractID, Object.keys(state.members), "release"]
@@ -871,9 +928,9 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect({ contractID }, { state }) {
           await postLeaveChatRoomCleanup(contractID, state);
-          const me = (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+          const me = (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
           if (me === state.attributes.creatorID || state.attributes.adminIDs.includes(me)) {
-            await (0, import_sbp2.default)("chelonia/out/deleteContract", contractID, {
+            await (0, import_sbp3.default)("chelonia/out/deleteContract", contractID, {
               [contractID]: {
                 billableContractID: me
               }
@@ -889,10 +946,10 @@ ${this.getErrorInfo()}`;
           if (data.type === MESSAGE_TYPES.POLL) {
             const optionStrings = data.pollData.options.map((o) => o.value);
             if (data.pollData.question.length > POLL_QUESTION_MAX_CHARS) {
-              throw new TypeError((0, import_common3.L)("Poll question must be less than {n} characters", { n: POLL_QUESTION_MAX_CHARS }));
+              throw new TypeError(L("Poll question must be less than {n} characters", { n: POLL_QUESTION_MAX_CHARS }));
             }
             if (optionStrings.some((v) => v.length > POLL_OPTION_MAX_CHARS)) {
-              throw new TypeError((0, import_common3.L)("Poll option must be less than {n} characters", { n: POLL_OPTION_MAX_CHARS }));
+              throw new TypeError(L("Poll option must be less than {n} characters", { n: POLL_OPTION_MAX_CHARS }));
             }
           }
         },
@@ -911,16 +968,22 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ contractID, hash, height, meta, data, innerSigningContractID }, { state, getters }) {
-          const me = (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+          const me = (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
           if (me === innerSigningContractID && data.type !== MESSAGE_TYPES.INTERACTIVE) {
             return;
           }
-          const newMessage = createMessage({ meta, data, hash, height, state, innerSigningContractID });
-          (0, import_sbp2.default)("okTurtles.events/emit", MESSAGE_RECEIVE_RAW, {
-            contractID,
-            data,
-            innerSigningContractID,
-            newMessage
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
+            if (!state2?.members?.[me]) {
+              return;
+            }
+            const newMessage = createMessage({ meta, data, hash, height, state: state2, innerSigningContractID });
+            (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE_RAW, {
+              contractID,
+              data,
+              innerSigningContractID,
+              newMessage
+            });
           });
         }
       },
@@ -948,14 +1011,20 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ contractID, hash, meta, data, innerSigningContractID }, { state, getters }) {
-          const me = (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+          const me = (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
           if (me === innerSigningContractID || getters.chatRoomAttributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
             return;
           }
-          (0, import_sbp2.default)("okTurtles.events/emit", MESSAGE_RECEIVE_RAW, {
-            contractID,
-            data,
-            innerSigningContractID
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
+            if (!state2?.members?.[me]) {
+              return;
+            }
+            (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE_RAW, {
+              contractID,
+              data,
+              innerSigningContractID
+            });
           });
         }
       },
@@ -970,9 +1039,9 @@ ${this.getErrorInfo()}`;
           })(data);
           if (innerSigningContractID !== data.messageSender) {
             if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-              throw new TypeError((0, import_common3.L)("Only the person who sent the message can delete it."));
+              throw new TypeError(L("Only the person who sent the message can delete it."));
             } else if (!state.attributes.adminIDs.includes(innerSigningContractID)) {
-              throw new TypeError((0, import_common3.L)("Only the group creator and the person who sent the message can delete it."));
+              throw new TypeError(L("Only the group creator and the person who sent the message can delete it."));
             }
           }
         }),
@@ -986,7 +1055,7 @@ ${this.getErrorInfo()}`;
             for (const message of messageArray) {
               if (message.replyingMessage?.hash === data.hash) {
                 message.replyingMessage.hash = null;
-                message.replyingMessage.text = (0, import_common3.L)("Original message was removed by {user}", {
+                message.replyingMessage.text = L("Original message was removed by {user}", {
                   user: makeMentionFromUserID(innerSigningContractID).me
                 });
               }
@@ -994,10 +1063,10 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ data, contractID, innerSigningContractID }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.identityContractID;
           if (rootState.chatroom?.chatRoomScrollPosition?.[contractID] === data.hash) {
-            (0, import_sbp2.default)("okTurtles.events/emit", NEW_CHATROOM_UNREAD_POSITION, {
+            (0, import_sbp3.default)("okTurtles.events/emit", NEW_CHATROOM_UNREAD_POSITION, {
               chatRoomID: contractID,
               messageHash: null
             });
@@ -1014,7 +1083,15 @@ ${this.getErrorInfo()}`;
           if (me === innerSigningContractID) {
             return;
           }
-          (0, import_sbp2.default)("gi.actions/identity/kv/removeChatRoomUnreadMessage", { contractID, messageHash: data.hash });
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
+            if (!state?.members?.[me]) {
+              return;
+            }
+            (0, import_sbp3.default)("gi.actions/identity/kv/removeChatRoomUnreadMessage", { contractID, messageHash: data.hash }).catch((e) => {
+              console.error("[gi.contracts/chatroom/deleteMessage/sideEffect] Error calling removeChatRoomUnreadMessage", e);
+            });
+          });
         }
       },
       "gi.contracts/chatroom/deleteAttachment": {
@@ -1042,7 +1119,7 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ data, contractID, innerSigningContractID }) {
-          const me = (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID;
+          const me = (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID;
           const option = {
             shouldDeleteFile: me === innerSigningContractID,
             shouldDeleteToken: me === data.messageSender
@@ -1196,26 +1273,26 @@ ${this.getErrorInfo()}`;
     methods: {
       "gi.contracts/chatroom/_cleanup": ({ contractID, state }) => {
         if (state?.members) {
-          (0, import_sbp2.default)("chelonia/contract/release", Object.keys(state.members)).catch((e) => {
+          (0, import_sbp3.default)("chelonia/contract/release", Object.keys(state.members)).catch((e) => {
             console.error("[gi.contracts/chatroom/_cleanup] Error calling release", contractID, e);
           });
         }
       },
       "gi.contracts/chatroom/rotateKeys": (contractID) => {
-        (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-          await (0, import_sbp2.default)("chelonia/contract/setPendingKeyRevocation", contractID, ["cek", "csk"]);
-          await (0, import_sbp2.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys");
+        (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+          await (0, import_sbp3.default)("chelonia/contract/setPendingKeyRevocation", contractID, ["cek", "csk"]);
+          await (0, import_sbp3.default)("gi.actions/out/rotateKeys", contractID, "gi.contracts/chatroom", "pending", "gi.actions/chatroom/shareNewKeys");
         }).catch((e) => {
           console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e);
         });
       },
       "gi.contracts/chatroom/removeForeignKeys": async (contractID, memberID, state) => {
-        const keyIds = await (0, import_sbp2.default)("chelonia/contract/foreignKeysByContractID", state, memberID);
+        const keyIds = await (0, import_sbp3.default)("chelonia/contract/foreignKeysByContractID", state, memberID);
         if (!keyIds?.length) return;
-        const CSKid = await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
-        const CEKid = await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "cek");
+        const CSKid = await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
+        const CEKid = await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "cek");
         if (!CEKid) throw new Error("Missing encryption key");
-        (0, import_sbp2.default)("chelonia/out/keyDel", {
+        (0, import_sbp3.default)("chelonia/out/keyDel", {
           contractID,
           contractName: "gi.contracts/chatroom",
           data: keyIds,
