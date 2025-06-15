@@ -23,6 +23,46 @@ import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/Render
 
 const dummyPosts = [
   {
+    createdAt: new Date('2025-06-10T00:00:01'),
+    title: 'Version 2.0 + New Server! 🥳',
+    content:
+      'Read [the announcement blog post](https://groupincome.org/2025/06/group-income-2.0/) for more details.\n\n' +
+      '**New Features**\n\n' +
+      '- Long chatroom messages are now truncated with a "Show more" link\n' +
+      '- Notification volume can now be adjusted in settings\n' +
+      '- You can now mark messages as unread in chatrooms and DMs\n' +
+      '- French localization\n' +
+      '- Server: admins can now display custom messages on login/signup screen\n' +
+      '- Server: archive mode lets server admins set Group Income to read-only\n' +
+      '- Server: data accounting logic now keeps track of data usage\n\n' +
+      '**Improvements**\n\n' +
+      '- Chatroom names now displayed in bold when they have new messages\n' +
+      '- Replying to a message no longer quotes entire message\n' +
+      '- You can now delete your group, your identity, everything\n' +
+      '- Push notifications much more reliable, and toggling them on and off in the settings fixes most issues\n' +
+      '- Handling of unread messages greatly improved\n' +
+      '- Extensionless files can now be uploaded in chat\n' +
+      '- Darktheme arrows now used for picture viewer\n' +
+      '- Profile cards can be opened in the Contributions page\n' +
+      '- Set notification settings in private chatrooms to behave the same as DMs by default\n' +
+      '- Server now keeps track of data usage\n' +
+      '- Various low-level improvements to Shelter Protocol and Chelonia\n' +
+      '- Various low-level server-side improvements related to data storage\n\n' +
+      '**Bugfixes**\n\n' +
+      '- Fixed missing "Delete message" button in menu on mobile\n' +
+      '- Chat remembers chatroom scroll position\n' +
+      '- Tooltips not disappearing when they should\n' +
+      '- Various text alignment and overflow issues fixed\n' +
+      '- Payment streaks are properly reset when switching to non-participant (pledging $0)\n' +
+      '- Properly scroll chat on new message when window is in background\n' +
+      '- Properly play notification sounds for chatroom events\n' +
+      '- Multiple bugfixes for issues preventing chatrooms from rendering properly\n' +
+      '- Fixed a bug that prevented multilingual translations from working\n' +
+      '- Fixed instances of contractID showing up instead of user display name\n' +
+      '- Various UI bugfixes\n' +
+      '- Various bugfixes to Chelonia'
+  },
+  {
     createdAt: new Date('2025-01-23T00:00:01'),
     title: 'Version 1.2.0 + The coming server wipe!',
     content:
