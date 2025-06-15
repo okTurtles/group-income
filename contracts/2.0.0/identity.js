@@ -29,9 +29,98 @@
     mod
   ));
 
+  // frontend/common/translations.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+
+  // frontend/common/stringTemplate.js
+  var nargs = /\{([0-9a-zA-Z_]+)\}/g;
+  function template(string3, ...args) {
+    const firstArg = args[0];
+    const replacementsByKey = typeof firstArg === "object" && firstArg !== null ? firstArg : args;
+    return string3.replace(nargs, function replaceArg(match, capture, index) {
+      if (string3[index - 1] === "{" && string3[index + match.length] === "}") {
+        return capture;
+      }
+      const maybeReplacement = (
+        // Avoid accessing inherited properties of the replacement table.
+        // $FlowFixMe
+        Object.prototype.hasOwnProperty.call(replacementsByKey, capture) ? replacementsByKey[capture] : void 0
+      );
+      if (maybeReplacement === null || maybeReplacement === void 0) {
+        return "";
+      }
+      return String(maybeReplacement);
+    });
+  }
+
+  // frontend/common/translations.js
+  var defaultLanguage = "en-US";
+  var defaultLanguageCode = "en";
+  var defaultTranslationTable = {};
+  var currentLanguage = defaultLanguage;
+  var currentLanguageCode = defaultLanguage.split("-")[0];
+  var currentTranslationTable = defaultTranslationTable;
+  var translations_default = (0, import_sbp.default)("sbp/selectors/register", {
+    "translations/init": async function init(language) {
+      const [languageCode] = language.toLowerCase().split("-");
+      if (language.toLowerCase() === currentLanguage.toLowerCase()) return;
+      if (languageCode === currentLanguageCode) return;
+      if (languageCode === defaultLanguageCode) {
+        currentLanguage = defaultLanguage;
+        currentLanguageCode = defaultLanguageCode;
+        currentTranslationTable = defaultTranslationTable;
+        return;
+      }
+      try {
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language) || defaultTranslationTable;
+        currentLanguage = language;
+        currentLanguageCode = languageCode;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  });
+  function L(key, args) {
+    return template(currentTranslationTable[key] || key, args).replace(/\s(?=[;:?!])/g, "\xA0");
+  }
+
+  // shared/domains/chelonia/errors.js
+  var ChelErrorGenerator = (name, base = Error) => class extends base {
+    constructor(...params) {
+      super(...params);
+      this.name = name;
+      if (params[1]?.cause !== this.cause) {
+        Object.defineProperty(this, "cause", { configurable: true, writable: true, value: params[1]?.cause });
+      }
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
+  };
+  var ChelErrorWarning = ChelErrorGenerator("ChelErrorWarning");
+  var ChelErrorAlreadyProcessed = ChelErrorGenerator("ChelErrorAlreadyProcessed");
+  var ChelErrorDBBadPreviousHEAD = ChelErrorGenerator("ChelErrorDBBadPreviousHEAD");
+  var ChelErrorDBConnection = ChelErrorGenerator("ChelErrorDBConnection");
+  var ChelErrorUnexpected = ChelErrorGenerator("ChelErrorUnexpected");
+  var ChelErrorKeyAlreadyExists = ChelErrorGenerator("ChelErrorKeyAlreadyExists");
+  var ChelErrorUnrecoverable = ChelErrorGenerator("ChelErrorUnrecoverable");
+  var ChelErrorForkedChain = ChelErrorGenerator("ChelErrorForkedChain");
+  var ChelErrorDecryptionError = ChelErrorGenerator("ChelErrorDecryptionError");
+  var ChelErrorDecryptionKeyNotFound = ChelErrorGenerator("ChelErrorDecryptionKeyNotFound", ChelErrorDecryptionError);
+  var ChelErrorSignatureError = ChelErrorGenerator("ChelErrorSignatureError");
+  var ChelErrorSignatureKeyUnauthorized = ChelErrorGenerator("ChelErrorSignatureKeyUnauthorized", ChelErrorSignatureError);
+  var ChelErrorSignatureKeyNotFound = ChelErrorGenerator("ChelErrorSignatureKeyNotFound", ChelErrorSignatureError);
+  var ChelErrorFetchServerTimeFailed = ChelErrorGenerator("ChelErrorFetchServerTimeFailed");
+  var ChelErrorUnexpectedHttpResponseCode = ChelErrorGenerator("ChelErrorUnexpectedHttpResponseCode");
+  var ChelErrorResourceGone = ChelErrorGenerator("ChelErrorResourceGone", ChelErrorUnexpectedHttpResponseCode);
+
+  // frontend/common/errors.js
+  var GIErrorIgnoreAndBan = ChelErrorGenerator("GIErrorIgnoreAndBan");
+  var GIErrorUIRuntimeError = ChelErrorGenerator("GIErrorUIRuntimeError");
+  var GIErrorMissingSigningKeyError = ChelErrorGenerator("GIErrorMissingSigningKeyError");
+
   // frontend/model/contracts/identity.js
-  var import_common3 = __require("@common/common.js");
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -467,11 +556,9 @@ ${this.getErrorInfo()}`;
   };
 
   // frontend/model/contracts/shared/functions.js
-  var import_sbp = __toESM(__require("@sbp/sbp"));
-  var import_common2 = __require("@common/common.js");
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
 
   // frontend/model/contracts/shared/time.js
-  var import_common = __require("@common/common.js");
   var MINS_MILLIS = 6e4;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
@@ -490,12 +577,12 @@ ${this.getErrorInfo()}`;
         if (op !== "retain" && op !== "release") throw new Error("Invalid operation");
         for (const childContractID of childContractIDs) {
           const key = `${selector}-${parentContractID}-${childContractID}`;
-          const count = (0, import_sbp.default)("okTurtles.data/get", key);
-          (0, import_sbp.default)("okTurtles.data/set", key, (count || 0) + delta[op]);
+          const count = (0, import_sbp2.default)("okTurtles.data/get", key);
+          (0, import_sbp2.default)("okTurtles.data/set", key, (count || 0) + delta[op]);
           if (count != null) return;
-          (0, import_sbp.default)("chelonia/queueInvocation", parentContractID, () => {
-            const count2 = (0, import_sbp.default)("okTurtles.data/get", key);
-            (0, import_sbp.default)("okTurtles.data/delete", key);
+          (0, import_sbp2.default)("chelonia/queueInvocation", parentContractID, () => {
+            const count2 = (0, import_sbp2.default)("okTurtles.data/get", key);
+            (0, import_sbp2.default)("okTurtles.data/delete", key);
             if (count2 && count2 !== Math.sign(count2)) {
               console.warn(`[${selector}] Unexpected value`, parentContractID, childContractID, count2);
               if ("") {
@@ -504,12 +591,12 @@ ${this.getErrorInfo()}`;
             }
             switch (Math.sign(count2)) {
               case -1:
-                (0, import_sbp.default)("chelonia/contract/release", childContractID).catch((e) => {
+                (0, import_sbp2.default)("chelonia/contract/release", childContractID).catch((e) => {
                   console.error(`[${selector}] Error calling release`, parentContractID, childContractID, e);
                 });
                 break;
               case 1:
-                (0, import_sbp.default)("chelonia/contract/retain", childContractID).catch((e) => console.error(`[${selector}] Error calling retain`, parentContractID, childContractID, e));
+                (0, import_sbp2.default)("chelonia/contract/retain", childContractID).catch((e) => console.error(`[${selector}] Error calling retain`, parentContractID, childContractID, e));
                 break;
             }
           }).catch((e) => {
@@ -599,22 +686,22 @@ ${this.getErrorInfo()}`;
     }
   };
   var checkUsernameConsistency = async (contractID, username) => {
-    const lookupResult = await (0, import_sbp2.default)("namespace/lookup", username, { skipCache: true });
+    const lookupResult = await (0, import_sbp3.default)("namespace/lookup", username, { skipCache: true });
     if (lookupResult === contractID) return;
     console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`);
-    (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-      const state = await (0, import_sbp2.default)("chelonia/contract/state", contractID);
+    (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+      const state = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
       if (!state) return;
       const username2 = state[contractID].attributes.username;
-      if (await (0, import_sbp2.default)("namespace/lookupCached", username2) !== contractID) {
-        (0, import_sbp2.default)("gi.notifications/emit", "WARNING", {
+      if (await (0, import_sbp3.default)("namespace/lookupCached", username2) !== contractID) {
+        (0, import_sbp3.default)("gi.notifications/emit", "WARNING", {
           contractID,
-          message: (0, import_common3.L)("Unable to confirm that the username {username} belongs to this identity contract", { username: username2 })
+          message: L("Unable to confirm that the username {username} belongs to this identity contract", { username: username2 })
         });
       }
     });
   };
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/identity",
     getters: {
       currentIdentityState(state) {
@@ -710,7 +797,7 @@ ${this.getErrorInfo()}`;
           };
         },
         sideEffect({ contractID, data }) {
-          (0, import_sbp2.default)("gi.contracts/identity/referenceTally", contractID, data.contractID, "retain");
+          (0, import_sbp3.default)("gi.contracts/identity/referenceTally", contractID, data.contractID, "retain");
         }
       },
       "gi.contracts/identity/joinDirectMessage": {
@@ -723,7 +810,7 @@ ${this.getErrorInfo()}`;
             state.chatRooms = /* @__PURE__ */ Object.create(null);
           }
           if (state.chatRooms[contractID]) {
-            throw new TypeError((0, import_common3.L)("Already joined direct message."));
+            throw new TypeError(L("Already joined direct message."));
           }
           state.chatRooms[contractID] = {
             visible: true
@@ -731,7 +818,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, data }, { state }) {
           if (state.chatRooms[data.contractID].visible) {
-            (0, import_sbp2.default)("gi.contracts/identity/referenceTally", contractID, data.contractID, "retain");
+            (0, import_sbp3.default)("gi.contracts/identity/referenceTally", contractID, data.contractID, "retain");
           }
         }
       },
@@ -746,38 +833,38 @@ ${this.getErrorInfo()}`;
           if (has(state.groups, groupContractID) && !state.groups[groupContractID].hasLeft) {
             throw new Error(`Cannot join already joined group ${groupContractID}`);
           }
-          const inviteSecretId = await (0, import_sbp2.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
+          const inviteSecretId = await (0, import_sbp3.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
           state.groups[groupContractID] = { hash, inviteSecretId };
         },
         async sideEffect({ hash, data, contractID }, { state }) {
           const { groupContractID, inviteSecret } = data;
-          await (0, import_sbp2.default)("chelonia/storeSecretKeys", new Secret([{
+          await (0, import_sbp3.default)("chelonia/storeSecretKeys", new Secret([{
             key: inviteSecret,
             transient: true
           }]));
-          (0, import_sbp2.default)("gi.contracts/identity/referenceTally", contractID, groupContractID, "retain");
-          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-            const state2 = await (0, import_sbp2.default)("chelonia/contract/state", contractID);
-            if (!state2 || contractID !== (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID) {
+          (0, import_sbp3.default)("gi.contracts/identity/referenceTally", contractID, groupContractID, "retain");
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state2 = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
+            if (!state2 || contractID !== (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID) {
               return;
             }
             if (!has(state2.groups, groupContractID) || state2.groups[groupContractID].hasLeft || state2.groups[groupContractID].hash !== hash) {
-              (0, import_sbp2.default)("okTurtles.data/set", `gi.contracts/identity/group-skipped-${groupContractID}-${hash}`, true);
+              (0, import_sbp3.default)("okTurtles.data/set", `gi.contracts/identity/group-skipped-${groupContractID}-${hash}`, true);
               return;
             }
-            const inviteSecretId = (0, import_sbp2.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
+            const inviteSecretId = (0, import_sbp3.default)("chelonia/crypto/keyId", new Secret(inviteSecret));
             return inviteSecretId;
           }).then(async (inviteSecretId) => {
             if (!inviteSecretId) return;
-            (0, import_sbp2.default)("gi.actions/group/join", {
+            (0, import_sbp3.default)("gi.actions/group/join", {
               originatingContractID: contractID,
               originatingContractName: "gi.contracts/identity",
               contractID: data.groupContractID,
               contractName: "gi.contracts/group",
               reference: hash,
               signingKeyId: inviteSecretId,
-              innerSigningKeyId: await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
-              encryptionKeyId: await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "cek")
+              innerSigningKeyId: await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "csk"),
+              encryptionKeyId: await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "cek")
             }).catch((e) => {
               console.warn(`[gi.contracts/identity/joinGroup/sideEffect] Error sending gi.actions/group/join action for group ${data.groupContractID}`, e);
             });
@@ -802,27 +889,27 @@ ${this.getErrorInfo()}`;
           state.groups[groupContractID] = { hash: reference, hasLeft: true };
         },
         sideEffect({ data, contractID }) {
-          (0, import_sbp2.default)("gi.contracts/identity/referenceTally", contractID, data.groupContractID, "release");
-          (0, import_sbp2.default)("chelonia/queueInvocation", contractID, async () => {
-            const state = await (0, import_sbp2.default)("chelonia/contract/state", contractID);
-            if (!state || contractID !== (0, import_sbp2.default)("state/vuex/state").loggedIn.identityContractID) {
+          (0, import_sbp3.default)("gi.contracts/identity/referenceTally", contractID, data.groupContractID, "release");
+          (0, import_sbp3.default)("chelonia/queueInvocation", contractID, async () => {
+            const state = await (0, import_sbp3.default)("chelonia/contract/state", contractID);
+            if (!state || contractID !== (0, import_sbp3.default)("state/vuex/state").loggedIn.identityContractID) {
               return;
             }
             const { groupContractID, reference } = data;
             if (!has(state.groups, groupContractID) || !state.groups[groupContractID].hasLeft || state.groups[groupContractID].hash !== reference) {
               return;
             }
-            (0, import_sbp2.default)("gi.actions/group/removeOurselves", {
+            (0, import_sbp3.default)("gi.actions/group/removeOurselves", {
               contractID: groupContractID
             }).catch((e) => {
               if (e?.name === "GIErrorUIRuntimeError" && e.cause?.name === "GIGroupNotJoinedError") return;
               console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e);
             });
-            if ((0, import_sbp2.default)("state/vuex/state").lastLoggedIn?.[contractID]) {
-              delete (0, import_sbp2.default)("state/vuex/state").lastLoggedIn[contractID];
+            if ((0, import_sbp3.default)("state/vuex/state").lastLoggedIn?.[contractID]) {
+              delete (0, import_sbp3.default)("state/vuex/state").lastLoggedIn[contractID];
             }
-            await (0, import_sbp2.default)("gi.contracts/identity/revokeGroupKeyAndRotateOurPEK", contractID, state, data.groupContractID);
-            (0, import_sbp2.default)("okTurtles.events/emit", LEFT_GROUP, { identityContractID: contractID, groupContractID: data.groupContractID });
+            await (0, import_sbp3.default)("gi.contracts/identity/revokeGroupKeyAndRotateOurPEK", contractID, state, data.groupContractID);
+            (0, import_sbp3.default)("okTurtles.events/emit", LEFT_GROUP, { identityContractID: contractID, groupContractID: data.groupContractID });
           }).catch((e) => {
             console.error(`[gi.contracts/identity/leaveGroup/sideEffect] Error leaving group ${data.groupContractID}`, e);
           });
@@ -835,7 +922,7 @@ ${this.getErrorInfo()}`;
             visible: boolean
           })(data);
           if (!state.chatRooms[data.contractID]) {
-            throw new TypeError((0, import_common3.L)("Not existing direct message."));
+            throw new TypeError(L("Not existing direct message."));
           }
         },
         process({ data }, { state }) {
@@ -895,7 +982,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ contractID, data }, { state }) {
           if (state.chatRooms[data.contractID].visible) {
-            (0, import_sbp2.default)(
+            (0, import_sbp3.default)(
               "gi.contracts/identity/pushSideEffect",
               contractID,
               ["gi.contracts/identity/referenceTally", contractID, data.contractID, "release"]
@@ -904,10 +991,10 @@ ${this.getErrorInfo()}`;
           delete state.chatRooms[data.contractID];
         },
         sideEffect({ data, contractID, innerSigningContractID }) {
-          (0, import_sbp2.default)("okTurtles.events/emit", DELETED_CHATROOM, { chatRoomID: data.contractID });
-          const { identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+          (0, import_sbp3.default)("okTurtles.events/emit", DELETED_CHATROOM, { chatRoomID: data.contractID });
+          const { identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
           if (identityContractID === innerSigningContractID) {
-            (0, import_sbp2.default)("gi.actions/chatroom/delete", { contractID: data.contractID, data: {} }).catch((e) => {
+            (0, import_sbp3.default)("gi.actions/chatroom/delete", { contractID: data.contractID, data: {} }).catch((e) => {
               console.warn(`Error sending chatroom removal action for ${data.chatRoomID}`, e);
             });
           }
@@ -916,14 +1003,14 @@ ${this.getErrorInfo()}`;
     },
     methods: {
       "gi.contracts/identity/revokeGroupKeyAndRotateOurPEK": async (identityContractID, state, groupContractID) => {
-        const CSKid = await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
-        const CEKid = await (0, import_sbp2.default)("chelonia/contract/currentKeyIdByName", state, "cek");
-        const groupCSKids = await (0, import_sbp2.default)("chelonia/contract/foreignKeysByContractID", state, groupContractID);
+        const CSKid = await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "csk", true);
+        const CEKid = await (0, import_sbp3.default)("chelonia/contract/currentKeyIdByName", state, "cek");
+        const groupCSKids = await (0, import_sbp3.default)("chelonia/contract/foreignKeysByContractID", state, groupContractID);
         if (groupCSKids?.length) {
           if (!CEKid) {
             throw new Error("Identity CEK not found");
           }
-          (0, import_sbp2.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
+          (0, import_sbp3.default)("chelonia/queueInvocation", identityContractID, ["chelonia/out/keyDel", {
             contractID: identityContractID,
             contractName: "gi.contracts/identity",
             data: groupCSKids,
@@ -932,10 +1019,10 @@ ${this.getErrorInfo()}`;
             console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during keyDel to ${identityContractID}:`, e);
           });
         }
-        (0, import_sbp2.default)("chelonia/queueInvocation", identityContractID, async () => {
-          await (0, import_sbp2.default)("chelonia/contract/setPendingKeyRevocation", identityContractID, ["pek"]);
-          await (0, import_sbp2.default)("gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK");
-          await (0, import_sbp2.default)("chelonia/contract/disconnect", identityContractID, groupContractID);
+        (0, import_sbp3.default)("chelonia/queueInvocation", identityContractID, async () => {
+          await (0, import_sbp3.default)("chelonia/contract/setPendingKeyRevocation", identityContractID, ["pek"]);
+          await (0, import_sbp3.default)("gi.actions/out/rotateKeys", identityContractID, "gi.contracts/identity", "pending", "gi.actions/identity/shareNewPEK");
+          await (0, import_sbp3.default)("chelonia/contract/disconnect", identityContractID, groupContractID);
         }).catch((e) => {
           console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e);
         });

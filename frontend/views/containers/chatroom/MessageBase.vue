@@ -24,8 +24,8 @@
       slot(name='header')
         .c-who(v-if='!isEditing' :class='{ "sr-only": isSameSender }')
           profile-card(:contractID='from' direction='top-left')
-            span.is-title-4 {{ who }}
-          span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
+            span.c-username.is-title-4(:title='who') {{ who }}
+          span.c-datetime.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
         render-message-text.c-replying(
@@ -502,11 +502,27 @@ export default ({
 }
 
 .c-body {
-  max-width: calc(100% - 2.5rem);
+  max-width: calc(100% - 2.75rem);
 }
 
 .c-who {
   display: flex;
+  width: 100%;
+
+  ::v-deep .c-twrapper {
+    width: auto;
+    overflow: hidden;
+  }
+
+  .c-username {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .c-datetime {
+    flex-shrink: 0;
+  }
 
   span {
     padding-right: 0.25rem;
