@@ -3,6 +3,7 @@
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
+import { Buffer } from 'buffer'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 

@@ -331,7 +331,6 @@ export default (sbp('sbp/selectors/register', {
       // $FlowFixMe
       BigInt,
       Boolean,
-      Buffer,
       String,
       Number,
       Int8Array,
