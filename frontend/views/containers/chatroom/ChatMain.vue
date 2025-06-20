@@ -14,86 +14,85 @@
   touch-link-helper
 
   .c-body
-    .c-body-conversation(
+    dynamic-scroller.c-body-conversation(
+      :items='messages'
+      :min-item-size='54'
+      key-field='hash'
+      @scroll.passive='onChatScroll'
+      @scroll-start='onScrollStart'
+      @scroll-end='onScrollEnd'
       ref='conversation'
       data-test='conversationWrapper'
-      @scroll='onChatScroll'
       :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
-
-      infinite-loading(
-        direction='top'
-        @infinite='infiniteHandler'
-        force-use-infinite-wrapper='.c-body-conversation'
-        ref='infinite-loading'
-      )
-        div(slot='no-more')
-          conversation-greetings(
-            :members='summary.numberOfMembers'
-            :creatorID='summary.attributes.creatorID'
-            :type='summary.attributes.type'
-            :joined='summary.isJoined'
-            :dm-to-myself='summary.isDMToMySelf'
-            :name='summary.title'
-            :description='summary.attributes.description'
-          )
-        div(slot='no-results')
-          conversation-greetings(
-            :members='summary.numberOfMembers'
-            :creatorID='summary.attributes.creatorID'
-            :type='summary.attributes.type'
-            :joined='summary.isJoined'
-            :dm-to-myself='summary.isDMToMySelf'
-            :name='summary.title'
-            :description='summary.attributes.description'
-          )
-      template(v-for='(message, index) in messages')
-        .c-divider(
-          v-if='changeDay(index) || isNew(message.hash)'
-          :class='{"is-new": isNew(message.hash)}'
-          :key='`date-${index}`'
+      template(:slot='"before"')
+        conversation-greetings(
+          :members='summary.numberOfMembers'
+          :creatorID='summary.attributes.creatorID'
+          :type='summary.attributes.type'
+          :joined='summary.isJoined'
+          :dm-to-myself='summary.isDMToMySelf'
+          :name='summary.title'
+          :description='summary.attributes.description'
         )
-          i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
-          span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
-
-        component(
-          :is='messageType(message)'
-          :ref='message.hash'
-          :key='message.hash'
-          :height='message.height'
-          :messageId='message.id'
-          :messageHash='message.hash'
-          :from='message.from'
-          :text='message.text'
-          :attachments='message.attachments'
-          :type='message.type'
-          :notification='message.notification'
-          :proposal='message.proposal'
-          :pollData='message.pollData'
-          :replyingMessage='replyingMessageText(message)'
-          :datetime='time(message.datetime)'
-          :edited='!!message.updatedDate'
-          :updatedDate='message.updatedDate'
-          :emoticonsList='message.emoticons'
-          :who='who(message)'
-          :currentUserID='currentUserAttr.id'
-          :avatar='avatar(message.from)'
-          :variant='variant(message)'
-          :pinnedBy='message.pinnedBy'
-          :isSameSender='isSameSender(index)'
-          :isMsgSender='isMsgSender(message.from)'
-          :isGroupCreator='isGroupCreator'
-          :class='{removed: message.delete}'
-          @retry='retryMessage(index)'
-          @reply='replyToMessage(message)'
-          @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
-          @edit-message='(newMessage) => editMessage(message, newMessage)'
-          @pin-to-channel='pinToChannel(message)'
-          @unpin-from-channel='unpinFromChannel(message.hash)'
-          @delete-message='deleteMessage(message)'
-          @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
-          @add-emoticon='addEmoticon(message, $event)'
+        div(v-if='ephemeral.loadingUp')
+          p {{'Loading'}}
+      template(:slot='"after"')
+        div(v-if='ephemeral.loadingDown')
+          p {{'Loading'}}
+      template(v-slot='{ item: message, index, active }')
+        dynamic-scroller-item(
+          :item='message'
+          :active='active'
+          :size-dependencies='[message.hash]'
+          :data-index='index'
         )
+          .c-divider(
+            v-if='changeDay(index) || isNew(message.hash)'
+            :class='{"is-new": isNew(message.hash)}'
+            :key='`date-${index}`'
+          )
+            i18n.c-new(v-if='isNew(message.hash)' :class='{"is-new-date": changeDay(index)}') New
+            span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
+
+          component(
+            :is='messageType(message)'
+            :ref='message.hash'
+            :key='message.hash'
+            :height='message.height'
+            :messageId='message.id'
+            :messageHash='message.hash'
+            :from='message.from'
+            :text='message.text'
+            :attachments='message.attachments'
+            :type='message.type'
+            :notification='message.notification'
+            :proposal='message.proposal'
+            :pollData='message.pollData'
+            :replyingMessage='replyingMessageText(message)'
+            :datetime='time(message.datetime)'
+            :edited='!!message.updatedDate'
+            :updatedDate='message.updatedDate'
+            :emoticonsList='message.emoticons'
+            :who='who(message)'
+            :currentUserID='currentUserAttr.id'
+            :avatar='avatar(message.from)'
+            :variant='variant(message)'
+            :pinnedBy='message.pinnedBy'
+            :isSameSender='isSameSender(index)'
+            :isMsgSender='isMsgSender(message.from)'
+            :isGroupCreator='isGroupCreator'
+            :class='{removed: message.delete}'
+            @retry='retryMessage(index)'
+            @reply='replyToMessage(message)'
+            @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
+            @edit-message='(newMessage) => editMessage(message, newMessage)'
+            @pin-to-channel='pinToChannel(message)'
+            @unpin-from-channel='unpinFromChannel(message.hash)'
+            @delete-message='deleteMessage(message)'
+            @delete-attachment='manifestCid => deleteAttachment(message, manifestCid)'
+            @add-emoticon='addEmoticon(message, $event)'
+          )
 
     .c-initializing(v-if='!ephemeral.messagesInitiated')
     //-   TODO later - Design a cool skeleton loading
@@ -127,11 +126,12 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
-import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
 import MessageInteractive, { interactiveMessage } from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -155,6 +155,7 @@ import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -170,9 +171,9 @@ const onChatScroll = function () {
     return
   }
 
-  const curScrollTop = this.$refs.conversation.scrollTop
-  const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
-  const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+  const curScrollTop = this.$refs.conversation.$el.scrollTop
+  const curScrollBottom = curScrollTop + this.$refs.conversation.$el.clientHeight
+  const scrollTopMax = this.$refs.conversation.$el.scrollHeight - this.$refs.conversation.$el.clientHeight
   this.ephemeral.scrollableDistance = scrollTopMax - curScrollTop
 
   for (let i = this.messages.length - 1; i >= 0; i--) {
@@ -228,8 +229,9 @@ export default ({
     Avatar,
     ConversationGreetings,
     Emoticons,
+    DynamicScroller,
+    DynamicScrollerItem,
     TouchLinkHelper,
-    InfiniteLoading,
     Message,
     MessageInteractive,
     MessageNotification,
@@ -256,7 +258,6 @@ export default ({
         messageHashToMarkUnread: null,
         scrollableDistance: 0,
         onChatScroll: null,
-        infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
@@ -301,6 +302,7 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
+    window.chatmain = this
   },
   beforeDestroy () {
     // Destroy various event listeners.
@@ -574,8 +576,7 @@ export default ({
         const contractID = this.ephemeral.renderingChatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
-          // FIX: this.messages[0].height could not be the starting height of the events in the page
-          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.messages[0].height, offset: limit / 2, limit, stream: false })
+          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.currentLowestHeight, offset: limit / 2, limit, stream: false })
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
@@ -616,9 +617,9 @@ export default ({
     },
     jumpToLatest (behavior = 'smooth') {
       if (this.$refs.conversation) {
-        this.$refs.conversation.scroll({
+        this.$refs.conversation.$el.scroll({
           left: 0,
-          top: this.$refs.conversation.scrollHeight,
+          top: this.$refs.conversation.$el.scrollHeight,
           // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
           // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
           //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
@@ -831,6 +832,13 @@ export default ({
 
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
+      if (messageState.messages) {
+        this.currentLowestHeight = messageState.messages[0]?.height
+        this.currentHighestHeight = messageState.messages[messageState.messages.length - 1]?.height
+      } else {
+        this.currentLowestHeight = undefined
+        this.currentHighestHeight = undefined
+      }
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -858,7 +866,7 @@ export default ({
      *            while processing this function, this function could do the redundant process. This normally happens
      *            when user switches channels very fast.
     */
-    async renderMoreMessages () {
+    async renderMoreMessages (direction?: 'up' | 'down') {
       // NOTE: 'this.ephemeral.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
@@ -887,23 +895,26 @@ export default ({
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false })
         }
-      } else if (this.latestEvents.length) {
-        const beforeHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
+      } else if (this.currentLowestHeight !== 0 && direction !== 'down') {
+        if (this.ephemeral.loadingUp) return
+        this.ephemeral.loadingUp = true
+        const beforeHeight = this.currentLowestHeight
         events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
-      } else {
-        let sinceHeight = 0
+      } else if (direction === 'down' || !this.latestEvents.length) {
+        if (this.ephemeral.loadingDown) return
+        this.ephemeral.loadingDown = true
+        const sinceHeight = this.currentHighestHeight
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
-        if (this.messages.length) {
-          sinceHeight = Math.max(0, this.messages[0].height - limit)
-        }
 
         events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
         if (this.chatroomHasSwitchedFrom(chatRoomID)) return
       }
 
       if (events.length) {
-        await this.rerenderEvents(events)
+        await this.rerenderEvents(events, direction)
       }
+      this.ephemeral.loadingUp = false
+      this.ephemeral.loadingDown = false
 
       if (!this.ephemeral.messagesInitiated) {
         this.setStartNewMessageIndex()
@@ -912,22 +923,36 @@ export default ({
 
       return events.length > 0 && SPMessage.deserializeHEAD(events[0]).head.height === 0
     },
-    async rerenderEvents (events) {
+    async rerenderEvents (events, direction?: 'up' | 'down') {
       if (!this.latestEvents.length) {
         this.latestEvents = events
       } else if (events.length > 1) {
-        this.latestEvents.unshift(...events)
+        if (direction === 'down') {
+          this.latestEvents.push(...events)
+        } else {
+          this.latestEvents.unshift(...events)
+        }
       }
 
       if (this.latestEvents.length > 0) {
         const entryHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        let state = await this.generateNewChatRoomState(true, entryHeight)
-
         const chatroomID = this.ephemeral.renderingChatRoomId
+        let state = await this.generateNewChatRoomState(true, entryHeight)
+        if (this.chatroomHasSwitchedFrom(chatroomID)) return
+
+        if (state.messages) {
+          this.currentLowestHeight = state.messages[0]?.height
+          this.currentHighestHeight = state.messages[state.messages.length - 1]?.height
+        }
+
         for (const event of this.latestEvents) {
+          const height = SPMessage.deserializeHEAD(event).head.height
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (this.chatroomHasSwitchedFrom(chatroomID)) return
           state = await sbp('chelonia/in/processMessage', event, state)
+          // Using negated inequality to handle 'undefined' / NaN
+          if (!(height >= this.currentLowestHeight)) this.currentLowestHeight = height
+          if (!(height <= this.currentHighestHeight)) this.currentHighestHeight = height
         }
 
         Vue.set(this.messageState, 'contract', state)
@@ -1141,7 +1166,7 @@ export default ({
           if (this.ephemeral.scrollableDistance < 50) {
             if (addedOrDeleted === 'ADDED' && this.messages.length) {
               const isScrollable = this.$refs.conversation &&
-                this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+                this.$refs.conversation.$el.scrollHeight !== this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
                 // Scroll-query to the latest message.
                 this.updateScroll()
@@ -1187,11 +1212,69 @@ export default ({
       // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
       _this.jumpToLatest('instant')
     }, 40),
-    infiniteHandler ($state) {
-      // NOTE: this infinite handler is being called once which should be ignored
-      //       before calling the 'initializeState' function
-      this.ephemeral.infiniteLoading = $state
+    onScrollEvt: debounce(function (direction?: 'up' | 'down') {
+      console.error('@@@onScrollEvt', direction)
+      if (this.ephemeral.messagesInitiated === undefined) return
 
+      if (this.ephemeral.initialScroll.hash) {
+        clearTimeout(this.ephemeral.initialScroll.timeoutId)
+      }
+
+      const targetChatroomID = this.ephemeral.renderingChatRoomId
+      sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, async () => {
+        if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
+
+        // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
+        try {
+          const completed = await this.renderMoreMessages(direction)
+          if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
+
+          if (completed === true) {
+            // If there's messages, call $state.loaded. This has the effect that
+            // the no-more message will be shown instead of the no-results message
+            // if (this.messages.length) $state.loaded()
+            // $state.complete()
+
+            if (!this.$refs.conversation ||
+            this.$refs.conversation.$el.scrollHeight === this.$refs.conversation.$el.clientHeight) {
+              // updateReadUntilMessageHash should only use messages that exist
+              // in the contract
+              const msg = this.messages.filter(m => !m.pending && !m.hasFailed).pop()
+              if (msg) {
+                this.updateReadUntilMessageHash({
+                  messageHash: msg.hash,
+                  createdHeight: msg.height
+                })
+              }
+            }
+          } else if (completed === false) {
+            // $state.loaded()
+          }
+
+          if (completed !== undefined && !this.ephemeral.messagesInitiated) {
+            // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when renderMoreMessages are successfully proceeded
+            this.ephemeral.messagesInitiated = true
+          }
+        } catch (e) {
+          console.error('ChatMain infiniteHandler() error:', e)
+        }
+
+        if (this.ephemeral.messagesInitiated) {
+          // Sometimes even after 'messagesInitiated' is set to 'true', infiniteHandler() is called again and loads more messages.
+          // In that case, we should defer 'auto-scrolling to the initial-position' until those additional messages are rendered.
+          // This can be achieved by calling 'scrollToInitialPosition' here with setTimeout(),
+          // and calling clearTimeout() at the start of infiniteHandler().
+          this.ephemeral.initialScroll.timeoutId = setTimeout(this.scrollToInitialPosition, 150)
+        }
+      })
+    }, 300),
+    onScrollStart () {
+      this.onScrollEvt('up')
+    },
+    onScrollEnd () {
+      this.onScrollEvt('down')
+    },
+    infiniteHandler ($state) {
       if (this.ephemeral.messagesInitiated === undefined) return
 
       if (this.ephemeral.initialScroll.hash) {
@@ -1214,7 +1297,7 @@ export default ({
             $state.complete()
 
             if (!this.$refs.conversation ||
-            this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
+            this.$refs.conversation.$el.scrollHeight === this.$refs.conversation.$el.clientHeight) {
               // updateReadUntilMessageHash should only use messages that exist
               // in the contract
               const msg = this.messages.filter(m => !m.pending && !m.hasFailed).pop()
@@ -1318,23 +1401,7 @@ export default ({
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
-          // We need to reset the infinite loading widget. There used to be:
-          // // this.ephemeral.infiniteLoading?.reset()
-          // However, this doesn't quite work for two reasons:
-          //   1. `this.ephemeral.infiniteLoading` is only defined after the
-          //      infinite handler has been called at least once, meaning that
-          //      some calls would be missed
-          //   2. Even if defined, `reset` only invokes the infinite handler
-          //      based on the current scroll position. In this case, we want a
-          //      full reset, regardless of position. The scroll position check
-          //      has been observed causing issues on Android, see
-          //      <https://github.com/okTurtles/group-income/issues/2822>
-          // <https://github.com/PeachScript/vue-infinite-loading/issues/303>
-          // has a snipped for doing this (since the API otherwise doesn't
-          // offer it): set the status and then manually emit the the infinite
-          // event, which will result in the guard conditions being bypassed.
-          this.$refs['infinite-loading'].status = 1 // STATUS.LOADING
-          this.$refs['infinite-loading'].$emit('infinite', this.$refs['infinite-loading'].stateChanger)
+          this.onScrollEvt('down')
         }
       } catch (e) {
         console.error('ChatMain.vue processChatroomSwitch() error:', e)
