@@ -575,7 +575,7 @@ export default ({
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
           // FIX: this.messages[0].height could not be the starting height of the events in the page
-          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.messages[0].height, offset: limit / 2, limit, stream: false })
+          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.messages[0].height, offset: limit / 2, stream: false })
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
@@ -885,11 +885,11 @@ export default ({
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
 
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-          events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false })
+          events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit, stream: false })
         }
       } else if (this.latestEvents.length) {
         const beforeHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
+        events = await sbp('chelonia/out/eventsBefore', chatRoomID, { beforeHeight: Math.max(0, beforeHeight - 1), limit, stream: false })
       } else {
         let sinceHeight = 0
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
@@ -897,7 +897,7 @@ export default ({
           sinceHeight = Math.max(0, this.messages[0].height - limit)
         }
 
-        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
+        events = await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight, limit: latestHeight - sinceHeight + 1, stream: false })
         if (this.chatroomHasSwitchedFrom(chatRoomID)) return
       }
 

@@ -1357,7 +1357,7 @@ export default (sbp('sbp/selectors/register', {
       if (latestHEAD !== recentHEAD) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recentHEAD || 'undefined'} but the latest is ${latestHEAD}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const eventsStream = sbp('chelonia/out/eventsAfter', contractID, recentHeight ?? 0, undefined, recentHEAD ?? contractID)
+        const eventsStream = sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: recentHeight ?? 0, sinceHash: recentHEAD ?? contractID })
         // Sanity check: verify event with latest hash exists in list of events
         // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
