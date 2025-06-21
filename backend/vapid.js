@@ -1,4 +1,5 @@
 import sbp from '@sbp/sbp'
+import { Buffer } from 'node:buffer'
 
 let vapidPublicKey: string
 let vapidPrivateKey: Object
