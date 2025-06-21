@@ -971,9 +971,13 @@ route.GET('/assets/{subpath*}', {
       .etag(basename)
       .header('Cache-Control', 'public,max-age=31536000,immutable')
   }
-  // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
+  // Files like `main.js` or `main.css` should be revalidated before use.
+  // We set a short 'stale-while-revalidate' value instead of 'no-cache' to
+  // signal to the app that it's fine to use old versions when offline or over
+  // unreliable connections.
   // This should also be suitable for serving unversioned fonts and images.
   return h.file(subpath)
+    .header('Cache-Control', 'public,max-age=604800,stale-while-revalidate=86400')
 })
 
 route.GET(staticServeConfig.routePath, {}, {
@@ -1052,7 +1056,13 @@ route.GET('/zkpp/{contractID}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['contractID'], req.query['b'])
 
-    return challenge || notFoundNoCache(h)
+    if (!challenge) {
+      return Boom.notFound()
+    }
+
+    return h.response(challenge)
+      .header('Cache-Control', 'no-store')
+      .header('Content-Type', 'text/plain')
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
     console.error(e, 'Error at GET /zkpp/{contractID}/auth_hash: ' + e.message)
@@ -1078,7 +1088,9 @@ route.GET('/zkpp/{contractID}/contract_hash', {
     const salt = await getContractSalt(req.params['contractID'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
     if (salt) {
-      return salt
+      return h.response(salt)
+        .header('Cache-Control', 'no-store')
+        .header('Content-Type', 'text/plain')
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
@@ -1107,7 +1119,8 @@ route.POST('/zkpp/{contractID}/updatePasswordHash', {
     const result = await updateContractSalt(req.params['contractID'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
-      return result
+      return h.response(result)
+        .header('Content-type', 'text/plain')
     }
   } catch (e) {
     e.ip = req.headers['x-real-ip'] || req.info.remoteAddress
