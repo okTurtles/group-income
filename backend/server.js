@@ -376,7 +376,7 @@ sbp('sbp/selectors/register', {
       const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
       if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
       const rawManifest = await sbp('chelonia.db/get', cid)
-      const size = ultimateOwnerID && await sbp('chelonia.db/get', `_private_size_${cid}`)
+      const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
       // If running in a persistent queue, already deleted contract should not
       // result in an error, because exceptions will result in the task being
       // re-attempted
@@ -466,12 +466,13 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', cid, '')
       sbp('chelonia/private/removeImmediately', cid)
 
-      if (ultimateOwnerID && size) {
+      if (size) {
         await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
       }
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
+      // Note: `creditsWorker.js` could be updated to do this instead
       await removeFromIndexFactory('_private_billable_entities')(cid)
       sbp('backend/server/broadcastDeletion', cid).catch(e => {
         console.error(e, 'Error broadcasting contract deletion', cid)
