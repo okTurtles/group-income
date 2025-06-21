@@ -1,5 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
+import { Buffer } from 'buffer'
 import { throttle } from 'turtledash'
 
 // NOTE: since these functions don't modify contract state, it should
