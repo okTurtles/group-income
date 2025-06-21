@@ -6,7 +6,6 @@ import { blake2b256stream } from '@chelonia/multiformats/blake2bstream'
 import { CID } from '@chelonia/multiformats/cid'
 // Use 'buffer' instead of 'node:buffer' to polyfill in the browser
 import { Buffer } from 'buffer'
-import { has } from 'turtledash'
 
 // Values from https://github.com/multiformats/multicodec/blob/master/table.csv
 export const multicodes: { [x: string]: number } = {
@@ -42,12 +41,6 @@ export const maybeParseCID = (cid: string): Object | null => {
     // Ignore errors if the CID couldn't be parsed
     return null
   }
-}
-
-// Makes the `Buffer` global available in the browser if needed.
-// $FlowFixMe[cannot-resolve-name]
-if (typeof globalThis === 'object' && !has(globalThis, 'Buffer')) {
-  globalThis.Buffer = Buffer
 }
 
 export async function createCIDfromStream (data: string | Uint8Array | ReadableStream, multicode: number = multicodes.RAW): Promise<string> {

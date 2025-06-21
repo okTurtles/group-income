@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { has, omit } from 'turtledash'
+import { Buffer } from 'buffer'
 import { b64ToStr } from '~/shared/functions.js'
 import type { SPKey, SPKeyPurpose, SPKeyUpdate, SPOpActionUnencrypted, SPOpAtomic, SPOpKeyAdd, SPOpKeyUpdate, SPOpValue, ProtoSPOpActionUnencrypted } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'

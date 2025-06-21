@@ -41,6 +41,7 @@ declare module 'pino' { declare module.exports: any }
 declare module 'node:crypto' { declare module.exports: any }
 declare module 'node:buffer' { declare module.exports: { Buffer: typeof Buffer } }
 declare module 'buffer' { declare module.exports: { Buffer: typeof Buffer } }
+declare module 'node:buffer' { declare module.exports: { Buffer: typeof Buffer } }
 declare module 'chalk' { declare module.exports: any }
 declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
