@@ -5,6 +5,7 @@
 *?rollup-plugin-vue=script.js
 key.json
 key.pub.json
+/docs/book/
 
 # prevent accidental addition of yarn.lock from making Travis builds longer
 /yarn.lock
