@@ -1119,15 +1119,15 @@ export default (sbp('sbp/selectors/register', {
     }).then(handleFetchResult('json'))
   },
   'chelonia/out/eventsAfter': eventsAfter,
-  'chelonia/out/eventsBefore': function (contractID: string, beforeHeight: number, limit: number, options) {
+  'chelonia/out/eventsBefore': function (contractID: string, { beforeHeight, limit, stream }: { beforeHeight: number, limit: number, stream: boolean }) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
     }
     const offset = Math.max(0, beforeHeight - limit + 1)
     const eventsAfterLimit = Math.min(beforeHeight + 1, limit)
-    return sbp('chelonia/out/eventsAfter', contractID, offset, eventsAfterLimit, undefined, options)
+    return sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: offset, limit: eventsAfterLimit, stream })
   },
-  'chelonia/out/eventsBetween': function (contractID: string, startHash: string, endHeight: number, offset: number = 0, { stream } = { stream: true }) {
+  'chelonia/out/eventsBetween': function (contractID: string, { startHash, endHeight, offset = 0, limit = 0, stream = true }: { startHash: string, endHeight: number, offset: number, limit: number, stream: boolean }) {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
@@ -1142,12 +1142,12 @@ export default (sbp('sbp/selectors/register', {
           return
         }
         const startOffset = Math.max(0, deserializedHEAD.head.height - offset)
-        const limit = endHeight - startOffset + 1
-        if (limit < 1) {
+        const ourLimit = limit ? Math.min(endHeight - startOffset + 1, limit) : endHeight - startOffset + 1
+        if (ourLimit < 1) {
           controller.close()
           return
         }
-        reader = sbp('chelonia/out/eventsAfter', contractID, startOffset, limit).getReader()
+        reader = sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: startOffset, limit: ourLimit }).getReader()
       },
       async pull (controller) {
         const { done, value } = await reader.read()
@@ -1176,7 +1176,7 @@ export default (sbp('sbp/selectors/register', {
     }
     let state = Object.create(null)
     let contractName = rootState.contracts[contractID]?.type
-    const eventsStream = sbp('chelonia/out/eventsAfter', contractID, 0, undefined, contractID)
+    const eventsStream = sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: 0, sinceHash: contractID })
     const eventsStreamReader = eventsStream.getReader()
     if (rootState[contractID]) state._volatile = rootState[contractID]._volatile
     for (;;) {
