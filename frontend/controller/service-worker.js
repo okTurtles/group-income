@@ -96,7 +96,7 @@ sbp('sbp/selectors/register', {
         ['routerBase', sbp('controller/router').options.base ?? ''],
         ['standalone', isPwa() ? '1' : '0']
       ])
-      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { scope: '/' })
+      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { type: 'module', scope: '/' })
 
       // This probably happens if the SW immediately crashed after registration
       // (e.g., trying to access indexedDB if it's undefined). In any case, we
