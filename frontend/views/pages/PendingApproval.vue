@@ -20,7 +20,7 @@ import { PROFILE_STATUS } from '@model/contracts/shared/constants'
 import sbp from '@sbp/sbp'
 import SvgInvitation from '@svgs/invitation.svg'
 import { mapGetters, mapState } from 'vuex'
-import { CHELONIA_RESET } from 'libchelonia/events'
+import { CHELONIA_RESET } from '@chelonia/lib/events'
 
 export default ({
   name: 'PendingApproval',

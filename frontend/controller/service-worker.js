@@ -6,9 +6,9 @@ import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
-import { SPMessage } from 'libchelonia/SPMessage'
-import { Secret } from 'libchelonia/Secret'
-import { getSubscriptionId } from 'libchelonia/functions'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import { Secret } from '@chelonia/lib/Secret'
+import { getSubscriptionId } from '@chelonia/lib/functions'
 
 const pwa = {
   deferredInstallPrompt: null,

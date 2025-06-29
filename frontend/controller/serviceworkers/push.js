@@ -4,8 +4,8 @@ import { makeNotification } from '@model/notifications/nativeNotification.js'
 import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { Buffer } from 'buffer'
-import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from 'libchelonia/pubsub'
-import { getSubscriptionId } from 'libchelonia/functions'
+import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
+import { getSubscriptionId } from '@chelonia/lib/functions'
 import { DEVICE_SETTINGS } from '@utils/constants.js'
 
 // The application server (public) key could be either an ArrayBuffer (which is

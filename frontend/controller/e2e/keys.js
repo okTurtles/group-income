@@ -3,11 +3,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { blake32Hash, bytesToB64 } from 'libchelonia/functions'
+import { blake32Hash, bytesToB64 } from '@chelonia/lib/functions'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
-import type { SPKey, SPKeyType } from 'libchelonia/SPMessage'
+import type { SPKey, SPKeyType } from '@chelonia/lib/SPMessage'
 
 function genSeed (): string {
   return bytesToB64(nacl.randomBytes(nacl.box.secretKeyLength))

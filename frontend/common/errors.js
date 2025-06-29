@@ -1,6 +1,6 @@
 'use strict'
 
-import { ChelErrorGenerator } from 'libchelonia/errors'
+import { ChelErrorGenerator } from '@chelonia/lib/errors'
 
 export const GIErrorIgnoreAndBan: typeof Error = ChelErrorGenerator('GIErrorIgnoreAndBan')
 

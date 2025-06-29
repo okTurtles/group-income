@@ -1,9 +1,9 @@
 import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
-import type { SPKey } from 'libchelonia/SPMessage'
-import { SPMessage } from 'libchelonia/SPMessage'
-import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from 'libchelonia/encryptedData'
-import { findKeyIdByName, findSuitableSecretKeyId } from 'libchelonia/utils'
+import type { SPKey } from '@chelonia/lib/SPMessage'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
+import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
 
 export { default as chatroom } from './chatroom.js'

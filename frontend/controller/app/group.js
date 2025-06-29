@@ -9,7 +9,7 @@ import {
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import type { ChelKeyRequestParams } from 'libchelonia'
+import type { ChelKeyRequestParams } from '@chelonia/lib'
 import type { GIActionParams } from '../actions/types.js'
 
 sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ identityContractID, groupContractID }) => {

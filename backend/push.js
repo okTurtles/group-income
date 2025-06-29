@@ -6,10 +6,10 @@ import { appendToIndexFactory, removeFromIndexFactory } from './database.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import rfc8291Ikm from './rfc8291Ikm.js'
 import { getVapidPublicKey, vapidAuthorization } from './vapid.js'
-import { getSubscriptionId } from 'libchelonia/functions'
+import { getSubscriptionId } from '@chelonia/lib/functions'
 
 // const pushController = require('web-push')
-const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('libchelonia/pubsub')
+const { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } = require('@chelonia/lib/pubsub')
 
 const addSubscriptionToIndex = appendToIndexFactory('_private_webpush_index')
 const deleteSubscriptionFromIndex = removeFromIndexFactory('_private_webpush_index')

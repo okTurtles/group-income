@@ -2,7 +2,7 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-import { verifyShelterAuthorizationHeader } from 'libchelonia/utils'
+import { verifyShelterAuthorizationHeader } from '@chelonia/lib/utils'
 const Boom = require('@hapi/boom')
 
 exports.plugin = {

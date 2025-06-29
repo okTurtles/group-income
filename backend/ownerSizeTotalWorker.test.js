@@ -5,7 +5,7 @@ import '@sbp/okturtles.eventqueue'
 import sbp from '@sbp/sbp'
 import { join } from 'node:path'
 import { Worker } from 'node:worker_threads'
-import { createCID } from 'libchelonia/functions'
+import { createCID } from '@chelonia/lib/functions'
 import { appendToIndexFactory, initDB, updateSize as updateSize_ } from './database.js'
 import assert from 'node:assert'
 

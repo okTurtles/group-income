@@ -12,9 +12,9 @@ import { PROFILE_STATUS, PROPOSAL_GENERIC, PROPOSAL_GROUP_SETTING_CHANGE, PROPOS
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
-import 'libchelonia'
-import { createCID, multicodes } from 'libchelonia/functions'
-import { Secret } from 'libchelonia/Secret'
+import '@chelonia/lib'
+import { createCID, multicodes } from '@chelonia/lib/functions'
+import { Secret } from '@chelonia/lib/Secret'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.

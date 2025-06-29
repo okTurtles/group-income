@@ -2,9 +2,9 @@
 
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
-import { SPMessage } from 'libchelonia/SPMessage'
-import { encryptedOutgoingData } from 'libchelonia/encryptedData'
-import { findKeyIdByName, findSuitableSecretKeyId } from 'libchelonia/utils'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import { encryptedOutgoingData } from '@chelonia/lib/encryptedData'
+import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import type { GIActionParams } from './types.js'

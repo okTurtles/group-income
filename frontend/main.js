@@ -12,10 +12,10 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import { CONTRACT_IS_SYNCING } from 'libchelonia/events'
-import 'libchelonia/local-selectors'
+import { CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
+import '@chelonia/lib/local-selectors'
 import { KV_KEYS } from './utils/constants.js'
-// import 'libchelonia/persistent-actions' // Commented out as persistentActions are not being used
+// import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
 import './controller/namespace.js'

@@ -2,7 +2,7 @@
 
 import { mkdir, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, normalize, resolve } from 'node:path'
-import { checkKey } from 'libchelonia/db'
+import { checkKey } from '@chelonia/lib/db'
 import DatabaseBackend from './DatabaseBackend.js'
 import type { IDatabaseBackend } from './DatabaseBackend.js'
 

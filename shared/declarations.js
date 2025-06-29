@@ -113,8 +113,8 @@ declare module './model/contracts/manifests.json' { declare module.exports: any 
 declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
 declare module '@controller/instance-keys.js' { declare module.exports: any }
-// Libchelonia
-declare module 'libchelonia' {
+// @chelonia/lib
+declare module '@chelonia/lib' {
     declare type ChelKeyRequestParams = {
         originatingContractID: string;
         originatingContractName: string;
@@ -140,16 +140,16 @@ declare module 'libchelonia' {
     }
     declare module.exports: any
 }
-declare module 'libchelonia/constants' { declare module.exports: any }
-declare module 'libchelonia/db' { declare module.exports: any }
-declare module 'libchelonia/encryptedData' { declare module.exports: any }
-declare module 'libchelonia/errors' { declare module.exports: any }
-declare module 'libchelonia/events' { declare module.exports: any }
-declare module 'libchelonia/functions' { declare module.exports: any }
-declare module 'libchelonia/local-selectors' { declare module.exports: any }
-declare module 'libchelonia/persistent-actions' { declare module.exports: any }
-declare module 'libchelonia/presets' { declare module.exports: any }
-declare module 'libchelonia/pubsub' {
+declare module '@chelonia/lib/constants' { declare module.exports: any }
+declare module '@chelonia/lib/db' { declare module.exports: any }
+declare module '@chelonia/lib/encryptedData' { declare module.exports: any }
+declare module '@chelonia/lib/errors' { declare module.exports: any }
+declare module '@chelonia/lib/events' { declare module.exports: any }
+declare module '@chelonia/lib/functions' { declare module.exports: any }
+declare module '@chelonia/lib/local-selectors' { declare module.exports: any }
+declare module '@chelonia/lib/persistent-actions' { declare module.exports: any }
+declare module '@chelonia/lib/presets' { declare module.exports: any }
+declare module '@chelonia/lib/pubsub' {
     declare type JSONType = string | number | boolean | null | JSONObject | JSONArray;
     declare type JSONObject = { [key: string]: JSONType };
     declare type JSONArray = Array<JSONType>;
@@ -178,14 +178,14 @@ declare module 'libchelonia/pubsub' {
     declare type NotificationTypeEnum = "entry" | "deletion" | "kv" | "kv_filter" | "ping" | "pong" | "pub" | "sub" | "unsub" | "version_info"
     declare module.exports: any
 }
-declare module 'libchelonia/Secret' {
+declare module '@chelonia/lib/Secret' {
     declare export class Secret<T> {
         constructor(T): Secret<T>;
         valueOf(): T
     }
 }
-declare module 'libchelonia/signedData' { declare module.exports: any }
-declare module 'libchelonia/SPMessage' {
+declare module '@chelonia/lib/signedData' { declare module.exports: any }
+declare module '@chelonia/lib/SPMessage' {
     declare interface EncryptedData<T> {}
     declare interface SignedData<T> {}
     declare interface Key {}
@@ -281,7 +281,7 @@ declare module 'libchelonia/SPMessage' {
         isKeyOp(): boolean;
     }
 }
-declare module 'libchelonia/types' {
+declare module '@chelonia/lib/types' {
     declare type JSONType = string | number | boolean | null | JSONObject | JSONArray;
     declare type JSONObject = { [key: string]: JSONType };
     declare type JSONArray = Array<JSONType>;
@@ -306,4 +306,4 @@ declare module 'libchelonia/types' {
       data?: JSONType
     }
 }
-declare module 'libchelonia/utils' { declare module.exports: any }
+declare module '@chelonia/lib/utils' { declare module.exports: any }

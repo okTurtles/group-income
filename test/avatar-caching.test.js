@@ -2,8 +2,8 @@
 import * as Common from '@common/common.js'
 import sbp from '@sbp/sbp'
 import manifests from '~/frontend/model/contracts/manifests.json'
-import 'libchelonia'
-import { Secret } from 'libchelonia/Secret'
+import '@chelonia/lib'
+import { Secret } from '@chelonia/lib/Secret'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 
 const assert = require('node:assert')

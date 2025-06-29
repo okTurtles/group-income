@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from 'libchelonia/events'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'

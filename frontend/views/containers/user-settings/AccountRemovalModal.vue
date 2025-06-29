@@ -82,7 +82,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { normalizeString } from 'turtledash'
-import { Secret } from 'libchelonia/Secret'
+import { Secret } from '@chelonia/lib/Secret'
 
 export default ({
   name: 'AccountRemovalModal',

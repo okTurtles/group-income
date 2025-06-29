@@ -1,4 +1,4 @@
-import { INVITE_STATUS } from 'libchelonia/constants'
+import { INVITE_STATUS } from '@chelonia/lib/constants'
 import {
   INVITE_INITIAL_CREATOR,
   MAX_SAVED_PERIODS,
