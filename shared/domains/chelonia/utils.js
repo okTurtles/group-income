@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { has, omit } from 'turtledash'
+import { Buffer } from 'buffer'
 import { b64ToStr } from '~/shared/functions.js'
 import type { SPKey, SPKeyPurpose, SPKeyUpdate, SPOpActionUnencrypted, SPOpAtomic, SPOpKeyAdd, SPOpKeyUpdate, SPOpValue, ProtoSPOpActionUnencrypted } from './SPMessage.js'
 import { SPMessage } from './SPMessage.js'
@@ -569,7 +570,7 @@ export const getContractIDfromKeyId = (contractID: string, signingKeyId: ?string
     : contractID
 }
 
-export function eventsAfter (contractID: string, sinceHeight: number, limit?: number, sinceHash?: string, { stream }: { stream: boolean } = { stream: true }): ReadableStream | Promise<any[]> {
+export function eventsAfter (contractID: string, { sinceHeight, limit, sinceHash, stream = true }: { sinceHeight: number, limit?: number, sinceHash?: string, stream: boolean }): ReadableStream | Promise<string[]> {
   if (!contractID) {
     // Avoid making a network roundtrip to tell us what we already know
     throw new Error('Missing contract ID')

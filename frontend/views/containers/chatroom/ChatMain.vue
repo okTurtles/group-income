@@ -927,14 +927,14 @@ export default ({
         if (this.ephemeral.loadingUp) return
         this.ephemeral.loadingUp = true
         const beforeHeight = this.currentLowestHeight
-        events = await sbp('chelonia/out/eventsBefore', chatRoomID, Math.max(0, beforeHeight - 1), limit, { stream: false })
+        events = await sbp('chelonia/out/eventsBefore', chatRoomID, { beforeHeight: Math.max(0, beforeHeight - 1), limit, stream: false })
       } else if (direction === 'down' || !this.latestEvents.length) {
         if (this.ephemeral.loadingDown) return
         this.ephemeral.loadingDown = true
         const sinceHeight = this.currentHighestHeight == null ? 0 : this.currentHighestHeight + 1
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
 
-        events = await sbp('chelonia/out/eventsAfter', chatRoomID, sinceHeight, latestHeight - sinceHeight + 1, undefined, { stream: false })
+        events = await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight, limit: latestHeight - sinceHeight + 1, stream: false })
         if (this.chatroomHasSwitchedFrom(chatRoomID)) return
       }
 
