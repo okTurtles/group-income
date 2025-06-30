@@ -88,6 +88,11 @@ const initialState = {
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },
+  },
+  kvStoreStatus: {
+    // enum of 'non-init' | 'loading' | 'loaded'
+    identity: 'non-init',
+    group: 'non-init'
   }
 }
 
@@ -212,6 +217,11 @@ const mutations = {
   setLastLoggedIn (state, [groupID, value]) {
     Vue.set(state.lastLoggedIn, groupID, value)
   },
+  setKvStoreStatus (state, { storeName, status }) {
+    if (storeName && status) {
+      state.kvStoreStatus[storeName] = status
+    }
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
@@ -228,6 +238,9 @@ const store: any = new Vuex.Store({
     },
     currentPaymentPeriod (state, getters) {
       return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
+    },
+    getKvStoreStatus (state) {
+      return (storeName) => state.kvStoreStatus[storeName]
     }
   },
   modules: {

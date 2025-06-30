@@ -17,6 +17,7 @@ export const RECONNECTING = 'reconnecting'
 export const RECONNECTION_FAILED = 'reconnection-failed'
 
 export const KV_EVENT = 'kv-event'
+export const KV_LOAD_STATUS = 'kv-load-status'
 
 export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
