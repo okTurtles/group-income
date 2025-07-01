@@ -20,20 +20,18 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   // If newMessage is undefined, it means that an existing message is being edited
   newMessage
 }) => {
-  const getters = sbp('state/vuex/getters')
-  console.log('!@# here - aaaa', sbp('state/vuex/state'))
-
-  // if (!getters.isKvStoreLoaded('identity')) {
-  //   console.log('!@# identity-kv not loaded yet!!')
-  //   // Without identity-kv store loaded/merged, below logics that use
-  //   // getters.chatRoomUnreadMessages and getters.ourUnreadMessages are
-  //   // checked against incorrect data and leads to wrong behaviour.
-  //   // (eg. 'message-received' sound plays for DM messages user already read from another device)
-  //   return
-  // }
-
-  const state = sbp('chelonia/contract/state', contractID)
   const rootState = sbp('chelonia/rootState')
+
+  if (rootState.kvStoreStatus.identity !== 'loaded') {
+    // Without identity-kv store loaded/merged, below logics that use
+    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages are
+    // checked against incorrect data and leads to wrong behaviour.
+    // (eg. 'message-received' sound plays for DM messages user already read from another device)
+    return
+  }
+
+  const getters = sbp('state/vuex/getters')
+  const state = sbp('chelonia/contract/state', contractID)
   const mentions = makeMentionFromUserID(rootState.loggedIn?.identityContractID)
   const msgData = newMessage || data
   const isMentionedMe = (!!newMessage || data.type === MESSAGE_TYPES.TEXT) && msgData.text &&
@@ -52,8 +50,6 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   }
 
   const userReadUntil = getters.ourUnreadMessages[contractID]?.readUntil
-  console.log('!@# userReadUntilHeight: ', userReadUntil?.createdHeight)
-  console.log('!@# height value of this message: ', msgData.height)
   if (userReadUntil?.createdHeight > 1 && userReadUntil.createdHeight >= msgData.height) {
     // If user has already read this message (eg. From other devices of the user),
     // No need to send a notification.

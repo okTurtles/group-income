@@ -16,6 +16,7 @@ export const OFFLINE = 'offline'
 export const RECONNECTING = 'reconnecting'
 export const RECONNECTION_FAILED = 'reconnection-failed'
 
+export const KV_QUEUE = 'kv-queue'
 export const KV_EVENT = 'kv-event'
 export const KV_LOAD_STATUS = 'kv-load-status'
 
@@ -62,8 +63,6 @@ export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
 
 export const NAMESPACE_REGISTRATION = 'namespace-registration'
-
-export const KV_QUEUE = 'kv-queue'
 
 export const PWA_INSTALLABLE = 'pwa-installable'
 

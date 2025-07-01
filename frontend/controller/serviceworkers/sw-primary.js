@@ -17,12 +17,12 @@ import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import {
+  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, KV_LOAD_STATUS,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
@@ -33,7 +33,7 @@ import {
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
-} from '../../utils/events.js'
+} from '~/frontend/utils/events.js'
 import './push.js'
 import './sw-namespace.js'
 
@@ -137,7 +137,7 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
-  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, KV_LOAD_STATUS,
   NOTIFICATION_TYPE.VERSION_INFO,
   MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
@@ -591,5 +591,19 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
     for (const key in settings) {
       rootState.chatroom.chatNotificationSettings[chatRoomID][key] = settings[key]
     }
+  }
+})
+
+sbp('okTurtles.events/on', KV_LOAD_STATUS, ({ name, status }) => {
+  const rootState = sbp('state/vuex/state')
+  const defaultObj = {
+    // enum of 'non-init' | 'loading' | 'loaded'
+    identity: 'non-init',
+    group: 'non-init'
+  }
+
+  rootState.kvStoreStatus = {
+    ...(rootState?.kvStoreStatus || defaultObj),
+    [name]: status
   }
 })

@@ -5,7 +5,7 @@ import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { Buffer } from 'buffer'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { Secret } from '~/shared/domains/chelonia/Secret.js'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
@@ -158,6 +158,10 @@ sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) 
 
 sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   sbp('state/vuex/commit', 'setPreferences', preferences)
+})
+
+sbp('okTurtles.events/on', KV_LOAD_STATUS, (data) => {
+  sbp('state/vuex/commit', 'setKvStoreStatus', data)
 })
 
 /* Commented out as persistentActions are not being used

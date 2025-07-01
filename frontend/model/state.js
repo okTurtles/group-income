@@ -244,9 +244,6 @@ const store: any = new Vuex.Store({
     },
     currentPaymentPeriod (state, getters) {
       return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
-    },
-    isKvStoreLoaded (state) {
-      return (name) => state.kvStoreStatus[name] === 'loaded'
     }
   },
   modules: {
