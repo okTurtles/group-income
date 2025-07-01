@@ -18,10 +18,14 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
+    sbp('state/vuex/commit', 'setKvStoreStatus', { name: 'identity', status: 'loading' })
+
     await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
     await sbp('gi.actions/identity/kv/loadPreferences')
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
+
     console.info('identity key-value store data loaded!')
+    sbp('state/vuex/commit', 'setKvStoreStatus', { name: 'identity', status: 'loaded' })
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {

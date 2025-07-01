@@ -15,6 +15,8 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/kv/load': async () => {
     console.info('loading data from group key-value store...')
+    sbp('state/vuex/commit', 'setKvStoreStatus', { name: 'group', status: 'loading' })
+
     const cheloniaState = await sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn?.identityContractID
     if (!identityContractID) {
@@ -27,7 +29,9 @@ export default (sbp('sbp/selectors/register', {
         return sbp('chelonia/queueInvocation', contractID, ['gi.actions/group/kv/loadLastLoggedIn', { contractID }])
       })
     )
+
     console.info('group key-value store data loaded!')
+    sbp('state/vuex/commit', 'setKvStoreStatus', { name: 'group', status: 'loaded' })
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
     const kvData = await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN)

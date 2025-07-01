@@ -90,7 +90,13 @@ const initialState = {
     lastRun: Object.create(null) // { notificationKey: number },
   },
   kvStoreStatus: {
-    // enum of 'non-init' | 'loading' | 'loaded'
+    // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
+    //          via kv-store so it's shared across multiple devices of the same user.)
+    //          and thus sometimes need to know whether kv-store data has been loaded from the server and merged to the Vuex store.
+    //          This 'kvStoreStatus' attribute here can be used to check the loading statuses of them from various
+    //          parts in the front-end.
+    //
+    // { [name]: 'non-init' | 'loading' | 'loaded' }
     identity: 'non-init',
     group: 'non-init'
   }
@@ -217,9 +223,9 @@ const mutations = {
   setLastLoggedIn (state, [groupID, value]) {
     Vue.set(state.lastLoggedIn, groupID, value)
   },
-  setKvStoreStatus (state, { storeName, status }) {
-    if (storeName && status) {
-      state.kvStoreStatus[storeName] = status
+  setKvStoreStatus (state, { name, status }) {
+    if (name && status) {
+      state.kvStoreStatus[name] = status
     }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
@@ -239,8 +245,8 @@ const store: any = new Vuex.Store({
     currentPaymentPeriod (state, getters) {
       return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
     },
-    getKvStoreStatus (state) {
-      return (storeName) => state.kvStoreStatus[storeName]
+    isKvStoreLoaded (state) {
+      return (name) => state.kvStoreStatus[name] === 'loaded'
     }
   },
   modules: {
