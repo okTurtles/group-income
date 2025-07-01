@@ -343,10 +343,10 @@
 "Are you sure you want to delete this group?" = "Are you sure you want to delete this group?";
 
 /* views/containers/chatroom/ChatMain.vue */
-"Are you sure you want to delete this message and it's file attachments permanently?" = "Are you sure you want to delete this message and it's file attachments permanently?";
+"Are you sure you want to delete this message and its file attachments?" = "Are you sure you want to delete this message and its file attachments?";
 
 /* views/containers/chatroom/ChatMain.vue */
-"Are you sure you want to delete this message permanently?" = "Are you sure you want to delete this message permanently?";
+"Are you sure you want to delete this message?" = "Are you sure you want to delete this message?";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Are you sure you want to delete {name}?" = "Are you sure you want to delete {name}?";

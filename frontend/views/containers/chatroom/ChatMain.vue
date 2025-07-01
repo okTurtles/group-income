@@ -713,8 +713,8 @@ export default ({
       const isDeletingLastMsg = msgHash === lastMsg?.hash
 
       const question = message.attachments?.length
-        ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
-        : L('Are you sure you want to delete this message permanently?')
+        ? L('Are you sure you want to delete this message and its file attachments?')
+        : L('Are you sure you want to delete this message?')
 
       const promptConfig = {
         heading: L('Delete message'),
