@@ -22,6 +22,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
 }) => {
   const rootState = sbp('chelonia/rootState')
 
+  console.log('!@# rootState.kvStoreStatus.identity: ', rootState.kvStoreStatus.identity)
   if (rootState.kvStoreStatus.identity !== 'loaded') {
     // Without identity-kv store loaded, below logics would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
