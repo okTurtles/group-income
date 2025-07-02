@@ -5,7 +5,7 @@
 Make sure:
 
 - You have at least Node version 16 installed
-- You have [followed the setup instructions](README.md#getting-started)
+- You have [followed the setup instructions](https://github.com/okTurtles/group-income/blob/master/README.md#getting-started)
 
 Try:
 

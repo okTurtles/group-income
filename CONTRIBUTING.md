@@ -15,7 +15,7 @@
 
 - Check the [open issues](https://github.com/okTurtles/group-income/issues).
 - View the [project board](https://github.com/okTurtles/group-income/projects).
-- Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), [`level: starter`](../../labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
+- Check especially what's [`up for grabs`](https://github.com/okTurtles/group-income/labels/Note%3AUp-for-grabs), [`high priority`](https://github.com/okTurtles/group-income/labels/Priority%3AHigh), [`level: starter`](https://github.com/okTurtles/group-income/labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/src/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/src/Style-Guide.md)__
 
 Then, [tell folks what you'll be working on](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ), and:
