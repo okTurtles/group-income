@@ -23,10 +23,10 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const rootState = sbp('chelonia/rootState')
 
   if (rootState.kvStoreStatus.identity !== 'loaded') {
-    // Without identity-kv store loaded/merged, below logics that use
-    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages are
-    // checked against incorrect data and leads to wrong behaviour.
-    // (eg. 'message-received' sound plays for DM messages user already read from another device)
+    // Without identity-kv store loaded, below logics would use wrong
+    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
+    // wrong computations and thus wrong behaviour.
+    // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
     return
   }
 
@@ -51,8 +51,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
 
   const userReadUntil = getters.ourUnreadMessages[contractID]?.readUntil
   if (userReadUntil?.createdHeight > 1 && userReadUntil.createdHeight >= msgData.height) {
-    // If user has already read this message (eg. From other devices of the user),
-    // No need to send a notification.
+    // If user has already read this message (eg. From other devices of the user), do not send a notification.
     return
   }
 
