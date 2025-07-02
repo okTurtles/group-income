@@ -16,7 +16,7 @@
 - Check the [open issues](https://github.com/okTurtles/group-income/issues).
 - View the [project board](https://github.com/okTurtles/group-income/projects).
 - Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), [`level: starter`](../../labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
-- Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/Style-Guide.md)__
+- Read some docs, like: __[:book: Frontend: Getting Started](docs/src/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/src/Style-Guide.md)__
 
 Then, [tell folks what you'll be working on](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ), and:
 
@@ -48,7 +48,7 @@ Pull requests (PRs) must adhere to the following requirements (unless the Founat
 3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.
-6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
+6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/src/Style-Guide.md).
 7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
 8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
 9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
@@ -75,5 +75,5 @@ If you're like to learn more about the `strings` utility [see this article](http
 ## How to submit an issue
 
 - Check if there's an open/closed issue that answers your question.
-- Read [troubleshooting docs](docs/Troubleshooting.md).
+- Read [troubleshooting docs](docs/src/Troubleshooting.md).
 - **Create an issue in the required [problem-solution](ISSUE_TEMPLATE.md) format.**
