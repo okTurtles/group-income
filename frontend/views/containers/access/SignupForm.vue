@@ -63,7 +63,7 @@ import {
   noUppercase,
   noWhitespace
 } from '@model/contracts/shared/validators.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { Secret } from '@chelonia/lib/Secret'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 
 export const usernameValidations = {
