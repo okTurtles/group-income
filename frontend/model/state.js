@@ -88,6 +88,16 @@ const initialState = {
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },
+  },
+  kvStoreStatus: {
+    // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
+    //          via kv-store so it's shared across multiple devices of the same user.)
+    //          and thus sometimes need to know whether kv-store data has been loaded from the server and
+    //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
+    //
+    // { [name]: 'non-init' | 'loading' | 'loaded' }
+    identity: 'non-init',
+    group: 'non-init'
   }
 }
 
@@ -133,6 +143,12 @@ sbp('sbp/selectors/register', {
     // }
     if (!state.preferences) {
       state.preferences = {}
+    }
+    if (!state.kvStoreStatus) {
+      state.kvStoreStatus = {
+        identity: 'non-init',
+        group: 'non-init'
+      }
     }
     if (state.periodicNotificationAlreadyFiredMap) {
       if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
@@ -211,6 +227,11 @@ const mutations = {
   },
   setLastLoggedIn (state, [groupID, value]) {
     Vue.set(state.lastLoggedIn, groupID, value)
+  },
+  setKvStoreStatus (state, { name, status }) {
+    if (name && status) {
+      state.kvStoreStatus[name] = status
+    }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
