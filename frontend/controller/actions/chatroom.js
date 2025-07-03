@@ -3,6 +3,7 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
+import { KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { has, omit } from 'turtledash'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
@@ -13,24 +14,10 @@ import { encryptedAction, encryptedNotification } from './utils.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 
-sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
-  contractID,
-  data,
-  innerSigningContractID,
-  // If newMessage is undefined, it means that an existing message is being edited
-  newMessage
-}) => {
+const messageReceivedRawQueue = []
+
+function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, newMessage }) {
   const rootState = sbp('chelonia/rootState')
-
-  console.log('!@# rootState.kvStoreStatus.identity: ', rootState.kvStoreStatus.identity)
-  if (rootState.kvStoreStatus.identity !== 'loaded') {
-    // Without identity-kv store loaded, below logics would use wrong
-    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
-    // wrong computations and thus wrong behaviour.
-    // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
-    return
-  }
-
   const getters = sbp('state/vuex/getters')
   const state = sbp('chelonia/contract/state', contractID)
   const mentions = makeMentionFromUserID(rootState.loggedIn?.identityContractID)
@@ -68,6 +55,36 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   }).catch(e => {
     console.error('[action/chatroom.js] Error on messageReceivePostEffect', e)
   })
+}
+
+sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
+  contractID,
+  data,
+  innerSigningContractID,
+  // If newMessage is undefined, it means that an existing message is being edited
+  newMessage
+}) => {
+  const rootState = sbp('chelonia/rootState')
+
+  if (rootState.kvStoreStatus.identity !== 'loaded') {
+    // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
+    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
+    // wrong computations and thus wrong behaviour.
+    // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
+    // So queueing the events here and then processing them after the kv-store is loaded.
+    const msgHash = (newMessage || data).hash
+    messageReceivedRawQueue.push({ contractID, data, innerSigningContractID, newMessage, msgHash })
+  } else {
+    messageReceivedRawHandler({ contractID, data, innerSigningContractID, newMessage })
+  }
+})
+
+sbp('okTurtles.events/on', KV_LOAD_STATUS, ({ name, status }) => {
+  if (name === 'identity' && status === 'loaded') {
+    while (messageReceivedRawQueue.length > 0) {
+      messageReceivedRawHandler(messageReceivedRawQueue.shift())
+    }
+  }
 })
 
 export default (sbp('sbp/selectors/register', {
