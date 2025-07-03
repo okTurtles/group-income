@@ -92,7 +92,7 @@ const initialState = {
   kvStoreStatus: {
     // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
     //          via kv-store so it's shared across multiple devices of the same user.)
-    //          and thus sometimes need to know whether kv-store data has been loaded from the server and 
+    //          and thus sometimes need to know whether kv-store data has been loaded from the server and
     //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
     //
     // { [name]: 'non-init' | 'loading' | 'loaded' }
