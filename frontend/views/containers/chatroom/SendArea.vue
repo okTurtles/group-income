@@ -380,6 +380,11 @@ export default ({
           this.focusOnTextArea()
         })
       }
+    },
+    currentChatRoomId () {
+      if (this.ephemeral.typingUsers.length) {
+        this.ephemeral.typingUsers = []
+      }
     }
   },
   created () {
