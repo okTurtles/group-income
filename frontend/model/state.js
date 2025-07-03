@@ -144,6 +144,12 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
+    if (!state.kvStoreStatus) {
+      state.kvStoreStatus = {
+        identity: 'non-init',
+        group: 'non-init'
+      }
+    }
     if (state.periodicNotificationAlreadyFiredMap) {
       if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
         state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
