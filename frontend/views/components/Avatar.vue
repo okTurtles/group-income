@@ -15,7 +15,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { Secret } from '@chelonia/lib/Secret'
 
 export default ({
   name: 'Avatar',

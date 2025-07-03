@@ -71,7 +71,7 @@ import sbp from '@sbp/sbp'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import { L } from '@common/common.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { Secret } from '@chelonia/lib/Secret'
 
 export default ({
   name: 'PasswordModal',

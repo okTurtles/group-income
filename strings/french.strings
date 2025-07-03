@@ -1063,10 +1063,10 @@
 "Are you sure you want to delete this file permanently?" = "Êtes-vous sûr de vouloir supprimer définitivement ce fichier ?";
 
 /* views/containers/chatroom/ChatMain.vue */
-"Are you sure you want to delete this message and it's file attachments permanently?" = "Êtes-vous sûr de vouloir supprimer définitivement ce message et ses pièces jointes ?";
+"Are you sure you want to delete this message and its file attachments?" = "Êtes-vous sûr de vouloir supprimer ce message et ses fichiers joints ?";
 
 /* views/containers/chatroom/ChatMain.vue */
-"Are you sure you want to delete this message permanently?" = "Êtes-vous sûr de vouloir supprimer définitivement ce message ?";
+"Are you sure you want to delete this message?" = "Êtes-vous sûr de vouloir supprimer ce message ?";
 
 /* views/containers/chatroom/ChatMain.vue */
 "Are you sure you want to remove this pinned message?" = "Êtes-vous sûr de vouloir supprimer ce message épinglé ?";
@@ -3461,6 +3461,12 @@
 
 /* Not currently used */
 "An email is required." = "Une adresse email est requise.";
+
+/* Not currently used */
+"Are you sure you want to delete this message and it's file attachments permanently?" = "Êtes-vous sûr de vouloir supprimer définitivement ce message et ses pièces jointes ?";
+
+/* Not currently used */
+"Are you sure you want to delete this message permanently?" = "Êtes-vous sûr de vouloir supprimer définitivement ce message ?";
 
 /* Not currently used */
 "Are you sure you want to leave {groupName}?" = "Êtes-vous sûr(e) de vouloir quitter {groupName}?";

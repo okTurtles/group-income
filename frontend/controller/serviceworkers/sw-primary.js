@@ -17,10 +17,10 @@ import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import { Secret } from '@chelonia/lib/Secret'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
+import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
   CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, KV_LOAD_STATUS,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,

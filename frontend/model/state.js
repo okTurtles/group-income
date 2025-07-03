@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
@@ -92,9 +92,8 @@ const initialState = {
   kvStoreStatus: {
     // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
     //          via kv-store so it's shared across multiple devices of the same user.)
-    //          and thus sometimes need to know whether kv-store data has been loaded from the server and merged to the Vuex store.
-    //          This 'kvStoreStatus' attribute here can be used to check the loading statuses of them from various
-    //          parts in the front-end.
+    //          and thus sometimes need to know whether kv-store data has been loaded from the server and 
+    //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
     //
     // { [name]: 'non-init' | 'loading' | 'loaded' }
     identity: 'non-init',

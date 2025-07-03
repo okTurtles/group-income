@@ -39,7 +39,7 @@ import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/notifications/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
-import { Secret } from '~/shared/domains/chelonia/Secret.js'
+import { Secret } from '@chelonia/lib/Secret'
 
 export default ({
   name: 'LoginForm',
