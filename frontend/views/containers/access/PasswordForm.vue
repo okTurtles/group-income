@@ -1,7 +1,23 @@
 <template lang='pug'>
 label.field
   .label(v-if='label') {{ label }}
+
+  .inputgroup(v-if='mode === "auto"')
+    input.input.width-with-single-addon(
+      type='text'
+      disabled
+      :name='name'
+      :data-test='name'
+      v-model='$v.form[name].$model'
+    )
+
+    .addons
+      button.is-icon(
+        type='button'
+        @click.prevent='copyPassword'
+      )
   .inputgroup(
+    v-else
     v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
   )
     input.input.with-single-addon(
@@ -17,7 +33,6 @@ label.field
     .addons
       button.is-icon(
         type='button'
-        v-if='hasIconRight'
         :aria-label='L("Toggle password visibility")'
         :aria-pressed='!isLock'
         @click.prevent='isLock = !isLock'
@@ -42,6 +57,11 @@ export default ({
       required: false,
       default: 'password'
     },
+    mode: {
+      type: String,
+      requried: false,
+      default: 'manual' // 'manual' | 'auto'
+    },
     label: {
       type: String,
       required: false
@@ -49,10 +69,6 @@ export default ({
     $v: {
       type: Object,
       required: true
-    },
-    hasIconRight: {
-      type: Boolean,
-      default: true
     },
     showPlaceholder: {
       type: Boolean,
@@ -65,6 +81,19 @@ export default ({
     size: {
       type: String,
       required: false
+    }
+  },
+  methods: {
+    generateRandomPassword (length = 16) {
+      const bytes = new Uint8Array(Math.floor(length / 2))
+      crypto.getRandomValues(bytes)
+
+      return Array.from(bytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+    },
+    copyPassword () {
+      console.log('!@# copy password!')
     }
   },
   created () {
