@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Group Income</string>
+    <string name="title_activity_main">Group Income</string>
+    <string name="package_name">org.groupincome.mobileapp</string>
+    <string name="custom_url_scheme">org.groupincome.mobileapp</string>
+</resources>

@@ -28,6 +28,8 @@
 .*/test/.*
 .*/test/frontend.js
 .*.test.js
+.*/android/.*
+.*/ios/.*
 
 [libs]
 ./shared/declarations.js

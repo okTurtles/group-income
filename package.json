@@ -19,7 +19,11 @@
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
     "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js",
+    "run:android": "grunt build && npx cap sync android && npx cap run android",
+    "dev:android": "concurrently \"grunt dev\" \"npm:run:android\"",
+    "run:ios": "grunt build && npx cap sync ios && npx cap run ios",
+    "dev:ios": "concurrently \"grunt dev\" \"npm:run:ios\""
   },
   "eslintConfig": {
     "root": true,
@@ -60,7 +64,9 @@
     "ignored/*",
     "node_modules/*",
     "test/cypress/cache/*",
-    "contracts/*"
+    "contracts/*",
+    "android/*",
+    "ios/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
@@ -110,6 +116,9 @@
     "@babel/preset-flow": "7.12.1",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
+    "@capacitor/android": "7.4.1",
+    "@capacitor/core": "7.4.1",
+    "@capacitor/ios": "7.4.1",
     "@chelonia/cli": "3.0.0",
     "@chelonia/crypto": "1.0.1",
     "@chelonia/lib": "1.1.0",
@@ -161,6 +170,7 @@
     "ws": "8.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "7.4.1",
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",
     "browser-sync": "2.27.10",
