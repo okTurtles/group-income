@@ -19,6 +19,14 @@ form(data-test='signup' @submit.prevent='')
 
     password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
 
+  .c-auto-password-field-container
+    password-form(
+      mode='auto'
+      :label='L("This is your password. Save it now.")'
+      name='password'
+      :$v='$v'
+    )
+
   label.checkbox
     input.input(
       type='checkbox'
@@ -207,5 +215,9 @@ export default ({
   @include phone {
     margin-bottom: 1.5rem;
   }
+}
+
+.c-auto-password-field-container {
+  margin: 1.5rem 0;
 }
 </style>
