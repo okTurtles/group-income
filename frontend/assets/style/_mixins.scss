@@ -16,6 +16,21 @@ $payment-table-desktop-bp: 1290px;
   width: $dimensions;
 }
 
+@mixin tooltip-style-common {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 3rem;
+  max-width: 12rem;
+  border-radius: 3px;
+  padding: 0.5rem;
+  z-index: 50; // $zindex-tooltip: 50;
+  pointer-events: none;
+  background-color: var(--text_0);
+  opacity: 0.95;
+  color: var(--background_0);
+}
+
 @mixin overflow-touch {
   -webkit-overflow-scrolling: touch;
 }

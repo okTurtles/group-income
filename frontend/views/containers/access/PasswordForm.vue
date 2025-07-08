@@ -10,9 +10,13 @@ label.field
     .addons
       button.is-success.c-copy-btn(
         type='button'
-        @click.prevent='copyPassword'
+        @click.prevent.self='copyPassword'
       )
         i18n Copy
+
+    i18n.c-feedback(
+      v-if='ephemeral.showCopyFeedback'
+    ) Copied to clipboard!
 
   .inputgroup(
     v-else
@@ -39,15 +43,21 @@ label.field
 </template>
 
 <script>
+import Tooltip from '@components/Tooltip.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'PasswordForm',
+  components: {
+    Tooltip
+  },
   data () {
     return {
       isLock: true,
       ephemeral: {
-        randomPassword: ''
+        randomPassword: '',
+        showCopyFeedback: false
       }
     }
   },
@@ -95,6 +105,27 @@ export default ({
     },
     copyPassword () {
       console.log('!@# copy password!')
+      const pw = this.ephemeral.randomPassword
+      const copyToClipBoard = () => {
+        navigator.clipboard.writeText(pw)
+        this.ephemeral.showCopyFeedback = true
+
+        setTimeout(() => {
+          this.ephemeral.showCopyFeedback = false
+        }, 1500)
+      }
+
+      if (navigator.share) {
+        navigator.share({
+          title: L('Your password'),
+          text: pw
+        }).catch((error) => {
+          console.error('navigator.share failed with:', error)
+          copyToClipBoard()
+        })
+      } else {
+        copyToClipBoard()
+      }
     }
   },
   created () {
@@ -108,6 +139,8 @@ export default ({
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
 .c-mode-auto {
   .c-auto-password {
     display: block;
@@ -132,5 +165,12 @@ button.c-copy-btn {
   border-radius: 3px;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+.c-feedback {
+  @include tooltip-style-common;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
 }
 </style>
