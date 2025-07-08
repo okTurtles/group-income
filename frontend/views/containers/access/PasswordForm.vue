@@ -1,8 +1,11 @@
 <template lang='pug'>
-label.field
+component.field(:is='mode === "manual" ? "label" : "div"')
   .label(v-if='label') {{ label }}
 
-  .inputgroup.c-mode-auto(v-if='mode === "auto"')
+  .inputgroup.c-mode-auto(
+    v-if='mode === "auto"'
+    v-error:[name]=''
+  )
     .input.width-with-single-addon.has-ellipsis.c-auto-password(
       :data-test='name'
     ) {{ ephemeral.randomPassword }}
@@ -10,7 +13,7 @@ label.field
     .addons
       button.is-success.c-copy-btn(
         type='button'
-        @click.prevent.self='copyPassword'
+        @click.stop='copyPassword'
       )
         i18n Copy
 
@@ -95,16 +98,21 @@ export default ({
     }
   },
   methods: {
-    generateRandomPassword (length = 32) {
-      const bytes = new Uint8Array(Math.floor(length / 2))
+    generateRandomPassword (pwLen = 32) {
+      const bytes = new Uint8Array(Math.ceil(pwLen / 2))
       crypto.getRandomValues(bytes)
 
-      this.ephemeral.randomPassword = Array.from(bytes)
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
+      let genPassword = Array.from(bytes).map(b => b.toString(36) // [0-9a-z] => 36 characters
+        .padStart(2, '0')).join('')
+
+      if (pwLen % 2 === 1) {
+        genPassword = genPassword.slice(1)
+      }
+
+      this.ephemeral.randomPassword = genPassword
+      this.$v.form[this.name].$model = genPassword
     },
     copyPassword () {
-      console.log('!@# copy password!')
       const pw = this.ephemeral.randomPassword
       const copyToClipBoard = () => {
         navigator.clipboard.writeText(pw)

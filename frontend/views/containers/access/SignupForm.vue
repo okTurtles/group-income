@@ -14,11 +14,6 @@ form(data-test='signup' @submit.prevent='')
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
     )
 
-  .c-password-fields-container
-    password-form(:label='L("Password")' name='password' :$v='$v')
-
-    password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
-
   .c-auto-password-field-container
     password-form(
       mode='auto'
@@ -27,17 +22,28 @@ form(data-test='signup' @submit.prevent='')
       :$v='$v'
     )
 
-  label.checkbox
-    input.input(
-      type='checkbox'
-      name='terms'
-      v-model='form.terms'
-      data-test='signTerms'
-      @click.stop=''
-    )
-    i18n(
-      :args='{ a_: `<a class="link" target="_blank" href="${linkToTerms}">`, _a: "</a>"}'
-    ) I agree to the {a_}terms and conditions{_a}
+  .c-confirm-check-container
+    label.checkbox
+      input.input(
+        type='checkbox'
+        name='savedPassword'
+        v-model='form.savedPassword'
+        data-test='savedPassword'
+        @click.stop=''
+      )
+      i18n I have saved the password
+
+    label.checkbox
+      input.input(
+        type='checkbox'
+        name='terms'
+        v-model='form.terms'
+        data-test='signTerms'
+        @click.stop=''
+      )
+      i18n(
+        :args='{ a_: `<a class="link" target="_blank" href="${linkToTerms}">`, _a: "</a>"}'
+      ) I agree to the {a_}terms and conditions{_a}
 
   banner-scoped(ref='formMsg' allow-a)
 
@@ -52,7 +58,7 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
+import { maxLength, minLength, required } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -115,7 +121,7 @@ export default ({
       form: {
         username: '',
         password: '',
-        passwordConfirm: '',
+        savedPassword: false,
         terms: false,
         pictureBase64: ''
       },
@@ -183,13 +189,11 @@ export default ({
           [L('A password is required.')]: required,
           [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
         },
-        passwordConfirm: {
-          [L('Passwords do not match.')]: sameAs('password')
+        savedPassword: {
+          [L('Please save the password.')]: (value) => Boolean(value)
         },
         terms: {
-          [L('You need to agree to the terms and conditions.')]: (value) => {
-            return Boolean(value)
-          }
+          [L('You need to agree to the terms and conditions.')]: (value) => Boolean(value)
         }
       }
     }
@@ -219,5 +223,13 @@ export default ({
 
 .c-auto-password-field-container {
   margin: 1.5rem 0;
+}
+
+.c-confirm-check-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.5rem;
+  margin-bottom: 2rem;
 }
 </style>
