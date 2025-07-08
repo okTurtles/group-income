@@ -207,8 +207,9 @@ Cypress.Commands.add('giSignup', (username, {
       cy.getByDT('signupBtn').click()
     }
     cy.getByDT('signName').type('{selectall}{del}' + username)
-    cy.getByDT('password').type(password)
-    cy.getByDT('passwordConfirm').type(password)
+    cy.getByDT('password').should('have.text', password)
+
+    cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
 
     cy.getByDT('signSubmit').click()

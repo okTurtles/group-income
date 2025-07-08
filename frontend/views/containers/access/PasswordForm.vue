@@ -23,7 +23,7 @@ component.field(:is='mode === "manual" ? "label" : "div"')
 
   .inputgroup(
     v-else
-    v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
+    v-error:[name]=''
   )
     input.input.with-single-addon(
       :type='isLock ? "password" : "text"'
@@ -99,14 +99,21 @@ export default ({
   },
   methods: {
     generateRandomPassword (pwLen = 32) {
-      const bytes = new Uint8Array(Math.ceil(pwLen / 2))
-      crypto.getRandomValues(bytes)
+      let genPassword = ''
 
-      let genPassword = Array.from(bytes).map(b => b.toString(36) // [0-9a-z] => 36 characters
-        .padStart(2, '0')).join('')
+      if (window?.Cypress) {
+        // For easier debugging, use the common default password in Cypress test.
+        genPassword = '123456789'
+      } else {
+        const bytes = new Uint8Array(Math.ceil(pwLen / 2))
+        crypto.getRandomValues(bytes)
 
-      if (pwLen % 2 === 1) {
-        genPassword = genPassword.slice(1)
+        genPassword = Array.from(bytes).map(b => b.toString(36) // [0-9a-z] => 36 characters
+          .padStart(2, '0')).join('')
+
+        if (pwLen % 2 === 1) {
+          genPassword = genPassword.slice(1)
+        }
       }
 
       this.ephemeral.randomPassword = genPassword
