@@ -56,7 +56,7 @@
 
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
-          :attachmentList='attachments'
+          :attachmentList='sortedAttachments'
           :variant='variant'
           :isForDownload='true'
           :isMsgSender='isMsgSender'
@@ -225,9 +225,32 @@ export default ({
     hasAttachments () {
       return Boolean(this.attachments?.length)
     },
-    hasImageAttachment () {
+    sortedAttachments () {
+      // Position media file attachments later in the order so things look tidy when rendered in the DOM.
+      if (!this.hasAttachments || !this.hasMediaAttachment) {
+        return  this.attachments
+      } else {
+        const tempCollections = {
+          'non-image': [],
+          'image': [],
+          'video': []
+        }
+
+        for (const entry of this.attachments) {
+          const fType = getFileType(entry.mimeType)
+          tempCollections[fType].push(entry)
+        }
+
+        return [
+          ...tempCollections['non-image'],
+          ...tempCollections['image'],
+          ...tempCollections['video']
+        ]
+      }
+    },
+    hasMediaAttachment () {
       return Array.isArray(this.attachments) &&
-        this.attachments.some(attachment => getFileType(attachment.mimeType) === 'image')
+        this.attachments.some(attachment => ['image', 'video'].includes(getFileType(attachment.mimeType)))
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
@@ -368,7 +391,7 @@ export default ({
       this.shouldCheckToTruncate &&
       // NOTE: If the message has any image attached, defer this check until the <img /> DOMs are rendered.
       //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
-      !this.hasImageAttachment
+      !this.hasMediaAttachment
     ) {
       this.determineToEnableTruncationToggle()
     }

@@ -9,17 +9,7 @@
       class='is-download-item'
       tabindex='0'
     )
-      .c-preview-non-image(v-if='!shouldPreviewImages')
-        .c-non-image-icon
-          i.icon-file
-
-        .c-non-image-file-info
-          .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext-and-size
-            .c-file-ext {{ fileExt(entry) }}
-            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
-
-      .c-preview-img(v-else)
+      .c-preview-img(v-if='shouldPreviewImages')
         img(
           v-if='objectURLList[entryIndex]'
           :src='objectURLList[entryIndex]'
@@ -29,6 +19,16 @@
           @error='onImageSettled(objectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
+
+      .c-preview-non-image(v-else)
+        .c-non-image-icon
+          i.icon-file
+
+        .c-non-image-file-info
+          .c-file-name.has-ellipsis {{ entry.name }}
+          .c-file-ext-and-size
+            .c-file-ext {{ fileExt(entry) }}
+            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
 
       .c-preview-pending-flag(v-if='isPending')
       .c-preview-failed-flag(v-else-if='isFailed')
@@ -132,8 +132,8 @@ export default {
   },
   computed: {
     shouldPreviewImages () {
-      return !this.attachmentList.some(attachment => {
-        return this.fileType(attachment) === 'non-image'
+      return this.attachmentList.every(attachment => {
+        return this.fileType(attachment) === 'image'
       })
     },
     allImageAttachments () {
@@ -434,6 +434,7 @@ export default {
     }
   }
 
+  &.is-video,
   &.is-non-image {
     max-width: 17.25rem;
     min-width: 14rem;

@@ -14,7 +14,11 @@ export const getFileExtension = (
 export const getFileType = (
   mimeType: string = ''
 ): string => {
-  return mimeType.match('image/') ? 'image' : 'non-image'
+  return mimeType.match('image/')
+    ? 'image'
+    : mimeType.match('video/')
+      ? 'video'
+      : 'non-image'
 }
 
 export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {
