@@ -7,7 +7,7 @@ import {
   MAX_COUNT_READ,
   MAX_COUNT_UNREAD
 } from './storageConstants.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { blake32Hash } from '@chelonia/lib/functions'
 import { hashableRepresentation } from 'turtledash'
 
 // How much time a notification can stay in the "new" state.

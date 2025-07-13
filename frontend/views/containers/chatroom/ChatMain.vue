@@ -133,8 +133,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
-
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
+import { SPMessage } from '@chelonia/lib/SPMessage'
 import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
@@ -158,7 +157,7 @@ import { CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBA
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
@@ -977,8 +976,8 @@ export default ({
       const isDeletingLastMsg = msgHash === lastMsg?.hash
 
       const question = message.attachments?.length
-        ? L('Are you sure you want to delete this message and it\'s file attachments permanently?')
-        : L('Are you sure you want to delete this message permanently?')
+        ? L('Are you sure you want to delete this message and its file attachments?')
+        : L('Are you sure you want to delete this message?')
 
       const promptConfig = {
         heading: L('Delete message'),

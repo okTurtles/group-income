@@ -5,12 +5,12 @@ import sbp from '@sbp/sbp'
 import chalk from 'chalk'
 import { basename, join } from 'node:path'
 import { Worker } from 'node:worker_threads'
-import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
-import '~/shared/domains/chelonia/chelonia.js'
-import '~/shared/domains/chelonia/persistent-actions.js'
-import { SERVER } from '~/shared/domains/chelonia/presets.js'
-import { multicodes, parseCID } from '~/shared/functions.js'
-import type { SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import '@chelonia/lib'
+import '@chelonia/lib/persistent-actions'
+import { SERVER } from '@chelonia/lib/presets'
+import { multicodes, parseCID } from '@chelonia/lib/functions'
+import type { SubMessage, UnsubMessage } from '@chelonia/lib/pubsub'
 import { CREDITS_WORKER_TASK_TIME_INTERVAL, OWNER_SIZE_TOTAL_WORKER_TASK_TIME_INTERVAL } from './constants.js'
 import { KEYOP_SEGMENT_LENGTH, appendToIndexFactory, initDB, lookupUltimateOwner, removeFromIndexFactory, updateSize } from './database.js'
 import { BackendErrorBadData, BackendErrorGone, BackendErrorNotFound } from './errors.js'
@@ -376,7 +376,7 @@ sbp('sbp/selectors/register', {
       const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
       if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
       const rawManifest = await sbp('chelonia.db/get', cid)
-      const size = ultimateOwnerID && await sbp('chelonia.db/get', `_private_size_${cid}`)
+      const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
       // If running in a persistent queue, already deleted contract should not
       // result in an error, because exceptions will result in the task being
       // re-attempted
@@ -466,12 +466,13 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia.db/set', cid, '')
       sbp('chelonia/private/removeImmediately', cid)
 
-      if (ultimateOwnerID && size) {
+      if (size) {
         await ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID: cid, size: -parseInt(size), ultimateOwnerID })
       }
 
       await sbp('chelonia.db/delete', `_private_cheloniaState_${cid}`)
       await removeFromIndexFactory('_private_cheloniaState_index')(cid)
+      // Note: `creditsWorker.js` could be updated to do this instead
       await removeFromIndexFactory('_private_billable_entities')(cid)
       sbp('backend/server/broadcastDeletion', cid).catch(e => {
         console.error(e, 'Error broadcasting contract deletion', cid)

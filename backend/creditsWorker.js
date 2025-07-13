@@ -180,6 +180,14 @@ sbp('sbp/selectors/register', {
         return
       }
 
+      // We could add this here to remove from billable entities if it's been
+      // deleted (remember to remove this line from `server.js`)
+      // Currently not done to avoid race conditions writing to keys both on the
+      // worker and on the main server
+      // if (size === 0) {
+      //  await removeFromIndexFactory('_private_billable_entities')(billableEntity)
+      // }
+
       // Call updateCredits to calculate and record the charge based on current size and time elapsed.
       // Not using await to queue the call and immediately proceed with the next
       // billable entity

@@ -1,6 +1,6 @@
 'use strict'
 
-import { ChelErrorGenerator } from '~/shared/domains/chelonia/errors.js'
+import { ChelErrorGenerator } from '@chelonia/lib/errors'
 
 export const BackendErrorNotFound: typeof Error = ChelErrorGenerator('BackendErrorNotFound')
 export const BackendErrorGone: typeof Error = ChelErrorGenerator('BackendErrorGone')

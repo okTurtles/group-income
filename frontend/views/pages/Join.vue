@@ -59,7 +59,7 @@ import SvgBrokenLink from '@svgs/broken-link.svg'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
-import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { INVITE_STATUS } from '@chelonia/lib/constants'
 import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { keyId } from '@chelonia/crypto'
 

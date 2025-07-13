@@ -40,9 +40,9 @@ We are continually improving the user experience for everyone, and applying the 
 #### Read first
 
 - __[:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)__
-- [:book: Getting Started — Modern frontend concepts & project overview](docs/Getting-Started-frontend.md)
-- [:book: Style Guide — Our development guidelines](docs/Style-Guide.md)
-- [:book: Information Flow - walkthrough of the logical layer](docs/Information-Flow.md)
+- [:book: Getting Started — Modern frontend concepts & project overview](docs/src/Getting-Started-frontend.md)
+- [:book: Style Guide — Our development guidelines](docs/src/Style-Guide.md)
+- [:book: Information Flow - walkthrough of the logical layer](docs/src/Information-Flow.md)
 
 #### Bounties
 
@@ -149,11 +149,11 @@ npm run docker -- grunt dev
 npm run docker -- grunt test --skipbuild
 ```
 
-For details, see: **[`Docker.md`](docs/Docker.md)**
+For details, see: **[`Docker.md`](docs/src/Docker.md)**
 
 ## Troubleshooting
 
-If you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
+If you run into any errors [during the setup](docs/src/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/src/Troubleshooting.md).
 
 ## Donating
 

@@ -380,6 +380,11 @@ export default ({
           this.focusOnTextArea()
         })
       }
+    },
+    currentChatRoomId () {
+      if (this.ephemeral.typingUsers.length) {
+        this.ephemeral.typingUsers = []
+      }
     }
   },
   created () {
@@ -902,7 +907,8 @@ export default ({
     },
     emitUserTypingEvent () {
       sbp('gi.actions/chatroom/user-typing-event', {
-        contractID: this.currentChatRoomId
+        contractID: this.currentChatRoomId,
+        innerSigningContractID: this.ourIdentityContractId
       }).catch(e => {
         console.error('Error emitting user typing event', e)
       })
@@ -913,7 +919,8 @@ export default ({
     },
     emitUserStopTypingEvent () {
       sbp('gi.actions/chatroom/user-stop-typing-event', {
-        contractID: this.currentChatRoomId
+        contractID: this.currentChatRoomId,
+        innerSigningContractID: this.ourIdentityContractId
       }).catch(e => {
         console.error('Error emitting user stopped typing event', e)
       })
