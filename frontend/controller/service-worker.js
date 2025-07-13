@@ -3,7 +3,7 @@
 import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_UNREAD_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { SPMessage } from '~/shared/domains/chelonia/SPMessage.js'
@@ -323,10 +323,10 @@ sbp('sbp/selectors/register', {
   })
 )
 
-sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (obj: Object) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (obj: Object) => {
   // Don't send messages from the SW back to the SW to prevent infinite loops
   if (obj.from === 'sw') return
-  navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_UNREAD_POSITION, data: [obj] })
+  navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_SCROLL_POSITION, data: [obj] })
 })
 
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (obj: Object) => {

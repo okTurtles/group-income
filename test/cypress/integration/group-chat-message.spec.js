@@ -68,9 +68,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
     })
 
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message').should('have.length', countAfter)
-    })
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', String(countAfter))
   }
 
   function pinMessage (nth) {
@@ -224,9 +222,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user2 sees totally 5 messages', () => {
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message').should('have.length', 5)
-    })
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '5')
 
     checkMessageBySender(0, user1, `Joined ${CHATROOM_GENERAL_NAME}`)
     checkMessageBySender(1, user1, `Welcome to the ${groupName}!`)

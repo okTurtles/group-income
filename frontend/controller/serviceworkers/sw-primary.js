@@ -29,7 +29,7 @@ import {
   JOINED_CHATROOM, JOINED_GROUP,
   KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_NOTIFICATION_SETTINGS,
-  NEW_CHATROOM_UNREAD_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
+  NEW_CHATROOM_SCROLL_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
@@ -171,16 +171,16 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   broadcastMessage(message, transferables)
 })
 
-// This event (`NEW_CHATROOM_UNREAD_POSITION`) requires special handling because
+// This event (`NEW_CHATROOM_SCROLL_POSITION`) requires special handling because
 // it can be sent from the SW to clients or from clients to the SW. Handling it
 // the normal way (in the forwarding logic above) would result in event loops.
-sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, (args) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (args) => {
   // Set a 'from' parameter to signal it comes from the SW
   const argsCopy = { ...args, from: 'sw' }
   const { data, transferables } = serializer([argsCopy])
   const message = {
     type: 'event',
-    subtype: NEW_CHATROOM_UNREAD_POSITION,
+    subtype: NEW_CHATROOM_SCROLL_POSITION,
     data
   }
   broadcastMessage(message, transferables)
@@ -537,7 +537,7 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
   sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
 })
 
-sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageHash }) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, ({ chatRoomID, messageHash }) => {
   const rootState = sbp('chelonia/rootState')
   if (messageHash) {
     rootState.chatroom.chatRoomScrollPosition[chatRoomID] = messageHash
