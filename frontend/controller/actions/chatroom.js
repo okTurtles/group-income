@@ -78,7 +78,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   } else {
     if (messageReceivedRawQueue.length) {
       // If the queue is still being processed, the event should be added to the queue to ensure
-      // it is processed in the correct order.
+      // it is processed in the correct order
       messageReceivedRawQueue.push(eventParams)
     } else {
       messageReceivedRawHandler(eventParams)
