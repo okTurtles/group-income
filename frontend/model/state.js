@@ -6,6 +6,7 @@
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
+import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
@@ -96,8 +97,8 @@ const initialState = {
     //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
     //
     // { [name]: 'non-init' | 'loading' | 'loaded' }
-    identity: 'non-init',
-    group: 'non-init'
+    identity: KV_LOAD_STATUS.NON_INIT,
+    group: KV_LOAD_STATUS.NON_INIT
   }
 }
 
@@ -146,8 +147,8 @@ sbp('sbp/selectors/register', {
     }
     if (!state.kvStoreStatus) {
       state.kvStoreStatus = {
-        identity: 'non-init',
-        group: 'non-init'
+        identity: KV_LOAD_STATUS.NON_INIT,
+        group: KV_LOAD_STATUS.NON_INIT
       }
     }
     if (state.periodicNotificationAlreadyFiredMap) {
@@ -230,6 +231,9 @@ const mutations = {
   },
   setKvStoreStatus (state, { name, status }) {
     if (name && status) {
+      if (!Object.values(KV_LOAD_STATUS).includes(status)) {
+        return console.warn(`bad setKvStoreStatus for ${name}: ${status}`)
+      }
       state.kvStoreStatus[name] = status
     }
   },

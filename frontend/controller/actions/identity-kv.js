@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_QUEUE, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
@@ -18,14 +18,14 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
-    sbp('okTurtles.events/emit', KV_LOAD_STATUS, { name: 'identity', status: 'loading' })
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADING })
 
     await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
     await sbp('gi.actions/identity/kv/loadPreferences')
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
 
     console.info('identity key-value store data loaded!')
-    sbp('okTurtles.events/emit', KV_LOAD_STATUS, { name: 'identity', status: 'loaded' })
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADED })
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {

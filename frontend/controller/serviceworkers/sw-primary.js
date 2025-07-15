@@ -16,13 +16,13 @@ import getters from '~/frontend/model/getters.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
-  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, KV_LOAD_STATUS,
+  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, NEW_KV_LOAD_STATUS,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
@@ -137,7 +137,7 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
-  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, KV_LOAD_STATUS,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NEW_KV_LOAD_STATUS,
   NOTIFICATION_TYPE.VERSION_INFO,
   MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
@@ -594,12 +594,12 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
   }
 })
 
-sbp('okTurtles.events/on', KV_LOAD_STATUS, ({ name, status }) => {
+sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
   const rootState = sbp('state/vuex/state')
   const defaultObj = {
     // enum of 'non-init' | 'loading' | 'loaded'
-    identity: 'non-init',
-    group: 'non-init'
+    identity: KV_LOAD_STATUS.NON_INIT,
+    group: KV_LOAD_STATUS.NON_INIT
   }
 
   rootState.kvStoreStatus = {

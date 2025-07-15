@@ -3,8 +3,9 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
@@ -38,7 +39,7 @@ function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, 
   }
 
   const userReadUntil = getters.ourUnreadMessages[contractID]?.readUntil
-  if (userReadUntil?.createdHeight > 1 && userReadUntil.createdHeight >= msgData.height) {
+  if (userReadUntil?.createdHeight >= msgData.height) {
     // If user has already read this message (eg. From other devices of the user), do not send a notification.
     return
   }
@@ -65,6 +66,7 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   newMessage
 }) => {
   const rootState = sbp('chelonia/rootState')
+  const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
   if (rootState.kvStoreStatus.identity !== 'loaded') {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
@@ -72,15 +74,20 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
     // wrong computations and thus wrong behaviour.
     // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
     // So queueing the events here and then processing them after the kv-store is loaded.
-    const msgHash = (newMessage || data).hash
-    messageReceivedRawQueue.push({ contractID, data, innerSigningContractID, newMessage, msgHash })
+    messageReceivedRawQueue.push(eventParams)
   } else {
-    messageReceivedRawHandler({ contractID, data, innerSigningContractID, newMessage })
+    if (messageReceivedRawQueue.length) {
+      // If the queue is still being processed, the event should be added to the queue to ensure
+      // it is processed in the correct order.
+      messageReceivedRawQueue.push(eventParams)
+    } else {
+      messageReceivedRawHandler(eventParams)
+    }
   }
 })
 
-sbp('okTurtles.events/on', KV_LOAD_STATUS, ({ name, status }) => {
-  if (name === 'identity' && status === 'loaded') {
+sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
+  if (name === 'identity' && status === KV_LOAD_STATUS.LOADED) {
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())
     }

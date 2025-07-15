@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, NEW_LAST_LOGGED_IN, ONLINE, KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_QUEUE, NEW_LAST_LOGGED_IN, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 
 sbp('okTurtles.events/on', ONLINE, () => {
   if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
@@ -15,7 +15,7 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/kv/load': async () => {
     console.info('loading data from group key-value store...')
-    sbp('okTurtles.events/emit', KV_LOAD_STATUS, { name: 'group', status: 'loading' })
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'group', status: KV_LOAD_STATUS.LOADING })
 
     const cheloniaState = await sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn?.identityContractID
@@ -31,7 +31,7 @@ export default (sbp('sbp/selectors/register', {
     )
 
     console.info('group key-value store data loaded!')
-    sbp('okTurtles.events/emit', KV_LOAD_STATUS, { name: 'group', status: 'loaded' })
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'group', status: KV_LOAD_STATUS.LOADED })
   },
   'gi.actions/group/kv/fetchLastLoggedIn': async ({ contractID }: { contractID: string }) => {
     const kvData = await sbp('chelonia/kv/get', contractID, KV_KEYS.LAST_LOGGED_IN)
