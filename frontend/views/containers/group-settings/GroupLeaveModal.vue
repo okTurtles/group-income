@@ -126,7 +126,7 @@ export default ({
       confirmation: {
         [L('This field is required')]: required,
         [L('Does not match')]: function (value) {
-          return normalizeString(value) === normalizeString(this.code)
+          return normalizeString(value || '') === normalizeString(this.code)
         }
       }
     }
