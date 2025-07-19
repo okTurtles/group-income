@@ -50,7 +50,7 @@
         dynamic-scroller-item(
           :item='message'
           :active='active'
-          :size-dependencies='[message.hash]'
+          :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash]]'
           :data-index='index'
         )
           .c-divider(
@@ -87,8 +87,11 @@
             :pinnedBy='message.pinnedBy'
             :isSameSender='isSameSender(message, ephemeral.messages[index - 1])'
             :isMsgSender='isMsgSender(message.from)'
+            :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
+            :isEditing='ephemeral.isEditing[message.hash]'
             :class='{removed: message.delete}'
+            @message-is-editing='status => triggerEditMessage(message.hash, status)'
             @retry='retryMessage(message)'
             @reply='replyToMessage(message)'
             @scroll-to-replying-message='scrollToMessage(message.replyingMessage.hash)'
@@ -279,6 +282,7 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
+        listenChatRoomActions: false,
         startedUnreadMessageHash: null,
         // Below contains the message hash on which the user manually marked as unread
         messageHashToMarkUnread: null,
@@ -302,7 +306,10 @@ export default ({
         },
         loadingDown: undefined,
         loadingUp: undefined,
-        messages: []
+        messages: [],
+        isEditing: {},
+        scrollActionId: null,
+        focusedEffect: null
       },
       messageState: {
         contract: {}
@@ -393,8 +400,23 @@ export default ({
     }
   },
   methods: {
+    triggerEditMessage (hash, status) {
+      console.error('@@@@triggerEditMessage', hash, status)
+      if (status) {
+        Vue.set(this.ephemeral.isEditing, hash, status)
+        if (!this.isScrolledUp) {
+          this.$nextTick(() => {
+            this.jumpToLatest()
+          })
+        }
+      } else {
+        Vue.delete(this.ephemeral.isEditing, hash)
+      }
+    },
     setMessages: debounce(function () {
-      this.ephemeral.messages = this.messageState.contract?.messages || []
+      const newMessages = this.messageState.contract?.messages || []
+      if (this.ephemeral.messages === newMessages) return
+      this.ephemeral.messages = newMessages
       this.rerenderEvents()
     }, 100),
     * visibleMessageIterator () {
@@ -431,7 +453,9 @@ export default ({
       const messages = this.messageState.contract.messages || []
       const instance = {}
 
+      console.error('@@@@loadMoreMessages1', direction)
       if (messages.length && !this.ephemeral.messagesInitiated) {
+        console.error('@@@@loadMoreMessages2', direction)
         const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
         if (shouldLoadMoreEvents) {
           if (this.ephemeral.loadingUp) return
@@ -447,7 +471,7 @@ export default ({
           console.error('@@@@loadMoreMessages eventsBetween', direction, messageHashToScroll, latestHeight)
           await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false }).then((events) => {
             if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-            return this.processEvents(events, direction)
+            return this.processEvents(events, direction, true)
           }).finally(() => {
             if (this.ephemeral.loadingUp === instance) {
               this.ephemeral.loadingUp = false
@@ -455,7 +479,8 @@ export default ({
           })
         }
       } else if (direction === 'down' || !this.latestEvents.length) {
-        if (this.ephemeral.loadingDown) return
+        console.error('@@@@loadMoreMessages3', direction)
+        if (this.ephemeral.loadingDown || this.ephemeral.currentHighestHeight === this.latestHeight) return
         this.ephemeral.loadingDown = instance
         let sinceHeight
         if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
@@ -478,10 +503,11 @@ export default ({
             this.ephemeral.loadingDown = false
           }
         })
-      } else if (this.ephemeral.currentLowestHeight && direction !== 'down') {
-        if (this.ephemeral.loadingUp) return
-        this.ephemeral.loadingUp = instance
+      } else if (direction !== 'down') {
+        console.error('@@@@loadMoreMessages4', direction)
         const beforeHeight = this.ephemeral.currentLowestHeight
+        if (this.ephemeral.loadingUp || beforeHeight === 0) return
+        this.ephemeral.loadingUp = instance
         console.error('@@@@loadMoreMessages eventsBefore', direction, beforeHeight)
         await sbp('chelonia/out/eventsBefore', chatRoomID, { beforeHeight: Math.max(0, beforeHeight - 1), limit, stream: false }).then((events) => {
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
@@ -500,46 +526,71 @@ export default ({
 
       return true
     },
-    async processEvents (events, direction: 'up' | 'down' = 'down') {
+    async processEvents (events, direction: 'up' | 'down' = 'down', replaceIfGap: boolean = false) {
       if (!events.length) return
       await enqueue.call(this, async () => {
         const firstEvent = this.latestEvents[0]
         const existingLength = this.latestEvents.length
         const lastEvent = this.latestEvents[existingLength - 1]
 
-        this.latestEvents = [...new Set([...events, ...this.latestEvents])].sort((a, b) => {
-          const heightA = SPMessage.deserializeHEAD(a).head.height
-          const heightB = SPMessage.deserializeHEAD(b).head.height
-
-          return heightA - heightB
+        const deserializedEvents = events.map((event) => {
+          return SPMessage.deserialize(event)
         })
 
-        const firstEntryHeight = SPMessage.deserializeHEAD(this.latestEvents[0]).head.height
-        const currentLatestEventIdx =
-          firstEntryHeight === this.ephemeral.currentLowestHeight &&
-          existingLength <= this.latestEvents.length &&
-          this.latestEvents[0] === firstEvent &&
-          this.latestEvents[existingLength - 1] === lastEvent
-            ? existingLength
-            : 0
+        let currentLatestEventIdx = 0
 
-        if (currentLatestEventIdx && this.latestEvents.length === existingLength) return
+        if (existingLength) {
+          const heightOfFirstEvent = deserializedEvents[0].height()
+          const heightOfFirstExistingEvent = firstEvent.height()
+          const heightOfLastExistingEvent = lastEvent.height()
+          if (heightOfFirstEvent < heightOfFirstExistingEvent) {
+            if (heightOfFirstEvent + deserializedEvents.length >= heightOfFirstExistingEvent) {
+              console.error('@@@@processEvents 10', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              this.latestEvents.unshift(...deserializedEvents.slice(0, deserializedEvents.length - (heightOfFirstExistingEvent - heightOfFirstEvent)))
+            } else if (replaceIfGap) {
+              console.error('@@@@processEvents 20', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              this.latestEvents = deserializedEvents
+            } else {
+              console.error('@@@@processEvents 30', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              return
+            }
+          } else {
+            if (heightOfFirstEvent === heightOfLastExistingEvent + 1) {
+              console.error('@@@@processEvents 40', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              this.latestEvents.push(...deserializedEvents)
+              currentLatestEventIdx = existingLength
+            } else if (heightOfFirstEvent < heightOfLastExistingEvent) {
+              console.error('@@@@processEvents 50', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              this.latestEvents.push(...deserializedEvents.slice(heightOfLastExistingEvent - heightOfFirstEvent))
+              currentLatestEventIdx = existingLength
+            } else if (heightOfFirstEvent > heightOfLastExistingEvent && replaceIfGap) {
+              console.error('@@@@processEvents 60', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              this.latestEvents = deserializedEvents
+            } else {
+              console.error('@@@@processEvents 70', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              return
+            }
+          }
+        } else {
+          console.error('@@@@processEvents 80', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+          this.latestEvents = deserializedEvents
+        }
 
-        const entryHeight = currentLatestEventIdx === 0 ? firstEntryHeight : SPMessage.deserializeHEAD(this.latestEvents[currentLatestEventIdx]).head.height
+        const entryHeight = this.latestEvents[currentLatestEventIdx].height()
         const chatroomID = this.ephemeral.renderingChatRoomId
         let state = currentLatestEventIdx ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
         if (this.chatroomHasSwitchedFrom(chatroomID)) return
 
-        if (state.messages) {
-          this.ephemeral.currentLowestHeight = state.messages[0]?.height
-          this.ephemeral.currentHighestHeight = state.messages[state.messages.length - 1]?.height
-        }
+        /* if (state.messages?.length) {
+          this.ephemeral.currentLowestHeight = state.messages[0].height
+          this.ephemeral.currentHighestHeight = state.messages[state.messages.length - 1].height
+        } */
 
         for (const event of this.latestEvents.slice(currentLatestEventIdx)) {
-          const height = SPMessage.deserializeHEAD(event).head.height
+          const height = event.height()
+          state = await sbp('chelonia/in/processMessage', event, state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (this.chatroomHasSwitchedFrom(chatroomID)) return
-          state = await sbp('chelonia/in/processMessage', event, state)
           // Using negated inequality to handle 'undefined' / NaN
           if (!(height >= this.ephemeral.currentLowestHeight)) this.ephemeral.currentLowestHeight = height
           if (!(height <= this.ephemeral.currentHighestHeight)) this.ephemeral.currentHighestHeight = height
@@ -552,6 +603,8 @@ export default ({
         if (previousLength === state.messages.length && previousFirst === this.messageState.contract.messages[0]?.height) {
           this.loadMoreMessages(direction)
         }
+
+        this.ephemeral.listenChatRoomActions = (this.ephemeral.currentHighestHeight !== this.latestHeight)
       })
     },
     isMessageVisible (hash) {
@@ -560,34 +613,6 @@ export default ({
       const messageBCR = this.$refs[hash].$el.getBoundingClientRect()
 
       return messageBCR.top < (conversationBCR.bottom - 10) && messageBCR.bottom > (conversationBCR.top + 10)
-    },
-    fillEmptySpace (direction: 'up' | 'down' = 'down') {
-      if (isNaN(NaN)) return
-      const chatroomID = this.ephemeral.renderingChatRoomId
-      // const startSentinelBCR = this.$refs.startSentinel.getBoundingClientRect()
-      // const endSentinelBCR = this.$refs.endSentinel.getBoundingClientRect()
-
-      this.$nextTick(async () => {
-        if (this.chatroomHasSwitchedFrom(chatroomID)) return
-        const conversation = this.$refs.conversation.$el
-
-        const contractHeight = this.latestHeight
-        const x = [
-          conversation.scrollTop < 5 && this.ephemeral.currentLowestHeight > 0,
-          conversation.clientHeight + (conversation.scrollTop + 5) > conversation.scrollHeight && (!contractHeight || this.ephemeral.currentHighestHeight !== contractHeight)
-          // startSentinelBCR.top > (conversationBCR.top + 10) && this.ephemeral.currentLowestHeight > 0,
-          // endSentinelBCR.bottom < (conversationBCR.bottom - 10) && (!contractHeight || this.ephemeral.currentHighestHeight !== contractHeight)
-        ]
-        console.error('@@@@fillEmptySpace', direction, x)
-
-        if (x[0] && direction === 'up') {
-          await this.loadMoreMessages('up')
-        } else if (x[1]) {
-          await this.loadMoreMessages('down')
-        } else if (x[0]) {
-          await this.loadMoreMessages('up')
-        }
-      })
     },
     proximityDate,
     chatroomHasSwitchedFrom (chatroomID) {
@@ -666,6 +691,7 @@ export default ({
             // the network
             const msg = this.messageState.contract.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) {
+              console.error('@@@@addMessage 1')
               Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
               this.stopReplying()
               this.updateScroll()
@@ -748,8 +774,10 @@ export default ({
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
-              const msgIndex = findMessageIdx(temporaryMessage.hash, this.ephemeral.messages)
-              this.messageState.contract.splice(msgIndex, 1)
+              const messages = this.messageState.contract.messages
+              const msgIndex = findMessageIdx(temporaryMessage.hash, messages)
+              if (msgIndex < 0) return
+              messages.splice(msgIndex, 1)
             }
           }
           sendMessage(removeTemporaryMessage)
@@ -789,6 +817,7 @@ export default ({
       if (!messageHash || !this.ephemeral.messages.length) {
         return
       }
+      const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
@@ -802,19 +831,14 @@ export default ({
         if (effect) {
           console.error('@@@@scrollToMessage highlight 0', messageHash, index)
           this.$refs.conversation.scrollToItem(index)
-          // eleTarget.scrollIntoView({ behavior: this.isReducedMotionMode ? 'instant' : 'smooth' })
-          const unwatch = this.$watch(() => this.$refs[messageHash]?.$el, (eleTarget) => {
-            console.error('@@@@scrollToMessage highlight 1', messageHash, index, () => eleTarget)
-
-            if (!eleTarget) return
-            this.$nextTick(() => {
-              eleTarget.classList.add('c-focused')
-              setTimeout(() => {
-                if (unwatch && eleTarget.parentNode) unwatch()
-                eleTarget.classList.remove('c-focused')
-              }, 1500)
-            })
-          }, { immediate: true })
+          this.$nextTick(() => {
+            if (this.chatroomHasSwitchedFrom(contractID)) return
+            this.ephemeral.focusedEffect = messageHash
+            setTimeout(() => {
+              if (this.ephemeral.focusedEffect !== messageHash) return
+              this.ephemeral.focusedEffect = null
+            }, 1500)
+          })
         } else {
           if (targetIsLatestMessage) {
             this.jumpToLatest('instant')
@@ -830,7 +854,6 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        const contractID = this.ephemeral.renderingChatRoomId
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
         const events =
           await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.ephemeral.currentLowestHeight, offset: limit / 2, limit, stream: false })
@@ -840,7 +863,7 @@ export default ({
 
         if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
-          await this.processEvents(events, 'up')
+          await this.processEvents(events, 'up', true)
 
           if (this.chatroomHasSwitchedFrom(contractID)) return
           this.ephemeral.messages = this.messageState.contract?.messages || []
@@ -857,6 +880,10 @@ export default ({
           }
         }
       }
+    },
+    performScrollAction (action) {
+      clearTimeout(this.ephemeral.scrollActionId)
+      this.ephemeral.scrollActionId = setTimeout(action, 0)
     },
     updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
       const contractID = this.ephemeral.renderingChatRoomId
@@ -877,6 +904,7 @@ export default ({
       }
     },
     jumpToLatest (behavior = 'smooth') {
+      // if (isNaN(NaN)) return
       if (this.$refs.conversation) {
         this.$refs.conversation.$el.scroll({
           left: 0,
@@ -922,6 +950,7 @@ export default ({
       this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
     },
     editMessage (message, newMessage) {
+      this.triggerEditMessage(message.hash, false)
       message.text = newMessage
       message.pending = true
       const contractID = this.ephemeral.renderingChatRoomId
@@ -1128,6 +1157,8 @@ export default ({
           this.scrollToInitialPosition()
         })
         return
+      } else {
+        if (isNaN(NaN)) return
       }
 
       // See https://github.com/Akryum/vue-virtual-scroller/issues/728#issuecomment-1150998238
@@ -1173,8 +1204,6 @@ export default ({
         }
         // console.error('@@@@rerenderEvents', oldScrollTop < 5 && oldClientHeight < oldScrollHeight, 'oST', oldScrollTop, 'oSH', oldScrollHeight, 'oCH', oldClientHeight, 'cSH', conversation.scrollHeight, 'cCH', conversation.clientHeight, conversation.scrollTop, scrollTop)
       })
-
-      this.fillEmptySpace(direction)
     },
     scrollToInitialPosition () {
       console.error('@@@@scrollToInitialPosition', this.ephemeral.initialScroll.hash)
@@ -1302,7 +1331,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
-      if (this.chatroomHasSwitchedFrom(contractID)) return
+      if (/* !this.ephemeral.listenChatRoomActions || */ this.chatroomHasSwitchedFrom(contractID)) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
 
@@ -1367,10 +1396,9 @@ export default ({
             // NOTE: Message will be deleted in processMessage function
             //       but need to make animation to delete it, probably here
             const messageHash = value.data.hash
-            const msgIndex = findMessageIdx(messageHash, this.ephemeral.messages)
-            if (msgIndex !== -1) {
-              // document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
-              this.$refs[messageHash]?.$el.classList.add('c-disappeared')
+            const msgEl = this.$refs[messageHash]?.$el
+            if (msgEl) {
+              msgEl.classList.add('c-disappeared')
 
               // NOTE: waiting for the animation to be completed with the duration of 500ms
               //       .c-disappeared class is defined in MessageBase.vue
@@ -1379,8 +1407,8 @@ export default ({
           }
 
           const serializedMessage = message.serialize()
-          console.error('@@@@listenChatRoomActions', message)
-          await this.processEvents([serializedMessage], 'down')
+          console.error('@@@@listenChatRoomActions', message, this.ephemeral.currentHighestHeight)
+          await this.processEvents([serializedMessage], 'down', false)
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (this.ephemeral.scrollableDistance < 50) {
@@ -1574,6 +1602,9 @@ export default ({
         } else {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
+          this.ephemeral.isEditing = {}
+          this.ephemeral.focusedEffect = null
+          this.ephemeral.listenChatRoomActions = false
           this.onScrollEvt('down')
         }
       } catch (e) {
@@ -1786,5 +1817,26 @@ export default ({
   bottom: 0;
   left: 0;
   width: 100%;
+}
+
+::v-deep .vue-recycle-scroller__item-view {
+  & > [data-index="0"] {
+    // fix: show full 'actions' overlay (otherwise it gets cropped due to
+    // 'overflow: hidden' on the container element)
+    margin-top: 1rem;
+  }
+
+  &:has(.c-message .c-menu .is-active) {
+    // fix: ensure the menu is visible (otherwise, absolute positioning makes
+    // it hidden behind other messages)
+    z-index: 1;
+  }
+}
+
+::v-deep .vue-recycle-scroller__item-wrapper {
+  &:has(.c-message .c-menu .is-active) {
+    // fix: ensure the menu is visible
+    overflow: visible;
+  }
 }
 </style>

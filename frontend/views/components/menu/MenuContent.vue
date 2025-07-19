@@ -55,7 +55,7 @@ export default ({
   top: 0;
   left: 0.5rem;
   right: 0.5rem;
-  z-index: 2;
+  z-index: 10;
   border-radius: $radius;
   background-color: $background;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);

@@ -32,7 +32,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function editMessage (nth, message) {
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
         cy.get('.c-actions button[aria-label="Edit"]').click()
@@ -43,11 +43,11 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get('.c-text').should('contain', message)
       cy.get('.c-edited').should('contain', '(edited)')
     })
-    cy.getByDT('conversationWrapper').find(`.c-message.sent:nth-child(${nth})`).should('exist')
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message.sent`).should('exist')
   }
 
   function deleteMessage (nth, countAfter) {
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
           cy.getByDT('menuTrigger').click()
@@ -65,14 +65,14 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
+      cy.get(`[data-index="${nth - 1}"] > .c-message`).should('have.class', 'c-disappeared')
     })
 
     cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', String(countAfter))
   }
 
   function pinMessage (nth) {
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
           cy.getByDT('menuTrigger').click()
@@ -100,7 +100,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   function sendEmoticon (nth, emojiCode, emojiCount) {
     const emojiWrapperSelector = '.c-picker-wrapper .emoji-mart .vue-recycle-scroller__item-wrapper .vue-recycle-scroller__item-view:first-child .emoji-mart-category'
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
         cy.get('.c-actions button[aria-label="Add reaction"]').click()
@@ -110,21 +110,21 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get(`.c-message:nth-child(${nth}) .c-emoticons-list`).should('exist')
-      cy.get(`.c-message:nth-child(${nth}) .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', emojiCount + 1)
+      cy.get(`[data-index="${nth - 1}"] > .c-message .c-emoticons-list`).should('exist')
+      cy.get(`[data-index="${nth - 1}"] > .c-message .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', emojiCount + 1)
     })
   }
 
   function deleteEmotion (nthMesage, nthEmoji, emojiCount) {
     const expectedEmojiCount = !emojiCount ? 0 : emojiCount + 1
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nthMesage})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nthMesage - 1}"] > .c-message`).within(() => {
       cy.get('.c-emoticons-list').should('exist')
       cy.get('.c-emoticons-list>.c-emoticon-wrapper').should('have.length', emojiCount + 2)
       cy.get(`.c-emoticons-list>.c-emoticon-wrapper:nth-child(${nthEmoji})`).click()
     })
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get(`.c-message:nth-child(${nthMesage}) .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', expectedEmojiCount)
+      cy.get(`[data-index="${nthMesage - 1}"] > .c-message .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', expectedEmojiCount)
     })
   }
 
@@ -136,7 +136,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function replyToMessage (nth, message) {
-    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').scrollIntoView().should('be.visible')
         cy.get('.c-actions button[aria-label="Reply"]').click({ force: true })
@@ -154,7 +154,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function votePoll (nthForMessage, nthForOption) {
-    cy.get(`.c-message:nth-child(${nthForMessage})`).within(() => {
+    cy.get(`[data-index="${nthForMessage - 1}"] > .c-message`).within(() => {
       cy.get('fieldset').within(() => {
         cy.get(`label.c-poll-option:nth-child(${nthForOption})`).click()
       })
@@ -166,7 +166,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function changeVote (nthForMessage, nthForOption) {
-    cy.get('.c-message:nth-child(13)').within(() => {
+    cy.get(`[data-index=${nthForMessage - 1}] > .c-message`).within(() => {
       cy.get('.c-poll-container .c-poll-menu').within(() => {
         cy.getByDT('menuTrigger').click()
         cy.getByDT('menuContent').should('be.visible').within(() => {
@@ -194,7 +194,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
     cy.giSendMessage(me, `Welcome to the ${groupName}!`)
     cy.giSendMessage(me, 'We are going to make the world better!')
-    editMessage(4, 'We are helping each other to make the world better!')
+    editMessage(3, 'We are helping each other to make the world better!')
 
     cy.getByDT('dashboard').click()
     cy.giGetInvitationAnyone().then(url => {
@@ -216,9 +216,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
     cy.giRedirectToGroupChat()
     cy.giSendMessage(me, 'Oh, yes. I have joined the group now.')
-    deleteMessage(6, 4)
+    deleteMessage(5, 4)
     cy.giSendMessage(me, 'Anyone here?')
-    editMessage(6, 'Hello everyone. Thanks for inviting me to this group.')
+    editMessage(5, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
   it('user2 sees totally 5 messages', () => {
@@ -234,13 +234,13 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   it('user2 mentions user1 and adds/removes reactions to the message', () => {
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user1).me}. When is the best time for you to help me with learning more about this group?`)
 
-    sendEmoticon(4, '+1', 1)
-    sendEmoticon(4, 'joy', 2)
-    sendEmoticon(4, 'grinning', 3)
+    sendEmoticon(3, '+1', 1)
+    sendEmoticon(3, 'joy', 2)
+    sendEmoticon(3, 'grinning', 3)
 
-    sendEmoticon(7, 'joy', 1)
+    sendEmoticon(6, 'joy', 1)
 
-    deleteEmotion(4, 2, 2)
+    deleteEmotion(3, 2, 2)
   })
 
   it('user1 sees a mention and three reactions, and he sends two mentions and one reaction too', () => {
@@ -252,15 +252,15 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(4) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
+      cy.get('[data-index="2"] > .c-message .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('[data-index="5"] > .c-message .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
     })
 
-    sendEmoticon(8, '+1', 2)
+    sendEmoticon(6, '+1', 2)
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
-      cy.get('.c-message:nth-child(8) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
+      cy.get('[data-index="5"] > .c-message .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('[data-index="5"] > .c-message .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
     })
   })
 
@@ -281,8 +281,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.getByDT('attachments').attachFile(fileNames[1])
     cy.giSendMessage(me, 'Sending two files; one is image, and the other is JSON file.')
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
-      cy.get('.c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('[data-index="8"] > .c-message .c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
         cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
         cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
         cy.get('.c-attachment-actions-wrapper').invoke('hide')
@@ -295,15 +295,15 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.getByDT('submitPrompt').click()
     })
 
-    cy.getByDT('conversationWrapper').find('.c-message:nth-child(11)').within(() => {
+    cy.getByDT('conversationWrapper').find('[data-index="8"] >.c-message').within(() => {
       cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
     })
   })
 
   it('user2 pins 3 messages and unpins 1 message', () => {
-    pinMessage(11)
+    pinMessage(9)
+    pinMessage(8)
     pinMessage(10)
-    pinMessage(12)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
@@ -359,7 +359,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user2 votes the poll he created', () => {
-    votePoll(13, 1)
+    votePoll(11, 1)
   })
 
   it('pinned messages should be sorted by the created date of original messages', () => {
@@ -379,7 +379,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(11)').should('have.class', 'c-focused')
+      cy.get('[data-index="8"] > .c-message').should('have.class', 'c-focused')
     })
   })
 
@@ -392,9 +392,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user1 votes the poll, updates his vote, and pins it', () => {
-    votePoll(13, 2)
-    changeVote(13, 3)
-    pinMessage(13)
+    votePoll(11, 2)
+    changeVote(11, 3)
+    pinMessage(11)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
   })
 
@@ -417,7 +417,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       // HACK: scrollIntoView() should not be there
       // But cy.get('.c-reply').click() doesn't scroll to the target message
       // Because of this can not move forward to the next stages, so just used HACK
-      cy.get('.c-message:nth-child(11)')
+      cy.get('[data-index="10"] > .c-message')
         .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
         .scrollIntoView()
         .should('be.visible')
@@ -464,8 +464,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giWaitUntilMessagesLoaded()
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message:nth-child(2) .c-who > span:first-child').should('contain', user1)
-      cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
+      cy.get('[data-index="1"] > .c-message .c-who > span:first-child').should('contain', user1)
+      cy.get('[data-index="1"] > .c-message .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
     cy.giLogout()
