@@ -154,6 +154,7 @@
     "vue-infinite-loading": "2.4.5",
     "vue-router": "3.5.3",
     "vue-slider-component": "3.2.11",
+    "vue-virtual-scroller": "1.1.2",
     "vue2-touch-events": "3.0.0",
     "vuelidate": "0.7.6",
     "vuex": "3.6.0",
