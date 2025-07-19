@@ -149,6 +149,12 @@ sbp('sbp/selectors/register', {
 
     // Map to store: ultimateOwnerID -> [totalDelta, Set<originalResourceIDs>]
     const ultimateOwners = new Map()
+    // 'Orphans' in this context are deleted contracts for which we can't find
+    // an owner (because the owner information was deleted when the contract was
+    // deleted). In these cases, delta processing is deferred until a later
+    // execution time during which the actual ultimate owner is known
+    // (since this is given at contract deletion time and stored in
+    // `cachedUltimateOwnerMap`). See issue #2865 and PR #2869 for details.
     const orphansSet = new Set()
     // Phase 1: Find the ultimate owner for each resource and aggregate deltas.
     await Promise.all(deltaEntries.map(async ([contractID, delta]) => {
@@ -172,7 +178,7 @@ sbp('sbp/selectors/register', {
       }
       cachedUltimateOwnerMap.delete(contractID)
       // Aggregate delta for the ultimate owner.
-      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set(ownerID)]
+      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set([ownerID])]
       ownedResourcesSet.add(contractID)
       ultimateOwners.set(ownerID, [val + delta, ownedResourcesSet])
     }))
