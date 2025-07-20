@@ -452,35 +452,33 @@ export default ({
       const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       const messages = this.messageState.contract.messages || []
       const instance = {}
+      const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
 
       console.error('@@@@loadMoreMessages1', direction)
-      if (messages.length && !this.ephemeral.messagesInitiated) {
+      if (messages.length && !this.ephemeral.messagesInitiated && shouldLoadMoreEvents) {
         console.error('@@@@loadMoreMessages2', direction)
-        const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
-        if (shouldLoadMoreEvents) {
-          if (this.ephemeral.loadingUp) return
-          this.ephemeral.loadingUp = instance
+        if (this.ephemeral.loadingUp) return
+        this.ephemeral.loadingUp = instance
 
-          const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID).finally(() => {
-            if (this.ephemeral.loadingUp === instance) {
-              this.ephemeral.loadingUp = false
-            }
-          })
+        const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID).finally(() => {
+          if (this.ephemeral.loadingUp === instance) {
+            this.ephemeral.loadingUp = false
+          }
+        })
 
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        console.error('@@@@loadMoreMessages eventsBetween', direction, messageHashToScroll, latestHeight)
+        await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false }).then((events) => {
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-          console.error('@@@@loadMoreMessages eventsBetween', direction, messageHashToScroll, latestHeight)
-          await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false }).then((events) => {
-            if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-            return this.processEvents(events, direction, true)
-          }).finally(() => {
-            if (this.ephemeral.loadingUp === instance) {
-              this.ephemeral.loadingUp = false
-            }
-          })
-        }
+          return this.processEvents(events, direction, true)
+        }).finally(() => {
+          if (this.ephemeral.loadingUp === instance) {
+            this.ephemeral.loadingUp = false
+          }
+        })
       } else if (direction === 'down' || !this.latestEvents.length) {
         console.error('@@@@loadMoreMessages3', direction)
-        if (this.ephemeral.loadingDown || this.ephemeral.currentHighestHeight === this.latestHeight) return
+        if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight === this.latestHeight)) return
         this.ephemeral.loadingDown = instance
         let sinceHeight
         if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
@@ -545,8 +543,12 @@ export default ({
           const heightOfLastExistingEvent = lastEvent.height()
           if (heightOfFirstEvent < heightOfFirstExistingEvent) {
             if (heightOfFirstEvent + deserializedEvents.length >= heightOfFirstExistingEvent) {
-              console.error('@@@@processEvents 10', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
-              this.latestEvents.unshift(...deserializedEvents.slice(0, deserializedEvents.length - (heightOfFirstExistingEvent - heightOfFirstEvent)))
+              console.error('@@@@processEvents 10', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length, 'heightOfFirstExistingEvent', heightOfFirstExistingEvent, 'heightOfFirstEvent', heightOfFirstEvent)
+              if (heightOfFirstEvent + deserializedEvents.length <= heightOfLastExistingEvent) {
+                this.latestEvents.unshift(...deserializedEvents.slice(0, heightOfFirstExistingEvent - heightOfFirstEvent))
+              } else {
+                this.latestEvents = deserializedEvents
+              }
             } else if (replaceIfGap) {
               console.error('@@@@processEvents 20', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
               this.latestEvents = deserializedEvents
@@ -554,22 +556,24 @@ export default ({
               console.error('@@@@processEvents 30', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
               return
             }
-          } else {
-            if (heightOfFirstEvent === heightOfLastExistingEvent + 1) {
-              console.error('@@@@processEvents 40', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
-              this.latestEvents.push(...deserializedEvents)
-              currentLatestEventIdx = existingLength
-            } else if (heightOfFirstEvent < heightOfLastExistingEvent) {
+          } else if (heightOfFirstEvent + deserializedEvents.length > heightOfLastExistingEvent) {
+            if (heightOfFirstEvent <= (heightOfLastExistingEvent + 1)) {
               console.error('@@@@processEvents 50', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
-              this.latestEvents.push(...deserializedEvents.slice(heightOfLastExistingEvent - heightOfFirstEvent))
-              currentLatestEventIdx = existingLength
-            } else if (heightOfFirstEvent > heightOfLastExistingEvent && replaceIfGap) {
+              if (deserializedEvents.length > (heightOfLastExistingEvent - heightOfFirstEvent + 1)) {
+                this.latestEvents.push(...deserializedEvents.slice(heightOfLastExistingEvent - heightOfFirstEvent + 1))
+                currentLatestEventIdx = existingLength
+              } else {
+                return
+              }
+            } else if (replaceIfGap) {
               console.error('@@@@processEvents 60', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
               this.latestEvents = deserializedEvents
             } else {
               console.error('@@@@processEvents 70', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
               return
             }
+          } else {
+            return
           }
         } else {
           console.error('@@@@processEvents 80', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
@@ -581,26 +585,21 @@ export default ({
         let state = currentLatestEventIdx ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
         if (this.chatroomHasSwitchedFrom(chatroomID)) return
 
-        /* if (state.messages?.length) {
-          this.ephemeral.currentLowestHeight = state.messages[0].height
-          this.ephemeral.currentHighestHeight = state.messages[state.messages.length - 1].height
-        } */
+        console.error('@@@@processEvents XX', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length, currentLatestEventIdx, sbp('state/vuex/getters').ourUsername, chatroomID)
 
         for (const event of this.latestEvents.slice(currentLatestEventIdx)) {
-          const height = event.height()
           state = await sbp('chelonia/in/processMessage', event, state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (this.chatroomHasSwitchedFrom(chatroomID)) return
-          // Using negated inequality to handle 'undefined' / NaN
-          if (!(height >= this.ephemeral.currentLowestHeight)) this.ephemeral.currentLowestHeight = height
-          if (!(height <= this.ephemeral.currentHighestHeight)) this.ephemeral.currentHighestHeight = height
         }
 
+        this.ephemeral.currentLowestHeight = this.latestEvents[0].height()
+        this.ephemeral.currentHighestHeight = this.latestEvents[this.latestEvents.length - 1].height()
+
         const previousLength = this.messageState.contract.messages.length
-        const previousFirst = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
-        if (previousLength === state.messages.length && previousFirst === this.messageState.contract.messages[0]?.height) {
+        if (previousLength === state.messages.length) {
           this.loadMoreMessages(direction)
         }
 
@@ -1126,9 +1125,9 @@ export default ({
 
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
-      if (messageState.messages) {
-        this.ephemeral.currentLowestHeight = messageState.messages[0]?.height
-        this.ephemeral.currentHighestHeight = messageState.messages[messageState.messages.length - 1]?.height
+      if (messageState.messages.length) {
+        this.ephemeral.currentLowestHeight = messageState.messages[0].height
+        this.ephemeral.currentHighestHeight = messageState.messages[messageState.messages.length - 1].height
       } else {
         this.ephemeral.currentLowestHeight = undefined
         this.ephemeral.currentHighestHeight = undefined
