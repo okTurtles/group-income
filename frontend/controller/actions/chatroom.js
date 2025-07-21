@@ -68,7 +68,8 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const rootState = sbp('chelonia/rootState')
   const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
-  if (rootState.kvStoreStatus.identity !== 'loaded') {
+  // NOTE: in some situations `rootState.kvStoreStatus` can be undefined
+  if (rootState.kvStoreStatus?.identity !== 'loaded') {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
     // wrong computations and thus wrong behaviour.
