@@ -168,7 +168,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   groupIdFromChatRoomId (state, getters, rootState) {
     return (chatRoomID: string) => Object.keys(rootState.contracts)
-      .find(cId => rootState.contracts[cId].type === 'gi.contracts/group' &&
+      .find(cId => rootState.contracts[cId]?.type === 'gi.contracts/group' &&
         Object.keys(rootState[cId].chatRooms).includes(chatRoomID))
   },
   chatRoomsInDetail (state, getters, rootState) {

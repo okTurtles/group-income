@@ -306,11 +306,11 @@ sbp('sbp/selectors/register', {
     }
   },
   'backend/server/registerBillableEntity': appendToIndexFactory('_private_billable_entities'),
-  'backend/server/updateSize': function (resourceID: string, size: number) {
+  'backend/server/updateSize': function (resourceID: string, size: number, ultimateOwnerID: ?string) {
     const sizeKey = `_private_size_${resourceID}`
     return updateSize(resourceID, sizeKey, size).then(() => {
       // Because this is relevant key for size accounting, call updateSizeSideEffects
-      return ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID, size })
+      return ownerSizeTotalWorker?.rpcSbp('worker/updateSizeSideEffects', { resourceID, size, ultimateOwnerID })
     })
   },
   'backend/server/updateContractFilesTotalSize': function (resourceID: string, size: number) {
@@ -374,7 +374,7 @@ sbp('sbp/selectors/register', {
 
     return sbp('chelonia/queueInvocation', cid, async () => {
       const owner = await sbp('chelonia.db/get', `_private_owner_${cid}`)
-      if (owner && !ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(owner)
+      if (!ultimateOwnerID) ultimateOwnerID = await lookupUltimateOwner(cid)
       const rawManifest = await sbp('chelonia.db/get', cid)
       const size = await sbp('chelonia.db/get', `_private_size_${cid}`)
       // If running in a persistent queue, already deleted contract should not
