@@ -71,6 +71,9 @@ export default ({
     },
     possibleMentions () {
       return [
+        // Use `reverseNamespaceLookups` instead of `ourContactProfilesById`
+        // so that all known usernames can be treated as a mention, even those
+        // that correspond to contracts we're no longer subscribed to.
         ...Object.keys(this.$store.state.reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
         makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
       ]
