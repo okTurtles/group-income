@@ -46,6 +46,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
         const members = Object.keys(chatRoomState.members)
         const isDMToMyself = members.length === 1 && members[0] === myIdentityId
+        // Explicitly don't filter out on `hasLeft` attribute, so that DMs can
+        // still show all participants, past and present.
         const partners = members
           .filter(memberID => memberID !== myIdentityId)
           .sort((p1, p2) => {

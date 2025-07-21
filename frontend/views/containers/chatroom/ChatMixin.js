@@ -83,7 +83,7 @@ const ChatMixin: Object = {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
           return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
-        numberOfMembers: Object.keys(this.currentChatRoomState.members).length,
+        numberOfMembers: Object.values(this.currentChatRoomState.members).filter(member => !member.hasLeft).length,
         participants: this.ourContactProfilesById // TODO: return only historical contributors
       }
     }

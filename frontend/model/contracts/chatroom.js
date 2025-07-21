@@ -129,7 +129,7 @@ sbp('chelonia/defineContract', {
           if (!state.members) {
             state.members = {}
           }
-          if (state.members[memberID]) {
+          if (state.members[memberID] && !state.members[memberID].hasLeft) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
@@ -224,18 +224,14 @@ sbp('chelonia/defineContract', {
         if (!state.renderingContext) {
           if (!state.members) {
             throw new Error('Missing members state')
-          } else if (!state.members[memberID]) {
+          } else if (!state.members[memberID] || state.members[memberID].hasLeft) {
             throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
         }
 
-        delete state.members[memberID]
+        state.members[memberID].hasLeft = true
 
         if (!state.attributes) return
-        if (state.attributes.type === CHATROOM_TYPES.DIRECT_MESSAGE) {
-          // NOTE: we don't make notification message for leaving in direct messages
-          return
-        }
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(notificationType, { memberID })
