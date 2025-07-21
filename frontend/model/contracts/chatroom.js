@@ -163,7 +163,7 @@ sbp('chelonia/defineContract', {
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
-          if (!state?.members?.[memberID]) {
+          if (!state?.members?.[memberID] || state.members[memberID].hasLeft) {
             return
           }
 
@@ -262,7 +262,7 @@ sbp('chelonia/defineContract', {
         sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state || !!state.members?.[data.memberID] || !state.attributes) {
+          if (!state || !!state.members?.[data.memberID] || state.members[data.memberID].hasLeft || !state.attributes) {
             return
           }
 
@@ -358,7 +358,7 @@ sbp('chelonia/defineContract', {
         // See <https://github.com/okTurtles/group-income/issues/2780>
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me]) {
+          if (!state?.members?.[me] || state.members[me].hasLeft) {
             return
           }
 
@@ -409,7 +409,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me]) {
+          if (!state?.members?.[me] || state.members[me].hasLeft) {
             return
           }
 
@@ -488,7 +488,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me]) {
+          if (!state?.members?.[me] || state.members[me].hasLeft) {
             return
           }
 
@@ -722,7 +722,7 @@ sbp('chelonia/defineContract', {
         hooks: {
           preSendCheck: (_, state) => {
             // Only issue OP_KEY_DEL for non-members
-            return !state.members?.[memberID]
+            return !state.members?.[memberID] || state.members[memberID].hasLeft
           }
         }
       }).catch(e => {
