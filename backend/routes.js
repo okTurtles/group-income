@@ -278,7 +278,7 @@ route.POST('/event', {
         }
       }
       // Store size information
-      await sbp('backend/server/updateSize', deserializedHEAD.contractID, Buffer.byteLength(request.payload))
+      await sbp('backend/server/updateSize', deserializedHEAD.contractID, Buffer.byteLength(request.payload), deserializedHEAD.isFirstMessage && !credentials?.billableContractID ? deserializedHEAD.contractID : undefined)
     } catch (err) {
       console.error(err, chalk.bold.yellow(err.name))
       if (err.name === 'ChelErrorDBBadPreviousHEAD' || err.name === 'ChelErrorAlreadyProcessed') {
