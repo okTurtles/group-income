@@ -782,7 +782,9 @@ export default (sbp('sbp/selectors/register', {
 
     const switchChannelAfterJoined = (contractID: string) => {
       if (contractID === chatRoomID) {
-        if (rootState[chatRoomID]?.members?.[identityContractID]) {
+        const contractState = sbp('chelonia/contract/state', contractID)
+        const memberState = contractState?.members?.[identityContractID]
+        if (memberState && !memberState.hasLeft) {
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID, chatRoomID })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }

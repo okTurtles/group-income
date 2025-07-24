@@ -230,6 +230,7 @@ sbp('chelonia/defineContract', {
         }
 
         state.members[memberID].hasLeft = true
+        // delete state.members[memberID]
 
         if (!state.attributes) return
 
@@ -262,7 +263,7 @@ sbp('chelonia/defineContract', {
         sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state || !!state.members?.[data.memberID] || state.members[data.memberID].hasLeft || !state.attributes) {
+          if (!state || (!!state.members?.[data.memberID] && !state.members[data.memberID].hasLeft) || !state.attributes) {
             return
           }
 
@@ -285,8 +286,9 @@ sbp('chelonia/defineContract', {
       process ({ meta, contractID }, { state }) {
         if (!state.attributes) return
         state.attributes['deletedDate'] = meta.createdDate
+        const activeMemberIds = Object.keys(state.members).filter(memberID => !state.members[memberID].hasLeft)
         sbp('gi.contracts/chatroom/pushSideEffect', contractID,
-          ['gi.contracts/chatroom/referenceTally', contractID, Object.keys(state.members), 'release']
+          ['gi.contracts/chatroom/referenceTally', contractID, activeMemberIds, 'release']
         )
         for (const memberID in state.members) {
           delete state.members[memberID]
@@ -691,7 +693,8 @@ sbp('chelonia/defineContract', {
   methods: {
     'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
       if (state?.members) {
-        sbp('chelonia/contract/release', Object.keys(state.members)).catch(e => {
+        const activeMemberIds = Object.keys(state.members).filter(memberID => !state.members[memberID].hasLeft)
+        sbp('chelonia/contract/release', activeMemberIds).catch(e => {
           console.error('[gi.contracts/chatroom/_cleanup] Error calling release', contractID, e)
         })
       }
