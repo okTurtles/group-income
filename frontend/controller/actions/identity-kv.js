@@ -12,7 +12,7 @@ const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // determine which case it is, and determine all of the names that are currently
 // valid.
 const checkAndAugmentNames = async (currentNames: string[]) => {
-  const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups)
+  const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
   const unconflictedNames = intersection(currentNames, ourNames)
   const recheckedNames = await Promise.all(difference(union(currentNames, ourNames), unconflictedNames).map(async (name) => {
     const value = await sbp('namespace/lookup', name, { skipCache: true })
@@ -352,6 +352,7 @@ export default (sbp('sbp/selectors/register', {
     }
 
     const onconflict = async ({ currentData = [], etag } = {}) => {
+      if (!currentData) currentData = []
       const data = await checkAndAugmentNames(currentData)
 
       data.sort()
@@ -372,7 +373,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NS_CACHE,
-      data: null,
+      data: Object.keys(sbp('state/vuex/state').namespaceLookups || {}).sort(),
       onconflict
     })
   },
@@ -380,7 +381,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentData = await sbp('gi.actions/identity/kv/fetchCachedNames')
 
-      await checkAndAugmentNames(currentData)
+      await checkAndAugmentNames(currentData || [])
     })
   }
 }): string[])
