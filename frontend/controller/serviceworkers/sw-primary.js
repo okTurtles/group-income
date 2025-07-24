@@ -531,6 +531,13 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
       rootState.notifications.status = data
       break
     }
+    case KV_KEYS.NS_CACHE: {
+      // saveCachedNames will do conflict resolution
+      sbp('gi.actions/identity/kv/saveCachedNames').catch(e => {
+        console.error('[NS_CACHE] Error on processing KV update', e)
+      })
+      break
+    }
     default:
       return
   }
