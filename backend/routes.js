@@ -221,7 +221,7 @@ route.POST('/event', {
           return Boom.unauthorized('This contract type requires ownership information', 'shelter')
         }
         if (process.env.CHELONIA_REGISTRATION_DISABLED) {
-          return Boom.unauthorized('Registration disabled', 'shelter')
+          return Boom.forbidden('Registration disabled')
         }
         // rate limit signups in production
         if (!SIGNUP_LIMIT_DISABLED) {
