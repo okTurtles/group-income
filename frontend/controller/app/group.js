@@ -52,9 +52,10 @@ sbp('okTurtles.events/on', ERROR_JOINING_CHATROOM, ({ identityContractID, groupC
     if (!ourGroups.includes(groupContractID)) return
 
     const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
     if (
       rootState[groupContractID].chatRooms[chatRoomID]?.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
-      (!rootState[chatRoomID]?.members[identityContractID] || rootState[chatRoomID].members[identityContractID].hasLeft)
+      !rootGetters.isJoinedChatRoom(chatRoomID, identityContractID)
     ) {
       sbp('gi.ui/prompt', {
         heading: L('Error joining chatroom'),

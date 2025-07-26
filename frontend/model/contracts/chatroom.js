@@ -118,7 +118,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireInnerSignature(objectOf({
         memberID: optional(string) // user id of joining memberID
       })),
-      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
+      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
 
         if (!memberID) {
@@ -129,7 +129,7 @@ sbp('chelonia/defineContract', {
           if (!state.members) {
             state.members = {}
           }
-          if (state.members[memberID] && !state.members[memberID].hasLeft) {
+          if (getters.isJoinedChatRoomForChatRoom(state, memberID)) {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
@@ -156,14 +156,14 @@ sbp('chelonia/defineContract', {
         )
         addMessage(state, createMessage({ meta, hash, height, state, data: notificationData, innerSigningContractID }))
       },
-      sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state }) {
+      sideEffect ({ data, contractID, hash, meta, innerSigningContractID, height }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
         sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'retain')
 
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
 
-          if (!state?.members?.[memberID] || state.members[memberID].hasLeft) {
+          if (!getters.isJoinedChatRoomForChatRoom(state, memberID)) {
             return
           }
 
@@ -213,7 +213,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         memberID: optional(string) // member to be removed
       }),
-      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state }) {
+      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
         if (!memberID) {
           throw new Error('The removed member must be given either explicitly or implcitly with an inner signature')
@@ -224,7 +224,7 @@ sbp('chelonia/defineContract', {
         if (!state.renderingContext) {
           if (!state.members) {
             throw new Error('Missing members state')
-          } else if (!state.members[memberID] || state.members[memberID].hasLeft) {
+          } else if (!getters.isJoinedChatRoomForChatRoom(state, memberID)) {
             throw new GIChatroomNotMemberError(`Can not leave the chatroom ${contractID} which ${memberID} is not part of`)
           }
         }
@@ -248,7 +248,7 @@ sbp('chelonia/defineContract', {
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
       },
-      async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state }) {
+      async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
         const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
 
@@ -263,7 +263,7 @@ sbp('chelonia/defineContract', {
         sbp('gi.contracts/chatroom/referenceTally', contractID, memberID, 'release')
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state || (!!state.members?.[data.memberID] && !state.members[data.memberID].hasLeft) || !state.attributes) {
+          if (!state || getters.isJoinedChatRoomForChatRoom(state, memberID) || !state.attributes) {
             return
           }
 
@@ -271,7 +271,7 @@ sbp('chelonia/defineContract', {
             sbp('gi.contracts/chatroom/rotateKeys', contractID)
           }
 
-          await sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state)
+          await sbp('gi.contracts/chatroom/removeForeignKeys', contractID, memberID, state, getters)
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/leave/sideEffect] Error at sideEffect', e?.message || e)
         })
@@ -283,10 +283,10 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
-      process ({ meta, contractID }, { state }) {
+      process ({ meta, contractID }, { state, getters }) {
         if (!state.attributes) return
         state.attributes['deletedDate'] = meta.createdDate
-        const activeMemberIds = Object.keys(state.members).filter(memberID => !state.members[memberID].hasLeft)
+        const activeMemberIds = getters.chatRoomActiveMemberIdsForChatRoom(state)
         sbp('gi.contracts/chatroom/pushSideEffect', contractID,
           ['gi.contracts/chatroom/referenceTally', contractID, activeMemberIds, 'release']
         )
@@ -360,7 +360,7 @@ sbp('chelonia/defineContract', {
         // See <https://github.com/okTurtles/group-income/issues/2780>
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me] || state.members[me].hasLeft) {
+          if (!getters.isJoinedChatRoomForChatRoom(state, me)) {
             return
           }
 
@@ -411,7 +411,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me] || state.members[me].hasLeft) {
+          if (!getters.isJoinedChatRoomForChatRoom(state)) {
             return
           }
 
@@ -460,7 +460,7 @@ sbp('chelonia/defineContract', {
           }
         })
       },
-      sideEffect ({ data, contractID, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }, { getters }) {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.identityContractID
 
@@ -490,7 +490,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!state?.members?.[me] || state.members[me].hasLeft) {
+          if (!getters.isJoinedChatRoomForChatRoom(state)) {
             return
           }
 
@@ -707,7 +707,7 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
       })
     },
-    'gi.contracts/chatroom/removeForeignKeys': async (contractID, memberID, state) => {
+    'gi.contracts/chatroom/removeForeignKeys': async (contractID, memberID, state, getters) => {
       const keyIds = await sbp('chelonia/contract/foreignKeysByContractID', state, memberID)
 
       if (!keyIds?.length) return
@@ -725,7 +725,7 @@ sbp('chelonia/defineContract', {
         hooks: {
           preSendCheck: (_, state) => {
             // Only issue OP_KEY_DEL for non-members
-            return !state.members?.[memberID] || state.members[memberID].hasLeft
+            return !getters.isJoinedChatRoomForChatRoom(state, memberID)
           }
         }
       }).catch(e => {

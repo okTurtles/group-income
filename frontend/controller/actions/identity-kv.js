@@ -14,13 +14,19 @@ const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 const checkAndAugmentNames = async (currentNames: string[]) => {
   const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
   const unconflictedNames = intersection(currentNames, ourNames)
-  const recheckedNames = await Promise.all(difference(union(currentNames, ourNames), unconflictedNames).map(async (name) => {
-    const value = await sbp('namespace/lookup', name, { skipCache: true })
+  // Batch the lookups to avoid too many concurrent requests
+  const BATCH_SIZE = 10
+  const namesToCheck = difference(union(currentNames, ourNames), unconflictedNames)
+  const recheckedNames = []
 
-    return value ? name : null
-  })).then((names) => {
-    return names.filter((v) => !!v)
-  })
+  for (let i = 0; i < namesToCheck.length; i += BATCH_SIZE) {
+    const batch = namesToCheck.slice(i, i + BATCH_SIZE)
+    const results = await Promise.all(batch.map(async (name) => {
+      const value = await sbp('namespace/lookup', name, { skipCache: true })
+      return value ? name : null
+    }))
+    recheckedNames.push(...results.filter(v => !!v))
+  }
 
   return union(unconflictedNames, recheckedNames)
 }
@@ -364,7 +370,8 @@ export default (sbp('sbp/selectors/register', {
         for (; i < data.length; i++) {
           if (data[i] !== currentData[i]) break
         }
-        if (i !== data.length) return
+        // If `i` equals `data.length`, the loop has ended and all items matched
+        if (i === data.length) return
       }
 
       return [data, etag]
@@ -381,6 +388,8 @@ export default (sbp('sbp/selectors/register', {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
       const currentData = await sbp('gi.actions/identity/kv/fetchCachedNames')
 
+      // `checkAndAugmentNames` will handle updating the namespace cache as
+      // necessary. The return value isn't needed.
       await checkAndAugmentNames(currentData || [])
     })
   }

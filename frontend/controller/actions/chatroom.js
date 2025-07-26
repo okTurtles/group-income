@@ -262,8 +262,7 @@ export default (sbp('sbp/selectors/register', {
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
-    // $FlowFixMe
-    const activeMemberIds = Object.keys(state.members).filter(memberID => !state.members[memberID].hasLeft)
+    const activeMemberIds = sbp('state/vuex/getters').chatRoomActiveMemberIdsForChatRoom(state)
     return Promise.all(activeMemberIds.map(async (pContractID) => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
       if (!CEKid) {

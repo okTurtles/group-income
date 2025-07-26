@@ -40,7 +40,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         const myIdentityId = getters.ourIdentityContractId
 
         // NOTE: skip DMs whose chatroom contracts are not synced yet
-        if (!chatRoomState || !chatRoomState.members?.[myIdentityId] || chatRoomState.members[myIdentityId].hasLeft) {
+        if (!getters.isJoinedChatRoom(chatRoomID, myIdentityId)) {
           continue
         }
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
@@ -136,8 +136,12 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   isJoinedChatRoom (state, getters, rootState) {
     return (chatRoomID: string, memberID?: string) => {
-      if (!memberID) memberID = getters.ourIdentityContractId
-      return !!rootState[chatRoomID]?.members?.[memberID] && !rootState[chatRoomID].members[memberID].hasLeft
+      return getters.isJoinedChatRoomForChatRoom(rootState[chatRoomID], memberID)
+    }
+  },
+  chatRoomActiveMemberIds (state, getters, rootState) {
+    return (chatRoomID: string) => {
+      return getters.chatRoomActiveMemberIdsForChatRoom(rootState[chatRoomID])
     }
   },
   currentChatVm (state, getters, rootState) {
@@ -181,7 +185,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     const myIdentityId = rootState.loggedIn.identityContractID
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
-      if (chatRoom && chatRoom.attributes && chatRoom.members[myIdentityId] && !chatRoom.members[myIdentityId].hasLeft) {
+      if (getters.isJoinedChatRoom(contractID, myIdentityId)) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
