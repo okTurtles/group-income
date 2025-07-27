@@ -43,7 +43,8 @@ export default ({
       }
     },
     isSameSender: Boolean,
-    isMsgSender: Boolean
+    isMsgSender: Boolean,
+    isFocused: Boolean
   },
   computed: {
     ...mapGetters(['userDisplayNameFromID', 'isGroupDirectMessage', 'currentChatRoomId']),

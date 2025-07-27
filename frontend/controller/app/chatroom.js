@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_CHATROOM, LEFT_CHATROOM, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
+import { DELETED_CHATROOM, JOINED_CHATROOM, LEFT_CHATROOM, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
 
 const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, chatRoomID }) => {
   const rootState = sbp('state/vuex/state')
@@ -42,7 +42,7 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
 })
 sbp('okTurtles.events/on', LEFT_CHATROOM, switchCurrentChatRoomHandler)
 sbp('okTurtles.events/on', DELETED_CHATROOM, switchCurrentChatRoomHandler)
-sbp('okTurtles.events/on', NEW_CHATROOM_UNREAD_POSITION, ({ chatRoomID, messageHash }) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, ({ chatRoomID, messageHash }) => {
   if (messageHash) {
     sbp('state/vuex/commit', 'setChatRoomScrollPosition', { chatRoomID, messageHash })
   } else {
