@@ -50,7 +50,7 @@
         dynamic-scroller-item(
           :item='message'
           :active='active'
-          :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash]]'
+          :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
         )
           .c-divider(
@@ -159,7 +159,7 @@ import {
 import { CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, throttle, delay } from 'turtledash'
+import { cloneDeep, debounce, has, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
@@ -416,8 +416,15 @@ export default ({
     setMessages: debounce(function () {
       const newMessages = this.messageState.contract?.messages || []
       if (this.ephemeral.messages === newMessages) return
+      const attrs = ['hash', 'text', 'from', 'type', 'attachments', 'proposal', 'pollData', 'datetime', 'updatedDate', 'emoticons', 'delete', 'notification', 'pinnedBy', 'relyingMessage']
+      for (const message of newMessages) {
+        for (const attr of attrs) {
+          if (!has(message, attr)) Vue.set(message, attr, undefined)
+        }
+      }
+      const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages
-      this.rerenderEvents()
+      this.rerenderEvents(currentVisibleMessage)
     }, 100),
     * visibleMessageIterator () {
       const scroller = this.$refs.conversation.$refs.scroller
@@ -425,6 +432,7 @@ export default ({
 
       for (let i = 0; i < messages.length; i++) {
         const msg = messages[i]
+        console.error('@@@@visibleMessageIterator', scroller?.$_startIndex ?? 0, scroller?.$_endIndex ?? this.ephemeral.messages.length, i, this.isMessageVisible(msg.hash))
         if (!this.isMessageVisible(msg.hash)) continue
         yield msg
       }
@@ -444,18 +452,13 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
-      const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
-      // NOTE: mhash is a query for scrolling to a particular message
-      //       when chat-room is done with the initial render.
-      //       (refer to 'copyMessageLink' method in MessageBase.vue)
-      const { mhash } = this.$route.query
-      const messageHashToScroll = mhash || this.currentChatRoomScrollPosition || readUntilPosition
-      const messages = this.messageState.contract.messages || []
       const instance = {}
+      const messages = this.messageState.contract.messages || []
+      const messageHashToScroll = this.ephemeral.initialScroll.hash
       const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
 
-      console.error('@@@@loadMoreMessages1', direction)
-      if (messages.length && !this.ephemeral.messagesInitiated && shouldLoadMoreEvents) {
+      console.error('@@@@loadMoreMessages1', direction, this.ephemeral.messagesInitiated, shouldLoadMoreEvents)
+      if (shouldLoadMoreEvents) {
         console.error('@@@@loadMoreMessages2', direction)
         if (this.ephemeral.loadingUp) return
         this.ephemeral.loadingUp = instance
@@ -518,8 +521,8 @@ export default ({
       }
 
       if (!this.ephemeral.messagesInitiated) {
+        this.ephemeral.messagesInitiated = true
         this.setStartNewMessageIndex()
-        this.ephemeral.initialScroll.hash = messageHashToScroll
       }
 
       return true
@@ -553,7 +556,7 @@ export default ({
               console.error('@@@@processEvents 20', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
               this.latestEvents = deserializedEvents
             } else {
-              console.error('@@@@processEvents 30', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length)
+              console.error('@@@@processEvents 30', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length, heightOfFirstEvent, heightOfFirstExistingEvent, heightOfLastExistingEvent)
               return
             }
           } else if (heightOfFirstEvent + deserializedEvents.length > heightOfLastExistingEvent) {
@@ -588,7 +591,7 @@ export default ({
         console.error('@@@@processEvents XX', replaceIfGap, events.length, direction, existingLength, this.latestEvents.length, currentLatestEventIdx, sbp('state/vuex/getters').ourUsername, chatroomID)
 
         for (const event of this.latestEvents.slice(currentLatestEventIdx)) {
-          state = await sbp('chelonia/in/processMessage', event, state)
+          state = await sbp('chelonia/in/processMessage', event.serialize(), state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (this.chatroomHasSwitchedFrom(chatroomID)) return
         }
@@ -597,9 +600,10 @@ export default ({
         this.ephemeral.currentHighestHeight = this.latestEvents[this.latestEvents.length - 1].height()
 
         const previousLength = this.messageState.contract.messages.length
+        const previousFirstHeight = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
-        if (previousLength === state.messages.length) {
+        if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.contract.messages[0].height)) {
           this.loadMoreMessages(direction)
         }
 
@@ -854,8 +858,9 @@ export default ({
         scrollAndHighlight(msgIndex)
       } else {
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+        console.error('@@@@scrollToMessage eventsBetween', messageHash, msgIndex)
         const events =
-          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.ephemeral.currentLowestHeight, offset: limit / 2, limit, stream: false })
+          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.latestHeight ?? Number.POSITIVE_INFINITY, offset: limit / 2, limit, stream: false })
             .catch((e) => {
               console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
             })
@@ -1124,14 +1129,24 @@ export default ({
       if (this.chatroomHasSwitchedFrom(chatRoomID)) return
 
       this.latestEvents = []
-      Vue.set(this.messageState, 'contract', messageState)
-      if (messageState.messages.length) {
-        this.ephemeral.currentLowestHeight = messageState.messages[0].height
-        this.ephemeral.currentHighestHeight = messageState.messages[messageState.messages.length - 1].height
+      this.ephemeral.currentLowestHeight = undefined
+      if (this.latestHeight && messageState.messages.length) {
+        this.ephemeral.currentHighestHeight = this.latestHeight
       } else {
-        this.ephemeral.currentLowestHeight = undefined
         this.ephemeral.currentHighestHeight = undefined
       }
+      this.ephemeral.unprocessedEvents = []
+      this.ephemeral.isEditing = {}
+      this.ephemeral.focusedEffect = null
+      const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
+      // NOTE: mhash is a query for scrolling to a particular message
+      //       when chat-room is done with the initial render.
+      //       (refer to 'copyMessageLink' method in MessageBase.vue)
+      const { mhash } = this.$route.query
+      this.ephemeral.initialScroll.hash = mhash || this.currentChatRoomScrollPosition || readUntilPosition
+      this.ephemeral.messagesInitiated = !!messageState.messages.length && (!this.ephemeral.initialScroll.hash || !!messageState.messages.find(m => m.hash === this.ephemeral.initialScroll.hash))
+      Vue.set(this.messageState, 'contract', messageState)
+      if (!this.ephemeral.messagesInitiated) this.loadMoreMessages()
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -1149,21 +1164,47 @@ export default ({
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
-    rerenderEvents (direction: 'up' | 'down' = 'down') {
-      console.error('@@@@rerenderEvents', direction)
+    rerenderEvents (topMessage) {
+      console.error('@@@@rerenderEvents', topMessage)
+      if (!this.ephemeral.messagesInitiated) return
       if (this.ephemeral.initialScroll.hash) {
         this.$nextTick(() => {
           this.scrollToInitialPosition()
         })
         return
       } else {
+        // if (isNaN(NaN)) return
+        const conversation = this.$refs.conversation?.$el
+        if (!conversation) {
+          console.error('@@@@rerenderEvents 1')
+          return
+        }
+        if (!topMessage) {
+          console.error('@@@@rerenderEvents 2')
+          return
+        }
+
+        const contractID = this.ephemeral.renderingChatRoomId
+        this.$nextTick(() => {
+          if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight) {
+            console.error('@@@@rerenderEvents 3', this.chatroomHasSwitchedFrom(contractID), conversation.scrollHeight <= conversation.clientHeight)
+            return
+          }
+          const visibleMessageIterator = this.visibleMessageIterator()
+          const { value: newTopMessage } = visibleMessageIterator.next()
+          if (!newTopMessage || topMessage.hash === newTopMessage.hash) {
+            console.error('@@@@rerenderEvents 4', newTopMessage?.hash, topMessage.hash)
+            return
+          }
+          console.error('@@@@rerenderEvents 5 --', topMessage.hash, newTopMessage)
+          this.scrollToMessage(topMessage.hash, false)
+        })
         if (isNaN(NaN)) return
       }
 
       // See https://github.com/Akryum/vue-virtual-scroller/issues/728#issuecomment-1150998238
       const conversation = this.$refs.conversation?.$el
       if (!conversation) return
-      const visibleMessageIterator = this.visibleMessageIterator()
       const contractID = this.ephemeral.renderingChatRoomId
       const oldScrollHeight = conversation.scrollHeight
       const oldClientHeight = conversation.clientHeight
@@ -1172,8 +1213,6 @@ export default ({
       this.ephemeral.x = ref
       conversation.style.overflow = 'hidden'
       // const pos = conversation.scrollHeight - conversation.scrollTop
-
-      const { value: topMessage } = visibleMessageIterator.next()
 
       // if (!this.ephemeral.maintainCurrentPosition) {
       this.$nextTick(() => {
@@ -1598,13 +1637,6 @@ export default ({
           // NOTE: 'return this.processChatroomSwitch()' below would make it more clear that we don't proceed with anything else, but
           //       having return here creates an occasional error saying 'TypeError: Chaining cycle detected for promise'.
           this.processChatroomSwitch()
-        } else {
-          this.ephemeral.messagesInitiated = false
-          this.ephemeral.unprocessedEvents = []
-          this.ephemeral.isEditing = {}
-          this.ephemeral.focusedEffect = null
-          this.ephemeral.listenChatRoomActions = false
-          this.onScrollEvt('down')
         }
       } catch (e) {
         console.error('ChatMain.vue processChatroomSwitch() error:', e)
@@ -1645,6 +1677,7 @@ export default ({
 
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
+        this.ephemeral.messages = []
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
