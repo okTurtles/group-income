@@ -140,7 +140,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     }
   },
   chatRoomActiveMemberIds (state, getters) {
-    return getters.chatRoomActiveMemberIdsForChatRoom(this.currentChatRoomState)
+    return getters.chatRoomActiveMemberIdsForChatRoom(getters.currentChatRoomState)
   },
   currentChatVm (state, getters, rootState) {
     return rootState?.[getters.currentChatRoomId]?._vm || null
