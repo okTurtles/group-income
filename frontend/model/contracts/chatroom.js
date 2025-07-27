@@ -411,7 +411,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!getters.isJoinedChatRoomForChatRoom(state)) {
+          if (!getters.isJoinedChatRoomForChatRoom(state, me)) {
             return
           }
 
@@ -490,7 +490,7 @@ sbp('chelonia/defineContract', {
         // after all side effects from joins and rejoins have been processed.
         sbp('chelonia/queueInvocation', contractID, async () => {
           const state = await sbp('chelonia/contract/state', contractID)
-          if (!getters.isJoinedChatRoomForChatRoom(state)) {
+          if (!getters.isJoinedChatRoomForChatRoom(state, me)) {
             return
           }
 
@@ -693,6 +693,7 @@ sbp('chelonia/defineContract', {
   methods: {
     'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
       if (state?.members) {
+        // Not using a getter because _cleanup doesn't currently take a getter
         const activeMemberIds = Object.keys(state.members).filter(memberID => !state.members[memberID].hasLeft)
         sbp('chelonia/contract/release', activeMemberIds).catch(e => {
           console.error('[gi.contracts/chatroom/_cleanup] Error calling release', contractID, e)

@@ -139,10 +139,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       return getters.isJoinedChatRoomForChatRoom(rootState[chatRoomID], memberID)
     }
   },
-  chatRoomActiveMemberIds (state, getters, rootState) {
-    return (chatRoomID: string) => {
-      return getters.chatRoomActiveMemberIdsForChatRoom(rootState[chatRoomID])
-    }
+  chatRoomActiveMemberIds (state, getters) {
+    return getters.chatRoomActiveMemberIdsForChatRoom(this.currentChatRoomState)
   },
   currentChatVm (state, getters, rootState) {
     return rootState?.[getters.currentChatRoomId]?._vm || null
@@ -185,7 +183,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     const myIdentityId = rootState.loggedIn.identityContractID
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
-      if (getters.isJoinedChatRoom(contractID, myIdentityId)) {
+      if (chatRoom?.attributes && getters.isJoinedChatRoom(contractID, myIdentityId)) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,

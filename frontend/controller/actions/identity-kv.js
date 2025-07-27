@@ -22,7 +22,9 @@ const checkAndAugmentNames = async (currentNames: string[]) => {
   for (let i = 0; i < namesToCheck.length; i += BATCH_SIZE) {
     const batch = namesToCheck.slice(i, i + BATCH_SIZE)
     const results = await Promise.all(batch.map(async (name) => {
-      const value = await sbp('namespace/lookup', name, { skipCache: true })
+      const value = await sbp('namespace/lookup', name, { skipCache: true }).catch(e => {
+        console.warn(`[checkAndAugmentNames] Failed to lookup name ${name}:`, e)
+      })
       return value ? name : null
     }))
     recheckedNames.push(...results.filter(v => !!v))
@@ -354,7 +356,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/saveCachedNames': () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
-      throw new Error('Unable to update notification status without an active session')
+      throw new Error('Unable to update cached names without an active session')
     }
 
     const onconflict = async ({ currentData = [], etag } = {}) => {
