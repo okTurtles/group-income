@@ -263,8 +263,8 @@ export default (sbp('sbp/selectors/register', {
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
-    // $FlowFixMe
-    return Promise.all(Object.keys(state.members).map(async (pContractID) => {
+    const activeMemberIds = sbp('state/vuex/getters').chatRoomActiveMemberIdsForChatRoom(state)
+    return Promise.all(activeMemberIds.map(async (pContractID) => {
       const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
       if (!CEKid) {
         console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
