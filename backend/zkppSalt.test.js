@@ -5,7 +5,7 @@ import { initDB } from './database.js'
 import 'should-sinon'
 import nacl from 'tweetnacl'
 
-import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '~/shared/zkppConstants.js'
+import { AUTHSALT, CONTRACTSALT, CS, SALT_LENGTH_IN_OCTETS, SU } from '@chelonia/lib/zkppConstants'
 import { getChallenge, getContractSalt, redeemSaltRegistrationToken, register, registrationKey, updateContractSalt } from './zkppSalt.js'
 
 const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
