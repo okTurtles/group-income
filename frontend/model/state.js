@@ -6,6 +6,7 @@
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
+import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
@@ -88,6 +89,16 @@ const initialState = {
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },
+  },
+  kvStoreStatus: {
+    // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
+    //          via kv-store so it's shared across multiple devices of the same user.)
+    //          and thus sometimes need to know whether kv-store data has been loaded from the server and
+    //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
+    //
+    // { [name]: 'non-init' | 'loading' | 'loaded' }
+    identity: KV_LOAD_STATUS.NON_INIT,
+    group: KV_LOAD_STATUS.NON_INIT
   }
 }
 
@@ -134,6 +145,12 @@ sbp('sbp/selectors/register', {
     if (!state.preferences) {
       state.preferences = {}
     }
+    if (!state.kvStoreStatus) {
+      state.kvStoreStatus = {
+        identity: KV_LOAD_STATUS.NON_INIT,
+        group: KV_LOAD_STATUS.NON_INIT
+      }
+    }
     if (state.periodicNotificationAlreadyFiredMap) {
       if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
         state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
@@ -162,6 +179,23 @@ sbp('sbp/selectors/register', {
         console.error('[state/vuex/postUpgradeVerification] Error during lookup', e)
       })
     })
+
+    // See issue #2868.
+    // Sometimes it seems like `namespaceLookups` and `reverseNamespaceLookups`
+    // go out of sync. If this happens, the following ensures that they're
+    // consistent again
+    ;(() => {
+      Object.entries(state.namespaceLookups)
+        .filter(([, value]) => !state.reverseNamespaceLookups[value])
+        .forEach(([name, value]) => {
+          state.reverseNamespaceLookups[value] = name
+        })
+      Object.entries(state.reverseNamespaceLookups)
+        .filter(([, name]) => !state.namespaceLookups[name])
+        .forEach(([value, name]) => {
+          state.namespaceLookups[name] = value
+        })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
@@ -211,6 +245,14 @@ const mutations = {
   },
   setLastLoggedIn (state, [groupID, value]) {
     Vue.set(state.lastLoggedIn, groupID, value)
+  },
+  setKvStoreStatus (state, { name, status }) {
+    if (name && status) {
+      if (!Object.values(KV_LOAD_STATUS).includes(status)) {
+        return console.warn(`bad setKvStoreStatus for ${name}: ${status}`)
+      }
+      state.kvStoreStatus[name] = status
+    }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state

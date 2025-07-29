@@ -63,7 +63,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourContactProfilesById',
       'usernameFromID',
       'chatRoomsInDetail'
     ]),
@@ -72,7 +71,12 @@ export default ({
     },
     possibleMentions () {
       return [
-        ...Object.keys(this.ourContactProfilesById).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+        // Use `reverseNamespaceLookups` instead of `ourContactProfilesById`
+        // so that all known usernames can be treated as a mention, even those
+        // that correspond to contracts we don't subscribe to.
+        // For example, if someone else leaves a group and then we join from
+        // a different device, we might not sync their contract.
+        ...Object.keys(this.$store.state.reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
         makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
       ]
     },

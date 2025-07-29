@@ -1,10 +1,37 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
-import { KV_QUEUE, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE } from '~/frontend/utils/events.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { debounce, difference, intersection, union } from 'turtledash'
+import { KV_QUEUE, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
+// Name discrepancies between the KV store and `namespaceLookups` may occur
+// due to being unsubcribed from an identity contract (e.g., someone has left
+// a group) or due to the username being deleted. This function attempts to
+// determine which case it is, and determine all of the names that are currently
+// valid.
+const checkAndAugmentNames = async (currentNames: string[]) => {
+  const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
+  const unconflictedNames = intersection(currentNames, ourNames)
+  // Batch the lookups to avoid too many concurrent requests
+  const BATCH_SIZE = 10
+  const namesToCheck = difference(union(currentNames, ourNames), unconflictedNames)
+  const recheckedNames = []
+
+  for (let i = 0; i < namesToCheck.length; i += BATCH_SIZE) {
+    const batch = namesToCheck.slice(i, i + BATCH_SIZE)
+    const results = await Promise.all(batch.map(async (name) => {
+      const value = await sbp('namespace/lookup', name, { skipCache: true }).catch(e => {
+        console.warn(`[checkAndAugmentNames] Failed to lookup name ${name}:`, e)
+      })
+      return value ? name : null
+    }))
+    recheckedNames.push(...results.filter(v => !!v))
+  }
+
+  return union(unconflictedNames, recheckedNames)
+}
 
 sbp('okTurtles.events/on', ONLINE, () => {
   if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
@@ -18,10 +45,15 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADING })
+
     await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
     await sbp('gi.actions/identity/kv/loadPreferences')
     await sbp('gi.actions/identity/kv/loadNotificationStatus')
+    await sbp('gi.actions/identity/kv/loadCachedNames')
+
     console.info('identity key-value store data loaded!')
+    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADED })
   },
   // Unread Messages
   'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
@@ -312,5 +344,59 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('gi.actions/identity/kv/saveNotificationStatus', { onconflict: getUpdatedNotificationStatus })
     })
+  },
+  // Namespace lookups
+  'gi.actions/identity/kv/fetchCachedNames': async () => {
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to fetch cached names without an active session')
+    }
+    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NS_CACHE))?.data || []
+  },
+  'gi.actions/identity/kv/saveCachedNames': () => {
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update cached names without an active session')
+    }
+
+    const onconflict = async ({ currentData = [], etag } = {}) => {
+      if (!currentData) currentData = []
+      const data = await checkAndAugmentNames(currentData)
+
+      data.sort()
+      currentData.sort()
+
+      // If there's no difference, there's no point in sending an update
+      if (data.length === currentData.length) {
+        let i = 0
+        for (; i < data.length; i++) {
+          if (data[i] !== currentData[i]) break
+        }
+        // If `i` equals `data.length`, the loop has ended and all items matched
+        if (i === data.length) return
+      }
+
+      return [data, etag]
+    }
+
+    return sbp('chelonia/kv/queuedSet', {
+      contractID: identityContractID,
+      key: KV_KEYS.NS_CACHE,
+      data: Object.keys(sbp('state/vuex/state').namespaceLookups || {}).sort(),
+      onconflict
+    })
+  },
+  'gi.actions/identity/kv/loadCachedNames': () => {
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const currentData = await sbp('gi.actions/identity/kv/fetchCachedNames')
+
+      // `checkAndAugmentNames` will handle updating the namespace cache as
+      // necessary. The return value isn't needed.
+      await checkAndAugmentNames(currentData || [])
+    })
   }
 }): string[])
+
+// Debounced so that `checkAndAugmentNames` (which may affect the names
+// being stored) doesn't result in too many calls to saveCachedNames.
+sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => sbp('gi.actions/identity/kv/saveCachedNames'), 300))

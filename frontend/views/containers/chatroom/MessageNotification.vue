@@ -62,7 +62,9 @@ export default ({
         //       But it's not removed because it could be useful in the future.
         onDirectMessage: {
           [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member: {displayName}', { displayName }),
-          [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined')
+          [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined'),
+          [MESSAGE_NOTIFICATIONS.LEAVE_MEMBER]: L('Left'),
+          [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member {displayName}', { displayName })
         },
         default: {
           [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),

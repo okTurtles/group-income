@@ -149,13 +149,36 @@ sbp('sbp/selectors/register', {
 
     // Map to store: ultimateOwnerID -> [totalDelta, Set<originalResourceIDs>]
     const ultimateOwners = new Map()
+    // 'Orphans' in this context are deleted contracts for which we can't find
+    // an owner (because the owner information was deleted when the contract was
+    // deleted). In these cases, delta processing is deferred until a later
+    // execution time during which the actual ultimate owner is known
+    // (since this is given at contract deletion time and stored in
+    // `cachedUltimateOwnerMap`). See issue #2865 and PR #2869 for details.
+    const orphansSet = new Set()
     // Phase 1: Find the ultimate owner for each resource and aggregate deltas.
     await Promise.all(deltaEntries.map(async ([contractID, delta]) => {
       // --- Potentially Slow Owner Lookup Loop ---
-      const ownerID = cachedUltimateOwnerMap.get(contractID) || await lookupUltimateOwner(contractID)
+      const cachedOwnerID = cachedUltimateOwnerMap.get(contractID)
+      const ownerID = cachedOwnerID || await lookupUltimateOwner(contractID)
+      // If the delta update is for an orphaned resource, it likely was
+      // deleted and needs special handling
+      if (!cachedOwnerID && ownerID === contractID) {
+        // Verify that the resource no longer exists
+        if (!(await sbp('chelonia.db/get', contractID))) {
+          // If so, add it back to `updatedSizeMap`, so that it gets processed
+          // later, when resource deletion manually sets `cachedOwnerID`
+          const current = updatedSizeMap.get(contractID) ?? 0
+          updatedSizeMap.set(contractID, current + delta)
+          // Deleted resources can't be processed from scratch, so add them to
+          // a set to later remove them from the temporary index.
+          orphansSet.add(contractID)
+          return
+        }
+      }
       cachedUltimateOwnerMap.delete(contractID)
       // Aggregate delta for the ultimate owner.
-      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set(ownerID)]
+      const [val, ownedResourcesSet] = ultimateOwners.get(ownerID) || [0, new Set([ownerID])]
       ownedResourcesSet.add(contractID)
       ultimateOwners.set(ownerID, [val + delta, ownedResourcesSet])
     }))
@@ -168,6 +191,7 @@ sbp('sbp/selectors/register', {
       // Remove the processed resource IDs from the persistent temporary index
       await removeFromTempIndex(Array.from(contributingResources))
     }))
+    await removeFromTempIndex(Array.from(orphansSet))
 
     // Reschedule the task for the next interval
     setTimeout(sbp, TASK_TIME_INTERVAL, 'backend/server/computeSizeTaskDeltas')

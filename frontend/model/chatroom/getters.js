@@ -40,12 +40,14 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         const myIdentityId = getters.ourIdentityContractId
 
         // NOTE: skip DMs whose chatroom contracts are not synced yet
-        if (!chatRoomState || !chatRoomState.members?.[myIdentityId]) {
+        if (!getters.isJoinedChatRoom(chatRoomID, myIdentityId)) {
           continue
         }
         // NOTE: direct messages should be filtered to the ones which are visible and of active group members
         const members = Object.keys(chatRoomState.members)
         const isDMToMyself = members.length === 1 && members[0] === myIdentityId
+        // Explicitly don't filter out on `hasLeft` attribute, so that DMs can
+        // still show all participants, past and present.
         const partners = members
           .filter(memberID => memberID !== myIdentityId)
           .sort((p1, p2) => {
@@ -53,7 +55,12 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
             const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
             return p1JoinedDate - p2JoinedDate
           })
-        const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
+        // The following line ensured that DMs for former members were hidden.
+        // Until the DM global dashboard is implemented, this check has been
+        // replaced with a check for all members (past and present), so that
+        // a conversation doesn't suddenly become inaccessible.
+        // // const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
+        const hasActiveMember = partners.some(memberID => !!rootState[groupID]?.profiles[memberID])
         if (directMessageSettings.visible && (isDMToMyself || hasActiveMember)) {
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
@@ -128,7 +135,12 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     }
   },
   isJoinedChatRoom (state, getters, rootState) {
-    return (chatRoomID: string, memberID?: string) => !!rootState[chatRoomID]?.members?.[memberID || getters.ourIdentityContractId]
+    return (chatRoomID: string, memberID?: string) => {
+      return getters.isJoinedChatRoomForChatRoom(rootState[chatRoomID], memberID)
+    }
+  },
+  chatRoomActiveMemberIds (state, getters) {
+    return getters.chatRoomActiveMemberIdsForChatRoom(getters.currentChatRoomState)
   },
   currentChatVm (state, getters, rootState) {
     return rootState?.[getters.currentChatRoomId]?._vm || null
@@ -163,7 +175,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   groupIdFromChatRoomId (state, getters, rootState) {
     return (chatRoomID: string) => Object.keys(rootState.contracts)
-      .find(cId => rootState.contracts[cId].type === 'gi.contracts/group' &&
+      .find(cId => rootState.contracts[cId]?.type === 'gi.contracts/group' &&
         Object.keys(rootState[cId].chatRooms).includes(chatRoomID))
   },
   chatRoomsInDetail (state, getters, rootState) {
@@ -171,7 +183,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     const myIdentityId = rootState.loggedIn.identityContractID
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = rootState[contractID]
-      if (chatRoom && chatRoom.attributes && chatRoom.members[myIdentityId]) {
+      if (chatRoom?.attributes && getters.isJoinedChatRoom(contractID, myIdentityId)) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
