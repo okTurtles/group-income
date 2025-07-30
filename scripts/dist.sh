@@ -9,7 +9,7 @@ VERSION=$(grep '"version"' package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/
 TAR_FLAGS="--no-acls"
 
 # prevent ._ files from being included in the archive on macOS
-[ "$(uname -s)" = "Darwin" ] && TAR_FLAGS="--no-mac-metadata --no-acls"
+[ "$(uname -s)" = "Darwin" ] && TAR_FLAGS+=" --no-mac-metadata"
 
 grunt clean
 grunt deploy
