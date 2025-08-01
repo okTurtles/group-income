@@ -4,7 +4,6 @@
   data-test='menuContent'
 )
   .c-content-wrapper(
-    v-if='isActive'
     v-on-clickaway='closeMenu'
   )
     slot

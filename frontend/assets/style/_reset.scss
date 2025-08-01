@@ -3,6 +3,7 @@
 html,
 body,
 // p,
+menu,
 ol,
 ul,
 li,
@@ -38,7 +39,7 @@ h6 {
 }
 
 // List
-ul {
+menu, ul {
   list-style: none;
 }
 

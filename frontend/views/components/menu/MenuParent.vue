@@ -1,5 +1,5 @@
 <template lang='pug'>
-  .c-menu
+  details.c-menu(:ref='"details"' @toggle='handleToggle')
     slot
 </template>
 
@@ -24,17 +24,25 @@ export default ({
     }
   },
   methods: {
-    handleTrigger () {
-      this.config.Menu.isActive = true
+    handleToggle (e) {
+      // Weird browser bug
+      if (e.oldState === e.newState) {
+        e.target.open = !e.target.open
+        return
+      }
+      if (this.config.Menu.isActive === e.target.open) return
+      this.config.Menu.isActive = e.target.open
       this.$emit(this.config.Menu.isActive ? 'menu-open' : 'menu-close')
+    },
+    handleTrigger () {
+      this.$refs.details.open = true
     },
     handleSelect (itemId) {
       this.closeMenu()
       this.$emit('select', itemId)
     },
     closeMenu () {
-      this.config.Menu.isActive = false
-      this.$emit('menu-close')
+      this.$refs.details.open = false
     }
   }
 }: Object)

@@ -1,5 +1,5 @@
 <template lang='pug'>
-menu-parent.c-message-menu(ref='menu')
+.c-message-menu(ref='menu')
   .c-actions
     tooltip(
       direction='top'
@@ -44,29 +44,28 @@ menu-parent.c-message-menu(ref='menu')
       )
         i.icon-undo
 
-    menu-trigger.is-icon-small(
-      :aria-label='L("More options")'
-      @trigger='moreOptionsTriggered'
-    )
-      i.icon-ellipsis-h
-
-  message-actions-mobile(
-    v-if='chatMainConfig.isPhone'
-    :options='moreOptions'
-    @select='action'
-  )
-
-  menu-content(v-else :class='{ "is-to-down": isToDown }')
-    ul
-      template(v-for='(option, index) in moreOptions')
-        menu-item.is-icon-small(
-          :key='index'
-          tag='button'
-          :data-test='option.action'
-          @click.stop='action(option.action, $event)'
-        )
-          i(:class='`icon-${option.icon}`')
-          span {{ option.name }}
+    menu-parent
+      menu-trigger.is-icon-small(
+        :aria-label='L("More options")'
+        @trigger='moreOptionsTriggered'
+      )
+        i.icon-ellipsis-h
+      message-actions-mobile(
+        v-if='chatMainConfig.isPhone'
+        :options='moreOptions'
+        @select='action'
+      )
+      menu-content(v-else :class='{ "is-to-down": isToDown }')
+        menu
+          template(v-for='(option, index) in moreOptions')
+            menu-item.is-icon-small(
+              :key='index'
+              tag='button'
+              :data-test='option.action'
+              @click.stop='action(option.action, $event)'
+            )
+              i(:class='`icon-${option.icon}`')
+              span {{ option.name }}
 </template>
 
 <script>
@@ -276,12 +275,17 @@ export default ({
   }
 }
 
-.c-menu {
+.c-message-menu {
   position: absolute;
   right: 0;
   top: 0;
   height: 100%;
   width: auto;
+}
+
+.c-menu {
+  /*
+  */
 
   .c-content {
     @include tablet {
