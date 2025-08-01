@@ -427,6 +427,7 @@ export default ({
       this.rerenderEvents(currentVisibleMessage)
     }, 100),
     * visibleMessageIterator () {
+      if (!this.$refs.conversation) return
       const scroller = this.$refs.conversation.$refs.scroller
       const messages = this.ephemeral.messages.slice(scroller?.$_startIndex ?? 0, scroller?.$_endIndex ?? this.ephemeral.messages.length)
 
@@ -603,7 +604,7 @@ export default ({
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
-        if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.contract.messages[0].height)) {
+        if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
           this.loadMoreMessages(direction)
         }
 
@@ -833,9 +834,9 @@ export default ({
 
         if (effect) {
           console.error('@@@@scrollToMessage highlight 0', messageHash, index)
-          this.$refs.conversation.scrollToItem(index)
           this.$nextTick(() => {
             if (this.chatroomHasSwitchedFrom(contractID)) return
+            this.$refs.conversation.scrollToItem(index)
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
               if (this.ephemeral.focusedEffect !== messageHash) return
@@ -844,7 +845,9 @@ export default ({
           })
         } else {
           if (targetIsLatestMessage) {
-            this.jumpToLatest('instant')
+            this.$nextTick(() => {
+              this.jumpToLatest('instant')
+            })
           } else {
             console.error('@@@@scrollToMessage highlight 2', messageHash, index)
             this.$refs.conversation.scrollToItem(index)
@@ -1212,6 +1215,7 @@ export default ({
       const ref = { r: Math.random() }
       this.ephemeral.x = ref
       conversation.style.overflow = 'hidden'
+      const direction = ''
       // const pos = conversation.scrollHeight - conversation.scrollTop
 
       // if (!this.ephemeral.maintainCurrentPosition) {

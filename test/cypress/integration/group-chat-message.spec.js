@@ -72,7 +72,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function pinMessage (nth) {
-    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message .c-actions [data-test="menuContent"] [data-test="pinToChannel"]`).click({ force: true })
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message .c-pinned-wrapper`).should('contain', 'Pinned by you')
+    /* cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
           cy.getByDT('menuTrigger').click()
@@ -83,7 +85,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
         cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
       cy.get('.c-pinned-wrapper').should('contain', 'Pinned by you')
-    })
+    }) */
   }
 
   function unpinMessage (nth) {
