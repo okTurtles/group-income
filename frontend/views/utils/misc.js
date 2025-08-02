@@ -27,7 +27,7 @@ export const showNavMixin = {
 export function validateURL (url: string): Object {
   const pathOnlyRegExp = /^\/[^\s]*$/
 
-  const response = {
+  const response: any = {
     isValid: false,
     isHttpValid: false,
     isMailtoValid: false,
