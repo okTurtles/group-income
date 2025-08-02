@@ -25,7 +25,22 @@ export const showNavMixin = {
 }
 
 export function validateURL (url: string): Object {
-  const response = {}
+  const pathOnlyRegExp = /^\/[^\s]*$/
+
+  const response = {
+    isValid: false,
+    isHttpValid: false,
+    isMailtoValid: false,
+    url: null
+  }
+
+  if (pathOnlyRegExp.test(url)) {
+    // If the passed URL is a path only string such as '/app/chatroom/chatID', we consider it as a valid URL.
+    response.isValid = true
+    response.isHttpValid = true
+    response.url = url
+    return response
+  }
 
   try {
     const objURL = new URL(url)
