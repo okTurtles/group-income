@@ -46,9 +46,18 @@ component.field(:is='mode === "manual" ? "label" : "div"')
 </template>
 
 <script>
+import { base58btc } from 'multiformats/bases/base58'
 import Tooltip from '@components/Tooltip.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { L } from '@common/common.js'
+
+function generateBase58Password (length = 32) {
+  const bytes = crypto.getRandomValues(new Uint8Array((length)))
+  const encoded = base58btc.encode(bytes).substring(1) // remove the prefix 'z'
+
+  // Truncate to desired length
+  return encoded.slice(0, length)
+}
 
 export default ({
   name: 'PasswordForm',
@@ -101,19 +110,11 @@ export default ({
     generateRandomPassword (pwLen = 32) {
       let genPassword = ''
 
-      if (window?.Cypress) {
+      if (window.Cypress) {
         // For easier debugging, use the common default password in Cypress test.
         genPassword = '123456789'
       } else {
-        const bytes = new Uint8Array(Math.ceil(pwLen / 2))
-        crypto.getRandomValues(bytes)
-
-        genPassword = Array.from(bytes).map(b => b.toString(36) // [0-9a-z] => 36 characters
-          .padStart(2, '0')).join('')
-
-        if (pwLen % 2 === 1) {
-          genPassword = genPassword.slice(1)
-        }
+        genPassword = generateBase58Password(pwLen)
       }
 
       this.ephemeral.randomPassword = genPassword
