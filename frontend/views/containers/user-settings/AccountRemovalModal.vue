@@ -40,7 +40,6 @@
         :label='L("Password")'
         :value='form'
         :$v='$v'
-        :hasIconRight='true'
         :showPlaceholder='false'
         :showPassword='false'
         size='is-large'

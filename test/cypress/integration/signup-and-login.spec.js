@@ -53,24 +53,28 @@ describe('Signup, Profile and Login', () => {
     cy.giLogout({ bypassUI: true })
   })
 
-  it('sign up button remains disabled if passwords are not the same or terms are not agreed', () => {
+  it('sign up button remains disabled if terms are not agreed or you have not saved the password', () => {
     const user2 = `user2-${userId}`
     const password = '123456789'
-    const wrongPassword = 'wRoNgPaSsWoRd123'
 
     cy.getByDT('signupBtn').click()
 
     cy.getByDT('signName').type(user2)
-    cy.getByDT('password').type(password)
-    cy.getByDT('passwordConfirm').type(wrongPassword)
-    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
+    cy.getByDT('password').should('have.text', password)
     cy.getByDT('signSubmit').should('be.disabled')
 
-    cy.getByDT('passwordConfirm').type('{selectall}{del}' + password)
+    cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
+    cy.getByDT('signTerms').check({ force: true }).should('be.checked')
+    cy.getByDT('signSubmit').should('not.be.disabled')
+
     cy.getByDT('signTerms').uncheck({ force: true }).should('not.be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
+    cy.getByDT('savedPassword').uncheck({ force: true }).should('not.be.checked')
+    cy.getByDT('signSubmit').should('be.disabled')
+
+    cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
     cy.getByDT('signSubmit').should('not.be.disabled')
 
     cy.closeModal()
