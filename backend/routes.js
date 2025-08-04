@@ -217,7 +217,12 @@ route.POST('/event', {
         const manifest = await sbp('chelonia.db/get', deserializedHEAD.head.manifest)
         const parsedManifest = JSON.parse(manifest)
         const { name } = JSON.parse(parsedManifest.body)
-        if (name !== 'gi.contracts/identity') return Boom.unauthorized('This contract type requires ownership information', 'shelter')
+        if (name !== 'gi.contracts/identity') {
+          return Boom.unauthorized('This contract type requires ownership information', 'shelter')
+        }
+        if (process.env.CHELONIA_REGISTRATION_DISABLED) {
+          return Boom.forbidden('Registration disabled')
+        }
         // rate limit signups in production
         if (!SIGNUP_LIMIT_DISABLED) {
           try {

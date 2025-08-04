@@ -713,7 +713,8 @@ export default (sbp('sbp/selectors/register', {
 
     const switchChannelAfterJoined = (contractID: string) => {
       if (contractID === message.contractID()) {
-        if (sbp('chelonia/contract/state', message.contractID())?.members?.[identityContractID]) {
+        const getters = sbp('state/vuex/getters')
+        if (getters.isJoinedChatRoom(contractID, identityContractID)) {
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }

@@ -428,7 +428,7 @@ export default ({
     members () {
       return Object.keys(this.chatRoomMembers)
         .map(memberID => {
-          const { username, displayName, picture } = this.ourContactProfilesById[memberID]
+          const { username, displayName, picture } = this.ourContactProfilesById[memberID] || {}
           return {
             memberID,
             username,

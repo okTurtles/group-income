@@ -179,6 +179,23 @@ sbp('sbp/selectors/register', {
         console.error('[state/vuex/postUpgradeVerification] Error during lookup', e)
       })
     })
+
+    // See issue #2868.
+    // Sometimes it seems like `namespaceLookups` and `reverseNamespaceLookups`
+    // go out of sync. If this happens, the following ensures that they're
+    // consistent again
+    ;(() => {
+      Object.entries(state.namespaceLookups)
+        .filter(([, value]) => !state.reverseNamespaceLookups[value])
+        .forEach(([name, value]) => {
+          state.reverseNamespaceLookups[value] = name
+        })
+      Object.entries(state.reverseNamespaceLookups)
+        .filter(([, name]) => !state.namespaceLookups[name])
+        .forEach(([value, name]) => {
+          state.namespaceLookups[name] = value
+        })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

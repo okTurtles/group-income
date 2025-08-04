@@ -49,7 +49,8 @@ const ChatMixin: Object = {
       'ourIdentityContractId',
       'isDirectMessage',
       'isGroupDirectMessage',
-      'isGroupDirectMessageToMyself'
+      'isGroupDirectMessageToMyself',
+      'chatRoomActiveMemberIds'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -83,7 +84,7 @@ const ChatMixin: Object = {
           const { displayName, picture, email } = this.globalProfile(memberID) || {}
           return [memberID, { ...this.currentChatRoomState.members[memberID], displayName, picture, email }]
         })),
-        numberOfMembers: Object.keys(this.currentChatRoomState.members).length,
+        numberOfMembers: this.chatRoomActiveMemberIds.length,
         participants: this.ourContactProfilesById // TODO: return only historical contributors
       }
     }
