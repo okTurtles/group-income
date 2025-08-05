@@ -24,9 +24,7 @@ export const showNavMixin = {
   }
 }
 
-export function validateURL (url: string): Object {
-  const pathOnlyRegExp = /^\/[^\s]*$/
-
+export function validateURL (url: string, acceptPathOnly: boolean = false): Object {
   const response: any = {
     isValid: false,
     isHttpValid: false,
@@ -34,12 +32,29 @@ export function validateURL (url: string): Object {
     url: null
   }
 
-  if (pathOnlyRegExp.test(url)) {
-    // If the passed URL is a path only string such as '/app/chatroom/chatID', we consider it as a valid URL.
-    response.isValid = true
-    response.isHttpValid = true
-    response.url = url
-    return response
+  if (acceptPathOnly) {
+    const regExpMap = {
+      pathOnly: /^\/[^\s]*$/, // eg. /app/chatroom/chatID, /to-a-path,
+      slugPiece: /^[a-zA-Z0-9_-]+$/, // eg. contributions, payments, dashboard, abc_123
+      slugPieceWithLeadingSharp: /^#[a-zA-Z0-9_-]+$/ // eg. #hello, #user_123, #valid-ID
+    }
+
+    if (regExpMap.pathOnly.test(url) && url.startsWith('/app')) {
+      // Case 1. if the url is a path starts with '/app', take it as a route to an in-app page.
+      const path = url.split('/app')[1]
+      url = location.origin + '/app' + path
+    } else if (regExpMap.slugPiece.test(url)) {
+      // Case 2. if the passed url is a string that does not contain any URL-related special characters(/, #, etc.), assume it is a route to an in-app page too.
+      url = location.origin + `/app/${url}`
+    } else if (regExpMap.pathOnly.test(url) || regExpMap.slugPieceWithLeadingSharp.test(url)) {
+      // Case 3. Rest of the valid cases:
+      // 1. a path-only string that is not an in-app route eg. /to-a-path
+      // 2. anchor-link eg. #hello, #user_123, #valid-ID
+      response.isValid = true
+      response.url = url
+
+      return response
+    }
   }
 
   try {
