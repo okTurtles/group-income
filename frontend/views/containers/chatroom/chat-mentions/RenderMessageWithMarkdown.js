@@ -31,11 +31,11 @@ const RenderMessageWithMarkdown: any = {
         const routerOptions = { isInAppRouter: false, route: {}, href: '' }
         if (entry.tagName === 'A' && entry.attributes.href) {
           const { href } = entry.attributes
-          const { url, isHttpValid } = validateURL(href)
+          const { url, isHttpValid } = validateURL(href, true)
           const appRouteBase = this.$router.options.base
           const appOrigin = document.location.origin + appRouteBase
 
-          if (isHttpValid && url.origin === appOrigin) {
+          if (isHttpValid && url.href.startsWith(appOrigin)) {
             const path = url.pathname.split(appRouteBase)[1]
             const query = {}
             for (const [key, value] of url.searchParams) {
