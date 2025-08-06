@@ -44,7 +44,7 @@ async function messageReceivePostEffect ({
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
   const shouldAddToUnreadMessages = isDMOrMention ||
-    (privacyLevelPrivate && shouldSoundMessage) ||
+    (privacyLevelPrivate && (shouldNotifyMessage || shouldSoundMessage)) ||
     [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
   await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
