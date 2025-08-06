@@ -367,7 +367,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user2 sends a message to a private channel and user1 sees a badge for it', () => {
-    // !@# 'channel22'
     switchUser(user2)
     cy.giRedirectToGroupChat()
     cy.giSwitchChannel('channel22')
