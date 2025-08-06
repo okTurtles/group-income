@@ -31,7 +31,21 @@ async function messageReceivePostEffect ({
   const identityContractID = rootState.loggedIn?.identityContractID
   if (!identityContractID) return
   const isDM = rootState[identityContractID].chatRooms[contractID]
-  const shouldAddToUnreadMessages = isDMOrMention || [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
+  const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+
+  // noticiation-settings related
+  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
+    ? rootGetters.chatNotificationSettings.privateDefault
+    : rootGetters.chatNotificationSettings.publicDefault
+  )
+  const { messageNotification, messageSound } = chatNotificationSettings
+  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+  (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+  const shouldAddToUnreadMessages = isDMOrMention ||
+    (privacyLevelPrivate && shouldSoundMessage) ||
+    [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
 
   await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
   try {
@@ -75,13 +89,6 @@ async function messageReceivePostEffect ({
     }
     const path = `/group-chat/${contractID}`
 
-    const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
-      ? rootGetters.chatNotificationSettings.privateDefault
-      : rootGetters.chatNotificationSettings.publicDefault
-    )
-    const { messageNotification, messageSound } = chatNotificationSettings
-
     // If the contract is syncing (meaning we're loading the app, joining a
     // chatroom, etc.), don't use a native notification or sound. Do this only
     // for messages coming over the WS.
@@ -94,11 +101,6 @@ async function messageReceivePostEffect ({
     // In this case, we may get sound notifications for old events that we
     // should not, because technically it's not the first sync.
     if (isSyncing) return
-
-    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-      (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
-    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-      (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
     shouldNotifyMessage && makeNotification({
       title,
