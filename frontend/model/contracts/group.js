@@ -65,7 +65,8 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
-    incomeDetailsLastUpdatedDate: null
+    incomeDetailsLastUpdatedDate: null,
+    role: null // { name: string, permissions: string[] }, initialised with null.
   }
 }
 
@@ -1104,6 +1105,38 @@ sbp('chelonia/defineContract', {
             state.streaks.onTimePayments[innerSigningContractID] = 0
             state.streaks.missedPayments[innerSigningContractID] = 0
           }
+        }
+      }
+    },
+    'gi.contracts/group/updatePermissions': {
+      validate: actionRequireActiveMember(objectMaybeOf({
+        memberID: stringMax(MAX_HASH_LEN, 'memberID'),
+        action: validatorFrom(x => ['add', 'edit', 'remove'].includes(x)),
+        roleName: string,
+        permissions: arrayOf(string)
+      })),
+      process ({ data }, { state }) {
+        const groupProfile = state.profiles[data.memberID]
+        if (!groupProfile) {
+          throw new TypeError(L('Member does not exist.'))
+        }
+
+        switch (data.action) {
+          case 'add':
+            groupProfile.role = {
+              name: data.roleName,
+              permissions: data.permissions
+            }
+            break
+          case 'edit':
+            groupProfile.role = {
+              name: data.roleName || groupProfile.role.name,
+              permissions: data.permissions || groupProfile.role.permissions
+            }
+            break
+          case 'remove':
+            groupProfile.role = null
+            break
         }
       }
     },
