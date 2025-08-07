@@ -36,9 +36,11 @@ page-section.c-section(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
+import { OPEN_MODAL } from '@utils/events.js'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
@@ -106,8 +108,11 @@ export default ({
   },
   methods: {
     handleAddPermissionsClick () {
-      alert(L('Coming soon!'))
-    }
+      this.openModal('AddPermissionsModal')
+    },
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
   },
   provide () {
     return {

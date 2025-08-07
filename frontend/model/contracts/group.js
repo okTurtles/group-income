@@ -1112,13 +1112,13 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(objectMaybeOf({
         memberID: stringMax(MAX_HASH_LEN, 'memberID'),
         action: validatorFrom(x => ['add', 'edit', 'remove'].includes(x)),
-        roleName: string,
-        permissions: arrayOf(string)
+        roleName: stringMax(GROUP_NAME_MAX_CHAR, 'roleName'),
+        permissions: arrayOf(stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'permissions'))
       })),
       process ({ data }, { state }) {
         const groupProfile = state.profiles[data.memberID]
         if (!groupProfile) {
-          throw new TypeError(L('Member does not exist.'))
+          throw new Error(L('Member does not exist.'))
         }
 
         switch (data.action) {
