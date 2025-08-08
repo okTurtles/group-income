@@ -198,11 +198,11 @@ button.c-dropdown-trigger {
   height: auto;
   width: 100%;
   max-width: 100%;
-  transform: translateY(1.25rem);
+  transform: translateY(1rem);
   overflow: hidden;
-  border: 1px solid $general_1;
+  border: 1px solid $general_2;
   border-radius: $radius;
-  background-color: $general_2;
+  background-color: $background_0;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 
   .is-dark-theme & {
@@ -234,7 +234,7 @@ button.c-dropdown-trigger {
   cursor: pointer;
 
   &:not(:last-child) {
-    border-bottom: 1px solid $general_1;
+    border-bottom: 1px solid $general_2;
   }
 
   &:hover,
