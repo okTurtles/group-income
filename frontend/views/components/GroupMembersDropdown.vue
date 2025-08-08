@@ -7,9 +7,9 @@
     @click='toggle'
   )
     .c-selected-member(v-if='ephemeral.selected')
-      avatar-user(:contractID='ephemeral.selected.contractID' size='xs')
+      avatar-user.c-avatar(:contractID='ephemeral.selected.contractID' size='xs')
       .c-member-info
-        .c-name.has-text-bold {{ getDisplayName(ephemeral.selected) }}
+        .c-display-name.has-text-bold {{ getDisplayName(ephemeral.selected) }}
         .c-username @{{ ephemeral.selected.username }}
     .c-default-text(v-else) {{ defaultText }}
 
@@ -38,7 +38,7 @@ export default ({
     defaultText: {
       type: String,
       required: false,
-      default: L('Select member')
+      default: L('Select user')
     },
     membersToExclude: {
       type: Array,
@@ -103,7 +103,11 @@ export default ({
 
 .c-dropdown-wrapper {
   position: relative;
-  width: max-content;
+  width: 100%;
+
+  @include tablet {
+    width: max-content;
+  }
 }
 
 button.c-dropdown-trigger {
@@ -115,6 +119,8 @@ button.c-dropdown-trigger {
   border: 1px solid $general_2;
   background-color: $general_2;
   width: 100%;
+  max-width: 100%;
+  color: $text_0;
 
   @include tablet {
     width: 20rem;
@@ -123,7 +129,12 @@ button.c-dropdown-trigger {
   &:hover,
   &:focus,
   &.is-active {
+    background-color: $general_1;
     border-color: $general_1;
+
+    .c-default-text {
+      color: $text_0;
+    }
   }
 
   &.is-active {
@@ -132,12 +143,19 @@ button.c-dropdown-trigger {
     }
   }
 
+  .c-avatar {
+    flex-shrink: 0;
+  }
+
   .c-selected-member,
   .c-default-text {
     flex-grow: 1;
   }
 
   .c-selected-member {
+    position: relative;
+    width: 100%;
+    max-width: calc(100% - 1.25rem);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -145,20 +163,44 @@ button.c-dropdown-trigger {
   }
 
   .c-member-info {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    align-items: stretch;
     font-size: 0.7rem;
+    flex-grow: 1;
+    max-width: calc(100% - 2rem);
+  }
+
+  .c-display-name,
+  .c-username {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: inherit;
+  }
+
+  .c-display-name {
+    color: $text_0;
   }
 
   .c-username {
-    color: $text_1;
     font-size: 0.625rem;
+    color: $text_1;
+  }
+
+  .c-default-text {
+    font-size: $size_5;
+    color: $text_1;
   }
 
   .c-dropdown-icon {
     flex-shrink: 0;
     transition: transform $transitionSpeed;
+    color: $text_0;
   }
 }
 </style>
