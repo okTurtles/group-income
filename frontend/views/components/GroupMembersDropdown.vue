@@ -81,10 +81,8 @@ export default ({
       'globalProfile'
     ]),
     allActiveMembers () {
-      let groupMemberProfiles = Object.keys(this.profilesByGroup(this.groupID || this.currentGroupId))
+      return Object.keys(this.profilesByGroup(this.groupID || this.currentGroupId))
         .map(memberId => this.globalProfile(memberId))
-
-      return groupMemberProfiles
     },
     dropdownOptions () {
       let options = []
@@ -194,6 +192,7 @@ button.c-dropdown-trigger {
 
 .c-dropdown-list-wrapper {
   position: absolute;
+  z-index: $zindex-tooltip;
   left: 0;
   top: 100%;
   height: auto;
