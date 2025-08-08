@@ -42,7 +42,6 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
-import { L } from '@common/common.js'
 
 const fakeRolesData = [
   // NOTE: This is a fake user data created for development purpose.
@@ -112,7 +111,7 @@ export default ({
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
-    },
+    }
   },
   provide () {
     return {

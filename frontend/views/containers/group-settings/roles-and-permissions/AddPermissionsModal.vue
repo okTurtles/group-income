@@ -9,16 +9,18 @@ modal-base-template.has-background(
       i18n.is-title-2.c-title(tag='h2') Add permissions
 
     .card.c-card
-      | TODO!
+      group-members-dropdown
 </template>
 
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
 
 export default ({
   name: 'AddPermissionsModal',
   components: {
-    ModalBaseTemplate
+    ModalBaseTemplate,
+    GroupMembersDropdown
   },
   methods: {
     closeModal () {
