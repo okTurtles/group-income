@@ -15,6 +15,19 @@
 
     .c-dropdown-icon
       i.icon-angle-down
+
+  .c-dropdown-list-wrapper(v-if='dropdownOptions.length && ephemeral.isActive')
+    ul.c-dropdown-list
+      li.c-dropdown-option-item(
+        v-for='option in dropdownOptions'
+        tabindex='0'
+        :key='option.contractID'
+        @click.stop='select(option)'
+      )
+        avatar-user.c-avatar(:contractID='option.contractID' size='xs')
+        .c-member-info
+          .c-display-name.has-text-bold {{ getDisplayName(option) }}
+          .c-username @{{ option.username }}
 </template>
 
 <script>
@@ -44,6 +57,10 @@ export default ({
       type: Array,
       required: false,
       default: () => []
+    },
+    excludeSelf: {
+      type: Boolean,
+      required: false
     }
   },
   data () {
@@ -64,10 +81,20 @@ export default ({
       'globalProfile'
     ]),
     allActiveMembers () {
-      const groupMemberProfiles = Object.keys(this.profilesByGroup(this.groupID || this.currentGroupId))
+      let groupMemberProfiles = Object.keys(this.profilesByGroup(this.groupID || this.currentGroupId))
         .map(memberId => this.globalProfile(memberId))
 
       return groupMemberProfiles
+    },
+    dropdownOptions () {
+      let options = []
+      for (let i = 0; i < 5; i++) {
+        options = [
+          ...options,
+          ...this.allActiveMembers
+        ]
+      }
+      return options
     }
   },
   methods: {
@@ -90,6 +117,10 @@ export default ({
     },
     getDisplayName (details) {
       return details.displayName || details.username
+    },
+    select (option) {
+      this.ephemeral.selected = option
+      this.close()
     }
   },
   created () {
@@ -116,6 +147,7 @@ button.c-dropdown-trigger {
   justify-content: flex-start;
   padding: 0.5rem 0.75rem;
   gap: 0.5rem;
+  border-radius: $radius;
   border: 1px solid $general_2;
   background-color: $general_2;
   width: 100%;
@@ -143,35 +175,93 @@ button.c-dropdown-trigger {
     }
   }
 
-  .c-avatar {
-    flex-shrink: 0;
-  }
-
   .c-selected-member,
   .c-default-text {
     flex-grow: 1;
   }
 
-  .c-selected-member {
-    position: relative;
-    width: 100%;
-    max-width: calc(100% - 1.25rem);
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    column-gap: 0.5rem;
+  .c-default-text {
+    font-size: $size_5;
+    color: $text_1;
   }
 
-  .c-member-info {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    font-size: 0.7rem;
-    flex-grow: 1;
-    max-width: calc(100% - 2rem);
+  .c-dropdown-icon {
+    flex-shrink: 0;
+    transition: transform $transitionSpeed;
+    color: $text_0;
   }
+}
+
+.c-dropdown-list-wrapper {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  height: auto;
+  width: 100%;
+  max-width: 100%;
+  transform: translateY(1.25rem);
+  overflow: hidden;
+  border: 1px solid $general_1;
+  border-radius: $radius;
+  background-color: $general_2;
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+
+  .is-dark-theme & {
+    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
+  }
+}
+
+.c-dropdown-list {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.c-selected-member,
+.c-dropdown-option-item {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  column-gap: 0.5rem;
+}
+
+.c-selected-member {
+  max-width: calc(100% - 1.25rem);
+}
+
+.c-dropdown-option-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $general_1;
+  }
+
+  &:hover,
+  &:focus {
+    background-color: $general_1;
+    border-color: $general_1;
+
+    .c-default-text {
+      color: $text_0;
+    }
+  }
+}
+
+.c-avatar {
+  flex-shrink: 0;
+}
+
+.c-member-info {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  font-size: 0.7rem;
+  flex-grow: 1;
+  max-width: calc(100% - 2rem);
 
   .c-display-name,
   .c-username {
@@ -190,17 +280,6 @@ button.c-dropdown-trigger {
   .c-username {
     font-size: 0.625rem;
     color: $text_1;
-  }
-
-  .c-default-text {
-    font-size: $size_5;
-    color: $text_1;
-  }
-
-  .c-dropdown-icon {
-    flex-shrink: 0;
-    transition: transform $transitionSpeed;
-    color: $text_0;
   }
 }
 </style>
