@@ -36,6 +36,7 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
       throw new Error(`The ${filename} SQLite database is already open.`)
     }
     this.db = new Database(join(dataFolder, filename))
+    process.on('exit', () => this.db.close())
     this.run('CREATE TABLE IF NOT EXISTS Data(key TEXT NOT NULL PRIMARY KEY, value TEXT NOT NULL)')
     console.info(`Connected to the ${filename} SQLite database.`)
     this.readStatement = this.db.prepare('SELECT value FROM Data WHERE key = ?')

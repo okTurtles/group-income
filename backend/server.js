@@ -684,3 +684,20 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     // Repeat every 1 hour
   }, 1 * 60 * 60 * 1000)
 })()
+
+const handleSignal = (signal: string, code: number) => {
+  process.on(signal, () => {
+    console.error(`Exiting upon receiving ${signal} (${code})`)
+    process.exit(128 + code)
+  })
+}
+
+// Codes from <signal.h>
+[
+  ['SIGHUP', 1],
+  ['SIGINT', 2],
+  ['SIGQUIT', 3],
+  ['SIGTERM', 15],
+  ['SIGUSR1', 10],
+  ['SIGUSR2', 11]
+].forEach(([signal, code]) => handleSignal(signal, code))
