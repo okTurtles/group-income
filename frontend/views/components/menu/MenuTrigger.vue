@@ -5,15 +5,7 @@ summary(
 )
   slot(v-if='hideWhenActive ? !isActive : true')
 </template>
-<style lang="scss" scoped>
-summary {
-  list-style: none;
 
-  &::marker {
-    display: none;
-  }
-}
-</style>
 <script>
 export default ({
   name: 'MenuTrigger',
@@ -28,3 +20,14 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+summary {
+  list-style: none;
+
+  &::marker {
+    display: none;
+  }
+}
+</style>
+

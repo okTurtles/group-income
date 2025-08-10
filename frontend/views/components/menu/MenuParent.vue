@@ -25,11 +25,6 @@ export default ({
   },
   methods: {
     handleToggle (e) {
-      // Weird browser bug
-      if (e.oldState === e.newState) {
-        e.target.open = !e.target.open
-        return
-      }
       if (this.config.Menu.isActive === e.target.open) return
       this.config.Menu.isActive = e.target.open
       this.$emit(this.config.Menu.isActive ? 'menu-open' : 'menu-close')

@@ -3,7 +3,7 @@
     menu-trigger.is-icon-small(:aria-label='L("Payment actions")')
       i.icon-ellipsis-v
     menu-content
-      ul
+      menu
         slot
 </template>
 

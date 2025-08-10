@@ -44,10 +44,9 @@
       )
         i.icon-undo
 
-    menu-parent
+    menu-parent(@menu-open='moreOptionsTriggered')
       menu-trigger.is-icon-small(
         :aria-label='L("More options")'
-        @trigger='moreOptionsTriggered'
       )
         i.icon-ellipsis-h
       message-actions-mobile(
@@ -253,7 +252,7 @@ export default ({
     right: 1.5rem;
   }
 
-  .is-icon-small {
+  &> * > .is-icon-small {
     color: $text_1;
     border-radius: 0;
     width: 2.375rem;
@@ -284,19 +283,16 @@ export default ({
 }
 
 .c-menu {
-  /*
-  */
-
   .c-content {
     @include tablet {
       width: 100%;
       left: auto;
       right: 0.5rem;
       top: auto;
-      bottom: calc(100% + 1.5rem);
+      bottom: calc(100% + 0.5rem);
 
       &.is-to-down {
-        top: 1.75rem;
+        top: 2.75rem;
         bottom: auto;
       }
 

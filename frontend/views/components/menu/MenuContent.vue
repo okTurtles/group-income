@@ -24,7 +24,10 @@ export default ({
     }
   },
   methods: {
-    closeMenu () {
+    closeMenu (e) {
+      if (e.target?.closest('details') === this.$el.closest('details')) {
+        return
+      }
       this.Menu.closeMenu()
     }
   }
