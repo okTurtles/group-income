@@ -307,3 +307,5 @@ declare module '@chelonia/lib/types' {
     }
 }
 declare module '@chelonia/lib/utils' { declare module.exports: any }
+declare module '@chelonia/lib/zkpp' { declare module.exports: any }
+declare module '@chelonia/lib/zkppConstants' { declare module.exports: any }

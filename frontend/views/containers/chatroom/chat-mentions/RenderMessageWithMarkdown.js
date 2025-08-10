@@ -32,8 +32,11 @@ const RenderMessageWithMarkdown: any = {
         if (entry.tagName === 'A' && entry.attributes.href) {
           const { href } = entry.attributes
           const { url, isHttpValid } = validateURL(href)
-          if (isHttpValid && url.origin === document.location.origin) {
-            const path = url.pathname.split(this.$router.options.base)[1]
+          const appRouteBase = this.$router.options.base
+          const appOrigin = document.location.origin + appRouteBase
+
+          if (isHttpValid && url.origin === appOrigin) {
+            const path = url.pathname.split(appRouteBase)[1]
             const query = {}
             for (const [key, value] of url.searchParams) {
               query[key] = value
