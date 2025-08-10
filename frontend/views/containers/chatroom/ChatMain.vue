@@ -22,23 +22,23 @@
       @scroll-end='onScrollEnd'
       ref='conversation'
       data-test='conversationWrapper'
-      :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown'
+      :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages'
       :data-length='ephemeral.messages.length'
       :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
       template(:slot='"before"')
         .c-start-sentinel(ref='startSentinel')
         .c-conversation-start
-        conversation-greetings(
-          :members='summary.numberOfMembers'
-          :creatorID='summary.attributes.creatorID'
-          :type='summary.attributes.type'
-          :joined='summary.isJoined'
-          :dm-to-myself='summary.isDMToMySelf'
-          :name='summary.title'
-          :description='summary.attributes.description'
-          v-if='ephemeral.currentLowestHeight === 0 && !ephemeral.loadingUp'
-        )
+          conversation-greetings(
+            :members='summary.numberOfMembers'
+            :creatorID='summary.attributes.creatorID'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
+            :dm-to-myself='summary.isDMToMySelf'
+            :name='summary.title'
+            :description='summary.attributes.description'
+            v-if='ephemeral.currentLowestHeight === 0 && !ephemeral.loadingUp'
+          )
         .c-loading(v-if='ephemeral.loadingUp')
           p.sr-only {{L('Loading')}}
       template(:slot='"after"')
@@ -1154,6 +1154,7 @@ export default ({
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
     skeletonState (chatRoomId) {
+      console.error('@@@@skeletonState', chatRoomId)
       const state = sbp('state/vuex/state')[chatRoomId] || {}
       const messageState = {
         settings: state.settings || {},
@@ -1164,6 +1165,7 @@ export default ({
         pinnedMessages: [],
         renderingContext: true
       }
+      this.ephemeral.renderingChatRoomId = null
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
@@ -1840,7 +1842,7 @@ export default ({
 }
 
 .c-conversation-start {
-  height: 2rem;
+  padding-top: 2rem;
 }
 
 .c-conversation-end {
