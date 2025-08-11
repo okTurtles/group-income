@@ -9,7 +9,29 @@ modal-base-template.has-background(
       i18n.is-title-2.c-title(tag='h2') Add permissions
 
     .card.c-card
-      group-members-dropdown
+      .c-add-member-container
+        i18n.label Select member to add permissions for:
+
+        .c-member-dropdown-container
+          group-members-dropdown(
+            ref='groupMembersDropdown'
+            v-model='ephemeral.selectedUser'
+            :membersToExclude='addedMemberIds'
+          )
+
+          i18n.is-success.c-add-btn(
+            v-if='ephemeral.selectedUser'
+            tag='button'
+            type='button'
+            @click.stop='addEntry'
+          ) Add
+
+      .c-permission-entry-container
+        i18n.is-title-3(tag='h3') Role & Permission details
+
+        ul.c-role-entry-list
+          li(v-for='entry in ephemeral.roleEntries')
+            | {{ entry.user.username }}
 </template>
 
 <script>
@@ -22,9 +44,37 @@ export default ({
     ModalBaseTemplate,
     GroupMembersDropdown
   },
+  data () {
+    return {
+      ephemeral: {
+        selectedUser: null,
+        roleEntries: []
+      }
+    }
+  },
+  computed: {
+    addedMemberIds () {
+      return this.ephemeral.roleEntries.map(entry => entry.user.contractID)
+    }
+  },
   methods: {
     closeModal () {
       this.$refs.modal.close()
+    },
+    addEntry () {
+      const user = this.ephemeral.selectedUser
+      if (this.ephemeral.roleEntries.every(entry => entry.user.contractID !== user.contractID)) {
+        this.ephemeral.roleEntries = [
+          ...this.ephemeral.roleEntries,
+          {
+            user,
+            role: '',
+            permissions: []
+          }
+        ]
+
+        this.$refs.groupMembersDropdown.clear()
+      }
     }
   }
 }: Object)
@@ -62,5 +112,22 @@ export default ({
 
 .c-card {
   margin-top: 1.5rem;
+}
+
+.c-member-dropdown-container {
+  display: flex;
+  column-gap: 0.5rem;
+}
+
+button.c-add-btn {
+  border-radius: $radius;
+  min-height: unset;
+}
+
+.c-permission-entry-container {
+  position: relative;
+  margin-top: 2rem;
+  border-top: 1px solid $general_0;
+  padding-top: 2rem;
 }
 </style>
