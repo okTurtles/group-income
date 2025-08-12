@@ -9,11 +9,11 @@
         .c-name-and-role-mobile(v-if='isMobile')
           strong.c-name.has-ellipsis {{ data.username }}
           .c-pill-container
-            span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
+            role-pill(:role='data.role')
         strong.c-name.has-ellipsis(v-else) {{ data.username }}
 
     td.td-role(v-if='!isMobile')
-      span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
+      role-pill(:role='data.role')
 
     td.td-permissions
       view-permissions(:permissions='data.permissions')
@@ -27,6 +27,7 @@
 import Avatar from '@components/Avatar.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
+import RolePill from './RolePill.vue'
 import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
@@ -38,7 +39,8 @@ export default {
   components: {
     Avatar,
     ViewPermissions,
-    PermissionActionMenu
+    PermissionActionMenu,
+    RolePill
   },
   props: {
     data: {
@@ -115,11 +117,6 @@ td.td-action {
 
 .c-pill-container {
   display: inline-block;
-}
-
-.c-role-pill {
-  display: inline;
-  white-space: initial;
 }
 
 .c-action-wrapper {

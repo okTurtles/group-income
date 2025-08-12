@@ -1,13 +1,27 @@
 <template lang="pug">
 li.c-update-permissions-list-item
   .c-user-info
-    avatar-user(:contractID='data.userId' size='xs')
+    avatar-user.c-avatar-user(:contractID='data.userId' size='xs')
     .c-user-info-text
       .c-display-name.has-text-bold {{ getDisplayName(profile) }}
       .c-username @{{ profile.username }}
 
   .c-set-permissions-container
-    | TODO
+    .c-select-role
+      i18n.c-select-role-title.has-text-1 Select role:
+
+      .selectbox
+        select.select(
+          :aria-label='L("Select role")'
+          :value='ephemeral.selectedRole'
+          @change='updateRole'
+        )
+          i18n(tag='option' disabled value='') Choose a role
+          option(
+            v-for='role in config.roles'
+            :key='role'
+            :value='role'
+          ) {{ getRoleDisplayName(role) }}
 
   .c-remove-entry-container
     button.is-icon-small.is-btn-shifted(
@@ -21,16 +35,30 @@ li.c-update-permissions-list-item
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
+import RolePill from './RolePill.vue'
+import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
+import { getRoleDisplayName } from './permissions-utils.js'
 
 export default {
   name: 'UpdatePermissionsListItem',
   components: {
-    AvatarUser
+    AvatarUser,
+    RolePill
   },
   props: {
     data: {
       type: Object, // { userId: string, role: string, permissions: string[] }
       required: true
+    }
+  },
+  data () {
+    return {
+      config: {
+        roles: Object.values(GROUP_ROLES)
+      },
+      ephemeral: {
+        selectedRole: ''
+      }
     }
   },
   computed: {
@@ -42,12 +70,25 @@ export default {
     }
   },
   methods: {
+    getRoleDisplayName,
+    initState () {
+      this.ephemeral.selectedRole = this.data.role || null
+    },
     getDisplayName (profile) {
       return profile.displayName || profile.username
     },
     remove () {
       this.$emit('remove', this.data.userId)
+    },
+    updateRole (e) {
+      const value = e.target.value
+      this.ephemeral.selectedRole = value
+
+      this.$emit('update', { role: value })
     }
+  },
+  created () {
+    this.initState()
   }
 }
 </script>
@@ -78,6 +119,14 @@ export default {
   justify-content: flex-start;
   column-gap: 0.5rem;
 
+  @include tablet {
+    max-width: 18rem;
+  }
+
+  .c-avatar-user {
+    flex-shrink: 0;
+  }
+
   .c-user-info-text {
     position: relative;
     display: flex;
@@ -104,5 +153,22 @@ export default {
       color: $text_0;
     }
   }
+}
+
+.c-set-permissions-container {
+  position: relative;
+  width: 100%;
+  flex-grow: 1;
+}
+
+.c-select-role {
+  @include tablet {
+    max-width: 15rem;
+  }
+}
+
+.c-select-role-title {
+  display: block;
+  margin-bottom: 0.5rem;
 }
 </style>
