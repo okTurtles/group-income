@@ -7,8 +7,8 @@ li.c-update-permissions-list-item
       .c-username @{{ profile.username }}
 
   .c-set-permissions-container
-    .c-select-role
-      i18n.c-select-role-title.has-text-1 Select role:
+    .c-select-role-section
+      i18n.c-select-role-title.has-text-1 Select a role:
 
       .selectbox
         select.select(
@@ -16,12 +16,22 @@ li.c-update-permissions-list-item
           :value='ephemeral.selectedRole'
           @change='updateRole'
         )
-          i18n(tag='option' disabled value='') Choose a role
+          i18n(tag='option' disabled value='') Select a role
           option(
             v-for='role in config.roles'
             :key='role'
             :value='role'
           ) {{ getRoleDisplayName(role) }}
+
+    .c-select-permissions-section
+      i18n.c-select-permissions-title.has-text-1 Select permissions:
+
+      .c-perimission-items-container
+        toggle-permission-item(
+          v-for='permission in config.allPermissions'
+          :key='permission'
+          :permission='permission'
+        )
 
   .c-remove-entry-container
     button.is-icon-small.is-btn-shifted(
@@ -36,13 +46,15 @@ li.c-update-permissions-list-item
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
+import TogglePermissionItem from './TogglePermissionItem.vue'
+import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 
 export default {
   name: 'UpdatePermissionsListItem',
   components: {
     AvatarUser,
+    TogglePermissionItem,
     RolePill
   },
   props: {
@@ -54,7 +66,8 @@ export default {
   data () {
     return {
       config: {
-        roles: Object.values(GROUP_ROLES)
+        roles: Object.values(GROUP_ROLES),
+        allPermissions: Object.values(GROUP_PERMISSIONS)
       },
       ephemeral: {
         selectedRole: ''
@@ -161,14 +174,27 @@ export default {
   flex-grow: 1;
 }
 
-.c-select-role {
+.c-select-role-section {
   @include tablet {
     max-width: 15rem;
   }
 }
 
-.c-select-role-title {
+.c-select-role-title,
+.c-select-permissions-title {
   display: block;
   margin-bottom: 0.5rem;
+}
+
+.c-select-permissions-section {
+  margin-top: 2rem;
+}
+
+.c-perimission-items-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 </style>
