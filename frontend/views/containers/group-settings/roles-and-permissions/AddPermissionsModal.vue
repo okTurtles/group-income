@@ -10,8 +10,10 @@ modal-base-template.has-background(
 
     .card.c-card
       .c-add-member-container
-        i18n.label Select member to add permissions for:
+        i18n.is-title-3(tag='h3') Add permissions details
+        i18n.has-text-1.c-title-desc(tag='p') Select group members and set their role and permissions.
 
+        i18n.is-title-4.c-select-member-title(tag='h4') Add members:
         .c-member-dropdown-container
           group-members-dropdown(
             ref='groupMembersDropdown'
@@ -19,7 +21,7 @@ modal-base-template.has-background(
             :membersToExclude='addedMemberIds'
           )
 
-          i18n.is-success.c-add-btn(
+          i18n.is-primary.c-add-btn(
             v-if='ephemeral.selectedUser'
             tag='button'
             type='button'
@@ -27,34 +29,40 @@ modal-base-template.has-background(
           ) Add
 
       .c-permission-entry-container
-        i18n.is-title-3(tag='h3') Role & Permission details
+        i18n.is-title-4.c-set-permissions-title(tag='h4') Set permissions:
 
         ul.c-role-entry-list
-          li(v-for='entry in ephemeral.roleEntries')
-            | {{ entry.user.username }}
+          update-permissions-list-item.c-permission-entry(
+            v-for='entry in ephemeral.roleEntries'
+            :key='entry.userId'
+            :data='entry'
+            @remove='removeEntry'
+          )
 </template>
 
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
+import UpdatePermissionsListItem from './UpdatePermissionsListItem.vue'
 
 export default ({
   name: 'AddPermissionsModal',
   components: {
     ModalBaseTemplate,
-    GroupMembersDropdown
+    GroupMembersDropdown,
+    UpdatePermissionsListItem
   },
   data () {
     return {
       ephemeral: {
         selectedUser: null,
-        roleEntries: []
+        roleEntries: [] // { userId: string, role: string, permissions: string[] }
       }
     }
   },
   computed: {
     addedMemberIds () {
-      return this.ephemeral.roleEntries.map(entry => entry.user.contractID)
+      return this.ephemeral.roleEntries.map(entry => entry.userId)
     }
   },
   methods: {
@@ -63,11 +71,11 @@ export default ({
     },
     addEntry () {
       const user = this.ephemeral.selectedUser
-      if (this.ephemeral.roleEntries.every(entry => entry.user.contractID !== user.contractID)) {
+      if (this.ephemeral.roleEntries.every(entry => entry.userId !== user.contractID)) {
         this.ephemeral.roleEntries = [
           ...this.ephemeral.roleEntries,
           {
-            user,
+            userId: user.contractID,
             role: '',
             permissions: []
           }
@@ -75,6 +83,9 @@ export default ({
 
         this.$refs.groupMembersDropdown.clear()
       }
+    },
+    removeEntry (userId) {
+      this.ephemeral.roleEntries = this.ephemeral.roleEntries.filter(entry => entry.userId !== userId)
     }
   }
 }: Object)
@@ -114,6 +125,15 @@ export default ({
   margin-top: 1.5rem;
 }
 
+.c-title-desc {
+  margin: 0.5rem 0;
+}
+
+.c-select-member-title {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
 .c-member-dropdown-container {
   display: flex;
   column-gap: 0.5rem;
@@ -126,8 +146,16 @@ button.c-add-btn {
 
 .c-permission-entry-container {
   position: relative;
-  margin-top: 2rem;
-  border-top: 1px solid $general_0;
-  padding-top: 2rem;
+  margin-top: 3rem;
+}
+
+.c-role-entry-list {
+  position: relative;
+  width: 100%;
+  margin-top: 1.5rem;
+
+  .c-permission-entry:not(:last-child) {
+    margin-bottom: 1rem;
+  }
 }
 </style>

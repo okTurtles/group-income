@@ -36,6 +36,7 @@
 import { mapState, mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import { mixin as clickaway } from 'vue-clickaway'
+import { uniq } from 'turtledash'
 import AvatarUser from './AvatarUser.vue'
 
 export default ({
@@ -95,7 +96,11 @@ export default ({
         .map(memberId => this.globalProfile(memberId))
     },
     dropdownOptions () {
-      return this.allActiveMembers.filter(member => !this.membersToExclude.includes(member.contractID))
+      const idsToExclude = uniq([
+        ...this.membersToExclude,
+        ...(this.excludeSelf ? this.ourIdentityContractId : [])
+      ])
+      return this.allActiveMembers.filter(member => !idsToExclude.includes(member.contractID))
     },
     noAvailableOption () {
       return this.dropdownOptions.length === 0
