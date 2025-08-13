@@ -10,8 +10,7 @@ modal-base-template.has-background(
 
     .card.c-card
       .c-add-member-container
-        i18n.is-title-3(tag='h3') Select members and set permissions
-        i18n.has-text-1.c-title-desc(tag='p') Select group members and set their role and permissions.
+        i18n.has-text-1(tag='p') Select group members and set their roles and permissions details.
 
         i18n.is-title-4.c-select-member-title(tag='h4') Add members:
         .c-member-dropdown-container
@@ -30,7 +29,7 @@ modal-base-template.has-background(
 
       template(v-if='ephemeral.roleEntries.length')
         .c-permission-entry-container
-          i18n.is-title-4.c-set-permissions-title(tag='h4') Set permissions:
+          i18n.is-title-4.c-set-permissions-title(tag='h4') Set roles and permissions:
 
           ul.c-role-entry-list
             update-permissions-list-item.c-permission-entry(
@@ -137,13 +136,9 @@ export default ({
   margin-top: 1.5rem;
 }
 
-.c-title-desc {
-  margin: 0.5rem 0;
-}
-
 .c-select-member-title {
   margin-top: 2rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .c-member-dropdown-container {
@@ -164,7 +159,7 @@ button.c-add-btn {
 .c-role-entry-list {
   position: relative;
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   box-shadow: inset 0 -2px 0 $general_2;
 
   .c-permission-entry:not(:last-child) {

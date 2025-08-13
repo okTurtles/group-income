@@ -24,7 +24,7 @@ li.c-update-permissions-list-item
           ) {{ getRoleDisplayName(role) }}
 
     .c-select-permissions-section(v-if='ephemeral.selectedRole')
-      i18n.c-select-permissions-title.has-text-1 Select permissions:
+      .c-select-permissions-title.has-text-1 {{ permissionSectionLabel }}
 
       .c-perimission-items-container
         permission-piece(
@@ -36,13 +36,13 @@ li.c-update-permissions-list-item
           @change='onPermissionItemChange'
         )
 
-  .c-remove-entry-container
-    button.is-icon-small.is-btn-shifted(
+  .c-cta-container
+    button.is-icon-small.is-btn-shifted.c-remove-btn(
       type='button'
       :aria-label='L("Remove role entry")'
       @click.stop='remove'
     )
-      i.icon-times
+      i.icon-trash-alt
 </template>
 
 <script>
@@ -53,6 +53,7 @@ import PermissionPiece from './PermissionPiece.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { uniq } from 'turtledash'
+import { L } from '@common/common.js'
 
 export default {
   name: 'UpdatePermissionsListItem',
@@ -70,7 +71,11 @@ export default {
   data () {
     return {
       config: {
-        roles: Object.values(GROUP_ROLES)
+        roles: [
+          GROUP_ROLES.MODERATOR_DELEGATOR,
+          GROUP_ROLES.MODERATOR,
+          GROUP_ROLES.CUSTOM
+        ]
       },
       ephemeral: {
         selectedRole: '',
@@ -95,6 +100,9 @@ export default {
         [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
         [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
       }
+    },
+    permissionSectionLabel () {
+      return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
     }
   },
   methods: {
@@ -149,21 +157,28 @@ export default {
 
 .c-update-permissions-list-item {
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  width: 100%;
-  column-gap: 0.5rem;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "c-user-info c-cta-container"
+    "c-set-permissions c-set-permissions";
+  align-items: start;
+  gap: 0.5rem;
   box-shadow: inset 0 2px 0 $general_2;
   padding: 1.25rem 0;
 
   @include tablet {
+    grid-template-rows: auto;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "c-user-info c-set-permissions c-cta-container";
     column-gap: 0.75rem;
     padding: 1.75rem 0;
   }
 }
 
 .c-user-info {
+  grid-area: c-user-info;
   position: relative;
   width: 100%;
   display: flex;
@@ -172,7 +187,8 @@ export default {
   column-gap: 0.5rem;
 
   @include tablet {
-    max-width: 18rem;
+    width: 15rem;
+    margin-top: 0.25rem;
   }
 
   .c-avatar-user {
@@ -208,14 +224,18 @@ export default {
 }
 
 .c-set-permissions-container {
+  grid-area: c-set-permissions;
   position: relative;
   width: 100%;
   flex-grow: 1;
 }
 
 .c-select-role-section {
+  margin-top: 1rem;
+
   @include tablet {
     max-width: 12.75rem;
+    margin-top: 0;
   }
 }
 
@@ -239,7 +259,11 @@ export default {
 }
 
 .c-select-permissions-section {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+
+  @include tablet {
+    margin-top: 2rem;
+  }
 }
 
 .c-perimission-items-container {
@@ -248,5 +272,27 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.c-cta-container {
+  grid-area: c-cta-container;
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  button.c-remove-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: $danger_0_1;
+    background-color: $danger_2;
+
+    &:hover,
+    &:focus {
+      color: $danger_0;
+      background-color: $general_1;
+    }
+  }
 }
 </style>

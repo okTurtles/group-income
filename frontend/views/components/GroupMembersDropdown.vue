@@ -3,7 +3,7 @@
   v-on-clickaway='onClickAway'
 )
   button.is-unstyled.c-dropdown-trigger(
-    :class='{ "is-active": ephemeral.isActive }'
+    :class='{ "is-active": ephemeral.isActive, "is-disabled": disabled || noAvailableOption }'
     @click='toggle'
   )
     .c-selected-member(v-if='ephemeral.selected')
@@ -72,6 +72,10 @@ export default ({
     excludeSelf: {
       type: Boolean,
       required: false
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -108,14 +112,20 @@ export default ({
   },
   methods: {
     open () {
+      if (this.noAvailableOption) { return }
+
       this.ephemeral.isActive = true
       this.$emit('open')
     },
     close () {
+      if (this.noAvailableOption) { return }
+
       this.ephemeral.isActive = false
       this.$emit('blur')
     },
     toggle () {
+      if (this.noAvailableOption) { return }
+
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
     clear () {
@@ -184,6 +194,11 @@ button.c-dropdown-trigger {
     .c-default-text {
       color: $text_0;
     }
+  }
+
+  &.is-disabled {
+    pointer-events: none;
+    opacity: 0.675;
   }
 
   &.is-active {
