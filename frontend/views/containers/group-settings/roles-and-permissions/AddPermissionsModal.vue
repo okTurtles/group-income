@@ -10,7 +10,7 @@ modal-base-template.has-background(
 
     .card.c-card
       .c-add-member-container
-        i18n.is-title-3(tag='h3') Add permissions details
+        i18n.is-title-3(tag='h3') Select members and set permissions
         i18n.has-text-1.c-title-desc(tag='p') Select group members and set their role and permissions.
 
         i18n.is-title-4.c-select-member-title(tag='h4') Add members:

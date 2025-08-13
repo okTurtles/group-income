@@ -10,7 +10,7 @@ li.c-update-permissions-list-item
     .c-select-role-section
       i18n.c-select-role-title.has-text-1 Select a role:
 
-      .selectbox
+      .selectbox.c-role-select-input
         select.select(
           :aria-label='L("Select role")'
           :value='ephemeral.selectedRole'
@@ -27,7 +27,7 @@ li.c-update-permissions-list-item
       i18n.c-select-permissions-title.has-text-1 Select permissions:
 
       .c-perimission-items-container
-        toggle-permission-item(
+        permission-piece(
           v-for='permission in config.allPermissions'
           :key='permission'
           :permission='permission'
@@ -46,7 +46,7 @@ li.c-update-permissions-list-item
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
-import TogglePermissionItem from './TogglePermissionItem.vue'
+import PermissionPiece from './PermissionPiece.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 
@@ -54,7 +54,7 @@ export default {
   name: 'UpdatePermissionsListItem',
   components: {
     AvatarUser,
-    TogglePermissionItem,
+    PermissionPiece,
     RolePill
   },
   props: {
@@ -176,7 +176,7 @@ export default {
 
 .c-select-role-section {
   @include tablet {
-    max-width: 15rem;
+    max-width: 12.75rem;
   }
 }
 
@@ -184,6 +184,19 @@ export default {
 .c-select-permissions-title {
   display: block;
   margin-bottom: 0.5rem;
+}
+
+.c-role-select-input {
+  &::after {
+    right: 0.75rem;
+  }
+
+  .select {
+    height: 2rem;
+    padding-left: 0.75rem;
+    padding-right: 1.5rem;
+    font-size: $size_4;
+  }
 }
 
 .c-select-permissions-section {
