@@ -65,8 +65,8 @@ export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
 export const GROUP_ROLES = {
   ADMIN: 'admin',
-  MODERATOR: 'moderator',
   MODERATOR_DELEGATOR: 'moderator-delegator',
+  MODERATOR: 'moderator',
   CUSTOM: 'custom'
 }
 
@@ -97,6 +97,12 @@ export const GROUP_PERMISSIONS_PRESET = {
     GP.DELETE_CHANNEL
   ],
   MODERATOR: [
+    GP.VIEW_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
+  ],
+  CUSTOM: [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE,

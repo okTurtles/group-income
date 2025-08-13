@@ -28,29 +28,38 @@ modal-base-template.has-background(
             @click.stop='addEntry'
           ) Add
 
-      .c-permission-entry-container
-        i18n.is-title-4.c-set-permissions-title(tag='h4') Set permissions:
+      template(v-if='ephemeral.roleEntries.length')
+        .c-permission-entry-container
+          i18n.is-title-4.c-set-permissions-title(tag='h4') Set permissions:
 
-        ul.c-role-entry-list
-          update-permissions-list-item.c-permission-entry(
-            v-for='entry in ephemeral.roleEntries'
-            :key='entry.userId'
-            :data='entry'
-            @remove='removeEntry'
-          )
+          ul.c-role-entry-list
+            update-permissions-list-item.c-permission-entry(
+              v-for='entry in ephemeral.roleEntries'
+              :key='entry.userId'
+              :data='entry'
+              @remove='removeEntry'
+            )
+
+        .buttons.c-button-container
+          i18n.is-outlined(tag='button' type='button' @click.stop='closeModal') Cancel
+          button-submit.is-success.c-update-btn(@click='submit')
+            i18n Update
+
 </template>
 
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
 import UpdatePermissionsListItem from './UpdatePermissionsListItem.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
   name: 'AddPermissionsModal',
   components: {
     ModalBaseTemplate,
     GroupMembersDropdown,
-    UpdatePermissionsListItem
+    UpdatePermissionsListItem,
+    ButtonSubmit
   },
   data () {
     return {
@@ -86,6 +95,9 @@ export default ({
     },
     removeEntry (userId) {
       this.ephemeral.roleEntries = this.ephemeral.roleEntries.filter(entry => entry.userId !== userId)
+    },
+    submit () {
+      alert('TODO: Implement submit!')
     }
   }
 }: Object)
@@ -153,9 +165,29 @@ button.c-add-btn {
   position: relative;
   width: 100%;
   margin-top: 1.5rem;
+  box-shadow: inset 0 -2px 0 $general_2;
 
   .c-permission-entry:not(:last-child) {
     margin-bottom: 1rem;
+  }
+}
+
+.c-button-container {
+  margin-top: 2rem;
+
+  @include phone {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    row-gap: 1rem;
+
+    button {
+      margin-right: 0;
+      min-height: 1.688rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-bottom: 0;
+      line-height: 1em;
+    }
   }
 }
 </style>

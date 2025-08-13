@@ -12,7 +12,7 @@
         .c-display-name.has-text-bold {{ getDisplayName(ephemeral.selected) }}
         .c-username @{{ ephemeral.selected.username }}
     .c-default-text(v-else)
-      i18n(v-if='noAvailableOption') No option available
+      i18n(v-if='noAvailableOption') No members available
       span(v-else) {{ defaultText }}
 
     .c-dropdown-icon

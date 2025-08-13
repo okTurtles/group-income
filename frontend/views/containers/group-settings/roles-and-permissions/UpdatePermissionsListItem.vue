@@ -23,14 +23,17 @@ li.c-update-permissions-list-item
             :value='role'
           ) {{ getRoleDisplayName(role) }}
 
-    .c-select-permissions-section
+    .c-select-permissions-section(v-if='ephemeral.selectedRole')
       i18n.c-select-permissions-title.has-text-1 Select permissions:
 
       .c-perimission-items-container
         permission-piece(
-          v-for='permission in config.allPermissions'
+          v-for='permission in permissionPresets[ephemeral.selectedRole]'
           :key='permission'
           :permission='permission'
+          :isSelectable='isCustomRole'
+          :active='checkPermissionActive(permission)'
+          @change='onPermissionItemChange'
         )
 
   .c-remove-entry-container
@@ -47,8 +50,9 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
 import PermissionPiece from './PermissionPiece.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
+import { uniq } from 'turtledash'
 
 export default {
   name: 'UpdatePermissionsListItem',
@@ -66,11 +70,11 @@ export default {
   data () {
     return {
       config: {
-        roles: Object.values(GROUP_ROLES),
-        allPermissions: Object.values(GROUP_PERMISSIONS)
+        roles: Object.values(GROUP_ROLES)
       },
       ephemeral: {
-        selectedRole: ''
+        selectedRole: '',
+        selectedPermissions: []
       }
     }
   },
@@ -80,6 +84,17 @@ export default {
     ]),
     profile () {
       return this.globalProfile(this.data.userId)
+    },
+    isCustomRole () {
+      return this.ephemeral.selectedRole === GROUP_ROLES.CUSTOM
+    },
+    permissionPresets () {
+      return {
+        [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET.ADMIN,
+        [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
+        [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
+        [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
+      }
     }
   },
   methods: {
@@ -97,7 +112,30 @@ export default {
       const value = e.target.value
       this.ephemeral.selectedRole = value
 
-      this.$emit('update', { role: value })
+      if (value === GROUP_ROLES.CUSTOM) {
+        this.ephemeral.selectedPermissions = this.data.permissions?.length > 0 ? this.data.permissions : []
+      } else {
+        this.ephemeral.selectedPermissions = this.permissionPresets[value]
+      }
+
+      this.$emit('update', { role: value, permissions: this.ephemeral.selectedPermissions })
+    },
+    checkPermissionActive (permission) {
+      if (!this.isCustomRole) { return false }
+
+      return this.ephemeral.selectedPermissions.includes(permission)
+    },
+    onPermissionItemChange (payload) {
+      const { permission, active } = payload
+
+      if (active) {
+        this.ephemeral.selectedPermissions = uniq([
+          ...this.ephemeral.selectedPermissions,
+          permission
+        ])
+      } else {
+        this.ephemeral.selectedPermissions = this.ephemeral.selectedPermissions.filter(p => p !== permission)
+      }
     }
   },
   created () {
@@ -121,6 +159,7 @@ export default {
 
   @include tablet {
     column-gap: 0.75rem;
+    padding: 1.75rem 0;
   }
 }
 

@@ -59,7 +59,10 @@ export default {
     getPermissionDisplayName,
     onClick () {
       if (this.isSelectable) {
-        this.$emit('change', !this.active)
+        this.$emit('change', {
+          permission: this.permission,
+          active: !this.active
+        })
       }
     }
   }
