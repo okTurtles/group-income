@@ -1,11 +1,9 @@
 <template lang="pug">
 page-section.c-section(
-  v-if='displayComponent'
+  v-if='ourGroupProfile.role'
   :title='L("Roles and Permissions")'
 )
   i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions granted to your group members.
-
-  banner-scoped(ref='feedbackMsg' :allowA='true')
 
   table.table.table-in-card.c-permissions-table
     thead
@@ -26,7 +24,7 @@ page-section.c-section(
         :is-mobile='ephemeral.isMobile'
       )
 
-  .c-buttons-container
+  .c-buttons-container(v-if='canDelegatePermissions')
     button.is-small.is-outlined(
       v-if='canDelegatePermissions'
       type='button'
@@ -37,8 +35,8 @@ page-section.c-section(
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import PageSection from '@components/PageSection.vue'
-import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
@@ -79,7 +77,6 @@ export default ({
   name: 'RolesAndPermissions',
   components: {
     PageSection,
-    BannerScoped,
     PermissionTableRow
   },
   data () {
@@ -92,17 +89,16 @@ export default ({
     }
   },
   computed: {
+    ...mapGetters([
+      'ourGroupProfile',
+      'ourGroupPermissionsHas'
+    ]),
     displayComponent () {
       // TODO: Remove this once the development is complete and the feature is ready for release.
       return process.env.NODE_ENV === 'development'
     },
-    myPermissions () {
-      // NOTE: Using ADMIN preset here for a development purpose for now.
-      // (TODO: Replace with logic that uses actual permissions eg. Implement a vuex getter)
-      return GROUP_PERMISSIONS_PRESET.ADMIN
-    },
     canDelegatePermissions () {
-      return this.myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
     }
   },
   methods: {

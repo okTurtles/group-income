@@ -35,7 +35,11 @@ import {
   PROPOSAL_REASON_MAX_CHAR,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
+  STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN,
+  GROUP_ROLE_NAME_MAX_CHAR,
+  GROUP_PERMISSION_MAX_CHAR,
+  GROUP_ROLES,
+  GROUP_PERMISSIONS_PRESET
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
@@ -56,7 +60,7 @@ function fetchInitKV (obj: Object, key: string, initialValue: any): any {
   return value
 }
 
-function initGroupProfile (joinedDate: string, joinedHeight: number, reference: string) {
+function initGroupProfile (joinedDate: string, joinedHeight: number, reference: string, isGroupCreator: boolean) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     joinedDate,
@@ -66,7 +70,9 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
     incomeDetailsLastUpdatedDate: null,
-    role: null // { name: string, permissions: string[] }, initialised with null.
+    role: isGroupCreator
+      ? { name: GROUP_ROLES.ADMIN, permissions: GROUP_PERMISSIONS_PRESET.ADMIN }
+      : null
   }
 }
 
@@ -881,7 +887,9 @@ sbp('chelonia/defineContract', {
         if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`)
         }
-        state.profiles[innerSigningContractID] = initGroupProfile(meta.createdDate, height, data.reference)
+
+        const isGroupCreator = state.groupOwnerID === innerSigningContractID
+        state.profiles[innerSigningContractID] = initGroupProfile(meta.createdDate, height, data.reference, isGroupCreator)
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -1109,34 +1117,39 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/updatePermissions': {
-      validate: actionRequireActiveMember(objectMaybeOf({
-        memberID: stringMax(MAX_HASH_LEN, 'memberID'),
-        action: validatorFrom(x => ['add', 'edit', 'remove'].includes(x)),
-        roleName: stringMax(GROUP_NAME_MAX_CHAR, 'roleName'),
-        permissions: arrayOf(stringMax(GROUP_DESCRIPTION_MAX_CHAR, 'permissions'))
-      })),
+      validate: actionRequireActiveMember(arrayOf(
+        objectMaybeOf({
+          memberID: stringMax(MAX_HASH_LEN, 'memberID'),
+          action: validatorFrom(x => ['add', 'edit', 'remove'].includes(x)),
+          roleName: stringMax(GROUP_ROLE_NAME_MAX_CHAR, 'roleName'),
+          permissions: arrayOf(stringMax(GROUP_PERMISSION_MAX_CHAR, 'permissions'))
+        })
+      )),
       process ({ data }, { state }) {
-        const groupProfile = state.profiles[data.memberID]
-        if (!groupProfile) {
-          throw new Error(L('Member does not exist.'))
-        }
+        for (const item of data) {
+          const groupProfile = state.profiles[item.memberID]
 
-        switch (data.action) {
-          case 'add':
-            groupProfile.role = {
-              name: data.roleName,
-              permissions: data.permissions
-            }
-            break
-          case 'edit':
-            groupProfile.role = {
-              name: data.roleName || groupProfile.role.name,
-              permissions: data.permissions || groupProfile.role.permissions
-            }
-            break
-          case 'remove':
-            groupProfile.role = null
-            break
+          if (!groupProfile) {
+            throw new Error(L('Member does not exist.'))
+          }
+
+          switch (item.action) {
+            case 'add':
+              groupProfile.role = {
+                name: item.roleName,
+                permissions: item.permissions
+              }
+              break
+            case 'edit':
+              groupProfile.role = {
+                name: item.roleName || groupProfile.role.name,
+                permissions: item.permissions || groupProfile.role.permissions
+              }
+              break
+            case 'remove':
+              groupProfile.role = null
+              break
+          }
         }
       }
     },
