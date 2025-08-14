@@ -96,7 +96,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourGroupPermissionsHas (state, getters) {
     return (permission) => getters.ourGroupPermissions.includes(permission)
   },
-  allGroupPermissions (state, getters) {
+  allGroupMemberPermissions (state, getters) {
     return Object.entries(getters.groupProfiles)
       .filter(([, profile]: [string, any]) => Boolean(profile.role))
       .map(([memberID, profile]: [string, any]) => ({ roleName: profile.role.name, permissions: profile.role.permissions, memberID }))

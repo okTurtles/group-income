@@ -60,7 +60,7 @@ export default ({
     ...mapGetters([
       'ourGroupProfile',
       'ourGroupPermissionsHas',
-      'allGroupPermissions',
+      'allGroupMemberPermissions',
       'ourIdentityContractId'
     ]),
     displayComponent () {
@@ -75,8 +75,8 @@ export default ({
     },
     groupPermissionsToDisplay () {
       return this.canViewOtherMembersPermissions
-        ? this.allGroupPermissions
-        : [this.allGroupPermissions.find(entry => entry.memberID === this.ourIdentityContractId)]
+        ? this.allGroupMemberPermissions
+        : [this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)]
     }
   },
   methods: {
