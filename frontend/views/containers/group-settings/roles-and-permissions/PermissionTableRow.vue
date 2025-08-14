@@ -2,29 +2,28 @@
   tr.c-permission-table-row(:class='{ "is-mobile": isMobile }')
     td.td-user
       .c-user-wrapper
-        // TODO: Use 'AvatarUser.vue' instead and also wrap these with 'ProfileCard.vue'
-        //       when implementing it with real data.
-        avatar.c-avatar(src='/assets/images/user-avatar-default.png' size='xs')
+        avatar-user.c-avatar(:contractID='data.memberID' size='xs')
 
         .c-name-and-role-mobile(v-if='isMobile')
-          strong.c-name.has-ellipsis {{ data.username }}
+          strong.c-name.has-ellipsis {{ userDisplayName }}
           .c-pill-container
-            role-pill(:role='data.role')
-        strong.c-name.has-ellipsis(v-else) {{ data.username }}
+            role-pill(:role='data.roleName')
+        strong.c-name.has-ellipsis(v-else) {{ userDisplayName }}
 
     td.td-role(v-if='!isMobile')
-      role-pill(:role='data.role')
+      role-pill(:role='data.roleName')
 
     td.td-permissions
       view-permissions(:permissions='data.permissions')
 
-    td.td-action
+    td.td-action(v-if='permissionsUtils.canDelegatePermissions')
       .c-action-wrapper
         permission-action-menu
 </template>
 
 <script>
-import Avatar from '@components/Avatar.vue'
+import { mapGetters } from 'vuex'
+import AvatarUser from '@components/AvatarUser.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
 import RolePill from './RolePill.vue'
@@ -36,15 +35,16 @@ import {
 
 export default {
   name: 'PermissionTableRow',
+  inject: ['permissionsUtils'],
   components: {
-    Avatar,
+    AvatarUser,
     ViewPermissions,
     PermissionActionMenu,
     RolePill
   },
   props: {
     data: {
-      type: Object
+      type: Object // { roleName: string, permissions: string[], memberID: string }
     },
     isMobile: {
       type: Boolean,
@@ -52,15 +52,21 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'userDisplayNameFromID'
+    ]),
+    userDisplayName () {
+      return this.userDisplayNameFromID(this.data.memberID)
+    },
     pillClasses () {
-      if (!this.data?.role) { return '' }
+      if (!this.data?.roleName) { return '' }
 
       return ({
         [GROUP_ROLES.ADMIN]: 'is-success',
         [GROUP_ROLES.MODERATOR_DELEGATOR]: 'is-primary',
         [GROUP_ROLES.MODERATOR]: 'is-neutral',
         [GROUP_ROLES.CUSTOM]: 'is-warning'
-      })[this.data.role]
+      })[this.data.roleName]
     }
   },
   methods: {
