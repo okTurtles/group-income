@@ -121,12 +121,15 @@ export default {
       this.ephemeral.selectedRole = value
 
       if (value === GROUP_ROLES.CUSTOM) {
-        this.ephemeral.selectedPermissions = this.data.permissions?.length > 0 ? this.data.permissions : []
+        const isMyCurrentRoleCustom = this.profile.role?.name === GROUP_ROLES.CUSTOM
+        this.ephemeral.selectedPermissions = isMyCurrentRoleCustom
+          ? this.profile.role.permissions || []
+          : []
       } else {
         this.ephemeral.selectedPermissions = this.permissionPresets[value]
       }
 
-      this.$emit('update', { role: value, permissions: this.ephemeral.selectedPermissions })
+      this.emitUpdateEvent()
     },
     checkPermissionActive (permission) {
       if (!this.isCustomRole) { return false }
@@ -144,6 +147,15 @@ export default {
       } else {
         this.ephemeral.selectedPermissions = this.ephemeral.selectedPermissions.filter(p => p !== permission)
       }
+
+      this.emitUpdateEvent()
+    },
+    emitUpdateEvent () {
+      this.$emit('update', {
+        userId: this.data.userId,
+        role: this.ephemeral.selectedRole,
+        permissions: this.ephemeral.selectedPermissions
+      })
     }
   },
   created () {

@@ -142,9 +142,6 @@ export default ({
       this.close()
     }
   },
-  created () {
-    this.select(this.globalProfile(this.ourIdentityContractId))
-  },
   watch: {
     'value' (newVal) {
       this.ephemeral.selected = newVal

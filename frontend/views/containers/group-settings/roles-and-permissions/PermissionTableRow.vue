@@ -16,7 +16,7 @@
     td.td-permissions
       view-permissions(:permissions='data.permissions')
 
-    td.td-action(v-if='permissionsUtils.canDelegatePermissions')
+    td.td-action(v-if='!amIAdmin && permissionsUtils.canDelegatePermissions')
       .c-action-wrapper
         permission-action-menu
 </template>
@@ -32,6 +32,7 @@ import {
   getRoleDisplayName,
   getPermissionDisplayName
 } from './permissions-utils.js'
+import { L } from '@common/common.js'
 
 export default {
   name: 'PermissionTableRow',
@@ -53,10 +54,18 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'userDisplayNameFromID'
+      'userDisplayNameFromID',
+      'ourIdentityContractId'
     ]),
+    isMe () {
+      return this.data.memberID === this.ourIdentityContractId
+    },
+    amIAdmin () {
+      return this.isMe && this.data.roleName === GROUP_ROLES.ADMIN
+    },
     userDisplayName () {
-      return this.userDisplayNameFromID(this.data.memberID)
+      const displayName = this.userDisplayNameFromID(this.data.memberID)
+      return this.isMe ? `${displayName} (${L('you')})` : displayName
     },
     pillClasses () {
       if (!this.data?.roleName) { return '' }
