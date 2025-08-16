@@ -252,7 +252,7 @@ export default ({
     right: 1.5rem;
   }
 
-  &> * > .is-icon-small {
+  & > * > .is-icon-small {
     color: $text_1;
     border-radius: 0;
     width: 2.375rem;

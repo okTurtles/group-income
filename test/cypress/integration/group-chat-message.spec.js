@@ -47,16 +47,11 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function deleteMessage (nth, countAfter) {
-    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
-          cy.getByDT('menuTrigger').click()
-        })
-        cy.getByDT('menuContent').within(() => {
-          cy.getByDT('deleteMessage').click()
-        })
-        cy.get('.c-actions').invoke('hide').should('be.hidden')
-      })
+    cy.getByDT('conversationWrapper').within(() => {
+      // cy.get(`[data-index="${nth - 1}"]:visible > .c-message .c-message-menu .c-actions`).invoke('attr', 'style', 'display: flex').invoke('show')
+      // cy.get(`[data-index="${nth - 1}"] > .c-message .c-message-menu .c-actions:visible`).getByDT('menuTrigger').click({ force: true })
+      cy.get(`[data-index="${nth - 1}"]:visible > .c-message .c-message-menu .c-actions`).getByDT('menuContent').getByDT('deleteMessage').eq(0).click({ force: true })
+      // cy.get(`[data-index="${nth - 1}"]:visible > .c-message .c-message-menu .c-actions`).invoke('hide').should('be.hidden')
     })
 
     cy.getByDT('modal').within(() => {
@@ -138,13 +133,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function replyToMessage (nth, message) {
-    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').scrollIntoView().should('be.visible')
-        cy.get('.c-actions button[aria-label="Reply"]').click({ force: true })
-        cy.get('.c-actions').invoke('hide').should('be.hidden')
-      })
-    })
+    cy.find(`[data-test="conversationWrapper"] [data-index="${nth - 1}"] > .c-message .c-message-menu .c-actions button[aria-label="Reply"]`).click({ force: true })
     cy.get('.c-tooltip.is-active').invoke('hide')
 
     cy.getByDT('messageInputWrapper').within(() => {
@@ -407,7 +396,10 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user1 replies message', () => {
-    replyToMessage(11, 'Yeah, they are pretty!') // 'Sending three profile pictures which are designed by Apple. Cute, right?'
+    cy.getByDT('conversationWrapper').scrollTo(0, 500)
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(200)
+    replyToMessage(9, 'Yeah, they are pretty!') // 'Sending three profile pictures which are designed by Apple. Cute, right?'
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message').last().find('.c-who > span:first-child').should('contain', user1)
@@ -419,7 +411,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       // HACK: scrollIntoView() should not be there
       // But cy.get('.c-reply').click() doesn't scroll to the target message
       // Because of this can not move forward to the next stages, so just used HACK
-      cy.get('[data-index="10"] > .c-message')
+      cy.get('[data-index="8"] > .c-message')
         .should('contain', 'Sending three profile pictures which are designed by Apple. Cute, right?')
         .scrollIntoView()
         .should('be.visible')

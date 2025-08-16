@@ -676,6 +676,7 @@ export default ({
       this.ephemeral.replyingTo = null
     },
     handleSendMessage (text, attachments, replyingMessage) {
+      console.error('@@@@handleSendMessage', text)
       const hasAttachments = attachments?.length > 0
       const contractID = this.ephemeral.renderingChatRoomId
 
