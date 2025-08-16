@@ -14,7 +14,7 @@ message-base.c-message-poll(
       component.c-poll-inner(
         :is='messageContentComponent'
         :isPollEditable='isPollEditable'
-        :isChangeMode='ephemeral.isChangeMode'
+        :isChangeMode='isEditing'
         :messageId='messageId'
         :messageHash='messageHash'
         :pollData='pollData'
@@ -72,19 +72,14 @@ export default ({
       }
     },
     pinnedBy: String,
-    isMsgSender: Boolean // says if the current user is the creator of the message
-  },
-  data () {
-    return {
-      ephemeral: {
-        isChangeMode: false
-      }
-    }
+    isMsgSender: Boolean, // says if the current user is the creator of the message
+    isFocused: Boolean,
+    isEditing: Boolean
   },
   computed: {
     messageContentComponent () {
       if (this.hasVoted) {
-        return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-vote-result'
+        return this.isEditing ? 'poll-to-vote' : 'poll-vote-result'
       } else {
         return this.isPollExpired ? 'poll-vote-result' : 'poll-to-vote'
       }
@@ -101,10 +96,10 @@ export default ({
       this.$emit('add-emoticon', emoticon)
     },
     switchOnChangeMode () {
-      this.ephemeral.isChangeMode = true
+      this.$emit('message-is-editing', true)
     },
     switchOffChangeMode () {
-      this.ephemeral.isChangeMode = false
+      this.$emit('message-is-editing', false)
     },
     checkAndSetupPollExpirationTimer () {
       const markPollClosed = async () => {
