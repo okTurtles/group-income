@@ -688,6 +688,8 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 const handleSignal = (signal: string, code: number) => {
   process.on(signal, () => {
     console.error(`Exiting upon receiving ${signal} (${code})`)
+    // Exit codes follow the 128 + signal code convention.
+    // See <https://tldp.org/LDP/abs/html/exitcodes.html>
     process.exit(128 + code)
   })
 }
