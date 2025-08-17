@@ -20,6 +20,7 @@
       key-field='hash'
       @scroll-start='onScrollStart'
       @scroll-end='onScrollEnd'
+      @scroll='onChatScroll'
       ref='conversation'
       data-test='conversationWrapper'
       :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages'
@@ -338,22 +339,21 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
-    // Need to do it directly in the DOM because `@scroll.passive` doesn't work
+    /* // Need to do it directly in the DOM because `@scroll.passive` doesn't work
     const setupEventListener = () => {
       if (!this.$refs.conversation?.$el) {
         this.scrollTimeoutId = setTimeout(setupEventListener, 100)
         return
       }
       delete this.scrollTimeoutId
-      this.$nextTick(() => {
-        this.$refs.conversation.$el.addEventListener('scroll', this.onChatScroll, { passive: true })
-      })
+      this.$refs.conversation.$el.addEventListener('scroll', this.onChatScroll, { passive: true })
     }
     setupEventListener()
+    */
     window.chatmain = this
   },
   beforeDestroy () {
-    if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
+    // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
     // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)

@@ -133,8 +133,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function replyToMessage (nth, message) {
-    cy.find(`[data-test="conversationWrapper"] [data-index="${nth - 1}"] > .c-message .c-message-menu .c-actions button[aria-label="Reply"]`).click({ force: true })
-    cy.get('.c-tooltip.is-active').invoke('hide')
+    cy.get(`[data-test="conversationWrapper"] [data-index="${nth - 1}"] > .c-message .c-message-menu .c-actions button[aria-label="Reply"]`).click({ force: true })
 
     cy.getByDT('messageInputWrapper').within(() => {
       cy.get('textarea').should('exist')
@@ -397,8 +396,6 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user1 replies message', () => {
     cy.getByDT('conversationWrapper').scrollTo(0, 500)
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(200)
     replyToMessage(9, 'Yeah, they are pretty!') // 'Sending three profile pictures which are designed by Apple. Cute, right?'
 
     cy.getByDT('conversationWrapper').within(() => {

@@ -19,7 +19,8 @@
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
     "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js",
+    "postinstall": "patch-package"
   },
   "eslintConfig": {
     "root": true,
@@ -182,6 +183,7 @@
     "flow-bin": "0.154.0",
     "flow-remove-types": "2.181.0",
     "mocha": "8.4.0",
+    "patch-package": "8.0.0",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
     "sass": "1.71.1",
     "should": "13.2.3",
