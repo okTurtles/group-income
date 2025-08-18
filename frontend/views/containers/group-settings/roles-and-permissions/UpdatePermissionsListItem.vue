@@ -231,6 +231,7 @@ export default {
 
     .c-display-name {
       color: $text_0;
+      font-size: $size_4;
     }
   }
 }
