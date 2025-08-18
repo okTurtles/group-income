@@ -113,6 +113,7 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
 
   async close () {
     for (const backend of new Set(Object.values(this.backends))) {
+      // $FlowFixMe[incompatible-use]
       await backend.close()
     }
   }
