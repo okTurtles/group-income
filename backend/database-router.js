@@ -110,4 +110,10 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
       await backend.clear()
     }
   }
+
+  async close () {
+    for (const backend of new Set(Object.values(this.backends))) {
+      await backend.close()
+    }
+  }
 }

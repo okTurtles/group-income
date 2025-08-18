@@ -235,7 +235,7 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
   if (persistence) {
     const Ctor = (await import(`./database-${persistence}.js`)).default
     // Destructuring is safe because these methods have been bound using rebindMethods().
-    const { init, readData, writeData, deleteData } = new Ctor(options[persistence])
+    const { init, readData, writeData, deleteData, close } = new Ctor(options[persistence])
     await init()
 
     // https://github.com/isaacs/node-lru-cache#usage
@@ -301,6 +301,9 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
     })
     sbp('sbp/selectors/lock', ['chelonia.db/get', 'chelonia.db/set', 'chelonia.db/delete'])
   }
+  process.on('exit', () => {
+    close.catch(e => console.error(e, 'Error closing DB'))
+  })
   if (skipDbPreloading) return
   // TODO: Update this to only run when persistence is disabled when `chel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== dbRootPath) {
