@@ -12,7 +12,7 @@
         .c-display-name.has-text-bold {{ getDisplayName(ephemeral.selected) }}
         .c-username @{{ ephemeral.selected.username }}
     .c-default-text(v-else)
-      i18n(v-if='noAvailableOption') No members available
+      i18n(v-if='noAvailableOption') No other members without roles
       span(v-else) {{ defaultText }}
 
     .c-dropdown-icon
@@ -62,7 +62,7 @@ export default ({
     defaultText: {
       type: String,
       required: false,
-      default: L('Select user')
+      default: L('Select a member')
     },
     membersToExclude: {
       type: Array,
@@ -102,8 +102,9 @@ export default ({
     dropdownOptions () {
       const idsToExclude = uniq([
         ...this.membersToExclude,
-        ...(this.excludeSelf ? this.ourIdentityContractId : [])
+        ...(this.excludeSelf ? [this.ourIdentityContractId] : [])
       ])
+
       return this.allActiveMembers.filter(member => !idsToExclude.includes(member.contractID))
     },
     noAvailableOption () {

@@ -16,7 +16,7 @@
     td.td-permissions
       view-permissions(:permissions='data.permissions')
 
-    td.td-action(v-if='!amIAdmin && permissionsUtils.canDelegatePermissions')
+    td.td-action(v-if='!isAdmin && !isMe && canDelegatePermissions')
       .c-action-wrapper
         permission-action-menu
 </template>
@@ -27,7 +27,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
 import RolePill from './RolePill.vue'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
   getPermissionDisplayName
@@ -36,7 +36,6 @@ import { L } from '@common/common.js'
 
 export default {
   name: 'PermissionTableRow',
-  inject: ['permissionsUtils'],
   components: {
     AvatarUser,
     ViewPermissions,
@@ -55,13 +54,17 @@ export default {
   computed: {
     ...mapGetters([
       'userDisplayNameFromID',
-      'ourIdentityContractId'
+      'ourIdentityContractId',
+      'ourGroupPermissionsHas'
     ]),
+    canDelegatePermissions () {
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
+    },
     isMe () {
       return this.data.memberID === this.ourIdentityContractId
     },
-    amIAdmin () {
-      return this.isMe && this.data.roleName === GROUP_ROLES.ADMIN
+    isAdmin () {
+      return this.data.roleName === GROUP_ROLES.ADMIN
     },
     userDisplayName () {
       const displayName = this.userDisplayNameFromID(this.data.memberID)

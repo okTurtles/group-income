@@ -39,7 +39,8 @@ import {
   GROUP_ROLE_NAME_MAX_CHAR,
   GROUP_PERMISSION_MAX_CHAR,
   GROUP_ROLES,
-  GROUP_PERMISSIONS_PRESET
+  GROUP_PERMISSIONS_PRESET,
+  GROUP_PERMISSION_UPDATE_ACTIONS
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
@@ -1120,7 +1121,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember(arrayOf(
         objectMaybeOf({
           memberID: stringMax(MAX_HASH_LEN, 'memberID'),
-          action: validatorFrom(x => ['add', 'edit', 'remove'].includes(x)),
+          action: validatorFrom(x => Object.values(GROUP_PERMISSION_UPDATE_ACTIONS).includes(x)),
           roleName: stringMax(GROUP_ROLE_NAME_MAX_CHAR, 'roleName'),
           permissions: arrayOf(stringMax(GROUP_PERMISSION_MAX_CHAR, 'permissions'))
         })

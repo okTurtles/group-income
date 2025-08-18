@@ -96,6 +96,12 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourGroupPermissionsHas (state, getters) {
     return (permission) => getters.ourGroupPermissions.includes(permission)
   },
+  getGroupMemberRoleNameById (state, getters) {
+    return (memberID) => {
+      const profile = getters.groupProfiles[memberID]
+      return profile?.role?.name || ''
+    }
+  },
   getGroupMemberPermissionsById (state, getters) {
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]

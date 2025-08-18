@@ -1031,7 +1031,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/updatePermissions', L('Failed to update permission details of a member.')),
-  ...encryptedAction('gi.actions/group/groupRoleUpdate', L('Failed to update group role.')),
   ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.'), (sendMessage, params) => {
     const { contractID } = params
     return sendMessage({

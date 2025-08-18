@@ -17,7 +17,6 @@ modal-base-template.has-background(
           group-members-dropdown(
             ref='groupMembersDropdown'
             v-model='ephemeral.selectedUser'
-            :excludeSelf='true'
             :membersToExclude='memberIdsToExclude'
           )
 
@@ -41,31 +40,28 @@ modal-base-template.has-background(
               @remove='removeEntry'
             )
 
+        banner-scoped(ref='formMsg' allow-a)
+
         .buttons.c-button-container
           i18n.is-outlined(tag='button' type='button' @click.stop='closeModal') Cancel
           button-submit.is-success.c-update-btn(
             :disabled='!enableUpdateBtn'
             @click='submit'
           )
-            i18n Update
+            i18n Submit
 
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { uniq } from 'turtledash'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
 import UpdatePermissionsListItem from './UpdatePermissionsListItem.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-
-const isPermissionsArrayEqual = (arr1, arr2) => {
-  if (arr1.length !== arr2.length) return false
-  const arr1Sorted = arr1.slice().sort()
-  const arr2Sorted = arr2.slice().sort()
-  return arr1Sorted.every((item, index) => item === arr2Sorted[index])
-}
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 export default ({
   name: 'AddPermissionsModal',
@@ -73,6 +69,7 @@ export default ({
     ModalBaseTemplate,
     GroupMembersDropdown,
     UpdatePermissionsListItem,
+    BannerScoped,
     ButtonSubmit
   },
   data () {
@@ -86,27 +83,17 @@ export default ({
   computed: {
     ...mapGetters([
       'allGroupMemberPermissions',
-      'getGroupMemberPermissionsById',
       'ourIdentityContractId'
     ]),
-    groupAdminId () {
-      const adminEntry = this.allGroupMemberPermissions.find(entry => entry.roleName === GROUP_ROLES.ADMIN)
-      return adminEntry?.memberID
-    },
     addedMemberIds () {
       return this.ephemeral.roleEntries.map(entry => entry.userId)
     },
     memberIdsToExclude () {
-      return uniq([this.groupAdminId, this.ourIdentityContractId, ...this.addedMemberIds])
+      const membersWhoHaveRole = this.allGroupMemberPermissions.map(entry => entry.memberID)
+      return uniq([...membersWhoHaveRole, ...this.addedMemberIds])
     },
     enableUpdateBtn () {
-      return this.addedMemberIds.some(memberId => {
-        const currPermissions = this.getGroupMemberPermissionsById(memberId) // member's current permissions
-        const updatedPermissions = this.getEditedPermissionsById(memberId) // permissions of the member edited in this modal
-        console.log('!@# currPermissions', currPermissions)
-        console.log('!@# updatedPermissions', updatedPermissions)
-        return !isPermissionsArrayEqual(currPermissions, updatedPermissions)
-      })
+      return this.ephemeral.roleEntries.every(entry => entry.permissions.length)
     }
   },
   methods: {
@@ -140,12 +127,23 @@ export default ({
     removeEntry (userId) {
       this.ephemeral.roleEntries = this.ephemeral.roleEntries.filter(entry => entry.userId !== userId)
     },
-    getEditedPermissionsById (memberId) {
-      const found = this.ephemeral.roleEntries.find(entry => entry.userId === memberId)
-      return found ? found.permissions : []
-    },
-    submit () {
-      alert('TODO: Implement submit!')
+    async submit () {
+      try {
+        await sbp('gi.actions/group/updatePermissions', {
+          contractID: this.$store.state.currentGroupId,
+          data: this.ephemeral.roleEntries.map(entry => ({
+            memberID: entry.userId,
+            action: GROUP_PERMISSION_UPDATE_ACTIONS.ADD,
+            roleName: entry.role,
+            permissions: entry.permissions
+          }))
+        })
+
+        this.closeModal()
+      } catch (e) {
+        console.error('AddPermissionsModal.vue submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
+      }
     }
   }
 }: Object)

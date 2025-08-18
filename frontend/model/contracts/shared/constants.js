@@ -29,6 +29,11 @@ export const GROUP_MINCOME_MAX = 1000000000
 export const GROUP_DISTRIBUTION_PERIOD_MAX_DAYS = 365
 export const GROUP_ROLE_NAME_MAX_CHAR = 50
 export const GROUP_PERMISSION_MAX_CHAR = 100
+export const GROUP_PERMISSION_UPDATE_ACTIONS = {
+  ADD: 'add',
+  EDIT: 'edit',
+  REMOVE: 'remove'
+}
 
 // group-proposal related
 

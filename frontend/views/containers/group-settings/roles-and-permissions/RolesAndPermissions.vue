@@ -5,7 +5,7 @@ page-section.c-section(
 )
   p.has-text-1.c-section-description
     i18n(v-if='canViewOtherMembersPermissions') Here's a list of roles and permissions granted to your group members.
-    i18n(v-else) Below is your own role and permissions.
+    i18n(v-else) Below is the role and permissions granted to you.
 
   table.table.table-in-card.c-permissions-table
     thead
@@ -85,14 +85,6 @@ export default ({
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
-    }
-  },
-  provide () {
-    return {
-      permissionsUtils: {
-        myPermissions: this.myPermissions,
-        canDelegatePermissions: this.canDelegatePermissions
-      }
     }
   },
   mounted () {
