@@ -107,14 +107,18 @@ export default class RouterBackend extends DatabaseBackend implements IDatabaseB
   async clear (): Promise<void> {
     for (const backend of new Set(Object.values(this.backends))) {
       // $FlowFixMe[incompatible-use]
-      await backend.clear()
+      await backend.clear().catch(e => {
+        console.error(e, 'Error clearing DB')
+      })
     }
   }
 
   async close () {
     for (const backend of new Set(Object.values(this.backends))) {
       // $FlowFixMe[incompatible-use]
-      await backend.close()
+      await backend.close().catch(e => {
+        console.error(e, 'Error closing DB')
+      })
     }
   }
 }
