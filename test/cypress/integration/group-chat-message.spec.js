@@ -455,8 +455,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giWaitUntilMessagesLoaded()
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('[data-index="1"] > .c-message .c-who > span:first-child').should('contain', user1)
-      cy.get('[data-index="1"] > .c-message .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
+      cy.get('[data-index="0"] > .c-message .c-who > span:first-child').should('contain', user1)
+      cy.get('[data-index="0"] > .c-message .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
     cy.giLogout()

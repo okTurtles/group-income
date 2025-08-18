@@ -1506,8 +1506,9 @@ export default ({
       _this.jumpToLatest('instant')
     }, 40),
     async onScrollEvt (direction: 'up' | 'down' = 'down') {
-      console.error('@@@@onScrollEvt', direction, this.ephemeral.messagesInitiated)
+      console.error('@@@@onScrollEvt', direction, this.ephemeral.messagesInitiated, this.ephemeral.currentHighestHeight, this.latestHeight, this.$refs.conversation.$el.scrollHeight, this.$refs.conversation.$el.clientHeight)
       if (this.ephemeral.messagesInitiated === undefined) return
+      if (direction === 'down' && this.ephemeral.currentHighestHeight === this.latestHeight && this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight) return
 
       // if (this.ephemeral.initialScroll.hash) {
       // clearTimeout(this.ephemeral.initialScroll.timeoutId)
