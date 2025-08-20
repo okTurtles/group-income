@@ -124,6 +124,27 @@ if (
 
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
+const securityHeaders = {
+  // This is the most likely to break things now; it may need changing when sandboxing or federation is implemented.
+  // - Not setting media-src since Background.vue dynamically adds sound assets.
+  // - The localhost:3000 entries are for BrowserSync support.
+  'Content-Security-Policy': "child-src 'none'; connect-src 'self' blob: http://localhost:3001 ws://localhost:3001; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none'; img-src 'self' https://unpkg.com blob: data:; manifest-src 'self'; object-src 'none'; script-src 'unsafe-eval'; script-src-attr 'none'; script-src-elem 'self' 'unsafe-inline'; style-src 'self'; style-src-attr 'none'; style-src-elem 'self' 'unsafe-inline'; upgrade-insecure-requests; worker-src 'self'",
+  // Block embedding cross-origin resources that don't explicitly allow it. Disabled because it blocks emoji sheet rendering.
+  // 'Cross-Origin-Embedder-Policy': 'require-corp',
+  // Don't share context with potentially untrusted sites.
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  // Block hotlinking.
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  // List generated using https://www.permissionspolicy.com.
+  'Permissions-Policy': 'accelerometer=(), ambient-light-sensor=(), autoplay=(), battery=(), camera=(), cross-origin-isolated=(self), display-capture=(), document-domain=(), encrypted-media=(), execution-while-not-rendered=(self), execution-while-out-of-viewport=(self), fullscreen=(self), geolocation=(), gyroscope=(), keyboard-map=(), magnetometer=(), microphone=(), midi=(), navigation-override=(self), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), web-share=(self), xr-spatial-tracking=(), clipboard-read=(), clipboard-write=(self), gamepad=(), speaker-selection=()',
+  // This tells the user agent under which circumstances to send a referrer header and what information it should contain.
+  // Setting it can be useful to prevent destination servers of links in GI from learning the exact URL (which can contain, e.g., a group) the user came from.
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Content-Type-Options': 'nosniff',
+  // Block loading the page in a frame.
+  'X-Frame-Options': 'DENY'
+}
+
 const hapi = new Hapi.Server({
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
@@ -152,9 +173,13 @@ hapi.ext({
       // but custom headers can be manually added using `.output.headers`.
       // See https://hapi.dev/module/boom/api/.
       if (typeof request.response.header === 'function') {
-        request.response.header('X-Frame-Options', 'deny')
+        for (const [name, value] of Object.entries(securityHeaders)) {
+          request.response.header(name, value)
+        }
       } else {
-        request.response.output.headers['X-Frame-Options'] = 'deny'
+        for (const [name, value] of Object.entries(securityHeaders)) {
+          request.response.output.headers[name] = value
+        }
       }
     } catch (err) {
       console.warn(chalk.yellow('[backend] Could not set X-Frame-Options header:', err.message))
