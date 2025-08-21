@@ -96,7 +96,7 @@ const handleSignal = (signal: string, code: number) => {
 }
 
 // Codes from <signal.h>
-[
+;[
   ['SIGHUP', 1],
   ['SIGINT', 2],
   ['SIGQUIT', 3],
