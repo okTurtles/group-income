@@ -7,10 +7,12 @@ import fs from 'fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
+import '@sbp/okturtles.events'
 import { checkKey, parsePrefixableKey, prefixHandlers } from '@chelonia/lib/db'
 import LRU from 'lru-cache'
 import { initVapid } from './vapid.js'
 import { initZkpp } from './zkppSalt.js'
+import { SERVER_EXITING } from './events.js'
 
 const Boom = require('@hapi/boom')
 
@@ -237,8 +239,14 @@ export const initDB = async ({ skipDbPreloading }: { skipDbPreloading?: boolean 
     // Destructuring is safe because these methods have been bound using rebindMethods().
     const { init, readData, writeData, deleteData, close } = new Ctor(options[persistence])
     await init()
-    process.on('exit', () => {
-      close().catch(e => console.error(e, 'Error closing DB'))
+    sbp('okTurtles.events/once', SERVER_EXITING, () => {
+      sbp('okTurtles.eventQueue/queueEvent', SERVER_EXITING, async () => {
+        try {
+          await close()
+        } catch (e) {
+          console.error(e, `Error closing DB ${persistence}`)
+        }
+      })
     })
 
     // https://github.com/isaacs/node-lru-cache#usage
