@@ -581,7 +581,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
     const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
-    const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+    const PEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
     const foreignContractState = sbp('chelonia/contract/state', foreignContractID)
 
     const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
@@ -593,7 +593,7 @@ export default (sbp('sbp/selectors/register', {
     return await sbp('chelonia/out/keyAdd', {
       contractID,
       contractName: 'gi.contracts/identity',
-      data: [encryptedOutgoingData(contractID, CEKid, {
+      data: [encryptedOutgoingData(contractID, PEKid, {
         foreignKey: `shelter:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
         id: keyId,
         data: foreignContractState._vm.authorizedKeys[keyId].data,
@@ -753,10 +753,10 @@ export default (sbp('sbp/selectors/register', {
           // having any groups in common
           contractID: message.contractID()
         },
-        // For now, we assume that we're messaging someone which whom we
+        // For now, we assume that we're messaging someone with whom we
         // share a group
         signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
-        innerSigningContractID: currentGroupId,
+        innerSigningKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED + '#inner'], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage#inner']),
         hooks
       })
     }
