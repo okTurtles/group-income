@@ -47,8 +47,12 @@ export default {
     }
   },
   methods: {
-    onMenuSelect (itemId) {
-      alert(L('Coming soon'))
+    onMenuSelect (actionName) {
+      if (actionName === 'edit') {
+        alert(L('Coming soon'))
+      } else {
+        this.$emit(actionName)
+      }
     }
   }
 }

@@ -18,16 +18,17 @@
 
     td.td-action(v-if='!isAdmin && !isMe && canDelegatePermissions')
       .c-action-wrapper
-        permission-action-menu
+        permission-action-menu(@remove='removeMemberRole')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
 import RolePill from './RolePill.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS, GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
   getPermissionDisplayName
@@ -49,6 +50,13 @@ export default {
     isMobile: {
       type: Boolean,
       default: false
+    }
+  },
+  data () {
+    return {
+      ephemeral: {
+        isSubmitting: false
+      }
     }
   },
   computed: {
@@ -83,7 +91,36 @@ export default {
   },
   methods: {
     getRoleDisplayName,
-    getPermissionDisplayName
+    getPermissionDisplayName,
+    async removeMemberRole () {
+      const promptConfig = {
+        heading: L('Remove member role'),
+        question: L('Are you sure you want to remove the role and permissions for this member?'),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel'),
+        primaryButtonStyle: 'primary'
+      }
+
+      try {
+        this.ephemeral.isSubmitting = true
+
+        const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+        if (primaryButtonSelected) {
+          await sbp('gi.actions/group/updatePermissions', {
+            contractID: this.$store.state.currentGroupId,
+            data: [{
+              memberID: this.data.memberID,
+              action: GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE
+            }]
+          })
+        }
+      } catch (e) {
+        console.error('PermissionTableRow caught error: ', e)
+        // TODO: display feedback banner to the user.
+      } finally {
+        this.ephemeral.isSubmitting = false
+      }
+    }
   }
 }
 </script>
