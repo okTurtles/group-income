@@ -82,6 +82,7 @@ lazyModal('AvatarEditorModal', () => import('../views/components/avatar-editor/A
 lazyModal('ChatFileAttachmentWarningModal', () => import('../views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue'))
 lazyModal('ImageViewerModal', () => import('../views/containers/chatroom/image-viewer/ImageViewerModal.vue'))
 lazyModal('AddPermissionsModal', () => import('../views/containers/group-settings/roles-and-permissions/AddPermissionsModal.vue'))
+lazyModal('RemovePermissionsModal', () => import('../views/containers/group-settings/roles-and-permissions/RemovePermissionsModal.vue'))
 lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/group-settings/GroupCreationModal.vue'))
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
