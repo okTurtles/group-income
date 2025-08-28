@@ -6,7 +6,7 @@
     template(slot='title')
       span {{ config.title }}
 
-    form.c-form(@submit.prevent='submit')
+    form.c-form(@submit.prevent='')
       i18n.is-title-4(tag='h3') Are you sure you want to delete this member's role in this group?
 
       ul.c-details-list(v-if='data')
@@ -17,7 +17,7 @@
             .c-member-details
               .c-member-display-name.has-ellipsis {{ userDisplayNameFromID(data.memberID) }}
               .c-member-username.has-ellipsis @{{ usernameFromID(data.memberID) }}
-        
+
           li.c-list-item
             i18n.c-label(tag='span') Role:
             .c-list-item-content
@@ -28,13 +28,15 @@
           ul.c-list-item-content.c-permissions-list
             li.c-permission-pill(v-for='permission in data.permissions' :key='permission') - {{ getPermissionDisplayName(permission) }}
 
+      banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+
       .buttons.c-button-container
         i18n.is-outlined(
           tag='button'
           @click.prevent='close'
         ) Cancel
 
-        button-submit.is-danger Remove
+        button-submit.is-danger(@click='submit') Remove
 </template>
 
 <script>
@@ -44,6 +46,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { getPermissionDisplayName } from './permissions-utils.js'
@@ -55,6 +58,7 @@ export default {
     ModalTemplate,
     ButtonSubmit,
     AvatarUser,
+    BannerScoped,
     RolePill
   },
   props: {
@@ -83,6 +87,8 @@ export default {
     },
     async submit () {
       try {
+        this.$refs.formMsg.clean()
+
         await sbp('gi.actions/group/updatePermissions', {
           contractID: this.$store.state.currentGroupId,
           data: [{
@@ -90,9 +96,10 @@ export default {
             action: GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE
           }]
         })
+        this.close()
       } catch (e) {
-        console.error('PermissionTableRow caught error: ', e)
-        // TODO: display feedback banner to the user.
+        console.error('RemovePermissionsModal.vue submit() caught error: ', e)
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },
@@ -192,7 +199,12 @@ export default {
   border-radius: $radius;
   font-size: $size_4;
   background-color: $general_1;
-  color: $text_1;
+  color: $text_0;
+}
+
+.c-feedback-banner {
+  margin-top: 0;
+  margin-bottom: 2rem;
 }
 
 .c-button-container {
