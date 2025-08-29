@@ -56,7 +56,7 @@ import { uniq } from 'turtledash'
 import { L } from '@common/common.js'
 
 export default {
-  name: 'UpdatePermissionsListItem',
+  name: 'AddPermissionsListItem',
   components: {
     AvatarUser,
     PermissionPiece,

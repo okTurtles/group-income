@@ -39,7 +39,7 @@ export default {
           },
           {
             id: 'remove',
-            label: L('Remove'),
+            label: L('Remove role'),
             icon: 'trash-alt'
           }
         ]

@@ -32,7 +32,7 @@ modal-base-template.has-background(
           i18n.is-title-4.c-set-permissions-title(tag='h4') Set roles and permissions:
 
           ul.c-role-entry-list
-            update-permissions-list-item.c-permission-entry(
+            add-permissions-list-item.c-permission-entry(
               v-for='entry in ephemeral.roleEntries'
               :key='entry.userId'
               :data='entry'
@@ -59,7 +59,7 @@ import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constan
 import { uniq } from 'turtledash'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
-import UpdatePermissionsListItem from './UpdatePermissionsListItem.vue'
+import AddPermissionsListItem from './AddPermissionsListItem.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
@@ -68,7 +68,7 @@ export default ({
   components: {
     ModalBaseTemplate,
     GroupMembersDropdown,
-    UpdatePermissionsListItem,
+    AddPermissionsListItem,
     BannerScoped,
     ButtonSubmit
   },

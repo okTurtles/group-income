@@ -7,7 +7,7 @@
       span {{ config.title }}
 
     form.c-form(@submit.prevent='')
-      i18n.is-title-4(tag='h3') Are you sure you want to delete this member's role in this group?
+      i18n.is-title-4(tag='h3') Are you sure you want to delete this member's role?
 
       ul.c-details-list(v-if='data')
         li.c-list-item
@@ -70,7 +70,7 @@ export default {
   data () {
     return {
       config: {
-        title: L('Remove permissions')
+        title: L('Remove role')
       }
     }
   },
