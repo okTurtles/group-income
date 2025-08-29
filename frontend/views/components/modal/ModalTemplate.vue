@@ -130,11 +130,12 @@ export default ({
 
 .c-modal-header {
   position: relative;
-  padding: 0 1rem;
+  padding: 0 4rem 0 1rem;
   min-height: 4.75rem;
 
   @include tablet {
     min-height: 5.75rem;
+    padding: 0 1rem;
     align-items: center;
   }
 

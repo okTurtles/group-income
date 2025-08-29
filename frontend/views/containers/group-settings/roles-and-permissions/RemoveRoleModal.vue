@@ -12,11 +12,7 @@
       ul.c-details-list(v-if='data')
         li.c-list-item
           i18n.c-label(tag='span') Member:
-          .c-list-item-content.c-member-details-container
-            avatar-user.c-avatar(:contractID='data.memberID' size='sm')
-            .c-member-details
-              .c-member-display-name.has-ellipsis {{ userDisplayNameFromID(data.memberID) }}
-              .c-member-username.has-ellipsis @{{ usernameFromID(data.memberID) }}
+          member-name.c-list-item-content.c-member-details-container(:memberID='data.memberID')
 
           li.c-list-item
             i18n.c-label(tag='span') Role:
@@ -47,19 +43,21 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import MemberName from './MemberName.vue'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { getPermissionDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
 
 export default {
-  name: 'RemovePermissionsModal',
+  name: 'RemoveRoleModal',
   components: {
     ModalTemplate,
     ButtonSubmit,
     AvatarUser,
     BannerScoped,
-    RolePill
+    RolePill,
+    MemberName
   },
   props: {
     data: {
@@ -83,7 +81,7 @@ export default {
   methods: {
     getPermissionDisplayName,
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL, 'RemovePermissionsModal')
+      sbp('okTurtles.events/emit', CLOSE_MODAL, 'RemoveRoleModal')
     },
     async submit () {
       try {
@@ -98,13 +96,13 @@ export default {
         })
         this.close()
       } catch (e) {
-        console.error('RemovePermissionsModal.vue submit() caught error: ', e)
+        console.error('RemoveRoleModal.vue submit() caught error: ', e)
         this.$refs.formMsg.danger(e.message)
       }
     }
   },
   created () {
-    if (!this.data) {
+    if (!this.data?.memberID) {
       this.close()
     }
   }
@@ -143,36 +141,7 @@ export default {
 }
 
 .c-member-details-container {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  column-gap: 0.5rem;
-  width: 100%;
   max-width: calc(100% - 7rem);
-
-  .c-avatar {
-    flex-shrink: 0;
-  }
-
-  .c-member-details {
-    position: relative;
-    display: block;
-    flex-grow: 1;
-    max-width: calc(100% - 3rem);
-    line-height: 1.2;
-
-    .c-member-display-name {
-      position: relative;
-      font-weight: 600;
-    }
-
-    .c-member-username {
-      position: relative;
-      font-size: $size_5;
-      color: $text_1;
-    }
-  }
 }
 
 .c-label {

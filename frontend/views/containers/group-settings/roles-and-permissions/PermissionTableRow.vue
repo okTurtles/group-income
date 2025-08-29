@@ -18,7 +18,10 @@
 
     td.td-action(v-if='!isAdmin && !isMe && canDelegatePermissions')
       .c-action-wrapper
-        permission-action-menu(@remove='openRemoveRoleModal')
+        permission-action-menu(
+          @remove='onActionMenuSelect("remove")'
+          @edit='onActionMenuSelect("edit")'
+        )
 </template>
 
 <script>
@@ -93,10 +96,15 @@ export default {
   methods: {
     getRoleDisplayName,
     getPermissionDisplayName,
-    openRemoveRoleModal () {
+    onActionMenuSelect (actionName) {
+      const modalName = {
+        'edit': 'EditPermissionsModal',
+        'remove': 'RemoveRoleModal'
+      }
+
       sbp('okTurtles.events/emit',
         OPEN_MODAL,
-        'RemoveRoleModal',
+        modalName[actionName],
         undefined,
         { data: this.data }
       )
