@@ -151,6 +151,10 @@ export default {
   text-transform: uppercase;
   width: 7rem;
   flex-shrink: 0;
+
+  @include tablet {
+    width: 8.25rem;
+  }
 }
 
 .c-permissions-list {

@@ -1,10 +1,7 @@
 <template lang="pug">
 li.c-update-permissions-list-item
   .c-user-info
-    avatar-user.c-avatar-user(:contractID='data.userId' size='xs')
-    .c-user-info-text
-      .c-display-name.has-text-bold {{ getDisplayName(profile) }}
-      .c-username @{{ profile.username }}
+    member-name.c-member-name(:memberID='data.userId')
 
   .c-set-permissions-container
     .c-select-role-section
@@ -48,6 +45,7 @@ li.c-update-permissions-list-item
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
+import MemberName from './MemberName.vue'
 import RolePill from './RolePill.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
@@ -60,6 +58,7 @@ export default {
   components: {
     AvatarUser,
     PermissionPiece,
+    MemberName,
     RolePill
   },
   props: {
@@ -171,7 +170,7 @@ export default {
   position: relative;
   display: grid;
   grid-template-rows: auto auto;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto auto;
   grid-template-areas:
     "c-user-info c-cta-container"
     "c-set-permissions c-set-permissions";
@@ -179,6 +178,7 @@ export default {
   gap: 0.5rem;
   box-shadow: inset 0 2px 0 $general_2;
   padding: 1.25rem 0;
+  width: 100%;
 
   @include tablet {
     grid-template-rows: auto;
@@ -193,46 +193,12 @@ export default {
   grid-area: c-user-info;
   position: relative;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  column-gap: 0.5rem;
+  min-width: 0;
+  display: block;
 
   @include tablet {
     width: 15rem;
     margin-top: 0.25rem;
-  }
-
-  .c-avatar-user {
-    flex-shrink: 0;
-  }
-
-  .c-user-info-text {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    font-size: 0.725rem;
-    flex-grow: 1;
-    max-width: calc(100% - 2rem);
-
-    // TODO: Implement ellipsis style for .c-username and .c-display-name
-    .c-display-name,
-    .c-username {
-      position: relative;
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: inherit;
-      line-height: 1.2;
-    }
-
-    .c-display-name {
-      color: $text_0;
-      font-size: $size_4;
-    }
   }
 }
 

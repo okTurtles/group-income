@@ -48,14 +48,17 @@ export default {
     flex-grow: 1;
     max-width: calc(100% - 3rem);
     line-height: 1.2;
+    min-width: 0;
 
     .c-member-display-name {
+      display: block;
       position: relative;
       font-weight: 600;
     }
 
     .c-member-username {
       position: relative;
+      display: block;
       font-size: $size_5;
       color: $text_1;
     }

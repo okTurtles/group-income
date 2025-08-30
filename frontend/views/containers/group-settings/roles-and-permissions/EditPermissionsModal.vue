@@ -7,18 +7,15 @@
       span {{ config.title }}
 
     form.c-form(v-if='data' @submit.prevent='')
-      i18n.label(tag='p') Edit permissions for:
-
-      .c-member-details
-        avatar-user.c-avatar(:contractID='data.memberID' size='md')
-        .c-member-info
-          .c-display-name.has-text-bold {{ userDisplayNameFromID(data.memberID) }}
-          .c-username.has-text-1 @{{ usernameFromID(data.memberID) }}
-
       ul.c-update-table
         li.c-table-list-item
+          i18n.c-label Member:
+          .c-list-item-content
+            member-name.c-member-name(:memberID='data.memberID')
+
+        li.c-table-list-item
           label.c-label Role:
-          .selectbox.c-role-select-input
+          .selectbox.c-role-select-input.c-list-item-content
             select.select(
               :aria-label='L("Select role")'
               :value='ephemeral.role'
@@ -44,8 +41,8 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import AvatarUser from '@components/AvatarUser.vue'
 import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
@@ -56,7 +53,7 @@ export default {
   components: {
     ModalTemplate,
     ButtonSubmit,
-    AvatarUser
+    MemberName
   },
   props: {
     data: {
@@ -127,46 +124,9 @@ export default {
 .c-update-table {
   position: relative;
   width: 100%;
-  margin-top: 1.25rem;
-
-  @include tablet {
-    margin-top: 1.5rem;
-  }
-}
-
-.c-member-details {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  margin-top: 0.75rem;
-
-  .c-avatar {
-    margin-bottom: 0.5rem;
-  }
-
-  .c-display-name,
-  .c-username {
-    word-break: break-word;
-    line-height: 1.2;
-    text-align: center;
-  }
-
-  .c-username {
-    font-size: $size_5;
-  }
-}
-
-.c-update-table {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  width: 100%;
-  padding: 1rem 0;
   border-top: 1px solid $general_0;
   border-bottom: 1px solid $general_0;
+  margin-top: 1.25rem;
 
   .c-table-list-item {
     position: relative;
@@ -174,7 +134,7 @@ export default {
     align-items: flex-start;
     justify-content: flex-start;
     width: 100%;
-    padding: 1rem 0;
+    padding: 1.25rem 0;
     column-gap: 0.5rem;
 
     &:not(:last-child) {
@@ -185,6 +145,10 @@ export default {
       column-gap: 0.75rem;
     }
   }
+
+  @include tablet {
+    margin-top: 1.5rem;
+  }
 }
 
 .c-label {
@@ -194,6 +158,19 @@ export default {
   text-transform: uppercase;
   width: 7rem;
   flex-shrink: 0;
+
+  @include from(450px) {
+    min-width: 35%;
+  }
+
+  @include tablet {
+    width: 8.25rem;
+  }
+}
+
+.c-list-item-content {
+  flex-grow: 1;
+  min-width: 0;
 }
 
 .c-role-select-input {
