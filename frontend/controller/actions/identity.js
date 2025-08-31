@@ -756,7 +756,17 @@ export default (sbp('sbp/selectors/register', {
         // For now, we assume that we're messaging someone with whom we
         // share a group
         signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        // See issue #2898. This works as follows:
+        // If using a new version of the app which uses the PEK to encrypt the
+        // foreign group CSK so that it's visible to members, suitableSigningKey
+        // will return a key ID.
+        // If using an older version of the app, in which the foreign group CSK
+        // isn't visible, suitableSigningKey will return undefined.
+        // innerSigningKeyId takes precedence over innerSigningContractID, and
+        // an inner signing key will be used as a fallback
+        // (from innerSigningContractID) if innerSigningKeyId is undefined
         innerSigningKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED + '#inner'], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage#inner']),
+        innerSigningContractID: currentGroupId,
         hooks
       })
     }
