@@ -1069,7 +1069,7 @@ export default (sbp('sbp/selectors/register', {
   // This function is called from 'state/vuex/postUpgradeVerification'
   // Group (foreign) CSKs that were encrypted with a CEK will be removed and
   // re-added being encrypted with the PEK. This allows other group members
-  // to see which foreign keys exist in our identity contract, which eliminates
+  // to see which foreign group CSK keys exist in our identity contract, which eliminates
   // the need for 'guessing' and resolves the issue of created DM chatrooms
   // not showing up
     const state = sbp('chelonia/rootState')
