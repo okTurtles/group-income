@@ -1108,7 +1108,7 @@ export default (sbp('sbp/selectors/register', {
         // Then, add it back, using the PEK for encryption
         [
           'chelonia/out/keyAdd', {
-            skipDuplicateKeyCheck: true,
+            skipExistingKeyCheck: true,
             data: groupFKTuple.map(([groupID, oldKeyId, newKeyId]) => {
               const oldKey = state[contractID]._vm.authorizedKeys[oldKeyId]
               const foreignContractState = state[groupID]
