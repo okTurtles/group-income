@@ -581,7 +581,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
     const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
-    const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+    const PEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
     const foreignContractState = sbp('chelonia/contract/state', foreignContractID)
 
     const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
@@ -593,7 +593,7 @@ export default (sbp('sbp/selectors/register', {
     return await sbp('chelonia/out/keyAdd', {
       contractID,
       contractName: 'gi.contracts/identity',
-      data: [encryptedOutgoingData(contractID, CEKid, {
+      data: [encryptedOutgoingData(contractID, PEKid, {
         foreignKey: `shelter:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
         id: keyId,
         data: foreignContractState._vm.authorizedKeys[keyId].data,
@@ -753,9 +753,19 @@ export default (sbp('sbp/selectors/register', {
           // having any groups in common
           contractID: message.contractID()
         },
-        // For now, we assume that we're messaging someone which whom we
+        // For now, we assume that we're messaging someone with whom we
         // share a group
         signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
+        // See issue #2898. This works as follows:
+        // If using a new version of the app which uses the PEK to encrypt the
+        // foreign group CSK so that it's visible to members, suitableSigningKey
+        // will return a key ID.
+        // If using an older version of the app, in which the foreign group CSK
+        // isn't visible, suitableSigningKey will return undefined.
+        // innerSigningKeyId takes precedence over innerSigningContractID, and
+        // an inner signing key will be used as a fallback
+        // (from innerSigningContractID) if innerSigningKeyId is undefined
+        innerSigningKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED + '#inner'], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage#inner']),
         innerSigningContractID: currentGroupId,
         hooks
       })
@@ -1053,5 +1063,69 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
-  ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
+  ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.')),
+  'gi.actions/identity/upgradeGroupForeignCSKs': (contractID: string, groupFKTuple: [string, string, string][]) => {
+  // See issue #2898
+  // This function is called from 'state/vuex/postUpgradeVerification'
+  // Group (foreign) CSKs that were encrypted with a CEK will be removed and
+  // re-added being encrypted with the PEK. This allows other group members
+  // to see which foreign group CSK keys exist in our identity contract, which eliminates
+  // the need for 'guessing' and resolves the issue of created DM chatrooms
+  // not showing up
+    const state = sbp('chelonia/rootState')
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
+    const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
+
+    // Sanity check to avoid unnecessary updates
+    groupFKTuple = groupFKTuple.filter(([groupID, oldKeyId]) => {
+      // Check that we're group members
+      if (!state[contractID].groups[groupID] || state[contractID].groups[groupID].hasLeft) return false
+      // Check that the key we're replacing is valid
+      if (!state[contractID]._vm.authorizedKeys[oldKeyId] || state[contractID]._vm.authorizedKeys[oldKeyId]._notAfterHeight != null) return false
+      // Check that the encryption key used originally was the CEK
+      if (!state[contractID]._vm.authorizedKeys[oldKeyId]._private || state[contractID]._vm.authorizedKeys[state[contractID]._vm.authorizedKeys[oldKeyId]._private]?.name !== 'cek') return false
+
+      return true
+    })
+
+    if (groupFKTuple.length === 0) return
+
+    // Note: We don't use OP_KEY_UPDATE
+    // OP_KEY_UPDATE works on _existing_ keys. The goal of this change
+    // is for others to be able to read the group CSKs in our contracts, and,
+    // for them, the initial OP_KEY_ADD is not visible. Hence, OP_KEY_DEL + OP_KEY_ADD
+    return sbp('chelonia/out/atomic', {
+      contractID,
+      contractName: 'gi.contracts/identity',
+      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [SPMessage.OP_KEY_ADD], ['sig']),
+      data: [
+        // First, delete keys that were encrypted using the CEK
+        [
+          'chelonia/out/keyDel', {
+            data: groupFKTuple.map(([, oldKeyId]) => encryptedOutgoingData(contractID, CEKid, oldKeyId))
+          }
+        ],
+        // Then, add it back, using the PEK for encryption
+        [
+          'chelonia/out/keyAdd', {
+            skipExistingKeyCheck: true,
+            data: groupFKTuple.map(([groupID, oldKeyId, newKeyId]) => {
+              const oldKey = state[contractID]._vm.authorizedKeys[oldKeyId]
+              const foreignContractState = state[groupID]
+              return encryptedOutgoingData(contractID, PEKid, {
+                foreignKey: `shelter:${encodeURIComponent(groupID)}?keyName=${encodeURIComponent(foreignContractState._vm.authorizedKeys[newKeyId].name)}`,
+                id: newKeyId,
+                data: foreignContractState._vm.authorizedKeys[newKeyId].data,
+                permissions: oldKey.permissions,
+                allowedActions: oldKey.allowedActions,
+                purpose: oldKey.purpose,
+                ringLevel: oldKey.ringLevel,
+                name: `${groupID}/${newKeyId}`
+              })
+            })
+          }
+        ]
+      ]
+    })
+  }
 }): string[])
