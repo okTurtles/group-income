@@ -25,7 +25,7 @@ li.c-update-permissions-list-item
 
       .c-perimission-items-container
         permission-piece(
-          v-for='permission in permissionPresets[ephemeral.selectedRole]'
+          v-for='permission in config.permissionPresets[ephemeral.selectedRole]'
           :key='permission'
           :permission='permission'
           :isSelectable='isCustomRole'
@@ -74,7 +74,13 @@ export default {
           GROUP_ROLES.MODERATOR_DELEGATOR,
           GROUP_ROLES.MODERATOR,
           GROUP_ROLES.CUSTOM
-        ]
+        ],
+        permissionPresets: {
+          [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET.ADMIN,
+          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
+          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
+          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
+        }
       },
       ephemeral: {
         selectedRole: '',
@@ -91,14 +97,6 @@ export default {
     },
     isCustomRole () {
       return this.ephemeral.selectedRole === GROUP_ROLES.CUSTOM
-    },
-    permissionPresets () {
-      return {
-        [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET.ADMIN,
-        [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
-        [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
-        [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
-      }
     },
     permissionSectionLabel () {
       return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
@@ -120,12 +118,12 @@ export default {
       this.ephemeral.selectedRole = value
 
       if (value === GROUP_ROLES.CUSTOM) {
-        const isMyCurrentRoleCustom = this.profile.role?.name === GROUP_ROLES.CUSTOM
-        this.ephemeral.selectedPermissions = isMyCurrentRoleCustom
+        const isCurrentRoleCustom = this.profile.role?.name === GROUP_ROLES.CUSTOM
+        this.ephemeral.selectedPermissions = isCurrentRoleCustom
           ? this.profile.role.permissions || []
           : []
       } else {
-        this.ephemeral.selectedPermissions = this.permissionPresets[value]
+        this.ephemeral.selectedPermissions = this.config.permissionPresets[value]
       }
 
       this.emitUpdateEvent()

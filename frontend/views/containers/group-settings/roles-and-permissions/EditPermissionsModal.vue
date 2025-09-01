@@ -9,12 +9,12 @@
     form.c-form(v-if='data' @submit.prevent='')
       ul.c-update-table
         li.c-table-list-item
-          i18n.c-label Member:
+          i18n.c-label(tag='label') Member:
           .c-list-item-content
             member-name.c-member-name(:memberID='data.memberID')
 
         li.c-table-list-item
-          label.c-label Role:
+          i18n.c-label(tag='label') Role:
           .selectbox.c-role-select-input.c-list-item-content
             select.select(
               :aria-label='L("Select role")'
@@ -28,13 +28,25 @@
                 :value='role'
               ) {{ getRoleDisplayName(role) }}
 
+        li.c-table-list-item
+          label.c-label {{ permissionSectionLabel }}:
+          .c-list-item-content.c-perimission-items-container
+            permission-piece(
+              v-for='permission in permissionsToDisplay'
+              :key='permission'
+              :permission='permission'
+              :isSelectable='isCustomRole'
+              :active='checkPermissionActive(permission)'
+              @change='onPermissionItemChange'
+            )
+
       .buttons.c-button-container
         i18n.is-outlined(
           tag='button'
           @click.prevent='close'
         ) Cancel
 
-        button-submit.is-success(@click='submit') Update
+        button-submit.is-success(@click='submit' :disabled='!enableSubmitBtn') Update
 </template>
 
 <script>
@@ -43,16 +55,19 @@ import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
+import PermissionPiece from './PermissionPiece.vue'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
+import { uniq } from 'turtledash'
 
 export default {
   name: 'EditPermissionsModal',
   components: {
     ModalTemplate,
     ButtonSubmit,
+    PermissionPiece,
     MemberName
   },
   props: {
@@ -60,12 +75,6 @@ export default {
       // { roleName: string, permissions: string[], memberID: string }
       type: Object
     }
-  },
-  computed: {
-    ...mapGetters([
-      'userDisplayNameFromID',
-      'usernameFromID'
-    ])
   },
   data () {
     return {
@@ -75,11 +84,46 @@ export default {
           GROUP_ROLES.MODERATOR_DELEGATOR,
           GROUP_ROLES.MODERATOR,
           GROUP_ROLES.CUSTOM
-        ]
+        ],
+        permissionPresets: {
+          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
+          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
+          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
+        }
       },
       ephemeral: {
         role: null,
         permissions: []
+      }
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'userDisplayNameFromID',
+      'usernameFromID'
+    ]),
+    isCustomRole () {
+      return this.ephemeral.role === GROUP_ROLES.CUSTOM
+    },
+    permissionSectionLabel () {
+      return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
+    },
+    permissionsToDisplay () {
+      return this.config.permissionPresets[this.ephemeral.role]
+    },
+    enableSubmitBtn () {
+      const isCurrentRoleCustom = this.data.roleName === GROUP_ROLES.CUSTOM
+      const { permissions, role } = this.ephemeral
+
+      if (isCurrentRoleCustom) {
+        return role !== GROUP_ROLES.CUSTOM || (
+          permissions.length !== this.data.permissions.length ||
+          permissions.some(p => !this.data.permissions.includes(p))
+        )
+      } else {
+        return role === GROUP_ROLES.CUSTOM
+          ? permissions.length > 0
+          : role !== this.data.roleName
       }
     }
   },
@@ -104,8 +148,30 @@ export default {
       this.ephemeral.role = value
 
       if (value === GROUP_ROLES.CUSTOM) {
-        console.log('TODO!: populate permissions with current data if there is')
+        const isCurrentRoleCustom = this.data.roleName === GROUP_ROLES.CUSTOM
+        this.ephemeral.permissions = isCurrentRoleCustom
+          ? this.data.permissions
+          : []
+      } else {
+        this.ephemeral.permissions = GROUP_PERMISSIONS_PRESET[value]
       }
+    },
+    onPermissionItemChange (payload) {
+      const { permission, active } = payload
+
+      if (active) {
+        this.ephemeral.permissions = uniq([
+          ...this.ephemeral.permissions,
+          permission
+        ])
+      } else {
+        this.ephemeral.permissions = this.ephemeral.permissions.filter(p => p !== permission)
+      }
+    },
+    checkPermissionActive (permission) {
+      if (!this.isCustomRole) { return false }
+
+      return this.ephemeral.permissions.includes(permission)
     }
   },
   created () {
@@ -124,9 +190,7 @@ export default {
 .c-update-table {
   position: relative;
   width: 100%;
-  border-top: 1px solid $general_0;
-  border-bottom: 1px solid $general_0;
-  margin-top: 1.25rem;
+  box-shadow: inset 0 -2px 0 $general_2;
 
   .c-table-list-item {
     position: relative;
@@ -138,16 +202,12 @@ export default {
     column-gap: 0.5rem;
 
     &:not(:last-child) {
-      border-bottom: 1px solid $general_0;
+      box-shadow: inset 0 -2px 0 $general_2;
     }
 
     @include tablet {
       column-gap: 0.75rem;
     }
-  }
-
-  @include tablet {
-    margin-top: 1.5rem;
   }
 }
 
@@ -184,5 +244,13 @@ export default {
     padding-right: 1.5rem;
     font-size: $size_4;
   }
+}
+
+.c-perimission-items-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 </style>

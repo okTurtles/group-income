@@ -131,7 +131,7 @@ export default {
   padding: 1rem 0;
 
   &:not(:last-child) {
-    border-bottom: 1px solid $general_0;
+    box-shadow: inset 0 -2px 0 $general_2;
   }
 
   &-content {
