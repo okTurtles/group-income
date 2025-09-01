@@ -29,7 +29,7 @@
               ) {{ getRoleDisplayName(role) }}
 
         li.c-table-list-item
-          label.c-label {{ permissionSectionLabel }}:
+          label.c-label {{ permissionSectionLabel }}
           .c-list-item-content.c-perimission-items-container
             permission-piece(
               v-for='permission in permissionsToDisplay'
@@ -187,6 +187,8 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+$modal_narrow_point: 450px;
+
 .c-update-table {
   position: relative;
   width: 100%;
@@ -195,14 +197,21 @@ export default {
   .c-table-list-item {
     position: relative;
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
     width: 100%;
     padding: 1.25rem 0;
-    column-gap: 0.5rem;
-
+    row-gap: 0.75rem;
+    
     &:not(:last-child) {
       box-shadow: inset 0 -2px 0 $general_2;
+    }
+
+    @include from($modal_narrow_point) {
+      flex-direction: row;
+      column-gap: 0.5rem;
+      row-gap: 0;
     }
 
     @include tablet {
@@ -216,10 +225,11 @@ export default {
   font-size: $size_5;
   color: $text_1;
   text-transform: uppercase;
-  width: 7rem;
   flex-shrink: 0;
+  width: 100%;
 
-  @include from(450px) {
+  @include from($modal_narrow_point) {
+    width: 7rem;
     min-width: 35%;
   }
 
@@ -234,6 +244,8 @@ export default {
 }
 
 .c-role-select-input {
+  width: 100%;
+
   &::after {
     right: 0.75rem;
   }
@@ -243,6 +255,10 @@ export default {
     padding-left: 0.75rem;
     padding-right: 1.5rem;
     font-size: $size_4;
+  }
+
+  @include from($modal_narrow_point) {
+    max-width: 12.75rem;
   }
 }
 
