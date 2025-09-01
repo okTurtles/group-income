@@ -196,6 +196,55 @@ sbp('sbp/selectors/register', {
           state.namespaceLookups[name] = value
         })
     })()
+
+    // See issue #2898
+    // This will remove the identity contract's group CSK as a foreign key and
+    // add it back (atomically). The purpose is to have it encrypted with the
+    // PEK instead of the CEK, so that it is visible to group members
+    ;(async () => {
+      const state = await sbp('chelonia/rootState')
+      const contractID = state.loggedIn?.identityContractID
+      if (!contractID) return
+      const groups = state[contractID].groups || {}
+      const groupFKTuple = Object.keys(groups).map(groupID => {
+        // Only refer to groups we haven't left and that we have in the state
+        if (groups[groupID].hasLeft || !state[groupID]) return undefined
+
+        const authorizedKeys = state[contractID]._vm.authorizedKeys
+        // `keyToReplace` identifies the key object to replace in the group
+        // $FlowFixMe[incompatible-use]
+        const keyToReplace = Object.values(authorizedKeys).find(({ _private, _notAfterHeight, foreignKey }) => {
+          // We're looing for keys that are valid (not revoked), that match
+          // the foreign key we're looking for and encrypted with the CEK
+          return _notAfterHeight == null && foreignKey === `shelter:${groupID}?keyName=csk` && authorizedKeys[_private]?.name === 'cek'
+        })
+        // If no matching key found, return
+        if (!keyToReplace) return undefined
+
+        // Now, we want to find the current group CSK to re-add it. Usually, if
+        // things work as they should in Chelonia, this should have the same
+        // key ID as the foreign key in `keyToReplace`.
+        // $FlowFixMe[incompatible-use]
+        const currentGroupCSK = Object.values(state[groupID]._vm.authorizedKeys).find(({ name }) => {
+          return name === 'csk'
+        })
+        // If we couldn't find a group CSK, return
+        if (!currentGroupCSK) return undefined
+
+        // We return a tuple consisting of the group ID, the key ID that will be
+        // deleted and the key ID that will be re-added.
+        // $FlowFixMe[incompatible-use]
+        return [groupID, keyToReplace.id, currentGroupCSK.id]
+      }).filter(Boolean)
+
+      if (!groupFKTuple.length) return
+
+      // We call into the SW for making the relevant changes, since it has
+      // access to all of the Chelonia utilities
+      sbp('gi.actions/identity/upgradeGroupForeignCSKs', contractID, groupFKTuple).catch(e => {
+        console.error('[state/vuex/postUpgradeVerification] Error migrating foreign CSKs', e)
+      })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
