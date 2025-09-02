@@ -43,9 +43,8 @@ import { L } from '@common/common.js'
 import PageSection from '@components/PageSection.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
-import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 
 export default ({
   name: 'RolesAndPermissions',
