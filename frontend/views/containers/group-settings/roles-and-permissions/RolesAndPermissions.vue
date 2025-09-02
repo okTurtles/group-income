@@ -26,6 +26,8 @@ page-section.c-section(
         :is-mobile='ephemeral.isMobile'
       )
 
+  banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+
   .c-buttons-container(v-if='canDelegatePermissions')
     button.is-small.is-outlined(
       type='button'
@@ -37,16 +39,20 @@ page-section.c-section(
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import { L } from '@common/common.js'
 import PageSection from '@components/PageSection.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 
 export default ({
   name: 'RolesAndPermissions',
   components: {
     PageSection,
-    PermissionTableRow
+    PermissionTableRow,
+    BannerScoped
   },
   data () {
     return {
@@ -85,7 +91,19 @@ export default ({
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
+    onGroupPermissionsUpdateSuccess ({ groupContractID, action }) {
+      if (groupContractID !== this.$store.state.currentGroupId) { return }
+
+      const messageMap = {
+        remove: L('Role removed successfully.'),
+        edit: L('Permission details updated successfully.')
+      }
+      this.$refs.formMsg.success(messageMap[action])
     }
+  },
+  created () {
+    sbp('okTurtles.events/on', GROUP_PERMISSIONS_UPDATE_SUCCESS, this.onGroupPermissionsUpdateSuccess)
   },
   mounted () {
     this.matchMediaMobile = window.matchMedia('screen and (max-width: 570px)')
@@ -96,6 +114,7 @@ export default ({
   },
   beforeDestroy () {
     this.matchMediaMobile.onchange = null
+    sbp('okTurtles.events/off', GROUP_PERMISSIONS_UPDATE_SUCCESS, this.onGroupPermissionsUpdateSuccess)
   }
 }: Object)
 </script>

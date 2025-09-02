@@ -46,6 +46,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import MemberName from './MemberName.vue'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { getPermissionDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
 
@@ -93,6 +94,11 @@ export default {
             memberID: this.data.memberID,
             action: GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE
           }]
+        })
+
+        sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {
+          groupContractID: this.$store.state.currentGroupId,
+          action: GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE
         })
         this.close()
       } catch (e) {

@@ -40,6 +40,8 @@
               @change='onPermissionItemChange'
             )
 
+      banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+
       .buttons.c-button-container
         i18n.is-outlined(
           tag='button'
@@ -56,7 +58,9 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PermissionPiece from './PermissionPiece.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
@@ -67,6 +71,7 @@ export default {
   components: {
     ModalTemplate,
     ButtonSubmit,
+    BannerScoped,
     PermissionPiece,
     MemberName
   },
@@ -132,11 +137,28 @@ export default {
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'EditPermissionsModal')
     },
-    submit () {
+    async submit () {
       try {
-        console.log('TODO!', this.data)
+        this.$refs.formMsg.clean()
+
+        await sbp('gi.actions/group/updatePermissions', {
+          contractID: this.$store.state.currentGroupId,
+          data: [{
+            memberID: this.data.memberID,
+            action: GROUP_PERMISSION_UPDATE_ACTIONS.EDIT,
+            roleName: this.ephemeral.role,
+            permissions: this.ephemeral.permissions
+          }]
+        })
+
+        sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {
+          groupContractID: this.$store.state.currentGroupId,
+          action: GROUP_PERMISSION_UPDATE_ACTIONS.EDIT
+        })
+        this.close()
       } catch (e) {
         console.error('EditPermissionsModal.vue submit() caught error: ', e)
+        this.$refs.formMsg.danger(e.message)
       }
     },
     initComponent () {
@@ -203,7 +225,7 @@ $modal_narrow_point: 450px;
     width: 100%;
     padding: 1.25rem 0;
     row-gap: 0.75rem;
-    
+
     &:not(:last-child) {
       box-shadow: inset 0 -2px 0 $general_2;
     }
@@ -268,5 +290,14 @@ $modal_narrow_point: 450px;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.c-feedback-banner {
+  margin-top: 0;
+  margin-bottom: 2rem;
+}
+
+.c-button-container {
+  margin-top: 2rem;
 }
 </style>
