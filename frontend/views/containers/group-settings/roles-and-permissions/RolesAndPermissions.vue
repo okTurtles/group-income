@@ -95,8 +95,9 @@ export default ({
       if (groupContractID !== this.$store.state.currentGroupId) { return }
 
       const messageMap = {
-        remove: L('Role removed successfully.'),
-        edit: L('Permission details updated successfully.')
+        add: L('Successfully created a role.'),
+        remove: L('Successfully removed a role.'),
+        edit: L('Permission details have been updated successfully.')
       }
       this.$refs.formMsg.success(messageMap[action])
     }
