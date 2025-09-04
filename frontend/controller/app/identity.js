@@ -5,10 +5,10 @@ import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { Buffer } from 'buffer'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
-import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
@@ -158,6 +158,10 @@ sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) 
 
 sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   sbp('state/vuex/commit', 'setPreferences', preferences)
+})
+
+sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, (data) => {
+  sbp('state/vuex/commit', 'setKvStoreStatus', data)
 })
 
 /* Commented out as persistentActions are not being used

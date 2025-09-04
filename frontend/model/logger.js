@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
-import CircularList from '~/shared/CircularList.js'
+import CircularList from '~/frontend/utils/CircularList.js'
 
 const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']
 const originalConsole = console
