@@ -231,7 +231,7 @@ export default ({
         return  this.attachments
       } else {
         const tempCollections = {
-          'non-image': [],
+          'non-media': [],
           'image': [],
           'video': []
         }
@@ -242,7 +242,7 @@ export default ({
         }
 
         return [
-          ...tempCollections['non-image'],
+          ...tempCollections['non-media'],
           ...tempCollections['image'],
           ...tempCollections['video']
         ]

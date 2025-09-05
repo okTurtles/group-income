@@ -18,7 +18,7 @@ export const getFileType = (
     ? 'image'
     : mimeType.match('video/')
       ? 'video'
-      : 'non-image'
+      : 'non-media'
 }
 
 export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {

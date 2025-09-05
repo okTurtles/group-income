@@ -3,10 +3,9 @@
 
   // Displaying attachments as part of message
   template(v-if='isForDownload')
-    .c-attachment-preview(
+    .c-attachment-preview.is-download-item(
       v-for='(entry, entryIndex) in attachmentList'
       :key='getAttachmentId(entry)'
-      class='is-download-item'
       tabindex='0'
     )
       .c-preview-img(v-if='shouldPreviewImages')
@@ -20,11 +19,11 @@
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
-      .c-preview-non-image(v-else)
-        .c-non-image-icon
+      .c-preview-non-media(v-else)
+        .c-non-media-icon
           i.icon-file
 
-        .c-non-image-file-info
+        .c-non-media-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
           .c-file-ext-and-size
             .c-file-ext {{ fileExt(entry) }}
@@ -71,11 +70,11 @@
         :src='entry.url'
         :alt='entry.name'
       )
-      .c-preview-non-image(v-else)
-        .c-non-image-icon
+      .c-preview-non-media(v-else)
+        .c-non-media-icon
           i.icon-file
 
-        .c-non-image-file-info
+        .c-non-media-file-info
           .c-file-name.has-ellipsis {{ entry.name }}
           .c-file-ext {{ fileExt(entry) }}
 
@@ -334,8 +333,8 @@ export default {
   &.is-for-download {
     padding: 0;
 
-    .c-preview-non-image {
-      .c-non-image-file-info {
+    .c-preview-non-media {
+      .c-non-media-file-info {
         width: calc(100% - 4rem);
       }
 
@@ -386,7 +385,7 @@ export default {
         align-items: flex-end;
       }
 
-      .c-preview-non-image {
+      .c-preview-non-media {
         max-width: 20rem;
         min-width: 16rem;
         min-height: 3.5rem;
@@ -435,14 +434,14 @@ export default {
   }
 
   &.is-video,
-  &.is-non-image {
+  &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
   }
 
   .c-preview-img,
-  .c-preview-non-image {
+  .c-preview-non-media {
     position: relative;
     width: 100%;
     height: 100%;
@@ -454,7 +453,7 @@ export default {
     object-fit: cover;
   }
 
-  .c-preview-non-image {
+  .c-preview-non-media {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr;
@@ -463,7 +462,7 @@ export default {
     padding: 0.5rem;
     gap: 0.5rem;
 
-    .c-non-image-icon {
+    .c-non-media-icon {
       grid-area: preview-icon;
       display: inline-flex;
       align-items: center;
@@ -476,7 +475,7 @@ export default {
       background-color: $primary_2;
     }
 
-    .c-non-image-file-info {
+    .c-non-media-file-info {
       grid-area: preview-info;
       position: relative;
       display: block;
