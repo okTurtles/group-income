@@ -1,0 +1,13 @@
+diff --git a/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.esm.js b/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.esm.js
+index 8703d3f..ed469c1 100644
+--- a/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.esm.js
++++ b/node_modules/vue-virtual-scroller/dist/vue-virtual-scroller.esm.js
+@@ -267,7 +267,7 @@ var script$2 = {
+           const {
+             continuous
+           } = this.updateVisibleItems(false, true);
+-
++          this.$listeners.scroll?.(event)
+           // It seems sometimes chrome doesn't fire scroll event :/
+           // When non continous scrolling is ending, we force a refresh
+           if (!continuous) {

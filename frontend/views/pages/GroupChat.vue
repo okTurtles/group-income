@@ -18,7 +18,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
           menu-header
             i18n Channel Options
 
-          ul
+          menu
             menu-item(
               v-if='!summary.isGeneral && isChatRoomCreator && !isGroupDirectMessage()'
               @click='openModal("EditChannelNameModal")'
