@@ -451,6 +451,15 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.contains('Yeah, they are pretty!').should('be.visible')
     })
 
+    for (let i = 0; i < 5; i++) {
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(500)
+      cy.getByDT('conversationWrapper').scrollTo('top')
+      cy.giWaitUntilMessagesLoaded()
+    }
+
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(200)
     cy.getByDT('conversationWrapper').scrollTo('top')
     cy.giWaitUntilMessagesLoaded()
 

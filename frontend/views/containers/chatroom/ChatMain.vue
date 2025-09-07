@@ -20,7 +20,7 @@
       key-field='hash'
       @scroll-start='onScrollStart'
       @scroll-end='onScrollEnd'
-      @scroll='onChatScroll'
+      @scroll.passive='onChatScroll'
       ref='conversation'
       data-test='conversationWrapper'
       :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages'
@@ -160,11 +160,12 @@ import {
 import { CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep, debounce, has, throttle, delay } from 'turtledash'
+import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
-import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
+import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
+import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -416,15 +417,16 @@ export default ({
     setMessages: debounce(function () {
       const newMessages = this.messageState.contract?.messages || []
       if (this.ephemeral.messages === newMessages) return
-      const attrs = ['hash', 'text', 'from', 'type', 'attachments', 'proposal', 'pollData', 'datetime', 'updatedDate', 'emoticons', 'delete', 'notification', 'pinnedBy', 'relyingMessage']
-      for (const message of newMessages) {
-        for (const attr of attrs) {
-          if (!has(message, attr)) Vue.set(message, attr, undefined)
-        }
-      }
       const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages
-      this.rerenderEvents(currentVisibleMessage)
+      const postSetMessageState = this.ephemeral.postSetMessageState
+      delete this.ephemeral.postSetMessageState
+      if (!postSetMessageState?.noRerender) {
+        this.rerenderEvents(currentVisibleMessage)
+      }
+      if (postSetMessageState) {
+        this.$nextTick(postSetMessageState)
+      }
     }, 100),
     * visibleMessageIterator () {
       if (!this.$refs.conversation) return
@@ -697,9 +699,22 @@ export default ({
             const msg = this.messageState.contract.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) {
               console.error('@@@@addMessage 1')
-              Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+              const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
+              this.ephemeral.postSetMessageState = () => {
+                console.error('@@@@addMessage 1,,,0', message)
+                if (this.chatroomHasSwitchedFrom(contractID)) {
+                  console.error('@@@@addMessage 1,,,1', message)
+                  return
+                }
+                if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
+                  console.error('@@@@addMessage 1,,,2', message)
+                  return
+                }
+                console.error('@@@@addMessage 1,,,3', message)
+                this.jumpToLatest()
+              }
+              Vue.set(this.messageState, 'contract', newContractState)
               this.stopReplying()
-              this.updateScroll()
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
@@ -761,11 +776,16 @@ export default ({
               //       temporarily until the uploading attachments is finished
               //       it always returns false, so it doesn't affect the contract state
               this.stopReplying()
-              this.updateScroll()
 
               if (this.chatroomHasSwitchedFrom(contractID)) return
               await enqueue.call(this, async () => {
                 console.error('@@@@addMessage 2')
+                this.ephemeral.postSetMessageState = () => {
+                  if (this.chatroomHasSwitchedFrom(contractID)) return
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) return
+                  this.jumpToLatest()
+                }
+
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
                 console.error('@@@@addMessage 3')
@@ -845,7 +865,7 @@ export default ({
             }, 1500)
           })
         } else {
-          if (targetIsLatestMessage) {
+          if (isNaN(1) && targetIsLatestMessage) {
             this.$nextTick(() => {
               this.jumpToLatest('instant')
             })
@@ -871,21 +891,22 @@ export default ({
 
         if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
-          await this.processEvents(events, 'up', true)
+          this.ephemeral.postSetMessageState = () => {
+            if (this.chatroomHasSwitchedFrom(contractID)) return
 
-          if (this.chatroomHasSwitchedFrom(contractID)) return
-          this.ephemeral.messages = this.messageState.contract?.messages || []
-
-          const msgIndex = findMessageIdx(messageHash, this.ephemeral.messages)
-          if (msgIndex >= 0) {
-            console.error('@@@@scrollToMessage 2', messageHash, msgIndex)
-            this.$nextTick(() => scrollAndHighlight(msgIndex))
-          } else {
+            const msgIndex = findMessageIdx(messageHash, this.ephemeral.messages)
+            if (msgIndex >= 0) {
+              console.error('@@@@scrollToMessage 2', messageHash, msgIndex)
+              this.$nextTick(() => scrollAndHighlight(msgIndex))
+            } else {
             // this is when the target message is deleted after reply message
             // should let user know the target message is deleted
-            console.error('@@@@scrollToMessage 3', messageHash, msgIndex)
-            console.debug(`Message ${messageHash} is removed from ${contractID}`)
+              console.error('@@@@scrollToMessage 3', messageHash, msgIndex)
+              console.debug(`Message ${messageHash} is removed from ${contractID}`)
+            }
           }
+          this.ephemeral.postSetMessageState.noRerender = true
+          await this.processEvents(events, 'up', true)
         }
       }
     },
@@ -912,19 +933,24 @@ export default ({
       }
     },
     jumpToLatest (behavior = 'smooth') {
-      // if (isNaN(NaN)) return
-      if (this.$refs.conversation) {
-        this.$refs.conversation.$el.scroll({
-          left: 0,
-          top: this.$refs.conversation.$el.scrollHeight + 5000,
-          // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
-          // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
-          //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
-          behavior: this.isReducedMotionMode || document.hidden
-            ? 'instant'
-            : behavior
-        })
+      if (!this.$refs.conversation) return
+      if (this.latestHeight && !(this.ephemeral.currentHighestHeight >= this.latestHeight)) {
+        const hash = this.$store.state.contracts[this.ephemeral.renderingChatRoomId]?.HEAD
+        if (hash) {
+          this.scrollToMessage(hash, false)
+          return
+        }
       }
+      this.$refs.conversation.$el.scroll({
+        left: 0,
+        top: this.$refs.conversation.$el.scrollHeight + 5000,
+        // NOTE-1: Force 'instant' behaviour in reduced-motion mode regardless of the passed param.
+        // NOTE-2: Browsers suspend DOM animation when the tab is inactive. Passing 'smooth' option for an inactive browser window
+        //         leads to the scroll() action being ignored. So we need to explicitly pass 'instant' option in this case.
+        behavior: this.isReducedMotionMode || document.hidden
+          ? 'instant'
+          : behavior
+      })
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
@@ -1274,9 +1300,19 @@ export default ({
           // Only do so if there is scroll area, so that auto-loading more
           // messages to fill up the chat window will preserve the initial
           // position
-          if (this.$refs.conversation.$el.clientHeight < this.$refs.conversation.$el.scrollHeight) {
-            this.ephemeral.initialScroll.hash = null
+          let tryCount = 0
+          const resetHash = () => {
+            const $el = this.$refs.conversation?.$el
+            if (!$el) {
+              if (tryCount++ < 3) this.$nextTick(resetHash)
+              return
+            }
+
+            if ($el.clientHeight < $el.scrollHeight) {
+              this.ephemeral.initialScroll.hash = null
+            }
           }
+          resetHash()
         })
       }
     },
