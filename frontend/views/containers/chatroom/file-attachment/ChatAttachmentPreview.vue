@@ -10,12 +10,12 @@
     )
       .c-preview-img(v-if='shouldPreviewImages')
         img(
-          v-if='objectURLList[entryIndex]'
-          :src='objectURLList[entryIndex]'
+          v-if='imgObjectURLList[entryIndex]'
+          :src='imgObjectURLList[entryIndex]'
           :alt='entry.name'
-          @click='openImageViewer(objectURLList[entryIndex])'
-          @load='onImageSettled(objectURLList[entryIndex])'
-          @error='onImageSettled(objectURLList[entryIndex])'
+          @click='openImageViewer(imgObjectURLList[entryIndex])'
+          @load='onImageSettled(imgObjectURLList[entryIndex])'
+          @error='onImageSettled(imgObjectURLList[entryIndex])'
         )
         .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
 
@@ -124,12 +124,26 @@ export default {
   },
   data () {
     return {
-      objectURLList: [],
+      imgObjectURLList: [],
       settledURLList: [],
       loadingBoxStyles: []
     }
   },
   computed: {
+    sortedAttachments () {
+      const collections = {
+        'non-media': [],
+        'image': [],
+        'video': []
+      }
+
+      for (const entry of this.attachments) {
+        const fType = getFileType(entry.mimeType)
+        collections[fType].push(entry)
+      }
+
+      return collections
+    },
     shouldPreviewImages () {
       return this.attachmentList.every(attachment => {
         return this.fileType(attachment) === 'image'
@@ -149,7 +163,7 @@ export default {
     if (this.shouldPreviewImages) {
       const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment))
       Promise.all(promiseToRetrieveURLs).then(urls => {
-        this.objectURLList = urls
+        this.imgObjectURLList = urls
       })
 
       if (this.isForDownload) {
@@ -183,7 +197,7 @@ export default {
     },
     deleteAttachment ({ index, url }) {
       if (url) {
-        index = this.objectURLList.indexOf(url)
+        index = this.imgObjectURLList.indexOf(url)
       }
 
       if (index >= 0) {
@@ -207,7 +221,7 @@ export default {
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
-        let url = this.objectURLList[index]
+        let url = this.imgObjectURLList[index]
         if (!url) {
           url = await this.getAttachmentObjectURL(attachment)
         }
@@ -247,7 +261,7 @@ export default {
 
       const imageAttachmentDetailsList = this.allImageAttachments
         .map((entry, index) => {
-          const imgUrl = entry.url || this.objectURLList[index] || ''
+          const imgUrl = entry.url || this.imgObjectURLList[index] || ''
           return {
             name: entry.name,
             ownerID: this.ownerID,
@@ -291,24 +305,24 @@ export default {
       if (from.length > to.length) {
         // NOTE: this will be caught when user tries to delete attachments
         const oldObjectURLMapping = {}
-        if (from.length === this.objectURLList.length) {
-          const currentObjectURLList = this.objectURLList.slice()
+        if (from.length === this.imgObjectURLList.length) {
+          const currentObjectURLList = this.imgObjectURLList.slice()
 
           from.forEach((attachment, index) => {
             oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
           })
-          this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+          this.imgObjectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
 
           // revoke object URL of a deleted attachment.
           Object.values(oldObjectURLMapping).forEach(oldUrl => {
-            if (!this.objectURLList.includes(oldUrl)) {
+            if (!this.imgObjectURLList.includes(oldUrl)) {
               URL.revokeObjectURL(oldUrl)
             }
           })
         } else {
           // NOTE: this should not be caught, but considered for the error handler
           Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
-            this.objectURLList = urls
+            this.imgObjectURLList = urls
           })
         }
       }
@@ -380,9 +394,7 @@ export default {
 
     .is-download-item {
       &:hover .c-attachment-actions-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
+        display: block;
       }
 
       .c-preview-non-media {

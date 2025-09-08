@@ -56,7 +56,7 @@
 
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
-          :attachmentList='sortedAttachments'
+          :attachmentList='attachments'
           :variant='variant'
           :isForDownload='true'
           :isMsgSender='isMsgSender'
@@ -224,29 +224,6 @@ export default ({
     },
     hasAttachments () {
       return Boolean(this.attachments?.length)
-    },
-    sortedAttachments () {
-      // Position media file attachments later in the order so things look tidy when rendered in the DOM.
-      if (!this.hasAttachments || !this.hasMediaAttachment) {
-        return  this.attachments
-      } else {
-        const tempCollections = {
-          'non-media': [],
-          'image': [],
-          'video': []
-        }
-
-        for (const entry of this.attachments) {
-          const fType = getFileType(entry.mimeType)
-          tempCollections[fType].push(entry)
-        }
-
-        return [
-          ...tempCollections['non-media'],
-          ...tempCollections['image'],
-          ...tempCollections['video']
-        ]
-      }
     },
     hasMediaAttachment () {
       return Array.isArray(this.attachments) &&
