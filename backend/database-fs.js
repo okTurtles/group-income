@@ -108,4 +108,6 @@ export default class FsBackend extends DatabaseBackend implements IDatabaseBacke
       throw e
     })
   }
+
+  close () {}
 }

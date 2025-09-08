@@ -4,9 +4,10 @@ export interface IDatabaseBackend {
   readData (key: string): Promise<Buffer | string | void>;
   writeData (key: string, value: Buffer | string): Promise<void>;
   deleteData (key: string): Promise<void>;
+  close (): Promise<void> | void;
 }
 
-const requiredMethodNames = ['init', 'clear', 'readData', 'writeData', 'deleteData']
+const requiredMethodNames = ['init', 'clear', 'readData', 'writeData', 'deleteData', 'close']
 
 export default class DatabaseBackend {
   constructor () {

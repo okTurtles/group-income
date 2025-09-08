@@ -63,4 +63,8 @@ export default class SqliteBackend extends DatabaseBackend implements IDatabaseB
   async deleteData (key: string) {
     await this.deleteStatement.run(key)
   }
+
+  close () {
+    this.db.close()
+  }
 }
