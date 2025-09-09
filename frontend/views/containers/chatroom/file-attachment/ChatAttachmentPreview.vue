@@ -327,6 +327,13 @@ export default {
         }
       }
     }
+  },
+  provide () {
+    return {
+      attachmentUtils: {
+        getStretchedDimension: this.getStretchedDimension
+      }
+    }
   }
 }
 </script>
@@ -386,7 +393,6 @@ export default {
 
       &.is-for-image {
         .c-attachment-actions {
-          align-self: flex-start;
           margin-top: 0.5rem;
         }
       }
