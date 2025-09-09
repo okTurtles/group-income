@@ -451,17 +451,14 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.contains('Yeah, they are pretty!').should('be.visible')
     })
 
-    for (let i = 0; i < 5; i++) {
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(500)
+    // Scroll up a few times to ensure we reach the top
+    for (let i = 0; i < 3; i++) {
       cy.getByDT('conversationWrapper').scrollTo('top')
+      // Wait period is due to debouncing in onChatScroll
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(300)
       cy.giWaitUntilMessagesLoaded()
     }
-
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(200)
-    cy.getByDT('conversationWrapper').scrollTo('top')
-    cy.giWaitUntilMessagesLoaded()
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('[data-index="0"] > .c-message .c-who > span:first-child').should('contain', user1)

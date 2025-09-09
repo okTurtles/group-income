@@ -51,10 +51,7 @@
 </template>
 
 <script>
-// import RecycleScroller from './RecycleScroller.vue'
-
 export default {
-  // components: { RecycleScroller },
   name: 'DynamicScroller',
   inheritAttrs: false,
   props: {

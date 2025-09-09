@@ -23,7 +23,7 @@
       @scroll.passive='onChatScroll'
       ref='conversation'
       data-test='conversationWrapper'
-      :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages'
+      :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages && ephemeral.messages === messageState.contract.messages'
       :data-length='ephemeral.messages.length'
       :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
