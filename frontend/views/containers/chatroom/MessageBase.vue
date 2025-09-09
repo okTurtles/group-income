@@ -36,7 +36,7 @@
         )
 
         send-area.c-edit-send-area(
-          v-if='isEditing'
+          v-if='isEditing && text'
           :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
           @send='onMessageEdited'
@@ -162,7 +162,6 @@ export default ({
   },
   data () {
     return {
-      isEditing: false,
       ephemeral: {
         truncateToggle: {
           enabled: false,
@@ -190,6 +189,7 @@ export default ({
       required: false
     },
     edited: Boolean,
+    isEditing: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -206,6 +206,7 @@ export default ({
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
+    isFocused: Boolean,
     shouldRenderMarkdown: Boolean
   },
   computed: {
@@ -218,7 +219,8 @@ export default ({
           'same-sender': this.isSameSender,
           'pinned': this.isAlreadyPinned,
           'has-truncate-toggle': this.ephemeral.truncateToggle.enabled,
-          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll
+          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll,
+          'c-focused': this.isFocused
         }
       ]
     },
@@ -265,23 +267,24 @@ export default ({
     humanDate,
     swapMentionIDForDisplayname,
     editMessage () {
-      this.isEditing = true
+      this.$emit('message-is-editing', true)
     },
     onMessageEdited (newMessage) {
-      this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
 
         // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
         this.ephemeral.truncateToggle.enabled = false
         this.ephemeral.truncateToggle.isShowingAll = false
+      } else {
+        this.$emit('message-is-editing', false)
       }
     },
     deleteAttachment (manifestCid) {
       this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
-      this.isEditing = false
+      this.$emit('message-is-editing', false)
     },
     reply () {
       this.$emit('reply')
