@@ -19,8 +19,7 @@
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
     "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js",
-    "postinstall": "patch-package"
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
   },
   "eslintConfig": {
     "root": true,
