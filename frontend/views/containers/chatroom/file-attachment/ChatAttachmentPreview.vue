@@ -3,59 +3,57 @@
 
   // Displaying attachments as part of message
   template(v-if='isForDownload')
-    .c-attachment-preview.is-download-item(
-      v-for='(entry, entryIndex) in attachmentList'
-      :key='getAttachmentId(entry)'
-      tabindex='0'
-    )
-      .c-preview-img(v-if='shouldPreviewImages')
-        img(
-          v-if='imgObjectURLList[entryIndex]'
-          :src='imgObjectURLList[entryIndex]'
-          :alt='entry.name'
-          @click='openImageViewer(imgObjectURLList[entryIndex])'
-          @load='onImageSettled(imgObjectURLList[entryIndex])'
-          @error='onImageSettled(imgObjectURLList[entryIndex])'
-        )
-        .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
-
-      .c-preview-non-media(v-else)
-        .c-non-media-icon
-          i.icon-file
-
-        .c-non-media-file-info
-          .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext-and-size
-            .c-file-ext {{ fileExt(entry) }}
-            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
-
-      .c-preview-pending-flag(v-if='isPending')
-      .c-preview-failed-flag(v-else-if='isFailed')
-        i.icon-exclamation-triangle
-
-      .c-attachment-actions-wrapper(
-        :class='{ "is-for-image": shouldPreviewImages }'
+    template(v-for='(entry, entryIndex) in attachmentList')
+      AttachmentDownloadItem(
+        v-if='fileType(entry)'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='isMsgSender || isGroupCreator'
+        @download='downloadAttachment(entryIndex)'
+        @delete='deleteAttachment({ index: entryIndex })'
       )
-        .c-attachment-actions
-          tooltip(
-            direction='top'
-            :text='getDownloadTooltipText(entry)'
+      .c-attachment-preview.is-download-item(
+        v-else
+        :key='getAttachmentId(entry)'
+        tabindex='0'
+      )
+        .c-preview-img
+          img(
+            v-if='imgObjectURLList[entryIndex]'
+            :src='imgObjectURLList[entryIndex]'
+            :alt='entry.name'
+            @click='openImageViewer(imgObjectURLList[entryIndex])'
+            @load='onImageSettled(imgObjectURLList[entryIndex])'
+            @error='onImageSettled(imgObjectURLList[entryIndex])'
           )
-            button.is-icon-small(
-              :aria-label='L("Download")'
-              @click.stop='downloadAttachment(entryIndex)'
+          .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
+
+        .c-preview-pending-flag(v-if='isPending')
+        .c-preview-failed-flag(v-else-if='isFailed')
+          i.icon-exclamation-triangle
+
+        .c-attachment-actions-wrapper.is-for-image
+          .c-attachment-actions
+            tooltip(
+              direction='top'
+              :text='getDownloadTooltipText(entry)'
             )
-              i.icon-download
-          tooltip(
-            v-if='isMsgSender || isGroupCreator'
-            direction='top'
-            :text='L("Delete")'
-          )
-            button.is-icon-small(
-              :aria-label='L("Delete")'
-              @click='deleteAttachment({ index: entryIndex })'
+              button.is-icon-small(
+                :aria-label='L("Download")'
+                @click.stop='downloadAttachment(entryIndex)'
+              )
+                i.icon-download
+            tooltip(
+              v-if='isMsgSender || isGroupCreator'
+              direction='top'
+              :text='L("Delete")'
             )
-              i.icon-trash-alt
+              button.is-icon-small(
+                :aria-label='L("Delete")'
+                @click='deleteAttachment({ index: entryIndex })'
+              )
+                i.icon-trash-alt
 
   // Displaying attachments as part of <send-area />
   template(v-else)
@@ -92,6 +90,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
@@ -103,7 +102,8 @@ import { uniq } from 'turtledash'
 export default {
   name: 'ChatAttachmentPreview',
   components: {
-    Tooltip
+    Tooltip,
+    AttachmentDownloadItem
   },
   props: {
     attachmentList: {
@@ -331,7 +331,8 @@ export default {
   provide () {
     return {
       attachmentUtils: {
-        getStretchedDimension: this.getStretchedDimension
+        getStretchedDimension: this.getStretchedDimension,
+        getAttachmentObjectURL: this.getAttachmentObjectURL
       }
     }
   }
@@ -346,6 +347,7 @@ export default {
   padding: 0 0.5rem;
   margin-top: 0.75rem;
   width: 100%;
+  max-width: 100%;
   display: flex;
   align-items: center;
   flex-wrap: wrap;

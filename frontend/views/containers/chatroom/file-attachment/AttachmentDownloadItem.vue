@@ -1,28 +1,28 @@
 <template lang='pug'>
 .c-attachment-download-item
-  .c-non-media-card(v-if='fileType === "non-media"')
+  .c-non-media-card(v-if='fileType')
     .c-non-media-icon
       i.icon-file
     .c-non-media-file-info
       .c-file-name.has-ellipsis {{ attachment.name }}
       .c-file-ext-and-size
         .c-file-ext {{ fileExt }}
-        .c-file-size(v-if='entry.size') {{ fileSizeDisplay(attachment) }}
+        .c-file-size(v-if='attachment.size') {{ fileSizeDisplay(attachment) }}
 
-  .c-image-card(v-else-if='fileType === "image"')
-  .c-video-card(v-else-if='fileType === "video"')
+  // .c-image-card(v-else-if='fileType === "image"')
+  // .c-video-card(v-else-if='fileType === "video"')
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
     i.icon-exclamation-triangle
-  
+
   .c-attachment-actions-wrapper(
     :class='{ "is-for-image": fileType === "image" }'
   )
     .c-attachment-actions
       tooltip(
         direction='top'
-        :text='getDownloadTooltipText(entry)'
+        :text='getDownloadTooltipText(attachment)'
       )
         button.is-icon-small(
           :aria-label='L("Download")'
@@ -37,15 +37,12 @@
       )
         button.is-icon-small(
           :aria-label='L("Delete")'
-          @click='deleteAttachment({ index: entryIndex })'
+          @click='$emit("delete")'
         )
           i.icon-trash-alt
-
-  a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
@@ -96,39 +93,6 @@ export default {
       return this.shouldPreviewImages
         ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
         : L('Download')
-    },
-    async getAttachmentObjectURL (attachment) {
-      if (attachment.url) {
-        return attachment.url
-      } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-        return URL.createObjectURL(blob)
-      }
-    },
-    async downloadAttachment () {
-      if (!this.attachment.downloadData) { return }
-
-      // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
-      try {
-        let url = this.imageObjectURL
-        if (!url) {
-          url = await this.getAttachmentObjectURL(attachment)
-        }
-        const aTag = this.$refs.downloadHelper
-
-        aTag.setAttribute('href', url)
-        aTag.setAttribute('download', attachment.name)
-
-        aTag.addEventListener('click', function (event) {
-          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
-          //       when user trys to download attachment inside the dialog
-          event.stopPropagation()
-        })
-
-        aTag.click()
-      } catch (err) {
-        console.error('error caught while downloading a file: ', err)
-      }
     }
   }
 }
@@ -142,7 +106,6 @@ export default {
   display: inline-block;
   border: 1px solid $general_0;
   border-radius: 0.25rem;
-  padding: 0.5rem;
 
   &:hover,
   &:focus {
@@ -161,13 +124,24 @@ export default {
 
 .c-non-media-card {
   position: relative;
-  width: 100%;
   height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "preview-icon preview-info";
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
   border-radius: inherit;
   background-color: $general_2;
-  max-width: 20rem;
-  min-width: 16rem;
+  width: 14rem;
+  max-width: 14rem;
   min-height: 3.5rem;
+
+  @include from (430px) {
+    width: 16rem;
+    max-width: 16rem;
+  }
 
   .c-non-media-icon {
     grid-area: preview-icon;
@@ -187,7 +161,8 @@ export default {
     position: relative;
     display: block;
     line-height: 1.2;
-    width: calc(100% - 4rem);
+    min-width: 0;
+    width: 100%;
 
     .c-file-name {
       position: relative;
