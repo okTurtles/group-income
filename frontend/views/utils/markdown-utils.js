@@ -17,8 +17,7 @@ marked.use({
 
         if (isValid) {
           const { href, text } = token
-          // custom renderer for <a> tag for setting target='_blank' to the output HTML
-          return `<a class="link" href="${href}" target="_blank">${text}</a>`
+          return `<a class="link" href="${href}">${text}</a>`
         }
         return token.raw
       }
