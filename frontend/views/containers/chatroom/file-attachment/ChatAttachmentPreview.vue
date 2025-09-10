@@ -3,57 +3,27 @@
 
   // Displaying attachments as part of message
   template(v-if='isForDownload')
-    template(v-for='(entry, entryIndex) in attachmentList')
+    .c-non-media-card-container(v-if='hasAttachmentType("non-media")')
       AttachmentDownloadItem(
-        v-if='fileType(entry)'
+        v-for='(entry, entryIndex) in sortedAttachments["non-media"]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
         :variant='variant'
-        :canDelete='isMsgSender || isGroupCreator'
-        @download='downloadAttachment(entryIndex)'
-        @delete='deleteAttachment({ index: entryIndex })'
+        :canDelete='canDelete'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: "non-media" })'
       )
-      .c-attachment-preview.is-download-item(
-        v-else
+    .c-image-card-container(v-if='hasAttachmentType("image")')
+      AttachmentDownloadItem(
+        v-for='(entry, entryIndex) in sortedAttachments["image"]'
         :key='getAttachmentId(entry)'
-        tabindex='0'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :imageObjectURL='imgObjectURLList[entryIndex]'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: "image" })'
       )
-        .c-preview-img
-          img(
-            v-if='imgObjectURLList[entryIndex]'
-            :src='imgObjectURLList[entryIndex]'
-            :alt='entry.name'
-            @click='openImageViewer(imgObjectURLList[entryIndex])'
-            @load='onImageSettled(imgObjectURLList[entryIndex])'
-            @error='onImageSettled(imgObjectURLList[entryIndex])'
-          )
-          .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
-
-        .c-preview-pending-flag(v-if='isPending')
-        .c-preview-failed-flag(v-else-if='isFailed')
-          i.icon-exclamation-triangle
-
-        .c-attachment-actions-wrapper.is-for-image
-          .c-attachment-actions
-            tooltip(
-              direction='top'
-              :text='getDownloadTooltipText(entry)'
-            )
-              button.is-icon-small(
-                :aria-label='L("Download")'
-                @click.stop='downloadAttachment(entryIndex)'
-              )
-                i.icon-download
-            tooltip(
-              v-if='isMsgSender || isGroupCreator'
-              direction='top'
-              :text='L("Delete")'
-            )
-              button.is-icon-small(
-                :aria-label='L("Delete")'
-                @click='deleteAttachment({ index: entryIndex })'
-              )
-                i.icon-trash-alt
 
   // Displaying attachments as part of <send-area />
   template(v-else)
@@ -93,10 +63,9 @@ import sbp from '@sbp/sbp'
 import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
-import { L } from '@common/common.js'
 import { uniq } from 'turtledash'
 
 export default {
@@ -125,7 +94,7 @@ export default {
   data () {
     return {
       imgObjectURLList: [],
-      settledURLList: [],
+      settledImgURLList: [],
       loadingBoxStyles: []
     }
   },
@@ -137,71 +106,58 @@ export default {
         'video': []
       }
 
-      for (const entry of this.attachments) {
+      for (const entry of this.attachmentList) {
         const fType = getFileType(entry.mimeType)
         collections[fType].push(entry)
       }
 
       return collections
     },
-    shouldPreviewImages () {
-      return this.attachmentList.every(attachment => {
-        return this.fileType(attachment) === 'image'
-      })
-    },
-    allImageAttachments () {
-      return this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+    hasImageAttachments () {
+      return this.sortedAttachments['image'].length > 0
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
     },
     isFailed () {
       return this.variant === MESSAGE_VARIANTS.FAILED
+    },
+    canDelete () {
+      return this.isMsgSender || this.isGroupCreator
     }
   },
   mounted () {
-    if (this.shouldPreviewImages) {
-      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment))
+    if (this.hasImageAttachments) {
+      const promiseToRetrieveURLs = this.sortedAttachments['image'].map(attachment => this.getAttachmentObjectURL(attachment))
       Promise.all(promiseToRetrieveURLs).then(urls => {
         this.imgObjectURLList = urls
       })
-
-      if (this.isForDownload) {
-        this.loadingBoxStyles = this.attachmentList.map(attachment => {
-          return this.getStretchedDimension(attachment.dimension)
-        })
-      }
 
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   beforeDestroy () {
-    if (this.shouldPreviewImages) {
+    if (this.hasImageAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   methods: {
+    hasAttachmentType (type) {
+      return this.sortedAttachments[type].length > 0
+    },
     fileExt ({ name }) {
       return getFileExtension(name, true)
-    },
-    fileSizeDisplay ({ size }) {
-      return size ? formatBytesDecimal(size) : ''
-    },
-    getDownloadTooltipText ({ size }) {
-      return this.shouldPreviewImages
-        ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
-        : L('Download')
     },
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment ({ index, url }) {
-      if (url) {
+    deleteAttachment ({ index, url, type }) {
+      if (type === 'image' && url) {
         index = this.imgObjectURLList.indexOf(url)
       }
 
       if (index >= 0) {
-        const attachment = this.attachmentList[index]
+        const attachment = this.sortedAttachments[type][index]
         if (attachment.downloadData) {
           this.$emit('delete-attachment', attachment.downloadData.manifestCid)
         }
@@ -215,18 +171,14 @@ export default {
         return URL.createObjectURL(blob)
       }
     },
-    async downloadAttachment (index) {
-      const attachment = this.attachmentList[index]
+    async downloadAttachment (attachment, objectURL = null) {
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
-        let url = this.imgObjectURLList[index]
-        if (!url) {
-          url = await this.getAttachmentObjectURL(attachment)
-        }
-        const aTag = this.$refs.downloadHelper
+        const url = objectURL || (await this.getAttachmentObjectURL(attachment))
 
+        const aTag = this.$refs.downloadHelper
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
 
@@ -259,7 +211,7 @@ export default {
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
-      const imageAttachmentDetailsList = this.allImageAttachments
+      const imageAttachmentDetailsList = this.sortedAttachments['image']
         .map((entry, index) => {
           const imgUrl = entry.url || this.imgObjectURLList[index] || ''
           return {
@@ -286,9 +238,9 @@ export default {
     },
     onImageSettled (url) {
       if (this.isForDownload) {
-        this.settledURLList = uniq([...this.settledURLList, url])
+        this.settledImgURLList = uniq([...this.settledImgURLList, url])
 
-        if (this.allImageAttachments.length === this.settledURLList.length) {
+        if (this.sortedAttachments['image'].length === this.settledImgURLList.length) {
           // Check if all image attachments are loaded in the DOM, notify the parent component.
           // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
           //  if this becomes useful in more places.)
@@ -332,7 +284,9 @@ export default {
     return {
       attachmentUtils: {
         getStretchedDimension: this.getStretchedDimension,
-        getAttachmentObjectURL: this.getAttachmentObjectURL
+        getAttachmentObjectURL: this.getAttachmentObjectURL,
+        openImageViewer: this.openImageViewer,
+        onImageSettled: this.onImageSettled
       }
     }
   }

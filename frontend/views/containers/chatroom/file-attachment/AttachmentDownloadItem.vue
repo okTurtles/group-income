@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-attachment-download-item
-  .c-non-media-card(v-if='fileType')
+  .c-non-media-card(v-if='fileType !== "image"')
     .c-non-media-icon
       i.icon-file
     .c-non-media-file-info
@@ -9,7 +9,17 @@
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='attachment.size') {{ fileSizeDisplay(attachment) }}
 
-  // .c-image-card(v-else-if='fileType === "image"')
+  .c-image-card(v-else)
+    img(
+      v-if='imageObjectURL'
+      :src='imageObjectURL'
+      :alt='attachment.name'
+      @click='attachmentUtils.openImageViewer(imageObjectURL)'
+      @load='attachmentUtils.onImageSettled(imageObjectURL)'
+      @error='attachmentUtils.onImageSettled(imageObjectURL)'
+    )
+    .loading-box(v-else :style='imgLoadingBoxStyles')
+
   // .c-video-card(v-else-if='fileType === "video"')
 
   .c-pending-flag(v-if='isPending')
@@ -53,6 +63,7 @@ export default {
   components: {
     Tooltip
   },
+  inject: ['attachmentUtils'],
   props: {
     attachment: {
       type: Object,
@@ -75,6 +86,9 @@ export default {
     fileType () {
       return getFileType(this.attachment.mimeType)
     },
+    isImage () {
+      return this.fileType === 'image'
+    },
     fileExt () {
       return getFileExtension(this.attachment.name, true)
     },
@@ -83,6 +97,13 @@ export default {
     },
     isFailed () {
       return this.variant === MESSAGE_VARIANTS.FAILED
+    },
+    imgLoadingBoxStyles () {
+      if (this.isImage) {
+        return this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
+      }
+
+      return {}
     }
   },
   methods: {
@@ -90,7 +111,7 @@ export default {
       return size ? formatBytesDecimal(size) : ''
     },
     getDownloadTooltipText ({ size }) {
-      return this.shouldPreviewImages
+      return this.isImage
         ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
         : L('Download')
     }
@@ -181,6 +202,35 @@ export default {
       color: $text_1;
       font-size: 0.8em;
     }
+  }
+}
+
+.c-image-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background-color: $general_2;
+  object-fit: cover;
+  padding: 0.5rem;
+
+  img {
+    user-select: none;
+    cursor: pointer;
+    max-width: 100%;
+    max-height: 20rem;
+
+    @include phone {
+      max-height: 12rem;
+    }
+  }
+
+  .loading-box {
+    border-radius: 0;
+    margin-bottom: 0;
+    max-height: 20rem;
+    min-height: unset;
+    max-width: 100%;
   }
 }
 

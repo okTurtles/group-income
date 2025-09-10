@@ -188,7 +188,7 @@ export default {
         return
       }
 
-      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
+      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { type: 'image', url: this.currentImage.imgUrl })
       this.ephemeral.deletingImages.push(this.currentImage.manifestCid)
     },
     onDeleteAttachmentFeedback ({ action, manifestCid }) {
