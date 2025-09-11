@@ -107,7 +107,7 @@ export default {
         'image': [],
         'video': []
       },
-      settledImgURLList: []
+      settledImgURLList: [] // TODO: update the logic related to this attribute to accommodate video attachments too.
     }
   },
   computed: {
@@ -216,7 +216,6 @@ export default {
       const maxHeight = 320
       // NOTE: 16px = 2 * 0.5rem of padding (.c-preview-img)
       //       2px = 2 * 1px of border width (.c-attachment-preview)
-      console.log('!@# getStretchedDimension: ', this.$refs.container?.clientWidth)
       const maxWidth = this.$refs.container.clientWidth - 16 - 2
       const zoomRatio = Math.min(maxWidth / width, maxHeight / height, 1)
       const widthInPixel = zoomRatio * width
