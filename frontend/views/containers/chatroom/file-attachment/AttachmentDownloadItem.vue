@@ -18,7 +18,7 @@
       @load='attachmentUtils.onImageSettled(imageObjectURL)'
       @error='attachmentUtils.onImageSettled(imageObjectURL)'
     )
-    .loading-box(v-else :style='imgLoadingBoxStyles')
+    .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
   // .c-video-card(v-else-if='fileType === "video"')
 
@@ -82,6 +82,13 @@ export default {
       required: false
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        imgLoadingBoxStyles: {}
+      }
+    }
+  },
   computed: {
     fileType () {
       return getFileType(this.attachment.mimeType)
@@ -97,13 +104,6 @@ export default {
     },
     isFailed () {
       return this.variant === MESSAGE_VARIANTS.FAILED
-    },
-    imgLoadingBoxStyles () {
-      if (this.isImage) {
-        return this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
-      }
-
-      return {}
     }
   },
   methods: {
@@ -114,6 +114,11 @@ export default {
       return this.isImage
         ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
         : L('Download')
+    }
+  },
+  mounted () {
+    if (this.isImage) {
+      this.ephemeral.imgLoadingBoxStyles = this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
     }
   }
 }

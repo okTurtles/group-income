@@ -13,6 +13,7 @@
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: "non-media" })'
       )
+
     .c-image-card-container(v-if='hasAttachmentType("image")')
       AttachmentDownloadItem(
         v-for='(entry, entryIndex) in sortedAttachments["image"]'
@@ -20,9 +21,20 @@
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
-        :imageObjectURL='imgObjectURLList[entryIndex]'
+        :imageObjectURL='mediaObjectURLList.image[entryIndex]'
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: "image" })'
+      )
+
+    .c-video-card-container(v-if='hasAttachmentType("video")')
+      AttachmentDownloadItem(
+        v-for='(entry, entryIndex) in sortedAttachments["video"]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: "video" })'
       )
 
   // Displaying attachments as part of <send-area />
@@ -52,8 +64,6 @@
         @click.stop='$emit("remove", entry.url)'
       )
         i.icon-times
-
-      .c-loader(v-if='isForDownload && !entry.downloadData')
 
   a.c-invisible-link(ref='downloadHelper')
 </template>
@@ -93,9 +103,11 @@ export default {
   },
   data () {
     return {
-      imgObjectURLList: [],
-      settledImgURLList: [],
-      loadingBoxStyles: []
+      mediaObjectURLList: {
+        'image': [],
+        'video': []
+      },
+      settledImgURLList: []
     }
   },
   computed: {
@@ -113,8 +125,8 @@ export default {
 
       return collections
     },
-    hasImageAttachments () {
-      return this.sortedAttachments['image'].length > 0
+    hasMediaAttachments () {
+      return this.sortedAttachments['image'].length > 0 || this.sortedAttachments['video'].length > 0
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -127,17 +139,23 @@ export default {
     }
   },
   mounted () {
-    if (this.hasImageAttachments) {
-      const promiseToRetrieveURLs = this.sortedAttachments['image'].map(attachment => this.getAttachmentObjectURL(attachment))
-      Promise.all(promiseToRetrieveURLs).then(urls => {
-        this.imgObjectURLList = urls
-      })
+    if (this.hasMediaAttachments) {
+      const mediaTypes = ['image', 'video']
+      for (const mediaType of mediaTypes) {
+        const attachments = this.sortedAttachments[mediaType]
+        if (attachments.length > 0) {
+          const promiseToRetrieveURLs = attachments.map(attachment => this.getAttachmentObjectURL(attachment))
+          Promise.all(promiseToRetrieveURLs).then(urls => {
+            this.mediaObjectURLList[mediaType] = urls
+          })
+        }
+      }
 
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   beforeDestroy () {
-    if (this.hasImageAttachments) {
+    if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
@@ -152,8 +170,8 @@ export default {
       return getFileType(mimeType)
     },
     deleteAttachment ({ index, url, type }) {
-      if (type === 'image' && url) {
-        index = this.imgObjectURLList.indexOf(url)
+      if (['image', 'video'].includes(type) && url) {
+        index = this.mediaObjectURLList[type].indexOf(url)
       }
 
       if (index >= 0) {
@@ -198,6 +216,7 @@ export default {
       const maxHeight = 320
       // NOTE: 16px = 2 * 0.5rem of padding (.c-preview-img)
       //       2px = 2 * 1px of border width (.c-attachment-preview)
+      console.log('!@# getStretchedDimension: ', this.$refs.container?.clientWidth)
       const maxWidth = this.$refs.container.clientWidth - 16 - 2
       const zoomRatio = Math.min(maxWidth / width, maxHeight / height, 1)
       const widthInPixel = zoomRatio * width
@@ -213,7 +232,7 @@ export default {
 
       const imageAttachmentDetailsList = this.sortedAttachments['image']
         .map((entry, index) => {
-          const imgUrl = entry.url || this.imgObjectURLList[index] || ''
+          const imgUrl = entry.url || this.mediaObjectURLList.image[index] || ''
           return {
             name: entry.name,
             ownerID: this.ownerID,
@@ -253,29 +272,32 @@ export default {
     }
   },
   watch: {
-    attachmentList (to, from) {
-      if (from.length > to.length) {
-        // NOTE: this will be caught when user tries to delete attachments
-        const oldObjectURLMapping = {}
-        if (from.length === this.imgObjectURLList.length) {
-          const currentObjectURLList = this.imgObjectURLList.slice()
+    sortedAttachments (to, from) {
+      const mediaTypes = ['image', 'video']
+      for (const mediaType of mediaTypes) {
+        const fromList = from[mediaType]
+        const toList = to[mediaType]
+        const currentObjectURLList = this.mediaObjectURLList[mediaType].slice()
 
-          from.forEach((attachment, index) => {
-            oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
-          })
-          this.imgObjectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+        if (fromList.length > toList.length) {
+          if (fromList.length === currentObjectURLList.length) {
+            const oldObjectURLMapping = {}
 
-          // revoke object URL of a deleted attachment.
-          Object.values(oldObjectURLMapping).forEach(oldUrl => {
-            if (!this.imgObjectURLList.includes(oldUrl)) {
-              URL.revokeObjectURL(oldUrl)
-            }
-          })
-        } else {
-          // NOTE: this should not be caught, but considered for the error handler
-          Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
-            this.imgObjectURLList = urls
-          })
+            fromList.forEach((attachment, index) => {
+              oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
+            })
+            this.mediaObjectURLList[mediaType] = toList.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+
+            currentObjectURLList.filter(url => !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
+              URL.revokeObjectURL(url)
+            })
+          } else {
+            currentObjectURLList.forEach(url => URL.revokeObjectURL(url))
+
+            Promise.all(toList.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
+              this.mediaObjectURLList[mediaType] = urls
+            })
+          }
         }
       }
     }
@@ -309,85 +331,9 @@ export default {
 
   &.is-for-download {
     padding: 0;
-
-    .c-preview-non-media {
-      .c-non-media-file-info {
-        width: calc(100% - 4rem);
-      }
-
-      .c-file-ext-and-size {
-        display: flex;
-        align-items: flex-end;
-        flex-direction: row;
-        column-gap: 0.325rem;
-      }
-
-      .c-file-size {
-        color: $text_1;
-        font-size: 0.8em;
-      }
-    }
-
-    .c-attachment-actions-wrapper {
-      display: none;
-      position: absolute;
-      right: 0.5rem;
-      top: 0;
-
-      .c-attachment-actions {
-        display: flex;
-        gap: 0.25rem;
-        align-self: center;
-        align-items: center;
-        background-color: $background_0;
-        padding: 2px;
-
-        .is-icon-small {
-          border-radius: 0;
-        }
-      }
-
-      &.is-for-image {
-        .c-attachment-actions {
-          margin-top: 0.5rem;
-        }
-      }
-    }
-
-    .is-download-item {
-      &:hover .c-attachment-actions-wrapper {
-        display: block;
-      }
-
-      .c-preview-non-media {
-        max-width: 20rem;
-        min-width: 16rem;
-        min-height: 3.5rem;
-      }
-
-      .c-preview-img {
-        padding: 0.5rem;
-
-        img {
-          user-select: none;
-          cursor: pointer;
-          max-width: 100%;
-          max-height: 20rem;
-
-          @include phone {
-            max-height: 12rem;
-          }
-        }
-
-        .loading-box {
-          border-radius: 0;
-          margin-bottom: 0;
-          max-height: 20rem;
-          min-height: unset;
-          max-width: 100%;
-        }
-      }
-    }
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: 1rem;
   }
 }
 
@@ -482,56 +428,6 @@ export default {
     background-color: $text_1;
     color: $general_1;
   }
-
-  .c-loader {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    border-radius: 0.25rem;
-    overflow: hidden;
-
-    &::before {
-      content: "";
-      display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: $general_1;
-      opacity: 0.65;
-    }
-
-    &::after {
-      content: "";
-      display: block;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid;
-      border-top-color: transparent;
-      border-radius: 50%;
-      color: $primary_0;
-      animation: loadSpin 1.75s infinite linear;
-    }
-  }
-
-  &.is-download-item {
-    &:hover,
-    &:focus {
-      border-color: $text_1;
-    }
-
-    &:active,
-    &:focus {
-      border-color: $text_0;
-    }
-  }
 }
 
 .c-invisible-link {
@@ -542,28 +438,11 @@ export default {
   pointer-events: none;
 }
 
-.c-preview-pending-flag {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-
-  &::after {
-    content: "";
-    position: absolute;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid;
-    border-top-color: transparent;
-    border-radius: 50%;
-    color: $general_0;
-    animation: loadSpin 1.75s infinite linear;
-  }
-}
-
-.c-preview-failed-flag {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  color: $warning_0;
+.c-non-media-card-container,
+.c-image-card-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 </style>
