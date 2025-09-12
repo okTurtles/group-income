@@ -50,6 +50,12 @@
         :src='entry.url'
         :alt='entry.name'
       )
+
+      .c-preview-video(v-else-if='fileType(entry) === "video"')
+        .c-video-thumb-container
+        .c-video-play-icon
+          i.icon-play
+
       .c-preview-non-media(v-else)
         .c-non-media-icon
           i.icon-file
@@ -342,17 +348,52 @@ export default {
   border: 1px solid $general_0;
   border-radius: 0.25rem;
 
-  &.is-image {
+  &.is-image,
+  &.is-video {
     width: 4.5rem;
     height: 4.5rem;
     cursor: pointer;
+  }
 
+  &.is-image {
     .c-preview-img {
       pointer-events: none;
     }
   }
 
-  &.is-video,
+  &.is-video {
+    .c-video-thumb-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: $general_0;
+      overflow: hidden;
+      border-radius: inherit;
+    }
+
+    .c-video-play-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1.5rem;
+      height: 1.5rem;
+      font-size: 0.625rem;
+      line-height: 1;
+      border-radius: 50%;
+      color: $white;
+      background-color: $primary_0;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      i {
+        transform: translateX(1px);
+      }
+    }
+  }
+
   &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;

@@ -207,6 +207,7 @@ page(
               i.icon-newspaper icon-newspaper
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
+              i.icon-play icon-play
               i.icon-plus icon-plus
               i.icon-poll icon-poll
               i.icon-question icon-question
