@@ -1084,7 +1084,10 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.')),
-  'gi.actions/identity/upgradeGroupForeignCSKs': (contractID: string, groupFKTuple: [string, string, string][]) => {
+  'gi.actions/identity/upgradeGroupForeignCSKs': (contractID: string, groupFKTuple: [string, string, string][], maxAttemptCount = 5) => {
+    if (maxAttemptCount < 1) {
+      console.error('[gi.actions/identity/upgradeGroupForeignCSK] Max attempts exceeded', contractID, groupFKTuple)
+    }
     // See issue #2898
     // This function is called from 'state/vuex/postUpgradeVerification'
     // Group (foreign) CSKs that were encrypted with a CEK will be removed and
@@ -1097,13 +1100,36 @@ export default (sbp('sbp/selectors/register', {
     const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
 
     // Sanity check to avoid unnecessary updates
-    groupFKTuple = groupFKTuple.filter(([groupID, oldKeyId]) => {
+    groupFKTuple = groupFKTuple.filter((tuple) => {
+      let [groupID, oldKeyId, newKeyId] = tuple
       // Check that we're group members
       if (!state[contractID].groups[groupID] || state[contractID].groups[groupID].hasLeft) return false
       // Check that the key we're replacing is valid
-      if (!state[contractID]._vm.authorizedKeys[oldKeyId] || state[contractID]._vm.authorizedKeys[oldKeyId]._notAfterHeight != null) return false
+      if (!state[contractID]._vm.authorizedKeys[oldKeyId]) return false
+      if (state[contractID]._vm.authorizedKeys[oldKeyId]._notAfterHeight != null) {
+        // The old key ID may have been rotated right before this function was
+        // called
+        tuple[1] = sbp('chelonia/contract/currentKeyIdByName', contractID, state[contractID]._vm.authorizedKeys[oldKeyId])
+        if (!tuple[1]) return false
+        oldKeyId = tuple[1]
+      }
       // Check that the encryption key used originally was the CEK
       if (!state[contractID]._vm.authorizedKeys[oldKeyId]._private || state[contractID]._vm.authorizedKeys[state[contractID]._vm.authorizedKeys[oldKeyId]._private]?.name !== 'cek') return false
+
+      const updatedGroupCskId = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
+      if (newKeyId !== updatedGroupCskId) {
+        tuple[2] = updatedGroupCskId
+        newKeyId = updatedGroupCskId
+      }
+      // If the key ID is the same (should be in most cases if keys are being
+      // automatically rotated), proceed. We want it encrypted with the PEK
+      if (updatedGroupCskId === oldKeyId) return true
+      // If automatic key roation didn't work for some reason, we still want to
+      // remove the old key and add the new one using CEK encryption
+      if (!state[contractID]._vm.authorizedKeys[newKeyId]) return true
+      // If we already have the new key _and_ it is already encrypted with the
+      // PEK, then there's nothing to do.
+      if (!state[contractID]._vm.authorizedKeys[newKeyId]._private || state[contractID]._vm.authorizedKeys[state[contractID]._vm.authorizedKeys[newKeyId]._private]?.name === 'pek') return false
 
       return true
     })
@@ -1118,6 +1144,43 @@ export default (sbp('sbp/selectors/register', {
       contractID,
       contractName: 'gi.contracts/identity',
       signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [SPMessage.OP_KEY_ADD], ['sig']),
+      beforeRequest: (newEntry) => {
+        // There still is a possibility that keys in the contract have changed
+        // while we're in the process of writing to it. We want to be careful
+        // with this operation and only send correct updates, or else the state
+        // will be broken.
+        // It's currently not possible to change an SPMessage after it's
+        // constructed, so if we detect any information that shouldn't be there,
+        // we call this action again (to produce a corrected messge) and abort
+        // the current call.
+        const canProceed = groupFKTuple.every(([groupID, oldKeyId, newKeyId]) => {
+          // Check that we're group members
+          if (!state[contractID].groups[groupID] || state[contractID].groups[groupID].hasLeft) return false
+          // Check that the key we're replacing is valid
+          if (!state[contractID]._vm.authorizedKeys[oldKeyId] && state[contractID]._vm.authorizedKeys[oldKeyId]._notAfterHeight != null) {
+            return false
+          }
+          // Check that the encryption key used originally was the CEK
+          if (!state[contractID]._vm.authorizedKeys[oldKeyId]._private || state[contractID]._vm.authorizedKeys[state[contractID]._vm.authorizedKeys[oldKeyId]._private]?.name !== 'cek') return false
+
+          // Check that the group CSK hasn't been rotated
+          const updatedGroupCskId = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
+          if (newKeyId !== updatedGroupCskId) return false
+
+          // Check that newKeyId hasn't been added yet
+          if (state[contractID]._vm.authorizedKeys[newKeyId] && newKeyId !== oldKeyId) return false
+
+          return true
+        })
+        if (!canProceed) {
+          setTimeout(() => {
+            sbp('gi.actions/identity/upgradeGroupForeignCSKs', contractID, groupFKTuple, maxAttemptCount - 1).catch((e) => {
+              console.error('[gi.actions/identity/upgradeGroupForeignCSKs] Error', contractID, groupFKTuple, e)
+            })
+          }, 200)
+          throw new Error('gi.actions/identity/upgradeGroupForeignCSKs: Unable to proceed as data changed.')
+        }
+      },
       data: [
         // First, delete keys that were encrypted using the CEK
         [
@@ -1140,7 +1203,9 @@ export default (sbp('sbp/selectors/register', {
                 allowedActions: oldKey.allowedActions,
                 purpose: oldKey.purpose,
                 ringLevel: oldKey.ringLevel,
-                name: `${groupID}/${newKeyId}`
+                // Intentionally using the old name in the new key to preserve
+                // continuity
+                name: oldKey.name
               })
             })
           }
