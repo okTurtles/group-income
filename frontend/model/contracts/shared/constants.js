@@ -27,6 +27,13 @@ export const GROUP_CURRENCY_MAX_CHAR = 10
 export const GROUP_MAX_PLEDGE_AMOUNT = 1000000000
 export const GROUP_MINCOME_MAX = 1000000000
 export const GROUP_DISTRIBUTION_PERIOD_MAX_DAYS = 365
+export const GROUP_ROLE_NAME_MAX_CHAR = 50
+export const GROUP_PERMISSION_MAX_CHAR = 100
+export const GROUP_PERMISSION_UPDATE_ACTIONS = {
+  ADD: 'add',
+  EDIT: 'edit',
+  REMOVE: 'remove'
+}
 
 // group-proposal related
 
@@ -65,8 +72,8 @@ export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
 export const GROUP_ROLES = {
   ADMIN: 'admin',
-  MODERATOR: 'moderator',
   MODERATOR_DELEGATOR: 'moderator-delegator',
+  MODERATOR: 'moderator',
   CUSTOM: 'custom'
 }
 
@@ -97,6 +104,12 @@ export const GROUP_PERMISSIONS_PRESET = {
     GP.DELETE_CHANNEL
   ],
   MODERATOR: [
+    GP.VIEW_PERMISSIONS,
+    GP.REMOVE_MEMBER,
+    GP.REVOKE_INVITE,
+    GP.DELETE_CHANNEL
+  ],
+  CUSTOM: [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE,
