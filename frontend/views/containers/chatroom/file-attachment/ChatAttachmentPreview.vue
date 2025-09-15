@@ -4,7 +4,7 @@
   // Displaying attachments as part of message
   template(v-if='isForDownload')
     .c-non-media-card-container(v-if='hasAttachmentType("non-media")')
-      AttachmentDownloadItem(
+      attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments["non-media"]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
@@ -15,7 +15,7 @@
       )
 
     .c-image-card-container(v-if='hasAttachmentType("image")')
-      AttachmentDownloadItem(
+      attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments["image"]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
@@ -27,7 +27,7 @@
       )
 
     .c-video-card-container(v-if='hasAttachmentType("video")')
-      AttachmentDownloadItem(
+      attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments["video"]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
@@ -39,37 +39,34 @@
 
   // Displaying attachments as part of <send-area />
   template(v-else)
-    .c-attachment-preview(
-      v-for='(entry, entryIndex) in attachmentList'
-      :key='entryIndex'
-      :class='"is-" + fileType(entry)'
-      @click='openImageViewer(entry.url)'
-    )
-      img.c-preview-img(
-        v-if='fileType(entry) === "image" && entry.url'
-        :src='entry.url'
-        :alt='entry.name'
+    template(v-for='(entry, entryIndex) in attachmentList')
+      .c-attachment-preview(
+        v-if='fileType(entry) === "non-media"'
+        :key='entryIndex'
+        :class='"is-" + fileType(entry)'
       )
+        .c-preview-non-media(@click.stop='')
+          .c-non-media-icon
+            i.icon-file
 
-      .c-preview-video(v-else-if='fileType(entry) === "video"')
-        .c-video-thumb-container
-        .c-video-play-icon
-          i.icon-play
+          .c-non-media-file-info
+            .c-file-name.has-ellipsis {{ entry.name }}
+            .c-file-ext {{ fileExt(entry) }}
 
-      .c-preview-non-media(v-else)
-        .c-non-media-icon
-          i.icon-file
+        button.c-attachment-remove-btn(
+          type='button'
+          :aria-label='L("Remove attachment")'
+          @click.stop='$emit("remove", entry.url)'
+        )
+          i.icon-times
 
-        .c-non-media-file-info
-          .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext {{ fileExt(entry) }}
-
-      button.c-attachment-remove-btn(
-        type='button'
-        :aria-label='L("Remove attachment")'
-        @click.stop='$emit("remove", entry.url)'
+      media-preview-in-text-area(
+        v-else
+        :key='entryIndex'
+        :attachment='entry'
+        @remove='$emit("remove", entry.url)'
+        @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
       )
-        i.icon-times
 
   a.c-invisible-link(ref='downloadHelper')
 </template>
@@ -77,6 +74,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
+import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
@@ -88,7 +86,8 @@ export default {
   name: 'ChatAttachmentPreview',
   components: {
     Tooltip,
-    AttachmentDownloadItem
+    AttachmentDownloadItem,
+    MediaPreviewInTextArea
   },
   props: {
     attachmentList: {
@@ -232,6 +231,17 @@ export default {
         height: `${heightInPixel}px`
       }
     },
+    onMediaPreviewCardClick (type, url) {
+      if (type === 'image') {
+        this.openImageViewer(url)
+      } else if (type === 'video') {
+        this.openVideoViewer(url)
+      }
+    },
+    openVideoViewer (url) {
+      if (!url) { return }
+      console.log('!@# TODO: build/lauch a video player modal!')
+    },
     openImageViewer (objectURL) {
       if (!objectURL) { return }
 
@@ -278,6 +288,8 @@ export default {
   },
   watch: {
     sortedAttachments (to, from) {
+      if (!this.isForDownload) { return }
+
       const mediaTypes = ['image', 'video']
       for (const mediaType of mediaTypes) {
         const fromList = from[mediaType]
@@ -289,10 +301,11 @@ export default {
             const oldObjectURLMapping = {}
 
             fromList.forEach((attachment, index) => {
-              oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
+              if (attachment.downloadData) {
+                oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
+              }
             })
             this.mediaObjectURLList[mediaType] = toList.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
-
             currentObjectURLList.filter(url => !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
               URL.revokeObjectURL(url)
             })
@@ -348,72 +361,18 @@ export default {
   border: 1px solid $general_0;
   border-radius: 0.25rem;
 
-  &.is-image,
-  &.is-video {
-    width: 4.5rem;
-    height: 4.5rem;
-    cursor: pointer;
-  }
-
-  &.is-image {
-    .c-preview-img {
-      pointer-events: none;
-    }
-  }
-
-  &.is-video {
-    .c-video-thumb-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background-color: $general_0;
-      overflow: hidden;
-      border-radius: inherit;
-    }
-
-    .c-video-play-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 1.5rem;
-      height: 1.5rem;
-      font-size: 0.625rem;
-      line-height: 1;
-      border-radius: 50%;
-      color: $white;
-      background-color: $primary_0;
-      z-index: 1;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-
-      i {
-        transform: translateX(1px);
-      }
-    }
-  }
-
   &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
   }
 
-  .c-preview-img,
   .c-preview-non-media {
     position: relative;
     width: 100%;
     height: 100%;
     border-radius: inherit;
     background-color: $general_2;
-  }
-
-  .c-preview-img {
-    object-fit: cover;
-  }
-
-  .c-preview-non-media {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr;
@@ -479,7 +438,8 @@ export default {
 }
 
 .c-non-media-card-container,
-.c-image-card-container {
+.c-image-card-container,
+.c-video-card-container {
   position: relative;
   display: flex;
   flex-wrap: wrap;

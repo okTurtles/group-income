@@ -769,6 +769,10 @@ export default ({
         list.push(attachment)
       }
 
+      // sort the list so that the media types come first in the array.
+      const priority = { video: 0, image: 1, 'non-media': 2 }
+      list.sort((a, b) => priority[getFileType(a.mimeType)] - priority[getFileType(b.mimeType)])
+
       this.ephemeral.attachments = list
     },
     clearAllAttachments () {
