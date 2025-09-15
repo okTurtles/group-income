@@ -8,8 +8,12 @@
     :src='attachment.url'
     :alt='attachment.name'
   )
-  .c-preview-video(v-else-if='fileType === "video"')
+  template(v-else-if='fileType === "video"')
     .c-video-thumb-container
+      img.c-video-thumb-img(
+        v-if='ephemeral.video.thumbnailURL'
+        :src='ephemeral.video.thumbnailURL'
+      )
     .c-video-play-icon
       i.icon-play
 
@@ -32,9 +36,82 @@ export default {
       required: true
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        video: {
+          isGeneratingThumbnail: false,
+          thumbnailURL: null
+        }
+      }
+    }
+  },
   computed: {
     fileType () {
       return getFileType(this.attachment.mimeType)
+    },
+    isVideo () {
+      return this.fileType === 'video'
+    }
+  },
+  methods: {
+    generateVideoThumbnail () {
+      // TODO: Check if this works well in Safari desktop and iOS Safari.
+      if (!this.isVideo || !this.attachment.url) { return }
+
+      this.ephemeral.video.isGeneratingThumbnail = true
+      this.ephemeral.video.thumbnailURL = null
+
+      const videoEl = document.createElement('video')
+      const seekToTime = (timeStamp) => {
+        return new Promise(resolve => {
+          videoEl.currentTime = timeStamp
+          const onSeekSuccess = () => {
+            videoEl.removeEventListener('seeked', onSeekSuccess)
+            resolve(true)
+          }
+
+          videoEl.addEventListener('seeked', onSeekSuccess)
+          videoEl.addEventListener('error', () => resolve(false))
+        })
+      }
+
+      videoEl.preload = 'metadata'
+      videoEl.muted = true
+      videoEl.src = this.attachment.url
+
+      videoEl.addEventListener('loadeddata', async () => {
+        console.log('!@# loadeddata: ', videoEl.duration)
+        const targetTime = Math.min(1, videoEl.duration / 2)
+        const isSuccess = await seekToTime(targetTime)
+        console.log('!@# isSuccess: ', targetTime, isSuccess)
+        if (isSuccess) {
+          const canvasEl = document.createElement('canvas')
+          const ctx = canvasEl.getContext('2d')
+          canvasEl.width = videoEl.videoWidth
+          canvasEl.height = videoEl.videoHeight
+          ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height)
+          this.ephemeral.video.thumbnailURL = canvasEl.toDataURL('image/png')
+          console.log('!@# thumbnailURL: ', this.ephemeral.video.thumbnailURL)
+          this.ephemeral.video.isGeneratingThumbnail = false
+        }
+      })
+    },
+    removeHandler () {
+      if (this.isVideo) {
+        this.ephemeral.video.isGeneratingThumbnail = false
+        if (this.ephemeral.video.thumbnailURL) {
+          URL.revokeObjectURL(this.ephemeral.video.thumbnailURL)
+          this.ephemeral.video.thumbnailURL = null
+        }
+      }
+
+      this.$emit('remove')
+    }
+  },
+  created () {
+    if (this.isVideo) {
+      this.generateVideoThumbnail()
     }
   }
 }
@@ -72,6 +149,13 @@ export default {
       background-color: $general_0;
       overflow: hidden;
       border-radius: inherit;
+
+      .c-video-thumb-img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
     }
 
     .c-video-play-icon {

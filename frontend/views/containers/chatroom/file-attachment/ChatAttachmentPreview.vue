@@ -42,7 +42,7 @@
     template(v-for='(entry, entryIndex) in attachmentList')
       .c-attachment-preview(
         v-if='fileType(entry) === "non-media"'
-        :key='entryIndex'
+        :key='entry.url'
         :class='"is-" + fileType(entry)'
       )
         .c-preview-non-media(@click.stop='')
@@ -62,7 +62,7 @@
 
       media-preview-in-text-area(
         v-else
-        :key='entryIndex'
+        :key='entry.url'
         :attachment='entry'
         @remove='$emit("remove", entry.url)'
         @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
