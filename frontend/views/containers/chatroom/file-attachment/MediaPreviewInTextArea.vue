@@ -78,9 +78,12 @@ export default {
       }
 
       videoEl.preload = 'metadata'
+      // NOTE: Some browsers have autoplay restrictions where a video with audio cannot autoplay without user interaction.
+      //       Muting the video here is to prevent this issue.
       videoEl.muted = true
       videoEl.src = this.attachment.url
       videoEl.addEventListener('loadedmetadata', async () => {
+        // Timestamp to seek here is 1 second or less so the data loads fast.
         const targetTime = Math.min(1, videoEl.duration / 2)
         const isSuccess = await seekToTime(targetTime)
         if (isSuccess) {
