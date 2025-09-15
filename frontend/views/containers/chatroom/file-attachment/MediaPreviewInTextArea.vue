@@ -87,18 +87,28 @@ export default {
         const targetTime = Math.min(1, videoEl.duration / 2)
         const isSuccess = await seekToTime(targetTime)
         if (isSuccess) {
-          const canvasEl = document.createElement('canvas')
-          const ctx = canvasEl.getContext('2d')
-          canvasEl.width = videoEl.videoWidth
-          canvasEl.height = videoEl.videoHeight
-          ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height)
-          this.ephemeral.video.thumbnailURL = canvasEl.toDataURL('image/png')
+          this.ephemeral.video.thumbnailURL = await this.generateImageURLByCanvas(
+            videoEl, videoEl.videoWidth, videoEl.videoHeight
+          )
           this.ephemeral.video.isGeneratingThumbnail = false
         }
       })
     },
+    async generateImageURLByCanvas (video, width, height) {
+      const canvasEl = document.createElement('canvas')
+      const ctx = canvasEl.getContext('2d')
+      const toBlob = () => new Promise((resolve) => {
+        canvasEl.toBlob(blob => resolve(blob), 'image/png', 0.85) // Thumbnail quality does not need to be super crisp.
+      })
+      canvasEl.width = width
+      canvasEl.height = height
+      ctx.drawImage(video, 0, 0, canvasEl.width, canvasEl.height)
+      const blob = await toBlob()
+      return URL.createObjectURL(blob)
+    },
     clearVideoThumbnail () {
       if (this.ephemeral.video.thumbnailURL) {
+        console.log('!@# revokeObjectURL', this.ephemeral.video.thumbnailURL)
         URL.revokeObjectURL(this.ephemeral.video.thumbnailURL)
       }
     }
