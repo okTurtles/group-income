@@ -13,7 +13,6 @@
       .c-post-content
         h3.is-title-4 {{ post.title }}
         render-message-with-markdown(:text='post.content')
-        //- div(v-safe-html:a='renderMarkdown(post.content)')
 </template>
 
 <script>
