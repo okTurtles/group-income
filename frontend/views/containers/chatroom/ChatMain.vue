@@ -447,7 +447,7 @@ export default ({
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
       const chatRoomID = this.ephemeral.renderingChatRoomId
-      const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      let limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
        * if the removed message was the first unread messages(currentChatRoomReadUntil)
        * we can load message of that hash(messageHash) but not scroll
@@ -487,7 +487,10 @@ export default ({
         if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight === this.latestHeight)) return
         this.ephemeral.loadingDown = instance
         let sinceHeight
-        if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
+        if (!this.isJoinedChatRoom(chatRoomID)) {
+          limit = Infinity
+          sinceHeight = 0
+        } else if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID).finally(() => {
             if (this.ephemeral.loadingDown === instance) {
               this.ephemeral.loadingDown = false
@@ -501,7 +504,17 @@ export default ({
         console.error('@@@@loadMoreMessages eventsAfter', direction, sinceHeight, this.ephemeral.currentHighestHeight, this.latestEvents.length)
         await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight, limit, stream: false }).then((events) => {
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-          return this.processEvents(events, direction)
+          return this.processEvents(events, direction).then(() => {
+            // Special case: if loading events for a chatroom we're not part
+            // of, scroll to bottom
+            if (limit !== Infinity || sinceHeight !== 0) return
+            this.ephemeral.postSetMessageState = () => {
+              if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+              if (!this.isJoinedChatRoom(chatRoomID)) {
+                this.jumpToLatest('instant')
+              }
+            }
+          })
         }).finally(() => {
           if (this.ephemeral.loadingDown === instance) {
             this.ephemeral.loadingDown = false
@@ -1205,7 +1218,6 @@ export default ({
         })
         return
       } else {
-        // if (isNaN(NaN)) return
         const conversation = this.$refs.conversation?.$el
         if (!conversation) {
           console.error('@@@@rerenderEvents 1')

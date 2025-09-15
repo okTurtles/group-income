@@ -221,8 +221,10 @@ export default ({
     },
     moreOptionsTriggered () {
       const eleMessage = this.$el.closest('.c-message')
-      const eleParent = eleMessage.parentElement
-      const heightOfAvailableSpace = eleMessage.offsetTop - eleParent.scrollTop
+      const eleParent = eleMessage.closest('.c-body-conversation')
+      const eleMessageCBR = eleMessage.getBoundingClientRect()
+      const eleParentCBR = eleParent.getBoundingClientRect()
+      const heightOfAvailableSpace = eleMessageCBR.top - eleParentCBR.top
       const heightOfMenuItem = this.isDesktopScreen ? 36 : 54
       const calculatedMoreOptionsMenuHeight = this.moreOptions.length * heightOfMenuItem + 2 * 8 // 8px = padding of 0.5rem for bottom and top
       const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
