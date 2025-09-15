@@ -56,7 +56,8 @@ export default {
   },
   methods: {
     generateVideoThumbnail () {
-      // TODO: Check if this works well in Safari desktop and iOS Safari.
+      // TODO-1: Check if this works well in iOS Safari.
+      // TODO-2: Display a loading indicator while generating the thumbnail.
       if (!this.isVideo || !this.attachment.url) { return }
 
       this.ephemeral.video.isGeneratingThumbnail = true
@@ -79,12 +80,9 @@ export default {
       videoEl.preload = 'metadata'
       videoEl.muted = true
       videoEl.src = this.attachment.url
-
-      videoEl.addEventListener('loadeddata', async () => {
-        console.log('!@# loadeddata: ', videoEl.duration)
+      videoEl.addEventListener('loadedmetadata', async () => {
         const targetTime = Math.min(1, videoEl.duration / 2)
         const isSuccess = await seekToTime(targetTime)
-        console.log('!@# isSuccess: ', targetTime, isSuccess)
         if (isSuccess) {
           const canvasEl = document.createElement('canvas')
           const ctx = canvasEl.getContext('2d')
@@ -92,26 +90,24 @@ export default {
           canvasEl.height = videoEl.videoHeight
           ctx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height)
           this.ephemeral.video.thumbnailURL = canvasEl.toDataURL('image/png')
-          console.log('!@# thumbnailURL: ', this.ephemeral.video.thumbnailURL)
           this.ephemeral.video.isGeneratingThumbnail = false
         }
       })
     },
-    removeHandler () {
-      if (this.isVideo) {
-        this.ephemeral.video.isGeneratingThumbnail = false
-        if (this.ephemeral.video.thumbnailURL) {
-          URL.revokeObjectURL(this.ephemeral.video.thumbnailURL)
-          this.ephemeral.video.thumbnailURL = null
-        }
+    clearVideoThumbnail () {
+      if (this.ephemeral.video.thumbnailURL) {
+        URL.revokeObjectURL(this.ephemeral.video.thumbnailURL)
       }
-
-      this.$emit('remove')
     }
   },
   created () {
     if (this.isVideo) {
       this.generateVideoThumbnail()
+    }
+  },
+  beforeDestroy () {
+    if (this.isVideo) {
+      this.clearVideoThumbnail()
     }
   }
 }
