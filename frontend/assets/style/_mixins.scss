@@ -115,6 +115,34 @@ $payment-table-desktop-bp: 1290px;
   }
 }
 
+@mixin media-viewer-modal-container($zindex: 40) {
+  position: fixed;
+  z-index: $zindex;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  overflow: auto;
+  background-color: rgba(10, 10, 10, 0.86);
+}
+
+@mixin media-viewer-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--image-viewer-bg-color);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  @include from($tablet) {
+    border-radius: 0.375rem;
+    width: 92.5vw;
+    height: 90vh;
+  }
+}
+
 %floating-panel {
   @include phone {
     top: auto;

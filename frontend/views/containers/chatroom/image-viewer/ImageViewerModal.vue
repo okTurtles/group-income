@@ -213,14 +213,7 @@ export default {
 $cta-zindex: 3;
 
 .c-image-viewer-modal {
-  position: fixed;
-  z-index: $zindex-modal;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  overflow: auto;
-  background-color: rgba(10, 10, 10, 0.86);
+  @include media-viewer-modal-container($zindex: $zindex-modal);
 
   --image-viewer-bg-color: #1e2021;
   --image-viewer-text-color: #e8e8e8;
@@ -248,23 +241,11 @@ $cta-zindex: 3;
 }
 
 .c-image-viewer-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: var(--image-viewer-bg-color);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+  @include media-viewer-modal-content;
   display: flex;
   flex-direction: row;
   align-items: stretch;
-
-  @include from($tablet) {
-    border-radius: 0.375rem;
-    width: 92.5vw;
-    height: 90vh;
-  }
+  background-color: var(--image-viewer-bg-color);
 }
 
 .c-modal-header {

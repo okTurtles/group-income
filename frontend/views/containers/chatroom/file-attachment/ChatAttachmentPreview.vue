@@ -232,15 +232,17 @@ export default {
       }
     },
     onMediaPreviewCardClick (type, url) {
-      if (type === 'image') {
-        this.openImageViewer(url)
-      } else if (type === 'video') {
-        this.openVideoViewer(url)
-      }
+      const func = ({
+        image: this.openImageViewer,
+        video: this.openVideoViewer
+      })[type]
+
+      func && func(url)
     },
-    openVideoViewer (url) {
-      if (!url) { return }
-      console.log('!@# TODO: build/lauch a video player modal!')
+    openVideoViewer (objectURL) {
+      if (!objectURL) { return }
+
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'VideoViewerModal')
     },
     openImageViewer (objectURL) {
       if (!objectURL) { return }

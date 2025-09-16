@@ -10,12 +10,14 @@
   )
   template(v-else-if='fileType === "video"')
     .c-video-thumb-container
-      img.c-video-thumb-img(
-        v-if='ephemeral.video.thumbnailURL'
-        :src='ephemeral.video.thumbnailURL'
-      )
-    .c-video-play-icon
-      i.icon-play
+      .c-loader(v-if='ephemeral.video.isGeneratingThumbnail')
+      template(v-else)
+        img.c-video-thumb-img(
+          v-if='ephemeral.video.thumbnailURL'
+          :src='ephemeral.video.thumbnailURL'
+        )
+        .c-video-play-icon
+          i.icon-play
 
   button.c-attachment-remove-btn(
     type='button'
@@ -108,7 +110,6 @@ export default {
     },
     clearVideoThumbnail () {
       if (this.ephemeral.video.thumbnailURL) {
-        console.log('!@# revokeObjectURL', this.ephemeral.video.thumbnailURL)
         URL.revokeObjectURL(this.ephemeral.video.thumbnailURL)
       }
     }
@@ -155,7 +156,7 @@ export default {
       position: relative;
       width: 100%;
       height: 100%;
-      background-color: $general_0;
+      background-color: $general_1;
       overflow: hidden;
       border-radius: inherit;
 
@@ -189,6 +190,21 @@ export default {
       }
     }
   }
+}
+
+.c-loader {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid;
+  border-top-color: transparent;
+  border-radius: 50%;
+  color: $primary_0;
+  z-index: 1;
+  animation: loadSpin 1.75s infinite linear;
 }
 
 button.c-attachment-remove-btn {
