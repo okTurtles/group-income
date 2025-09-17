@@ -240,33 +240,44 @@ export default {
       func && func(url)
     },
     openVideoViewer (objectURL) {
-      if (!objectURL) { return }
-
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'VideoViewerModal')
+      if (objectURL) {
+        this.openMediaViewer('video', objectURL)
+      }
     },
     openImageViewer (objectURL) {
-      if (!objectURL) { return }
+      if (objectURL) {
+        this.openMediaViewer('image', objectURL)
+      }
+    },
+    openMediaViewer (type, objectURL) {
+      const modalName = ({
+        image: 'ImageViewerModal',
+        video: 'VideoViewerModal'
+      })[type]
 
-      const imageAttachmentDetailsList = this.sortedAttachments['image']
+      if (!modalName) { return }
+
+      const objURLKey = type === 'image' ? 'imgUrl' : 'videoUrl'
+      const attachmentDetailsList = this.sortedAttachments[type]
         .map((entry, index) => {
-          const imgUrl = entry.url || this.mediaObjectURLList.image[index] || ''
+          const mediaURL = entry.url || this.mediaObjectURLList[type][index] || ''
           return {
             name: entry.name,
             ownerID: this.ownerID,
             createdAt: this.createdAt || new Date(),
             size: entry.size,
-            id: imgUrl,
-            imgUrl,
+            id: mediaURL,
+            [objURLKey]: mediaURL,
             manifestCid: entry.downloadData?.manifestCid
           }
         })
-      const initialIndex = imageAttachmentDetailsList.findIndex(attachment => attachment.imgUrl === objectURL)
+      const initialIndex = attachmentDetailsList.findIndex(attachment => attachment[objURLKey] === objectURL)
 
       sbp(
-        'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+        'okTurtles.events/emit', OPEN_MODAL, modalName,
         null,
         {
-          images: imageAttachmentDetailsList,
+          [type === 'image' ? 'images' : 'videos']: attachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
           canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
         }
