@@ -90,7 +90,10 @@
       "string-quotes": "double",
       "selector-pseudo-element-no-unknown": null,
       "no-descending-specificity": null
-    }
+    },
+    "ignoreFiles": [
+      "frontend/assets/style/components/plyr/*.scss"
+    ]
   },
   "repository": {
     "type": "git",
