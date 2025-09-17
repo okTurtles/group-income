@@ -1,0 +1,38 @@
+@use "../../variables" as *;
+@use "./plyr_default";
+
+$phone_narrow: 430px;
+
+.plyr_override {
+  // To override default colors of the player, refer to this css color variable table:
+  // https://www.npmjs.com/package/plyr#customizing-the-css
+  --plyr-color-main: var(--green);
+  --custom-aspect-ratio: 16/9;
+
+  aspect-ratio: var(--custom-aspect-ratio);
+
+  .plyr {
+    aspect-ratio: inherit;
+  }
+
+  // NOTE: When the screen size is narrow, there is an issue where the play/resume button and the progress-bar UI becomes too small
+  //       (Even smaller than the volume-control UI). To get more space for the play progess bar, we hide some buttons that are not absolutely essential
+  //       when compared to others.
+  //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
+  //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
+  .plyr__controls {
+    @include until($phone_narrow) {
+      .plyr__controls__item[data-plyr="pip"],
+      .plyr__controls__item.plyr__menu {
+        display: none;
+      }
+    }
+
+    @include phone {
+      input[data-plyr="volume"] {
+        min-width: 0px;
+        max-width: 60px;
+      }
+    }
+  }
+}
