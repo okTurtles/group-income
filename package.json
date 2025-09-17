@@ -92,7 +92,7 @@
       "no-descending-specificity": null
     },
     "ignoreFiles": [
-      "frontend/assets/style/components/plyr/*.scss"
+      "frontend/assets/style/components/plyr/_plyr_default.scss"
     ]
   },
   "repository": {
