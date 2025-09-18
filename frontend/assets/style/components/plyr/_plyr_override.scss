@@ -1,4 +1,4 @@
-@use "../../variables" as *;
+@use "../../variables" as v;
 @use "./plyr_default";
 
 $phone_narrow: 430px;
@@ -6,10 +6,8 @@ $phone_narrow: 430px;
 .plyr_override {
   // To override default colors of the player, refer to this css color variable table:
   // https://www.npmjs.com/package/plyr#customizing-the-css
-  --plyr-color-main: var(--green);
-  --custom-aspect-ratio: 16/9;
-
-  aspect-ratio: var(--custom-aspect-ratio);
+  --plyr-color-main: var(--primary_0);
+  aspect-ratio: 16/9;
 
   .plyr {
     aspect-ratio: inherit;
@@ -21,16 +19,16 @@ $phone_narrow: 430px;
   //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
   //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
   .plyr__controls {
-    @include until($phone_narrow) {
+    @include v.until($phone_narrow) {
       .plyr__controls__item[data-plyr="pip"],
       .plyr__controls__item.plyr__menu {
         display: none;
       }
     }
 
-    @include phone {
+    @include v.phone {
       input[data-plyr="volume"] {
-        min-width: 0px;
+        min-width: 0;
         max-width: 60px;
       }
     }

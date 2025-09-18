@@ -1,5 +1,5 @@
 <template lang="pug">
-.video-player-container
+.video-player-container.plyr_override
   video.c-video-el(ref='videoEl' playsinline controls)
     source(:src='src' :type='mimeType')
 </template>
@@ -49,5 +49,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
-@import "@assets/style/components/plyr/_plyr_override.scss";
 </style>
