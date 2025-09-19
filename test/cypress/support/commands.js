@@ -759,20 +759,12 @@ Cypress.Commands.add('giAddNewChatroom', ({
 
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('conversationWrapper').within(() => {
-    // This checks for the 'no-more' slot of the infinite loader
-    cy.get('.infinite-status-prompt:nth-child(3)')
-      .invoke('attr', 'style')
-      .should('not.include', 'display: none')
-    cy.get('.infinite-status-prompt:nth-child(3)').within(() => {
-      cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
-      cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
-      cy.get('.buttons').within(() => {
-        cy.getByDT('addMembers').should('exist')
-        if (!description) {
-          cy.getByDT('addDescription').should('exist')
-        }
-      })
-    })
+    cy.get('.c-conversation-start .c-greetings .is-title-4').should('contain', 'Welcome!')
+    cy.get('.c-conversation-start .c-greetings p').should('contain', `This is the beginning of ${name}.`)
+    cy.get('.c-conversation-start').get('.buttons').getByDT('addMembers').should('exist')
+    if (!description) {
+      cy.get('.c-conversation-start').get('.buttons').getByDT('addDescription').should('exist')
+    }
   })
 })
 
@@ -860,11 +852,7 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
 
 Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
   cy.get('.c-initializing').should('not.exist')
-  cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('include', 'display: none')
-  })
+  cy.getByDT('conversationWrapper').invoke('attr', 'data-loaded').should('eq', 'true')
   if (isGroupChannel) {
     cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }

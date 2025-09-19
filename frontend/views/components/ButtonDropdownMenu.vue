@@ -5,7 +5,7 @@ menu-parent.c-menu(v-on='listeners')
     i.icon-angle-down.is-suffix
 
   menu-content.c-menu-content(:class='"bound-to-" + boundEdge')
-    ul
+    menu
       template(v-if='options')
         component(
           v-for='item in options'

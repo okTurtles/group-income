@@ -164,7 +164,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function updateDescription (description) {
-    cy.getByDT('updateDescription').click()
+    cy.getByDT('updateDescription').filter(':visible').click()
     cy.getByDT('updateChannelDescription').clear()
     cy.getByDT('updateChannelDescription').type(description)
     cy.getByDT('updateChannelDescriptionSubmit').click()
