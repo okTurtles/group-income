@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message-menu(ref='menu')
+.c-message-menu
   .c-actions
     tooltip(
       direction='top'
@@ -44,7 +44,7 @@
       )
         i.icon-undo
 
-    menu-parent(@menu-open='moreOptionsTriggered')
+    menu-parent(ref='menu' @menu-open='moreOptionsTriggered')
       menu-trigger.is-icon-small(
         :aria-label='L("More options")'
       )
