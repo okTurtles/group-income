@@ -25,10 +25,12 @@
         src='https://okturtles.org/videos/group_income_ending_big_tech_control.mp4'
         mimeType='video/mp4'
       )
+
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
@@ -51,6 +53,10 @@ export default {
       default: 0
     },
     canDelete: {
+      type: Boolean,
+      default: false
+    },
+    deleting: {
       type: Boolean,
       default: false
     }
@@ -87,6 +93,9 @@ export default {
     },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'VideoViewerModal')
+    },
+    showComingSoon () {
+      alert(L('Under development!'))
     }
   },
   created () {
@@ -115,13 +124,16 @@ export default {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "c-header"
+    "c-body";
 
   @include from($tablet) {
+    grid-template-rows: auto auto;
     width: 92.5vw;
     height: auto;
     max-height: 90vh;
     max-width: 68rem;
-    aspect-ratio: 4/3;
     border-radius: 0.375rem;
   }
 }
@@ -129,6 +141,7 @@ export default {
 .c-modal-header {
   @include media-viewer-modal-header;
   position: relative;
+  grid-area: c-header;
 }
 
 button.c-close-btn {
@@ -140,16 +153,23 @@ button.c-close-btn {
 }
 
 .c-video-viewer-body {
+  grid-area: c-body;
   position: relative;
-  height: 100%;
   width: 100%;
   display: grid;
   place-content: center;
+
+  @include from($tablet) {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16/9;
+  }
 }
 
 .c-video-player {
-  @include from($tablet) {
-    aspect-ratio: 17/9;
-  }
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16/9;
 }
 </style>

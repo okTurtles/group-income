@@ -239,7 +239,7 @@ export default {
   flex-direction: row;
   align-items: stretch;
   background-color: var(--viewer-bg-color);
-  
+
   @include from($tablet) {
     border-radius: 0.375rem;
     width: 92.5vw;
