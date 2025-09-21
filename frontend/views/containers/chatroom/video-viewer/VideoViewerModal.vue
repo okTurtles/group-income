@@ -22,10 +22,9 @@
 
     section.c-video-viewer-body
       video-player.c-video-player(
-        src='https://okturtles.org/videos/group_income_ending_big_tech_control.mp4'
-        mimeType='video/mp4'
+        :src='currentVideo.videoUrl'
+        :mimeType='currentVideo.mimeType'
       )
-
 </template>
 
 <script>
@@ -161,7 +160,6 @@ button.c-close-btn {
 
   @include from($tablet) {
     display: block;
-    width: 100%;
     aspect-ratio: 16/9;
   }
 }
@@ -171,5 +169,10 @@ button.c-close-btn {
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
+  transform: translateY(-1.5rem);
+
+  @include from($tablet) {
+    transform: translateY(0);
+  }
 }
 </style>

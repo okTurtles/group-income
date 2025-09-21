@@ -49,4 +49,11 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-video-el {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: inherit;
+}
 </style>

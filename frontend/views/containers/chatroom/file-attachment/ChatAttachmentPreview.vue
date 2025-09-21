@@ -266,6 +266,7 @@ export default {
             ownerID: this.ownerID,
             createdAt: this.createdAt || new Date(),
             size: entry.size,
+            mimeType: entry.mimeType,
             id: mediaURL,
             [objURLKey]: mediaURL,
             manifestCid: entry.downloadData?.manifestCid
