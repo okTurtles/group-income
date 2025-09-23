@@ -113,7 +113,10 @@ export default {
         'image': [],
         'video': []
       },
-      settledImgURLList: [] // TODO: update the logic related to this attribute to accommodate video attachments too.
+      settledMediaURLList: {
+        'image': [],
+        'video': []
+      }
     }
   },
   computed: {
@@ -285,15 +288,15 @@ export default {
         }
       )
     },
-    onImageSettled (url) {
-      if (this.isForDownload) {
-        this.settledImgURLList = uniq([...this.settledImgURLList, url])
+    onMediaSrcSettled (url, fileType) {
+      if (this.isForDownload && ['image', 'video'].includes(fileType)) {
+        this.settledMediaURLList[fileType] = uniq([...this.settledMediaURLList[fileType], url])
 
-        if (this.sortedAttachments['image'].length === this.settledImgURLList.length) {
-          // Check if all image attachments are loaded in the DOM, notify the parent component.
-          // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
+        if (['image', 'video'].every(type => this.sortedAttachments[type].length === this.settledMediaURLList[type].length)) {
+          // Check if all media attachments are loaded in the DOM, notify the parent component.
+          // (This can be enhanced to something like sbp('okTurtles.events/emit', MEDIA_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
           //  if this becomes useful in more places.)
-          this.$nextTick(() => this.$emit('image-attachments-render-complete'))
+          this.$nextTick(() => this.$emit('media-attachments-render-complete'))
         }
       }
     },
@@ -341,7 +344,7 @@ export default {
         getStretchedDimension: this.getStretchedDimension,
         getAttachmentObjectURL: this.getAttachmentObjectURL,
         openImageViewer: this.openImageViewer,
-        onImageSettled: this.onImageSettled
+        onMediaSrcSettled: this.onMediaSrcSettled
       }
     }
   }

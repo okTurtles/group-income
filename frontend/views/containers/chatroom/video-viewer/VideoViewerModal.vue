@@ -24,7 +24,6 @@
       video-player.c-video-player(
         :src='currentVideo.videoUrl'
         :mimeType='currentVideo.mimeType'
-        :options='config.plyrOptions'
       )
 </template>
 
@@ -67,11 +66,6 @@ export default {
         videosToShow: [],
         deletingVideos: [],
         currentIndex: 0
-      },
-      config: {
-        plyrOptions: {
-          controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen']
-        }
       }
     }
   },

@@ -64,7 +64,7 @@
           :createdAt='datetime'
           :isGroupCreator='isGroupCreator'
           @delete-attachment='deleteAttachment'
-          @image-attachments-render-complete='determineToEnableTruncationToggle'
+          @media-attachments-render-complete='determineToEnableTruncationToggle'
         )
 
       .c-failure-message-wrapper
@@ -367,7 +367,7 @@ export default ({
     if (
       this.shouldCheckToTruncate &&
       // NOTE: If the message has any image attached, defer this check until the <img /> DOMs are rendered.
-      //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
+      //       (which is detected via 'media-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
       !this.hasMediaAttachment
     ) {
       this.determineToEnableTruncationToggle()

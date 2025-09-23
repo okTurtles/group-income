@@ -15,8 +15,8 @@
       :src='mediaObjectURL'
       :alt='attachment.name'
       @click='attachmentUtils.openImageViewer(mediaObjectURL)'
-      @load='attachmentUtils.onImageSettled(mediaObjectURL)'
-      @error='attachmentUtils.onImageSettled(mediaObjectURL)'
+      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "image")'
+      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "image")'
     )
     .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
@@ -25,14 +25,18 @@
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
+      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "video")'
+      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "video")'
+      mode='simple'
     )
+    .loading-box.c-video-loading(v-else)
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
     i.icon-exclamation-triangle
 
   .c-attachment-actions-wrapper(
-    :class='{ "is-for-image": fileType === "image" }'
+    :class='{ "is-for-media": fileType !== "non-media" }'
   )
     .c-attachment-actions
       tooltip(
@@ -290,7 +294,7 @@ export default {
     }
   }
 
-  &.is-for-image {
+  &.is-for-media {
     .c-attachment-actions {
       margin-top: 0.5rem;
     }
@@ -310,6 +314,16 @@ export default {
   border-radius: inherit;
   max-width: 28.25rem;
   width: 100%;
+  background-color: $general_2;
+  padding: 0.5rem;
+
+  .c-video-loading {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
 
   .c-video-player {
     border-radius: inherit;
