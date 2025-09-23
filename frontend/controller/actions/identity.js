@@ -1150,7 +1150,7 @@ export default (sbp('sbp/selectors/register', {
 
         const updatedGroupFKTuple = verifyUpdates()
         if (updatedGroupFKTuple) {
-          groupFKTuple = (updatedGroupFKTuple: [string, string, string][])
+          groupFKTuple = ((updatedGroupFKTuple: any): [string, string, string][])
         }
 
         if (groupFKTuple.length === 0) return
