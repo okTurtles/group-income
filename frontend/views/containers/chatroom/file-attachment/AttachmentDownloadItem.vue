@@ -1,26 +1,31 @@
 <template lang='pug'>
 .c-attachment-download-item
-  .c-non-media-card(v-if='fileType !== "image"')
+  .c-non-media-card(v-if='fileType === "non-media"')
     .c-non-media-icon
       i.icon-file
     .c-non-media-file-info
-      .c-file-name.has-ellipsis {{ attachment.name }}
+      .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
       .c-file-ext-and-size
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='attachment.size') {{ fileSizeDisplay(attachment) }}
 
-  .c-image-card(v-else)
+  .c-image-card(v-else-if='fileType === "image"')
     img(
-      v-if='imageObjectURL'
-      :src='imageObjectURL'
+      v-if='mediaObjectURL'
+      :src='mediaObjectURL'
       :alt='attachment.name'
-      @click='attachmentUtils.openImageViewer(imageObjectURL)'
-      @load='attachmentUtils.onImageSettled(imageObjectURL)'
-      @error='attachmentUtils.onImageSettled(imageObjectURL)'
+      @click='attachmentUtils.openImageViewer(mediaObjectURL)'
+      @load='attachmentUtils.onImageSettled(mediaObjectURL)'
+      @error='attachmentUtils.onImageSettled(mediaObjectURL)'
     )
     .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
-  // .c-video-card(v-else-if='fileType === "video"')
+  .c-video-card(v-else-if='fileType === "video"')
+    video-player.c-video-player(
+      v-if='mediaObjectURL'
+      :src='mediaObjectURL'
+      :mimeType='attachment.mimeType'
+    )
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -56,12 +61,14 @@
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
+import VideoPlayer from '../video-viewer/VideoPlayer.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'AttachmentDownloadItem',
   components: {
-    Tooltip
+    Tooltip,
+    VideoPlayer
   },
   inject: ['attachmentUtils'],
   props: {
@@ -73,7 +80,7 @@ export default {
       type: String,
       required: false
     },
-    imageObjectURL: {
+    mediaObjectURL: {
       type: String,
       required: false
     },
@@ -296,5 +303,16 @@ export default {
   left: -10rem;
   opacity: 0;
   pointer-events: none;
+}
+
+.c-video-card {
+  position: relative;
+  border-radius: inherit;
+  max-width: 28.25rem;
+  width: 100%;
+
+  .c-video-player {
+    border-radius: inherit;
+  }
 }
 </style>

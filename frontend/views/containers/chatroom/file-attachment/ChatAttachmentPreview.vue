@@ -21,7 +21,7 @@
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
-        :imageObjectURL='mediaObjectURLList.image[entryIndex]'
+        :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: "image" })'
       )
@@ -33,6 +33,7 @@
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: "video" })'
       )
