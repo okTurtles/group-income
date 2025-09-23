@@ -626,7 +626,7 @@ export default (sbp('sbp/selectors/register', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
         data: encryptedOutgoingData(groupID, CEKid, {
-          contractID: groupID,
+          contractID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
