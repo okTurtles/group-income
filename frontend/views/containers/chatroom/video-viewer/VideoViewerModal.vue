@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-video-viewer-modal
+.c-video-viewer-modal(@click.stop='clickBackDrop')
   .c-video-viewer-content
     header.c-modal-header
       avatar-user.c-avatar(
@@ -24,6 +24,7 @@
       video-player.c-video-player(
         :src='currentVideo.videoUrl'
         :mimeType='currentVideo.mimeType'
+        :options='config.plyrOptions'
       )
 </template>
 
@@ -66,6 +67,11 @@ export default {
         videosToShow: [],
         deletingVideos: [],
         currentIndex: 0
+      },
+      config: {
+        plyrOptions: {
+          controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen']
+        }
       }
     }
   },
@@ -95,6 +101,12 @@ export default {
     },
     showComingSoon () {
       alert(L('Under development!'))
+    },
+    clickBackDrop (e) {
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-video-viewer-content')
+      if (!element) {
+        this.close()
+      }
     }
   },
   created () {
@@ -118,7 +130,7 @@ export default {
 
 .c-video-viewer-content {
   @include media-viewer-modal-content;
-  background-color: $general_0;
+  background-color: var(--viewer-bg-color);
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
@@ -155,8 +167,10 @@ button.c-close-btn {
   grid-area: c-body;
   position: relative;
   width: 100%;
-  display: grid;
-  place-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
 
   @include from($tablet) {
     display: block;

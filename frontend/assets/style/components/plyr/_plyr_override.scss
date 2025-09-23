@@ -19,6 +19,10 @@ $phone_narrow: 430px;
   //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
   //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
   .plyr__controls {
+    button.plyr__control {
+      min-height: unset;
+    }
+
     @include v.until($phone_narrow) {
       .plyr__controls__item[data-plyr="pip"],
       .plyr__controls__item.plyr__menu {
