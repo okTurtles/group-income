@@ -1116,7 +1116,10 @@ export default (sbp('sbp/selectors/register', {
               return null
             }
             // Check that the key we're replacing is valid
-            if (!state[contractID]._vm.authorizedKeys[oldKeyId]) return false
+            if (!state[contractID]._vm.authorizedKeys[oldKeyId]) {
+              modified = true
+              return null
+            }
             // The old key ID may have been rotated right before this function was
             // called
             if (state[contractID]._vm.authorizedKeys[oldKeyId]._notAfterHeight != null) {
