@@ -1,11 +1,11 @@
 <template lang="pug">
 .c-video-viewer-modal
   .c-video-viewer-content(
-    :class='{ "cta-hidden": ephemeral.hideCta }'
+    :class='{ "nav-buttons-hidden": ephemeral.hideCtas.navButtons }'
     @mouseenter='onMouseEnter'
     @mouseleave='onMouseLeave'
   )
-    header.c-modal-header
+    header.c-modal-header(:class='{ "is-hidden": ephemeral.hideCtas.header }')
       avatar-user.c-avatar(
         v-if='currentVideo.ownerID'
         :contractID='currentVideo.ownerID'
@@ -54,7 +54,6 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
@@ -94,6 +93,10 @@ export default {
       ephemeral: {
         videosToShow: [],
         currentIndex: 0,
+        hideCtas: {
+          header: false,
+          navButtons: false
+        },
         hideCta: false
       },
       matchMedia: {
@@ -135,9 +138,6 @@ export default {
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL, 'VideoViewerModal')
     },
-    showComingSoon () {
-      alert(L('Under development!'))
-    },
     initMatchMedia () {
       this.matchMedia.handler = window.matchMedia('(min-width: 769px) and (hover: hover) and (pointer: fine)')
       this.matchMedia.handler.onchange = (e) => {
@@ -146,21 +146,23 @@ export default {
       this.matchMedia.isDesktop = this.matchMedia.handler.matches
     },
     onMouseEnter () {
-      this.ephemeral.hideCta = false
+      this.ephemeral.hideCtas.header = false
+      this.ephemeral.hideCtas.navButtons = false
     },
     onVideoPlay () {
       if (this.matchMedia.isDesktop) {
-        this.ephemeral.hideCta = true
+        this.ephemeral.hideCtas.header = true
       }
+      this.ephemeral.hideCtas.navButtons = true
     },
     onVideoPause () {
-      if (this.matchMedia.isDesktop) {
-        this.ephemeral.hideCta = false
-      }
+      this.ephemeral.hideCtas.header = false
+      this.ephemeral.hideCtas.navButtons = false
     },
     onMouseLeave () {
       if (this.matchMedia.isDesktop && this.$refs.videoPlayer.isPlaying()) {
-        this.ephemeral.hideCta = true
+        this.ephemeral.hideCtas.header = true
+        this.ephemeral.hideCtas.navButtons = true
       }
     },
     selectNextVideo () {
@@ -236,7 +238,7 @@ export default {
     }
   }
 
-  .cta-hidden & {
+  .is-hidden {
     transform: translateY(-200%);
   }
 }
@@ -269,7 +271,6 @@ button.c-close-btn {
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
-  transform: translateY(-1.5rem);
 
   @include from($tablet) {
     transform: translateY(0);
@@ -278,19 +279,19 @@ button.c-close-btn {
 
 button.c-image-nav-btn {
   @include media-viewer-navigation-btn;
-  transition: opacity 0.350ms ease-in-out;
+  transition: opacity 350ms ease-in-out;
 
-  .cta-hidden & {
+  .nav-buttons-hidden & {
     opacity: 0;
     pointer-events: none;
   }
 
   &.is-prev {
-    left: 1rem;
+    left: 1.5rem;
   }
 
   &.is-next {
-    right: 1rem;
+    right: 1.5rem;
   }
 
   @include phone {
