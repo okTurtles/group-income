@@ -271,6 +271,7 @@ button.c-close-btn {
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
+  transform: translateY(-2rem);
 
   @include from($tablet) {
     transform: translateY(0);
