@@ -12,6 +12,10 @@ $cta-zindex: 3;
 
   --viewer-bg-color: #1e2021;
   --viewer-text-color: #e8e8e8;
+  --viewer-cta-bg-color: #1e2021;
+  --viewer-cta-text-color: #e8e8e8;
+  --viewer-cta-border-color: #717879;
+  --viewer-cta-box-shadow-color: #383c3e;
 
   .is-dark-theme & {
     --viewer-bg-color: #717879;
@@ -97,5 +101,21 @@ $cta-zindex: 3;
       user-select: none;
       text-shadow: 1px 1px 2px #1e2021;
     }
+  }
+}
+
+@mixin media-viewer-navigation-btn {
+  position: absolute;
+  z-index: $cta-zindex;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--viewer-cta-bg-color);
+  color: var(--viewer-cta-text-color);
+  border-color: var(--viewer-cta-border-color);
+  width: 2.5rem;
+  height: 2.5rem;
+
+  &:focus {
+    box-shadow: 0 0 0 2px var(--viewer-cta-box-shadow-color);
   }
 }

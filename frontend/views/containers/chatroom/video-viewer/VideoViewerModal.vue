@@ -27,12 +27,29 @@
     section.c-video-viewer-body
       video-player.c-video-player(
         ref='videoPlayer'
+        :key='currentVideo.videoUrl'
         :src='currentVideo.videoUrl'
         :mimeType='currentVideo.mimeType'
         :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
         @play='onVideoPlay'
         @pause='onVideoPause'
       )
+
+    button.is-icon.c-image-nav-btn.is-prev(
+      v-if='showPrevButton'
+      @click='selectPrevVideo'
+      title='L("Previous")'
+      type='button'
+    )
+      i.icon-chevron-left
+
+    button.is-icon.c-image-nav-btn.is-next(
+      v-if='showNextButton'
+      @click='selectNextVideo'
+      title='L("Next")'
+      type='button'
+    )
+      i.icon-chevron-right
 </template>
 
 <script>
@@ -76,7 +93,6 @@ export default {
     return {
       ephemeral: {
         videosToShow: [],
-        deletingVideos: [],
         currentIndex: 0,
         hideCta: false
       },
@@ -95,12 +111,21 @@ export default {
       return this.ephemeral.videosToShow[this.ephemeral.currentIndex]
     },
     displayName () {
+      if (!this.currentVideo) {
+        return ''
+      }
+
       const contractID = this.currentVideo.ownerID
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
     },
-    deletingCurrentVideo () {
-      return this.ephemeral.deletingVideos.includes(this.currentVideo.manifestCid)
+    showPrevButton () {
+      const len = this.ephemeral.videosToShow.length
+      return len > 1 && this.ephemeral.currentIndex > 0
+    },
+    showNextButton () {
+      const len = this.ephemeral.videosToShow.length
+      return len > 1 && this.ephemeral.currentIndex < len - 1
     }
   },
   methods: {
@@ -136,6 +161,16 @@ export default {
     onMouseLeave () {
       if (this.matchMedia.isDesktop && this.$refs.videoPlayer.isPlaying()) {
         this.ephemeral.hideCta = true
+      }
+    },
+    selectNextVideo () {
+      if (this.ephemeral.currentIndex < this.ephemeral.videosToShow.length - 1) {
+        this.ephemeral.currentIndex += 1
+      }
+    },
+    selectPrevVideo () {
+      if (this.ephemeral.currentIndex > 0) {
+        this.ephemeral.currentIndex -= 1
       }
     }
   },
@@ -238,6 +273,38 @@ button.c-close-btn {
 
   @include from($tablet) {
     transform: translateY(0);
+  }
+}
+
+button.c-image-nav-btn {
+  @include media-viewer-navigation-btn;
+  transition: opacity 0.350ms ease-in-out;
+
+  .cta-hidden & {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.is-prev {
+    left: 1rem;
+  }
+
+  &.is-next {
+    right: 1rem;
+  }
+
+  @include phone {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+
+    &.is-prev {
+      left: 0.75rem;
+    }
+
+    &.is-next {
+      right: 0.75rem;
+    }
   }
 }
 </style>
