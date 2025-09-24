@@ -68,7 +68,7 @@
       )
         button.is-icon-small(
           :aria-label='L("Expand")'
-          @click='openVideoModal'
+          @click.stop='openVideoModal'
         )
           i.icon-expand
 </template>
@@ -150,9 +150,13 @@ export default {
         : null
     },
     openVideoModal () {
-      this.attachmentUtils.openVideoViewer(this.mediaObjectURL, {
-        initialTime: this.getVideoCurrentTime()
-      })
+      if (this.isVideo) {
+        this.$refs.videoPlayer.pause()
+
+        this.attachmentUtils.openVideoViewer(this.mediaObjectURL, {
+          initialTime: this.getVideoCurrentTime()
+        })
+      }
     }
   },
   mounted () {

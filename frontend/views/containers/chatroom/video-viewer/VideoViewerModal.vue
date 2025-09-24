@@ -1,6 +1,10 @@
 <template lang="pug">
-.c-video-viewer-modal(@click.stop='clickBackDrop')
-  .c-video-viewer-content
+.c-video-viewer-modal
+  .c-video-viewer-content(
+    :class='{ "cta-hidden": ephemeral.hideCta }'
+    @mouseenter='onMouseEnter'
+    @mouseleave='onMouseLeave'
+  )
     header.c-modal-header
       avatar-user.c-avatar(
         v-if='currentVideo.ownerID'
@@ -22,9 +26,12 @@
 
     section.c-video-viewer-body
       video-player.c-video-player(
+        ref='videoPlayer'
         :src='currentVideo.videoUrl'
         :mimeType='currentVideo.mimeType'
         :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
+        @play='onVideoPlay'
+        @pause='onVideoPause'
       )
 </template>
 
@@ -70,7 +77,12 @@ export default {
       ephemeral: {
         videosToShow: [],
         deletingVideos: [],
-        currentIndex: 0
+        currentIndex: 0,
+        hideCta: false
+      },
+      matchMedia: {
+        handler: null,
+        isDesktop: false
       }
     }
   },
@@ -101,10 +113,29 @@ export default {
     showComingSoon () {
       alert(L('Under development!'))
     },
-    clickBackDrop (e) {
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-video-viewer-content')
-      if (!element) {
-        this.close()
+    initMatchMedia () {
+      this.matchMedia.handler = window.matchMedia('(min-width: 769px) and (hover: hover) and (pointer: fine)')
+      this.matchMedia.handler.onchange = (e) => {
+        this.matchMedia.isDesktop = e.matches
+      }
+      this.matchMedia.isDesktop = this.matchMedia.handler.matches
+    },
+    onMouseEnter () {
+      this.ephemeral.hideCta = false
+    },
+    onVideoPlay () {
+      if (this.matchMedia.isDesktop) {
+        this.ephemeral.hideCta = true
+      }
+    },
+    onVideoPause () {
+      if (this.matchMedia.isDesktop) {
+        this.ephemeral.hideCta = false
+      }
+    },
+    onMouseLeave () {
+      if (this.matchMedia.isDesktop && this.$refs.videoPlayer.isPlaying()) {
+        this.ephemeral.hideCta = true
       }
     }
   },
@@ -114,6 +145,13 @@ export default {
     } else {
       this.ephemeral.currentIndex = this.initialIndex || 0
       this.ephemeral.videosToShow = this.videos
+
+      this.initMatchMedia()
+    }
+  },
+  beforeDestroy () {
+    if (this.matchMedia.handler) {
+      this.matchMedia.handler.onchange = null
     }
   }
 }
@@ -139,7 +177,7 @@ export default {
     "c-body";
 
   @include from($tablet) {
-    grid-template-rows: auto auto;
+    display: block;
     width: 92.5vw;
     height: auto;
     max-height: 90vh;
@@ -152,6 +190,20 @@ export default {
   @include media-viewer-modal-header;
   position: relative;
   grid-area: c-header;
+  transition: transform 350ms ease-in-out;
+
+  @include from($tablet) {
+    position: absolute;
+
+    &::after {
+      background: linear-gradient(rgba(0, 0, 0, 0.7490196078) 10%, rgba(0, 0, 0, 0));
+      height: 120%;
+    }
+  }
+
+  .cta-hidden & {
+    transform: translateY(-200%);
+  }
 }
 
 button.c-close-btn {

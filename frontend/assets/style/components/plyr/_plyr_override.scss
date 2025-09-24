@@ -11,6 +11,7 @@ $phone_narrow: 430px;
 
   .plyr {
     aspect-ratio: inherit;
+    max-height: 100%;
   }
 
   // NOTE: When the screen size is narrow, there is an issue where the play/resume button and the progress-bar UI becomes too small
@@ -21,6 +22,10 @@ $phone_narrow: 430px;
   .plyr__controls {
     button.plyr__control {
       min-height: unset;
+
+      &:focus {
+        box-shadow: none;
+      }
     }
 
     @include v.until($phone_narrow) {

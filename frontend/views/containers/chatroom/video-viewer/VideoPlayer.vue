@@ -47,18 +47,29 @@ export default {
   },
   methods: {
     initPlayer () {
-      const controlsMap = {
-        default: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-        simple: ['play', 'progress', 'mute', 'volume']
+      const optsPerMode = {
+        default: {
+          controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'settings', 'volume', 'fullscreen'],
+          settings: ['speed']
+        },
+        simple: {
+          controls: ['play', 'progress', 'mute', 'volume']
+        }
       }
 
       // plyr options reference: https://www.npmjs.com/package/plyr#options
       const opts = {
-        debug: false,
-        controls: controlsMap[this.mode],
+        ...optsPerMode[this.mode],
         ...this.options
       }
+
       this.config.player = new Plyr(this.$refs.videoEl, opts)
+
+      // event listeners
+      const events = ['play', 'pause', 'ended']
+      events.forEach(event => {
+        this.config.player.on(event, () => this.$emit(event))
+      })
     },
     onVideoSrcLoaded () {
       if (this.initialTime > 0) {
@@ -69,6 +80,15 @@ export default {
     },
     getCurrentTime () {
       return this.config.player.currentTime
+    },
+    pause () {
+      this.config.player.pause()
+    },
+    play () {
+      this.config.player.play()
+    },
+    isPlaying () {
+      return this.config.player.playing
     }
   },
   mounted () {
