@@ -24,6 +24,7 @@
       video-player.c-video-player(
         :src='currentVideo.videoUrl'
         :mimeType='currentVideo.mimeType'
+        :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
       )
 </template>
 
@@ -58,6 +59,10 @@ export default {
     deleting: {
       type: Boolean,
       default: false
+    },
+    initialTime: {
+      type: Number,
+      required: false
     }
   },
   data () {

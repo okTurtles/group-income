@@ -193,6 +193,7 @@ page(
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
               i.icon-envelope-open-text icon-envelope-open-text
+              i.icon-expand icon-expand
               i.icon-external-link-alt icon-external-link-alt
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash

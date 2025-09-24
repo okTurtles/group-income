@@ -4,7 +4,7 @@
     ref='videoEl'
     playsinline
     controls
-    @loadedmetadata='$emit("load")'
+    @loadedmetadata='onVideoSrcLoaded'
     @error='$emit("error")'
   )
     source(:src='src' :type='mimeType')
@@ -32,6 +32,10 @@ export default {
     options: {
       type: Object,
       default: () => ({})
+    },
+    initialTime: {
+      type: Number, // Floating point number in seconds
+      required: false
     }
   },
   data () {
@@ -55,6 +59,16 @@ export default {
         ...this.options
       }
       this.config.player = new Plyr(this.$refs.videoEl, opts)
+    },
+    onVideoSrcLoaded () {
+      if (this.initialTime > 0) {
+        this.config.player.currentTime = this.initialTime
+      }
+
+      this.$emit('load')
+    },
+    getCurrentTime () {
+      return this.config.player.currentTime
     }
   },
   mounted () {

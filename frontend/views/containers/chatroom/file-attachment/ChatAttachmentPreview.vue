@@ -243,9 +243,9 @@ export default {
 
       func && func(url)
     },
-    openVideoViewer (objectURL) {
+    openVideoViewer (objectURL, additionalData = null) {
       if (objectURL) {
-        this.openMediaViewer('video', objectURL)
+        this.openMediaViewer('video', objectURL, additionalData)
       }
     },
     openImageViewer (objectURL) {
@@ -253,7 +253,7 @@ export default {
         this.openMediaViewer('image', objectURL)
       }
     },
-    openMediaViewer (type, objectURL) {
+    openMediaViewer (type, objectURL, additionalData = null) {
       const modalName = ({
         image: 'ImageViewerModal',
         video: 'VideoViewerModal'
@@ -284,7 +284,8 @@ export default {
         {
           [type === 'image' ? 'images' : 'videos']: attachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
-          canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
+          canDelete: this.isMsgSender || this.isGroupCreator, // delete-attachment action can only be performed by the sender or the group creator
+          ...(additionalData || {})
         }
       )
     },
@@ -344,6 +345,7 @@ export default {
         getStretchedDimension: this.getStretchedDimension,
         getAttachmentObjectURL: this.getAttachmentObjectURL,
         openImageViewer: this.openImageViewer,
+        openVideoViewer: this.openVideoViewer,
         onMediaSrcSettled: this.onMediaSrcSettled
       }
     }

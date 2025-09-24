@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-attachment-download-item
-  .c-non-media-card(v-if='fileType === "non-media"')
+  .c-non-media-card(v-if='!isMediaType')
     .c-non-media-icon
       i.icon-file
     .c-non-media-file-info
@@ -9,7 +9,7 @@
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='attachment.size') {{ fileSizeDisplay(attachment) }}
 
-  .c-image-card(v-else-if='fileType === "image"')
+  .c-image-card(v-else-if='isImage')
     img(
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
@@ -20,8 +20,9 @@
     )
     .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
-  .c-video-card(v-else-if='fileType === "video"')
+  .c-video-card(v-else-if='isVideo')
     video-player.c-video-player(
+      ref='videoPlayer'
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
@@ -59,6 +60,17 @@
           @click='$emit("delete")'
         )
           i.icon-trash-alt
+
+      tooltip(
+        v-if='isVideo'
+        direction='top'
+        :text='L("Expand")'
+      )
+        button.is-icon-small(
+          :aria-label='L("Expand")'
+          @click='openVideoModal'
+        )
+          i.icon-expand
 </template>
 
 <script>
@@ -107,6 +119,12 @@ export default {
     isImage () {
       return this.fileType === 'image'
     },
+    isVideo () {
+      return this.fileType === 'video'
+    },
+    isMediaType () {
+      return this.isImage || this.isVideo
+    },
     fileExt () {
       return getFileExtension(this.attachment.name, true)
     },
@@ -125,6 +143,16 @@ export default {
       return this.isImage
         ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
         : L('Download')
+    },
+    getVideoCurrentTime () {
+      return this.isVideo
+        ? this.$refs.videoPlayer.getCurrentTime()
+        : null
+    },
+    openVideoModal () {
+      this.attachmentUtils.openVideoViewer(this.mediaObjectURL, {
+        initialTime: this.getVideoCurrentTime()
+      })
     }
   },
   mounted () {
