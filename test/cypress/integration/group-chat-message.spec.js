@@ -77,8 +77,8 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
-            cy.getByDT('menuTrigger').click()
-          })
+          cy.getByDT('menuTrigger').click()
+        })
         cy.getByDT('menuContent').within(() => {
           cy.getByDT('pinToChannel').click()
         })
