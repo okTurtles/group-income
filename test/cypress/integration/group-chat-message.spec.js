@@ -73,14 +73,18 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
   }
 
-  function pinMessage (nth) {
+  function pinMessage (nth, makeSureVisible = false) {
+    if (makeSureVisible) {
+      cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth - 1})`).scrollIntoView()
+    }
+
     cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
-          cy.getByDT('menuTrigger').click()
+          cy.getByDT('menuTrigger').click({ force: true })
         })
         cy.getByDT('menuContent').within(() => {
-          cy.getByDT('pinToChannel').click()
+          cy.getByDT('pinToChannel').click({ force: true })
         })
         cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
@@ -305,9 +309,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user2 pins 3 messages and unpins 1 message', () => {
-    pinMessage(11)
-    pinMessage(10)
-    pinMessage(12)
+    pinMessage(11, true)
+    pinMessage(10, true)
+    pinMessage(12, true)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')
