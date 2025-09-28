@@ -268,7 +268,7 @@ export default ({
     humanDate,
     swapMentionIDForDisplayname,
     mouseLeave () {
-      if (this.$refs.messageAction?.$refs?.menu) {
+      if (this.$refs.messageAction?.$refs?.menu && this.$refs.messageAction.$refs.menu.isActive) {
         this.$refs.messageAction.$refs.menu.closeMenu()
       }
     },

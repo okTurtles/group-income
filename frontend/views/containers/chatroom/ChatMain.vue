@@ -25,10 +25,10 @@
       data-test='conversationWrapper'
       :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages && ephemeral.messages === messageState.contract.messages'
       :data-length='ephemeral.messages.length'
-      :class='{"c-invisible": !ephemeral.messagesInitiated}'
+      :class='{ "c-invisible": !ephemeral.messagesInitiated }'
     )
       template(:slot='"before"')
-        .c-start-sentinel(ref='startSentinel')
+        .c-top-padding
         .c-conversation-start
           conversation-greetings(
             :members='summary.numberOfMembers'
@@ -45,7 +45,6 @@
       template(:slot='"after"')
         .c-loading(v-if='ephemeral.loadingDown')
           p.sr-only {{L('Loading')}}
-        .c-end-sentinel(ref='endSentinel')
         div(:class='"c-conversation-end"')
       template(v-slot='{ item: message, index, active }')
         dynamic-scroller-item(
@@ -340,6 +339,34 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
+    this.resizeObserver = new ResizeObserver(() => {
+      this.applyTopPadding()
+    })
+    // Mutation observer needed because resize observer won't trigger on
+    // scroll height changes
+    this.mutationObserver = new MutationObserver((entries) => {
+      if (!this.resizeObserver || !this.mutationObserver) return
+      for (const entry of entries) {
+        if (entry.type !== 'childList') continue
+        for (const addedNode of entry.addedNodes) {
+          this.resizeObserver.observe(addedNode)
+        }
+        for (const removedNode of entry.removedNodes) {
+          this.resizeObserver.unobserve(removedNode)
+        }
+      }
+    })
+    const observeSizeChanges = () => {
+      if (!this.resizeObserver) return
+      if (!this.$refs.conversation?.$el) {
+        setTimeout(() => this.$nextTick(observeSizeChanges), 100)
+        return
+      }
+      this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
+      this.resizeObserver.observe(this.$refs.conversation.$el)
+      this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+    }
+    observeSizeChanges()
     /* // Need to do it directly in the DOM because `@scroll.passive` doesn't work
     const setupEventListener = () => {
       if (!this.$refs.conversation?.$el) {
@@ -358,6 +385,10 @@ export default ({
     // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
+    this.resizeObserver?.disconnect()
+    this.mutationObserver?.disconnect()
+    this.resizeObserver = null
+    this.mutationObserver = null
     this.matchMediaPhone.onchange = null
   },
   computed: {
@@ -401,6 +432,15 @@ export default ({
     }
   },
   methods: {
+    applyTopPadding () {
+      // Top padding used so that there's enough space to render the menu
+      // options
+      const conversation = this.$refs.conversation?.$el
+      const conversationTP = conversation?.querySelector('.c-top-padding')
+      if (!conversation || !conversationTP || !conversation.parentElement) return
+      const padding = Math.max(conversation.parentElement.clientHeight - conversation.scrollHeight + conversationTP.clientHeight - 1, 0)
+      conversationTP.style.height = `${padding}px`
+    },
     triggerEditMessage (hash, status) {
       console.error('@@@@triggerEditMessage', hash, status)
       if (status) {
@@ -1253,8 +1293,9 @@ export default ({
       const oldScrollHeight = conversation.scrollHeight
       const oldClientHeight = conversation.clientHeight
       const oldScrollTop = conversation.scrollTop
+      // `ref` is used to distinguish between different invocations
       const ref = { r: Math.random() }
-      this.ephemeral.x = ref
+      this.ephemeral.rerenderRef = ref
       conversation.style.overflow = 'hidden'
       const direction = ''
       // const pos = conversation.scrollHeight - conversation.scrollTop
@@ -1262,23 +1303,23 @@ export default ({
       // if (!this.ephemeral.maintainCurrentPosition) {
       this.$nextTick(() => {
         conversation.style.overflow = ''
-        if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.x !== ref) return
+        if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
         if (oldScrollTop < 5 && oldClientHeight < oldScrollHeight) {
           setTimeout(() => {
             console.error('@@@@rerenderEvents 1', Math.min(conversation.scrollHeight - conversation.clientHeight, 20))
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.x !== ref) return
+            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
             conversation.scroll(0, 20)
           }, 0)
         } else if (oldClientHeight >= oldScrollHeight) {
           console.error('@@@@rerenderEvents 2')
           setTimeout(() => {
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.x !== ref) return
+            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
             this.jumpToLatest('instant')
           }, 0)
         } else if (direction === 'top') {
           if (topMessage) {
             console.error('@@@@rerenderEvents 3', topMessage)
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.x !== ref) return
+            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
             this.scrollToMessage(topMessage.hash, false)
           } else {
             console.error('@@@@rerenderEvents 4')
