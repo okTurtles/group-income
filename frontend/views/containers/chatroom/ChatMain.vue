@@ -339,34 +339,29 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
-    this.resizeObserver = new ResizeObserver(() => {
-      this.applyTopPadding()
+
+    if (typeof ResizeObserver !== 'function') return
+    this.resizeObserver = new ResizeObserver((entries) => {
+      if (!entries.length) return
+      requestAnimationFrame(() => this.applyTopPadding())
     })
     // Mutation observer needed because resize observer won't trigger on
     // scroll height changes
-    this.mutationObserver = new MutationObserver((entries) => {
-      if (!this.resizeObserver || !this.mutationObserver) return
-      for (const entry of entries) {
-        if (entry.type !== 'childList') continue
-        for (const addedNode of entry.addedNodes) {
-          this.resizeObserver.observe(addedNode)
+    if (typeof MutationObserver === 'function') {
+      this.mutationObserver = new MutationObserver((entries) => {
+        if (!this.resizeObserver || !this.mutationObserver) return
+        for (const entry of entries) {
+          if (entry.type !== 'childList') continue
+          for (const addedNode of entry.addedNodes) {
+            this.resizeObserver.observe(addedNode)
+          }
+          for (const removedNode of entry.removedNodes) {
+            this.resizeObserver.unobserve(removedNode)
+          }
         }
-        for (const removedNode of entry.removedNodes) {
-          this.resizeObserver.unobserve(removedNode)
-        }
-      }
-    })
-    const observeSizeChanges = () => {
-      if (!this.resizeObserver) return
-      if (!this.$refs.conversation?.$el) {
-        setTimeout(() => this.$nextTick(observeSizeChanges), 100)
-        return
-      }
-      this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
-      this.resizeObserver.observe(this.$refs.conversation.$el)
-      this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+      })
     }
-    observeSizeChanges()
+
     /* // Need to do it directly in the DOM because `@scroll.passive` doesn't work
     const setupEventListener = () => {
       if (!this.$refs.conversation?.$el) {
@@ -432,6 +427,23 @@ export default ({
     }
   },
   methods: {
+    resetObservers () {
+      const observeSizeChanges = () => {
+        if (!this.resizeObserver) return
+        if (!this.$refs.conversation?.$el) {
+          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
+          return
+        }
+        if (this.mutationObserver) {
+          this.mutationObserver.disconnect()
+          this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
+        }
+        this.resizeObserver.disconnect()
+        this.resizeObserver.observe(this.$refs.conversation.$el)
+        this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+      }
+      observeSizeChanges()
+    },
     applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
       // options
@@ -1791,6 +1803,10 @@ export default ({
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
       this.setMessages()
+    },
+    'ephemeral.renderingChatRoomId' (to) {
+      if (!to) return
+      this.$nextTick(this.resetObservers)
     }
   }
 }: Object)
