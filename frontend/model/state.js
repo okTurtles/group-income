@@ -219,14 +219,6 @@ sbp('sbp/selectors/register', {
         })
       }
       await internal()
-      const ourIdentityContractId = state.loggedIn.identityContractID
-      const dmkId = await sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'dmk')
-
-      if (dmkId) return
-
-      await sbp('gi.actions/identity/addDmk', ourIdentityContractId).catch(e => {
-        console.error('[postUpgradeVerification] Error adding DMK', e)
-      })
     })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {

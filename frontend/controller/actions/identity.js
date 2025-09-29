@@ -1066,6 +1066,11 @@ export default (sbp('sbp/selectors/register', {
           ? [['chelonia/out/keyAdd', {
               data: (() => {
                 const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractState, 'pek')
+
+                if (!PEKid) {
+                  throw new Error(`PEK not found for contract ${contractID}`)
+                }
+
                 const DMK = keygen(EDWARDS25519SHA512BATCH)
                 const DMKid = keyId(DMK)
                 const DMKp = serializeKey(DMK, false)
