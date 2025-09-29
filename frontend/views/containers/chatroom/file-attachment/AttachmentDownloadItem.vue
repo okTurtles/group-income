@@ -15,8 +15,8 @@
       :src='mediaObjectURL'
       :alt='attachment.name'
       @click='attachmentUtils.openImageViewer(mediaObjectURL)'
-      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "image")'
-      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "image")'
+      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.IMAGE)'
+      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.IMAGE)'
     )
     .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
@@ -26,8 +26,8 @@
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
-      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "video")'
-      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, "video")'
+      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.VIDEO)'
+      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.VIDEO)'
       mode='simple'
     )
     .loading-box.c-video-loading(v-else)
@@ -37,7 +37,7 @@
     i.icon-exclamation-triangle
 
   .c-attachment-actions-wrapper(
-    :class='{ "is-for-media": fileType !== "non-media" }'
+    :class='{ "is-for-media": isMediaType }'
   )
     .c-attachment-actions
       tooltip(
@@ -75,7 +75,7 @@
 
 <script>
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -109,6 +109,9 @@ export default {
     return {
       ephemeral: {
         imgLoadingBoxStyles: {}
+      },
+      config: {
+        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
       }
     }
   },
@@ -117,10 +120,10 @@ export default {
       return getFileType(this.attachment.mimeType)
     },
     isImage () {
-      return this.fileType === 'image'
+      return this.fileType === CHATROOM_ATTACHMENT_TYPES.IMAGE
     },
     isVideo () {
-      return this.fileType === 'video'
+      return this.fileType === CHATROOM_ATTACHMENT_TYPES.VIDEO
     },
     isMediaType () {
       return this.isImage || this.isVideo

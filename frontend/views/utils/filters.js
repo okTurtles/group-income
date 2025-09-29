@@ -1,4 +1,5 @@
 import { L } from '@common/common.js'
+import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 
 export const toPercent = (decimal: number): number => Math.floor(decimal * 100)
 
@@ -15,10 +16,10 @@ export const getFileType = (
   mimeType: string = ''
 ): string => {
   return mimeType.match('image/')
-    ? 'image'
+    ? CHATROOM_ATTACHMENT_TYPES.IMAGE
     : mimeType.match('video/')
-      ? 'video'
-      : 'non-media'
+      ? CHATROOM_ATTACHMENT_TYPES.VIDEO
+      : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
 }
 
 export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {

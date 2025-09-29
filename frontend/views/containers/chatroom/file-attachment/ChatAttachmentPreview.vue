@@ -3,46 +3,46 @@
 
   // Displaying attachments as part of message
   template(v-if='isForDownload')
-    .c-non-media-card-container(v-if='hasAttachmentType("non-media")')
+    .c-non-media-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA)')
       attachment-download-item(
-        v-for='(entry, entryIndex) in sortedAttachments["non-media"]'
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
         @download='downloadAttachment(entry)'
-        @delete='deleteAttachment({ index: entryIndex, type: "non-media" })'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
 
-    .c-image-card-container(v-if='hasAttachmentType("image")')
+    .c-image-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.IMAGE)')
       attachment-download-item(
-        v-for='(entry, entryIndex) in sortedAttachments["image"]'
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.IMAGE]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
         @download='downloadAttachment(entry)'
-        @delete='deleteAttachment({ index: entryIndex, type: "image" })'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
       )
 
-    .c-video-card-container(v-if='hasAttachmentType("video")')
+    .c-video-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.VIDEO)')
       attachment-download-item(
-        v-for='(entry, entryIndex) in sortedAttachments["video"]'
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.VIDEO]'
         :key='getAttachmentId(entry)'
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
         @download='downloadAttachment(entry)'
-        @delete='deleteAttachment({ index: entryIndex, type: "video" })'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.VIDEO })'
       )
 
   // Displaying attachments as part of <send-area />
   template(v-else)
     template(v-for='(entry, entryIndex) in attachmentList')
       .c-attachment-preview(
-        v-if='fileType(entry) === "non-media"'
+        v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
         :key='entry.url'
         :class='"is-" + fileType(entry)'
       )
@@ -77,7 +77,7 @@ import sbp from '@sbp/sbp'
 import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
 import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
@@ -110,21 +110,24 @@ export default {
   data () {
     return {
       mediaObjectURLList: {
-        'image': [],
-        'video': []
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
       },
       settledMediaURLList: {
-        'image': [],
-        'video': []
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+      },
+      config: {
+        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
       }
     }
   },
   computed: {
     sortedAttachments () {
       const collections = {
-        'non-media': [],
-        'image': [],
-        'video': []
+        [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: [],
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
       }
 
       for (const entry of this.attachmentList) {
@@ -135,7 +138,8 @@ export default {
       return collections
     },
     hasMediaAttachments () {
-      return this.sortedAttachments['image'].length > 0 || this.sortedAttachments['video'].length > 0
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length > 0 ||
+        this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -149,8 +153,7 @@ export default {
   },
   mounted () {
     if (this.hasMediaAttachments) {
-      const mediaTypes = ['image', 'video']
-      for (const mediaType of mediaTypes) {
+      for (const mediaType of [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]) {
         const attachments = this.sortedAttachments[mediaType]
         if (attachments.length > 0) {
           const promiseToRetrieveURLs = attachments.map(attachment => this.getAttachmentObjectURL(attachment))
@@ -179,7 +182,7 @@ export default {
       return getFileType(mimeType)
     },
     deleteAttachment ({ index, url, type }) {
-      if (['image', 'video'].includes(type) && url) {
+      if ([CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
         index = this.mediaObjectURLList[type].indexOf(url)
       }
 
@@ -245,23 +248,23 @@ export default {
     },
     openVideoViewer (objectURL, additionalData = null) {
       if (objectURL) {
-        this.openMediaViewer('video', objectURL, additionalData)
+        this.openMediaViewer(CHATROOM_ATTACHMENT_TYPES.VIDEO, objectURL, additionalData)
       }
     },
     openImageViewer (objectURL) {
       if (objectURL) {
-        this.openMediaViewer('image', objectURL)
+        this.openMediaViewer(CHATROOM_ATTACHMENT_TYPES.IMAGE, objectURL)
       }
     },
     openMediaViewer (type, objectURL, additionalData = null) {
       const modalName = ({
-        image: 'ImageViewerModal',
-        video: 'VideoViewerModal'
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: 'ImageViewerModal',
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: 'VideoViewerModal'
       })[type]
 
       if (!modalName) { return }
 
-      const objURLKey = type === 'image' ? 'imgUrl' : 'videoUrl'
+      const objURLKey = type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'imgUrl' : 'videoUrl'
       const attachmentDetailsList = this.sortedAttachments[type]
         .map((entry, index) => {
           const mediaURL = entry.url || this.mediaObjectURLList[type][index] || ''
@@ -282,7 +285,7 @@ export default {
         'okTurtles.events/emit', OPEN_MODAL, modalName,
         null,
         {
-          [type === 'image' ? 'images' : 'videos']: attachmentDetailsList,
+          [type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'images' : 'videos']: attachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
           canDelete: this.isMsgSender || this.isGroupCreator, // delete-attachment action can only be performed by the sender or the group creator
           ...(additionalData || {})
@@ -290,10 +293,11 @@ export default {
       )
     },
     onMediaSrcSettled (url, fileType) {
-      if (this.isForDownload && ['image', 'video'].includes(fileType)) {
+      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
+      if (this.isForDownload && mediaTypes.includes(fileType)) {
         this.settledMediaURLList[fileType] = uniq([...this.settledMediaURLList[fileType], url])
 
-        if (['image', 'video'].every(type => this.sortedAttachments[type].length === this.settledMediaURLList[type].length)) {
+        if (mediaTypes.every(type => this.sortedAttachments[type].length === this.settledMediaURLList[type].length)) {
           // Check if all media attachments are loaded in the DOM, notify the parent component.
           // (This can be enhanced to something like sbp('okTurtles.events/emit', MEDIA_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
           //  if this becomes useful in more places.)
@@ -309,7 +313,7 @@ export default {
     sortedAttachments (to, from) {
       if (!this.isForDownload) { return }
 
-      const mediaTypes = ['image', 'video']
+      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
       for (const mediaType of mediaTypes) {
         const fromList = from[mediaType]
         const toList = to[mediaType]
