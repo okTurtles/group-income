@@ -1035,7 +1035,7 @@ export default (sbp('sbp/selectors/register', {
     // See issue #2898
     const dmkId = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk')
     const contractState = sbp('chelonia/contract/state', contractID)
-    const keys = Object.values(contractState._vm.authorizedKeys).filter((key) => {
+    const keys = Object.values(contractState._vm.authorizedKeys).filter((key: any) => {
       return key._notAfterHeight == null &&
         (
           key.permissions.includes(SPMessage.OP_ACTION_ENCRYPTED) ||
@@ -1044,11 +1044,11 @@ export default (sbp('sbp/selectors/register', {
         (key.name.startsWith('#krrk-') || !!key.foreignKey)
     })
     const groupIds = Object.keys(contractState.groups || {})
-    const krrks = []
-    const gfcsks = []
+    const krrks: any[] = []
+    const gfcsks: any[] = []
     groupIds.forEach((groupId) => {
-      const krrk = keys.filter((key) => key.name.startsWith('#krrk-') && key.meta?.keyRequest?.contractID === groupId)
-      const gfcsk = keys.filter((key) => key.name.startsWith(groupId + '/'))
+      const krrk = keys.filter((key: any) => key.name.startsWith('#krrk-') && key.meta?.keyRequest?.contractID === groupId)
+      const gfcsk = keys.filter((key: any) => key.name.startsWith(groupId + '/'))
 
       krrks.push(...krrk)
       gfcsks.push(...gfcsk)
