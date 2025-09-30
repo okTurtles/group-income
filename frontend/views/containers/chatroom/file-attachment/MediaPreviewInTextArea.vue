@@ -138,6 +138,7 @@ export default {
   width: 4.5rem;
   height: 4.5rem;
   cursor: pointer;
+  flex-shrink: 0;
 
   &.is-image {
     .c-preview-img {

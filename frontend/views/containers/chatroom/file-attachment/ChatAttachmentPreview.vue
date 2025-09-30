@@ -40,34 +40,35 @@
 
   // Displaying attachments as part of <send-area />
   template(v-else)
-    template(v-for='(entry, entryIndex) in attachmentList')
-      .c-attachment-preview(
-        v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
-        :key='entry.url'
-        :class='"is-" + fileType(entry)'
-      )
-        .c-preview-non-media(@click.stop='')
-          .c-non-media-icon
-            i.icon-file
-
-          .c-non-media-file-info
-            .c-file-name.has-ellipsis {{ entry.name }}
-            .c-file-ext {{ fileExt(entry) }}
-
-        button.c-attachment-remove-btn(
-          type='button'
-          :aria-label='L("Remove attachment")'
-          @click.stop='$emit("remove", entry.url)'
+    send-area-attachments-gallery
+      template(v-for='(entry, entryIndex) in attachmentList')
+        .c-attachment-preview(
+          v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
+          :key='entry.url'
+          :class='"is-" + fileType(entry)'
         )
-          i.icon-times
+          .c-preview-non-media(@click.stop='')
+            .c-non-media-icon
+              i.icon-file
 
-      media-preview-in-text-area(
-        v-else
-        :key='entry.url'
-        :attachment='entry'
-        @remove='$emit("remove", entry.url)'
-        @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
-      )
+            .c-non-media-file-info
+              .c-file-name.has-ellipsis {{ entry.name }}
+              .c-file-ext {{ fileExt(entry) }}
+
+          button.c-attachment-remove-btn(
+            type='button'
+            :aria-label='L("Remove attachment")'
+            @click.stop='$emit("remove", entry.url)'
+          )
+            i.icon-times
+
+        media-preview-in-text-area(
+          v-else
+          :key='entry.url'
+          :attachment='entry'
+          @remove='$emit("remove", entry.url)'
+          @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
+        )
 
   a.c-invisible-link(ref='downloadHelper')
 </template>
@@ -76,6 +77,7 @@
 import sbp from '@sbp/sbp'
 import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
 import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
+import SendAreaAttachmentsGallery from './SendAreaAttachmentsGallery.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { getFileExtension, getFileType } from '@view-utils/filters.js'
@@ -88,7 +90,8 @@ export default {
   components: {
     Tooltip,
     AttachmentDownloadItem,
-    MediaPreviewInTextArea
+    MediaPreviewInTextArea,
+    SendAreaAttachmentsGallery
   },
   props: {
     attachmentList: {
@@ -363,19 +366,17 @@ export default {
 .c-attachment-container {
   position: relative;
   padding: 0 0.5rem;
-  margin-top: 0.75rem;
   width: 100%;
   max-width: 100%;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
   gap: 1rem;
 
   &.is-for-download {
     padding: 0;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     row-gap: 1rem;
+    margin-top: 0.75rem;
   }
 }
 
@@ -384,6 +385,7 @@ export default {
   display: inline-block;
   border: 1px solid $general_0;
   border-radius: 0.25rem;
+  flex-shrink: 0;
 
   &.is-non-media {
     max-width: 17.25rem;
