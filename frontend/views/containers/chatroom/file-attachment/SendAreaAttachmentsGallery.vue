@@ -1,36 +1,73 @@
 <template lang='pug'>
-  .c-send-area-attachments-container(ref='galleryContainer')
-    .c-send-area-attachments-wrapper
+  .c-send-area-attachments-container
+    .c-send-area-attachments-wrapper(
+      ref='scrollContainer'
+      @scroll='config.debouncedButtonVisibilityCheck'
+    )
       slot
 
     button.is-icon.c-scroll-btn.is-left(
+      :class='{ "is-visible": ephemeral.buttonsVisible.left }'
       type='button'
       :aria-label='L("Scroll left")'
-      @click.stop='scrollLeft'
+      @click.stop='scrollByButton("left")'
     )
       i.icon-chevron-left
 
     button.is-icon.c-scroll-btn.is-right(
+      :class='{ "is-visible": ephemeral.buttonsVisible.right }'
       type='button'
       :aria-label='L("Scroll right")'
-      @click.stop='scrollRight'
+      @click.stop='scrollByButton("right")'
     )
       i.icon-chevron-right
 </template>
 
 <script>
+import { debounce } from 'turtledash'
+
 export default {
   name: 'SendAreaAttachmentsContainer',
+  data () {
+    return {
+      ephemeral: {
+        buttonsVisible: {
+          left: false,
+          right: false
+        }
+      },
+      config: {
+        debouncedButtonVisibilityCheck: debounce(this.determineButtonVisibility, 100)
+      }
+    }
+  },
   methods: {
     determineButtonVisibility () {
-      console.log('TODO')
+      const { scrollWidth, clientWidth, scrollLeft } = this.$refs.scrollContainer
+      const maxScrollLeft = scrollWidth - clientWidth
+
+      // 1. Left button
+      this.ephemeral.buttonsVisible.left = scrollLeft > 10
+
+      // 2. Right button
+      this.ephemeral.buttonsVisible.right = scrollLeft + 10 < maxScrollLeft
     },
-    scrollLeft () {
-      console.log('TODO')
-    },
-    scrollRight () {
-      console.log('TODO')
+    scrollByButton (direction = 'right') {
+      const { clientWidth } = this.$refs.scrollContainer
+      const scrollAmount = clientWidth * 0.6
+
+      this.$refs.scrollContainer.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      })
     }
+  },
+  mounted () {
+    this.determineButtonVisibility()
+    window.addEventListener('resize', this.config.debouncedButtonVisibilityCheck)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.config.debouncedButtonVisibilityCheck)
   }
 }
 </script>
@@ -74,6 +111,14 @@ button.c-scroll-btn {
   justify-content: center;
   line-height: 1;
   z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $transitionSpeed ease;
+
+  &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   &.is-left {
     left: -1rem;
