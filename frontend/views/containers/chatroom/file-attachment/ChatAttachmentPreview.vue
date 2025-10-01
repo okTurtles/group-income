@@ -384,6 +384,7 @@ export default {
   position: relative;
   display: inline-block;
   border: 1px solid $general_0;
+  box-shadow: 0 0 4px rgba(29, 28, 29, 0.13);
   border-radius: 0.25rem;
   flex-shrink: 0;
 
