@@ -1105,8 +1105,7 @@ export default (sbp('sbp/selectors/register', {
                 oldKeyId: krrk.id,
                 purpose: krrk.purpose,
                 permissions: [SPMessage.OP_KEY_SHARE],
-                allowedActions: [],
-                meta: krrk.meta
+                allowedActions: []
               }))
             }]]
           : [])
