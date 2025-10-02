@@ -1,13 +1,11 @@
 <template lang='pug'>
-button(
-  v-if='hideWhenActive ? !isActive : true'
-  :aria-pressed='isActive ? "true" : "false"'
+summary.button(
   data-test='menuTrigger'
   :class='{ "is-active" : isActive }'
-  @click='handleClick'
 )
-  slot
+  slot(v-if='hideWhenActive ? !isActive : true')
 </template>
+
 <script>
 export default ({
   name: 'MenuTrigger',
@@ -19,16 +17,16 @@ export default ({
     isActive () {
       return this.Menu.isActive
     }
-  },
-  methods: {
-    handleClick (e) {
-      if (this.isActive) {
-        this.Menu.closeMenu()
-      } else {
-        this.$emit('trigger')
-        this.Menu.handleTrigger()
-      }
-    }
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+summary {
+  list-style: none;
+
+  &::marker {
+    display: none;
+  }
+}
+</style>

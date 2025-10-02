@@ -136,7 +136,8 @@ export default ({
     id: String,
     type: String,
     datetime: Date,
-    proposal: Object
+    proposal: Object,
+    isFocused: Boolean
   },
   components: {
     SvgHorn,
