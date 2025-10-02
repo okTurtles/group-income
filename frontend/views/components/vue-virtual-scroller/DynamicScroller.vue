@@ -56,10 +56,10 @@
 }
 
 .vue-recycle-scroller__item-wrapper {
-  flex:1;
-  box-sizing:border-box;
-  overflow:hidden;
-  position:relative;
+  flex: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
 }
 
 .vue-recycle-scroller__item-view {
