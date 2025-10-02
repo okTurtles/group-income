@@ -14,17 +14,17 @@
     )
 
     header.c-modal-header
-      avatar-user.c-avatar(
+      avatar-user.viewer-avatar(
         v-if='currentImage.ownerID'
         :contractID='currentImage.ownerID'
         size='sm'
       )
 
-      .c-img-data
-        .c-name.has-ellipsis {{ displayName }}
-        .c-filename-and-size
-          .c-filename.has-ellipsis {{ currentImage.name }}
-          .c-file-size {{ displayFilesize(currentImage.size) }}
+      .media-data
+        .name.has-ellipsis {{ displayName }}
+        .filename-and-size
+          .filename.has-ellipsis {{ currentImage.name }}
+          .file-size {{ displayFilesize(currentImage.size) }}
 
       button.is-icon-small.c-close-btn(
         type='button'
@@ -107,9 +107,6 @@ export default {
       return this.globalProfile(contractID)?.displayName ||
         this.usernameFromID(contractID)
     },
-    hasMultipleImages () {
-      return Array.isArray(this.ephemeral.imagesToShow) && this.ephemeral.imagesToShow.length > 1
-    },
     showPrevButton () {
       const len = this.ephemeral.imagesToShow.length
       return len > 1 && this.ephemeral.currentIndex > 0
@@ -188,7 +185,7 @@ export default {
         return
       }
 
-      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { url: this.currentImage.imgUrl })
+      sbp('okTurtles.events/emit', DELETE_ATTACHMENT, { type: 'image', url: this.currentImage.imgUrl })
       this.ephemeral.deletingImages.push(this.currentImage.manifestCid)
     },
     onDeleteAttachmentFeedback ({ action, manifestCid }) {
@@ -210,55 +207,30 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
-$cta-zindex: 3;
+@import "@assets/style/components/_media-viewer_utils.scss";
 
 .c-image-viewer-modal {
-  position: fixed;
-  z-index: $zindex-modal;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  overflow: auto;
-  background-color: rgba(10, 10, 10, 0.86);
+  @include media-viewer-modal-container($zindex: $zindex-modal);
 
-  --image-viewer-bg-color: #1e2021;
-  --image-viewer-text-color: #e8e8e8;
   --image-viewer-btn-color: #2e3032;
   --image-viewer-slider-bg-color: #2e3032;
   --image-viewer-btn-color_active: #717879;
   --image-viewer-btn-text-color_active: #1e2021;
-  --image-viewer-cta-bg-color: #1e2021;
-  --image-viewer-cta-text-color: #e8e8e8;
-  --image-viewer-cta-border-color: #717879;
-  --image-viewer-cta-box-shadow-color: #383c3e;
 
   .is-dark-theme & {
-    --image-viewer-bg-color: #717879;
-    --image-viewer-text-color: #e8e8e8;
     --image-viewer-btn-color: #1e2021;
     --image-viewer-slider-bg-color: #1e2021;
     --image-viewer-btn-color_active: #2e3032;
     --image-viewer-btn-text-color_active: #e8e8e8;
-    --image-viewer-cta-bg-color: #1e2021;
-    --image-viewer-cta-text-color: #e8e8e8;
-    --image-viewer-cta-border-color: #717879;
-    --image-viewer-cta-box-shadow-color: #383c3e;
   }
 }
 
 .c-image-viewer-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: var(--image-viewer-bg-color);
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+  @include media-viewer-modal-content;
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  background-color: var(--viewer-bg-color);
 
   @include from($tablet) {
     border-radius: 0.375rem;
@@ -268,73 +240,7 @@ $cta-zindex: 3;
 }
 
 .c-modal-header {
-  position: absolute;
-  width: 100%;
-  top: 0;
-  left: 0;
-  height: auto;
-  z-index: $cta-zindex;
-  padding: 1rem;
-  padding-right: 3rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  column-gap: 0.75rem;
-
-  > * {
-    z-index: 1;
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 135%;
-    background: linear-gradient(#1e2021bb, #1e202100);
-    z-index: 0;
-  }
-
-  .c-avatar {
-    flex-shrink: 0;
-  }
-
-  .c-img-data {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    line-height: 1.125;
-    color: var(--image-viewer-text-color);
-  }
-
-  .c-name {
-    font-size: $size_4;
-    font-weight: 700;
-  }
-
-  .c-filename-and-size {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    column-gap: 0.5rem;
-  }
-
-  .c-file-size {
-    flex-shrink: 0;
-  }
-
-  .c-filename,
-  .c-file-size {
-    font-size: $size_5;
-  }
-
-  .c-name,
-  .c-filename,
-  .c-file-size {
-    user-select: none;
-    text-shadow: 1px 1px 2px #1e2021;
-  }
+  @include media-viewer-modal-header;
 }
 
 .c-image-blurry-background {
@@ -345,7 +251,7 @@ $cta-zindex: 3;
   background-position: 50%;
   background-size: contain;
   background-repeat: no-repeat;
-  background-color: var(--image-viewer-bg-color);
+  background-color: var(--viewer-bg-color);
   inset: -100px;
 }
 
@@ -354,7 +260,7 @@ $cta-zindex: 3;
   right: 0.75rem;
   top: 1rem;
   background-color: var(--image-viewer-btn-color);
-  color: var(--image-viewer-text-color);
+  color: var(--viewer-text-color);
 
   &:hover,
   &:focus {
@@ -364,19 +270,7 @@ $cta-zindex: 3;
 }
 
 button.c-image-nav-btn {
-  position: absolute;
-  z-index: $cta-zindex;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: var(--image-viewer-cta-bg-color);
-  color: var(--image-viewer-cta-text-color);
-  border-color: var(--image-viewer-cta-border-color);
-  width: 2.5rem;
-  height: 2.5rem;
-
-  &:focus {
-    box-shadow: 0 0 0 2px var(--image-viewer-cta-box-shadow-color);
-  }
+  @include media-viewer-navigation-btn;
 
   &.is-prev {
     left: 1rem;

@@ -90,7 +90,10 @@
       "string-quotes": "double",
       "selector-pseudo-element-no-unknown": null,
       "no-descending-specificity": null
-    }
+    },
+    "ignoreFiles": [
+      "frontend/assets/style/components/plyr/_plyr_default.scss"
+    ]
   },
   "repository": {
     "type": "git",
@@ -142,6 +145,7 @@
     "marked": "11.1.1",
     "pino": "8.19.0",
     "pino-pretty": "10.3.1",
+    "plyr": "3.8.3",
     "portal-vue": "2.1.7",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
