@@ -84,6 +84,22 @@ export default ({
     },
     checkIsTouch () {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
+    },
+    findAndScrollToAnchor (str) {
+      const anchorEl = this.$el.querySelector(`:is([id='${str}'], [name='${str}'], [href='#${str}'])`)
+      anchorEl && anchorEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  },
+  watch: {
+    '$route': {
+      immediate: true,
+      handler (to, from) {
+        if (to.hash && from?.hash !== to.hash) {
+          setTimeout(() => {
+            this.findAndScrollToAnchor(to.hash.slice(1))
+          }, 100)
+        }
+      }
     }
   }
 }: Object)
