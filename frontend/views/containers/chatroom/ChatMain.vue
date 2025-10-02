@@ -1315,7 +1315,7 @@ export default ({
           // NOTE: 'return this.processChatroomSwitch()' below would make it more clear that we don't proceed with anything else, but
           //       having return here creates an occasional error saying 'TypeError: Chaining cycle detected for promise'.
           this.processChatroomSwitch()
-        } else {
+        } else if (this.$refs['infinite-loading']) {
           this.ephemeral.messagesInitiated = false
           this.ephemeral.unprocessedEvents = []
           // We need to reset the infinite loading widget. There used to be:
@@ -1335,6 +1335,8 @@ export default ({
           // event, which will result in the guard conditions being bypassed.
           this.$refs['infinite-loading'].status = 1 // STATUS.LOADING
           this.$refs['infinite-loading'].$emit('infinite', this.$refs['infinite-loading'].stateChanger)
+        } else {
+          console.warn('ChatMain.vue processChatroomSwitch(): infinite-loading ref is undefined', targetChatroomId)
         }
       } catch (e) {
         console.error('ChatMain.vue processChatroomSwitch() error:', e)
@@ -1345,6 +1347,9 @@ export default ({
             question: L('Error details: {reportError}', LError(e)),
             primaryButton: L('Close')
           })
+        }
+        if (process.env.CI) {
+          throw e
         }
       }
     }, 250)

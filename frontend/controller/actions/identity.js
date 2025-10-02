@@ -198,6 +198,7 @@ export default (sbp('sbp/selectors/register', {
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const PEK = keygen(CURVE25519XSALSA20POLY1305)
+    const DMK = keygen(EDWARDS25519SHA512BATCH)
     const SAK = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
@@ -206,6 +207,7 @@ export default (sbp('sbp/selectors/register', {
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const PEKid = keyId(PEK)
+    const DMKid = keyId(DMK)
     const SAKid = keyId(SAK)
 
     // Public keys to be stored in the contract
@@ -214,18 +216,20 @@ export default (sbp('sbp/selectors/register', {
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const PEKp = serializeKey(PEK, false)
+    const DMKp = serializeKey(DMK, false)
     const SAKp = serializeKey(SAK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(CEK, true))
     const PEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(PEK, true))
+    const DMKs = encryptedOutgoingDataWithRawKey(PEK, serializeKey(DMK, true))
     const SAKs = encryptedOutgoingDataWithRawKey(IEK, serializeKey(SAK, true))
     const encryptedDeletionToken = encryptedOutgoingDataWithRawKey(IEK, deletionToken)
 
     // Before creating the contract, put all keys into transient store
     await sbp('chelonia/storeSecretKeys',
-      new Secret([IPK, IEK, CEK, CSK, PEK, SAK].map(key => ({ key, transient: true })))
+      new Secret([IPK, IEK, CEK, CSK, PEK, SAK, DMK].map(key => ({ key, transient: true })))
     )
 
     let userID
@@ -319,6 +323,20 @@ export default (sbp('sbp/selectors/register', {
             data: PEKp
           },
           {
+            id: DMKid,
+            name: 'dmk',
+            purpose: ['sig'],
+            ringLevel: 2,
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+            meta: {
+              private: {
+                content: DMKs
+              }
+            },
+            data: DMKp
+          },
+          {
             id: SAKid,
             name: '#sak',
             purpose: ['sak'],
@@ -368,10 +386,8 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store persistent keys
       await sbp('chelonia/storeSecretKeys',
-        new Secret([CEK, CSK, PEK, SAK].map(key => ({ key })))
+        new Secret([CEK, CSK, PEK, SAK, DMK].map(key => ({ key })))
       )
-      // And remove transient keys, which require a user password
-      sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)), { cause: e })
@@ -579,34 +595,8 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', LOGOUT)
     return cheloniaState
   },
-  'gi.actions/identity/addJoinDirectMessageKey': async (contractID, foreignContractID, keyName) => {
-    const keyId = await sbp('chelonia/contract/currentKeyIdByName', foreignContractID, keyName)
-    const CEKid = await sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek')
-    const foreignContractState = sbp('chelonia/contract/state', foreignContractID)
-
-    const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', contractID, foreignContractID)
-
-    if (existingForeignKeys?.includes(keyId)) {
-      return
-    }
-
-    return await sbp('chelonia/out/keyAdd', {
-      contractID,
-      contractName: 'gi.contracts/identity',
-      data: [encryptedOutgoingData(contractID, CEKid, {
-        foreignKey: `shelter:${encodeURIComponent(foreignContractID)}?keyName=${encodeURIComponent(keyName)}`,
-        id: keyId,
-        data: foreignContractState._vm.authorizedKeys[keyId].data,
-        // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
-        // that a chatroom has just been created
-        permissions: [SPMessage.OP_ACTION_ENCRYPTED + '#inner'],
-        allowedActions: ['gi.contracts/identity/joinDirectMessage#inner'],
-        purpose: ['sig'],
-        ringLevel: Number.MAX_SAFE_INTEGER,
-        name: `${foreignContractID}/${keyId}`
-      })],
-      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [SPMessage.OP_KEY_ADD], ['sig'])
-    })
+  'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
+    // no longer used; left empty for compatibility with old contracts
   },
   'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
     const rootState = sbp('chelonia/rootState')
@@ -626,7 +616,7 @@ export default (sbp('sbp/selectors/register', {
         contractID: groupID,
         contractName: rootState.contracts[groupID].type,
         data: encryptedOutgoingData(groupID, CEKid, {
-          contractID: groupID,
+          contractID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
@@ -732,6 +722,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
+    await sbp('chelonia/contract/wait', partnerIDs)
     for (let index = 0; index < partnerIDs.length; index++) {
       const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
 
@@ -745,6 +736,7 @@ export default (sbp('sbp/selectors/register', {
         keyIds: '*'
       })
 
+      const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
       await sbp('gi.actions/identity/joinDirectMessage', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: partnerIDs[index],
@@ -755,8 +747,9 @@ export default (sbp('sbp/selectors/register', {
         },
         // For now, we assume that we're messaging someone which whom we
         // share a group
-        signingKeyId: await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage']),
-        innerSigningContractID: currentGroupId,
+        signingKeyId,
+        innerSigningContractID: null,
+        innerSigningKeyId: null,
         hooks
       })
     }
@@ -1036,6 +1029,87 @@ export default (sbp('sbp/selectors/register', {
 
     await sbp('chelonia/out/deleteContract', contractID, {
       [contractID]: { token: new Secret(token.valueOf()) }
+    })
+  },
+  'gi.actions/identity/addDmk': async (contractID: string) => {
+    // See issue #2898
+    const dmkId = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk')
+    const contractState = sbp('chelonia/contract/state', contractID)
+    const keys = Object.values(contractState._vm.authorizedKeys).filter((key: any) => {
+      return key._notAfterHeight == null &&
+        (
+          key.permissions.includes(SPMessage.OP_ACTION_ENCRYPTED) ||
+          key.permissions.includes(SPMessage.OP_ACTION_ENCRYPTED + '#inner')
+        ) &&
+        (key.name.startsWith('#krrk-') || !!key.foreignKey)
+    })
+    const groupIds = Object.keys(contractState.groups || {})
+    const krrks: any[] = []
+    const gfcsks: any[] = []
+    groupIds.forEach((groupId) => {
+      const krrk = keys.filter((key: any) => key.name.startsWith('#krrk-') && key.meta?.keyRequest?.contractID === groupId)
+      const gfcsk = keys.filter((key: any) => key.name.startsWith(groupId + '/'))
+
+      krrks.push(...krrk)
+      gfcsks.push(...gfcsk)
+    })
+
+    // There's nothing to upgrade at this point
+    if (!dmkId && krrks.length === 0 && gfcsks.length === 0) return
+
+    await sbp('chelonia/out/atomic', {
+      contractID,
+      contractName: 'gi.contracts/identity',
+      signingKeyId: sbp('chelonia/contract/suitableSigningKey', contractID, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_ADD, SPMessage.OP_KEY_UPDATE, SPMessage.OP_KEY_DEL], ['sig']),
+      data: [
+        ...(!dmkId
+          ? [['chelonia/out/keyAdd', {
+              data: (() => {
+                const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractState, 'pek')
+
+                if (!PEKid) {
+                  throw new Error(`PEK not found for contract ${contractID}`)
+                }
+
+                const DMK = keygen(EDWARDS25519SHA512BATCH)
+                const DMKid = keyId(DMK)
+                const DMKp = serializeKey(DMK, false)
+                const DMKs = encryptedOutgoingData(contractID, PEKid, serializeKey(DMK, true))
+
+                return [{
+                  id: DMKid,
+                  name: 'dmk',
+                  purpose: ['sig'],
+                  ringLevel: 2,
+                  permissions: [SPMessage.OP_ACTION_ENCRYPTED],
+                  allowedActions: ['gi.contracts/identity/joinDirectMessage'],
+                  meta: {
+                    private: {
+                      content: DMKs
+                    }
+                  },
+                  data: DMKp
+                }]
+              })()
+            }]]
+          : []),
+        ...(gfcsks.length
+          ? [['chelonia/out/keyDel', {
+              data: gfcsks.map((gfcsk) => encryptedOutgoingData(contractID, gfcsk._private, gfcsk.id))
+            }]]
+          : []),
+        ...(krrks.length
+          ? [['chelonia/out/keyUpdate', {
+              data: krrks.map(krrk => ({
+                name: krrk.name,
+                oldKeyId: krrk.id,
+                purpose: krrk.purpose,
+                permissions: [SPMessage.OP_KEY_SHARE],
+                allowedActions: []
+              }))
+            }]]
+          : [])
+      ]
     })
   },
   'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
