@@ -279,7 +279,6 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
-        listenChatRoomActions: false,
         startedUnreadMessageHash: null,
         // Below contains the message hash on which the user manually marked as unread
         messageHashToMarkUnread: null,
@@ -651,10 +650,11 @@ export default ({
         Vue.set(this.messageState, 'contract', state)
 
         if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
-          this.loadMoreMessages(direction)
+          // No `await` to prevent a deadlock
+          this.loadMoreMessages(direction).catch(e => {
+            console.error('[ChatMain.vue/processEvents] Error on `loadMoreMessages`', e)
+          })
         }
-
-        this.ephemeral.listenChatRoomActions = (this.ephemeral.currentHighestHeight !== this.latestHeight)
       })
     },
     isMessageVisible (hash) {
@@ -1192,7 +1192,7 @@ export default ({
       this.ephemeral.initialScroll.hash = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       this.ephemeral.messagesInitiated = !!messageState.messages.length && (!this.ephemeral.initialScroll.hash || !!messageState.messages.find(m => m.hash === this.ephemeral.initialScroll.hash))
       Vue.set(this.messageState, 'contract', messageState)
-      if (!this.ephemeral.messagesInitiated) this.loadMoreMessages()
+      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages()
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -1374,7 +1374,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
-      if (/* !this.ephemeral.listenChatRoomActions || */ this.chatroomHasSwitchedFrom(contractID)) return
+      if (this.chatroomHasSwitchedFrom(contractID)) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
 
