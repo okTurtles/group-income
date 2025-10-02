@@ -118,6 +118,7 @@ export default ({
             }
           : {
               title: L('Proposals'),
+              anchor: 'proposals',
               svg: SvgVote,
               isCard: true
             }

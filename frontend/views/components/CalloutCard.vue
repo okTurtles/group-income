@@ -1,5 +1,5 @@
 <template lang='pug'>
-  section.c-calloutCard(:class='{ card: isCard }')
+  section.c-calloutCard(:class='{ card: isCard }' :id='anchor')
     component.c-svg(:is='svg')
     div
       h2.c-title(
@@ -17,7 +17,8 @@ export default ({
   props: {
     title: String,
     svg: Object, // Svg file as component
-    isCard: Boolean
+    isCard: Boolean,
+    anchor: String
   }
 }: Object)
 </script>
