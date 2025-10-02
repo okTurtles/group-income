@@ -27,6 +27,11 @@ export default ({
     handleToggle (e) {
       if (this.config.Menu.isActive === e.target.open) return
       this.config.Menu.isActive = e.target.open
+      // Because this handler relies on the native 'toggle' event, this should
+      // work every time the menu is opened or closed. Hence, the custom event
+      // is emitted here for reliability and doing it in `closeMenu` or
+      // `handleTrigger` (or `handleSelect`, which implies `closeMenu`) is
+      // redundant.
       this.$emit(this.config.Menu.isActive ? 'menu-open' : 'menu-close')
     },
     handleTrigger () {

@@ -289,7 +289,7 @@ export default ({
     @include tablet {
       width: 100%;
       left: auto;
-      right: 0.5rem;
+      right: 0;
       top: auto;
       bottom: calc(100% + 0.5rem);
 

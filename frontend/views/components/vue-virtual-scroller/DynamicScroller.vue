@@ -50,6 +50,23 @@
   </div>
 </template>
 
+<style scoped>
+.vue-recycle-scroller__slot {
+  flex: auto 0 0;
+}
+
+.vue-recycle-scroller__item-wrapper {
+  flex:1;
+  box-sizing:border-box;
+  overflow:hidden;
+  position:relative;
+}
+
+.vue-recycle-scroller__item-view {
+  width: 100%;
+}
+</style>
+
 <script>
 export default {
   name: 'DynamicScroller',
@@ -62,11 +79,6 @@ export default {
     keyField: {
       type: String,
       default: 'id'
-    },
-    direction: {
-      type: String,
-      default: 'vertical',
-      validator: (value) => ['vertical', 'horizontal'].includes(value)
     },
     listTag: {
       type: String,

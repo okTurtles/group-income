@@ -1,7 +1,7 @@
 <template lang='pug'>
-summary(
+summary.button(
   data-test='menuTrigger'
-  :class='{ "button": true, "is-active" : isActive }'
+  :class='{ "is-active" : isActive }'
 )
   slot(v-if='hideWhenActive ? !isActive : true')
 </template>

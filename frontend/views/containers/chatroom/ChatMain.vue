@@ -23,7 +23,7 @@
       @scroll.passive='onChatScroll'
       ref='conversation'
       data-test='conversationWrapper'
-      :data-loaded='ephemeral.messagesInitiated && !ephemeral.loadingUp && !ephemeral.loadingDown && messageState.contract.messages === ephemeral.messages && ephemeral.messages === messageState.contract.messages'
+      :data-loaded='isLoaded'
       :data-length='ephemeral.messages.length'
       :class='{ "c-invisible": !ephemeral.messagesInitiated }'
     )
@@ -135,7 +135,6 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { L, LError } from '@common/common.js'
 import Vue from 'vue'
@@ -205,7 +204,6 @@ const onChatScroll = function (ev) {
     this.onScrollEnd()
   }
 
-  // for (let i = this.ephemeral.messages.length - 1; i >= 0; i--) {
   for (let i = (scroller?.$_endIndex ?? this.ephemeral.messages.length) - 1; i >= (scroller?.$_startIndex ?? 0); i--) {
     const msg = this.ephemeral.messages[i]
     // console.error('@@@@onChatScroll x', msg.pending, msg.hasFailed, ((v) => () => v)(this.$refs[msg.hash]?.$el))
@@ -401,6 +399,17 @@ export default ({
       'currentChatRoomReadUntil',
       'isReducedMotionMode'
     ]),
+    isLoaded () {
+      return (
+        // Initial load attempt
+        this.ephemeral.messagesInitiated &&
+        // No active load attemps
+        !this.ephemeral.loadingUp &&
+        !this.ephemeral.loadingDown &&
+        // Rendering the current contract state
+        this.messageState.contract.messages === this.ephemeral.messages
+      )
+    },
     currentUserAttr () {
       return {
         ...this.currentIdentityState.attributes,
@@ -911,15 +920,8 @@ export default ({
 
       const scrollAndHighlight = () => {
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
-        // const allMessageEls = document.querySelectorAll('.c-body-conversation > .c-message')
-        // const eleMessage = allMessageEls[index]
-        const targetIsLatestMessage = index === (this.ephemeral.messages.length - 1)
-        // const eleTarget = targetIsLatestMessage ? eleMessage : allMessageEls[Math.max(0, index - 1)]
-
-        // if (!eleTarget) { return }
 
         if (effect) {
-          console.error('@@@@scrollToMessage highlight 0', messageHash, index)
           this.$nextTick(() => {
             if (this.chatroomHasSwitchedFrom(contractID)) return
             this.$refs.conversation.scrollToItem(index)
@@ -930,14 +932,7 @@ export default ({
             }, 1500)
           })
         } else {
-          if (isNaN(1) && targetIsLatestMessage) {
-            this.$nextTick(() => {
-              this.jumpToLatest('instant')
-            })
-          } else {
-            console.error('@@@@scrollToMessage highlight 2', messageHash, index)
-            this.$refs.conversation.scrollToItem(index)
-          }
+          this.$refs.conversation.scrollToItem(index)
         }
       }
 
@@ -1268,7 +1263,6 @@ export default ({
         this.$nextTick(() => {
           this.scrollToInitialPosition()
         })
-        return
       } else {
         const conversation = this.$refs.conversation?.$el
         if (!conversation) {
@@ -1295,51 +1289,7 @@ export default ({
           console.error('@@@@rerenderEvents 5 --', topMessage.hash, newTopMessage)
           this.scrollToMessage(topMessage.hash, false)
         })
-        if (isNaN(NaN)) return
       }
-
-      // See https://github.com/Akryum/vue-virtual-scroller/issues/728#issuecomment-1150998238
-      const conversation = this.$refs.conversation?.$el
-      if (!conversation) return
-      const contractID = this.ephemeral.renderingChatRoomId
-      const oldScrollHeight = conversation.scrollHeight
-      const oldClientHeight = conversation.clientHeight
-      const oldScrollTop = conversation.scrollTop
-      // `ref` is used to distinguish between different invocations
-      const ref = { r: Math.random() }
-      this.ephemeral.rerenderRef = ref
-      conversation.style.overflow = 'hidden'
-      const direction = ''
-      // const pos = conversation.scrollHeight - conversation.scrollTop
-
-      // if (!this.ephemeral.maintainCurrentPosition) {
-      this.$nextTick(() => {
-        conversation.style.overflow = ''
-        if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
-        if (oldScrollTop < 5 && oldClientHeight < oldScrollHeight) {
-          setTimeout(() => {
-            console.error('@@@@rerenderEvents 1', Math.min(conversation.scrollHeight - conversation.clientHeight, 20))
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
-            conversation.scroll(0, 20)
-          }, 0)
-        } else if (oldClientHeight >= oldScrollHeight) {
-          console.error('@@@@rerenderEvents 2')
-          setTimeout(() => {
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
-            this.jumpToLatest('instant')
-          }, 0)
-        } else if (direction === 'top') {
-          if (topMessage) {
-            console.error('@@@@rerenderEvents 3', topMessage)
-            if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight || this.ephemeral.rerenderRef !== ref) return
-            this.scrollToMessage(topMessage.hash, false)
-          } else {
-            console.error('@@@@rerenderEvents 4')
-            conversation.scroll(0, conversation.scrollHeight + oldScrollTop - oldScrollHeight)
-          }
-        }
-        // console.error('@@@@rerenderEvents', oldScrollTop < 5 && oldClientHeight < oldScrollHeight, 'oST', oldScrollTop, 'oSH', oldScrollHeight, 'oCH', oldClientHeight, 'cSH', conversation.scrollHeight, 'cCH', conversation.clientHeight, conversation.scrollTop, scrollTop)
-      })
     },
     scrollToInitialPosition () {
       console.error('@@@@scrollToInitialPosition', this.ephemeral.initialScroll.hash)
