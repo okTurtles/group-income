@@ -140,7 +140,6 @@
     "load-grunt-tasks": "5.1.0",
     "lru-cache": "7.14.0",
     "marked": "11.1.1",
-    "multiformats": "13.3.7",
     "pino": "8.19.0",
     "pino-pretty": "10.3.1",
     "portal-vue": "2.1.7",

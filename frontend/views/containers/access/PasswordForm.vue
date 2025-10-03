@@ -46,14 +46,14 @@ component.field(:is='mode === "manual" ? "label" : "div"')
 </template>
 
 <script>
-import { base58btc } from 'multiformats/bases/base58'
+import { base58btc } from '@chelonia/multiformats/bases/base58'
 import Tooltip from '@components/Tooltip.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { L } from '@common/common.js'
 
 function generateBase58Password (length = 32) {
   const bytes = crypto.getRandomValues(new Uint8Array((length)))
-  const encoded = base58btc.encode(bytes).substring(1) // remove the prefix 'z'
+  const encoded = base58btc.baseEncode(bytes)
 
   // Truncate to desired length
   return encoded.slice(0, length)
@@ -110,8 +110,9 @@ export default ({
     generateRandomPassword (pwLen = 32) {
       let genPassword = ''
 
-      if (window.Cypress) {
-        // For easier debugging, use the common default password in Cypress test.
+      if (process.env.CI || (Math.random() > 1 && process.env.NODE_ENV !== 'production')) {
+        // For easier debugging/development, use the common default password when running in non-production environments.
+        // Comment out process.env.NODE_ENV !== 'production' though if you need to use/test the safe auto-generated password feature in local development.
         genPassword = '123456789'
       } else {
         genPassword = generateBase58Password(pwLen)
