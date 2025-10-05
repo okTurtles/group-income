@@ -233,10 +233,12 @@ const onChatScroll = function (ev) {
     for (const msg of iterator) {
       if (msg.pending || msg.hasFailed) continue
 
-      sbp('okTurtles.events/emit', NEW_CHATROOM_SCROLL_POSITION, {
-        chatRoomID: this.ephemeral.renderingChatRoomId,
-        messageHash: msg.hash
-      })
+      if (msg.hash !== this.currentChatRoomScrollPosition) {
+        sbp('okTurtles.events/emit', NEW_CHATROOM_SCROLL_POSITION, {
+          chatRoomID: this.ephemeral.renderingChatRoomId,
+          messageHash: msg.hash
+        })
+      }
       break
     }
   } else if (this.currentChatRoomScrollPosition && this.ephemeral.currentHighestHeight === this.latestHeight) {
