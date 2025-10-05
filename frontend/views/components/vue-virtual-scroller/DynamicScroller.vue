@@ -111,7 +111,7 @@ export default {
   },
   methods: {
     scrollToItem (index: number) {
-      this.$el.querySelector('.vue-recycle-scroller__item-view:nth-child(' + index + ')')?.scrollIntoView()
+      this.$el.querySelector('.vue-recycle-scroller__item-view:nth-child(' + (index + 1) + ')')?.scrollIntoView()
     }
   }
 }

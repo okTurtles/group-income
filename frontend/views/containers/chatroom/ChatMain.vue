@@ -176,8 +176,6 @@ const enqueue = function (fn) {
   })
 }
 
-// const xdebounce = (x, ..._) => x
-
 // The following methods are wrapped inside `debounce`, which requires calling
 // flush before the references used go away, like when switching groups.
 // Vue.js binds methods, which means that properties like `.flush` become
@@ -480,9 +478,17 @@ export default ({
       // // const messages = this.ephemeral.messages.slice(scroller?.$_startIndex ?? 0, scroller?.$_endIndex ?? this.ephemeral.messages.length)
       const messages = this.ephemeral.messages
 
-      for (let i = 0; i < messages.length; i++) {
+      let i = 0
+      for (; i < messages.length; i++) {
         const msg = messages[i]
         if (!this.isMessageVisible(msg.hash)) continue
+        yield msg
+        break
+      }
+
+      for (; i < messages.length; i++) {
+        const msg = messages[i]
+        if (!this.isMessageVisible(msg.hash)) break
         yield msg
       }
     },
@@ -886,7 +892,7 @@ export default ({
         if (effect) {
           this.$nextTick(() => {
             if (this.chatroomHasSwitchedFrom(contractID)) return
-            this.$refs.conversation.scrollToItem(index)
+            this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
               if (this.ephemeral.focusedEffect !== messageHash) return
