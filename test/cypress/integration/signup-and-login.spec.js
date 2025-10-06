@@ -4,10 +4,14 @@ describe('Signup, Profile and Login', () => {
   // users and groups that are created during test...
   const userId = performance.now().toFixed(20).replace('.', '')
   const username = `user1-${userId}`
+  const pwStore = {} // { username: password }
 
   it('user1 signups and creates a group', () => {
     cy.visit('/')
     cy.giSignup(username)
+    cy.window().then(win => {
+      pwStore[username] = win.sessionStorage.getItem(`cy__pw__${username}`)
+    })
 
     cy.giCreateGroup('Dreamers', { bypassUI: true })
     cy.getByDT('profileName').should('contain', username)
@@ -15,7 +19,7 @@ describe('Signup, Profile and Login', () => {
 
   it('user1 does logout and login again', () => {
     cy.giLogout()
-    cy.giLogin(username)
+    cy.giLogin(username, { password: pwStore[username] })
   })
 
   it('user1 changes avatar and profile settings', () => {
@@ -55,25 +59,32 @@ describe('Signup, Profile and Login', () => {
 
   it('sign up button remains disabled if terms are not agreed or you have not saved the password', () => {
     const user2 = `user2-${userId}`
-    const password = '123456789'
 
     cy.getByDT('signupBtn').click()
 
     cy.getByDT('signName').type(user2)
-    cy.getByDT('password').should('have.text', password)
+    // Auto-generated password should be 32 characters long.
+    cy.getByDT('password').invoke('val').should('have.length', 32)
     cy.getByDT('signSubmit').should('be.disabled')
 
     cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
+    cy.getByDT('signSubmit').should('be.disabled')
+
+    // 1. Clicking the copy password button is mandatory to enable the sign up button.
+    cy.getByDT('copyPassword').click()
     cy.getByDT('signSubmit').should('not.be.disabled')
 
+    // 2. If the terms and conditions checkbox is unchecked, the sign up button gets disabled.
     cy.getByDT('signTerms').uncheck({ force: true }).should('not.be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
+    // 3. If the saved password checkbox is unchecked, the sign up button gets disabled.
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
     cy.getByDT('savedPassword').uncheck({ force: true }).should('not.be.checked')
     cy.getByDT('signSubmit').should('be.disabled')
 
+    // Once all conditions for 1, 2 and 3 above are met, the sign up button becomes enabled.
     cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
     cy.getByDT('signSubmit').should('not.be.disabled')
 
@@ -119,11 +130,13 @@ describe('Signup, Profile and Login', () => {
   })
 
   it('change user password', () => {
-    cy.giLogin(username)
+    const oldPassword = pwStore[username]
+    const newPassword = 'abcdefghi'
+
+    cy.giLogin(username, { password: oldPassword })
     cy.getByDT('settingsBtn').click()
     cy.getByDT('passwordBtn').click()
-    const oldPassword = '123456789'
-    const newPassword = 'abcdefghi'
+
     cy.getByDT('PasswordModal').within(() => {
       cy.getByDT('current').type('{selectall}{del}' + oldPassword)
       cy.getByDT('newPassword').type('{selectall}{del}' + newPassword)

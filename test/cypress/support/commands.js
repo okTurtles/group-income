@@ -207,8 +207,15 @@ Cypress.Commands.add('giSignup', (username, {
       cy.getByDT('signupBtn').click()
     }
     cy.getByDT('signName').type('{selectall}{del}' + username)
-    cy.getByDT('password').should('have.text', password)
+    // If bypassUI option is not used, check if the auto-generated password is 32 characters long.
+    cy.getByDT('password').invoke('val').then(pw => {
+      expect(pw).to.have.length(32)
+      cy.window().then(win => {
+        win.sessionStorage.setItem(`cy__pw__${username}`, pw)
+      })
+    })
 
+    cy.getByDT('copyPassword').click()
     cy.getByDT('savedPassword').check({ force: true }).should('be.checked')
     cy.getByDT('signTerms').check({ force: true }).should('be.checked')
 

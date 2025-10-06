@@ -18,6 +18,7 @@ component.field(:is='mode === "manual" ? "label" : "div"')
     .addons
       button.is-success.c-copy-btn(
         type='button'
+        data-test='copyPassword'
         @click.stop='copyPassword'
       )
         span.c-copied(v-if='ephemeral.showCopyFeedback')
