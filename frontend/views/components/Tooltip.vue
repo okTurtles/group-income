@@ -375,18 +375,7 @@ export default ({
 
 .c-tooltip,
 .c-anchored-tooltip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  min-width: 3rem;
-  max-width: 12rem;
-  border-radius: $radius;
-  padding: 0.5rem;
-  z-index: $zindex-tooltip;
-  pointer-events: none;
-  background-color: $text_0;
-  opacity: 0.95;
-  color: $background_0;
+  @include tooltip-style-common;
 
   &.has-text-center {
     text-align: center;
