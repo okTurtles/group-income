@@ -256,9 +256,6 @@ export default ({
     const mincomeCurrency = getters.groupMincomeCurrency
     return mincomeCurrency && currencies[mincomeCurrency]
   },
-  groupMincomeFormatted (state, getters) {
-    return getters.withGroupCurrency?.(getters.groupMincomeAmount)
-  },
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },

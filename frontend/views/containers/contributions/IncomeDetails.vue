@@ -79,6 +79,7 @@ import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 import PaymentMethods from './PaymentMethods.vue'
 import NonMonetaryPledges from './NonMonetaryPledges.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -117,13 +118,16 @@ export default ({
       'groupSettings',
       'groupProfile',
       'groupProfiles',
-      'groupMincomeFormatted',
+      'groupMincomeAmount',
       'groupMincomeSymbolWithCode',
       'ourIdentityContractId',
       'withGroupCurrency',
       'ourGroupProfile',
       'usernameFromID'
     ]),
+    groupMincomeFormatted () {
+      return withGroupCurrency(this.groupMincomeAmount)
+    },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },
