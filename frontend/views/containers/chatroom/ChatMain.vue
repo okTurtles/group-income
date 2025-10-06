@@ -1626,6 +1626,10 @@ export default ({
             primaryButton: L('Close')
           })
         }
+        // In case of an error here, we want CI to fail.
+        if (process.env.CI) {
+          throw e
+        }
       }
     }, 250)
   },
