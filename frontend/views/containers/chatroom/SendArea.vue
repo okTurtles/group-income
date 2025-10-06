@@ -262,7 +262,7 @@
       ref='mask'
     )
 
-    create-poll.c-poll(ref='poll')
+    create-poll.c-poll(ref='poll' @created-poll='$emit("jump-to-latest")')
 </template>
 
 <script>

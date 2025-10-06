@@ -148,7 +148,9 @@ export default {
   },
   mounted () {
     if (this.shouldPreviewImages) {
-      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment))
+      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment).catch(e => {
+        console.error('[ChatAttachmentPreview/mounted] Error', e)
+      }))
       Promise.all(promiseToRetrieveURLs).then(urls => {
         this.objectURLList = urls
       })
