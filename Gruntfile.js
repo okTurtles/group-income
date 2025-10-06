@@ -43,6 +43,7 @@ const {
   LIGHTWEIGHT_CLIENT = 'true',
   MAX_EVENTS_AFTER = '',
   NODE_ENV = 'development',
+  UNSAFE_HARDCODED_TEST_PASSWORD = 'false',
   EXPOSE_SBP = '',
   ENABLE_UNSAFE_NULL_CRYPTO = 'false',
   UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS = 'false'
@@ -227,6 +228,7 @@ module.exports = (grunt) => {
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
+        'process.env.UNSAFE_HARDCODED_TEST_PASSWORD': `'${UNSAFE_HARDCODED_TEST_PASSWORD}'`,
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
         'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
         'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`

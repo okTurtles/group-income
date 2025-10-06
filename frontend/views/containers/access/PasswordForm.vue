@@ -4,22 +4,24 @@ component.field(:is='mode === "manual" ? "label" : "div"')
 
   .inputgroup.c-mode-auto(
     v-if='mode === "auto"'
+    :class='{ "password-copied": ephemeral.showCopyFeedback }'
     v-error:[name]=''
   )
-    .input.width-with-single-addon.has-ellipsis.c-auto-password(
+    input.input.width-with-single-addon.has-ellipsis.c-auto-password(
       :data-test='name'
-    ) {{ ephemeral.randomPassword }}
+      :value='ephemeral.randomPassword'
+      :disabled='true'
+    )
 
     .addons
       button.is-success.c-copy-btn(
         type='button'
         @click.stop='copyPassword'
       )
-        i18n Copy
-
-    i18n.c-feedback(
-      v-if='ephemeral.showCopyFeedback'
-    ) Copied to clipboard!
+        span.c-copied(v-if='ephemeral.showCopyFeedback')
+          i.icon-check-circle
+          i18n Copied
+        i18n.c-copy(v-else) Copy
 
   .inputgroup(
     v-else
@@ -67,9 +69,11 @@ export default ({
   data () {
     return {
       isLock: true,
+      pwCopyTimeoutId: null,
       ephemeral: {
         randomPassword: '',
-        showCopyFeedback: false
+        showCopyFeedback: false,
+        passwordCopied: false
       }
     }
   },
@@ -110,9 +114,9 @@ export default ({
     generateRandomPassword (pwLen = 32) {
       let genPassword = ''
 
-      if (process.env.CI || (Math.random() > 1 && process.env.NODE_ENV !== 'production')) {
-        // For easier debugging/development, use the common default password when running in non-production environments.
-        // Comment out process.env.NODE_ENV !== 'production' though if you need to use/test the safe auto-generated password feature in local development.
+      if (process.env.NODE_ENV !== 'production' && process.env.UNSAFE_HARDCODED_TEST_PASSWORD === 'true') {
+        // We can optionally use a hardcoded test password for easier debugging/development
+        // so there is no need to memorize random passwords generated for each new account.
         genPassword = '123456789'
       } else {
         genPassword = generateBase58Password(pwLen)
@@ -126,10 +130,15 @@ export default ({
       const copyToClipBoard = () => {
         navigator.clipboard.writeText(pw)
         this.ephemeral.showCopyFeedback = true
+        this.ephemeral.passwordCopied = true
 
-        setTimeout(() => {
+        if (this.pwCopyTimeoutId) {
+          clearTimeout(this.pwCopyTimeoutId)
+        }
+
+        this.pwCopyTimeoutId = setTimeout(() => {
           this.ephemeral.showCopyFeedback = false
-        }, 1500)
+        }, 2000)
       }
 
       if (navigator.share) {
@@ -162,7 +171,7 @@ export default ({
   .c-auto-password {
     display: block;
     line-height: 2.75rem;
-    padding-right: 5.5rem;
+    padding-right: 5rem;
   }
 
   .addons {
@@ -180,14 +189,24 @@ button.c-copy-btn {
   min-height: unset;
   height: 1.75rem;
   border-radius: 3px;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  overflow: hidden;
+
+  .c-copied {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
 }
 
-.c-feedback {
-  @include tooltip-style-common;
-  top: calc(100% + 0.5rem);
-  left: 50%;
-  transform: translateX(-50%);
+.password-copied {
+  .c-auto-password {
+    padding-right: 7rem;
+  }
+
+  button.c-copy-btn {
+    padding-left: 0.75rem;
+  }
 }
 </style>
