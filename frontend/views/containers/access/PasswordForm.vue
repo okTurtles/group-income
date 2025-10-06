@@ -7,7 +7,7 @@ component.field(:is='mode === "manual" ? "label" : "div"')
     :class='{ "password-copied": ephemeral.showCopyFeedback }'
     v-error:[name]=''
   )
-    input.input.width-with-single-addon.c-auto-password(
+    input.input.with-single-addon.c-auto-password(
       :class='{ "blurred-text has-ellipsis": ephemeral.pwMode === "text" }'
       :type='ephemeral.pwMode'
       :data-test='name'
@@ -89,7 +89,7 @@ export default ({
     },
     mode: {
       type: String,
-      requried: false,
+      required: false,
       default: 'manual' // 'manual' | 'auto'
     },
     label: {
