@@ -17,9 +17,10 @@ form(data-test='signup' @submit.prevent='')
   .c-auto-password-field-container
     password-form(
       mode='auto'
-      :label='L("This is your password. Save it now.")'
       name='password'
+      :label='L("This is your password. Save it now.")'
       :$v='$v'
+      @password-copied='onPasswordCopied'
     )
 
   .c-confirm-check-container
@@ -51,7 +52,7 @@ form(data-test='signup' @submit.prevent='')
     button-submit(
       @click='signup'
       data-test='signSubmit'
-      :disabled='$v.form.$invalid'
+      :disabled='$v.form.$invalid || !ephemeral.passwordCopied'
     ) {{ L('Create an account') }}
 </template>
 
@@ -125,6 +126,9 @@ export default ({
         terms: false,
         pictureBase64: ''
       },
+      ephemeral: {
+        passwordCopied: false
+      },
       linkToTerms: ALLOWED_URLS.TERMS_PAGE,
       usernameAsyncValidation: {
         timer: null,
@@ -133,6 +137,9 @@ export default ({
     }
   },
   methods: {
+    onPasswordCopied () {
+      this.ephemeral.passwordCopied = true
+    },
     async signup () {
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('The form is invalid.'))

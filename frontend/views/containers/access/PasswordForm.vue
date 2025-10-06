@@ -7,7 +7,9 @@ component.field(:is='mode === "manual" ? "label" : "div"')
     :class='{ "password-copied": ephemeral.showCopyFeedback }'
     v-error:[name]=''
   )
-    input.input.width-with-single-addon.has-ellipsis.c-auto-password(
+    input.input.width-with-single-addon.c-auto-password(
+      :class='{ "blurred-text has-ellipsis": ephemeral.pwMode === "text" }'
+      :type='ephemeral.pwMode'
       :data-test='name'
       :value='ephemeral.randomPassword'
       :disabled='true'
@@ -73,7 +75,7 @@ export default ({
       ephemeral: {
         randomPassword: '',
         showCopyFeedback: false,
-        passwordCopied: false
+        pwMode: 'text'
       }
     }
   },
@@ -130,12 +132,10 @@ export default ({
       const copyToClipBoard = () => {
         navigator.clipboard.writeText(pw)
         this.ephemeral.showCopyFeedback = true
-        this.ephemeral.passwordCopied = true
+        this.ephemeral.pwMode = 'password'
+        this.$emit('password-copied')
 
-        if (this.pwCopyTimeoutId) {
-          clearTimeout(this.pwCopyTimeoutId)
-        }
-
+        clearTimeout(this.pwCopyTimeoutId)
         this.pwCopyTimeoutId = setTimeout(() => {
           this.ephemeral.showCopyFeedback = false
         }, 2000)
@@ -168,21 +168,23 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-mode-auto {
+  position: relative;
+
   .c-auto-password {
     display: block;
     line-height: 2.75rem;
     padding-right: 5rem;
+
+    &.blurred-text {
+      color: transparent;
+      text-shadow: 0 0 4px rgba(54, 54, 54, 0.725);
+    }
   }
 
   .addons {
     align-items: center;
     right: 0.5rem;
   }
-}
-
-.icon {
-  cursor: pointer;
-  pointer-events: initial !important;
 }
 
 button.c-copy-btn {
@@ -208,5 +210,9 @@ button.c-copy-btn {
   button.c-copy-btn {
     padding-left: 0.75rem;
   }
+}
+
+.is-dark-theme .c-auto-password.blurred-text {
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.685);
 }
 </style>
