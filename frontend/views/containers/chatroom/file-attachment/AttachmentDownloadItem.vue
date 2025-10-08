@@ -15,8 +15,8 @@
       :src='mediaObjectURL'
       :alt='attachment.name'
       @click='attachmentUtils.openImageViewer(mediaObjectURL)'
-      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.IMAGE)'
-      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.IMAGE)'
+      @load='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
+      @error='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
     )
     .loading-box(v-else :style='ephemeral.imgLoadingBoxStyles')
 
@@ -26,11 +26,14 @@
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
-      @load='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.VIDEO)'
-      @error='attachmentUtils.onMediaSrcSettled(mediaObjectURL, config.CHATROOM_ATTACHMENT_TYPES.VIDEO)'
       mode='simple'
     )
-    .loading-box.c-video-loading(v-else)
+    template(v-else)
+      .loading-box.c-video-loading(v-if='isVideoStatus("loading")')
+      .c-video-details(v-else-if='isVideoStatus("idle")')
+        i18n Todo - video details
+      .c-c-video-error(v-else-if='isVideoStatus("error")')
+        i18n Todo - video error
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -108,10 +111,10 @@ export default {
   data () {
     return {
       ephemeral: {
-        imgLoadingBoxStyles: {}
-      },
-      config: {
-        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+        imgLoadingBoxStyles: {},
+        videoData: {
+          loadingStatus: 'idle' // 'idle', 'loading', 'error'
+        }
       }
     }
   },
@@ -141,6 +144,9 @@ export default {
   methods: {
     fileSizeDisplay ({ size }) {
       return size ? formatBytesDecimal(size) : ''
+    },
+    isVideoStatus (status) {
+      return this.ephemeral.videoData.loadingStatus === status
     },
     getDownloadTooltipText ({ size }) {
       return this.isImage
@@ -352,12 +358,20 @@ export default {
   background-color: $general_2;
   padding: 0.5rem;
 
-  .c-video-loading {
+  .c-video-loading,
+  .c-video-details,
+  .c-video-error {
     position: relative;
     width: 100%;
     aspect-ratio: 16/9;
     border-radius: 0;
     margin-bottom: 0;
+  }
+
+  .c-video-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .c-video-player {

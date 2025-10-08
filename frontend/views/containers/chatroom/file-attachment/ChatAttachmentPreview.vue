@@ -116,10 +116,7 @@ export default {
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
         [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
       },
-      settledMediaURLList: {
-        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
-        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
-      },
+      settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
       }
@@ -140,9 +137,14 @@ export default {
 
       return collections
     },
+    hasImgAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length > 0
+    },
+    hasVideoAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
+    },
     hasMediaAttachments () {
-      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length > 0 ||
-        this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
+      return this.hasImgAttachments || this.hasVideoAttachments
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -156,14 +158,13 @@ export default {
   },
   mounted () {
     if (this.hasMediaAttachments) {
-      for (const mediaType of [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]) {
-        const attachments = this.sortedAttachments[mediaType]
-        if (attachments.length > 0) {
-          const promiseToRetrieveURLs = attachments.map(attachment => this.getAttachmentObjectURL(attachment))
-          Promise.all(promiseToRetrieveURLs).then(urls => {
-            this.mediaObjectURLList[mediaType] = urls
-          })
-        }
+      if (this.hasImgAttachments) {
+        const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
+          .map(attachment => this.getAttachmentObjectURL(attachment))
+
+        Promise.all(promiseToRetrieveURLs).then(urls => {
+          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
+        })
       }
 
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
@@ -295,17 +296,11 @@ export default {
         }
       )
     },
-    onMediaSrcSettled (url, fileType) {
-      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
-      if (this.isForDownload && mediaTypes.includes(fileType)) {
-        this.settledMediaURLList[fileType] = uniq([...this.settledMediaURLList[fileType], url])
+    onImageSrcSettled (url) {
+      this.settledImgURLList = uniq([...this.settledImgURLList, url])
 
-        if (mediaTypes.every(type => this.sortedAttachments[type].length === this.settledMediaURLList[type].length)) {
-          // Check if all media attachments are loaded in the DOM, notify the parent component.
-          // (This can be enhanced to something like sbp('okTurtles.events/emit', MEDIA_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
-          //  if this becomes useful in more places.)
-          this.$nextTick(() => this.$emit('media-attachments-render-complete'))
-        }
+      if (this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length === this.settledImgURLList.length) {
+        this.$nextTick(() => this.$emit('image-attachments-render-complete'))
       }
     },
     getAttachmentId (attachment) {
@@ -353,7 +348,7 @@ export default {
         getAttachmentObjectURL: this.getAttachmentObjectURL,
         openImageViewer: this.openImageViewer,
         openVideoViewer: this.openVideoViewer,
-        onMediaSrcSettled: this.onMediaSrcSettled
+        onImageSrcSettled: this.onImageSrcSettled
       }
     }
   }
