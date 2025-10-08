@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-attachment-download-item
+.c-attachment-download-item(:class='{ "is-video": isVideo }')
   .c-non-media-card(v-if='!isMediaType')
     .c-non-media-icon
       i.icon-file
@@ -7,7 +7,7 @@
       .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
       .c-file-ext-and-size
         .c-file-ext {{ fileExt }}
-        .c-file-size(v-if='attachment.size') {{ fileSizeDisplay(attachment) }}
+        .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
 
   .c-image-card(v-else-if='isImage')
     img(
@@ -23,17 +23,27 @@
   .c-video-card(v-else-if='isVideo')
     video-player.c-video-player(
       ref='videoPlayer'
-      v-if='mediaObjectURL'
+      v-if='isVideoPlayable'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
       mode='simple'
     )
     template(v-else)
-      .loading-box.c-video-loading(v-if='isVideoStatus("loading")')
-      .c-video-details(v-else-if='isVideoStatus("idle")')
-        i18n Todo - video details
-      .c-c-video-error(v-else-if='isVideoStatus("error")')
-        i18n Todo - video error
+      .c-video-details
+        i.icon-video.c-video-icon(v-if='isVideoStatus("idle")')
+        i.icon-exclamation-triangle.c-video-icon.is-error(v-else-if='isVideoStatus("error")')
+        .c-video-icon(v-else-if='isVideoStatus("loading")')
+          .c-spinner
+
+        .c-details-text
+          .c-filename.has-ellipsis(:title='attachment.name') {{ attachment.name }}
+          .c-filesize {{ fileSizeDisplay }}
+
+        button.is-small.is-outlined.c-load-video-button(
+          :class='{ "is-loading": isVideoStatus("loading"), "is-danger": isVideoStatus("error") }'
+          type='button'
+          @click.stop='loadVideo'
+        ) {{ getLoadBtnText(ephemeral.videoData.loadingStatus) }}
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -65,7 +75,7 @@
           i.icon-trash-alt
 
       tooltip(
-        v-if='isVideo'
+        v-if='isVideoPlayable'
         direction='top'
         :text='L("Expand")'
       )
@@ -128,11 +138,17 @@ export default {
     isVideo () {
       return this.fileType === CHATROOM_ATTACHMENT_TYPES.VIDEO
     },
+    isVideoPlayable () {
+      return this.isVideo && this.mediaObjectURL
+    },
     isMediaType () {
       return this.isImage || this.isVideo
     },
     fileExt () {
       return getFileExtension(this.attachment.name, true)
+    },
+    fileSizeDisplay () {
+      return this.attachment.size ? formatBytesDecimal(this.attachment.size) : ''
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -142,9 +158,6 @@ export default {
     }
   },
   methods: {
-    fileSizeDisplay ({ size }) {
-      return size ? formatBytesDecimal(size) : ''
-    },
     isVideoStatus (status) {
       return this.ephemeral.videoData.loadingStatus === status
     },
@@ -166,6 +179,16 @@ export default {
           initialTime: this.getVideoCurrentTime()
         })
       }
+    },
+    getLoadBtnText (status) {
+      return ({
+        loading: L('Loading...'),
+        error: L('Retry'),
+        idle: L('Load video')
+      })[status]
+    },
+    loadVideo () {
+      console.log('TODO: Load video.')
     }
   },
   mounted () {
@@ -178,6 +201,8 @@ export default {
 
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
+
+$mobile-narrow: 441px;
 
 .c-attachment-download-item {
   position: relative;
@@ -197,6 +222,11 @@ export default {
   &:active,
   &:focus {
     border-color: $text_0;
+  }
+
+  &.is-video {
+    display: block;
+    max-width: 28.25rem;
   }
 }
 
@@ -358,7 +388,6 @@ export default {
   background-color: $general_2;
   padding: 0.5rem;
 
-  .c-video-loading,
   .c-video-details,
   .c-video-error {
     position: relative;
@@ -372,10 +401,95 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    row-gap: 0.25rem;
+    background-color: $background_0;
+    min-width: 0;
+
+    @include from($mobile-narrow) {
+      row-gap: 0.75rem;
+    }
+
+    .c-video-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.725rem;
+      line-height: 1;
+      height: 1.75rem;
+      width: 1.75rem;
+      border-radius: 50%;
+      background-color: $general_2;
+
+      &.is-error {
+        background-color: $danger_0;
+        color: $danger_2;
+      }
+
+      @include from($mobile-narrow) {
+        height: 2.75rem;
+        width: 2.75rem;
+        font-size: 1.125rem;
+      }
+    }
+
+    .c-details-text {
+      position: relative;
+      min-width: 0;
+      width: 100%;
+      text-align: center;
+      padding: 0 0.75rem;
+      font-size: $size_5;
+      line-height: 1.275;
+
+      .c-filesize {
+        color: $text_1;
+        font-size: 0.85em;
+      }
+
+      @include from($mobile-narrow) {
+        font-size: $size_4;
+        line-height: 1.4;
+      }
+    }
+
+    button.c-load-video-button {
+      &.is-loading {
+        pointer-events: none;
+        cursor: not-allowed;
+      }
+
+      @include until($mobile-narrow) {
+        min-height: 1.4rem;
+        font-size: $size_5;
+        margin-top: 0.25rem;
+      }
+    }
+
+    .c-spinner {
+      position: relative;
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: video-loader-spin 1.75s infinite linear;
+
+      @include from($mobile-narrow) {
+        width: 1rem;
+        height: 1rem;
+      }
+    }
   }
 
   .c-video-player {
     border-radius: inherit;
   }
+}
+
+@keyframes video-loader-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

@@ -467,4 +467,9 @@ export default {
   flex-wrap: wrap;
   gap: 1rem;
 }
+
+.c-video-card-container {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
 </style>

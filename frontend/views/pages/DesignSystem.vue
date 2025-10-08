@@ -225,6 +225,7 @@ page(
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
               i.icon-user-minus icon-user-minus
+              i.icon-video icon-video
               i.icon-vote-yea icon-vote-yea
               i.icon-wifi icon-wifi
               i.icon-hashtag icon-hashtag
