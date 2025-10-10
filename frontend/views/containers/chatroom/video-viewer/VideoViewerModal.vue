@@ -6,17 +6,18 @@
     @mouseleave='onMouseLeave'
   )
     header.c-modal-header(:class='{ "is-hidden": ephemeral.hideCtas.header }')
-      avatar-user.c-avatar(
-        v-if='currentVideo.ownerID'
-        :contractID='currentVideo.ownerID'
-        size='sm'
-      )
+      template(v-if='currentVideo')
+        avatar-user.c-avatar(
+          v-if='currentVideo.ownerID'
+          :contractID='currentVideo.ownerID'
+          size='sm'
+        )
 
-      .media-data
-        .name.has-ellipsis {{ displayName }}
-        .filename-and-size
-          .filename.has-ellipsis {{ currentVideo.name }}
-          .file-size {{ displayFilesize(currentVideo.size) }}
+        .media-data
+          .name.has-ellipsis {{ displayName }}
+          .filename-and-size
+            .filename.has-ellipsis {{ currentVideo.name }}
+            .file-size {{ displayFilesize(currentVideo.size) }}
 
       button.is-icon-small.c-close-btn(
         type='button'
@@ -26,6 +27,7 @@
 
     section.c-video-viewer-body
       video-player.c-video-player(
+        v-if='currentVideo'
         ref='videoPlayer'
         :key='currentVideo.videoUrl'
         :src='currentVideo.videoUrl'
@@ -174,6 +176,11 @@ export default {
       if (this.ephemeral.currentIndex > 0) {
         this.ephemeral.currentIndex -= 1
       }
+    },
+    keyUpHandler (e) {
+      if (e.code === 'Space') {
+        this.$refs.videoPlayer.togglePlay()
+      }
     }
   },
   created () {
@@ -186,10 +193,14 @@ export default {
       this.initMatchMedia()
     }
   },
+  mounted () {
+    window.addEventListener('keyup', this.keyUpHandler)
+  },
   beforeDestroy () {
     if (this.matchMedia.handler) {
       this.matchMedia.handler.onchange = null
     }
+    window.removeEventListener('keyup', this.keyUpHandler)
   }
 }
 </script>
@@ -200,6 +211,10 @@ export default {
 
 .c-video-viewer-modal {
   @include media-viewer-modal-container($zindex:$zindex-modal);
+
+  .is-dark-theme & {
+    --viewer-bg-color: var(--general_2);
+  }
 }
 
 .c-video-viewer-content {

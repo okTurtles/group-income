@@ -87,6 +87,9 @@ export default {
     play () {
       this.config.player.play()
     },
+    togglePlay () {
+      this.config.player.togglePlay()
+    },
     isPlaying () {
       return this.config.player.playing
     }
