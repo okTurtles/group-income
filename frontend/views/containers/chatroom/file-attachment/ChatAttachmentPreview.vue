@@ -22,7 +22,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
-        @download='downloadAttachment(entry)'
+        @download='downloadAttachment(entry, mediaObjectURLList.image[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
       )
 
@@ -34,7 +34,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
-        @download='downloadAttachment(entry)'
+        @download='downloadAttachment(entry, mediaObjectURLList.video[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.VIDEO })'
       )
 
@@ -157,16 +157,21 @@ export default {
     }
   },
   mounted () {
+    if (this.hasImgAttachments) {
+      const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
+        .map(attachment => this.getAttachmentObjectURL(attachment))
+
+      Promise.all(promiseToRetrieveURLs).then(urls => {
+        this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
+      })
+    }
+
+    if (this.hasVideoAttachments) {
+      this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+        .map(attachment => attachment.url || '')
+    }
+
     if (this.hasMediaAttachments) {
-      if (this.hasImgAttachments) {
-        const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
-          .map(attachment => this.getAttachmentObjectURL(attachment))
-
-        Promise.all(promiseToRetrieveURLs).then(urls => {
-          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
-        })
-      }
-
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
@@ -203,6 +208,21 @@ export default {
       } else if (attachment.downloadData) {
         const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
         return URL.createObjectURL(blob)
+      }
+    },
+    async loadVideoObjectURL (attachment) {
+      const downloadData = attachment.downloadData
+
+      if (downloadData?.manifestCid) {
+        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
+        const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+          .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
+
+        if (index >= 0) {
+          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO].map((url, i) => {
+            return i === index ? URL.createObjectURL(blob) : url
+          })
+        }
       }
     },
     async downloadAttachment (attachment, objectURL = null) {
@@ -272,17 +292,20 @@ export default {
       const attachmentDetailsList = this.sortedAttachments[type]
         .map((entry, index) => {
           const mediaURL = entry.url || this.mediaObjectURLList[type][index] || ''
-          return {
-            name: entry.name,
-            ownerID: this.ownerID,
-            createdAt: this.createdAt || new Date(),
-            size: entry.size,
-            mimeType: entry.mimeType,
-            id: mediaURL,
-            [objURLKey]: mediaURL,
-            manifestCid: entry.downloadData?.manifestCid
-          }
-        })
+
+          return mediaURL
+            ? {
+                name: entry.name,
+                ownerID: this.ownerID,
+                createdAt: this.createdAt || new Date(),
+                size: entry.size,
+                mimeType: entry.mimeType,
+                id: mediaURL,
+                [objURLKey]: mediaURL,
+                manifestCid: entry.downloadData?.manifestCid
+              }
+            : null
+        }).filter(Boolean)
       const initialIndex = attachmentDetailsList.findIndex(attachment => attachment[objURLKey] === objectURL)
 
       sbp(
@@ -348,7 +371,8 @@ export default {
         getAttachmentObjectURL: this.getAttachmentObjectURL,
         openImageViewer: this.openImageViewer,
         openVideoViewer: this.openVideoViewer,
-        onImageSrcSettled: this.onImageSrcSettled
+        onImageSrcSettled: this.onImageSrcSettled,
+        loadVideoObjectURL: this.loadVideoObjectURL
       }
     }
   }

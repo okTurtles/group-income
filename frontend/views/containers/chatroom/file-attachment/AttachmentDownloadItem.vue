@@ -43,7 +43,7 @@
           :class='{ "is-loading": isVideoStatus("loading"), "is-danger": isVideoStatus("error") }'
           type='button'
           @click.stop='loadVideo'
-        ) {{ getLoadBtnText(ephemeral.videoData.loadingStatus) }}
+        ) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -122,9 +122,7 @@ export default {
     return {
       ephemeral: {
         imgLoadingBoxStyles: {},
-        videoData: {
-          loadingStatus: 'idle' // 'idle', 'loading', 'error'
-        }
+        videoLoadingStatus: 'idle' // 'idle', 'loading', 'error'
       }
     }
   },
@@ -159,7 +157,7 @@ export default {
   },
   methods: {
     isVideoStatus (status) {
-      return this.ephemeral.videoData.loadingStatus === status
+      return this.ephemeral.videoLoadingStatus === status
     },
     getDownloadTooltipText ({ size }) {
       return this.isImage
@@ -187,8 +185,15 @@ export default {
         idle: L('Load video')
       })[status]
     },
-    loadVideo () {
-      console.log('TODO: Load video.')
+    async loadVideo () {
+      try {
+        this.ephemeral.videoLoadingStatus = 'loading'
+        await this.attachmentUtils.loadVideoObjectURL(this.attachment)
+        this.ephemeral.videoLoadingStatus = 'idle'
+      } catch (err) {
+        console.error('AttachmentDownloadItem.vue caught:', err)
+        this.ephemeral.videoLoadingStatus = 'error'
+      }
     }
   },
   mounted () {
@@ -388,6 +393,10 @@ $mobile-narrow: 441px;
   background-color: $general_2;
   padding: 0.5rem;
 
+  @include from($desktop) {
+    max-width: 30.25rem;
+  }
+
   .c-video-details,
   .c-video-error {
     position: relative;
@@ -403,7 +412,9 @@ $mobile-narrow: 441px;
     align-items: center;
     justify-content: center;
     row-gap: 0.25rem;
-    background-color: $background_0;
+    border-radius: inherit;
+    border: 1px solid $general_0;
+    background-color: $general_1;
     min-width: 0;
 
     @include from($mobile-narrow) {
@@ -419,6 +430,7 @@ $mobile-narrow: 441px;
       height: 1.75rem;
       width: 1.75rem;
       border-radius: 50%;
+      border: 1px solid $general_0;
       background-color: $general_2;
 
       &.is-error {
@@ -457,6 +469,10 @@ $mobile-narrow: 441px;
       &.is-loading {
         pointer-events: none;
         cursor: not-allowed;
+
+        &:focus {
+          box-shadow: none;
+        }
       }
 
       @include until($mobile-narrow) {
@@ -485,6 +501,15 @@ $mobile-narrow: 441px;
 
   .c-video-player {
     border-radius: inherit;
+  }
+}
+
+.is-dark-theme .c-video-details {
+  background-color: $background_0;
+  border: none;
+
+  .c-video-icon {
+    border: none;
   }
 }
 
