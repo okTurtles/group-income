@@ -58,8 +58,6 @@ export default {
   },
   methods: {
     generateVideoThumbnail () {
-      // TODO-1: Check if this works well in iOS Safari.
-      // TODO-2: Display a loading indicator while generating the thumbnail.
       if (!this.isVideo || !this.attachment.url) { return }
 
       this.ephemeral.video.isGeneratingThumbnail = true
@@ -75,26 +73,40 @@ export default {
           }
 
           videoEl.addEventListener('seeked', onSeekSuccess)
-          videoEl.addEventListener('error', () => resolve(false))
         })
+      }
+      const cleanup = () => {
+        videoEl.removeEventListener('loadedmetadata', onLoadMetadata)
+        videoEl.removeEventListener('error', onError)
+        videoEl.src = ''
+      }
+      const onLoadMetadata = async () => {
+        try {
+          // Timestamp to seek here is 1 second or less so the data loads fast.
+          const targetTime = Math.min(1, videoEl.duration / 2)
+          const isSuccess = await seekToTime(targetTime)
+          if (isSuccess) {
+            this.ephemeral.video.thumbnailURL = await this.generateImageURLByCanvas(
+              videoEl, videoEl.videoWidth, videoEl.videoHeight
+            )
+          }
+        } finally {
+          cleanup()
+          this.ephemeral.video.isGeneratingThumbnail = false
+        }
+      }
+      const onError = () => {
+        cleanup()
+        this.ephemeral.video.isGeneratingThumbnail = false
       }
 
       videoEl.preload = 'metadata'
       // NOTE: Some browsers have autoplay restrictions where a video with audio cannot autoplay without user interaction.
       //       Muting the video here is to prevent this issue.
       videoEl.muted = true
+      videoEl.addEventListener('loadedmetadata', onLoadMetadata)
+      videoEl.addEventListener('error', onError)
       videoEl.src = this.attachment.url
-      videoEl.addEventListener('loadedmetadata', async () => {
-        // Timestamp to seek here is 1 second or less so the data loads fast.
-        const targetTime = Math.min(1, videoEl.duration / 2)
-        const isSuccess = await seekToTime(targetTime)
-        if (isSuccess) {
-          this.ephemeral.video.thumbnailURL = await this.generateImageURLByCanvas(
-            videoEl, videoEl.videoWidth, videoEl.videoHeight
-          )
-          this.ephemeral.video.isGeneratingThumbnail = false
-        }
-      })
     },
     async generateImageURLByCanvas (video, width, height) {
       const canvasEl = document.createElement('canvas')

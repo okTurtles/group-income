@@ -191,7 +191,8 @@ export default {
       return getFileType(mimeType)
     },
     deleteAttachment ({ index, url, type }) {
-      if ([CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
+      // If index is not explicitly provided, look up the index by the URL.
+      if (!index && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
         index = this.mediaObjectURLList[type].indexOf(url)
       }
 
@@ -220,7 +221,12 @@ export default {
 
         if (index >= 0) {
           this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO].map((url, i) => {
-            return i === index ? URL.createObjectURL(blob) : url
+            if (i !== index) { return url }
+
+            if (url) {
+              URL.revokeObjectURL(url)
+            }
+            return URL.createObjectURL(blob)
           })
         }
       }
@@ -350,7 +356,7 @@ export default {
               }
             })
             this.mediaObjectURLList[mediaType] = toList.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
-            currentObjectURLList.filter(url => !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
+            currentObjectURLList.filter(url => url && !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
               URL.revokeObjectURL(url)
             })
           } else {

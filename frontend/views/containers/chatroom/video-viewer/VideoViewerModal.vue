@@ -37,18 +37,20 @@
         @pause='onVideoPause'
       )
 
-    button.is-icon.c-image-nav-btn.is-prev(
+    button.is-icon.c-video-nav-btn.is-prev(
       v-if='showPrevButton'
       @click='selectPrevVideo'
-      title='L("Previous")'
+      title='L("Previous video")'
+      aria-label='L("Previous video")'
       type='button'
     )
       i.icon-chevron-left
 
-    button.is-icon.c-image-nav-btn.is-next(
+    button.is-icon.c-video-nav-btn.is-next(
       v-if='showNextButton'
       @click='selectNextVideo'
-      title='L("Next")'
+      title='L("Next video")'
+      aria-label='L("Next video")'
       type='button'
     )
       i.icon-chevron-right
@@ -293,9 +295,11 @@ button.c-close-btn {
   }
 }
 
-button.c-image-nav-btn {
+button.c-video-nav-btn {
   @include media-viewer-navigation-btn;
-  transition: opacity 350ms ease-in-out;
+  transition:
+    opacity 350ms ease-in-out,
+    box-shadow 150ms ease-in-out;
 
   .nav-buttons-hidden & {
     opacity: 0;
@@ -308,6 +312,11 @@ button.c-image-nav-btn {
 
   &.is-next {
     right: 1.5rem;
+  }
+
+  &:hover,
+  &:focus {
+    box-shadow: 0 0 0 2px var(--viewer-cta-box-shadow-color);
   }
 
   @include phone {
