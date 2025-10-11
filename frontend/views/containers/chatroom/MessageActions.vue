@@ -49,11 +49,6 @@
         :aria-label='L("More options")'
       )
         i.icon-ellipsis-h
-      message-actions-mobile(
-        v-if='chatMainConfig.isPhonexx'
-        :options='moreOptions'
-        @select='action'
-      )
       dialog.c-dialog(ref='dialog' @click='clickAway' @close='closeDialog')
         menu-content(:class='{ "is-to-down": isToDown }')
           menu
