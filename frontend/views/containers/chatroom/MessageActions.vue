@@ -44,32 +44,32 @@
       )
         i.icon-undo
 
-    menu-parent(ref='menu' @menu-open='moreOptionsTriggered')
+    menu-parent(ref='menu' @menu-open='moreOptionsTriggered' @menu-close='moreOptionsClosed')
       menu-trigger.is-icon-small(
         :aria-label='L("More options")'
       )
         i.icon-ellipsis-h
       message-actions-mobile(
-        v-if='chatMainConfig.isPhone'
+        v-if='chatMainConfig.isPhonexx'
         :options='moreOptions'
         @select='action'
       )
-      menu-content(v-else :class='{ "is-to-down": isToDown }')
-        menu
-          template(v-for='(option, index) in moreOptions')
-            menu-item.is-icon-small(
-              :key='index'
-              tag='button'
-              :data-test='option.action'
-              @click.stop='action(option.action, $event)'
-            )
-              i(:class='`icon-${option.icon}`')
-              span {{ option.name }}
+      dialog.c-dialog(ref='dialog' @click='clickAway' @close='closeDialog')
+        menu-content(:class='{ "is-to-down": isToDown }')
+          menu
+            template(v-for='(option, index) in moreOptions')
+              menu-item.is-icon-small(
+                :key='index'
+                tag='button'
+                :data-test='option.action'
+                @click.stop='action(option.action, $event)'
+              )
+                i(:class='`icon-${option.icon}`')
+                span {{ option.name }}
 </template>
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
-import MessageActionsMobile from './MessageActionsMobile.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
@@ -78,7 +78,6 @@ export default ({
   name: 'MessageActions',
   inject: ['chatMainConfig'],
   components: {
-    MessageActionsMobile,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -219,19 +218,61 @@ export default ({
         }
       }
     },
+    moreOptionsClosed () {
+      this.$refs.dialog?.close?.()
+    },
     moreOptionsTriggered () {
-      const eleMessage = this.$el.closest('.c-message')
-      const eleParent = eleMessage.closest('.c-body-conversation')
-      const eleMessageCBR = eleMessage.getBoundingClientRect()
-      const eleParentCBR = eleParent.getBoundingClientRect()
-      const heightOfAvailableSpace = eleMessageCBR.top - eleParentCBR.top
-      const heightOfMenuItem = this.isDesktopScreen ? 36 : 54
-      const calculatedMoreOptionsMenuHeight = this.moreOptions.length * heightOfMenuItem + 2 * 8 // 8px = padding of 0.5rem for bottom and top
-      const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
+      this.$refs.dialog.showModal()
 
-      this.isToDown = false
-      if (heightOfAvailableSpace < calculatedHeightOfNeededSpace) {
-        this.isToDown = true
+      const repositionDialog = () => requestAnimationFrame(() => {
+        const dialogEl = this.$refs.dialog
+        if (!dialogEl) return
+        const eleTrigger = this.$el.querySelector('.c-menu summary')
+        const eleTriggerCBR = eleTrigger.getBoundingClientRect()
+
+        const isMobile = !!this.chatMainConfig.isPhone
+
+        if (isMobile) {
+          Object.assign(dialogEl.style, {
+            top: 'auto',
+            right: '0',
+            bottom: '0',
+            left: '0'
+          })
+
+          return
+        }
+
+        const heightOfMenuItem = !isMobile ? 36 : 54
+        const calculatedMoreOptionsMenuHeight = this.moreOptions.length * heightOfMenuItem + 2 * 8 // 8px = padding of 0.5rem for bottom and top
+        const calculatedHeightOfNeededSpace = calculatedMoreOptionsMenuHeight + 32 // 32px = offset
+
+        const isToDown = calculatedHeightOfNeededSpace > eleTriggerCBR.top
+
+        Object.assign(dialogEl.style, {
+          top: isToDown ? `${eleTriggerCBR.bottom}px` : 'auto',
+          right: `calc(100vw - ${eleTriggerCBR.right}px)`,
+          bottom: isToDown ? 'auto' : `calc(100vh - ${eleTriggerCBR.top}px)`,
+          left: 'auto'
+        })
+      })
+
+      repositionDialog()
+      window.addEventListener('resize', repositionDialog, false)
+      const closeHandler = () => {
+        window.removeEventListener('resize', repositionDialog, false)
+        this.$refs.dialog.removeEventListener('close', closeHandler, false)
+      }
+      this.$refs.dialog.addEventListener('close', closeHandler, false)
+    },
+    closeDialog (e) {
+      this.$refs.menu?.closeMenu()
+    },
+    clickAway (e) {
+      if (!(e.target instanceof HTMLDialogElement)) return
+      const BCR = e.target.getBoundingClientRect()
+      if (BCR.top < e.clientY || BCR.bottom > e.clientY || BCR.left < e.clientX || BCR.right > e.clientX) {
+        e.target.close()
       }
     }
   }
@@ -285,6 +326,33 @@ export default ({
 }
 
 .c-menu {
+  .c-dialog {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    background: transparent;
+    min-width: 100%;
+
+    @include tablet {
+      min-width: auto;
+      padding: 0.5rem 0;
+    }
+
+    & .c-content {
+      position: static;
+      overflow: auto;
+    }
+
+    &::backdrop {
+      background-color: rgba(0, 0, 0, 0.7);
+
+      @include tablet {
+        background-color: transparent;
+      }
+    }
+  }
+
   .c-content {
     @include tablet {
       width: 100%;
@@ -305,11 +373,28 @@ export default ({
   }
 
   .c-menuItem ::v-deep .c-item-link {
-    height: 2.31rem;
+    height: 3.43rem;
+    width: 100%;
+    font-family: "Lato";
+    box-sizing: border-box;
+
+    i {
+      margin-right: 1rem;
+    }
+
+    @include tablet {
+      height: 2.31rem;
+
+      i {
+        margin-right: 0.5rem;
+      }
+    }
   }
 }
 
-.icon-smile-beam::before {
-  font-weight: 400;
+@include tablet {
+  .icon-smile-beam::before {
+    font-weight: 400;
+  }
 }
 </style>

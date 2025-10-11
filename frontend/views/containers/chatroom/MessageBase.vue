@@ -428,7 +428,7 @@ export default ({
     }
   }
 
-  &:hover {
+  &:hover, &:has(.c-menu .is-active) {
     background-color: $general_2;
 
     &:not(.pending, .failed) {
