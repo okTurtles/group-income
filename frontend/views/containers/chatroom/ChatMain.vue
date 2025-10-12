@@ -1,6 +1,5 @@
 <template lang='pug'>
 .c-chat-main(
-  v-if='ephemeral.renderingChatRoomId'
   :class='{ "is-dnd-active": dndState && dndState.isActive }'
   @dragover='dragStartHandler'
 )
@@ -1216,6 +1215,7 @@ export default ({
         renderingContext: true
       }
       this.ephemeral.renderingChatRoomId = null
+      this.ephemeral.messagesInitiated = undefined
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
