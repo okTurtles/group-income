@@ -196,6 +196,30 @@ sbp('sbp/selectors/register', {
           state.namespaceLookups[name] = value
         })
     })()
+
+    // See issue #2898
+    ;(async () => {
+      let count = 0
+      const internal = async () => {
+        // When logging in in a fresh session, loggedIn isn't populated yet
+        if (!state.loggedIn?.identityContractID && count++ <= 3) {
+          setTimeout(internal, 300)
+          return
+        }
+        const ourIdentityContractId = state.loggedIn.identityContractID
+        const dmkId = await sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'dmk')
+
+        // This means the upgrade has already taken place
+        if (dmkId) return
+
+        // Call into the SW to perform the upgrade, as it has better access
+        // to Chelonia internals
+        await sbp('gi.actions/identity/addDmk', ourIdentityContractId).catch(e => {
+          console.error('[postUpgradeVerification] Error adding DMK', e)
+        })
+      }
+      await internal()
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

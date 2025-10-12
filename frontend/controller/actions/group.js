@@ -440,8 +440,6 @@ export default (sbp('sbp/selectors/register', {
           await sbp('chelonia/out/keyRequest', {
             ...omit(params, ['options']),
             innerEncryptionKeyId: await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek'),
-            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
-            allowedActions: ['gi.contracts/identity/joinDirectMessage'],
             reference: params.reference,
             encryptKeyRequestMetadata: true,
             hooks: {
