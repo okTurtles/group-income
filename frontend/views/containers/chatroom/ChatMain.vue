@@ -1730,18 +1730,6 @@ export default ({
   padding: 0;
   overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
-  // scroll-snap-type: y mandatory;
-
-  /*
-  .c-start-sentinel {
-    // margin-top: 100px;
-  }
-
-  .c-end-sentinel {
-    // scroll-snap-align: end;
-    // margin-bottom: 100px;
-  }
-  */
 }
 
 .c-divider {
