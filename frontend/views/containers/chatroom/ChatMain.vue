@@ -27,7 +27,10 @@
       :class='{ "c-invisible": !ephemeral.messagesInitiated }'
     )
       template(:slot='"before"')
-        .c-top-padding
+        //- .c-top-padding
+        //- c-fill-while-invisible is used to trigger scroll-{start,end} when
+        //- switching between chatrooms
+        .c-fill-while-invisible(v-if='!ephemeral.messagesInitiated')
         .c-conversation-start
           conversation-greetings(
             :members='summary.numberOfMembers'
@@ -248,6 +251,22 @@ const onChatScroll = function (ev) {
   }
 }
 
+const onScrollStart = function () {
+  const conversation = this.$refs.conversation?.$el
+
+  if (conversation?.scrollTop < 5) {
+    this.onScrollEvt('up')
+  }
+}
+
+const onScrollEnd = function () {
+  const conversation = this.$refs.conversation?.$el
+
+  if (conversation && conversation.clientHeight + (conversation.scrollTop + 5) > conversation.scrollHeight) {
+    this.onScrollEvt('down')
+  }
+}
+
 export default ({
   name: 'ChatMain',
   components: {
@@ -283,6 +302,8 @@ export default ({
         messageHashToMarkUnread: null,
         scrollableDistance: 0,
         onChatScroll: null,
+        onScrollStart: () => {},
+        onScrollEnd: () => {},
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
@@ -325,7 +346,9 @@ export default ({
   },
   mounted () {
     // setup various event listeners.
-    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), 300)
+    this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), process.env.CI ? 30 : 300)
+    this.ephemeral.onScrollStart = debounce(onScrollStart.bind(this), process.env.CI ? 20 : 200)
+    this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
 
@@ -334,6 +357,7 @@ export default ({
       this.processChatroomSwitch()
     }
 
+    /*
     if (typeof ResizeObserver !== 'function') return
     this.resizeObserver = new ResizeObserver((entries) => {
       if (!entries.length) return
@@ -355,17 +379,20 @@ export default ({
         }
       })
     }
+    */
   },
   beforeDestroy () {
     // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
     // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
+    /*
     this.resizeObserver?.disconnect()
     this.mutationObserver?.disconnect()
     this.resizeObserver = null
     this.mutationObserver = null
     this.matchMediaPhone.onchange = null
+    */
   },
   computed: {
     ...mapGetters([
@@ -436,15 +463,15 @@ export default ({
       }
       observeSizeChanges()
     },
-    applyTopPadding () {
+    /* applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
       // options
       const conversation = this.$refs.conversation?.$el
       const conversationTP = conversation?.querySelector('.c-top-padding')
       if (!conversation || !conversationTP || !conversation.parentElement) return
       const padding = Math.max(conversation.parentElement.clientHeight - conversation.scrollHeight + conversationTP.clientHeight - 1, 0)
-      conversationTP.style.height = `${padding}px`
-    },
+      conversationTP.style.height = `0.0${padding}px`
+    }, */
     triggerEditMessage (hash, status) {
       if (status) {
         Vue.set(this.ephemeral.isEditing, hash, status)
@@ -458,6 +485,7 @@ export default ({
       }
     },
     setMessages: debounce(function () {
+      if (!this.ephemeral.renderingChatRoomId) return
       const newMessages = this.messageState.contract?.messages || []
       if (this.ephemeral.messages === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
@@ -470,7 +498,7 @@ export default ({
       if (postSetMessageState) {
         this.$nextTick(postSetMessageState)
       }
-    }, 100),
+    }, process.env.CI ? 10 : 100),
     * visibleMessageIterator () {
       if (!this.$refs.conversation) return
       // The following is slightly more efficient if using `vue-virtual-scroller'
@@ -499,6 +527,8 @@ export default ({
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
       const chatRoomID = this.ephemeral.renderingChatRoomId
+      if (!chatRoomID) return
+
       let limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
        * if the removed message was the first unread messages(currentChatRoomReadUntil)
@@ -533,17 +563,24 @@ export default ({
         })
       } else if (direction === 'down' || !this.latestEvents.length) {
         if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight === this.latestHeight)) return
-        this.ephemeral.loadingDown = instance
+        if (direction === 'down') {
+          this.ephemeral.loadingDown = instance
+        } else {
+          this.ephemeral.loadingUp = instance
+        }
         let sinceHeight
         if (!this.isJoinedChatRoom(chatRoomID)) {
           limit = Infinity
           sinceHeight = 0
         } else if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
-          const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID).finally(() => {
-            if (this.ephemeral.loadingDown === instance) {
-              this.ephemeral.loadingDown = false
-            }
-          })
+          const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
+          /* .finally(() => {
+              if (this.ephemeral.loadingDown === instance) {
+                this.ephemeral.loadingDown = false
+              } else if (this.ephemeral.loadingUp === instance) {
+                this.ephemeral.loadingUp = false
+              }
+            }) */
           sinceHeight = Math.max(latestHeight - limit + 1, 0)
         } else {
           sinceHeight = this.ephemeral.currentHighestHeight + 1
@@ -565,6 +602,8 @@ export default ({
         }).finally(() => {
           if (this.ephemeral.loadingDown === instance) {
             this.ephemeral.loadingDown = false
+          } else if (this.ephemeral.loadingUp === instance) {
+            this.ephemeral.loadingUp = false
           }
         })
       } else if (direction !== 'down') {
@@ -1215,7 +1254,6 @@ export default ({
         renderingContext: true
       }
       this.ephemeral.renderingChatRoomId = null
-      this.ephemeral.messagesInitiated = undefined
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
     },
@@ -1532,20 +1570,12 @@ export default ({
         console.error('ChatMain onScrollEvt() error:', e)
       }
     },
-    onScrollStart: debounce(function () {
-      const conversation = this.$refs.conversation?.$el
-
-      if (conversation?.scrollTop < 5) {
-        this.onScrollEvt('up')
-      }
-    }, 200),
-    onScrollEnd: debounce(function () {
-      const conversation = this.$refs.conversation?.$el
-
-      if (conversation && conversation.clientHeight + (conversation.scrollTop + 5) > conversation.scrollHeight) {
-        this.onScrollEvt('down')
-      }
-    }, 200),
+    onScrollStart: function () {
+      this.ephemeral.onScrollStart()
+    },
+    onScrollEnd: function () {
+      this.ephemeral.onScrollEnd()
+    },
     onChatScroll (ev) {
       // NOTE: We need this method wrapper to avoid ephemeral.onChatScroll being null
       this.ephemeral.onChatScroll?.(ev)
@@ -1631,7 +1661,7 @@ export default ({
           throw e
         }
       }
-    }, 250)
+    }, process.env.CI ? 25 : 250)
   },
   provide () {
     return {
@@ -1654,6 +1684,8 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.onChatScroll?.flush()
+        this.ephemeral.onScrollStart.clear?.()
+        this.ephemeral.onScrollEnd.clear?.()
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
@@ -1807,6 +1839,10 @@ export default ({
 
 .c-loading {
   position: relative;
+}
+
+.c-fill-while-invisible {
+  padding: 100%;
 }
 
 .c-conversation-start {

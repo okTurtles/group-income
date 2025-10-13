@@ -456,7 +456,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.getByDT('conversationWrapper').scrollTo('top')
       // Wait period is due to debouncing in onChatScroll
       // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(300)
+      cy.wait(201)
       cy.giWaitUntilMessagesLoaded()
     }
 
