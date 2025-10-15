@@ -91,8 +91,12 @@ const periodicNotificationEntries: {
           const currentPeriod = rootGetters.groupSettingsForGroup(rootState[gId]).distributionDate
           if (!currentPeriod) { return null }
 
+          const nextPeriod = rootGetters.periodAfterPeriodForGroup(rootState[gId], currentPeriod)
+          const now = dateToPeriodStamp(new Date())
+          const isPeriodRelevant = comparePeriodStamps(now, currentPeriod) > 0 && comparePeriodStamps(now, nextPeriod) < 0
+
           return (
-            comparePeriodStamps(dateToPeriodStamp(new Date()), currentPeriod) > 0 &&
+            isPeriodRelevant &&
               !myNotificationHas(item => item.type === 'NEW_DISTRIBUTION_PERIOD' && item.data.period === currentPeriod, gId)
           )
             ? [gId, currentPeriod, profile.incomeDetailsType]
