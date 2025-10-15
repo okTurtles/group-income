@@ -5,7 +5,7 @@ proposal-template(
   :title='L("Remove Member")'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
-  :shouldImmediateChange='form.useAdminPermission'
+  :shouldImmediateChange='form.usePermission'
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
@@ -15,9 +15,9 @@ proposal-template(
       i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-if='groupShouldPropose') Remove {name} from the group
       i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-else) Are you sure you want to remove {name} from the group?
 
-    label.checkbox.c-use-admin-permissions(v-if='groupShouldPropose && isGroupCreator')
-      input.input(type='checkbox' v-model='form.useAdminPermission')
-      i18n Use admin permissions to remove immediately
+    label.checkbox.c-use-admin-permissions(v-if='groupShouldPropose && hasPermissionsToRemoveMember')
+      input.input(type='checkbox' v-model='form.usePermission')
+      i18n Use permissions to remove immediately
 
   banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
@@ -27,7 +27,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
-import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_REMOVE_MEMBER, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 
@@ -45,7 +45,7 @@ export default ({
         currentStep: 0
       },
       form: {
-        useAdminPermission: false
+        usePermission: false
       },
       config: {
         steps: [
@@ -74,20 +74,19 @@ export default ({
     ]),
     ...mapGetters([
       'currentGroupState',
-      'currentGroupOwnerID',
       'globalProfile',
       'groupProfiles',
       'groupSettings',
       'groupShouldPropose',
       'groupMembersCount',
-      'ourIdentityContractId',
-      'userDisplayNameFromID'
+      'userDisplayNameFromID',
+      'ourGroupPermissionsHas'
     ]),
     memberGlobalProfile () {
       return this.globalProfile(this.memberID) || {}
     },
-    isGroupCreator () {
-      return this.ourIdentityContractId === this.currentGroupOwnerID
+    hasPermissionsToRemoveMember () {
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.REMOVE_MEMBER)
     }
   },
   methods: {
@@ -95,7 +94,7 @@ export default ({
       this.$refs.formMsg.clean()
       const memberID = this.memberID
 
-      if (this.groupShouldPropose && !this.form.useAdminPermission) {
+      if (this.groupShouldPropose && !this.form.usePermission) {
         try {
           await sbp('gi.actions/group/proposal', {
             contractID: this.currentGroupId,

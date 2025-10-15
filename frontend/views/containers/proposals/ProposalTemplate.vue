@@ -53,7 +53,7 @@
           :class='submitStyleNonProposal'
           v-if='!isConfirmation && !shouldPropose'
           @click='submit'
-          :disabled='disabled || !isGroupCreator'
+          :disabled='disabled || (!isGroupCreator && !shouldImmediateChange)'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
