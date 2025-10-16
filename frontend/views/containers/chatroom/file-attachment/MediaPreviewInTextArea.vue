@@ -91,7 +91,7 @@ export default {
             )
           }
         } catch (error) {
-          // in case of thumbnail generation error, just silently ignore and use the default background css style.
+          // in case of thumbnail generation error, just silently ignore and use the default background css style. (So the video files still can be uploaded/sent)
           console.error('MediaPreviewInTextArea.vue caught:', error)
         } finally {
           cleanup()
