@@ -25,6 +25,7 @@ export default ({
 summary {
   list-style: none;
 
+  &::-webkit-details-marker,
   &::marker {
     display: none;
   }

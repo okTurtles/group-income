@@ -8,8 +8,9 @@
     i.icon-exclamation-triangle.is-prefix
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
 
-  .c-send.inputgroup(
+  fieldset.c-send.inputgroup(
     :class='{"is-editing": isEditing}'
+    :disabled='loading'
     data-test='messageInputWrapper'
   )
     .c-mentions(
@@ -60,7 +61,6 @@
 
     textarea.textarea.c-send-textarea(
       ref='textarea'
-      :disabled='loading'
       :placeholder='L("Write your message...")'
       :style='textareaStyles'
       :maxlength='config.messageMaxChar'
@@ -249,9 +249,9 @@
                   @change='fileAttachmentHandler($event.target.files)'
                 )
 
-          .c-send-button(
+          button.c-send-button(
             id='mobileSendButton'
-            tag='button'
+            type='submit'
             data-test='sendMessageButton'
             :class='{ isActive }'
             @click='sendMessage'
@@ -399,7 +399,11 @@ export default ({
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
-    this.focusOnTextArea()
+    // The following causes inconsistent focusing on iOS depending on whether
+    // iOS determines the action to be a result of user interaction.
+    // Commenting this out will result on focus being triggered the 'normal'
+    // way, when the chatroom is ready.
+    // this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -1208,8 +1212,10 @@ export default ({
   justify-content: center;
   align-items: center;
   border-radius: 0.25rem;
+  padding: 0;
+  min-height: 0;
 
-  &.isActive {
+  &.isActive:not(:disabled) {
     background: $primary_0;
 
     &:hover {
@@ -1237,7 +1243,7 @@ export default ({
 
   .c-send-actions {
     button.is-icon:focus,
-    button.is-icon:hover {
+    button.is-icon:hover:not(:disabled) {
       color: $general_0 !important;
     }
   }

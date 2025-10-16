@@ -25,8 +25,9 @@ export default ({
   },
   methods: {
     closeMenu (e) {
-      // Prevent closing the menu when clicking inside of the parent element
-      if (e.target?.closest('details') === this.$el.closest('details')) {
+      // Prevent closing the menu when clicking inside of the parent element,
+      // except if the event was on `.c-content` (.c-responsive-menu)
+      if (e.target !== this.$el && e.target?.closest('details') === this.$el.closest('details')) {
         return
       }
       this.Menu.closeMenu()
