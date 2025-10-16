@@ -66,7 +66,7 @@ export default {
       this.config.player = new Plyr(this.$refs.videoEl, opts)
 
       // event listeners
-      const events = ['play', 'pause', 'ended']
+      const events = ['play', 'pause', 'ended', 'enterfullscreen', 'exitfullscreen']
       events.forEach(event => {
         this.config.player.on(event, () => this.$emit(event))
       })

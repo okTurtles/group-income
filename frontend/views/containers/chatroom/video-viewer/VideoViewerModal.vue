@@ -35,6 +35,8 @@
         :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
         @play='onVideoPlay'
         @pause='onVideoPause'
+        @enterfullscreen='onVideoFullscreenChange'
+        @exitfullscreen='onVideoFullscreenChange'
       )
 
     button.is-icon.c-video-nav-btn.is-prev(
@@ -162,6 +164,12 @@ export default {
     onVideoPause () {
       this.ephemeral.hideCtas.header = false
       this.ephemeral.hideCtas.navButtons = false
+    },
+    onVideoFullscreenChange () {
+      const currentActiveElement = document.activeElement
+      if (currentActiveElement && currentActiveElement.matches('[data-plyr="fullscreen"]')) {
+        currentActiveElement.blur()
+      }
     },
     onMouseLeave () {
       if (this.matchMedia.isDesktop && this.$refs.videoPlayer.isPlaying()) {
