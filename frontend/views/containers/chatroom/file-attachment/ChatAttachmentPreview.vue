@@ -192,7 +192,7 @@ export default {
     },
     deleteAttachment ({ index, url, type }) {
       // If index is not explicitly provided, look up the index by the URL.
-      if (!index && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
+      if (index === undefined && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
         index = this.mediaObjectURLList[type].indexOf(url)
       }
 
@@ -355,7 +355,11 @@ export default {
                 oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
               }
             })
-            this.mediaObjectURLList[mediaType] = toList.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+            this.mediaObjectURLList[mediaType] = toList.map(
+              attachment => attachment.downloadData ? oldObjectURLMapping[attachment.downloadData.manifestCid] : null
+            ).filter(Boolean)
+
+            // revoke object URLs that are no longer needed
             currentObjectURLList.filter(url => url && !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
               URL.revokeObjectURL(url)
             })

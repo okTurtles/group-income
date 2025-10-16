@@ -90,6 +90,9 @@ export default {
               videoEl, videoEl.videoWidth, videoEl.videoHeight
             )
           }
+        } catch (error) {
+          // in case of thumbnail generation error, just silently ignore and use the default background css style.
+          console.error('MediaPreviewInTextArea.vue caught:', error)
         } finally {
           cleanup()
           this.ephemeral.video.isGeneratingThumbnail = false
@@ -111,8 +114,14 @@ export default {
     async generateImageURLByCanvas (video, width, height) {
       const canvasEl = document.createElement('canvas')
       const ctx = canvasEl.getContext('2d')
-      const toBlob = () => new Promise((resolve) => {
-        canvasEl.toBlob(blob => resolve(blob), 'image/png', 0.85) // Thumbnail quality does not need to be super crisp.
+      const toBlob = () => new Promise((resolve, reject) => {
+        canvasEl.toBlob(blob => {
+          if (blob) {
+            resolve(blob)
+          } else {
+            reject(new Error('Failed to generate thumbnail image URL by canvas'))
+          }
+        }, 'image/png', 0.85) // Thumbnail quality does not need to be super crisp.
       })
       canvasEl.width = width
       canvasEl.height = height
