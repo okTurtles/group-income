@@ -64,6 +64,7 @@
       :placeholder='L("Write your message...")'
       :style='textareaStyles'
       :maxlength='config.messageMaxChar'
+      @focus='textAreaFocus'
       @blur='textAreaBlur'
       @keydown.enter.exact='handleKeyDownEnter'
       @keydown.tab.exact='handleKeyDownTab'
@@ -479,6 +480,12 @@ export default ({
       if (this.$refs.textarea) {
         this.$refs.textarea.focus()
       }
+    },
+    textAreaFocus (event) {
+      // Sometimes, on mobile, the virtual hardware keyboard appears
+      // over the page. This doesn't seem to be detectable, but scrolling
+      // seems to work around it.
+      event.target.scrollIntoView()
     },
     textAreaBlur (event) {
       if (!this.ephemeral.isPhone) {
