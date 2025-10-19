@@ -3,108 +3,95 @@
 
   // Displaying attachments as part of message
   template(v-if='isForDownload')
-    .c-attachment-preview(
-      v-for='(entry, entryIndex) in attachmentList'
-      :key='getAttachmentId(entry)'
-      class='is-download-item'
-      tabindex='0'
-    )
-      .c-preview-non-image(v-if='!shouldPreviewImages')
-        .c-non-image-icon
-          i.icon-file
-
-        .c-non-image-file-info
-          .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext-and-size
-            .c-file-ext {{ fileExt(entry) }}
-            .c-file-size(v-if='entry.size') {{ fileSizeDisplay(entry) }}
-
-      .c-preview-img(v-else)
-        img(
-          v-if='objectURLList[entryIndex]'
-          :src='objectURLList[entryIndex]'
-          :alt='entry.name'
-          @click='openImageViewer(objectURLList[entryIndex])'
-          @load='onImageSettled(objectURLList[entryIndex])'
-          @error='onImageSettled(objectURLList[entryIndex])'
-        )
-        .loading-box(v-else :style='loadingBoxStyles[entryIndex]')
-
-      .c-preview-pending-flag(v-if='isPending')
-      .c-preview-failed-flag(v-else-if='isFailed')
-        i.icon-exclamation-triangle
-
-      .c-attachment-actions-wrapper(
-        :class='{ "is-for-image": shouldPreviewImages }'
+    .c-non-media-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
-        .c-attachment-actions
-          tooltip(
-            direction='top'
-            :text='getDownloadTooltipText(entry)'
-          )
-            button.is-icon-small(
-              :aria-label='L("Download")'
-              @click.stop='downloadAttachment(entryIndex)'
-            )
-              i.icon-download
-          tooltip(
-            v-if='isMsgSender || isGroupCreator'
-            direction='top'
-            :text='L("Delete")'
-          )
-            button.is-icon-small(
-              :aria-label='L("Delete")'
-              @click='deleteAttachment({ index: entryIndex })'
-            )
-              i.icon-trash-alt
+
+    .c-image-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.IMAGE)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.IMAGE]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
+        @download='downloadAttachment(entry, mediaObjectURLList.image[entryIndex])'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
+      )
+
+    .c-video-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.VIDEO)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.VIDEO]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
+        @download='downloadAttachment(entry, mediaObjectURLList.video[entryIndex])'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.VIDEO })'
+      )
 
   // Displaying attachments as part of <send-area />
   template(v-else)
-    .c-attachment-preview(
-      v-for='(entry, entryIndex) in attachmentList'
-      :key='entryIndex'
-      :class='"is-" + fileType(entry)'
-      @click='openImageViewer(entry.url)'
-    )
-      img.c-preview-img(
-        v-if='fileType(entry) === "image" && entry.url'
-        :src='entry.url'
-        :alt='entry.name'
-      )
-      .c-preview-non-image(v-else)
-        .c-non-image-icon
-          i.icon-file
+    send-area-attachments-gallery
+      template(v-for='(entry, entryIndex) in attachmentList')
+        .c-attachment-preview(
+          v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
+          :key='entry.url'
+          :class='"is-" + fileType(entry)'
+        )
+          .c-preview-non-media(@click.stop='')
+            .c-non-media-icon
+              i.icon-file
 
-        .c-non-image-file-info
-          .c-file-name.has-ellipsis {{ entry.name }}
-          .c-file-ext {{ fileExt(entry) }}
+            .c-non-media-file-info
+              .c-file-name.has-ellipsis {{ entry.name }}
+              .c-file-ext {{ fileExt(entry) }}
 
-      button.c-attachment-remove-btn(
-        type='button'
-        :aria-label='L("Remove attachment")'
-        @click.stop='$emit("remove", entry.url)'
-      )
-        i.icon-times
+          button.c-attachment-remove-btn(
+            type='button'
+            :aria-label='L("Remove attachment")'
+            @click.stop='$emit("remove", entry.url)'
+          )
+            i.icon-times
 
-      .c-loader(v-if='isForDownload && !entry.downloadData')
+        media-preview-in-text-area(
+          v-else
+          :key='entry.url'
+          :attachment='entry'
+          @remove='$emit("remove", entry.url)'
+          @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
+        )
 
   a.c-invisible-link(ref='downloadHelper')
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
+import AttachmentDownloadItem from './AttachmentDownloadItem.vue'
+import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
+import SendAreaAttachmentsGallery from './SendAreaAttachmentsGallery.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
+import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
-import { L } from '@common/common.js'
 import { uniq } from 'turtledash'
 
 export default {
   name: 'ChatAttachmentPreview',
   components: {
-    Tooltip
+    Tooltip,
+    AttachmentDownloadItem,
+    MediaPreviewInTextArea,
+    SendAreaAttachmentsGallery
   },
   props: {
     attachmentList: {
@@ -125,72 +112,94 @@ export default {
   },
   data () {
     return {
-      objectURLList: [],
-      settledURLList: [],
-      loadingBoxStyles: []
+      mediaObjectURLList: {
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+      },
+      settledImgURLList: [],
+      config: {
+        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+      }
     }
   },
   computed: {
-    shouldPreviewImages () {
-      return !this.attachmentList.some(attachment => {
-        return this.fileType(attachment) === 'non-image'
-      })
+    sortedAttachments () {
+      const collections = {
+        [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: [],
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+      }
+
+      for (const entry of this.attachmentList) {
+        const fType = getFileType(entry.mimeType)
+        collections[fType].push(entry)
+      }
+
+      return collections
     },
-    allImageAttachments () {
-      return this.attachmentList.filter(entry => this.fileType(entry) === 'image')
+    hasImgAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length > 0
+    },
+    hasVideoAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
+    },
+    hasMediaAttachments () {
+      return this.hasImgAttachments || this.hasVideoAttachments
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
     },
     isFailed () {
       return this.variant === MESSAGE_VARIANTS.FAILED
+    },
+    canDelete () {
+      return this.isMsgSender || this.isGroupCreator
     }
   },
   mounted () {
-    if (this.shouldPreviewImages) {
-      const promiseToRetrieveURLs = this.attachmentList.map(attachment => this.getAttachmentObjectURL(attachment).catch(e => {
-        console.error('[ChatAttachmentPreview/mounted] Error', e)
-      }))
+    if (this.hasImgAttachments) {
+      const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
+        .map(attachment => this.getAttachmentObjectURL(attachment).catch(e => {
+          console.error('[ChatAttachmentPreview/mounted] Error', e)
+        }))
+
       Promise.all(promiseToRetrieveURLs).then(urls => {
-        this.objectURLList = urls
+        this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
       })
+    }
 
-      if (this.isForDownload) {
-        this.loadingBoxStyles = this.attachmentList.map(attachment => {
-          return this.getStretchedDimension(attachment.dimension)
-        })
-      }
+    if (this.hasVideoAttachments) {
+      this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+        .map(attachment => attachment.url || '')
+    }
 
+    if (this.hasMediaAttachments) {
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   beforeDestroy () {
-    if (this.shouldPreviewImages) {
+    if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   methods: {
+    hasAttachmentType (type) {
+      return this.sortedAttachments[type].length > 0
+    },
     fileExt ({ name }) {
       return getFileExtension(name, true)
-    },
-    fileSizeDisplay ({ size }) {
-      return size ? formatBytesDecimal(size) : ''
-    },
-    getDownloadTooltipText ({ size }) {
-      return this.shouldPreviewImages
-        ? `${L('Download ({size})', { size: formatBytesDecimal(size) })}`
-        : L('Download')
     },
     fileType ({ mimeType }) {
       return getFileType(mimeType)
     },
-    deleteAttachment ({ index, url }) {
-      if (url) {
-        index = this.objectURLList.indexOf(url)
+    deleteAttachment ({ index, url, type }) {
+      // If index is not explicitly provided, look up the index by the URL.
+      if (index === undefined && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
+        index = this.mediaObjectURLList[type].indexOf(url)
       }
 
       if (index >= 0) {
-        const attachment = this.attachmentList[index]
+        const attachment = this.sortedAttachments[type][index]
         if (attachment.downloadData) {
           this.$emit('delete-attachment', attachment.downloadData.manifestCid)
         }
@@ -204,18 +213,34 @@ export default {
         return URL.createObjectURL(blob)
       }
     },
-    async downloadAttachment (index) {
-      const attachment = this.attachmentList[index]
+    async loadVideoObjectURL (attachment) {
+      const downloadData = attachment.downloadData
+
+      if (downloadData?.manifestCid) {
+        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
+        const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+          .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
+
+        if (index >= 0) {
+          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO].map((url, i) => {
+            if (i !== index) { return url }
+
+            if (url) {
+              URL.revokeObjectURL(url)
+            }
+            return URL.createObjectURL(blob)
+          })
+        }
+      }
+    },
+    async downloadAttachment (attachment, objectURL = null) {
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
-        let url = this.objectURLList[index]
-        if (!url) {
-          url = await this.getAttachmentObjectURL(attachment)
-        }
-        const aTag = this.$refs.downloadHelper
+        const url = objectURL || (await this.getAttachmentObjectURL(attachment))
 
+        const aTag = this.$refs.downloadHelper
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
 
@@ -245,44 +270,68 @@ export default {
         height: `${heightInPixel}px`
       }
     },
-    openImageViewer (objectURL) {
-      if (!objectURL) { return }
+    onMediaPreviewCardClick (type, url) {
+      const func = ({
+        image: this.openImageViewer,
+        video: this.openVideoViewer
+      })[type]
 
-      const imageAttachmentDetailsList = this.allImageAttachments
+      func && func(url)
+    },
+    openVideoViewer (objectURL, additionalData = null) {
+      if (objectURL) {
+        this.openMediaViewer(CHATROOM_ATTACHMENT_TYPES.VIDEO, objectURL, additionalData)
+      }
+    },
+    openImageViewer (objectURL) {
+      if (objectURL) {
+        this.openMediaViewer(CHATROOM_ATTACHMENT_TYPES.IMAGE, objectURL)
+      }
+    },
+    openMediaViewer (type, objectURL, additionalData = null) {
+      const modalName = ({
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: 'ImageViewerModal',
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: 'VideoViewerModal'
+      })[type]
+
+      if (!modalName) { return }
+
+      const objURLKey = type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'imgUrl' : 'videoUrl'
+      const attachmentDetailsList = this.sortedAttachments[type]
         .map((entry, index) => {
-          const imgUrl = entry.url || this.objectURLList[index] || ''
-          return {
-            name: entry.name,
-            ownerID: this.ownerID,
-            createdAt: this.createdAt || new Date(),
-            size: entry.size,
-            id: imgUrl,
-            imgUrl,
-            manifestCid: entry.downloadData?.manifestCid
-          }
-        })
-      const initialIndex = imageAttachmentDetailsList.findIndex(attachment => attachment.imgUrl === objectURL)
+          const mediaURL = entry.url || this.mediaObjectURLList[type][index] || ''
+
+          return mediaURL
+            ? {
+                name: entry.name,
+                ownerID: this.ownerID,
+                createdAt: this.createdAt || new Date(),
+                size: entry.size,
+                mimeType: entry.mimeType,
+                id: mediaURL,
+                [objURLKey]: mediaURL,
+                manifestCid: entry.downloadData?.manifestCid
+              }
+            : null
+        }).filter(Boolean)
+      const initialIndex = attachmentDetailsList.findIndex(attachment => attachment[objURLKey] === objectURL)
 
       sbp(
-        'okTurtles.events/emit', OPEN_MODAL, 'ImageViewerModal',
+        'okTurtles.events/emit', OPEN_MODAL, modalName,
         null,
         {
-          images: imageAttachmentDetailsList,
+          [type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'images' : 'videos']: attachmentDetailsList,
           initialIndex: initialIndex === -1 ? 0 : initialIndex,
-          canDelete: this.isMsgSender || this.isGroupCreator // delete-attachment action can only be performed by the sender or the group creator
+          canDelete: this.isMsgSender || this.isGroupCreator, // delete-attachment action can only be performed by the sender or the group creator
+          ...(additionalData || {})
         }
       )
     },
-    onImageSettled (url) {
-      if (this.isForDownload) {
-        this.settledURLList = uniq([...this.settledURLList, url])
+    onImageSrcSettled (url) {
+      this.settledImgURLList = uniq([...this.settledImgURLList, url])
 
-        if (this.allImageAttachments.length === this.settledURLList.length) {
-          // Check if all image attachments are loaded in the DOM, notify the parent component.
-          // (This can be enhanced to something like sbp('okTurtles.events/emit', IMAGE_ATTACHMENTS_RENDER_COMPLETE, messageHash) in the future,
-          //  if this becomes useful in more places.)
-          this.$nextTick(() => this.$emit('image-attachments-render-complete'))
-        }
+      if (this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE].length === this.settledImgURLList.length) {
+        this.$nextTick(() => this.$emit('image-attachments-render-complete'))
       }
     },
     getAttachmentId (attachment) {
@@ -290,30 +339,52 @@ export default {
     }
   },
   watch: {
-    attachmentList (to, from) {
-      if (from.length > to.length) {
-        // NOTE: this will be caught when user tries to delete attachments
-        const oldObjectURLMapping = {}
-        if (from.length === this.objectURLList.length) {
-          const currentObjectURLList = this.objectURLList.slice()
+    sortedAttachments (to, from) {
+      if (!this.isForDownload) { return }
 
-          from.forEach((attachment, index) => {
-            oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
-          })
-          this.objectURLList = to.map(attachment => oldObjectURLMapping[attachment.downloadData.manifestCid])
+      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
+      for (const mediaType of mediaTypes) {
+        const fromList = from[mediaType]
+        const toList = to[mediaType]
+        const currentObjectURLList = this.mediaObjectURLList[mediaType].slice()
 
-          // revoke object URL of a deleted attachment.
-          Object.values(oldObjectURLMapping).forEach(oldUrl => {
-            if (!this.objectURLList.includes(oldUrl)) {
-              URL.revokeObjectURL(oldUrl)
-            }
-          })
-        } else {
-          // NOTE: this should not be caught, but considered for the error handler
-          Promise.all(to.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
-            this.objectURLList = urls
-          })
+        if (fromList.length > toList.length) {
+          if (fromList.length === currentObjectURLList.length) {
+            const oldObjectURLMapping = {}
+
+            fromList.forEach((attachment, index) => {
+              if (attachment.downloadData) {
+                oldObjectURLMapping[attachment.downloadData.manifestCid] = currentObjectURLList[index]
+              }
+            })
+            this.mediaObjectURLList[mediaType] = toList.map(
+              attachment => attachment.downloadData ? oldObjectURLMapping[attachment.downloadData.manifestCid] : null
+            ).filter(Boolean)
+
+            // revoke object URLs that are no longer needed
+            currentObjectURLList.filter(url => url && !this.mediaObjectURLList[mediaType].includes(url)).forEach(url => {
+              URL.revokeObjectURL(url)
+            })
+          } else {
+            currentObjectURLList.forEach(url => URL.revokeObjectURL(url))
+
+            Promise.all(toList.map(attachment => this.getAttachmentObjectURL(attachment))).then(urls => {
+              this.mediaObjectURLList[mediaType] = urls
+            })
+          }
         }
+      }
+    }
+  },
+  provide () {
+    return {
+      attachmentUtils: {
+        getStretchedDimension: this.getStretchedDimension,
+        getAttachmentObjectURL: this.getAttachmentObjectURL,
+        openImageViewer: this.openImageViewer,
+        openVideoViewer: this.openVideoViewer,
+        onImageSrcSettled: this.onImageSrcSettled,
+        loadVideoObjectURL: this.loadVideoObjectURL
       }
     }
   }
@@ -326,97 +397,17 @@ export default {
 .c-attachment-container {
   position: relative;
   padding: 0 0.5rem;
-  margin-top: 0.75rem;
   width: 100%;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  max-width: 100%;
   gap: 1rem;
 
   &.is-for-download {
     padding: 0;
-
-    .c-preview-non-image {
-      .c-non-image-file-info {
-        width: calc(100% - 4rem);
-      }
-
-      .c-file-ext-and-size {
-        display: flex;
-        align-items: flex-end;
-        flex-direction: row;
-        column-gap: 0.325rem;
-      }
-
-      .c-file-size {
-        color: $text_1;
-        font-size: 0.8em;
-      }
-    }
-
-    .c-attachment-actions-wrapper {
-      display: none;
-      position: absolute;
-      right: 0.5rem;
-      top: 0;
-
-      .c-attachment-actions {
-        display: flex;
-        gap: 0.25rem;
-        align-self: center;
-        align-items: center;
-        background-color: $background_0;
-        padding: 2px;
-
-        .is-icon-small {
-          border-radius: 0;
-        }
-      }
-
-      &.is-for-image {
-        .c-attachment-actions {
-          align-self: flex-start;
-          margin-top: 0.5rem;
-        }
-      }
-    }
-
-    .is-download-item {
-      &:hover .c-attachment-actions-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-      }
-
-      .c-preview-non-image {
-        max-width: 20rem;
-        min-width: 16rem;
-        min-height: 3.5rem;
-      }
-
-      .c-preview-img {
-        padding: 0.5rem;
-
-        img {
-          user-select: none;
-          cursor: pointer;
-          max-width: 100%;
-          max-height: 20rem;
-
-          @include phone {
-            max-height: 12rem;
-          }
-        }
-
-        .loading-box {
-          border-radius: 0;
-          margin-bottom: 0;
-          max-height: 20rem;
-          min-height: unset;
-          max-width: 100%;
-        }
-      }
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    row-gap: 1rem;
+    margin-top: 0.75rem;
   }
 }
 
@@ -424,38 +415,22 @@ export default {
   position: relative;
   display: inline-block;
   border: 1px solid $general_0;
+  box-shadow: 0 0 4px rgba(29, 28, 29, 0.13);
   border-radius: 0.25rem;
+  flex-shrink: 0;
 
-  &.is-image {
-    width: 4.5rem;
-    height: 4.5rem;
-    cursor: pointer;
-
-    .c-preview-img {
-      pointer-events: none;
-    }
-  }
-
-  &.is-non-image {
+  &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;
     min-height: 3.5rem;
   }
 
-  .c-preview-img,
-  .c-preview-non-image {
+  .c-preview-non-media {
     position: relative;
     width: 100%;
     height: 100%;
     border-radius: inherit;
     background-color: $general_2;
-  }
-
-  .c-preview-img {
-    object-fit: cover;
-  }
-
-  .c-preview-non-image {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: 1fr;
@@ -464,7 +439,7 @@ export default {
     padding: 0.5rem;
     gap: 0.5rem;
 
-    .c-non-image-icon {
+    .c-non-media-icon {
       grid-area: preview-icon;
       display: inline-flex;
       align-items: center;
@@ -477,7 +452,7 @@ export default {
       background-color: $primary_2;
     }
 
-    .c-non-image-file-info {
+    .c-non-media-file-info {
       grid-area: preview-info;
       position: relative;
       display: block;
@@ -510,56 +485,6 @@ export default {
     background-color: $text_1;
     color: $general_1;
   }
-
-  .c-loader {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    border-radius: 0.25rem;
-    overflow: hidden;
-
-    &::before {
-      content: "";
-      display: block;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: $general_1;
-      opacity: 0.65;
-    }
-
-    &::after {
-      content: "";
-      display: block;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 1rem;
-      height: 1rem;
-      border: 2px solid;
-      border-top-color: transparent;
-      border-radius: 50%;
-      color: $primary_0;
-      animation: loadSpin 1.75s infinite linear;
-    }
-  }
-
-  &.is-download-item {
-    &:hover,
-    &:focus {
-      border-color: $text_1;
-    }
-
-    &:active,
-    &:focus {
-      border-color: $text_0;
-    }
-  }
 }
 
 .c-invisible-link {
@@ -570,28 +495,17 @@ export default {
   pointer-events: none;
 }
 
-.c-preview-pending-flag {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-
-  &::after {
-    content: "";
-    position: absolute;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid;
-    border-top-color: transparent;
-    border-radius: 50%;
-    color: $general_0;
-    animation: loadSpin 1.75s infinite linear;
-  }
+.c-non-media-card-container,
+.c-image-card-container,
+.c-video-card-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.c-preview-failed-flag {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-  color: $warning_0;
+.c-video-card-container {
+  flex-direction: column;
+  flex-wrap: nowrap;
 }
 </style>

@@ -905,7 +905,7 @@ sbp('chelonia/defineContract', {
 
           const { profiles = {} } = state
 
-          if (profiles[innerSigningContractID].status !== PROFILE_STATUS.ACTIVE) {
+          if (profiles[innerSigningContractID]?.status !== PROFILE_STATUS.ACTIVE) {
             return
           }
 

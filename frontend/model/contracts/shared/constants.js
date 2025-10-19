@@ -117,6 +117,12 @@ export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 
+export const CHATROOM_ATTACHMENT_TYPES = {
+  IMAGE: 'image',
+  VIDEO: 'video',
+  NON_MEDIA: 'non-media'
+}
+
 // chatroom events
 export const MESSAGE_RECEIVE_RAW = 'message-receive-raw'
 export const MESSAGE_RECEIVE = 'message-receive'

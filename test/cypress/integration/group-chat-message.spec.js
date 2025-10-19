@@ -66,21 +66,13 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', String(countAfter))
   }
 
-  function pinMessage (nth) {
+  function pinMessage (nth, makeSureVisible = false) {
+    if (makeSureVisible) {
+      cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"]`).scrollIntoView()
+    }
+
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message .c-actions [data-test="menuContent"] [data-test="pinToChannel"]`).click({ force: true })
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message .c-pinned-wrapper`).should('contain', 'Pinned by you')
-    /* cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible').within(() => {
-          cy.getByDT('menuTrigger').click()
-        })
-        cy.getByDT('menuContent').within(() => {
-          cy.getByDT('pinToChannel').click()
-        })
-        cy.get('.c-actions').invoke('hide').should('be.hidden')
-      })
-      cy.get('.c-pinned-wrapper').should('contain', 'Pinned by you')
-    }) */
   }
 
   function unpinMessage (nth) {
@@ -272,9 +264,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSendMessage(me, 'Sending two files; one is image, and the other is JSON file.')
 
     cy.getByDT('conversationWrapper').within(() => {
-      cy.get('[data-index="8"] > .c-message .c-attachment-container').find('.c-attachment-preview:nth-child(2)').within(() => {
-        cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: flex').invoke('show')
-        cy.get('.c-attachment-actions span[aria-label="Delete"]').click()
+      cy.get('[data-index="8"] > .c-message .c-attachment-container').find('.c-attachment-download-item').eq(1).within(() => {
+        cy.get('.c-attachment-actions-wrapper').invoke('attr', 'style', 'display: block').invoke('show')
+        cy.get('.c-attachment-actions button[aria-label="Delete"]').click({ force: true })
         cy.get('.c-attachment-actions-wrapper').invoke('hide')
       })
     })
@@ -286,14 +278,14 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
 
     cy.getByDT('conversationWrapper').find('[data-index="8"] >.c-message').within(() => {
-      cy.get('.c-attachment-container').find('.c-attachment-preview').should('have.length', 2)
+      cy.get('.c-attachment-container').find('.c-attachment-download-item').should('have.length', 2)
     })
   })
 
   it('user2 pins 3 messages and unpins 1 message', () => {
-    pinMessage(9)
-    pinMessage(8)
-    pinMessage(10)
+    pinMessage(9, true)
+    pinMessage(8, true)
+    pinMessage(10, true)
     cy.getByDT('numberOfPinnedMessages').should('contain', '3 Pinned')
     unpinMessage(1)
     cy.getByDT('numberOfPinnedMessages').should('contain', '2 Pinned')

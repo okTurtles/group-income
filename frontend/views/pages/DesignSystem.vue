@@ -193,6 +193,7 @@ page(
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
               i.icon-envelope-open-text icon-envelope-open-text
+              i.icon-expand icon-expand
               i.icon-external-link-alt icon-external-link-alt
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
@@ -207,6 +208,7 @@ page(
               i.icon-newspaper icon-newspaper
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
+              i.icon-play icon-play
               i.icon-plus icon-plus
               i.icon-poll icon-poll
               i.icon-question icon-question
@@ -223,6 +225,7 @@ page(
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
               i.icon-user-minus icon-user-minus
+              i.icon-video icon-video
               i.icon-vote-yea icon-vote-yea
               i.icon-wifi icon-wifi
               i.icon-hashtag icon-hashtag
