@@ -112,7 +112,7 @@
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.0.0",
     "@chelonia/crypto": "1.0.1",
-    "@chelonia/lib": "1.2.5",
+    "@chelonia/lib": "file:../libcheloniajs/chelonia-lib-1.2.6.tgz",
     "@chelonia/multiformats": "1.0.0",
     "@chelonia/serdes": "1.0.0",
     "@hapi/boom": "9.1.0",

@@ -4,7 +4,7 @@
     v-bind="$attrs"
     v-on="$listeners"
   >
-    <span ref="startSentinel"></span>
+    <span class="sentinel" ref="startSentinel"></span>
     <div
       v-if="$slots.before"
       ref="before"
@@ -46,11 +46,18 @@
         name="after"
       />
     </div>
-    <span ref="endSentinel"></span>
+    <span class="sentinel" ref="endSentinel"></span>
   </div>
 </template>
 
 <style scoped>
+.sentinel {
+  display: block;
+  height: 1px;
+  width: 1px;
+  margin: -1px 0;
+}
+
 .vue-recycle-scroller__slot {
   flex: auto 0 0;
 }

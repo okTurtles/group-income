@@ -262,6 +262,7 @@ const onScrollStart = function () {
 const onScrollEnd = function () {
   const conversation = this.$refs.conversation?.$el
 
+  console.error('@@@@onScrollEnd', !!conversation, 'cH', conversation.clientHeight, 'sT', conversation.scrollTop, 'sH', conversation.scrollHeight)
   if (conversation && conversation.clientHeight + (conversation.scrollTop + 5) > conversation.scrollHeight) {
     this.onScrollEvt('down')
   }
@@ -325,7 +326,9 @@ export default ({
         messages: [],
         isEditing: {},
         scrollActionId: null,
-        focusedEffect: null
+        focusedEffect: null,
+        currentLowestHeight: undefined,
+        currentHighestHeight: undefined
       },
       messageState: {
         contract: {}
@@ -418,6 +421,12 @@ export default ({
         !this.ephemeral.loadingDown &&
         // Rendering the current contract state
         this.messageState.contract.messages === this.ephemeral.messages
+      )
+    },
+    needsFromScratch () {
+      return (
+        this.ephemeral.currentLowestHeight !== 0 &&
+        !this.isJoinedChatRoom(this.ephemeral.renderingChatRoomId)
       )
     },
     currentUserAttr () {
@@ -546,21 +555,25 @@ export default ({
         if (this.ephemeral.loadingUp) return
         this.ephemeral.loadingUp = instance
 
-        const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID).finally(() => {
-          if (this.ephemeral.loadingUp === instance) {
-            this.ephemeral.loadingUp = false
-          }
-        })
-
         if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-        await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, endHeight: latestHeight, offset: limit / 2, limit, stream: false }).then((events) => {
+        let events
+        if (this.needsFromScratch) {
+          // TODO: Implement snapshots or `keyOps` logic to make this
+          // more efficient
+          const { head: { height } } = await sbp('chelonia/out/deserializedHEAD', messageHashToScroll, { contractID: chatRoomID })
           if (this.chatroomHasSwitchedFrom(chatRoomID)) return
-          return this.processEvents(events, direction, true)
-        }).finally(() => {
+          events = await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight: 0, limit: height + limit / 2, stream: false })
+        } else {
+          events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, offset: limit / 2, limit, stream: false })
+        }
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        try {
+          await this.processEvents(events, direction, true)
+        } finally {
           if (this.ephemeral.loadingUp === instance) {
             this.ephemeral.loadingUp = false
           }
-        })
+        }
       } else if (direction === 'down' || !this.latestEvents.length) {
         if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight === this.latestHeight)) return
         if (direction === 'down') {
@@ -569,8 +582,8 @@ export default ({
           this.ephemeral.loadingUp = instance
         }
         let sinceHeight
-        if (!this.isJoinedChatRoom(chatRoomID)) {
-          limit = Infinity
+        if (this.needsFromScratch) {
+          limit = undefined
           sinceHeight = 0
         } else if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
@@ -591,7 +604,7 @@ export default ({
           return this.processEvents(events, direction).then(() => {
             // Special case: if loading events for a chatroom we're not part
             // of, scroll to bottom
-            if (limit !== Infinity || sinceHeight !== 0) return
+            if (limit !== undefined || sinceHeight !== 0) return
             this.ephemeral.postSetMessageState = () => {
               if (this.chatroomHasSwitchedFrom(chatRoomID)) return
               if (!this.isJoinedChatRoom(chatRoomID)) {
@@ -948,13 +961,17 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events =
-          await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, endHeight: this.latestHeight ?? Number.POSITIVE_INFINITY, offset: limit / 2, limit, stream: false })
-            .catch((e) => {
-              console.debug(`Error fetching events or message ${messageHash} doesn't belong to ${contractID}`, e)
-            })
-
+        const limit = this.isJoinedChatRoom(contractID) ? this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE : 0
+        let events
+        if (this.needsFromScratch) {
+          // TODO: Implement snapshots or `keyOps` logic to make this
+          // more efficient
+          const { height } = await sbp('chelonia/out/deserializedHEAD', messageHash, { contractID })
+          if (this.chatroomHasSwitchedFrom(contractID)) return
+          events = await sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: 0, limit: height + limit / 2, stream: false })
+        } else {
+          events = await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, offset: limit / 2, limit, stream: false })
+        }
         if (this.chatroomHasSwitchedFrom(contractID)) return
         if (events && events.length) {
           this.ephemeral.postSetMessageState = () => {
@@ -1549,6 +1566,7 @@ export default ({
       _this.jumpToLatest('instant')
     }, 40),
     async onScrollEvt (direction: 'up' | 'down' = 'down') {
+      console.error('@@@@onScrollEvt', direction)
       if (this.ephemeral.messagesInitiated === undefined) return
       if (direction === 'down' && this.ephemeral.currentHighestHeight === this.latestHeight && this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight) return
 
