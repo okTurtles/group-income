@@ -453,12 +453,13 @@ export default ({
   },
   MINCOME_CHANGED (data: { groupID: string, creatorID: string, to: number, memberType: string, increased: boolean }) {
     const rootState = sbp('state/vuex/state')
-    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const { withGroupCurrencyForGroup } = sbp('state/vuex/getters')
+    const amount = withGroupCurrencyForGroup(rootState[data.groupID])(data.to)
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Mincome changes'),
       avatarUserID: data.creatorID,
-      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
-      plaintextBody: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
+      body: L('The mincome has changed to {amount}.', { amount }),
+      plaintextBody: L('The mincome has changed to {amount}.', { amount }),
       creatorID: data.creatorID,
       icon: 'dollar-sign',
       level: 'info',
