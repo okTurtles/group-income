@@ -262,7 +262,6 @@ const onScrollStart = function () {
 const onScrollEnd = function () {
   const conversation = this.$refs.conversation?.$el
 
-  console.error('@@@@onScrollEnd', !!conversation, 'cH', conversation.clientHeight, 'sT', conversation.scrollTop, 'sH', conversation.scrollHeight)
   if (conversation && conversation.clientHeight + (conversation.scrollTop + 5) > conversation.scrollHeight) {
     this.onScrollEvt('down')
   }
@@ -328,7 +327,9 @@ export default ({
         scrollActionId: null,
         focusedEffect: null,
         currentLowestHeight: undefined,
-        currentHighestHeight: undefined
+        currentHighestHeight: undefined,
+        // Used for non-joined chatrooms
+        latestHeight: undefined
       },
       messageState: {
         contract: {}
@@ -448,6 +449,9 @@ export default ({
       return false
     },
     latestHeight () {
+      if (this.ephemeral.latestHeight != null) {
+        return this.ephemeral.latestHeight
+      }
       const chatRoomID = this.ephemeral.renderingChatRoomId
       const contractHeight = this.$store.state.contracts[chatRoomID]?.height
 
@@ -530,13 +534,12 @@ export default ({
         yield msg
       }
     },
-    async loadMoreMessages (direction = 'down') {
+    async loadMoreMessages (chatRoomID, direction = 'down') {
       // NOTE: 'this.ephemeral.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
-      const chatRoomID = this.ephemeral.renderingChatRoomId
-      if (!chatRoomID) return
+      if (!chatRoomID || this.chatroomHasSwitchedFrom(chatRoomID)) return
 
       let limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
@@ -575,7 +578,7 @@ export default ({
           }
         }
       } else if (direction === 'down' || !this.latestEvents.length) {
-        if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight === this.latestHeight)) return
+        if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight >= this.latestHeight)) return
         if (direction === 'down') {
           this.ephemeral.loadingDown = instance
         } else {
@@ -710,7 +713,7 @@ export default ({
 
         if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
           // No `await` to prevent a deadlock
-          this.loadMoreMessages(direction).catch(e => {
+          this.loadMoreMessages(chatroomID, direction).catch(e => {
             console.error('[ChatMain.vue/processEvents] Error on `loadMoreMessages`', e)
           })
         }
@@ -1161,7 +1164,7 @@ export default ({
       }
     },
     async deleteAttachment (message, manifestCid) {
-      const contractID = this.currentChatRoomId
+      const contractID = this.ephemeral.renderingChatRoomId
       const { from, hash } = message
       const shouldDeleteMessageInstead = !message.text && message.attachments?.length === 1
 
@@ -1244,6 +1247,13 @@ export default ({
       } else {
         this.ephemeral.currentHighestHeight = undefined
       }
+      if (!this.isJoinedChatRoom(chatRoomID)) {
+        const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
+        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        this.ephemeral.latestHeight = latestHeight
+      } else {
+        this.ephemeral.latestHeight = undefined
+      }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}
       this.ephemeral.focusedEffect = null
@@ -1255,7 +1265,7 @@ export default ({
       this.ephemeral.initialScroll.hash = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       this.ephemeral.messagesInitiated = !!messageState.messages.length && (!this.ephemeral.initialScroll.hash || !!messageState.messages.find(m => m.hash === this.ephemeral.initialScroll.hash))
       Vue.set(this.messageState, 'contract', messageState)
-      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages()
+      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID)
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -1270,6 +1280,7 @@ export default ({
         pinnedMessages: [],
         renderingContext: true
       }
+      this.ephemeral.initialScroll.hash = null
       this.ephemeral.renderingChatRoomId = null
       this.latestEvents = []
       Vue.set(this.messageState, 'contract', messageState)
@@ -1566,9 +1577,8 @@ export default ({
       _this.jumpToLatest('instant')
     }, 40),
     async onScrollEvt (direction: 'up' | 'down' = 'down') {
-      console.error('@@@@onScrollEvt', direction)
       if (this.ephemeral.messagesInitiated === undefined) return
-      if (direction === 'down' && this.ephemeral.currentHighestHeight === this.latestHeight && this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight) return
+      if (direction === 'down' && this.ephemeral.currentHighestHeight >= this.latestHeight && this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight) return
 
       // if (this.ephemeral.initialScroll.hash) {
       // clearTimeout(this.ephemeral.initialScroll.timeoutId)
@@ -1577,7 +1587,7 @@ export default ({
       const targetChatroomID = this.ephemeral.renderingChatRoomId
       // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
       try {
-        const completed = await this.loadMoreMessages(direction)
+        const completed = await this.loadMoreMessages(targetChatroomID, direction)
         if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
 
         if (completed !== undefined && !this.ephemeral.messagesInitiated) {

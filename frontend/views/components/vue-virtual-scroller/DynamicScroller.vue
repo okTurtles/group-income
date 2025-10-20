@@ -55,7 +55,7 @@
   display: block;
   height: 1px;
   width: 1px;
-  margin: -1px 0;
+  margin: -1px 0 0 0;
 }
 
 .vue-recycle-scroller__slot {
