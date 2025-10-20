@@ -86,7 +86,7 @@ const RenderMessageWithMarkdown: any = {
     }
 
     return createElement(
-      'p',
+      'div',
       {
         class: {
           'c-replying': isReplyingMessage,

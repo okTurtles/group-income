@@ -12,7 +12,7 @@ import {
   PROPOSAL_GENERIC,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from './constants.js'
-import { NEW_CHATROOM_UNREAD_POSITION } from '@utils/events.js'
+import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
 import { humanDate } from './time.js'
 
 // !!!!!!!!!!!!!!!
@@ -168,7 +168,7 @@ export async function postLeaveChatRoomCleanup (contractID: string, state: Objec
   sbp('gi.actions/identity/kv/deleteChatRoomUnreadMessages', { contractID }).catch((e) => {
     console.error('[leaveChatroom] Error at deleteChatRoomUnreadMessages ', contractID, e)
   })
-  sbp('okTurtles.events/emit', NEW_CHATROOM_UNREAD_POSITION, { chatRoomID: contractID })
+  sbp('okTurtles.events/emit', NEW_CHATROOM_SCROLL_POSITION, { chatRoomID: contractID })
   // NOTE: The contract that keeps track of chatrooms should now call `/release`
   // This would be the group contract (for group chatrooms) or the identity
   // contract (for DMs).
