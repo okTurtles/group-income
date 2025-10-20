@@ -604,7 +604,7 @@ img.c-preview-image {
   border: 2px solid;
   border-top-color: transparent;
   border-radius: 50%;
-  color: var(--image-viewer-text-color);
+  color: var(--viewer-text-color);
   animation: loader-ani 1.75s infinite linear;
   z-index: 2;
 

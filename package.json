@@ -90,7 +90,10 @@
       "string-quotes": "double",
       "selector-pseudo-element-no-unknown": null,
       "no-descending-specificity": null
-    }
+    },
+    "ignoreFiles": [
+      "frontend/assets/style/components/plyr/_plyr_default.scss"
+    ]
   },
   "repository": {
     "type": "git",
@@ -112,7 +115,7 @@
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.0.0",
     "@chelonia/crypto": "1.0.1",
-    "@chelonia/lib": "1.2.0",
+    "@chelonia/lib": "1.2.6",
     "@chelonia/multiformats": "1.0.0",
     "@chelonia/serdes": "1.0.0",
     "@hapi/boom": "9.1.0",
@@ -142,6 +145,7 @@
     "marked": "11.1.1",
     "pino": "8.19.0",
     "pino-pretty": "10.3.1",
+    "plyr": "3.8.3",
     "portal-vue": "2.1.7",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
@@ -151,7 +155,6 @@
     "uuid": "9.0.0",
     "vue": "2.6.12",
     "vue-clickaway": "2.2.2",
-    "vue-infinite-loading": "2.4.5",
     "vue-router": "3.5.3",
     "vue-slider-component": "3.2.11",
     "vue2-touch-events": "3.0.0",
