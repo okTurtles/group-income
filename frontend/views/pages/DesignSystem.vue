@@ -1178,7 +1178,7 @@ page(
               |   )
               |     i.icon-ellipsis-v
               |   menu-content
-              |     ul
+              |     menu
               |       menu-item(
               |         tag='button'
               |         item-id='profile'
@@ -1190,7 +1190,7 @@ page(
                 i.icon-ellipsis-v
 
               menu-content.c-menu-content
-                ul
+                menu
                   menu-item(
                     tag='button'
                     item-id='profile'

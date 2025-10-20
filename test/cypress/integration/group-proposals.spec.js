@@ -491,7 +491,7 @@ describe('Proposals - Add members', () => {
       cy.getByDT('proposalsSection').within(() => {
         cy.getByDT('menuTrigger').click()
         cy.getByDT('menuContent').within(() => {
-          cy.get('ul').children().eq(7).within(() => {
+          cy.get('menu').children().eq(7).within(() => {
             cy.get('button').click()
           })
         })

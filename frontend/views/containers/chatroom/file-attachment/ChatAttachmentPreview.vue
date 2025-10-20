@@ -159,7 +159,9 @@ export default {
   mounted () {
     if (this.hasImgAttachments) {
       const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
-        .map(attachment => this.getAttachmentObjectURL(attachment))
+        .map(attachment => this.getAttachmentObjectURL(attachment).catch(e => {
+          console.error('[ChatAttachmentPreview/mounted] Error', e)
+        }))
 
       Promise.all(promiseToRetrieveURLs).then(urls => {
         this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
