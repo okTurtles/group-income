@@ -487,7 +487,13 @@ export default ({
       // Sometimes, on mobile, the virtual hardware keyboard appears
       // over the page. This doesn't seem to be detectable, but scrolling
       // seems to work around it.
-      setTimeout(() => this.$el.scrollIntoView(), 500)
+      // This issue seems to affect Blink on Android. A delay is needed to
+      // compensate for the keyboard animation.
+      // NOTE: This test will not work when requesting a 'desktop website', as
+      // then the user agent typically will not mention Android.
+      if (/android/i.test(navigator.userAgent)) {
+        setTimeout(() => this.$el.scrollIntoView(), 500)
+      }
     },
     textAreaBlur (event) {
       if (!this.ephemeral.isPhone) {
