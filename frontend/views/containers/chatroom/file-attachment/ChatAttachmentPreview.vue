@@ -230,6 +230,7 @@ export default {
       }
     },
     blobToBase64 (blob) {
+      // serialize blob to base64
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onloadend = () => resolve(reader.result) // e.g. "data:video/mpeg;base64,..."
@@ -238,6 +239,7 @@ export default {
       })
     },
     base64ToBlob (dataURL) {
+      // description: convert base64 to blob
       const [meta, base64] = dataURL.split(',')
       const mime = meta.match(/:(.*?);/)[1]
       const binary = atob(base64)
