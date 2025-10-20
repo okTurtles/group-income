@@ -84,6 +84,10 @@ import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
+import {
+  saveAttachmentBlobToSessionStorage,
+  getAttachmentBlobFromSessionStorage
+} from './attachments-utils.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -219,49 +223,25 @@ export default {
         return attachment.url
       } else if (attachment.downloadData) {
         const manifestCid = attachment.downloadData.manifestCid
-        const blobFromStorage = sessionStorage.getItem(manifestCid)
+        const blobFromStorage = getAttachmentBlobFromSessionStorage(manifestCid)
 
         if (blobFromStorage) {
-          return URL.createObjectURL(this.base64ToBlob(blobFromStorage))
+          return URL.createObjectURL(blobFromStorage)
         } else {
           const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-          sessionStorage.setItem(manifestCid, await this.blobToBase64(blob))
+          await saveAttachmentBlobToSessionStorage(manifestCid, blob)
 
           return URL.createObjectURL(blob)
         }
       }
-    },
-    blobToBase64 (blob) {
-      // serialize blob to base64
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result) // e.g. "data:video/mpeg;base64,..."
-        reader.onerror = reject
-        reader.readAsDataURL(blob)
-      })
-    },
-    base64ToBlob (dataURL) {
-      // description: convert base64 to blob
-      const [meta, base64] = dataURL.split(',')
-      const mime = meta.match(/:(.*?);/)[1]
-      const binary = atob(base64)
-      const len = binary.length
-      const u8arr = new Uint8Array(len)
-
-      for (let i = 0; i < len; i++) {
-        u8arr[i] = binary.charCodeAt(i)
-      }
-      return new Blob([u8arr], { type: mime })
     },
     async loadVideoObjectURL (attachment) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
         const manifestCid = downloadData.manifestCid
-        const blobFromStorage = sessionStorage.getItem(manifestCid)
-        const blobToUse = blobFromStorage
-          ? this.base64ToBlob(blobFromStorage)
-          : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+        const blobFromStorage = getAttachmentBlobFromSessionStorage(manifestCid)
+        const blobToUse = blobFromStorage || (await sbp('chelonia/fileDownload', new Secret(downloadData)))
 
         const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
@@ -278,7 +258,7 @@ export default {
         }
 
         if (!blobFromStorage) {
-          sessionStorage.setItem(manifestCid, await this.blobToBase64(blobToUse))
+          await saveAttachmentBlobToSessionStorage(manifestCid, blobToUse)
         }
       }
     },
