@@ -178,6 +178,10 @@ export default {
   beforeDestroy () {
     if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        this.revokeAllMediaObjectURLs()
+      }
     }
   },
   methods: {
@@ -202,6 +206,11 @@ export default {
           this.$emit('delete-attachment', attachment.downloadData.manifestCid)
         }
       }
+    },
+    revokeAllMediaObjectURLs () {
+      Object.values(this.mediaObjectURLList).forEach(urlList => {
+        urlList.forEach(url => URL.revokeObjectURL(url))
+      })
     },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
