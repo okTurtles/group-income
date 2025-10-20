@@ -216,15 +216,49 @@ export default {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-        return URL.createObjectURL(blob)
+        const manifestCid = attachment.downloadData.manifestCid
+        const blobFromStorage = sessionStorage.getItem(manifestCid)
+
+        if (blobFromStorage) {
+          return URL.createObjectURL(this.base64ToBlob(blobFromStorage))
+        } else {
+          const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
+          sessionStorage.setItem(manifestCid, await this.blobToBase64(blob))
+
+          return URL.createObjectURL(blob)
+        }
       }
+    },
+    blobToBase64 (blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result) // e.g. "data:video/mpeg;base64,..."
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+    },
+    base64ToBlob (dataURL) {
+      const [meta, base64] = dataURL.split(',')
+      const mime = meta.match(/:(.*?);/)[1]
+      const binary = atob(base64)
+      const len = binary.length
+      const u8arr = new Uint8Array(len)
+
+      for (let i = 0; i < len; i++) {
+        u8arr[i] = binary.charCodeAt(i)
+      }
+      return new Blob([u8arr], { type: mime })
     },
     async loadVideoObjectURL (attachment) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
+        const manifestCid = downloadData.manifestCid
+        const blobFromStorage = sessionStorage.getItem(manifestCid)
+        const blobToUse = blobFromStorage
+          ? this.base64ToBlob(blobFromStorage)
+          : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+
         const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
 
@@ -235,8 +269,12 @@ export default {
             if (url) {
               URL.revokeObjectURL(url)
             }
-            return URL.createObjectURL(blob)
+            return URL.createObjectURL(blobToUse)
           })
+        }
+
+        if (!blobFromStorage) {
+          sessionStorage.setItem(manifestCid, await this.blobToBase64(blobToUse))
         }
       }
     },
