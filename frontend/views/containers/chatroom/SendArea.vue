@@ -992,6 +992,7 @@ export default ({
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
   border-radius: 0.25rem;
+  min-width: 0;
 
   &-textarea,
   &-mask {
