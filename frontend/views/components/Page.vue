@@ -87,10 +87,11 @@ export default ({
     },
     findAndScrollToAnchor (str) {
       const anchorEl = document.getElementById(str) || this.$el.querySelector(`[name="${CSS.escape(str)}"]`)
-      anchorEl && anchorEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-      if (anchorEl.tabIndex >= 0 || anchorEl.hasAttribute('tabindex')) {
-        anchorEl.focus()
+      if (anchorEl) {
+        anchorEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (anchorEl.tabIndex >= 0 || anchorEl.hasAttribute('tabindex')) {
+          anchorEl.focus()
+        }
       }
     }
   },
