@@ -174,7 +174,16 @@ export default {
 
     if (this.hasVideoAttachments) {
       this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
-        .map(attachment => attachment.url || '')
+        .map(attachment => {
+          if (attachment.url) {
+            return attachment.url
+          } else if (attachment.downloadData?.manifestCid) {
+            const blobFromStorage = getAttachmentBlobFromSessionStorage(attachment.downloadData?.manifestCid)
+            return blobFromStorage ? URL.createObjectURL(blobFromStorage) : ''
+          }
+
+          return ''
+        })
     }
 
     if (this.hasMediaAttachments) {
@@ -229,7 +238,7 @@ export default {
           return URL.createObjectURL(blobFromStorage)
         } else {
           const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-          await saveAttachmentBlobToSessionStorage(manifestCid, blob)
+          saveAttachmentBlobToSessionStorage(manifestCid, blob)
 
           return URL.createObjectURL(blob)
         }
@@ -258,7 +267,7 @@ export default {
         }
 
         if (!blobFromStorage) {
-          await saveAttachmentBlobToSessionStorage(manifestCid, blobToUse)
+          saveAttachmentBlobToSessionStorage(manifestCid, blobToUse)
         }
       }
     },
