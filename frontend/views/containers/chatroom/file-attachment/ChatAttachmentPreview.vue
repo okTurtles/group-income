@@ -195,6 +195,7 @@ export default {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
 
       if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
         this.revokeAllMediaObjectURLs()
       }
     }
