@@ -1,4 +1,4 @@
-export const blobToBase64 = (blob: Blob): Promise<any> => {
+export const blobToDataUrl = (blob: Blob): Promise<any> => {
   // serialize blob to base64
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -8,17 +8,16 @@ export const blobToBase64 = (blob: Blob): Promise<any> => {
   })
 }
 
-export const base64ToBlob = (dataURL: string): any => {
-  // description: convert base64 to blob
-  const [meta, base64] = dataURL.split(',')
+export const dataUrlToBlob = (dataURL: string): any => {
+  const [meta, data] = dataURL.split(',')
   const mimeType = meta?.match(/:(.*?);/)?.[1]
 
-  if (!mimeType || !base64) {
+  if (!mimeType || !data) {
     console.error('Error converting base64 to blob: mimeType or base64 is missing')
     return null
   }
 
-  const byteString = atob(base64)
+  const byteString = atob(data)
   const len = byteString.length
   const u8arr = new Uint8Array(len)
 
@@ -39,7 +38,7 @@ export const saveAttachmentBlobToSessionStorage = async (manifestCid: string, bl
   }
 
   try {
-    sessionStorage.setItem(`attachmentblob/${manifestCid}`, await blobToBase64(blob))
+    sessionStorage.setItem(`attachmentblob/${manifestCid}`, await blobToDataUrl(blob))
   } catch (err) {
     console.error('Error saving attachment blob to session storage:', err)
   }
@@ -51,7 +50,7 @@ export const getAttachmentBlobFromSessionStorage = (manifestCid: string): any =>
   if (!loaded) return null
 
   try {
-    return base64ToBlob(loaded)
+    return dataUrlToBlob(loaded)
   } catch (err) {
     console.error('Error converting base64 to blob:', err)
     return null
