@@ -121,7 +121,6 @@ export default ({
       'groupMincomeAmount',
       'groupMincomeSymbolWithCode',
       'ourIdentityContractId',
-      'withGroupCurrency',
       'ourGroupProfile',
       'usernameFromID'
     ]),
@@ -269,7 +268,7 @@ export default ({
           [L('Your income must be lower than the group mincome')]: function (value) {
             return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
           },
-          [L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) })]: function (value) {
+          [L('Pledge amount cannot exceed {max}', { max: withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) })]: function (value) {
             return !this.isPledging || normalizeCurrency(value) < GROUP_MAX_PLEDGE_AMOUNT
           }
         }
