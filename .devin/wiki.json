@@ -143,7 +143,7 @@
       ]
     },
     {
-      "title": "SBP Selector-based Programming",
+      "title": "Selector-based Programming",
       "purpose": "Explain Selector-based Programming (SBP), how it enables communication between components, action namespaces (gi.actions/*, chelonia/*, okTurtles.events/*), and the RPC pattern",
       "parent": "Architecture",
       "page_notes": [
