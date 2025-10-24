@@ -1,0 +1,305 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce Group Income as a decentralized basic income system, explaining its purpose, core concepts (contracts, Chelonia, end-to-end encryption), and high-level architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Guide developers through setting up the development environment, running the application, and understanding the basic development workflow",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Development Setup",
+      "purpose": "Detailed instructions for setting up the development environment, including Node.js requirements, npm install, Docker setup, and running grunt dev",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Testing",
+      "purpose": "Explain how to run unit tests and E2E tests, use Cypress interactive mode, and understand the custom Cypress commands",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Contributing",
+      "purpose": "Contribution guidelines, code style requirements, PR process, and the C4.1 contribution model",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Architecture",
+      "purpose": "High-level overview of the system architecture, covering frontend, backend, contracts, and how they interact",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Contracts System",
+      "purpose": "Explain the Chelonia contract framework, how contracts work, contract state management, and the relationship between Identity, Group, and Chatroom contracts",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Identity Contracts",
+      "purpose": "Detail the Identity contract structure, state, actions (signup, login, logout), and how user authentication works",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Group Contracts",
+      "purpose": "Explain Group contract structure, state (profiles, settings, proposals, payments), actions (create, join, leave), and group management features",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Chatroom Contracts",
+      "purpose": "Document Chatroom contract structure, state (messages, members), actions (send message, join, leave), and how chat rooms integrate with groups",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Cryptographic Keys",
+      "purpose": "Explain the hierarchical key system (IPK, IEK, CSK, CEK, PEK, DMK, SAK), key rings, transient vs. persistent keys, and key sharing via OP_KEY_REQUEST/OP_KEY_SHARE",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Frontend Architecture",
+      "purpose": "Overview of the Vue.js frontend, Vuex store, router, SBP service bus, component structure, and how the UI interacts with contracts",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Backend Architecture",
+      "purpose": "Explain the Hapi.js server, HTTP API routes, WebSocket Pub/Sub, persistence layer (FS and SQLite backends), and data synchronization",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Service Worker",
+      "purpose": "Document the service worker architecture, offline functionality, push notifications, background sync, and how Chelonia runs in the SW context",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "SBP Selector-based Programming",
+      "purpose": "Explain Selector-based Programming (SBP), how it enables communication between components, action namespaces (gi.actions/*, chelonia/*, okTurtles.events/*), and the RPC pattern",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Core Features",
+      "purpose": "Overview of the main user-facing features: groups, payments, proposals, and chat",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Groups",
+      "purpose": "Document group creation, joining groups, member management, and group settings",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Creating Groups",
+      "purpose": "Step-by-step guide to creating a group, including GroupCreationModal, setting mincome, choosing voting rules, and generating initial invite",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Joining Groups",
+      "purpose": "Explain the invitation system, Join.vue page, invite validation, key request/share flow, and pending approval process",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Invitations",
+      "purpose": "Detail invitation creation, invitation links, expiry, quantity limits, revoking invites, and the InvitationsTable component",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Payments and Contributions",
+      "purpose": "Overview of the payment system, income details, pledges, payment periods, and distribution calculations",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Income Details",
+      "purpose": "Explain the IncomeDetails modal, declaring income vs. pledges, payment methods, non-monetary contributions, and the ContributionsWidget",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Payment Periods and Distribution",
+      "purpose": "Document payment period lifecycle, distribution calculation, haveNeedsSnapshot, distribution locking, and period transitions",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Recording Payments",
+      "purpose": "Explain the payment recording flow, RecordPayment modal, payment states (Todo, Pending, Completed, Not Received), and thank you notes",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Proposals and Voting",
+      "purpose": "Document the proposal system, voting rules (percentage, disagreement), proposal types, and the governance workflow",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Proposal Types",
+      "purpose": "Detail each proposal type: PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Voting Rules",
+      "purpose": "Explain RULE_PERCENTAGE and RULE_DISAGREEMENT, how votes are counted, and when proposals pass or fail",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Chat System",
+      "purpose": "Overview of the chat system, channels, direct messages, message types, and real-time communication",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Sending Messages",
+      "purpose": "Document the SendArea component, message composition, mentions (@username, #channel), markdown formatting, and typing indicators",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Message Display and Actions",
+      "purpose": "Explain MessageBase, message rendering, actions (edit, reply, delete, pin, react), and the MessageActions menu",
+      "parent": "Core Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
