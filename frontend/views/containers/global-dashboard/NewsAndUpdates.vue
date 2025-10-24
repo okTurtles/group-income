@@ -75,10 +75,12 @@ export default ({
       if (this.posts.length > 0 && this.ourIdentityContractId) {
         const latestNewsDate = this.posts[0].createdAt.toISOString()
         try {
-          await sbp('gi.actions/identity/updateSettings', {
-            contractID: this.ourIdentityContractId,
-            data: { lastSeenNewsDate: latestNewsDate }
-          })
+          const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
+            return [{ ...currentPreferences, lastSeenNewsDate: latestNewsDate }, etag]
+          }
+
+          const data = getUpdatedPreferences()[0]
+          await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
         } catch (error) {
           console.error('Failed to update last seen news date:', error)
         }

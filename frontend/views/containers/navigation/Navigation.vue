@@ -163,7 +163,7 @@ export default ({
       'colors',
       'totalUnreadNotificationCount',
       'groupUnreadMessages',
-      'currentIdentityState'
+      'ourPreferences'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -189,7 +189,7 @@ export default ({
       }
 
       // Check if there's a stored last seen date
-      const lastSeenNewsDate = this.currentIdentityState?.settings?.lastSeenNewsDate
+      const lastSeenNewsDate = this.ourPreferences?.lastSeenNewsDate
 
       // If no last seen date is stored, don't show badge
       if (!lastSeenNewsDate || !this.ephemeral.latestNewsDate) {
