@@ -84,6 +84,10 @@ import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
+import {
+  saveAttachmentBlobToSessionStorage,
+  getAttachmentBlobFromSessionStorage
+} from './attachments-utils.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -170,7 +174,16 @@ export default {
 
     if (this.hasVideoAttachments) {
       this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
-        .map(attachment => attachment.url || '')
+        .map(attachment => {
+          if (attachment.url) {
+            return attachment.url
+          } else if (attachment.downloadData?.manifestCid) {
+            const blobFromStorage = getAttachmentBlobFromSessionStorage(attachment.downloadData?.manifestCid)
+            return blobFromStorage ? URL.createObjectURL(blobFromStorage) : ''
+          }
+
+          return ''
+        })
     }
 
     if (this.hasMediaAttachments) {
@@ -180,6 +193,11 @@ export default {
   beforeDestroy () {
     if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
+        this.revokeAllMediaObjectURLs()
+      }
     }
   },
   methods: {
@@ -205,19 +223,36 @@ export default {
         }
       }
     },
+    revokeAllMediaObjectURLs () {
+      Object.values(this.mediaObjectURLList).forEach(urlList => {
+        urlList.forEach(url => URL.revokeObjectURL(url))
+      })
+    },
     async getAttachmentObjectURL (attachment) {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-        return URL.createObjectURL(blob)
+        const manifestCid = attachment.downloadData.manifestCid
+        const blobFromStorage = getAttachmentBlobFromSessionStorage(manifestCid)
+
+        if (blobFromStorage) {
+          return URL.createObjectURL(blobFromStorage)
+        } else {
+          const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
+          saveAttachmentBlobToSessionStorage(manifestCid, blob)
+
+          return URL.createObjectURL(blob)
+        }
       }
     },
     async loadVideoObjectURL (attachment) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
+        const manifestCid = downloadData.manifestCid
+        const blobFromStorage = getAttachmentBlobFromSessionStorage(manifestCid)
+        const blobToUse = blobFromStorage || (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+
         const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
 
@@ -228,8 +263,12 @@ export default {
             if (url) {
               URL.revokeObjectURL(url)
             }
-            return URL.createObjectURL(blob)
+            return URL.createObjectURL(blobToUse)
           })
+        }
+
+        if (!blobFromStorage) {
+          saveAttachmentBlobToSessionStorage(manifestCid, blobToUse)
         }
       }
     },
