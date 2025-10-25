@@ -10,6 +10,11 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
           src='/assets/images/group-income-icon-transparent-circle.png'
           alt='Global dashboard logo'
         )
+      badge(
+        v-if='hasNewNews'
+        type='compact'
+        data-test='globalDashboardBadge'
+      )
 
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
@@ -57,6 +62,16 @@ export default ({
     Badge,
     Tooltip
   },
+  data () {
+    return {
+      ephemeral: {
+        latestNewsDate: null
+      }
+    }
+  },
+  created () {
+    this.checkForNewNews()
+  },
   computed: {
     ...mapState([
       'currentGroupId'
@@ -64,7 +79,8 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'groupUnreadMessages',
-      'unreadGroupNotificationCountFor'
+      'unreadGroupNotificationCountFor',
+      'ourPreferences'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
@@ -76,6 +92,26 @@ export default ({
     },
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard')
+    },
+    hasNewNews () {
+      // Don't show badge if we're currently on the news page
+      if (this.$route.path === '/global-dashboard/news-and-updates') {
+        return false
+      }
+
+      // Check if there's a stored last seen date
+      const lastSeenNewsDate = this.ourPreferences?.lastSeenNewsDate
+
+      // If no last seen date is stored, don't show badge
+      if (!lastSeenNewsDate || !this.ephemeral.latestNewsDate) {
+        return false
+      }
+
+      // Compare the latest news date with the last seen date
+      const lastSeen = new Date(lastSeenNewsDate)
+      const latest = new Date(this.ephemeral.latestNewsDate)
+
+      return latest > lastSeen
     }
   },
   methods: {
@@ -106,6 +142,19 @@ export default ({
     },
     groupPictureForContract (contractID) {
       return this.$store.state[contractID]?.settings?.groupPicture || ''
+    },
+    async checkForNewNews () {
+      try {
+        const response = await fetch('https://groupincome.org/news.json')
+        if (!response.ok) return
+
+        const data = await response.json()
+        if (data.length > 0) {
+          this.ephemeral.latestNewsDate = data[0].createdAt
+        }
+      } catch (error) {
+        console.error('Failed to check for new news:', error)
+      }
     }
   }
 }: Object)

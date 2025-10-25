@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-news-and-updates-container
   .c-loading(v-if='isLoading') {{ L('Loading news...') }}
-  .c-error(v-else-if='error') {{ L('Failed to load news (err: {msg}).', { msg: errorMessage }) }}
+  .c-error(v-else-if='error') {{ L('Failed to load news: {errorMessage}', { errorMessage }) }}
   .c-post-block(v-else v-for='(post, index) in posts' :key='index')
     .c-post-created-date {{ humanDate(post.createdAt, { month: 'long', year: 'numeric', day: 'numeric' }) }}
 
@@ -23,6 +23,7 @@ import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'NewAndUpdates',
@@ -67,7 +68,7 @@ export default ({
       } catch (error) {
         console.error('Failed to fetch news:', error)
         this.error = true
-        this.errorMessage = error.message || 'Unknown error'
+        this.errorMessage = error.message || L('Unknown error')
       } finally {
         this.isLoading = false
       }
