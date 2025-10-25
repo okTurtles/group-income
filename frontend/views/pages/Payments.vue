@@ -181,6 +181,7 @@ import {
   dummyLightningPaymentDetails
 } from '@view-utils/lightning-dummy-data.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 
 export default ({
   name: 'Payments',
@@ -272,8 +273,7 @@ export default ({
       'thisPeriodPaymentInfo',
       'ourGroupProfile',
       'groupSettings',
-      'userDisplayNameFromID',
-      'withGroupCurrency'
+      'userDisplayNameFromID'
     ]),
     needsIncome () {
       return this.ourGroupProfile?.incomeDetailsType === 'incomeAmount'
@@ -437,6 +437,7 @@ export default ({
   },
   methods: {
     humanDate,
+    withGroupCurrency,
     prettyDate (date) {
       return humanDate(date, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })
     },

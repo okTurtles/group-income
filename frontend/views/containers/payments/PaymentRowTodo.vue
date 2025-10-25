@@ -34,12 +34,12 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 
 export default ({
   name: 'PaymentRowTodo',
@@ -62,9 +62,6 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'withGroupCurrency'
-    ]),
     wasNotReceived () {
       const { data } = this.payment
       return data && data.status === PAYMENT_NOT_RECEIVED
@@ -72,6 +69,7 @@ export default ({
   },
   methods: {
     humanDate,
+    withGroupCurrency,
     // TODO: make multiple payments
     select () {
       this.form.checked = true

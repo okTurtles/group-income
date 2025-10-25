@@ -478,9 +478,9 @@ describe('Contributions', () => {
 
     cy.giSwitchUser(`user2-${userId}`)
     const graphicLegend2 = [
-      'Total Pledged$1100',
+      'Total Pledged$1,100',
       'Needed Pledges$0',
-      'Surplus$1000'
+      'Surplus$1,000'
     ]
     updateIncome(500, false, graphicLegend2, '$45.45 to Greg')
 

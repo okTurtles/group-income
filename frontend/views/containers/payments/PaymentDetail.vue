@@ -3,7 +3,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title(data-test='amount') {{ withCurrency(payment.data.amount) }}
+  .is-title-2.c-title(data-test='amount') {{ withGroupCurrency(payment.data.amount) }}
   .c-subtitle.has-text-1(data-test='subtitle') {{ subtitleCopy }}
 
   //- TODO This should be a table...
@@ -16,7 +16,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       strong {{ humanDate(payment.periodstamp, { month: 'long', year: 'numeric', day: 'numeric' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Mincome at the time
-      strong {{ withCurrency(payment.data.groupMincome) }}
+      strong {{ withGroupCurrency(payment.data.groupMincome) }}
     li.c-payment-list-item(v-if='lightningPayment')
       i18n.has-text-1 Transaction ID
       link-to-copy.c-lightning-trxn-id(
@@ -52,7 +52,7 @@ import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import currencies from '@model/contracts/shared/currencies.js'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { cloneDeep } from 'turtledash'
 
@@ -82,9 +82,6 @@ export default ({
       'ourIdentityContractId',
       'userDisplayNameFromID'
     ]),
-    withCurrency () {
-      return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
-    },
     fromMemberID () {
       return this.payment?.data.fromMemberID || ''
     },
@@ -101,6 +98,7 @@ export default ({
     }
   },
   methods: {
+    withGroupCurrency,
     humanDate,
     async initializeDetails () {
       // NOTE: Only for the historical payments, there is 'period'

@@ -266,9 +266,6 @@ export default ({
   groupCurrency (state, getters) {
     return getters.groupCurrencyForGroup(getters.currentGroupState)
   },
-  groupMincomeFormatted (state, getters) {
-    return getters.withGroupCurrency?.(getters.groupMincomeAmount)
-  },
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },

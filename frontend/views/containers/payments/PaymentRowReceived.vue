@@ -51,7 +51,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
@@ -80,15 +80,13 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'withGroupCurrency'
-    ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     }
   },
   methods: {
     humanDate,
+    withGroupCurrency,
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },

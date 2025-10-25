@@ -15,14 +15,18 @@ div(data-test='groupMincome')
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
+import withGroupCurrency from '@view-utils/withGroupCurrency.js'
 
 export default ({
   name: 'GroupMincome',
   computed: {
     ...mapGetters([
       'groupSettings',
-      'groupMincomeFormatted'
-    ])
+      'groupMincomeAmount'
+    ]),
+    groupMincomeFormatted () {
+      return withGroupCurrency(this.groupMincomeAmount)
+    }
   },
   methods: {
     openProposal () {
