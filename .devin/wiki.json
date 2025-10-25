@@ -114,7 +114,7 @@
     },
     {
       "title": "Frontend Architecture",
-      "purpose": "Overview of the Vue.js frontend, Vuex store, router, SBP service bus, component structure, and how the UI interacts with contracts",
+      "purpose": "Overview of the Vue.js frontend, Vuex store, router, SBP, component structure, and how the UI interacts with contracts",
       "parent": "Architecture",
       "page_notes": [
         {
