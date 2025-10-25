@@ -54,6 +54,7 @@ import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
+import { fetchNews } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupsList',
@@ -145,10 +146,7 @@ export default ({
     },
     async checkForNewNews () {
       try {
-        const response = await fetch('https://groupincome.org/news.json')
-        if (!response.ok) return
-
-        const data = await response.json()
+        const data = await fetchNews()
         if (data.length > 0) {
           this.ephemeral.latestNewsDate = data[0].createdAt
         }

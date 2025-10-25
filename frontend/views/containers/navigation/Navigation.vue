@@ -108,7 +108,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { showNavMixin } from '@view-utils/misc.js'
+import { showNavMixin, fetchNews } from '@view-utils/misc.js'
 import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
 import { debounce } from 'turtledash'
 
@@ -219,10 +219,7 @@ export default ({
     },
     async checkForNewNews () {
       try {
-        const response = await fetch('https://groupincome.org/news.json')
-        if (!response.ok) return
-
-        const data = await response.json()
+        const data = await fetchNews()
         if (data.length > 0) {
           this.ephemeral.latestNewsDate = data[0].createdAt
         }

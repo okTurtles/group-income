@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-news-and-updates-container
   .c-loading(v-if='isLoading') {{ L('Loading news...') }}
-  .c-error(v-else-if='error') {{ L('Failed to load news: {errorMessage}', { errorMessage }) }}
+  .c-error(v-else-if='errorMessage') {{ L('Failed to load news: {errorMessage}', { errorMessage }) }}
   .c-post-block(v-else v-for='(post, index) in posts' :key='index')
     .c-post-created-date {{ humanDate(post.createdAt, { month: 'long', year: 'numeric', day: 'numeric' }) }}
 
@@ -24,6 +24,7 @@ import Avatar from '@components/Avatar.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
+import { fetchNews } from '@view-utils/misc.js'
 
 export default ({
   name: 'NewAndUpdates',
@@ -35,8 +36,7 @@ export default ({
     return {
       posts: [],
       isLoading: true,
-      error: false,
-      errorMessage: ''
+      errorMessage: null
     }
   },
   computed: {
@@ -51,14 +51,9 @@ export default ({
     async fetchNews () {
       try {
         this.isLoading = true
-        this.error = false
+        this.errorMessage = null
 
-        const response = await fetch('https://groupincome.org/news.json')
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
+        const data = await fetchNews()
 
         // Convert createdAt strings to Date objects for proper formatting
         this.posts = data.map(post => ({
@@ -67,7 +62,6 @@ export default ({
         }))
       } catch (error) {
         console.error('Failed to fetch news:', error)
-        this.error = true
         this.errorMessage = error.message || L('Unknown error')
       } finally {
         this.isLoading = false
