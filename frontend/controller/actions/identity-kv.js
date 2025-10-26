@@ -254,6 +254,20 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
     })
   },
+  'gi.actions/identity/kv/updateLastSeenNewsDate': ({ lastSeenNewsDate }: { lastSeenNewsDate: string }) => {
+    if (!lastSeenNewsDate) {
+      throw new Error('Unable to update last seen news date without a valid date')
+    }
+
+    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+      const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
+        return [{ ...currentPreferences, lastSeenNewsDate }, etag]
+      }
+
+      const data = getUpdatedPreferences()[0]
+      await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+    })
+  },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID

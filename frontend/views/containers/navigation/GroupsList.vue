@@ -96,23 +96,14 @@ export default ({
     },
     hasNewNews () {
       // Don't show badge if we're currently on the news page
-      if (this.$route.path === '/global-dashboard/news-and-updates') {
+      if (this.$route.path === '/global-dashboard/news-and-updates' ||
+        !this.ourPreferences?.lastSeenNewsDate ||
+        !this.ephemeral.latestNewsDate
+      ) {
         return false
       }
 
-      // Check if there's a stored last seen date
-      const lastSeenNewsDate = this.ourPreferences?.lastSeenNewsDate
-
-      // If no last seen date is stored, don't show badge
-      if (!lastSeenNewsDate || !this.ephemeral.latestNewsDate) {
-        return false
-      }
-
-      // Compare the latest news date with the last seen date
-      const lastSeen = new Date(lastSeenNewsDate)
-      const latest = new Date(this.ephemeral.latestNewsDate)
-
-      return latest > lastSeen
+      return new Date(this.ephemeral.latestNewsDate) > new Date(this.ourPreferences.lastSeenNewsDate)
     }
   },
   methods: {
