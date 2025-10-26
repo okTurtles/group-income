@@ -1,14 +1,15 @@
 <template lang='pug'>
 .c-news-and-updates-container
-  .c-loader-skeleton-container(v-if='isLoading')
+  .c-loader-skeleton-container(v-if='isStatus("loading")')
     .c-skeleton-block(v-for='i in 2' :key='i')
       .c-loading-box.c-skeleton-date
       .c-loading-box.c-skeleton-card
 
-  .c-error(v-else-if='errorMessage') {{ L('Failed to load news: {errorMessage}', { errorMessage }) }}
-  template(v-else)
-    .c-post-block(v-for='(post, index) in posts' :key='index')
-      .c-post-created-date {{ humanDate(post.createdAt, { month: 'long', year: 'numeric', day: 'numeric' }) }}
+  banner-scoped(v-else-if='isStatus("error")' ref='errorMsg' allow-a)
+
+  template(v-else-if='isStatus("loaded")')
+    .c-post-block(v-for='(post, index) in ephemeral.posts' :key='index')
+      .c-post-created-date {{ displayDate(post.createdAt) }}
 
       .card.c-post-card
         .c-post-img-container
@@ -26,22 +27,25 @@
 import { humanDate } from '@model/contracts/shared/time.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import { fetchNews } from '@view-utils/misc.js'
 
 export default ({
   name: 'NewAndUpdates',
   components: {
     Avatar,
+    BannerScoped,
     RenderMessageWithMarkdown
   },
   data () {
     return {
-      posts: [],
-      isLoading: true,
-      errorMessage: null
+      ephemeral: {
+        posts: [],
+        loadStatus: ''
+      }
     }
   },
   computed: {
@@ -52,32 +56,38 @@ export default ({
     await this.markNewsAsSeen()
   },
   methods: {
-    humanDate,
+    displayDate (date) {
+      return humanDate(date, { month: 'long', year: 'numeric', day: 'numeric' })
+    },
+    isStatus (status) {
+      return this.ephemeral.loadStatus === status
+    },
     async fetchNews () {
       try {
-        this.isLoading = true
-        this.errorMessage = null
-
+        this.ephemeral.loadStatus = 'loading'
         const data = await fetchNews()
 
         // Convert createdAt strings to Date objects for proper formatting
-        this.posts = data.map(post => ({
+        this.ephemeral.posts = data.map(post => ({
           ...post,
           createdAt: new Date(post.createdAt)
         }))
+        this.ephemeral.loadStatus = 'loaded'
       } catch (error) {
+        this.ephemeral.loadStatus = 'error'
         console.error('Failed to fetch news:', error)
-        this.errorMessage = error.message || L('Unknown error')
-      } finally {
-        this.isLoading = false
+
+        this.$nextTick(() => {
+          this.$refs.errorMsg.danger(L('Failed to load news: {reportError}', LError(error)))
+        })
       }
     },
     async markNewsAsSeen () {
       // Update the last seen news date when user visits the page
-      if (this.posts.length > 0 && this.ourIdentityContractId) {
+      if (this.ephemeral.posts.length > 0 && this.ourIdentityContractId) {
         try {
           await sbp('gi.actions/identity/kv/updateLastSeenNewsDate', {
-            lastSeenNewsDate: this.posts[0].createdAt.toISOString()
+            lastSeenNewsDate: this.ephemeral.posts[0].createdAt.toISOString()
           })
         } catch (error) {
           console.error('Failed to update last seen news date:', error)
