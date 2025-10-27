@@ -332,6 +332,7 @@ export default ({
         latestHeight: undefined
       },
       messageState: {
+        fetched: false,
         contract: {}
       },
       dndState: {
@@ -384,6 +385,7 @@ export default ({
       })
     }
     */
+    window.chatmain = this
   },
   beforeDestroy () {
     // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
@@ -554,6 +556,8 @@ export default ({
       const messageHashToScroll = this.ephemeral.initialScroll.hash
       const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
 
+      const hasPreviousEvents = this.messageState.fetched && this.latestEvents.length
+
       if (shouldLoadMoreEvents) {
         if (this.ephemeral.loadingUp) return
         this.ephemeral.loadingUp = instance
@@ -577,8 +581,8 @@ export default ({
             this.ephemeral.loadingUp = false
           }
         }
-      } else if (direction === 'down' || !this.latestEvents.length) {
-        if (this.ephemeral.loadingDown || (this.latestEvents.length && this.ephemeral.currentHighestHeight >= this.latestHeight)) return
+      } else if (direction === 'down' || !hasPreviousEvents) {
+        if (this.ephemeral.loadingDown || (hasPreviousEvents && this.ephemeral.currentHighestHeight >= this.latestHeight)) return
         if (direction === 'down') {
           this.ephemeral.loadingDown = instance
         } else {
@@ -588,7 +592,7 @@ export default ({
         if (this.needsFromScratch) {
           limit = undefined
           sinceHeight = 0
-        } else if (this.ephemeral.currentHighestHeight == null || !this.latestEvents.length) {
+        } else if (this.ephemeral.currentHighestHeight == null || !hasPreviousEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
           /* .finally(() => {
               if (this.ephemeral.loadingDown === instance) {
@@ -695,7 +699,8 @@ export default ({
 
         const entryHeight = this.latestEvents[currentLatestEventIdx].height()
         const chatroomID = this.ephemeral.renderingChatRoomId
-        let state = currentLatestEventIdx ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
+        // TODO: state
+        let state = currentLatestEventIdx || !this.messageState.fetched ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
         if (this.chatroomHasSwitchedFrom(chatroomID)) return
 
         for (const event of this.latestEvents.slice(currentLatestEventIdx)) {
@@ -704,14 +709,16 @@ export default ({
           if (this.chatroomHasSwitchedFrom(chatroomID)) return
         }
 
-        this.ephemeral.currentLowestHeight = this.latestEvents[0].height()
+        if (this.messageState.fetched) {
+          this.ephemeral.currentLowestHeight = this.latestEvents[0].height()
+        }
         this.ephemeral.currentHighestHeight = this.latestEvents[this.latestEvents.length - 1].height()
 
         const previousLength = this.messageState.contract.messages.length
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
-        if (!state.messages.length || (previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
+        if (!state.messages.length || (this.messageState.fetched && previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
           // No `await` to prevent a deadlock
           this.loadMoreMessages(chatroomID, direction).catch(e => {
             console.error('[ChatMain.vue/processEvents] Error on `loadMoreMessages`', e)
@@ -1221,12 +1228,13 @@ export default ({
     },
     async generateNewChatRoomState (shouldClearMessages = false, height) {
       const state = await sbp('chelonia/contract/state', this.ephemeral.renderingChatRoomId, height) || {}
+      const messages = shouldClearMessages ? [] : (state.messages || [])
       return {
         settings: state.settings || {},
         attributes: state.attributes || {},
         members: state.members || {},
         _vm: state._vm,
-        messages: shouldClearMessages ? [] : (state.messages || []),
+        messages,
         pinnedMessages: [], // NOTE: We don't use this pinnedMessages, but initialize so that the process functions won't break
         renderingContext: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
@@ -1265,6 +1273,7 @@ export default ({
       this.ephemeral.initialScroll.hash = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       this.ephemeral.messagesInitiated = !!messageState.messages.length && (!this.ephemeral.initialScroll.hash || !!messageState.messages.find(m => m.hash === this.ephemeral.initialScroll.hash))
       Vue.set(this.messageState, 'contract', messageState)
+      Vue.set(this.messageState, 'fetched', false)
       if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID)
     },
     // Similar to calling initializeState(true), except that it's synchronous
@@ -1740,6 +1749,12 @@ export default ({
     'ephemeral.renderingChatRoomId' (to) {
       if (!to) return
       this.$nextTick(this.resetObservers)
+    },
+    'ephemeral.loadingDown' () {
+      this.messageState.fetched = true
+    },
+    'ephemeral.loadingUp' () {
+      this.messageState.fetched = true
     }
   }
 }: Object)
