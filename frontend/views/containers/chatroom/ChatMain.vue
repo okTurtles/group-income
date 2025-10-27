@@ -332,6 +332,11 @@ export default ({
         latestHeight: undefined
       },
       messageState: {
+        // `fetched` indicates whether we've loaded messages dynamically
+        // from the server. The purpose of this flag is to discriminate between
+        // 'cached' messages that come directly from the root state and messages
+        // that have been fetched by `ChatMain`. This is useful for taking
+        // different paths and avoid unnecessarily loading messages.
         fetched: false,
         contract: {}
       },
@@ -385,7 +390,6 @@ export default ({
       })
     }
     */
-    window.chatmain = this
   },
   beforeDestroy () {
     // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
@@ -556,6 +560,9 @@ export default ({
       const messageHashToScroll = this.ephemeral.initialScroll.hash
       const shouldLoadMoreEvents = messageHashToScroll && messages.findIndex(msg => msg.hash === messageHashToScroll) < 0
 
+      // Set to 'have events been loaded dynamically'. Used to determine the
+      // logic to use to fetch messages in a way that doesn't break message
+      // order.
       const hasPreviousEvents = this.messageState.fetched && this.latestEvents.length
 
       if (shouldLoadMoreEvents) {
@@ -718,7 +725,20 @@ export default ({
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
-        if (!state.messages.length || (this.messageState.fetched && previousLength === state.messages.length && previousFirstHeight === state.messages[0].height)) {
+        if (
+          // If there are no messages
+          !state.messages.length ||
+          // Or,
+          (
+            // If we have fetched messages from the server
+            this.messageState.fetched &&
+            // and the message count remained the same
+            previousLength === state.messages.length &&
+            // and no new messages were loaded
+            previousFirstHeight === state.messages[0].height
+          )
+        ) {
+          // Then, fetch more messages from the server
           // No `await` to prevent a deadlock
           this.loadMoreMessages(chatroomID, direction).catch(e => {
             console.error('[ChatMain.vue/processEvents] Error on `loadMoreMessages`', e)
@@ -1273,6 +1293,8 @@ export default ({
       this.ephemeral.initialScroll.hash = mhash || this.currentChatRoomScrollPosition || readUntilPosition
       this.ephemeral.messagesInitiated = !!messageState.messages.length && (!this.ephemeral.initialScroll.hash || !!messageState.messages.find(m => m.hash === this.ephemeral.initialScroll.hash))
       Vue.set(this.messageState, 'contract', messageState)
+      // At this point, we've not fetched any messages dynamically, so `fetched`
+      // is set to false.
       Vue.set(this.messageState, 'fetched', false)
       if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID)
     },
@@ -1751,9 +1773,13 @@ export default ({
       this.$nextTick(this.resetObservers)
     },
     'ephemeral.loadingDown' () {
+      // If ephemeral.loadingDown changes, it means that we're dynamically
+      // fetching from the server
       this.messageState.fetched = true
     },
     'ephemeral.loadingUp' () {
+      // If ephemeral.loadingUp changes, it means that we're dynamically
+      // fetching from the server
       this.messageState.fetched = true
     }
   }
