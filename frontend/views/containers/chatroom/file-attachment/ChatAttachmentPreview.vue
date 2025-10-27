@@ -180,6 +180,11 @@ export default {
   beforeDestroy () {
     if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
+        this.revokeAllMediaObjectURLs()
+      }
     }
   },
   methods: {
@@ -212,6 +217,11 @@ export default {
         const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
         return URL.createObjectURL(blob)
       }
+    },
+    revokeAllMediaObjectURLs () {
+      Object.values(this.mediaObjectURLList).forEach(urlList => {
+        urlList.forEach(url => URL.revokeObjectURL(url))
+      })
     },
     async loadVideoObjectURL (attachment) {
       const downloadData = attachment.downloadData
