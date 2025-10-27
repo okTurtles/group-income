@@ -406,7 +406,7 @@ export default ({
     // iOS determines the action to be a result of user interaction.
     // Commenting this out will result on focus being triggered the 'normal'
     // way, when the chatroom is ready.
-    // this.focusOnTextArea()
+    this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
