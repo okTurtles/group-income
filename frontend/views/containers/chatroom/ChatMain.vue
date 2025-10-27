@@ -706,7 +706,10 @@ export default ({
 
         const entryHeight = this.latestEvents[currentLatestEventIdx].height()
         const chatroomID = this.ephemeral.renderingChatRoomId
-        // TODO: state
+        // If we haven't fetched messages dynamically or if we found a
+        // currentLatestEventIdx, re-use the existing contract state. This
+        // avoids fetching or processing messages unnecessarily. Otherwise, we
+        // generate a fetch state with no messages.
         let state = currentLatestEventIdx || !this.messageState.fetched ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
         if (this.chatroomHasSwitchedFrom(chatroomID)) return
 
