@@ -114,11 +114,11 @@ const localforage = {
           }
         })
       },
-      async removeItems (keys: string[]) {
+      async removeMany (keys: string[]) {
         const db = await lazyInitDb()
         const transaction = db.transaction([storeName], 'readwrite')
         const objectStore = transaction.objectStore(storeName)
-        
+
         for (const key of keys) {
           objectStore.delete(key)
         }
@@ -404,24 +404,24 @@ sbp('sbp/selectors/register', {
   'gi.db/filesCache/clear': async function (): Promise<void> {
     await filesCache.clear()
   },
-  'gi.db/temporaryFilesCache/save': async function (cacheKey: string, blob: Blob): Promise<*> {
+  'gi.db/filesCache/temporary/save': function (cacheKey: string, blob: Blob): Promise<*> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     return sbp('gi.db/filesCache/save', `temporary/${cacheKey}/`, blob)
   },
-  'gi.db/temporaryFilesCache/load': async function (cacheKey: string): Promise<Blob> {
+  'gi.db/filesCache/temporary/load': function (cacheKey: string): Promise<Blob> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     return sbp('gi.db/filesCache/load', `temporary/${cacheKey}/`)
   },
-  'gi.db/temporaryFilesCache/delete': async function (cacheKey: string): Promise<void> {
+  'gi.db/filesCache/temporary/delete': function (cacheKey: string): Promise<void> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     return sbp('gi.db/filesCache/delete', `temporary/${cacheKey}/`)
   },
-  'gi.db/temporaryFilesCache/clear': async function (): Promise<void> {
+  'gi.db/filesCache/temporary/clear': function () {
     sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
       const keys = await filesCache.getItem('keys') ?? []
       const allTempKeys = keys.filter(k => k.startsWith('temporary/'))
-      await filesCache.removeItems(allTempKeys).catch(e => {
-        console.error('[gi.db/temporaryFilesCache/clear] Error removing temporary keys', e)
+      await filesCache.removeMany(allTempKeys).catch(e => {
+        console.error('[gi.db/filesCache/temporary/clear] Error removing temporary keys', e)
       })
     })
   }
