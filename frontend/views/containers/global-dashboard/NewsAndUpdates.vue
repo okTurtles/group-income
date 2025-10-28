@@ -86,8 +86,9 @@ export default ({
       // Update the last seen news date when user visits the page
       if (this.ephemeral.posts.length > 0 && this.ourIdentityContractId) {
         try {
-          await sbp('gi.actions/identity/kv/updateLastSeenNewsDate', {
-            lastSeenNewsDate: this.ephemeral.posts[0].createdAt.toISOString()
+          await sbp('gi.actions/identity/kv/updatePreference', {
+            key: 'lastSeenNewsDate',
+            value: this.ephemeral.posts[0].createdAt.toISOString()
           })
         } catch (error) {
           console.error('Failed to update last seen news date:', error)
