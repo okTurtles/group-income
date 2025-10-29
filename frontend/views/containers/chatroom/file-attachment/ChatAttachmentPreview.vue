@@ -190,12 +190,12 @@ export default {
               })
             } else {
               if (attachment.url) {
-                return Promise.resolve(attachment.url)
+                return attachment.url
               } else if (attachment.downloadData?.manifestCid) {
-                const cachedBlob = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
-                return cachedBlob ? URL.createObjectURL(cachedBlob) : ''
+                const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
+                return cachedArrayBuffer ? URL.createObjectURL(new Blob([cachedArrayBuffer])) : ''
               }
-              return Promise.resolve('')
+              return ''
             }
           })
 
@@ -231,13 +231,14 @@ export default {
         return attachment.url
       } else if (attachment.downloadData) {
         const manifestCid = attachment.downloadData.manifestCid
-        const cachedBlob = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
 
-        if (cachedBlob) {
-          return URL.createObjectURL(cachedBlob)
+        if (cachedArrayBuffer) {
+          return URL.createObjectURL(new Blob([cachedArrayBuffer]))
         } else {
           const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-          sbp('gi.db/filesCache/temporary/save', manifestCid, blob)
+          const arrayBuffer = await blob.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
           return URL.createObjectURL(blob)
         }
       }
@@ -252,8 +253,10 @@ export default {
 
       if (downloadData?.manifestCid) {
         const manifestCid = downloadData.manifestCid
-        const cachedBlob = await sbp('gi.db/filesCache/temporary/load', manifestCid)
-        const bloToUse = cachedBlob || (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+        const bloToUse = cachedArrayBuffer
+          ? new Blob([cachedArrayBuffer])
+          : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
 
         const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
@@ -269,8 +272,9 @@ export default {
           })
         }
 
-        if (!cachedBlob) {
-          sbp('gi.db/filesCache/temporary/save', manifestCid, bloToUse)
+        if (!cachedArrayBuffer) {
+          const arrayBuffer = await bloToUse.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
         }
       }
     },
