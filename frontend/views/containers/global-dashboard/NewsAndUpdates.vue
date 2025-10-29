@@ -122,7 +122,7 @@ export default ({
 
     .c-loading-box {
       animation: loading-heartbeat 3s linear infinite;
-      background-color: var(--general_1);
+      background-color: $general_1;
       opacity: 0.625;
     }
 
@@ -144,9 +144,9 @@ export default ({
 }
 
 @keyframes loading-heartbeat {
-  0% { background-color: var(--general_1); }
-  50% { background-color: var(--general_0); }
-  100% { background-color: var(--general_1); }
+  0% { background-color: $general_1; }
+  50% { background-color: $general_0; }
+  100% { background-color: $general_1; }
 }
 
 .is-dark-theme {
