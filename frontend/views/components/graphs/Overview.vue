@@ -39,7 +39,7 @@ div
 <script>
 import { mapGetters } from 'vuex'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'Overview',

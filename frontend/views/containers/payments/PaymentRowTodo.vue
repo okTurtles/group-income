@@ -39,7 +39,7 @@ import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'PaymentRowTodo',

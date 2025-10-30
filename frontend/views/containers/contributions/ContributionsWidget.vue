@@ -55,7 +55,7 @@ import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({

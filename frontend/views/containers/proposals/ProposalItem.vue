@@ -81,7 +81,7 @@ import {
   STATUS_OPEN,
   STATUS_PASSED
 } from '@model/contracts/shared/constants.js'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'

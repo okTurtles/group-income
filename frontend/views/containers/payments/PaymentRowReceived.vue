@@ -51,7 +51,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'

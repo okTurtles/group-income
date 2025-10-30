@@ -52,7 +52,7 @@ import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { cloneDeep } from 'turtledash'
 

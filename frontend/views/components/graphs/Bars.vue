@@ -63,7 +63,7 @@
 import { mapGetters } from 'vuex'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'Bars',

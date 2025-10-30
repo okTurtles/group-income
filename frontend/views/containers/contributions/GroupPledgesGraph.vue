@@ -49,7 +49,7 @@ import { unadjustedDistribution } from '@model/contracts/shared/distribution/dis
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupPledgesGraph',

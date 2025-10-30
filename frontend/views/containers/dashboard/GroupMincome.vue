@@ -15,7 +15,7 @@ div(data-test='groupMincome')
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupMincome',

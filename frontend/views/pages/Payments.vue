@@ -180,8 +180,7 @@ import {
   dummyLightningTodoItems,
   dummyLightningPaymentDetails
 } from '@view-utils/lightning-dummy-data.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import withGroupCurrency from '@view-utils/withGroupCurrency.js'
+import { logExceptNavigationDuplicated, withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'Payments',
