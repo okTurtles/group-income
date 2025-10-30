@@ -16,7 +16,7 @@ Let's say you have a contract with this series of events:
 A -> B -> C -> D
 ```
 
-Event `A`, through a side effect, calls out to the frontend using one of the `gi.actions/*` selectors that live in `frontend/controller/app`.
+Event `A`, through a side effect, calls out to the frontend using one of the `gi.actions/*` selectors that live in `frontend/controller/actions`.
 
 Event `B` emits an event using `okTurtles.events` that gets propagated to the frontend.
 
