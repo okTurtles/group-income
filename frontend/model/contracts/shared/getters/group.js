@@ -296,6 +296,7 @@ export default ({
       return getters.groupCurrencyForGroup(state)?.displayWithCurrency
     }
   },
+  // Deprecated. Please use @view-utils/withGroupCurrency instead for proper localization.
   withGroupCurrency (state, getters) {
     return getters.withGroupCurrencyForGroup(getters.currentGroupState)
   },
