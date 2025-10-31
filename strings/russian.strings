@@ -352,7 +352,7 @@
 "The server's history for '{type}' has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug.\n\nTo fix this, the contract needs to be resynced, and some recent events may be missing. Would you like to do so now?\n\n(If problems persist, please open the Troubleshooting page under the User Settings and resync all contracts.)" = "История сервера для '{type}' отличается от нашей. Это может произойти в крайне редких случаях из-за вредоносной активности или ошибки.\n\nДля исправления контракт необходимо пересинхронизировать, и некоторые недавние события могут быть потеряны. Хотите сделать это сейчас?\n\n(Если проблемы сохраняются, откройте страницу устранения неполадок в настройках пользователя и пересинхронизируйте все контракты.)";
 
 /* main.js */
-"There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "Возникла проблема при пересинхронизации контракта: {errMsg}\n\nПожалуйста, смотрите журналы приложения в настройках пользователя для получения дополнительной информации. Страница устранения неполадок в настройках пользователя может быть другим способом исправить проблему.";
+"There was a problem resyncing the contract: {errMsg}\n\nPlease see the Application Logs under User Settings for more details. The Troubleshooting page in User Settings may be another way to fix the problem." = "Возникла проблема при пересинхронизации контракта: {errMsg}\n\nПожалуйста, смотрите журналы приложения в настройках пользователя для получения дополнительной информации. Проблема может быть исправлена другим способом, на странице устранения неполадок, в настройках пользователя.";
 
 /* main.js */
 "This browser doesn't support all features required to use Group Income. Please try a different browser." = "Этот браузер не поддерживает все функции, необходимые для использования Group Income. Пожалуйста, попробуйте другой браузер.";
@@ -790,7 +790,7 @@
 "Edit avatar" = "Редактировать аватар";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue */
-"Pinch to zoom, drag to reposition" = "Сожмите для увеличения, перетащите для перемещения";
+"Pinch to zoom, drag to reposition" = "Сожмите для масштабирования, перетащите для перемещения";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "Заменить фото";
@@ -826,7 +826,7 @@
 "Currency" = "Валюта";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
-"On what day should the first payment distribution be calculated?" = "В какой день должен рассчитываться первое распределение платежей?";
+"On what day should the first payment distribution be calculated?" = "В какой день должно рассчитываться первое распределение платежей?";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "Payment distribution will be calculated every 30 days." = "Распределение платежей будет рассчитываться каждые 30 дней.";
@@ -853,7 +853,7 @@
 "Group avatar" = "Аватар группы";
 
 /* views/components/group-creation-steps/GroupName.vue */
-"The group picture must be a valid url" = "Изображение группы должно быть действительным URL";
+"The group picture must be a valid url" = "Изображение группы должно иметь действительный URL-адрес";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "Upload an image" = "Загрузить изображение";
@@ -883,7 +883,7 @@
 "4. Voting System" = "4. Система голосования";
 
 /* views/components/group-creation-steps/GroupRules.vue */
-"Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Предложения — это способ, которым группа принимает решения. Вы можете предложить, например, добавить или удалить членов или изменить значение mincome вашей группы.";
+"Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Предложения — это способ, с помощью которого группа принимает решения. Вы можете предложить, например, добавить или удалить членов или изменить значение mincome вашей группы.";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Голосование по предложениям";
@@ -970,10 +970,10 @@
 "A username can only contain letters, digits, hyphens or underscores." = "Имя пользователя может содержать только буквы, цифры, дефисы или подчеркивания.";
 
 /* views/containers/access/SignupForm.vue */
-"A username cannot contain two consecutive hyphens or underscores." = "Имя пользователя не может содержать два подряд идущих дефиса или подчеркивания.";
+"A username cannot contain two consecutive hyphens or underscores." = "Имя пользователя не может содержать два идущих подряд дефиса или подчеркивания.";
 
 /* views/containers/access/SignupForm.vue */
-"A username cannot contain uppercase letters." = "Имя пользователя не может содержать заглавные буквы.";
+"A username cannot contain uppercase letters only." = "Имя пользователя не может содержать только заглавные буквы.";
 
 /* views/containers/access/SignupForm.vue */
 "A username cannot contain whitespace." = "Имя пользователя не может содержать пробелы.";
@@ -1339,10 +1339,10 @@
 "Proposal cancelled" = "Предложение отменено";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal expired" = "Предложение истекло";
+"Proposal expired" = "Срок предложения истек";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal expiring on {date}" = "Предложение истекает {date}";
+"Proposal expiring on {date}" = "Срок предложения истекает {date}";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} is accepted. \"{title}\"" = "Предложение от {from} принято. \"{title}\"";
@@ -1351,10 +1351,10 @@
 "Proposal from {from} is cancelled. \"{title}\"" = "Предложение от {from} отменено. \"{title}\"";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} is expired. \"{title}\"" = "Предложение от {from} истекло. \"{title}\"";
+"Proposal from {from} is expired. \"{title}\"" = "Срок предложения от {from} истек. \"{title}\"";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} is expiring. \"{title}\"" = "Предложение от {from} истекает. \"{title}\"";
+"Proposal from {from} is expiring. \"{title}\"" = "Срок предложения от {from} истекает. \"{title}\"";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} is rejected. \"{title}\"" = "Предложение от {from} отклонено. \"{title}\"";
@@ -1366,10 +1366,10 @@
 "Proposal from {from} to add {member} is cancelled." = "Предложение от {from} о добавлении {member} отменено.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to add {member} is expired." = "Предложение от {from} о добавлении {member} истекло.";
+"Proposal from {from} to add {member} is expired." = "Срок предложения от {from} о добавлении {member} истек.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to add {member} is expiring." = "Предложение от {from} о добавлении {member} истекает.";
+"Proposal from {from} to add {member} is expiring." = "Срок предложения от {from} о добавлении {member} истекает.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to add {member} is rejected." = "Предложение от {from} о добавлении {member} отклонено.";
@@ -1381,10 +1381,10 @@
 "Proposal from {from} to change the {setting} is cancelled." = "Предложение от {from} об изменении {setting} отменено.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the {setting} is expired." = "Предложение от {from} об изменении {setting} истекло.";
+"Proposal from {from} to change the {setting} is expired." = "Срок предложения от {from} об изменении {setting} истек.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the {setting} is expiring." = "Предложение от {from} об изменении {setting} истекает.";
+"Proposal from {from} to change the {setting} is expiring." = "Срок предложения от {from} об изменении {setting} истекает.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to change the {setting} is rejected." = "Предложение от {from} об изменении {setting} отклонено.";
@@ -1396,7 +1396,7 @@
 "Proposal from {from} to remove {member} is cancelled." = "Предложение от {from} об удалении {member} отменено.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to remove {member} is expiring." = "Предложение от {from} об удалении {member} истекает.";
+"Proposal from {from} to remove {member} is expiring." = "Срок предложения от {from} об удалении {member} истекает.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal rejected" = "Предложение отклонено";
@@ -1459,7 +1459,7 @@
 "New Direct Message" = "Новое личное сообщение";
 
 /* views/containers/chatroom/NewDirectMessageModal.vue */
-"Recent Conversations ({nbMembers})" = "Недавние разговоры ({nbMembers})";
+"Recent Conversations ({nbMembers})" = "Недавние беседы ({nbMembers})";
 
 /* views/containers/chatroom/PinnedMessages.vue */
 "Unpin this message" = "Открепить это сообщение";
@@ -1492,7 +1492,7 @@
 "Code" = "Код";
 
 /* views/containers/chatroom/SendArea.vue */
-"Italic style text" = "Курсивный текст";
+"Italic style text" = "Текст курсивом";
 
 /* views/containers/chatroom/SendArea.vue */
 "Italic" = "Курсив";
