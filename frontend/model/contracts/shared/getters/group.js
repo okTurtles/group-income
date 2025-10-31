@@ -287,19 +287,6 @@ export default ({
   groupTotalPledgeAmount (state, getters): number {
     return getters.currentGroupState.totalPledgeAmount || 0
   },
-  withGroupCurrencyForGroup (state, getters) {
-    return state => {
-      // TODO: If this group has no defined mincome currency, not even a default one like
-      //       USD, then calling this function is probably an error which should be reported.
-      //       Just make sure the UI doesn't break if an exception is thrown, since this is
-      //       bound to the UI in some location.
-      return getters.groupCurrencyForGroup(state)?.displayWithCurrency
-    }
-  },
-  // Deprecated. Please use @view-utils/withGroupCurrency instead for proper localization.
-  withGroupCurrency (state, getters) {
-    return getters.withGroupCurrencyForGroup(getters.currentGroupState)
-  },
   groupChatRooms (state, getters) {
     return getters.currentGroupState.chatRooms
   },
