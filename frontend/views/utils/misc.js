@@ -97,6 +97,14 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
   return response
 }
 
+export async function fetchNews (): Promise<Array<Object>> {
+  const response = await fetch('https://groupincome.org/news.json')
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return await response.json()
+}
+
 export function withCurrency (code: string, amount: number): string {
   if (!currencyFormatsByCode[code]) {
     currencyFormatsByCode[code] = new Intl.NumberFormat(
