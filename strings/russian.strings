@@ -973,7 +973,7 @@
 "A username cannot contain two consecutive hyphens or underscores." = "Имя пользователя не может содержать два идущих подряд дефиса или подчеркивания.";
 
 /* views/containers/access/SignupForm.vue */
-"A username cannot contain uppercase letters only." = "Имя пользователя не может содержать только заглавные буквы.";
+"A username cannot contain uppercase letters." = "Имя пользователя не может содержать заглавные буквы.";
 
 /* views/containers/access/SignupForm.vue */
 "A username cannot contain whitespace." = "Имя пользователя не может содержать пробелы.";
