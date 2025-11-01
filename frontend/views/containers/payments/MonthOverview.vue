@@ -31,12 +31,12 @@
 </template>
 
 <script>
-import currencies from '@model/contracts/shared/currencies.js'
 import { mapGetters } from 'vuex'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { L } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'MonthOverview',
@@ -44,6 +44,7 @@ export default ({
     ProgressBar
   },
   methods: {
+    withGroupCurrency,
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
@@ -61,9 +62,6 @@ export default ({
       'ourPayments',
       'periodStampGivenDate'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
-    },
     humanDueDate () {
       return humanDate(this.dueDateForPeriod(this.currentPaymentPeriod))
     },
@@ -93,8 +91,8 @@ export default ({
           max: amountTotal,
           hasMarks: false,
           label: L('{value} out of {max}', {
-            value: this.currency(amountDone),
-            max: this.currency(amountTotal)
+            value: this.withGroupCurrency(amountDone),
+            max: this.withGroupCurrency(amountTotal)
           })
         })
       } else {
@@ -104,8 +102,8 @@ export default ({
           max: amountTotal,
           hasMarks: false,
           label: L('{value} out of {max}', {
-            value: this.currency(amountDone),
-            max: this.currency(amountTotal)
+            value: this.withGroupCurrency(amountDone),
+            max: this.withGroupCurrency(amountTotal)
           })
         })
       }

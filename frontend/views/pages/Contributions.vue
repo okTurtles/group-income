@@ -55,7 +55,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             v-if='doesReceiveMonetary'
           )
             contribution-item(
-              :what='withCurrency(receivingMonetary.total)'
+              :what='withGroupCurrency(receivingMonetary.total)'
               :who='receivingMonetary.who'
               :whoIds='receivingMonetary.whoIds'
               type='MONETARY'
@@ -104,7 +104,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         ul(data-test='givingList')
           contribution(v-if='doesGiveMonetary')
             contribution-item(
-              :what='withCurrency(givingMonetary.total)'
+              :what='withGroupCurrency(givingMonetary.total)'
               :who='givingMonetary.who'
               :whoIds='givingMonetary.whoIds'
               type='MONETARY'
@@ -138,7 +138,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import currencies from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
@@ -174,7 +174,6 @@ export default ({
       'groupSettings',
       'groupMembersCount',
       'groupProfiles',
-      'groupMincomeFormatted',
       'globalProfile',
       'groupIncomeDistribution',
       'ourContributionSummary'
@@ -182,7 +181,7 @@ export default ({
     upTo () {
       const amount = this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType]
       if (typeof amount !== 'number') return false
-      return this.withCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+      return this.withGroupCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     someoneNeedsIncome () {
       return Boolean(this.groupIncomeDistribution.length)
@@ -216,9 +215,6 @@ export default ({
     },
     noOneToGive () {
       return (this.givingMonetary || {}).total === 0
-    },
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
     }
   },
   beforeMount () {
@@ -250,9 +246,7 @@ export default ({
     displayName (username) {
       return this.globalProfile(username).displayName || username
     },
-    withCurrency (amount) {
-      return this.currency.displayWithCurrency(amount)
-    }
+    withGroupCurrency
   }
 }: Object)
 </script>

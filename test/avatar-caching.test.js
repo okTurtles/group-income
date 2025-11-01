@@ -73,6 +73,10 @@ describe('avatar file serving', function () {
           allowedSelectors: [
             'chelonia/queueInvocation'
           ],
+          exposedGlobals: {
+            Intl,
+            Set
+          },
           modules: { '@common/common.js': Common },
           preferSlim: true
         }

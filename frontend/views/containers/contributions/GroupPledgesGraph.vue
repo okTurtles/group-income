@@ -6,24 +6,24 @@
     :inner-slices='innerSlices'
   )
     i18n.has-text-1.c-title(tag='p' :args='LTags("span")') {span_}Group{_span} goal
-    span.is-title-4 {{ withCurrency(graphData.groupGoal) }}
+    span.is-title-4 {{ withGroupCurrency(graphData.groupGoal) }}
 
   ul.c-legendList(:aria-label='L("Group pledging summary")' data-test='groupPledgeSummary')
     graph-legend-item(
-      :amount='withCurrency(graphData.pledgeTotal)'
+      :amount='withGroupCurrency(graphData.pledgeTotal)'
       color='primary-solid'
       variant='side'
     ) {{ L('Total Pledged') }}
 
     graph-legend-item(
-      :amount='withCurrency(graphData.neededPledges)'
+      :amount='withGroupCurrency(graphData.neededPledges)'
       color='blank'
       variant='side'
     ) {{ L('Needed Pledges') }}
 
     graph-legend-item(
       v-if='graphData.surplus'
-      :amount='withCurrency(graphData.surplus)'
+      :amount='withGroupCurrency(graphData.surplus)'
       color='success-solid'
       variant='side'
     ) {{ L('Surplus') }}
@@ -32,7 +32,7 @@
 
     graph-legend-item(
       v-if='graphData.ourIncomeToReceive > 0'
-      :amount='withCurrency(graphData.ourIncomeToReceive)'
+      :amount='withGroupCurrency(graphData.ourIncomeToReceive)'
       color='warning-solid'
       variant='side'
     ) {{ L("You'll receive") }}
@@ -45,11 +45,11 @@
 </template>
 
 <script>
-import currencies from '@model/contracts/shared/currencies.js'
 import { unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupPledgesGraph',
@@ -178,9 +178,7 @@ export default ({
     }
   },
   methods: {
-    withCurrency (amount) {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(amount)
-    },
+    withGroupCurrency,
     decimalSlice (amount) {
       const perc = amount / this.graphData.groupGoal
       // avoid breaking the graph when perc is bigger than 1 or smaller than 0

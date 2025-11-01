@@ -49,10 +49,10 @@
     :class='{ positive: barTotal >= 0 }'
     :style='{ opacity: barTotal || barAmount ? 1 : 0, transform: `translate3d(${labelX}px,${labelY}px,0)`} '
   )
-    .c-tag-total(v-if='Math.round(barTotal) !== 0') {{currency(Math.abs(Math.round(barTotal)))}}
-    .c-tag-amount(v-if='barAmount !== 0 && Math.round(barAmount) !== Math.round(barTotal)') {{currency(Math.abs(Math.round(barAmount)))}}
+    .c-tag-total(v-if='Math.round(barTotal) !== 0') {{withGroupCurrency(Math.abs(barTotal))}}
+    .c-tag-amount(v-if='barAmount !== 0 && Math.round(barAmount) !== Math.round(barTotal)') {{withGroupCurrency(Math.abs(barAmount))}}
 
-  .c-tag.mincome(:style='middleTag') {{ base }}
+  .c-tag.mincome(:style='middleTag') {{ withGroupCurrency(0) }}
   .c-tag.g-animate-opacity.g-animate-delay(
     v-for='scaleLine in createScale'
     :style='{ opacity: isReady ? 1 : 0, transform: "translate(0," + (-scaleLine.position + middle - labelPadding) + "px)" }'
@@ -63,7 +63,7 @@
 import { mapGetters } from 'vuex'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
-import currencies from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'Bars',
@@ -97,12 +97,6 @@ export default ({
       'groupProfiles',
       'groupSettings'
     ]),
-    base () {
-      return this.currency(0)
-    },
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
-    },
     membersNumber () {
       return this.members.length
     },
@@ -137,7 +131,7 @@ export default ({
       const scales = []
       let scale = Math.ceil(this.min / roundedTickRange) * roundedTickRange
       while (scale <= this.max) {
-        let label = this.currency(Math.abs(scale))
+        let label = this.withGroupCurrency(Math.abs(scale))
         if (scale < 0) label = '-' + label
         // Add scale label and positition
         scales.push({ label: label, position: this.calculRatioY(scale) })
@@ -147,6 +141,7 @@ export default ({
     }
   },
   methods: {
+    withGroupCurrency,
     handleResize: debounce(function () {
       if (this.$refs.graph) {
         this.isMobile = this.verifyIsMobile()

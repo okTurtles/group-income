@@ -33,6 +33,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { L } from '@common/common.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -95,9 +96,12 @@ export default ({
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount',
-      'groupMincomeFormatted',
+      'groupMincomeAmount',
       'groupMincomeSymbolWithCode'
-    ])
+    ]),
+    groupMincomeFormatted () {
+      return withGroupCurrency(this.groupMincomeAmount)
+    }
   },
   mounted () {
     this.$refs.mincomeAmount.focus()

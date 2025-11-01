@@ -181,6 +181,8 @@ const setupChelonia = async (): Promise<*> => {
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
         exposedGlobals: {
+          Intl: self.Intl,
+          Set,
           // note: needs to be written this way and not simply "Notification"
           // because that breaks on mobile where Notification is undefined
           Notification: self.Notification

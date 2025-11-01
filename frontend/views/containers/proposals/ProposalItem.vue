@@ -81,7 +81,7 @@ import {
   STATUS_OPEN,
   STATUS_PASSED
 } from '@model/contracts/shared/constants.js'
-import currencies from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
@@ -174,12 +174,12 @@ export default ({
           // TODO layout for this type of proposal. Waiting for designs.
           const variablesMap = {
             'mincomeAmount': () => {
-              const { mincomeCurrency, currentValue, proposedValue } = this.proposal.data.proposalData
+              const { currentValue, proposedValue } = this.proposal.data.proposalData
 
               return {
                 setting: L('mincome'),
-                currentValue: currencies[mincomeCurrency].displayWithCurrency(currentValue),
-                proposedValue: currencies[mincomeCurrency].displayWithCurrency(proposedValue)
+                currentValue: this.withGroupCurrency(currentValue),
+                proposedValue: this.withGroupCurrency(proposedValue)
               }
             },
             'distributionDate': () => {
@@ -340,6 +340,7 @@ export default ({
     }
   },
   methods: {
+    withGroupCurrency,
     toggleReason (e) {
       e.target.blur() // so the button doesnt remain focused (with black color).
       this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
