@@ -14,7 +14,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
-import { withCurrency } from '@view-utils/misc.js'
+import { withCurrency } from '@model/contracts/shared/currencies.js'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {
