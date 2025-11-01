@@ -32,7 +32,7 @@ Events `A` and `B` in our example are essentially the same problem.
 
 For `A`, the contract could be calling a selector like `'gi.actions/group/join'`. The definition of this selector is in `frontend/controller/actions/group.js`, and this code runs inside of the service worker. Because it is not version controlled through pinning, it must accept the same parameters for life, and behave in essentially the same way for all time, so that if it's called by an old version of the contract it will still work as expected.
 
-This selector is allowed to be called because when Chelonia is setup via `'chelonia/configure'` (in `frontend/setupChelonia.js`), is included in the `allowedSelectors` configuration. These are selectors that are allowed to be called from contracts. Their invocation is allowed to leave the contract sandbox.
+This selector is allowed to be called because when Chelonia is setup via `'chelonia/configure'` (in `frontend/setupChelonia.js`), it's included in the `allowedSelectors` configuration. These are selectors that are allowed to be called from contracts. Their invocation is allowed to leave the contract sandbox.
 
 Likewise, Group Income allows the entire `'okTurtles.events'` domain to be called from contracts (via `allowedDomains`). This means contracts can emit any event that Group Income supports. And that in turn means that any events that are triggered by contracts must have event handlers in the app that will forever take the same parameters.
 
