@@ -2095,7 +2095,7 @@
 "Hello" = "Привет";
 
 /* views/containers/global-dashboard/DirectMessages.vue */
-"Direct Messages: Coming soon!" = "Прямые сообщения: Скоро!";
+"Direct Messages: Coming soon!" = "Личные сообщения: Скоро!";
 
 /* views/containers/global-dashboard/NewsAndUpdates.vue */
 "Failed to load news: {reportError}" = "Не удалось загрузить новости: {reportError}";
@@ -2134,7 +2134,7 @@
 "Create Group" = "Создать группу";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
-"All messages exchanged between members will be {strong_} deleted permanently{_strong}." = "Все сообщения, обменянные между участниками, будут {strong_}безвозвратно удалены{_strong}.";
+"All messages exchanged between members will be {strong_} deleted permanently{_strong}." = "Все сообщения между участниками будут {strong_}безвозвратно удалены{_strong}.";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Are you sure you want to delete this group?" = "Вы уверены, что хотите удалить эту группу?";
@@ -2239,13 +2239,13 @@
 "{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}" = "{b_}{percent}{_b} {sm_}({count}* из {total} участников){_sm}";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
-"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "После окончания периода ввода каждый будет голосовать за добавление нового участника. Но пока наслаждайтесь {count} бесплатными пропусками!";
+"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "После окончания ознакомительного периода каждый будет голосовать за добавление нового участника. А пока наслаждайтесь {count} бесплатными пропусками!";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
-"Broken invite link!" = "Сломанная ссылка-приглашение!";
+"Broken invite link!" = "Некорректная ссылка-приглашение!";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
-"See {a_}logs for details{_a}." = "См. {a_}журналы для деталей{_a}.";
+"See {a_}logs for details{_a}." = "См. {a_}журнал событий для подробностей{_a}.";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "Share this link to grant access to your group." = "Поделитесь этой ссылкой, чтобы предоставить доступ к вашей группе.";
@@ -2422,7 +2422,7 @@
 "We couldn’t find what you are looking for." = "Мы не смогли найти то, что вы ищете.";
 
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue, views/pages/Join.vue */
-"Take me home" = "Вернуть на главную";
+"Take me home" = "Вернуться на главную";
 
 /* views/containers/navigation/GroupsList.vue */
 "Create a new group" = "Создать новую группу";
@@ -2566,7 +2566,7 @@
 "Already marked as not received!" = "Уже отмечено как не получено!";
 
 /* views/containers/payments/PaymentRowReceived.vue */
-"I did not receive this" = "Я не получил это";
+"I did not receive this" = "Я это не получил";
 
 /* views/containers/payments/PaymentRowReceived.vue */
 "Send thank you" = "Отправить спасибо";
@@ -2683,7 +2683,7 @@
 "Received payments" = "Полученные платежи";
 
 /* views/containers/payments/SendThankYouModal.vue */
-"Send Thank You Modal" = "Модальное окно отправки спасибо";
+"Send Thank You Modal" = "Модальное окно отправки благодарности";
 
 /* views/containers/payments/SendThankYouModal.vue */
 "Thank you!" = "Спасибо!";
@@ -2692,16 +2692,16 @@
 "What message would you like to send?" = "Какое сообщение вы хотите отправить?";
 
 /* views/containers/payments/SendThankYouModal.vue */
-"Your Thank You was sent!" = "Ваше спасибо отправлено!";
+"Your Thank You was sent!" = "Ваша благодарность отправлена!";
 
 /* views/containers/payments/SendThankYouModal.vue */
-"something went wrong! couldn't process your request to send a thank you note." = "что-то пошло не так! не удалось обработать ваш запрос на отправку благодарственной записки.";
+"something went wrong! couldn't process your request to send a thank you note." = "Что-то пошло не так! Не удалось обработать ваш запрос на отправку благодарственного сообщения.";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
-"Thank you note!" = "Благодарственная записка!";
+"Thank you note!" = "Благодарственное сообщение!";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
-"View Thank You Modal" = "Просмотр модального окна спасибо";
+"View Thank You Modal" = "Просмотр модального окна благодарности";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
 "{name} Note:" = "Заметка {name}:";
@@ -2779,7 +2779,7 @@
 "Approve" = "Одобрить";
 
 /* views/containers/proposals/MemberRequest.vue */
-"In Group Income, you can use an invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions." = "В Group Income вы можете использовать ссылку-приглашение, чтобы добавить участников в группу и пригласить до 60 человек. Как только кто-то использует эту ссылку для присоединения, ему потребуется одобрение участника группы с разрешениями на одобрение участников.";
+"In Group Income, you can use an invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions." = "В Group Income вы можете использовать ссылку-приглашение, чтобы добавить участников в группу и пригласить до 60 человек. Как только кто-то использует эту ссылку для присоединения, ему потребуется одобрение участника группы, имеющего разрешения на одобрение новых участников.";
 
 /* views/containers/proposals/MemberRequest.vue */
 "Member Requests" = "Запросы участников";
@@ -2824,10 +2824,10 @@
 "Change disagreement number from {X} to {N}." = "Изменить количество несогласных с {X} на {N}.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Изменить с системы голосования на основе несогласия на процентную с минимальным согласием {percent}.";
+"Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Изменить систему гоолосования с основанной на несогласии, на процентную, с минимальным порогом согласия {percent}.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Change from a percentage based voting system to a disagreement based one, with a maximum of {N} “no” votes." = "Изменить с процентной системы голосования на систему на основе несогласия с максимумом {N} голосов \"против\".";
+"Change from a percentage based voting system to a disagreement based one, with a maximum of {N} “no” votes." = "Изменить систему гоолосования с процентной на систему на основе несогласия с максимальным числом {N} голосов \"против\".";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Change percentage based from {X} to {N}." = "Изменить процентное значение с {X} на {N}.";
@@ -2872,7 +2872,7 @@
 "{automated}Remove {user} from the group." = "{automated}Удалить {user} из группы.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"{count} out of {total} members voted. Expires on {date}." = "{count} из {total} участников проголосовали. Истекает {date}.";
+"{count} out of {total} members voted. Expires on {date}." = "{count} из {total} участников проголосовали. Срок действия истекает {date}.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "{username} is proposing" = "{username} предлагает";
@@ -2971,7 +2971,7 @@
 "Voting Systems" = "Системы голосования";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/containers/proposals/PropositionsAllModal.vue */
-"Archived proposals" = "Архивные предложения";
+"Archived proposals" = "Архивированные предложения";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "Create proposal" = "Создать предложение";
@@ -3040,28 +3040,28 @@
 "Debug" = "Отладка";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Error obtaining logs. {reportError}" = "Ошибка получения журналов. {reportError}";
+"Error obtaining logs. {reportError}" = "Ошибка получения журнала событий. {reportError}";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Failed to download the app logs. {reportError}" = "Не удалось скачать журналы приложения. {reportError}";
+"Failed to download the app logs. {reportError}" = "Не удалось скачать журнал событий приложения. {reportError}";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Failed to share the app logs. {reportError}" = "Не удалось поделиться журналами приложения. {reportError}";
+"Failed to share the app logs. {reportError}" = "Не удалось поделиться журналом событий приложения. {reportError}";
 
 /* views/containers/user-settings/AppLogs.vue */
-"If you encounter problems, please download the logs and {a_}send them to us{_a}." = "Если возникнут проблемы, скачайте журналы и {a_}отправьте их нам{_a}.";
+"If you encounter problems, please download the logs and {a_}send them to us{_a}." = "Если возникнут проблемы, скачайте журнал событий и {a_}отправьте его нам{_a}.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Информация";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Log source:" = "Источник журнала:";
+"Log source:" = "Источник журнала событий:";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Log" = "Журнал";
+"Log" = "Журнал событий";
 
 /* views/containers/user-settings/AppLogs.vue */
-"Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Недавняя ошибка: \"{errorMsg}\". Пожалуйста, скачайте журналы и {a_}отправьте их нам{_a}, чтобы мы могли помочь с устранением неисправностей.";
+"Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Недавняя ошибка: \"{errorMsg}\". Пожалуйста, скачайте журнал событий и {a_}отправьте его нам{_a}, чтобы мы могли помочь с устранением неисправностей.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Service worker" = "Сервис-воркер";
@@ -3070,7 +3070,7 @@
 "Source:" = "Источник:";
 
 /* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
-"Application Logs" = "Журналы приложения";
+"Application Logs" = "Журнал событий приложения";
 
 /* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
 "Troubleshooting" = "Устранение неисправностей";
@@ -3079,10 +3079,10 @@
 "Animations" = "Анимации";
 
 /* views/containers/user-settings/Appearence.vue */
-"Reduced Motion" = "Сниженная анимация";
+"Reduced Motion" = "Сокращенная анимация";
 
 /* views/containers/user-settings/Appearence.vue */
-"Reduced motion" = "Сниженная анимация";
+"Reduced motion" = "Сокращенная анимация";
 
 /* views/containers/user-settings/Appearence.vue */
 "Text size" = "Размер текста";
@@ -3091,7 +3091,7 @@
 "Theme" = "Тема";
 
 /* views/containers/user-settings/Appearence.vue */
-"When enabled the amount of animations you see around are reduced." = "При включении количество видимых анимаций уменьшается.";
+"When enabled the amount of animations you see around are reduced." = "При включении количество отображаемых анимаций сокращается.";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow browser notifications" = "Разрешить уведомления браузера";
@@ -3109,10 +3109,10 @@
 "Push notifications are disabled because your browser settings have disabled them." = "Push-уведомления отключены, поскольку настройки браузера их запрещают.";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"There was a problem requesting notifications permission" = "Проблема с запросом разрешения на уведомления";
+"There was a problem requesting notifications permission" = "Возникла проблема с запросом разрешения на уведомления";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Try granting notifications permissions in your browser settings first" = "Сначала попробуйте предоставить разрешения на уведомления в настройках браузера";
+"Try granting notifications permissions in your browser settings first" = "Сначала попробуйте предоставить разрешения на уведомления в настройках вашего браузера";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "You have granted browser notification!" = "Вы предоставили разрешение на уведомления браузера!";
@@ -3127,10 +3127,10 @@
 "Use system settings" = "Использовать системные настройки";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"For diagnostic info, see application logs." = "Для диагностической информации см. журналы приложения.";
+"For diagnostic info, see application logs." = "Для диагностической информации см. журнал событий приложения.";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT." = "Если у вас проблемы с приложением, попробуйте сбросить Group Income. Это удалит текущее состояние приложения и выйдет из аккаунта. После повторного входа приложению может потребоваться несколько минут для сброса, но это должно исправить большинство проблем. ЭТО ВЫЙДЕТ ИЗ АККАУНТА.";
+"If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT." = "Если у вас проблемы с приложением, попробуйте сбросить Group Income. Это удалит текущее состояние приложения и позволит выйти из аккаунта. После повторного входа приложению может потребоваться несколько минут для сброса, но это должно исправить большинство проблем. ВЫ СОБИРАЕТЕСЬ ВЫЙТИ ИЗ АККАУНТА.";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Ok" = "Ок";
@@ -3196,10 +3196,10 @@
 "Giving" = "Даю";
 
 /* views/pages/Contributions.vue */
-"No one is pledging money at the moment." = "Никто сейчас не дает деньги.";
+"No one is pledging money at the moment." = "В данный момент никто не вносит деньги.";
 
 /* views/pages/Contributions.vue */
-"No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like." = "Никому сейчас не нужны денежные вклады. Вы все равно можете добавить немонетарные вклады.";
+"No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like." = "В данный момент никому не нужны денежные вклады. Но вы можете добавить немонетарные вклады.";
 
 /* views/pages/Contributions.vue */
 "Payment method {paymentMethod}" = "Метод оплаты {paymentMethod}";
@@ -3208,16 +3208,16 @@
 "Receiving" = "Получаю";
 
 /* views/pages/Contributions.vue */
-"When other members pledge a monetary or non-monetary contribution, they will appear here." = "Когда другие участники дают денежный или немонетарный вклад, они появятся здесь.";
+"When other members pledge a monetary or non-monetary contribution, they will appear here." = "Когда другие участники производят денежный или немонетарный вклад, они появятся здесь.";
 
 /* views/pages/Contributions.vue */
-"You are pledging up to {upTo}" = "Вы даете до {upTo}";
+"You are pledging up to {upTo}" = "Вы вносите до {upTo}";
 
 /* views/pages/Contributions.vue */
 "You can add non-monetary contributions for the group here." = "Вы можете добавить немонетарные вклады для группы здесь.";
 
 /* views/pages/Contributions.vue */
-"You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!" = "Вы можете внести вклад в группу деньгами или другими ценностями, такими как обучение навыкам, деление временем для помощи кому-то. Возможностей безгранично!";
+"You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!" = "Вы можете внести вклад в группу деньгами или другими ценностями, такими как: обучение навыкам, помощь другим. Возможности безграничны!";
 
 /* views/pages/Contributions.vue */
 "You need {amount}" = "Вам нужно {amount}";
@@ -3262,7 +3262,7 @@
 "Rename" = "Переименовать";
 
 /* views/pages/GroupChat.vue */
-"Sorry, this message is from a private chatroom that you are not part of." = "Извините, это сообщение из приватной комнаты чата, частью которой вы не являетесь.";
+"Sorry, this message is from a private chatroom that you are not part of." = "Извините, это сообщение из приватной чат-комнаты, частью которой вы не являетесь.";
 
 /* views/pages/GroupChat.vue */
 "Update description" = "Обновить описание";
@@ -3286,7 +3286,7 @@
 "Default currency" = "Валюта по умолчанию";
 
 /* views/pages/GroupSettings.vue */
-"Feature coming soon" = "Функция скоро";
+"Feature coming soon" = "Функция скоро будет доступна";
 
 /* views/pages/GroupSettings.vue */
 "Group description cannot exceed {maxchar} characters" = "Описание группы не может превышать {maxchar} символов";
@@ -3304,7 +3304,7 @@
 "This is the currency that will be displayed for every member of the group, across the platform." = "Это валюта, которая будет отображаться для каждого участника группы на платформе.";
 
 /* views/pages/GroupSettings.vue */
-"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "Это означает, что вы потеряете доступ к {b_}чатам группы{_b} (включая прямые сообщения другим участникам) и {b_}вкладам{_b}. Повторный вход возможен, но требует голосования и согласия других участников.";
+"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "Это означает, что вы потеряете доступ к {b_}чатам группы{_b} (включая личные сообщения другим участникам) и {b_}вкладам{_b}. Повторный вход возможен, но требует голосования и согласия других участников.";
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Система голосования";
@@ -3316,7 +3316,7 @@
 "Enter an existing group using your username." = "Войдите в существующую группу с помощью вашего имени пользователя.";
 
 /* views/pages/Home.vue */
-"Install this web app on your device for better usability." = "Установите это веб-приложение на устройство для лучшей удобности.";
+"Install this web app on your device for better usability." = "Установите это веб-приложение на ваше устройство для лучшего удобства использования.";
 
 /* views/pages/Home.vue */
 "Install" = "Установить";
@@ -3346,7 +3346,7 @@
 "Go to dashboard" = "Перейти на панель";
 
 /* views/pages/Join.vue */
-"Oh no! {br_}This invite is already expired" = "О нет! {br_}Это приглашение уже истекло";
+"Oh no! {br_}This invite is already expired" = "О нет! {br_}Срок этого приглашения уже истек";
 
 /* views/pages/Join.vue */
 "Oh no! {br_}This invite is not valid" = "О нет! {br_}Это приглашение недействительно";
@@ -3406,7 +3406,7 @@
 "There are no payments." = "Нет платежей.";
 
 /* views/pages/Payments.vue */
-"Todo" = "Делать";
+"Todo" = "Задачи";
 
 /* views/pages/Payments.vue */
 "Try out the {r1}payments simulator.{r2}" = "Попробуйте {r1}симулятор платежей.{r2}";
@@ -3421,7 +3421,7 @@
 "You can change this at any time by updating your {r1}income details{r2}." = "Вы можете изменить это в любое время, обновив {r1}детали дохода{r2}.";
 
 /* views/pages/Payments.vue */
-"You haven’t received any payments yet" = "Вы еще не получили платежей";
+"You haven’t received any payments yet" = "Вы еще не получили ни одного платежа";
 
 /* views/pages/Payments.vue */
 "{amt} in total, to 1 member" = "{amt} всего, 1 участнику";
