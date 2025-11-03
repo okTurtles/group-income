@@ -420,9 +420,9 @@ sbp('sbp/selectors/register', {
     sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
       const keys = await filesCache.getItem('keys') ?? []
       const allTempKeys = keys.filter(k => k.startsWith('temporary/'))
-      await filesCache.removeMany(allTempKeys).catch(e => {
-        console.error('[gi.db/filesCache/temporary/clear] Error removing temporary keys', e)
-      })
+      await filesCache.removeMany(allTempKeys)
+    }).catch(e => {
+      console.error('[gi.db/filesCache/temporary/clear] Error removing temporary keys', e)
     })
   }
 })
