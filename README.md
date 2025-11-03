@@ -156,6 +156,8 @@ For details, see: **[`Docker.md`](docs/src/Docker.md)**
 
 If you run into any errors [during the setup](docs/src/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/src/Troubleshooting.md).
 
+Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/okTurtles/group-income)
+
 ## Donating
 
 [Donations to the okTurtles Foundation](https://okturtles.org/donate/) support the development of Group Income and related projects.
