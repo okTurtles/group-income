@@ -2,9 +2,14 @@
 
 It's recommended that you understand the [basics of `sbp`](https://github.com/okTurtles/sbp-js) before moving on because everything below relies on it.
 
-In Group Income, we use a framework for building software out of something called "contract chains" (if you're familiar with how smart contracts in Ethereum work, this will make more sense to you).
+In Group Income, we use a framework called [Chelonia](https://github.com/okTurtles/libcheloniajs) for building software out of something called "contract chains" (if you're familiar with how smart contracts in Ethereum work, this will make more sense to you).
 
-A contract chain is an immutable linked-list of events. We use this sequence of events to build up a state. For example, in Group Income we have a "group contract" that represents everything happening within a single group. The first event in the contract defines and registers the contract itself, in this case, the specific instance of a group. Each subsequent event represents an action that happens within the group.
+For more information, watch these two talks:
+
+- 🎦 [**Shelter Protocol Introduction by Greg Slepak @ DWebCamp2023**](https://odysee.com/@okTurtles:e/shelter-protocol-introduction-by-greg:5)
+- 🎦 [**Chelonia End-to-End Encryption For Every App @ Internet Archive**](https://archive.org/details/dweb-weekend-conference-2025-day-2-all-presentations-playlist/06+-+Greg+Slepak+-+Chelonia+End-to-End+Encryption+For+Every+App+-+DWeb+Conference+Day+2.mp4)
+
+A contract chain is an immutable linked-list of events. We use this sequence of events to build up a state. For example, in Group Income we have a "group contract" that represents group-related data and events. The first event in the contract defines and registers the contract itself, in this case, the specific instance of a group. Each subsequent event represents an action that happens within the group.
 
 So for example, if we want to update the settings of a group, we do this:
 
@@ -18,34 +23,43 @@ await sbp('gi.actions/group/updateSettings', {
 
 This action accomplishes two things at once:
 
-1. It creates the event — an *action* — and wraps it in a [`SPMessage`](../../shared/SPMessage.js) object.
+1. It creates the event — an *action* — and wraps it in a [`SPMessage`](https://github.com/okTurtles/libcheloniajs/blob/main/src/SPMessage.ts) object.
 2. It sends this `SPMessage` to the server - appending it to the contract `contractID` (in this case, the current group we're in)
 
 > _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`frontend/model/contracts/`](../../frontend/model/contracts/).
 
-##### Data Representation
+### Version controlled
+
+All contracts are version controlled by "pinning". This means that any time any contract logic changes, a snapshot of these changes must be made before the next release of the app using the `grunt pin` command. This creates a complete copy the contract that gets frozen in time, so that any events that are processed using that contract are always processed using the same code no matter when they are processed. This ensures that all clients are able to build up the same state even in the face of changing code.
+
+### Data Representation
 
 `SPMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work, except much simpler (no [DHT](https://en.wikipedia.org/wiki/Distributed_hash_table) is used).
 
-##### Actions
+### Actions
 
 All of the contract actions for all the contracts used in Group Income are defined in [`frontend/controller/actions/`](..frontend/controller/actions/).
 
-##### Client <-> Server Communication Details
+The code in `frontend/controller/actions/*` is used for creating `SPMessages` to send to contracts, and it mirrors the actions that can be called on contracts that are defined in `frontend/model/conracts/*`.
+
+### Client <-> Server Communication Details
 
 When a client sends a `SPMessage` to a contract stored on the server, that message is sent back (via websockets) to everyone who is subscribed to that contract, including the client that sent the message. Upon receiving this message/event, each client uses it to update their local copy of the contract state, per the `process` function that is defined for that action. All of these `process` functions can be found in [`frontend/model/contracts/`](../../frontend/model/contracts/).
 
-##### Vuex Integration
+### Vuex Integration
 
 In Group Income, we integrate our contract framework with Vuex, and the logic for that integration can be found in [`frontend/model/state.js`](../../frontend/model/state.js).
 
-This allows the UI to be automatically updated whenever an action is sent to the contract. Our framework even supports Vuex-like getters, that can be directly bound to the UI.
+This allows the UI to be automatically updated whenever an action is sent to the contract. Chelonia also supports Vuex-like getters, that can be directly bound to the UI.
 
-###### The `process` function
+Contract state is updated by the `process` function inside of contract actions. Whenever this state is updated, those updates are propagated to the UI via Vuex.
 
-Whenever a message is received by a client, it is first processed through the Vuex action `handleEvent` in [`frontend/model/state.js`](../../frontend/model/state.js).
+> [!NOTE]
+> In fact all of the `gi.actions` live in the service worker because all of Chelonia runs in the service worker. This prevents multiple instances of Chelonia from running when there are multiple tabs or windows of Group Income open. State is copied over from the service worker to each Vuex instance in every tab. Not every Chelonia app needs to behave this way, but Group Income does as it makes data corruption less likely to happen and also makes web push notifications work.
 
-From there is sent to our framework and contract logic. In most cases, a normal non-async function is called, call the `process` function. This processes the message and applies the logic to update the state based on the action name and any data that is associated with it.
+### The `process` function
+
+When most data comes in from the server (whether by a manual sync or over the web socket after we're subscribed), it first passes through the contract's `process` function corresponding to the action that was sent.
 
 In our example above, the name of the *contract action* generated by `sbp('gi.actions/group/updateSettings', ...)` is called `'gi.contracts/group/updateSettings'`, and its `process` function is defined in [`frontend/model/contracts/group.js`](../../frontend/model/contracts/group.js):
 
@@ -66,9 +80,37 @@ In our example above, the name of the *contract action* generated by `sbp('gi.ac
 },
 ```
 
-> **Note**: Metadata is only included when contracts define a metadata key in their contract definition. It includes information about the action, such as when it was created and who created it.
+Process functions are only allowed to update the state for their corresponding contract, and do nothing else. They're not allowed to perform any side effects. For that, we have the `sideEffect` function.
 
-##### Subscribing to a contract
+> [!NOTE]
+> Metadata is only included when contracts define a metadata key in their contract definition. It includes information about the action, such as when it was created and who created it.
+
+### The `sideEffect` function
+
+Anything that triggers other app behavior belongs in the `sideEffect` function. These functions are allowed to do anything **except** update contract state (they're like the inverse of the `process` function).
+
+You can create side effects by implementing the `sideEffect` function, or by calling the special selector `<contractName>/pushSideEffect`. See `group.js` for examples of both patterns.
+
+It's **very important** when writing side effects to understand that unlike contract methods (see next section) any events or selectors that they call that get propagated to the app are not version-controlled! This means that the implementation of those selectors in the app cannot change (or at the very least, must handle the same parameters forever). See [**Calls From Contracts**](./Calls-From-Contracts.md) for more details.
+
+### Contract methods
+
+In addition to an `actions` section, contracts can have `methods`. These are version-controlled blocks of code that can be called from within the contract for organizational purposes. It can be handy to have these for example when you have a process function that wants to decide at processing time whether or not to trigger some other code that might have side effects using the `*/pushSideEffect` selector.
+
+Contract method selectors have this structure: `<contractName>/<methodName>`.
+
+Here's an example from `group.js` of a contract method being queued up to be called by a process function:
+
+```js
+sbp('gi.contracts/group/pushSideEffect', contractID,
+  ['gi.contracts/group/archivePayments', contractID, archivingPayments]
+)
+```
+
+> [!NOTE]
+> Side effects that are pushed onto the "side effect stack" using `pushSideEffect` get run *after* the `sideEffect` function, if it is defined.
+
+### Subscribing to a contract
 
 Chelonia implements _reference counting_ to automatically manage contract
 subscriptions. When the reference count is positive, a contract subscription
@@ -98,7 +140,7 @@ For example:
 await sbp('chelonia/contract/release', contractID)
 ```
 
-###### When to call `retain` and `release`
+#### When to call `retain` and `release`
 
 Normally, you should call `retain` each time an event is about to happen that
 requires receiving updates for a contract. You should then call `release` when
@@ -123,7 +165,7 @@ Three examples of this are:
     a session. This would be an example where you would have a call to `retain`
     when the account is created and then there could be no `release` call.
 
-###### Ephemeral reference counts
+#### Ephemeral reference counts
 
 Chelonia maintains two different reference counts that you can directly control
 using `retain` and `release`: ephemeral and non-ephemeral.
@@ -162,7 +204,7 @@ try {
 }
 ```
 
-###### `chelonia/contract/sync`
+#### `chelonia/contract/sync`
 
 In addition to `retain` and `release`, there is another selector that's
 relevant: `chelonia/contract/sync`. You use `sync` to force fetch the latest
@@ -185,3 +227,9 @@ keys (meaning keys that are defined in other contracts), Chelonia may listen for
 events in those other contracts to keep keys in sync.
 
 That's all for now! Feel free to dive even more deeply in the files mentioned so far and complement these docs with your discoveries.
+
+#### `referenceTally` helper function
+
+Some advanced situations can happen when one contract is responsible for deciding whether or not to sync another contract.
+
+A member could, for example, join and leave a chatroom multiple times. We wouldn't want to actually have them join and leave that chatroom multiple times every time they log in on a new computer when syncing the contract from scratch, so until contract snapshots are implemented, we have a utility function called `referenceTally` that is used by contracts like `group.js` and `chatroom.js` that can be called instead and it decides whether to eventually sync the contract or not based on how many `join`/`leave` pairs there are.
