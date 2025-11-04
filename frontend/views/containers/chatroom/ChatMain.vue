@@ -1685,7 +1685,7 @@ export default ({
           }
 
           detectedFiles.length &&
-            this.$refs.sendArea.fileAttachmentHandler(detectedFiles, true)
+            this.$refs.sendArea.fileAttachmentHandler(detectedFiles)
         }
       }
     },
