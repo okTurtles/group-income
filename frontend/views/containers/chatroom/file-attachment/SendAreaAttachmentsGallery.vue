@@ -2,7 +2,7 @@
   .c-send-area-attachments-container
     .c-send-area-attachments-wrapper(
       ref='scrollContainer'
-      @scroll='onScroll'
+      @scroll='config.debouncedButtonVisibilityCheck()'
     )
       slot
 
@@ -60,9 +60,6 @@ export default {
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       })
-    },
-    onScroll () {
-      this.config.debouncedButtonVisibilityCheck()
     }
   },
   updated () {
