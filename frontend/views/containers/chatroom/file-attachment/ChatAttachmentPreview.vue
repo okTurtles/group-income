@@ -184,17 +184,20 @@ export default {
 
         const promiseToRetrieveURLs = this.sortedAttachments[mediaType]
           .map(async attachment => {
-            if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
-              return this.getAttachmentObjectURL(attachment).catch(e => {
-                console.error('[ChatAttachmentPreview/initMediaObjectURLList] Error:', e)
-              })
-            } else {
-              if (attachment.url) {
-                return attachment.url
-              } else if (attachment.downloadData?.manifestCid) {
-                const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
-                return cachedArrayBuffer ? URL.createObjectURL(new Blob([cachedArrayBuffer])) : ''
+            try {
+              if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
+                return this.getAttachmentObjectURL(attachment)
+              } else {
+                if (attachment.url) {
+                  return attachment.url
+                } else if (attachment.downloadData?.manifestCid) {
+                  const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
+                  return cachedArrayBuffer ? URL.createObjectURL(new Blob([cachedArrayBuffer])) : ''
+                }
+                return ''
               }
+            } catch (err) {
+              console.error('[ChatAttachmentPreview/initMediaObjectURLList] Error:', err)
               return ''
             }
           })
@@ -254,7 +257,7 @@ export default {
       if (downloadData?.manifestCid) {
         const manifestCid = downloadData.manifestCid
         const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
-        const bloToUse = cachedArrayBuffer
+        const blobToUse = cachedArrayBuffer
           ? new Blob([cachedArrayBuffer])
           : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
 
@@ -268,12 +271,12 @@ export default {
             if (url) {
               URL.revokeObjectURL(url)
             }
-            return URL.createObjectURL(bloToUse)
+            return URL.createObjectURL(blobToUse)
           })
         }
 
         if (!cachedArrayBuffer) {
-          const arrayBuffer = await bloToUse.arrayBuffer()
+          const arrayBuffer = await blobToUse.arrayBuffer()
           sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
         }
       }
