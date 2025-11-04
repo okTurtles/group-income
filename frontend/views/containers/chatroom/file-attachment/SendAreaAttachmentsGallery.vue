@@ -28,6 +28,9 @@ import { debounce } from 'turtledash'
 
 export default {
   name: 'SendAreaAttachmentsContainer',
+  props: {
+    contentSize: Number
+  },
   data () {
     return {
       ephemeral: {
@@ -68,6 +71,11 @@ export default {
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.config.debouncedButtonVisibilityCheck)
+  },
+  watch: {
+    contentSize () {
+      this.config.debouncedButtonVisibilityCheck()
+    }
   }
 }
 </script>

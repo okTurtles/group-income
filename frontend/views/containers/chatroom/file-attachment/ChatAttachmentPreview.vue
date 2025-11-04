@@ -40,7 +40,7 @@
 
   // Displaying attachments as part of <send-area />
   template(v-else)
-    send-area-attachments-gallery(ref='sendAreaAttachmentsGallery')
+    send-area-attachments-gallery(:content-size='attachmentList.length')
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
           v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
@@ -373,11 +373,6 @@ export default {
             })
           }
         }
-      }
-    },
-    attachmentList (to, from) {
-      if (!this.isForDownload) {
-        this.$refs.sendAreaAttachmentsGallery?.config?.debouncedButtonVisibilityCheck()
       }
     }
   },
