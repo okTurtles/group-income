@@ -2,7 +2,7 @@
   .c-send-area-attachments-container
     .c-send-area-attachments-wrapper(
       ref='scrollContainer'
-      @scroll='config.debouncedButtonVisibilityCheck'
+      @scroll='onScroll'
     )
       slot
 
@@ -28,9 +28,6 @@ import { debounce } from 'turtledash'
 
 export default {
   name: 'SendAreaAttachmentsContainer',
-  props: {
-    contentSize: Number
-  },
   data () {
     return {
       ephemeral: {
@@ -63,7 +60,13 @@ export default {
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       })
+    },
+    onScroll () {
+      this.config.debouncedButtonVisibilityCheck()
     }
+  },
+  updated () {
+    this.config.debouncedButtonVisibilityCheck()
   },
   mounted () {
     this.determineButtonVisibility()
@@ -71,12 +74,6 @@ export default {
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.config.debouncedButtonVisibilityCheck)
-  },
-  watch: {
-    contentSize () {
-      // Re-determine the button visibility when the content of the gallery changes. (eg. more attachments are added, an item is removed, etc.)
-      this.config.debouncedButtonVisibilityCheck()
-    }
   }
 }
 </script>

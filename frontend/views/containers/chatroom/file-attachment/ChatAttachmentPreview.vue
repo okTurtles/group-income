@@ -40,7 +40,7 @@
 
   // Displaying attachments as part of <send-area />
   template(v-else)
-    send-area-attachments-gallery(:content-size='attachmentList.length')
+    send-area-attachments-gallery
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
           v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
