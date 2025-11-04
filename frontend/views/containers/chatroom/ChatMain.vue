@@ -890,6 +890,12 @@ export default ({
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
           throw e
+        } finally {
+          attachments.forEach(attachment => {
+            if (attachment.url) {
+              URL.revokeObjectURL(attachment.url)
+            }
+          })
         }
       }
 
