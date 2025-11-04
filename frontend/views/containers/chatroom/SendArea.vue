@@ -797,6 +797,7 @@ export default ({
       list.sort((a, b) => priority[getFileType(a.mimeType)] - priority[getFileType(b.mimeType)])
 
       this.ephemeral.attachments = list
+      this.$refs.fileAttachmentInputEl.value = '' // clear the input value
     },
     clearAllAttachments () {
       this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
