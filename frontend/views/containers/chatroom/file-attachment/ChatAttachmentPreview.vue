@@ -157,32 +157,56 @@ export default {
     }
   },
   mounted () {
-    if (this.hasImgAttachments) {
-      const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
-        .map(attachment => this.getAttachmentObjectURL(attachment).catch(e => {
-          console.error('[ChatAttachmentPreview/mounted] Error', e)
-        }))
-
-      Promise.all(promiseToRetrieveURLs).then(urls => {
-        this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
-      })
-    }
-
-    if (this.hasVideoAttachments) {
-      this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
-        .map(attachment => attachment.url || '')
-    }
-
     if (this.hasMediaAttachments) {
+      this.initMediaObjectURLLists()
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   beforeDestroy () {
     if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
+        this.revokeAllMediaObjectURLs()
+      }
     }
   },
   methods: {
+    initMediaObjectURLLists () {
+      const types = [
+        CHATROOM_ATTACHMENT_TYPES.IMAGE,
+        CHATROOM_ATTACHMENT_TYPES.VIDEO
+      ]
+
+      for (const mediaType of types) {
+        if (this.sortedAttachments[mediaType].length === 0) { continue }
+
+        const promiseToRetrieveURLs = this.sortedAttachments[mediaType]
+          .map(async attachment => {
+            try {
+              if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
+                return this.getAttachmentObjectURL(attachment)
+              } else {
+                if (attachment.url) {
+                  return attachment.url
+                } else if (attachment.downloadData?.manifestCid) {
+                  const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
+                  return cachedArrayBuffer ? URL.createObjectURL(new Blob([cachedArrayBuffer])) : ''
+                }
+                return ''
+              }
+            } catch (err) {
+              console.error('[ChatAttachmentPreview/initMediaObjectURLList] Error:', err)
+              return ''
+            }
+          })
+
+        Promise.all(promiseToRetrieveURLs).then(urls => {
+          this.mediaObjectURLList[mediaType] = urls
+        })
+      }
+    },
     hasAttachmentType (type) {
       return this.sortedAttachments[type].length > 0
     },
@@ -209,15 +233,34 @@ export default {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-        return URL.createObjectURL(blob)
+        const manifestCid = attachment.downloadData.manifestCid
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+
+        if (cachedArrayBuffer) {
+          return URL.createObjectURL(new Blob([cachedArrayBuffer]))
+        } else {
+          const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
+          const arrayBuffer = await blob.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
+          return URL.createObjectURL(blob)
+        }
       }
+    },
+    revokeAllMediaObjectURLs () {
+      Object.values(this.mediaObjectURLList).forEach(urlList => {
+        urlList.forEach(url => URL.revokeObjectURL(url))
+      })
     },
     async loadVideoObjectURL (attachment) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
+        const manifestCid = downloadData.manifestCid
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+        const blobToUse = cachedArrayBuffer
+          ? new Blob([cachedArrayBuffer])
+          : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+
         const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
 
@@ -228,8 +271,13 @@ export default {
             if (url) {
               URL.revokeObjectURL(url)
             }
-            return URL.createObjectURL(blob)
+            return URL.createObjectURL(blobToUse)
           })
+        }
+
+        if (!cachedArrayBuffer) {
+          const arrayBuffer = await blobToUse.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
         }
       }
     },
