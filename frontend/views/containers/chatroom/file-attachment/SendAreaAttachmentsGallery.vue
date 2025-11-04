@@ -2,7 +2,7 @@
   .c-send-area-attachments-container
     .c-send-area-attachments-wrapper(
       ref='scrollContainer'
-      @scroll='config.debouncedButtonVisibilityCheck()'
+      @scroll='config.debouncedButtonVisibilityCheck'
     )
       slot
 
