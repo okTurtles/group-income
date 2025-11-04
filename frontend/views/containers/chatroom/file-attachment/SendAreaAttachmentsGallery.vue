@@ -74,6 +74,7 @@ export default {
   },
   watch: {
     contentSize () {
+      // Re-determine the button visibility when the content of the gallery changes. (eg. more attachments are added, an item is removed, etc.)
       this.config.debouncedButtonVisibilityCheck()
     }
   }
