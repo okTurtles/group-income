@@ -277,6 +277,7 @@ export default {
         }
         this.$v.form.$reset()
         this.close()
+        this.$emit('created-poll')
       } catch (e) {
         console.log(`Error adding message to create poll for ${contractID}`, e)
         this.$refs.formMsg.danger(e.message)
