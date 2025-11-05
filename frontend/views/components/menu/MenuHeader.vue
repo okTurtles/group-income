@@ -13,6 +13,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-header {
+  position: relative;
+  min-width: 0;
   padding: 0.5rem 1rem;
   font-weight: bold;
   text-transform: uppercase;

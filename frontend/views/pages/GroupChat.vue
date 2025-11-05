@@ -1,7 +1,7 @@
 <template lang='pug'>
 page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
   template(#header='')
-    .c-header(data-test='channelName')
+    .c-channel-header(data-test='channelName')
       .avatar-wrapper(v-if='summary.picture')
         avatar(
           :src='summary.picture'
@@ -66,7 +66,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
               i18n Delete channel
 
   template(#description='')
-    .c-header-description
+    .c-channel-header-description
       span.c-pin-wrapper(
         data-test='numberOfPinnedMessages'
         v-if='pinnedMessages.length'
@@ -319,7 +319,7 @@ export default ({
   }
 }
 
-.c-header {
+.c-channel-header {
   display: flex;
   align-items: center;
   position: relative;
@@ -409,7 +409,7 @@ export default ({
   transition: opacity 0.3s cubic-bezier(1, 0.5, 0.8, 1);
 }
 
-.c-header-description {
+.c-channel-header-description {
   display: none;
 
   @include desktop {
