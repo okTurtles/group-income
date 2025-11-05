@@ -84,6 +84,27 @@ export default ({
     },
     checkIsTouch () {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
+    },
+    findAndScrollToAnchor (str) {
+      const anchorEl = document.getElementById(str) || this.$el.querySelector(`[name="${CSS.escape(str)}"]`)
+      if (anchorEl) {
+        anchorEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (anchorEl.tabIndex >= 0 || anchorEl.hasAttribute('tabindex')) {
+          anchorEl.focus()
+        }
+      }
+    }
+  },
+  watch: {
+    '$route': {
+      immediate: true,
+      handler (to, from) {
+        if (to.hash && from?.hash !== to.hash) {
+          setTimeout(() => {
+            this.findAndScrollToAnchor(to.hash.slice(1))
+          }, 100)
+        }
+      }
     }
   }
 }: Object)

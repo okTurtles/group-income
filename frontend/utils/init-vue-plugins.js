@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import PortalVue from 'portal-vue'
+// import PortalVue from 'portal-vue'
 
 // 1. Setup vue2-touch-events
 if ('ontouchstart' in window || 'msMaxTouchPoints' in navigator) {
@@ -7,4 +7,4 @@ if ('ontouchstart' in window || 'msMaxTouchPoints' in navigator) {
 } else Vue.directive('touch', {})
 
 // 2. Setup portal-vue (https://v2.portal-vue.linusb.org/guide/getting-started.html)
-Vue.use(PortalVue)
+// Vue.use(PortalVue)

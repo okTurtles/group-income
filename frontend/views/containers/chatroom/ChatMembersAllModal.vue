@@ -167,6 +167,10 @@ export default ({
     ...mapState([
       'currentGroupId'
     ]),
+    chatroomActiveMembers () {
+      const activeMemberEntries = Object.entries(this.chatRoomMembers).filter(([, joinInfo]) => !joinInfo.hasLeft)
+      return Object.fromEntries(activeMemberEntries)
+    },
     filteredRecents () {
       return filterByKeyword(this.addedMembers, this.searchText, ['username', 'displayName'])
     },
@@ -222,7 +226,7 @@ export default ({
   methods: {
     initializeMembers () {
       if (this.isGroupDirectMessage()) {
-        this.addedMembers = Object.keys(this.chatRoomMembers)
+        this.addedMembers = Object.keys(this.chatroomActiveMembers)
           .map(contractID => {
             const profile = contractID === this.ourIdentityContractId ? this.globalProfile(contractID) : this.ourContactProfilesById[contractID]
             return {
@@ -246,7 +250,8 @@ export default ({
             }
           })
       } else {
-        this.addedMembers = this.chatRoomMembersInOrder.map(member => ({ ...member, departedDate: null }))
+        this.addedMembers = this.chatRoomMembersInOrder.filter(member => !!this.chatroomActiveMembers[member.contractID])
+          .map(member => ({ ...member, departedDate: null }))
         this.canAddMembers = this.groupMembersSorted
           .filter(member => !this.addedMembers.find(mb => mb.contractID === member.contractID) && !member.invitedBy)
           .map(member => ({

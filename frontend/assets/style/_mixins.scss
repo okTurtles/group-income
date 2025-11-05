@@ -20,6 +20,15 @@ $payment-table-desktop-bp: 1290px;
   -webkit-overflow-scrolling: touch;
 }
 
+@mixin hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @mixin from($device) {
   @media screen and (min-width: $device) {
     @content;

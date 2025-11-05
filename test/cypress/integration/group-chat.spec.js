@@ -164,7 +164,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function updateDescription (description) {
-    cy.getByDT('updateDescription').click()
+    cy.getByDT('updateDescription').filter(':visible').click()
     cy.getByDT('updateChannelDescription').clear()
     cy.getByDT('updateChannelDescription').type(description)
     cy.getByDT('updateChannelDescriptionSubmit').click()
@@ -364,6 +364,17 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.giWaitUntilMessagesLoaded()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
+  })
+
+  it('user2 sends a message to a private channel and user1 sees a badge for it', () => {
+    switchUser(user2)
+    cy.giRedirectToGroupChat()
+    cy.giSwitchChannel('channel22')
+    cy.giSendMessage(user2, 'Hi, There!')
+
+    switchUser(user1)
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.giRedirectToGroupChat()
   })
 
   it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {

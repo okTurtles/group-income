@@ -21,24 +21,6 @@ export default ({
     titleHtml () {
       return this.anchor ? `<a class='c-section-anchor' href='#${this.anchor}'>${this.title}</a>` : this.title
     }
-  },
-  methods: {
-    scrollToAnchor () {
-      const anchorEl = this.$el.querySelector('.c-section-anchor')
-      anchorEl && anchorEl.click()
-    }
-  },
-  watch: {
-    '$route': {
-      immediate: true,
-      handler (to, from) {
-        if (to.hash &&
-          (from?.hash !== to.hash) &&
-          `#${this.anchor}` === to.hash) {
-          setTimeout(this.scrollToAnchor, 100)
-        }
-      }
-    }
   }
 }: Object)
 </script>

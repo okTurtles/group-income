@@ -27,8 +27,14 @@
 /* MISSING TRANSLATION - views/containers/chatroom/CreatePoll.vue */
 "Option {index}" = "Option {index}";
 
+/* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
+"Left" = "Left";
+
 /* MISSING TRANSLATION - views/containers/chatroom/SendArea.vue */
 "Code" = "Code";
+
+/* MISSING TRANSLATION - views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Expand" = "Expand";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */
 "{button_}{who}{_button}" = "{button_}{who}{_button}";
@@ -363,7 +369,7 @@
 /* controller/router.js */
 "Pending Approval" = "En attente d'approbation";
 
-/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/AppLogs.vue */
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/chatroom/ChatMain.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/AppLogs.vue */
 "Loading" = "Chargement";
 
 /* controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
@@ -1347,11 +1353,11 @@
 /* views/containers/chatroom/MessageActions.vue, views/containers/chatroom/MessageReactions.vue, views/containers/chatroom/SendArea.vue */
 "Add reaction" = "Ajouter une réaction";
 
+/* views/containers/chatroom/MessageActions.vue, views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/ErrorPage.vue */
+"Retry" = "Réessayer";
+
 /* views/containers/chatroom/MessageActions.vue, views/containers/contributions/Contribution.vue, views/containers/dashboard/GroupPurpose.vue */
 "Edit" = "Éditer";
-
-/* views/containers/chatroom/MessageActions.vue, views/containers/loading-error/ErrorPage.vue */
-"Retry" = "Réessayer";
 
 /* views/containers/chatroom/MessageBase.vue */
 "Message failed to send." = "L'envoi du message a échoué.";
@@ -1469,6 +1475,9 @@
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Membre expulsé de {title} : {displayName}";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Kicked a member {displayName}" = "A expulsé un membre {displayName}";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
@@ -1590,17 +1599,23 @@
 /* views/containers/chatroom/chat-mentions/RenderMessageText.vue, views/containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js */
 "(edited)" = "(édité)";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Download ({size})" = "Télécharger ({size})";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
-"Remove attachment" = "Supprimer la pièce jointe";
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Load video" = "Charger la vidéo";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue */
 "Delete" = "Effacer";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue, views/containers/user-settings/AppLogs.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue, views/containers/user-settings/AppLogs.vue */
 "Download" = "Télécharger";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
+"Loading..." = "Chargement...";
+
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue */
+"Remove attachment" = "Supprimer la pièce jointe";
 
 /* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
 "Chat attachment too large modal" = "Pièce jointe de la discussion modale trop grande";
@@ -1613,6 +1628,12 @@
 
 /* views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
 "Upload attachment" = "Télécharger la pièce jointe";
+
+/* views/containers/chatroom/file-attachment/SendAreaAttachmentsGallery.vue */
+"Scroll left" = "Faire défiler à gauche";
+
+/* views/containers/chatroom/file-attachment/SendAreaAttachmentsGallery.vue */
+"Scroll right" = "Faire défiler à droite";
 
 /* views/containers/chatroom/image-viewer/PreviewImageArea.vue */
 "Image preview" = "Aperçu de l'image";
@@ -1637,6 +1658,12 @@
 
 /* views/containers/chatroom/poll-message-content/VoterAvatars.vue */
 "Voted for “{option}”" = "A voté pour “{option}”";
+
+/* views/containers/chatroom/video-viewer/VideoViewerModal.vue */
+"Next video" = "Vidéo suivante";
+
+/* views/containers/chatroom/video-viewer/VideoViewerModal.vue */
+"Previous video" = "Vidéo précédente";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add income details" = "Indiquer vos revenus";
@@ -2106,6 +2133,9 @@
 /* views/containers/global-dashboard/DirectMessages.vue */
 "Direct Messages: Coming soon!" = "Messages directs : Bientôt disponible!";
 
+/* views/containers/global-dashboard/NewsAndUpdates.vue */
+"Failed to load news: {reportError}" = "Échec du chargement des actualités : {reportError}";
+
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Group name is required" = "Le nom du groupe est obligatoire";
 
@@ -2420,9 +2450,6 @@
 
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue, views/pages/Join.vue */
 "Take me home" = "Accueil";
-
-/* views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
-"Loading..." = "Chargement...";
 
 /* views/containers/navigation/GroupsList.vue */
 "Create a new group" = "Créer un nouveau groupe";

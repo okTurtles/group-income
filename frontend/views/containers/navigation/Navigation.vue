@@ -24,6 +24,7 @@ nav.c-navigation(
               :key='entry.id'
               :icon='entry.icon'
               :to='entry.routeTo'
+              :badgeCount='entry.id === "news-and-updates" && hasNewNews ? 1 : 0'
               :data-test='"global-dashboard_" + entry.id'
             ) {{ entry.title }}
 
@@ -107,7 +108,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { showNavMixin } from '@view-utils/misc.js'
+import { showNavMixin, fetchNews } from '@view-utils/misc.js'
 import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
 import { debounce } from 'turtledash'
 
@@ -131,12 +132,14 @@ export default ({
       },
       ephemeral: {
         isActive: false,
-        isTouch: null
+        isTouch: null,
+        latestNewsDate: null
       }
     }
   },
   created () {
     this.checkIsTouch()
+    this.checkForNewNews()
   },
   mounted () {
     // TODO - Create a single resize listener to be reused on components
@@ -159,7 +162,8 @@ export default ({
       'groupsByName',
       'colors',
       'totalUnreadNotificationCount',
-      'groupUnreadMessages'
+      'groupUnreadMessages',
+      'ourPreferences'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -177,6 +181,26 @@ export default ({
     },
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard')
+    },
+    hasNewNews () {
+      // Don't show badge if we're currently on the news page
+      if (this.$route.path === '/global-dashboard/news-and-updates') {
+        return false
+      }
+
+      // Check if there's a stored last seen date
+      const lastSeenNewsDate = this.ourPreferences?.lastSeenNewsDate
+
+      // If no last seen date is stored, don't show badge
+      if (!lastSeenNewsDate || !this.ephemeral.latestNewsDate) {
+        return false
+      }
+
+      // Compare the latest news date with the last seen date
+      const lastSeen = new Date(lastSeenNewsDate)
+      const latest = new Date(this.ephemeral.latestNewsDate)
+
+      return latest > lastSeen
     }
   },
   methods: {
@@ -192,6 +216,16 @@ export default ({
     onMenuItemsClick () {
       // Close the menu when a menu item is clicked.
       this.ephemeral.isActive = false
+    },
+    async checkForNewNews () {
+      try {
+        const data = await fetchNews()
+        if (data.length > 0) {
+          this.ephemeral.latestNewsDate = data[0].createdAt
+        }
+      } catch (error) {
+        console.error('Failed to check for new news:', error)
+      }
     }
   }
 }: Object)

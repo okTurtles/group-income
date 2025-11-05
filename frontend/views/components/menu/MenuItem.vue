@@ -25,6 +25,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-menuItem {
+  width: 100%;
+
   ::v-deep .c-item-link {
     height: 2rem;
     font-family: "Lato";

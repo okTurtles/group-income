@@ -10,8 +10,16 @@ import { PUBSUB_INSTANCE } from './instance-keys.js'
 
 // Used by 'backend/translations/get'
 // Do not include 'english.json' here unless the browser might need to download it.
+// https://appmakers.substack.com/p/bcp-47-language-codes-list
 const languageFileMap = new Map([
-  ['fr', 'french.json']
+  ['fr', 'french.json'],
+  ['ru', 'russian.json'],
+  ['ko', 'korean.json'],
+  ['es', 'spanish.json'],
+  ['ja', 'japanese.json'],
+  ['uk', 'ukrainian.json'],
+  ['pt', 'portuguese.json'],
+  ['zh', 'chinese.json']
 ])
 
 sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {

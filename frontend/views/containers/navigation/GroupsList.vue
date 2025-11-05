@@ -10,6 +10,11 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
           src='/assets/images/group-income-icon-transparent-circle.png'
           alt='Global dashboard logo'
         )
+      badge(
+        v-if='hasNewNews'
+        type='compact'
+        data-test='globalDashboardBadge'
+      )
 
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
@@ -49,6 +54,7 @@ import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
+import { fetchNews } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupsList',
@@ -57,6 +63,16 @@ export default ({
     Badge,
     Tooltip
   },
+  data () {
+    return {
+      ephemeral: {
+        latestNewsDate: null
+      }
+    }
+  },
+  created () {
+    this.checkForNewNews()
+  },
   computed: {
     ...mapState([
       'currentGroupId'
@@ -64,7 +80,8 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'groupUnreadMessages',
-      'unreadGroupNotificationCountFor'
+      'unreadGroupNotificationCountFor',
+      'ourPreferences'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
@@ -76,6 +93,17 @@ export default ({
     },
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard')
+    },
+    hasNewNews () {
+      // Don't show badge if we're currently on the news page
+      if (this.$route.path === '/global-dashboard/news-and-updates' ||
+        !this.ourPreferences?.lastSeenNewsDate ||
+        !this.ephemeral.latestNewsDate
+      ) {
+        return false
+      }
+
+      return new Date(this.ephemeral.latestNewsDate) > new Date(this.ourPreferences.lastSeenNewsDate)
     }
   },
   methods: {
@@ -106,6 +134,16 @@ export default ({
     },
     groupPictureForContract (contractID) {
       return this.$store.state[contractID]?.settings?.groupPicture || ''
+    },
+    async checkForNewNews () {
+      try {
+        const data = await fetchNews()
+        if (data.length > 0) {
+          this.ephemeral.latestNewsDate = data[0].createdAt
+        }
+      } catch (error) {
+        console.error('Failed to check for new news:', error)
+      }
     }
   }
 }: Object)
