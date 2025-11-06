@@ -751,13 +751,13 @@ export default ({
       const list = this.hasAttachments ? [...this.ephemeral.attachments] : []
 
       for (const file of filesList) {
-        const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
+        const fileUrl = URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
