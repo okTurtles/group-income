@@ -58,9 +58,12 @@ export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
 }
 
+// ISO 4217 code "reserved for testing".
+// We use it to handle non-ISO 4217 codes, e.g. cryptos.
+const XTS = 'XTS'
+
 /**
- *
- * @param {string} code A three-character currency code.
+ * @param {string} code A currency code defined in currencies.js.
  * @param {number} amount
  * @returns A monetary string formatted according to the user locale.
  */
@@ -70,9 +73,8 @@ export function withCurrency (code: string, amount: number): string {
     return 'Error: unsupported currency'
   }
   const { isCrypto, numberFormat, symbol } = currencies[code]
-  // Intl.NumberFormat doesn't know symbols for cryptos.
-  return (isCrypto && symbol)
-    ? numberFormat.format(amount).replace(code, symbol)
+  return isCrypto
+    ? numberFormat.format(amount).replace(XTS, symbol || code)
     : numberFormat.format(amount)
 }
 
@@ -84,7 +86,7 @@ function makeCurrency (options): Currency {
       typeof navigator === 'object' ? (navigator.languages ?? navigator.language) : 'en-US',
       {
         style: 'currency',
-        currency: code,
+        currency: isCrypto ? XTS : code,
         // For cryptos we have to set the number of decimal places explicitly.
         maximumFractionDigits: isCrypto ? decimalsMax : undefined,
         // Don't show fraction digits *if* they are all zero.
