@@ -412,9 +412,8 @@ export default ({
   },
   PAYMENT_RECEIVED (data: { groupID: string, creatorID: string, amount: number, currency: string, paymentHash: string }) {
     const rootState = sbp('state/vuex/state')
-    const { mincomeCurrency } = rootState[data.groupID].settings
     // [backward-compat] data.amount could be a string in older versions.
-    const formattedAmount = (typeof data.amount === 'string' ? data.amount : withCurrency(mincomeCurrency, data.amount))
+    const formattedAmount = (typeof data.amount === 'string' ? data.amount : withCurrency(data.currency, data.amount))
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Payment received'),
       avatarUserID: data.creatorID,
