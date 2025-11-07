@@ -268,7 +268,7 @@ describe('Group Payments', () => {
       // after feels hackish/buggy. If anyone knows the "proper" way to do this
       // please fix!
       cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
-      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1,000')
     })
     cy.closeModal()
 
@@ -454,7 +454,7 @@ describe('Group Payments', () => {
       cy.getByDT('subtitle').should('contain', `Sent to user3-${userId}`)
 
       cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
-      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1,000')
     })
     cy.closeModal()
 
