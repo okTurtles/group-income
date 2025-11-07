@@ -7,39 +7,50 @@ $phone_narrow: 430px;
   // To override default colors of the player, refer to this css color variable table:
   // https://www.npmjs.com/package/plyr#customizing-the-css
   --plyr-color-main: var(--primary_0);
-  aspect-ratio: 16/9;
 
-  .plyr {
-    aspect-ratio: inherit;
-    max-height: 100%;
+  // style-overrides for the video player.
+  &.for-video {
+    aspect-ratio: 16/9;
+
+    .plyr {
+      aspect-ratio: inherit;
+      max-height: 100%;
+    }
+
+    // NOTE: When the screen size is narrow, there is an issue where the play/resume button and the progress-bar UI becomes too small
+    //       (Even smaller than the volume-control UI). To get more space for the play progess bar, we hide some buttons that are not absolutely essential
+    //       when compared to others.
+    //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
+    //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
+    .plyr__controls {
+      button.plyr__control {
+        min-height: unset;
+
+        &:focus {
+          box-shadow: none;
+        }
+      }
+
+      @include v.until($phone_narrow) {
+        .plyr__controls__item[data-plyr="pip"],
+        .plyr__controls__item.plyr__menu {
+          display: none;
+        }
+      }
+
+      @include v.phone {
+        input[data-plyr="volume"] {
+          min-width: 0;
+          max-width: 60px;
+        }
+      }
+    }
   }
 
-  // NOTE: When the screen size is narrow, there is an issue where the play/resume button and the progress-bar UI becomes too small
-  //       (Even smaller than the volume-control UI). To get more space for the play progess bar, we hide some buttons that are not absolutely essential
-  //       when compared to others.
-  //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
-  //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
-  .plyr__controls {
-    button.plyr__control {
-      min-height: unset;
-
-      &:focus {
-        box-shadow: none;
-      }
-    }
-
-    @include v.until($phone_narrow) {
-      .plyr__controls__item[data-plyr="pip"],
-      .plyr__controls__item.plyr__menu {
-        display: none;
-      }
-    }
-
-    @include v.phone {
-      input[data-plyr="volume"] {
-        min-width: 0;
-        max-width: 60px;
-      }
-    }
+  // style-overrides for the audio player.
+  &.for-audio {
+    --plyr-audio-controls-background: #{v.$general_0};
+    --plyr-audio-control-color: var(--primary_0);
+    // TODO: Override more custom color variables as needed.
   }
 }
