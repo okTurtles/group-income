@@ -19,7 +19,9 @@ export const getFileType = (
     ? CHATROOM_ATTACHMENT_TYPES.IMAGE
     : mimeType.match('video/')
       ? CHATROOM_ATTACHMENT_TYPES.VIDEO
-      : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
+      : mimeType.match('audio/')
+        ? CHATROOM_ATTACHMENT_TYPES.AUDIO
+        : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
 }
 
 export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {

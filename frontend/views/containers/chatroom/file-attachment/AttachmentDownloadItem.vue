@@ -9,6 +9,16 @@
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
 
+  // TODO: Implement audio-player component and use it here instead of below placeholder.
+  .c-non-media-card(v-if='isAudio')
+    .c-non-media-icon
+      i.icon-file
+    .c-non-media-file-info
+      .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
+      .c-file-ext-and-size
+        .c-file-ext {{ fileExt }}
+        .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
+
   .c-image-card(v-else-if='isImage')
     img(
       v-if='mediaObjectURL'
@@ -136,11 +146,14 @@ export default {
     isVideo () {
       return this.fileType === CHATROOM_ATTACHMENT_TYPES.VIDEO
     },
+    isAudio () {
+      return this.fileType === CHATROOM_ATTACHMENT_TYPES.AUDIO
+    },
     isVideoPlayable () {
       return this.isVideo && this.mediaObjectURL
     },
     isMediaType () {
-      return this.isImage || this.isVideo
+      return this.isImage || this.isVideo || this.isAudio
     },
     fileExt () {
       return getFileExtension(this.attachment.name, true)

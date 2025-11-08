@@ -14,6 +14,18 @@
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
 
+    .c-audio-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.AUDIO)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.AUDIO]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
+      )
+
     .c-image-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.IMAGE)')
       attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.IMAGE]'
@@ -43,7 +55,7 @@
     send-area-attachments-gallery
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
-          v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
+          v-if='[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA, config.CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(fileType(entry))'
           :key='entry.url'
           :class='"is-" + fileType(entry)'
         )
@@ -114,7 +126,8 @@ export default {
     return {
       mediaObjectURLList: {
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
-        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: [],
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: []
       },
       settledImgURLList: [],
       config: {
@@ -127,7 +140,8 @@ export default {
       const collections = {
         [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: [],
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
-        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: [],
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: []
       }
 
       for (const entry of this.attachmentList) {
@@ -143,8 +157,11 @@ export default {
     hasVideoAttachments () {
       return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
     },
+    hasAudioAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.AUDIO].length > 0
+    },
     hasMediaAttachments () {
-      return this.hasImgAttachments || this.hasVideoAttachments
+      return this.hasImgAttachments || this.hasVideoAttachments || this.hasAudioAttachments
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -176,7 +193,8 @@ export default {
     initMediaObjectURLLists () {
       const types = [
         CHATROOM_ATTACHMENT_TYPES.IMAGE,
-        CHATROOM_ATTACHMENT_TYPES.VIDEO
+        CHATROOM_ATTACHMENT_TYPES.VIDEO,
+        CHATROOM_ATTACHMENT_TYPES.AUDIO
       ]
 
       for (const mediaType of types) {
@@ -218,7 +236,9 @@ export default {
     },
     deleteAttachment ({ index, url, type }) {
       // If index is not explicitly provided, look up the index by the URL.
-      if (index === undefined && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
+      if (index === undefined &&
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO, CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(type) &&
+        url) {
         index = this.mediaObjectURLList[type].indexOf(url)
       }
 
@@ -390,7 +410,7 @@ export default {
     sortedAttachments (to, from) {
       if (!this.isForDownload) { return }
 
-      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
+      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO, CHATROOM_ATTACHMENT_TYPES.AUDIO]
       for (const mediaType of mediaTypes) {
         const fromList = from[mediaType]
         const toList = to[mediaType]
@@ -544,6 +564,7 @@ export default {
 }
 
 .c-non-media-card-container,
+.c-audio-card-container,
 .c-image-card-container,
 .c-video-card-container {
   position: relative;
@@ -552,6 +573,7 @@ export default {
   gap: 1rem;
 }
 
+.c-audio-card-container,
 .c-video-card-container {
   flex-direction: column;
   flex-wrap: nowrap;
