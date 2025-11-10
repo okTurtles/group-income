@@ -259,6 +259,12 @@ export default ({
         this.$refs.dialog.removeEventListener('close', closeHandler, false)
       }
       this.$refs.dialog.addEventListener('close', closeHandler, false)
+
+      if (document.activeElement && document.activeElement.matches('button.c-item-link')) {
+        // There is a Firefox bug where a first menu item is pre-focused when the menu is opened,
+        // This is a fix to check if this happens and prevent it.
+        document.activeElement.blur()
+      }
     },
     closeDialog (e) {
       this.$refs.menu?.closeMenu()

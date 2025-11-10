@@ -594,7 +594,7 @@ export default ({
     },
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
-        this.fileAttachmentHandler(e.clipboardData.files, true)
+        this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
     addSelectedMention (index) {
@@ -742,29 +742,22 @@ export default ({
       e.target.blur()
       this.$refs.fileAttachmentInputEl.click()
     },
-    fileAttachmentHandler (filesList, appendItems = false) {
+    fileAttachmentHandler (filesList) {
       filesList = Array.from(filesList)
 
       // User clicked 'Cancel button'.
       if (!filesList.length) { return }
 
-      const list = appendItems && this.hasAttachments
-        ? [...this.ephemeral.attachments]
-        : []
-
-      if (this.hasAttachments) {
-        // make sure to clear the previous state if there is already attached file(s).
-        this.clearAllAttachments()
-      }
+      const list = this.hasAttachments ? [...this.ephemeral.attachments] : []
 
       for (const file of filesList) {
-        const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
+        const fileUrl = URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,

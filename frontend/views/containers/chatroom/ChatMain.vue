@@ -45,7 +45,7 @@
         .c-loading(v-if='ephemeral.loadingUp')
           p.sr-only {{L('Loading')}}
       template(:slot='"after"')
-        .c-loading(v-if='ephemeral.loadingDown')
+        .c-loading.is-bottom(v-if='ephemeral.loadingDown')
           p.sr-only {{L('Loading')}}
         div(:class='"c-conversation-end"')
       template(v-slot='{ item: message, index, active }')
@@ -601,13 +601,6 @@ export default ({
           sinceHeight = 0
         } else if (this.ephemeral.currentHighestHeight == null || !hasPreviousEvents) {
           const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
-          /* .finally(() => {
-              if (this.ephemeral.loadingDown === instance) {
-                this.ephemeral.loadingDown = false
-              } else if (this.ephemeral.loadingUp === instance) {
-                this.ephemeral.loadingUp = false
-              }
-            }) */
           sinceHeight = Math.max(latestHeight - limit + 1, 0)
         } else {
           sinceHeight = this.ephemeral.currentHighestHeight + 1
@@ -1691,7 +1684,7 @@ export default ({
           }
 
           detectedFiles.length &&
-            this.$refs.sendArea.fileAttachmentHandler(detectedFiles, true)
+            this.$refs.sendArea.fileAttachmentHandler(detectedFiles)
         }
       }
     },
@@ -1781,10 +1774,13 @@ export default ({
       if (!to) return
       this.$nextTick(this.resetObservers)
     },
-    'ephemeral.loadingDown' () {
+    'ephemeral.loadingDown' (newVal) {
       // If ephemeral.loadingDown changes, it means that we're dynamically
       // fetching from the server
       this.messageState.fetched = true
+      if (newVal) {
+        this.jumpToLatest('instant')
+      }
     },
     'ephemeral.loadingUp' () {
       // If ephemeral.loadingUp changes, it means that we're dynamically
@@ -1917,6 +1913,10 @@ export default ({
 
 .c-loading {
   position: relative;
+
+  &.is-bottom {
+    height: 3.75rem;
+  }
 }
 
 .c-fill-while-invisible {
