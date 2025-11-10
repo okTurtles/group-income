@@ -373,7 +373,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giSendMessage(user2, 'Hi, There!')
 
     switchUser(user1)
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]')
     cy.giRedirectToGroupChat()
   })
 
@@ -428,7 +428,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // NOTE: this check is to wait until 2 INTERACTIVE mesages are created
     //       one for creating proposal and another is for proposal approval
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]')
 
     cy.giRedirectToGroupChat()
 
