@@ -60,7 +60,6 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
-const backendIndex = './backend/index.js'
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
@@ -444,25 +443,10 @@ module.exports = (grunt) => {
   // backend or shared files are modified.
   grunt.registerTask('backend:relaunch', '[internal]', function () {
     const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
+    const fork2 = async function () {
       grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: { NODE_ENV, ...process.env },
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
+      grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
+      await execWithErrMsg('./node_modules/.bin/chel serve .')
       done()
     }
     if (child) {
