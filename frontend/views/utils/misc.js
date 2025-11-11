@@ -1,5 +1,9 @@
 'use strict'
+
+import sbp from '@sbp/sbp'
 import VueRouter from 'vue-router'
+import { L } from '@common/common.js'
+import { withCurrency } from '@model/contracts/shared/currencies.js'
 
 export function logExceptNavigationDuplicated (err: Object) {
   err.name !== 'NavigationDuplicated' && console.error(err)
@@ -75,6 +79,17 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
   }
 
   return response
+}
+
+export function withGroupCurrency (amount: number): string {
+  // Group currency code.
+  const code = sbp('state/vuex/getters').groupSettings?.mincomeCurrency
+  // https://github.com/okTurtles/group-income/pull/2923#discussion_r2456246025
+  if (code === undefined) {
+    console.error('missing currency')
+    return L('ERROR: missing currency')
+  }
+  return withCurrency(code, amount)
 }
 
 export async function fetchNews (): Promise<Array<Object>> {

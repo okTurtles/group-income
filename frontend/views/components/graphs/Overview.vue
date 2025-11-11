@@ -8,27 +8,27 @@ div
   .c-chart
     ul.c-chart-legends
       graph-legend-item(
-        :amount='withCurrency(totalCovered)'
+        :amount='withGroupCurrency(totalCovered)'
         color='warning-solid'
         variant='inline'
       ) {{ L('Total covered') }}
 
       graph-legend-item(
-        :amount='withCurrency(totalCovered)'
+        :amount='withGroupCurrency(totalCovered)'
         color='primary-solid'
         variant='inline'
       ) {{ L('Total given') }}
 
       graph-legend-item(
         v-if='surplus > 0'
-        :amount='withCurrency(surplus)'
+        :amount='withGroupCurrency(surplus)'
         color='success-solid'
         variant='inline'
       ) {{ L('Surplus') }}
 
       graph-legend-item(
         v-else
-        :amount='withCurrency(Math.abs(surplus))'
+        :amount='withGroupCurrency(Math.abs(surplus))'
         color='danger-solid'
         variant='inline'
       ) {{ L('Total needed') }}
@@ -38,8 +38,8 @@ div
 
 <script>
 import { mapGetters } from 'vuex'
-import currencies from '@model/contracts/shared/currencies.js'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'Overview',
@@ -110,9 +110,7 @@ export default ({
     }
   },
   methods: {
-    withCurrency (amount) {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(amount)
-    },
+    withGroupCurrency,
     addToList (list, id, amount) {
       const existingUser = list[id]
       // Test if user already in the list

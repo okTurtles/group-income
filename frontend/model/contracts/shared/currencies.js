@@ -4,6 +4,8 @@ type Currency = {|
   decimalsMax: number;
   displayWithCurrency(n: number): string;
   displayWithoutCurrency(n: number): string;
+  isCrypto: boolean;
+  numberFormat: Object;
   symbol: string;
   symbolWithCode: string;
   validate(n: string): boolean;
@@ -56,13 +58,46 @@ export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
 }
 
+// ISO 4217 code "reserved for testing".
+// We use it to handle non-ISO 4217 codes, e.g. cryptos.
+const XTS = 'XTS'
+
+/**
+ * @param {string} code A currency code defined in currencies.js.
+ * @param {number} amount
+ * @returns A monetary string formatted according to the user locale.
+ */
+export function withCurrency (code: string, amount: number): string {
+  if (!currencies[code]) {
+    console.error('withCurrency: unsupported currency', code)
+    return 'Error: unsupported currency'
+  }
+  const { isCrypto, numberFormat, symbol } = currencies[code]
+  return isCrypto
+    ? numberFormat.format(amount).replace(XTS, symbol || code)
+    : numberFormat.format(amount)
+}
+
 function makeCurrency (options): Currency {
-  const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options
+  const { code, symbol, decimalsMax, isCrypto = false } = options
   return {
+    numberFormat: new Intl.NumberFormat(
+      // $FlowIgnore[incompatible-call]
+      typeof navigator === 'object' ? (navigator.languages ?? navigator.language) : 'en-US',
+      {
+        style: 'currency',
+        currency: isCrypto ? XTS : code,
+        // For cryptos we have to set the number of decimal places explicitly.
+        maximumFractionDigits: isCrypto ? decimalsMax : undefined,
+        // Don't show fraction digits *if* they are all zero.
+        trailingZeroDisplay: 'stripIfInteger'
+      }
+    ),
     symbol,
-    symbolWithCode,
+    symbolWithCode: `${symbol} ${code}`,
     decimalsMax,
-    displayWithCurrency: (n: number) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+    isCrypto,
+    displayWithCurrency: (n: number) => withCurrency(code, n),
     displayWithoutCurrency: (n: number) => decimalsOrInt(n, decimalsMax),
     validate: (n: string) => validateMincome(n, decimalsMax)
   }
@@ -74,22 +109,20 @@ function makeCurrency (options): Currency {
 //       having to "recompile" a new version of the app.
 const currencies: { [string]: Currency } = {
   USD: makeCurrency({
+    code: 'USD',
     symbol: '$',
-    symbolWithCode: '$ USD',
-    decimalsMax: 2,
-    formatCurrency: amount => '$' + amount
+    decimalsMax: 2
   }),
   EUR: makeCurrency({
+    code: 'EUR',
     symbol: '€',
-    symbolWithCode: '€ EUR',
-    decimalsMax: 2,
-    formatCurrency: amount => '€' + amount
+    decimalsMax: 2
   }),
   BTC: makeCurrency({
-    symbol: 'Ƀ',
-    symbolWithCode: 'Ƀ BTC',
-    decimalsMax: DECIMALS_MAX,
-    formatCurrency: amount => amount + 'Ƀ'
+    code: 'BTC',
+    symbol: '₿',
+    decimalsMax: 8,
+    isCrypto: true
   })
 }
 
