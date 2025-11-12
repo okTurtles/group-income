@@ -10,14 +10,12 @@
         .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
 
   // TODO: Implement audio-player component and use it here instead of below placeholder.
-  .c-non-media-card(v-if='isAudio')
-    .c-non-media-icon
-      i.icon-file
-    .c-non-media-file-info
-      .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
-      .c-file-ext-and-size
-        .c-file-ext {{ fileExt }}
-        .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
+  .c-audio-card(v-if='isAudio')
+    audio-player.c-audio-player(
+      v-if='isAudioPlayable'
+      :src='mediaObjectURL'
+      :mimeType='attachment.mimeType'
+    )
 
   .c-image-card(v-else-if='isImage')
     img(
@@ -101,12 +99,14 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
+import AudioPlayer from '../audio-player/AudioPlayer.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'AttachmentDownloadItem',
   components: {
     Tooltip,
+    AudioPlayer,
     VideoPlayer
   },
   inject: ['attachmentUtils'],
@@ -151,6 +151,9 @@ export default {
     },
     isVideoPlayable () {
       return this.isVideo && this.mediaObjectURL
+    },
+    isAudioPlayable () {
+      return this.isAudio && this.mediaObjectURL
     },
     isMediaType () {
       return this.isImage || this.isVideo || this.isAudio

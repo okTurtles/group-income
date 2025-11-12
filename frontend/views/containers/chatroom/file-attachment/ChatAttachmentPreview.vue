@@ -204,7 +204,7 @@ export default {
         const promiseToRetrieveURLs = this.sortedAttachments[mediaType]
           .map(async attachment => {
             try {
-              if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
+              if ([CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(mediaType)) {
                 return this.getAttachmentObjectURL(attachment)
               } else {
                 if (attachment.url) {

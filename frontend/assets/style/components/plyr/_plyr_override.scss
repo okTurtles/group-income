@@ -49,8 +49,46 @@ $phone_narrow: 430px;
 
   // style-overrides for the audio player.
   &.for-audio {
-    --plyr-audio-controls-background: #{v.$general_0};
-    --plyr-audio-control-color: var(--primary_0);
-    // TODO: Override more custom color variables as needed.
+    --plyr-color-main: var(--primary_0);
+    --plyr-audio-controls-background: var(--general_2);
+    --plyr-audio-control-color: var(--text_0);
+    --plyr-audio-progress-buffered-background: var(--primary_2);
+    --plyr-range-thumb-background: var(--background_0);
+    --plyr-range-thumb-shadow: 0 0 0 1px var(--general_1);
+    --plyr-tooltip-background: var(--general_0);
+    --plyr-menu-background: var(--general_0);
+
+    .plyr__controls {
+      border-radius: v.$radius-large;
+      border: 1px solid var(--general_1);
+      padding: 0.25rem 0.5rem;
+
+      .plyr__controls__item.plyr__menu {
+        display: none;
+      }
+
+      input[data-plyr="volume"] {
+        min-width: 0;
+        max-width: 60px;
+      }
+
+      @include v.from ($phone_narrow) {
+        .plyr__controls__item.plyr__menu {
+          display: block;
+        }
+      }
+
+      @include v.from (v.$tablet) {
+        padding: 0.5rem 0.75rem;
+
+        input[data-plyr="volume"] {
+          max-width: 90px;
+        }
+      }
+    }
+
+    .plyr__menu__container .plyr__control[role=menuitemradio]:hover::before {
+      background-color: var(--general_1);
+    }
   }
 }
