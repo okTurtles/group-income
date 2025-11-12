@@ -13,6 +13,7 @@
   .c-audio-card(v-if='isAudio')
     audio-player.c-audio-player(
       v-if='isAudioPlayable'
+      :hideDefaultPlayButton='true'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
     )

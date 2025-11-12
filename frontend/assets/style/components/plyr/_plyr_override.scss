@@ -49,19 +49,32 @@ $phone_narrow: 430px;
 
   // style-overrides for the audio player.
   &.for-audio {
-    --plyr-color-main: var(--primary_0);
+    --plyr-color-main: var(--text_0);
     --plyr-audio-controls-background: var(--general_2);
     --plyr-audio-control-color: var(--text_0);
-    --plyr-audio-progress-buffered-background: var(--primary_2);
+    --plyr-audio-control-color-hover: var(--background_0);
+    --plyr-audio-progress-buffered-background: var(--general_0);
     --plyr-range-thumb-background: var(--background_0);
-    --plyr-range-thumb-shadow: 0 0 0 1px var(--general_1);
-    --plyr-tooltip-background: var(--general_0);
+    --plyr-range-thumb-shadow: 0 0 0 1px var(--general_0);
+    --plyr-tooltip-background: var(--text_0);
+    --plyr-tooltip-color: var(--background_0);
     --plyr-menu-background: var(--general_0);
 
     .plyr__controls {
       border-radius: v.$radius-large;
-      border: 1px solid var(--general_1);
-      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--general_2);
+      padding: 0.5rem 0.75rem;
+
+      button.plyr__control {
+        // override default button style in the app
+        min-height: unset;
+
+        &:focus {
+          background-color: var(--plyr-audio-control-color);
+          color: var(--plyr-audio-control-color-hover);
+          box-shadow: none;
+        }
+      }
 
       .plyr__controls__item.plyr__menu {
         display: none;
@@ -79,16 +92,20 @@ $phone_narrow: 430px;
       }
 
       @include v.from (v.$tablet) {
-        padding: 0.5rem 0.75rem;
-
         input[data-plyr="volume"] {
           max-width: 90px;
         }
       }
     }
 
+    &.hide-default-play-button {
+      [data-plyr="play"] {
+        display: none;
+      }
+    }
+
     .plyr__menu__container .plyr__control[role=menuitemradio]:hover::before {
-      background-color: var(--general_1);
+      background-color: var(--general_2);
     }
   }
 }

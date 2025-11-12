@@ -1,5 +1,7 @@
 <template lang="pug">
-.c-audio-player.plyr_override.for-audio
+.c-audio-player.plyr_override.for-audio(
+  :class='{ "hide-default-play-button": hideDefaultPlayButton }'
+)
   audio(ref='audioEl' controls playsinline)
     source(:src='src' :type='mimeType')
 </template>
@@ -19,6 +21,10 @@ export default {
       required: true
     },
     autoPlay: {
+      type: Boolean,
+      default: false
+    },
+    hideDefaultPlayButton: {
       type: Boolean,
       default: false
     }
@@ -47,6 +53,18 @@ export default {
       this.config.player.on('ready', () => {
         this.ephemeral.isReady = true
       })
+    },
+    play () {
+      this.config.player.play()
+    },
+    pause () {
+      this.config.player.pause()
+    },
+    togglePlay () {
+      this.config.player.togglePlay()
+    },
+    reset () {
+      this.config.player.stop()
     }
   },
   mounted () {
