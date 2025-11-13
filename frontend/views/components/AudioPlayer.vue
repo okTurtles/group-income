@@ -43,6 +43,7 @@ export default {
     initPlayer () {
       const opts = {
         debug: false,
+        controls: ['play', 'progress', 'mute', 'volume'],
         autoplay: this.autoPlay
       }
 
@@ -50,8 +51,15 @@ export default {
         this.$refs.audioEl,
         opts
       )
+
+      // event listeners
       this.config.player.on('ready', () => {
         this.ephemeral.isReady = true
+      })
+
+      const events = ['play', 'pause', 'ended']
+      events.forEach(event => {
+        this.config.player.on(event, () => this.$emit(event))
       })
     },
     play () {

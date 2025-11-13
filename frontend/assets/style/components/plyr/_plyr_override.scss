@@ -63,7 +63,7 @@ $phone_narrow: 430px;
     .plyr__controls {
       border-radius: v.$radius-large;
       border: 1px solid var(--general_2);
-      padding: 0.5rem 0.75rem;
+      padding: 0;
 
       button.plyr__control {
         // override default button style in the app
@@ -93,7 +93,7 @@ $phone_narrow: 430px;
 
       @include v.from (v.$tablet) {
         input[data-plyr="volume"] {
-          max-width: 90px;
+          max-width: 70px;
         }
       }
     }

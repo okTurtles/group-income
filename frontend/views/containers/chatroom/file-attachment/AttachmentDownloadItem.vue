@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-attachment-download-item(:class='{ "is-video": isVideo }')
+.c-attachment-download-item(:class='{ "is-video": isVideo, "is-audio": isAudio }')
   .c-non-media-card(v-if='!isMediaType')
     .c-non-media-icon
       i.icon-file
@@ -11,12 +11,26 @@
 
   // TODO: Implement audio-player component and use it here instead of below placeholder.
   .c-audio-card(v-if='isAudio')
-    audio-player.c-audio-player(
-      v-if='isAudioPlayable'
-      :hideDefaultPlayButton='true'
-      :src='mediaObjectURL'
-      :mimeType='attachment.mimeType'
+    button.is-unstyled.c-audio-play-button(
+      :aria-label='L("Play")'
+      @click.stop='playAudio'
     )
+      i.icon-play
+    .c-audio-icon-and-ext
+      i.icon-headphones
+      .c-file-ext {{ fileExt }}
+  
+    .c-audio-card-content
+      .c-file-metadata
+        .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
+        .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
+      .c-audio-player-wrapper
+        audio-player.c-audio-player(
+          v-if='isAudioPlayable'
+          :hideDefaultPlayButton='true'
+          :src='mediaObjectURL'
+          :mimeType='attachment.mimeType'
+        )
 
   .c-image-card(v-else-if='isImage')
     img(
@@ -100,7 +114,7 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
-import AudioPlayer from '../audio-player/AudioPlayer.vue'
+import AudioPlayer from '@components/AudioPlayer.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default {
@@ -246,7 +260,8 @@ $mobile-narrow: 441px;
     border-color: $text_0;
   }
 
-  &.is-video {
+  &.is-video,
+  &.is-audio {
     display: block;
     max-width: 28.25rem;
   }
@@ -313,6 +328,8 @@ $mobile-narrow: 441px;
     }
   }
 }
+
+// image card
 
 .c-image-card {
   position: relative;
@@ -401,6 +418,8 @@ $mobile-narrow: 441px;
   opacity: 0;
   pointer-events: none;
 }
+
+// video card
 
 .c-video-card {
   position: relative;
@@ -533,5 +552,38 @@ $mobile-narrow: 441px;
 @keyframes video-loader-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+// audio card
+
+.c-audio-card {
+  position: relative;
+  border-radius: inherit;
+  max-width: 28.25rem;
+  width: 100%;
+  background-color: $general_2;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  column-gap: 0.5rem;
+
+  .c-audio-icon-and-ext {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: $primary_0;
+    background-color: $primary_2;
+    width: 5.25rem;
+    height: 5.25rem;
+    border-radius: inherit;
+    flex-shrink: 0;
+  }
+
+  .c-audio-card-content {
+    flex-grow: 1;
+  }
 }
 </style>
