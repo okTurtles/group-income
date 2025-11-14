@@ -10,27 +10,13 @@
         .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
 
   // TODO: Implement audio-player component and use it here instead of below placeholder.
-  .c-audio-card(v-if='isAudio')
-    button.is-unstyled.c-audio-play-button(
-      :aria-label='L("Play")'
-      @click.stop='playAudio'
+  .c-audio-card-container(v-if='isAudioPlayable')
+    audio-player-card(
+      :mimeType='attachment.mimeType'
+      :src='mediaObjectURL'
+      :name='attachment.name'
+      :size='fileSizeDisplay'
     )
-      i.icon-play
-    .c-audio-icon-and-ext
-      i.icon-headphones
-      .c-file-ext {{ fileExt }}
-  
-    .c-audio-card-content
-      .c-file-metadata
-        .c-file-name.has-ellipsis(:title='attachment.name') {{ attachment.name }}
-        .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
-      .c-audio-player-wrapper
-        audio-player.c-audio-player(
-          v-if='isAudioPlayable'
-          :hideDefaultPlayButton='true'
-          :src='mediaObjectURL'
-          :mimeType='attachment.mimeType'
-        )
 
   .c-image-card(v-else-if='isImage')
     img(
@@ -114,14 +100,14 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
-import AudioPlayer from '@components/AudioPlayer.vue'
+import AudioPlayerCard from '../audio-player/AudioPlayerCard.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'AttachmentDownloadItem',
   components: {
     Tooltip,
-    AudioPlayer,
+    AudioPlayerCard,
     VideoPlayer
   },
   inject: ['attachmentUtils'],
@@ -556,34 +542,13 @@ $mobile-narrow: 441px;
 
 // audio card
 
-.c-audio-card {
+.c-audio-card-container {
   position: relative;
   border-radius: inherit;
   max-width: 28.25rem;
   width: 100%;
   background-color: $general_2;
+  display: block;
   padding: 0.5rem;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  column-gap: 0.5rem;
-
-  .c-audio-icon-and-ext {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: $primary_0;
-    background-color: $primary_2;
-    width: 5.25rem;
-    height: 5.25rem;
-    border-radius: inherit;
-    flex-shrink: 0;
-  }
-
-  .c-audio-card-content {
-    flex-grow: 1;
-  }
 }
 </style>

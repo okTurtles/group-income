@@ -49,10 +49,11 @@ $phone_narrow: 430px;
 
   // style-overrides for the audio player.
   &.for-audio {
-    --plyr-color-main: var(--text_0);
+    --plyr-color-main: var(--primary_0);
     --plyr-audio-controls-background: var(--general_2);
     --plyr-audio-control-color: var(--text_0);
     --plyr-audio-control-color-hover: var(--background_0);
+    --plyr-audio-control-background-hover: var(--text_0);
     --plyr-audio-progress-buffered-background: var(--general_0);
     --plyr-range-thumb-background: var(--background_0);
     --plyr-range-thumb-shadow: 0 0 0 1px var(--general_0);

@@ -43,7 +43,7 @@ export default {
     initPlayer () {
       const opts = {
         debug: false,
-        controls: ['play', 'progress', 'mute', 'volume'],
+        controls: ['play', 'progress', 'current-time', 'mute', 'volume'],
         autoplay: this.autoPlay
       }
 
