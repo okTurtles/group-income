@@ -4,24 +4,31 @@
     button.is-unstyled.c-audio-play-button(
       type='button'
       :aria-label='L("Play")'
-      @click.stop='playAudio'
+      @click.stop='togglePlay'
     )
-      i.icon-play
+      i.icon-pause(v-if='ephemeral.isPlaying')
+      i.icon-play(v-else)
 
     .c-audio-metadata
       .c-file-name.has-ellipsis(:title='name') {{ name }}
-      .c-file-size(v-if='size') {{ size }}
+      .c-file-size(v-if='size')
+        span {{ size }}
+        .pill.is-success.c-file-ext(v-if='fileExtension') {{ fileExtension }}
 
   audio-player.c-audio-player(
     ref='audioPlayer'
     :hideDefaultPlayButton='true'
     :src='src'
     :mimeType='mimeType'
+    @playing='onPlaying'
+    @pause='onPaused'
   )
 </template>
 
 <script>
 import AudioPlayer from '@components/AudioPlayer.vue'
+import { getFileExtension } from '@view-utils/filters.js'
+
 export default {
   name: 'AudioPlayerCard',
   components: {
@@ -39,9 +46,31 @@ export default {
     name: String,
     size: String
   },
+  data () {
+    return {
+      ephemeral: {
+        isPlaying: false
+      }
+    }
+  },
+  computed: {
+    fileExtension () {
+      return getFileExtension(this.name, true)
+    }
+  },
   methods: {
-    playAudio () {
-      this.$refs.audioPlayer.play()
+    togglePlay () {
+      if (this.ephemeral.isPlaying) {
+        this.$refs.audioPlayer.pause()
+      } else {
+        this.$refs.audioPlayer.play()
+      }
+    },
+    onPlaying () {
+      this.ephemeral.isPlaying = true
+    },
+    onPaused () {
+      this.ephemeral.isPlaying = false
     }
   }
 }
@@ -81,7 +110,7 @@ export default {
       border-color: currentColor;
     }
 
-    i {
+    i.icon-play {
       transform: translateX(1px);
     }
   }
@@ -98,8 +127,16 @@ export default {
     }
 
     .c-file-size {
+      display: flex;
+      align-items: center;
+      column-gap: 0.25rem;
       color: $text_1;
       font-size: $size_small;
+
+      .c-file-ext {
+        text-transform: uppercase;
+        font-size: 0.675rem;
+      }
     }
   }
 }

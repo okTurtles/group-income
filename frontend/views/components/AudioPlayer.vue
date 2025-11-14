@@ -57,7 +57,7 @@ export default {
         this.ephemeral.isReady = true
       })
 
-      const events = ['play', 'pause', 'ended']
+      const events = ['play', 'playing', 'pause', 'ended']
       events.forEach(event => {
         this.config.player.on(event, () => this.$emit(event))
       })
