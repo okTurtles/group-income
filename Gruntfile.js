@@ -17,9 +17,9 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, execSync, fork } = require('child_process')
+const { exec, execSync } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
+const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -74,12 +74,6 @@ const manifestJSON = path.join(contractsDir, 'manifests.json')
 const development = NODE_ENV === 'development'
 const production = !development
 
-// Make database path available to subprocess
-const dbPath = process.env.DB_PATH || './data'
-if (!process.env.DB_PATH) {
-  Object.assign(process.env, { DB_PATH: dbPath })
-}
-
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
@@ -108,11 +102,12 @@ module.exports = (grunt) => {
   const clone = o => JSON.parse(JSON.stringify(o))
 
   async function execWithErrMsg (cmd, errMsg) {
-    const { stdout, stderr } = await execP(cmd, {
+    const p = execP(cmd, {
       // this is needed to get it to work in certain Windows environments
       shell: process.env.SHELL || '/bin/sh'
     })
-    if (stderr) {
+    const { stdout, stderr } = await p
+    if (p.child.exitCode !== 0) {
       console.error(chalk`{red ${errMsg}:}`, stderr)
       throw new Error(errMsg)
     }
@@ -130,24 +125,15 @@ module.exports = (grunt) => {
       console.log(stdout)
     }
     grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    grunt.log.writeln(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`)
     // TODO: do this with JS instead of POSIX commands for Windows support
     const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
     console.log(stdout)
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
-    grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-    // If we're writing to a URL, don't try to create a directory
-    try {
-      const url = new URL(dest)
-      // Likely a drive letter
-      if (url.protocol.length < 3) {
-        throw new Error('Not a URL')
-      }
-    } catch {
-      await access(dest).catch(async () => await mkdir(dest))
-    }
-    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest ? `--url ${dest}` : ''} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
@@ -155,7 +141,7 @@ module.exports = (grunt) => {
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest = dbPath) {
+  async function genManifestsAndDeploy (dir, version, dest) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir, dest)
   }
@@ -200,15 +186,6 @@ module.exports = (grunt) => {
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
-  }
-
-  const databaseOptionBags = {
-    fs: {
-      dest: dbPath
-    },
-    sqlite: {
-      dest: `${dbPath}/groupincome.db`
-    }
   }
 
   // https://esbuild.github.io/api/
@@ -399,16 +376,14 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: { SKIP_DB_FS_CASE_SENSITIVITY_CHECK: 'true', ...process.env } }
       },
-      chelDevDeploy: `find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`,
-      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`
+      chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy',
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy`
     }
   })
 
   // -------------------------------------------------------------------------
   //  Grunt Tasks
   // -------------------------------------------------------------------------
-
-  let child = null
 
   grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
@@ -441,25 +416,11 @@ module.exports = (grunt) => {
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
+  grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async() // Tell Grunt we're async.
-    const fork2 = async function () {
-      grunt.log.writeln('backend: forking...')
-      grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
-      await execWithErrMsg('./node_modules/.bin/chel serve .')
-      done()
-    }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
+    grunt.log.writeln('backend: forking...')
+    grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
+    execWithErrMsg('./node_modules/.bin/chel serve .').then(done)
   })
 
   grunt.registerTask('build', function () {
@@ -549,11 +510,11 @@ module.exports = (grunt) => {
     // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
     // contract manifests match the ones that are the dist archive. We do this in both production
     // and development environments to make sure they match when serving the site using grunt serve.
-    grunt.task.run(['exec:chelProdDeploy', 'backend:relaunch', 'keepalive'])
+    grunt.task.run(['exec:chelProdDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:launch', 'keepalive'])
 
   // --------------------
   // - Our esbuild task
@@ -612,7 +573,6 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -661,7 +621,7 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
+              const dest = process.env.API_URL
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
@@ -694,9 +654,9 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
@@ -704,16 +664,6 @@ module.exports = (grunt) => {
 
   process.on('exit', () => {
     // Note: 'beforeExit' doesn't work.
-    // In cases where 'watch' fails while child (server) is still running
-    // we will exit and child will continue running in the background.
-    // This can happen, for example, when running two GIS instances via
-    // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
-    // cannot bind to the port for some reason, then the parent process
-    // will exit leaving a dangling child server process.
-    if (child) {
-      grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
-    }
     // Stops the Flowtype server.
     exec('./node_modules/.bin/flow stop')
   })
