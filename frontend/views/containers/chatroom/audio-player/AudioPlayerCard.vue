@@ -2,22 +2,24 @@
 .c-audio-player-card
   .c-card-upper-section
     button.is-unstyled.c-audio-play-button(
+      :class='{ "is-loading": ephemeral.isLoading }'
       type='button'
       :aria-label='L("Play")'
       @click.stop='togglePlay'
     )
-      i.icon-pause(v-if='ephemeral.isPlaying')
+      .simple-spinner.c-spinner(v-if='ephemeral.loadingStatus === "loading"')
+      i.icon-pause(v-else-if='ephemeral.isPlaying')
       i.icon-play(v-else)
 
     .c-audio-metadata
-      .c-file-name.has-ellipsis(:title='name') {{ name }}
-      .c-file-size(v-if='size')
-        span {{ size }}
-        .pill.is-success.c-file-ext(v-if='fileExtension') {{ fileExtension }}
+      .c-file-name.has-ellipsis(v-if='attachment.name' :title='attachment.name') {{ attachment.name }}
+      .c-file-size(v-if='size') {{ size }}
 
   audio-player.c-audio-player(
     ref='audioPlayer'
+    :key='src || "audio-player"'
     :hideDefaultPlayButton='true'
+    :disabled='!src'
     :src='src'
     :mimeType='mimeType'
     @playing='onPlaying'
@@ -27,40 +29,39 @@
 
 <script>
 import AudioPlayer from '@components/AudioPlayer.vue'
-import { getFileExtension } from '@view-utils/filters.js'
+import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'AudioPlayerCard',
   components: {
     AudioPlayer
   },
+  inject: ['attachmentUtils'],
   props: {
     src: {
       type: String,
-      required: true
+      required: false
     },
     mimeType: {
       type: String,
-      required: true
+      required: false
     },
-    name: String,
+    attachment: Object,
     size: String
   },
   data () {
     return {
       ephemeral: {
+        loadingStatus: 'idle',
         isPlaying: false
       }
     }
   },
-  computed: {
-    fileExtension () {
-      return getFileExtension(this.name, true)
-    }
-  },
   methods: {
     togglePlay () {
-      if (this.ephemeral.isPlaying) {
+      if (!this.src) {
+        this.loadAudio()
+      } else if (this.ephemeral.isPlaying) {
         this.$refs.audioPlayer.pause()
       } else {
         this.$refs.audioPlayer.play()
@@ -71,6 +72,22 @@ export default {
     },
     onPaused () {
       this.ephemeral.isPlaying = false
+    },
+    async loadAudio () {
+      if (this.ephemeral.loadingStatus === 'loading') { return }
+
+      try {
+        this.ephemeral.loadingStatus = 'loading'
+        await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.AUDIO)
+        this.ephemeral.loadingStatus = 'idle'
+
+        this.$nextTick(() => {
+          this.togglePlay()
+        })
+      } catch (err) {
+        console.error('AudioPlayerCard.vue caught:', err)
+        this.ephemeral.loadingStatus = 'error'
+      }
     }
   }
 }
@@ -110,6 +127,10 @@ export default {
       border-color: currentColor;
     }
 
+    &.is-loading {
+      pointer-events: none;
+    }
+
     i.icon-play {
       transform: translateX(1px);
     }
@@ -143,5 +164,12 @@ export default {
 
 .is-dark-theme button.c-audio-play-button {
   background-color: $primary_2;
+}
+
+.c-spinner {
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+  color: $primary_0;
 }
 </style>

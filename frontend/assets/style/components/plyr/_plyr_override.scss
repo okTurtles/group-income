@@ -99,14 +99,24 @@ $phone_narrow: 430px;
       }
     }
 
+    .plyr__menu__container .plyr__control[role=menuitemradio]:hover::before {
+      background-color: var(--general_2);
+    }
+
     &.hide-default-play-button {
       [data-plyr="play"] {
         display: none;
       }
     }
 
-    .plyr__menu__container .plyr__control[role=menuitemradio]:hover::before {
-      background-color: var(--general_2);
+    &.is-unplayable {
+      .plyr__progress {
+        pointer-events: none;
+      }
+
+      .plyr__controls__item.plyr__time {
+        display: none;
+      }
     }
   }
 }

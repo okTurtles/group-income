@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-audio-player.plyr_override.for-audio(
-  :class='{ "hide-default-play-button": hideDefaultPlayButton }'
+  :class='{ "hide-default-play-button": hideDefaultPlayButton, "is-unplayable": disabled }'
 )
   audio(ref='audioEl' controls playsinline)
     source(:src='src' :type='mimeType')
@@ -14,13 +14,17 @@ export default {
   props: {
     src: {
       type: String,
-      required: true
+      required: false
     },
     mimeType: {
       type: String,
-      required: true
+      required: false
     },
     autoPlay: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
       type: Boolean,
       default: false
     },

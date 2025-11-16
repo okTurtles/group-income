@@ -204,7 +204,7 @@ export default {
         const promiseToRetrieveURLs = this.sortedAttachments[mediaType]
           .map(async attachment => {
             try {
-              if ([CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(mediaType)) {
+              if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
                 return this.getAttachmentObjectURL(attachment)
               } else {
                 if (attachment.url) {
@@ -272,7 +272,7 @@ export default {
         urlList.forEach(url => URL.revokeObjectURL(url))
       })
     },
-    async loadVideoObjectURL (attachment) {
+    async loadMediaObjectURL (attachment, mediaType) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
@@ -282,11 +282,11 @@ export default {
           ? new Blob([cachedArrayBuffer])
           : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
 
-        const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+        const index = this.sortedAttachments[mediaType]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
 
         if (index >= 0) {
-          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO].map((url, i) => {
+          this.mediaObjectURLList[mediaType] = this.mediaObjectURLList[mediaType].map((url, i) => {
             if (i !== index) { return url }
 
             if (url) {
@@ -453,7 +453,7 @@ export default {
         openImageViewer: this.openImageViewer,
         openVideoViewer: this.openVideoViewer,
         onImageSrcSettled: this.onImageSrcSettled,
-        loadVideoObjectURL: this.loadVideoObjectURL
+        loadMediaObjectURL: this.loadMediaObjectURL
       }
     }
   }

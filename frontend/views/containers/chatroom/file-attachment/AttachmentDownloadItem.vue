@@ -9,12 +9,11 @@
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
 
-  // TODO: Implement audio-player component and use it here instead of below placeholder.
-  .c-audio-card-container(v-if='isAudioPlayable')
+  .c-audio-card-container(v-if='isAudio')
     audio-player-card(
       :mimeType='attachment.mimeType'
       :src='mediaObjectURL'
-      :name='attachment.name'
+      :attachment='attachment'
       :size='fileSizeDisplay'
     )
 
@@ -42,7 +41,7 @@
         i.icon-video.c-video-icon(v-if='isVideoStatus("idle")')
         i.icon-exclamation-triangle.c-video-icon.is-error(v-else-if='isVideoStatus("error")')
         .c-video-icon(v-else-if='isVideoStatus("loading")')
-          .c-spinner
+          .simple-spinner.c-spinner
 
         .c-details-text
           .c-filename.has-ellipsis(:title='attachment.name') {{ attachment.name }}
@@ -153,9 +152,6 @@ export default {
     isVideoPlayable () {
       return this.isVideo && this.mediaObjectURL
     },
-    isAudioPlayable () {
-      return this.isAudio && this.mediaObjectURL
-    },
     isMediaType () {
       return this.isImage || this.isVideo || this.isAudio
     },
@@ -205,7 +201,7 @@ export default {
     async loadVideo () {
       try {
         this.ephemeral.videoLoadingStatus = 'loading'
-        await this.attachmentUtils.loadVideoObjectURL(this.attachment)
+        await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.VIDEO)
         this.ephemeral.videoLoadingStatus = 'idle'
       } catch (err) {
         console.error('AttachmentDownloadItem.vue caught:', err)
@@ -506,13 +502,8 @@ $mobile-narrow: 441px;
 
     .c-spinner {
       position: relative;
-      display: inline-block;
       width: 0.75rem;
       height: 0.75rem;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: video-loader-spin 1.75s infinite linear;
 
       @include from($mobile-narrow) {
         width: 1rem;
@@ -533,11 +524,6 @@ $mobile-narrow: 441px;
   .c-video-icon {
     border: none;
   }
-}
-
-@keyframes video-loader-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 // audio card
