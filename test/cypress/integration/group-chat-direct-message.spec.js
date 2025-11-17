@@ -207,7 +207,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
       cy.getByDT('addToChannel-' + user1).click()
     })
 
-    cy.wait(2 *1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    cy.wait(2 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
     cy.giWaitUntilMessagesLoaded(false)
