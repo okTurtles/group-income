@@ -199,7 +199,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     openDMByMembers([user3])
 
-    // This is a fix for a cypress heisenbug - https://github.com/okTurtles/group-income/issues/2931
+    // This is a fix for a cypress heisenbug: https://github.com/okTurtles/group-income/issues/2931
     cy.wait(4 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.getByDT('channelName').within(() => {
