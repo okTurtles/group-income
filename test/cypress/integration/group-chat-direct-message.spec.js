@@ -207,7 +207,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
       cy.getByDT('addToChannel-' + user1).click()
     })
 
-    // This is a fix for a cypress heisenbug: https://github.com/okTurtles/group-income/issues/2931
+    // This is a fix for a cypress heisenbug : https://github.com/okTurtles/group-income/issues/2931
     cy.wait(2 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
