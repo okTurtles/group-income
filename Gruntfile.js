@@ -17,7 +17,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, execSync } = require('child_process')
+const { exec, execSync, spawn } = require('child_process')
 const execP = util.promisify(exec)
 const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -135,7 +135,7 @@ module.exports = (grunt) => {
     grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest ? `--url ${dest}` : ''} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
-    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
+    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest\.json:.*(zL7mM9d4Xb4.+)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
     fs.writeFileSync(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n', 'utf8')
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
@@ -420,7 +420,14 @@ module.exports = (grunt) => {
     const done = this.async() // Tell Grunt we're async.
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
-    execWithErrMsg('./node_modules/.bin/chel serve .').then(done)
+    const child = spawn('./node_modules/.bin/chel', ['serve', 'dist'])
+    child.stdout.on('data', (data) => {
+      grunt.log.write(data)
+    })
+    child.stderr.on('data', (data) => {
+      grunt.log.write(data)
+    })
+    child.on('close', done)
   })
 
   grunt.registerTask('build', function () {
