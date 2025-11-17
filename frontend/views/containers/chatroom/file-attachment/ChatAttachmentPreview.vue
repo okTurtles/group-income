@@ -14,18 +14,6 @@
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
 
-    .c-audio-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.AUDIO)')
-      attachment-download-item(
-        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.AUDIO]'
-        :key='getAttachmentId(entry)'
-        :attachment='entry'
-        :variant='variant'
-        :canDelete='canDelete'
-        :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
-        @download='downloadAttachment(entry)'
-        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
-      )
-
     .c-image-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.IMAGE)')
       attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.IMAGE]'
@@ -36,6 +24,18 @@
         :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
         @download='downloadAttachment(entry, mediaObjectURLList.image[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
+      )
+
+    .c-audio-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.AUDIO)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.AUDIO]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
       )
 
     .c-video-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.VIDEO)')

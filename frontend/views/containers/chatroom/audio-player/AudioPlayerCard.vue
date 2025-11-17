@@ -25,6 +25,11 @@
     @playing='onPlaying'
     @pause='onPaused'
   )
+
+  i18n.error.c-error(
+    v-if='ephemeral.loadingStatus === "error"'
+    tag='p'
+  ) Failed to load audio. Please retry.
 </template>
 
 <script>
@@ -78,6 +83,7 @@ export default {
 
       try {
         this.ephemeral.loadingStatus = 'loading'
+
         await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.AUDIO)
         this.ephemeral.loadingStatus = 'idle'
 
@@ -171,5 +177,11 @@ export default {
   width: 1rem;
   height: 1rem;
   color: $primary_0;
+}
+
+.c-error {
+  font-size: $size_5;
+  padding-left: 0.25rem;
+  margin-top: 0.25rem;
 }
 </style>
