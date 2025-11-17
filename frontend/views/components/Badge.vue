@@ -16,7 +16,7 @@ export default ({
       validator: (type) => ['default', 'compact'].indexOf(type) !== -1
     },
     count: {
-      // An option to explicitly set the count value intead of passing in a slot:
+      // An option to explicitly set the count value intead of passing in a slot :
       // eg) 'compact' type does not present a number in the UI, so it is not necessary to pass it in as a slot.
       type: Number,
       default: 0
