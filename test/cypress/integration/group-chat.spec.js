@@ -263,6 +263,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     for (const cn of channelsOf2For3) {
       addMemberToChannel(cn, user3)
     }
+
+    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
   })
 
   it('user1 checks the visibilities, sort order and permissions', () => {
