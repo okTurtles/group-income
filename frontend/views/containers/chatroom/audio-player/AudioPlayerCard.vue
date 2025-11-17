@@ -88,7 +88,10 @@ export default {
         this.ephemeral.loadingStatus = 'idle'
 
         this.$nextTick(() => {
-          this.togglePlay()
+          // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
+          if (this.$refs.audioPlayer) {
+            this.togglePlay()
+          }
         })
       } catch (err) {
         console.error('AudioPlayerCard.vue caught:', err)

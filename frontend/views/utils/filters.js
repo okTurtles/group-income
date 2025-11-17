@@ -12,6 +12,11 @@ export const getFileExtension = (
   return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
 }
 
+const isPlayableAudioMime = (mimeType) => {
+  const audio = document.createElement('audio')
+  return !!audio.canPlayType(mimeType)
+}
+
 export const getFileType = (
   mimeType: string = ''
 ): string => {
@@ -19,7 +24,7 @@ export const getFileType = (
     ? CHATROOM_ATTACHMENT_TYPES.IMAGE
     : mimeType.match('video/')
       ? CHATROOM_ATTACHMENT_TYPES.VIDEO
-      : mimeType.match('audio/')
+      : mimeType.match('audio/') || isPlayableAudioMime(mimeType)
         ? CHATROOM_ATTACHMENT_TYPES.AUDIO
         : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
 }

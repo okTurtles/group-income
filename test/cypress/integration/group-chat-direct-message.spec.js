@@ -199,6 +199,8 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     openDMByMembers([user3])
 
+    cy.wait(4 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
@@ -206,8 +208,6 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + user1).click()
     })
-
-    cy.wait(2 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
     cy.giWaitUntilMessagesLoaded(false)

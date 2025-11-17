@@ -279,7 +279,7 @@ export default {
         const manifestCid = downloadData.manifestCid
         const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
         const blobToUse = cachedArrayBuffer
-          ? new Blob([cachedArrayBuffer])
+          ? new Blob([cachedArrayBuffer], { type: attachment.mimeType })
           : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
 
         const index = this.sortedAttachments[mediaType]

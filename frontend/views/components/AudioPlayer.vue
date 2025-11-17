@@ -35,10 +35,8 @@ export default {
   },
   data () {
     return {
-      config: {
-        player: null
-      },
       ephemeral: {
+        player: null,
         isReady: false
       }
     }
@@ -51,32 +49,32 @@ export default {
         autoplay: this.autoPlay
       }
 
-      this.config.player = new Plyr(
+      this.ephemeral.player = new Plyr(
         this.$refs.audioEl,
         opts
       )
 
       // event listeners
-      this.config.player.on('ready', () => {
+      this.ephemeral.player.on('ready', () => {
         this.ephemeral.isReady = true
       })
 
       const events = ['play', 'playing', 'pause', 'ended']
       events.forEach(event => {
-        this.config.player.on(event, () => this.$emit(event))
+        this.ephemeral.player.on(event, () => this.$emit(event))
       })
     },
     play () {
-      this.config.player.play()
+      this.ephemeral.player.play()
     },
     pause () {
-      this.config.player.pause()
+      this.ephemeral.player.pause()
     },
     togglePlay () {
-      this.config.player.togglePlay()
+      this.ephemeral.player.togglePlay()
     },
     reset () {
-      this.config.player.stop()
+      this.ephemeral.player.stop()
     }
   },
   mounted () {
