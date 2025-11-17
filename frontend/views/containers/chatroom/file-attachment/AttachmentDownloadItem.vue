@@ -526,7 +526,7 @@ $mobile-narrow: 441px;
   }
 }
 
-// audio card.
+// audio card
 
 .c-audio-card-container {
   position: relative;
