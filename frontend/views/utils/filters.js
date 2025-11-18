@@ -12,6 +12,13 @@ export const getFileExtension = (
   return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
 }
 
+const isPlayableAudioMime = (mimeType) => {
+  const audio = document.createElement('audio')
+  // some audio mime types does not necessarily starts with 'audio/' (eg. 'application/ogg').
+  // In this case, this function can be used to check if the mime type is playable by the browser.
+  return !!audio.canPlayType(mimeType)
+}
+
 export const getFileType = (
   mimeType: string = ''
 ): string => {
@@ -19,7 +26,9 @@ export const getFileType = (
     ? CHATROOM_ATTACHMENT_TYPES.IMAGE
     : mimeType.match('video/')
       ? CHATROOM_ATTACHMENT_TYPES.VIDEO
-      : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
+      : mimeType.match('audio/') || isPlayableAudioMime(mimeType)
+        ? CHATROOM_ATTACHMENT_TYPES.AUDIO
+        : CHATROOM_ATTACHMENT_TYPES.NON_MEDIA
 }
 
 export const formatBytesDecimal = (bytes: number, decimals: number = 2): string => {

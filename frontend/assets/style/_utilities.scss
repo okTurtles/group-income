@@ -98,3 +98,16 @@ $fills: (
     display: none !important;
   }
 }
+
+.simple-spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: loader-spin 1.75s infinite linear;
+}
+
+@keyframes loader-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

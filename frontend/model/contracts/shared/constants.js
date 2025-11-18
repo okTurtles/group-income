@@ -120,6 +120,7 @@ export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 export const CHATROOM_ATTACHMENT_TYPES = {
   IMAGE: 'image',
   VIDEO: 'video',
+  AUDIO: 'audio',
   NON_MEDIA: 'non-media'
 }
 
