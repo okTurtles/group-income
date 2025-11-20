@@ -776,7 +776,7 @@ export default ({
 
           // Determine if the image needs lossy-compression before upload.
           attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE &&
-            // Do not compress GIF images so they don't lose animation.
+            // Skip the compression for GIF images so they don't lose animation.
             file.type !== 'image/gif'
         }
 
