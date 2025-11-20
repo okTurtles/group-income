@@ -57,7 +57,13 @@ const validateUsername = (username: string) => {
 
 const checkUsernameConsistency = async (contractID: string, username: string) => {
   // Lookup and save the username so that we can verify that it matches
-  const lookupResult = await sbp('namespace/lookup', username, { skipCache: true })
+  try {
+    const lookupResult = await sbp('namespace/lookup', username, { skipCache: true })
+  } catch (e) {
+    console.error(`'namespace/lookup' failed for username ${username}:`, e)
+    return
+  }
+
   if (lookupResult === contractID) return
 
   console.error(`Mismatched username. The lookup result was ${lookupResult} instead of ${contractID}`)
