@@ -775,7 +775,9 @@ export default ({
           img.src = fileUrl
 
           // Determine if the image needs lossy-compression before upload.
-          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
+          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE &&
+            // Do not compress GIF images so they don't lose animation.
+            file.type !== 'image/gif'
         }
 
         list.push(attachment)

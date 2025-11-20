@@ -580,4 +580,8 @@ export default {
   flex-direction: column;
   flex-wrap: nowrap;
 }
+
+.c-image-card-container {
+  align-items: flex-end;
+}
 </style>
