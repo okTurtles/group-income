@@ -55,6 +55,9 @@
             :edited='edited'
           )
 
+      .c-attachments-loader(v-if='showAttachmentsLoader')
+        i18n Uploading attachments...
+
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
@@ -203,6 +206,7 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
+    uploadingAttachments: Number,
     pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
@@ -262,6 +266,12 @@ export default ({
     isMessageCropped () {
       // Check if the truncate-toggle is enabled and the message is folded.
       return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
+    },
+    isPending () {
+      return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    showAttachmentsLoader () {
+      return this.isPending && this.uploadingAttachments > 0
     }
   },
   methods: {
@@ -551,6 +561,7 @@ export default ({
   }
 }
 
+.c-attachments-loader,
 .c-attachments-wrapper {
   position: relative;
   margin-top: 0.25rem;

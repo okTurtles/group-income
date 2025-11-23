@@ -92,6 +92,7 @@
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
             :isEditing='ephemeral.isEditing[message.hash]'
+            :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
             @message-is-editing='status => triggerEditMessage(message.hash, status)'
             @retry='retryMessage(message)'
@@ -324,6 +325,7 @@ export default ({
         loadingUp: undefined,
         messages: [],
         isEditing: {},
+        uploadingAttachments: {},
         scrollActionId: null,
         focusedEffect: null,
         currentLowestHeight: undefined,
@@ -916,6 +918,7 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
+                this.ephemeral.uploadingAttachments[temporaryMessage.hash] = attachments.length
               })
 
               return false
@@ -926,6 +929,7 @@ export default ({
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
+              delete this.ephemeral.uploadingAttachments[temporaryMessage.hash]
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(temporaryMessage.hash, messages)
               if (msgIndex < 0) return
@@ -1286,6 +1290,7 @@ export default ({
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}
+      this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
       // NOTE: mhash is a query for scrolling to a particular message
