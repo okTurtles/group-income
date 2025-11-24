@@ -55,8 +55,10 @@
             :edited='edited'
           )
 
-      .c-attachments-loader(v-if='showAttachmentsLoader')
-        i18n Uploading attachments...
+      upload-animation-feedback(
+        v-if='showAttachmentsLoader'
+        size='1.5em'
+      )
 
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
@@ -135,6 +137,7 @@ import MessageReactions from './MessageReactions.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
+import UploadAnimationFeedback from './UploadAnimationFeedback.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
@@ -160,6 +163,7 @@ export default ({
     MessageActions,
     MessageReactions,
     SendArea,
+    UploadAnimationFeedback,
     ChatAttachmentPreview,
     RenderMessageText,
     RenderMessageWithMarkdown
@@ -271,7 +275,8 @@ export default ({
       return this.variant === MESSAGE_VARIANTS.PENDING
     },
     showAttachmentsLoader () {
-      return this.isPending && this.uploadingAttachments > 0
+      // return this.isPending && this.uploadingAttachments > 0
+      return true
     }
   },
   methods: {
@@ -561,7 +566,6 @@ export default ({
   }
 }
 
-.c-attachments-loader,
 .c-attachments-wrapper {
   position: relative;
   margin-top: 0.25rem;
