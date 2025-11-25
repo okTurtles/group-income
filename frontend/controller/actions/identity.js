@@ -765,11 +765,14 @@ export default (sbp('sbp/selectors/register', {
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
+      let aborted = false
       const uploadAbortController = new AbortController()
       const { signal: uploadAbortSignal } = uploadAbortController
       sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
+        console.log('!@# CHATROOM_CANCEL_UPLOAD_ATTACHMENTS', mHash === messageHash, mHash, messageHash)
         if (mHash === messageHash) {
           uploadAbortController.abort()
+          aborted = true
         }
       })
 
@@ -811,6 +814,10 @@ export default (sbp('sbp/selectors/register', {
         contractID: identityContractID,
         data: { billableContractID, tokensByManifestCid }
       })
+
+      if (aborted) {
+        throw new Error('Upload cancelled by user')
+      }
 
       return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
     } catch (err) {

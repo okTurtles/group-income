@@ -1,6 +1,6 @@
 <template lang="pug">
-.c-attachments-feedback
-  .c-upload-animation-container(:style='styles')
+.c-attachments-feedback(:style='styles')
+  .c-upload-animation-container
     svg(
       xmlns='http://www.w3.org/2000/svg'
       viewBox='0 0 50 50'
@@ -10,11 +10,19 @@
 
     i.icon-arrow-up.c-arrow-icon
 
-  .c-attachments-feedback-text(ref='feedbackTxt') {{ config.uploadingText }}
+  i18n.c-attachments-feedback-text(tag='div') Uploading attachments...
+
+  button.is-unstyled.c-cancel-button(
+    type='button'
+    :aria-label='L("Cancel upload")'
+    @click.stop='cancelUpload'
+  )
+    i.icon-times
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import sbp from '@sbp/sbp'
+import { CHATROOM_CANCEL_UPLOAD_ATTACHMENTS } from '~/frontend/utils/events.js'
 
 export default {
   name: 'UploadAnimationFeedback',
@@ -22,16 +30,8 @@ export default {
     size: {
       type: String,
       default: '1em'
-    }
-  },
-  data () {
-    return {
-      config: {
-        uploadingText: L('Uploading attachments')
-      },
-      intervalId: null,
-      dotCount: 0
-    }
+    },
+    messageHash: String
   },
   computed: {
     styles () {
@@ -40,14 +40,11 @@ export default {
       }
     }
   },
-  mounted () {
-    this.intervalId = setInterval(() => {
-      this.$refs.feedbackTxt.textContent = this.config.uploadingText + '.'.repeat(this.dotCount)
-      this.dotCount = (this.dotCount + 1) % 4
-    }, 350)
-  },
-  beforeDestroy () {
-    clearInterval(this.intervalId)
+  methods: {
+    cancelUpload () {
+      sbp('okTurtles.events/emit', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, this.messageHash)
+      this.$emit('cancel-upload')
+    }
   }
 }
 </script>
@@ -72,6 +69,7 @@ export default {
   position: relative;
   width: var(--size);
   height: var(--size);
+  flex-shrink: 0;
 
   svg {
     display: block;
@@ -99,6 +97,26 @@ export default {
     font-size: calc(var(--size) * 0.375);
     color: currentColor;
     animation: ani-arrow 2s linear infinite;
+  }
+}
+
+button.c-cancel-button {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  color: $danger_0;
+  border: 1px solid currentColor;
+  margin-left: 0.25rem;
+
+  i {
+    font-size: calc(var(--size) * 0.375);
+  }
+
+  &:hover,
+  &:focus {
+    color: $danger_2;
+    background-color: $danger_0;
   }
 }
 

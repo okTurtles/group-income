@@ -58,6 +58,7 @@
       upload-animation-feedback(
         v-if='showAttachmentsLoader'
         size='1.5em'
+        :messageHash='messageHash'
       )
 
       .c-attachments-wrapper(v-if='hasAttachments')
