@@ -158,7 +158,10 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
+import {
+  CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION,
+  DELETE_ATTACHMENT_FEEDBACK, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS
+} from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
@@ -875,13 +878,30 @@ export default ({
         })
       }
       const uploadAttachments = async (messageHash) => {
+        const cancellableUpload = () => {
+          return Promise.race([
+            new Promise((resolve) => {
+              sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
+                console.log('!@# CHATROOM_CANCEL_UPLOAD_ATTACHMENTS', mHash === messageHash, mHash, messageHash)
+                if (mHash === messageHash) {
+                  delete this.ephemeral.uploadingAttachments[messageHash]
+                  resolve()
+                }
+              })
+            }),
+            sbp('gi.actions/identity/uploadFiles', {
+              attachments,
+              billableContractID: contractID,
+              messageHash
+            })
+          ])
+        }
+
         try {
           attachments = await this.checkAndCompressImages(attachments)
-          data.attachments = await sbp('gi.actions/identity/uploadFiles', {
-            attachments,
-            billableContractID: contractID,
-            messageHash
-          })
+          console.log('!@# data.attachments - before: ', data.attachments)
+          data.attachments = await cancellableUpload()
+          console.log('!@# data.attachments - after: ', data.attachments)
 
           return true
         } catch (e) {
@@ -920,24 +940,28 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
-                this.ephemeral.uploadingAttachments[temporaryMessage.hash] = attachments.length
+                this.ephemeral.uploadingAttachments[temporaryMessage.hash] = true
               })
 
               return false
             }
           }
         }).then(async () => {
-          await uploadAttachments(temporaryMessage?.hash)
+          await uploadAttachments(temporaryMessage.hash)
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
-              delete this.ephemeral.uploadingAttachments[temporaryMessage.hash]
+              const messageHash = temporaryMessage.hash
+              if (this.ephemeral.uploadingAttachments[messageHash]) {
+                delete this.ephemeral.uploadingAttachments[messageHash]
+              }
               const messages = this.messageState.contract.messages
-              const msgIndex = findMessageIdx(temporaryMessage.hash, messages)
+              const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
             }
           }
+          console.log('!@# is it here - aaa')
           sendMessage(removeTemporaryMessage)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {

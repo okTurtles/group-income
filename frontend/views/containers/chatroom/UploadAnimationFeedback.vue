@@ -8,11 +8,13 @@
     )
       circle.c-circle(cx='25' cy='25' r='20')
 
-    i.icon-arrow-up.c-arrow-icon
+    i.icon-trash-alt.c-feedback-icon(v-if='ephemeral.isCancelling')
+    i.icon-arrow-up.c-feedback-icon(v-else)
 
-  i18n.c-attachments-feedback-text(tag='div') Uploading attachments...
+  .c-attachments-feedback-text {{ feedbackMsg }}
 
   button.is-unstyled.c-cancel-button(
+    v-if='isCancellable && !ephemeral.isCancelling'
     type='button'
     :aria-label='L("Cancel upload")'
     @click.stop='cancelUpload'
@@ -22,6 +24,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { CHATROOM_CANCEL_UPLOAD_ATTACHMENTS } from '~/frontend/utils/events.js'
 
 export default {
@@ -33,17 +36,32 @@ export default {
     },
     messageHash: String
   },
+  data () {
+    return {
+      ephemeral: {
+        isCancelling: false
+      }
+    }
+  },
   computed: {
     styles () {
       return {
         '--size': this.size
       }
+    },
+    isCancellable () {
+      return !!this.messageHash
+    },
+    feedbackMsg () {
+      return this.ephemeral.isCancelling
+        ? L('Cancelling upload...')
+        : L('Uploading attachments...')
     }
   },
   methods: {
     cancelUpload () {
       sbp('okTurtles.events/emit', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, this.messageHash)
-      this.$emit('cancel-upload')
+      this.ephemeral.isCancelling = true
     }
   }
 }
@@ -88,7 +106,7 @@ export default {
     animation: ani-circle 2s ease-out infinite;
   }
 
-  .c-arrow-icon {
+  .c-feedback-icon {
     position: absolute;
     top: 50%;
     left: 50%;

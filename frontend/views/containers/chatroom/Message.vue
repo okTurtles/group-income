@@ -45,7 +45,7 @@ export default ({
     },
     edited: Boolean,
     isEditing: Boolean,
-    uploadingAttachments: Number,
+    uploadingAttachments: Boolean,
     variant: {
       type: String,
       validator (value) {

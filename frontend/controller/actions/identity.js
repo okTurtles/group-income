@@ -764,65 +764,61 @@ export default (sbp('sbp/selectors/register', {
     attachments: Array<Object>, billableContractID: string, messageHash: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
-    try {
-      let aborted = false
-      const uploadAbortController = new AbortController()
-      const { signal: uploadAbortSignal } = uploadAbortController
-      sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
-        console.log('!@# CHATROOM_CANCEL_UPLOAD_ATTACHMENTS', mHash === messageHash, mHash, messageHash)
-        if (mHash === messageHash) {
-          uploadAbortController.abort()
-          aborted = true
-        }
-      })
-
-      const cancellableUpload = (attachmentBlob, mimeType) => {
-        return Promise.race([
-          sbp('chelonia/fileUpload', attachmentBlob, {
-            type: mimeType,
-            cipher: 'aes256gcm'
-          }, { billableContractID }),
-          new Promise((resolve, reject) => {
-            uploadAbortSignal.addEventListener('abort', () => {
+    let aborted = false
+    const cancellableUpload = (uploadAction) => {
+      return Promise.race([
+        uploadAction(),
+        new Promise((resolve, reject) => {
+          sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
+            if (mHash === messageHash) {
+              aborted = true
               reject(new Error('Upload cancelled by user'))
-            })
+            }
           })
-        ])
+        })
+      ])
+    }
+
+    try {
+      const uploadAttachments = async () => {
+        const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
+          const { url, compressedBlob } = attachment
+          // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+          const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
+
+          const response = await sbp('chelonia/fileUpload', attachmentBlob, {
+            type: attachment.mimeType,
+            cipher: 'aes256gcm'
+          }, { billableContractID })
+          const { delete: token, download: downloadData } = response
+          return {
+            attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
+            downloadData,
+            deleteData: { token }
+          }
+        }))
+
+        const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
+          manifestCid: downloadData.manifestCid,
+          token: deleteData.token
+        }))
+
+        await sbp('gi.actions/identity/saveFileDeleteToken', {
+          contractID: identityContractID,
+          data: { billableContractID, tokensByManifestCid }
+        })
+
+        return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
       }
 
-      const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
-        const { url, compressedBlob } = attachment
-        // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-        const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
-
-        const response = await cancellableUpload(attachmentBlob, attachment.mimeType)
-
-        const { delete: token, download: downloadData } = response
-        return {
-          attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
-          downloadData,
-          deleteData: { token }
-        }
-      }))
-
-      const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
-        manifestCid: downloadData.manifestCid,
-        token: deleteData.token
-      }))
-
-      await sbp('gi.actions/identity/saveFileDeleteToken', {
-        contractID: identityContractID,
-        data: { billableContractID, tokensByManifestCid }
-      })
-
-      if (aborted) {
-        throw new Error('Upload cancelled by user')
-      }
-
-      return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
+      return await cancellableUpload(uploadAttachments)
     } catch (err) {
-      const humanErr = L('Failed to upload files: {reportError}', LError(err))
-      throw new GIErrorUIRuntimeError(humanErr)
+      if (aborted) {
+        console.error('Attachments upload aborted: ', err)
+      } else {
+        const humanErr = L('Failed to upload files: {reportError}', LError(err))
+        throw new GIErrorUIRuntimeError(humanErr)
+      }
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {

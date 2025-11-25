@@ -211,7 +211,7 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    uploadingAttachments: Number,
+    uploadingAttachments: Boolean,
     pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
