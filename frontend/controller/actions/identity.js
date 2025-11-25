@@ -11,7 +11,7 @@ import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS } from '~/frontend/utils/events.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
@@ -760,20 +760,40 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
-  'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
-    attachments: Array<Object>, billableContractID: string
+  'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID, messageHash }: {
+    attachments: Array<Object>, billableContractID: string, messageHash: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
+      const uploadAbortController = new AbortController()
+      const { signal: uploadAbortSignal } = uploadAbortController
+      sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
+        if (mHash === messageHash) {
+          uploadAbortController.abort()
+        }
+      })
+
+      const cancellableUpload = (attachmentBlob, mimeType) => {
+        return Promise.race([
+          sbp('chelonia/fileUpload', attachmentBlob, {
+            type: mimeType,
+            cipher: 'aes256gcm'
+          }, { billableContractID }),
+          new Promise((resolve, reject) => {
+            uploadAbortSignal.addEventListener('abort', () => {
+              reject(new Error('Upload cancelled by user'))
+            })
+          })
+        ])
+      }
+
       const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
         const { url, compressedBlob } = attachment
         // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
         const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
 
-        const response = await sbp('chelonia/fileUpload', attachmentBlob, {
-          type: attachment.mimeType,
-          cipher: 'aes256gcm'
-        }, { billableContractID })
+        const response = await cancellableUpload(attachmentBlob, attachment.mimeType)
+
         const { delete: token, download: downloadData } = response
         return {
           attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),

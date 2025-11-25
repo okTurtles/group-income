@@ -874,13 +874,15 @@ export default ({
           }
         })
       }
-      const uploadAttachments = async () => {
+      const uploadAttachments = async (messageHash) => {
         try {
           attachments = await this.checkAndCompressImages(attachments)
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
-            billableContractID: contractID
+            billableContractID: contractID,
+            messageHash
           })
+
           return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
@@ -925,7 +927,7 @@ export default ({
             }
           }
         }).then(async () => {
-          await uploadAttachments()
+          await uploadAttachments(temporaryMessage?.hash)
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
