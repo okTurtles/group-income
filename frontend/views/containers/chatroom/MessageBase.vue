@@ -276,7 +276,7 @@ export default ({
       return this.variant === MESSAGE_VARIANTS.PENDING
     },
     showAttachmentsLoader () {
-      return this.isPending && this.uploadingAttachments > 0
+      return this.isPending && this.uploadingAttachments
     }
   },
   methods: {

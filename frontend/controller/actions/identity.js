@@ -803,6 +803,8 @@ export default (sbp('sbp/selectors/register', {
           token: deleteData.token
         }))
 
+        if (aborted) { return }
+
         await sbp('gi.actions/identity/saveFileDeleteToken', {
           contractID: identityContractID,
           data: { billableContractID, tokensByManifestCid }

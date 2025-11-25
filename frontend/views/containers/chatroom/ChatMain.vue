@@ -882,9 +882,11 @@ export default ({
           return Promise.race([
             new Promise((resolve) => {
               sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
-                console.log('!@# CHATROOM_CANCEL_UPLOAD_ATTACHMENTS', mHash === messageHash, mHash, messageHash)
                 if (mHash === messageHash) {
-                  delete this.ephemeral.uploadingAttachments[messageHash]
+                  this.ephemeral.uploadingAttachments = Object.fromEntries(
+                    Object.entries(this.ephemeral.uploadingAttachments).filter(([key]) => key !== messageHash)
+                  )
+                  console.log('!@# this.ephemeral.uploadingAttachments - after: ', this.ephemeral.uploadingAttachments)
                   resolve()
                 }
               })
