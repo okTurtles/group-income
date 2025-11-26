@@ -159,11 +159,24 @@ export default ({
 
 .c-poll-title {
   margin-bottom: 1.375rem;
+  word-break: break-word;
 }
 
 .c-poll-option {
   &-value {
+    display: flex;
+    align-items: flex-start;
     white-space: normal;
+    word-break: break-word;
+
+    &::before,
+    &::after {
+      flex-shrink: 0;
+    }
+
+    &::before {
+      transform: translateY(4px);
+    }
   }
 
   &:not(:first-of-type) {
