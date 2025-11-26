@@ -3,7 +3,7 @@
 import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
@@ -317,7 +317,7 @@ sbp('sbp/selectors/register', {
 })
 
 // Events that need to be relayed to the SW
-;[LOGIN_COMPLETE, SET_APP_LOGS_FILTER, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS].forEach((event) =>
+;[LOGIN_COMPLETE, SET_APP_LOGS_FILTER].forEach((event) =>
   sbp('okTurtles.events/on', event, (...data) => {
     navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: event, data })
   })

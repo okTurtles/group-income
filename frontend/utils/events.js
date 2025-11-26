@@ -61,7 +61,6 @@ export const THEME_CHANGE = 'theme-change'
 export const CHATROOM_EVENTS = 'chatroom-events'
 export const CHATROOM_USER_TYPING = 'chatroom-user-typing'
 export const CHATROOM_USER_STOP_TYPING = 'chatroom-user-stop-typing'
-export const CHATROOM_CANCEL_UPLOAD_ATTACHMENTS = 'chatroom-cancel-upload-attachments'
 
 export const NAMESPACE_REGISTRATION = 'namespace-registration'
 

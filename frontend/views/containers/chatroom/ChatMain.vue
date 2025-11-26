@@ -159,8 +159,7 @@ import {
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
 import {
-  CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION,
-  DELETE_ATTACHMENT_FEEDBACK, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS
+  CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
@@ -877,33 +876,13 @@ export default ({
           }
         })
       }
-      const uploadAttachments = async (messageHash) => {
-        const cancellableUpload = () => {
-          return Promise.race([
-            new Promise((resolve) => {
-              sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
-                if (mHash === messageHash) {
-                  this.ephemeral.uploadingAttachments = Object.fromEntries(
-                    Object.entries(this.ephemeral.uploadingAttachments).filter(([key]) => key !== messageHash)
-                  )
-                  console.log('!@# this.ephemeral.uploadingAttachments - after: ', this.ephemeral.uploadingAttachments)
-                  resolve()
-                }
-              })
-            }),
-            sbp('gi.actions/identity/uploadFiles', {
-              attachments,
-              billableContractID: contractID,
-              messageHash
-            })
-          ])
-        }
-
+      const uploadAttachments = async () => {
         try {
           attachments = await this.checkAndCompressImages(attachments)
-          console.log('!@# data.attachments - before: ', data.attachments)
-          data.attachments = await cancellableUpload()
-          console.log('!@# data.attachments - after: ', data.attachments)
+          data.attachments = await sbp('gi.actions/identity/uploadFiles', {
+            attachments,
+            billableContractID: contractID
+          })
 
           return true
         } catch (e) {
@@ -949,7 +928,7 @@ export default ({
             }
           }
         }).then(async () => {
-          await uploadAttachments(temporaryMessage.hash)
+          await uploadAttachments()
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
@@ -963,7 +942,6 @@ export default ({
               messages.splice(msgIndex, 1)
             }
           }
-          console.log('!@# is it here - aaa')
           sendMessage(removeTemporaryMessage)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {

@@ -11,7 +11,7 @@ import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT, CHATROOM_CANCEL_UPLOAD_ATTACHMENTS } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
@@ -760,67 +760,42 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
-  'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID, messageHash }: {
-    attachments: Array<Object>, billableContractID: string, messageHash: string
+  'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
+    attachments: Array<Object>, billableContractID: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
-    let aborted = false
-    const cancellableUpload = (uploadAction) => {
-      return Promise.race([
-        uploadAction(),
-        new Promise((resolve, reject) => {
-          sbp('okTurtles.events/once', CHATROOM_CANCEL_UPLOAD_ATTACHMENTS, (mHash) => {
-            if (mHash === messageHash) {
-              aborted = true
-              reject(new Error('Upload cancelled by user'))
-            }
-          })
-        })
-      ])
-    }
-
     try {
-      const uploadAttachments = async () => {
-        const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
-          const { url, compressedBlob } = attachment
-          // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
-          const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
+      const attachmentsData = await Promise.all(attachments.map(async (attachment) => {
+        const { url, compressedBlob } = attachment
+        // url here is an instance of URL.createObjectURL(), which needs to be converted to a 'Blob'
+        const attachmentBlob = compressedBlob || await objectURLtoBlob(url)
 
-          const response = await sbp('chelonia/fileUpload', attachmentBlob, {
-            type: attachment.mimeType,
-            cipher: 'aes256gcm'
-          }, { billableContractID })
-          const { delete: token, download: downloadData } = response
-          return {
-            attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
-            downloadData,
-            deleteData: { token }
-          }
-        }))
+        const response = await sbp('chelonia/fileUpload', attachmentBlob, {
+          type: attachment.mimeType,
+          cipher: 'aes256gcm'
+        }, { billableContractID })
+        const { delete: token, download: downloadData } = response
+        return {
+          attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
+          downloadData,
+          deleteData: { token }
+        }
+      }))
 
-        const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
-          manifestCid: downloadData.manifestCid,
-          token: deleteData.token
-        }))
+      const tokensByManifestCid = attachmentsData.map(({ downloadData, deleteData }) => ({
+        manifestCid: downloadData.manifestCid,
+        token: deleteData.token
+      }))
 
-        if (aborted) { return }
+      await sbp('gi.actions/identity/saveFileDeleteToken', {
+        contractID: identityContractID,
+        data: { billableContractID, tokensByManifestCid }
+      })
 
-        await sbp('gi.actions/identity/saveFileDeleteToken', {
-          contractID: identityContractID,
-          data: { billableContractID, tokensByManifestCid }
-        })
-
-        return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
-      }
-
-      return await cancellableUpload(uploadAttachments)
+      return attachmentsData.map(({ attributes, downloadData }) => ({ ...attributes, downloadData }))
     } catch (err) {
-      if (aborted) {
-        console.error('Attachments upload aborted: ', err)
-      } else {
-        const humanErr = L('Failed to upload files: {reportError}', LError(err))
-        throw new GIErrorUIRuntimeError(humanErr)
-      }
+      const humanErr = L('Failed to upload files: {reportError}', LError(err))
+      throw new GIErrorUIRuntimeError(humanErr)
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
