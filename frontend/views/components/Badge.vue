@@ -1,7 +1,7 @@
 <template lang="pug">
 span.c-badge(
   :class='`is-${type}`'
-  :aria-label='L("{num} new notifications", { num: $slots.default ? $slots.default[0].text : "" })'
+  :aria-label='L("{num} new notifications", { num })'
   role='alert'
 )
   slot
@@ -14,6 +14,21 @@ export default ({
     type: {
       default: 'default',
       validator: (type) => ['default', 'compact'].indexOf(type) !== -1
+    },
+    count: {
+      // An option to explicitly set the count value intead of passing in a slot:
+      // eg) 'compact' type does not present a number in the UI, so it is not necessary to pass it as a slot.
+      type: Number,
+      default: 0
+    }
+  },
+  computed: {
+    num () {
+      return this.count > 0
+        ? this.count
+        : this.$slots.default
+          ? this.$slots.default[0].text
+          : ''
     }
   }
 }: Object)
