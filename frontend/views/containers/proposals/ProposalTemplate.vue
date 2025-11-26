@@ -310,4 +310,8 @@ export default ({
     }
   }
 }
+
+.buttons {
+  row-gap: 0.75rem;
+}
 </style>

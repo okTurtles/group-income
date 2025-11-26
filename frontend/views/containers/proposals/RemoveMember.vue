@@ -19,7 +19,13 @@ proposal-template(
       input.input(type='checkbox' v-model='form.usePermission')
       i18n Use permissions to remove immediately
 
-  banner-scoped(ref='formMsg' data-test='proposalError')
+  banner-scoped(ref='formMsg' allow-a data-test='proposalError')
+
+  template(#shouldImmediateChangeFooter='' v-if='form.usePermission')
+    i18n(
+      :args='LTags("strong")'
+    ) {strong_}this change will be immediate{_strong} (no voting required).
+
 </template>
 
 <script>

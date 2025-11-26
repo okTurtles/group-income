@@ -815,7 +815,9 @@ sbp('chelonia/defineContract', {
 
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
-        const hasPermissionsToRemoveMember = getters.ourGroupPermissionsHas(GROUP_PERMISSIONS.REMOVE_MEMBER)
+        const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
+        const myProfile = getters.groupProfile(innerSigningContractID)
+        const myPermissions = myProfile?.role?.permissions || []
 
         if (!state.profiles[memberToRemove]) {
           throw new GIGroupNotJoinedError(L('Not part of the group.'))
@@ -828,7 +830,7 @@ sbp('chelonia/defineContract', {
           return true
         }
 
-        if (hasPermissionsToRemoveMember) {
+        if (isGroupCreator || myPermissions.includes(GROUP_PERMISSIONS.REMOVE_MEMBER)) {
           return true
         } else if (membersCount < 3) {
           // In a small group only the creator can remove someone
