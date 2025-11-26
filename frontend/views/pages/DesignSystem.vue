@@ -168,6 +168,8 @@ page(
             .c-icons
               i.icon-angle-left icon-angle-left
               i.icon-angle-down icon-angle-down
+              i.icon-arrow-up icon-arrow-up
+              i.icon-arrow-down icon-arrow-down
               i.icon-arrow-right icon-arrow-right
               i.icon-ban icon-ban
               i.icon-bars icon-bars
