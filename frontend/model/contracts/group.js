@@ -604,7 +604,8 @@ sbp('chelonia/defineContract', {
                 groupID: contractID,
                 creatorID: innerSigningContractID,
                 paymentHash: data.paymentHash,
-                amount: getters.withGroupCurrency(payment.data.amount)
+                amount: payment.data.amount,
+                currency: getters.groupSettings.mincomeCurrency
               })
             }
           }

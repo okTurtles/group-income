@@ -62,6 +62,9 @@ export default {
       })
     }
   },
+  updated () {
+    this.config.debouncedButtonVisibilityCheck()
+  },
   mounted () {
     this.determineButtonVisibility()
     window.addEventListener('resize', this.config.debouncedButtonVisibilityCheck)

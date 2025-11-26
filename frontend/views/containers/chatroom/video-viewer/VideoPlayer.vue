@@ -1,5 +1,5 @@
 <template lang="pug">
-.video-player-container.plyr_override
+.video-player-container.plyr_override.for-video
   video.c-video-el(
     ref='videoEl'
     playsinline

@@ -64,8 +64,8 @@ Cypress.on('window:before:load', window => {
   // times doesn't raise an error. Otherwise, the property is marked as
   // non-configurable and if this code runs more than once, an error with be
   // thrown.
-  Object.defineProperty(window.navigator, 'language', { value: 'en-US-POSIX', configurable: true })
-  Object.defineProperty(window.navigator, 'languages', { value: ['en-US-POSIX', 'en-US', 'en'], configurable: true })
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true })
+  Object.defineProperty(window.navigator, 'languages', { value: ['en-US', 'en'], configurable: true })
   // Remove `Notification` object, since we're not currently testing push events
   // or native notifications on Cypress. Setting up a push subscription will
   // also fail on Cypress.

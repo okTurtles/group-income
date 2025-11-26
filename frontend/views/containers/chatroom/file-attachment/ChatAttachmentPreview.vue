@@ -26,6 +26,18 @@
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
       )
 
+    .c-audio-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.AUDIO)')
+      attachment-download-item(
+        v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.AUDIO]'
+        :key='getAttachmentId(entry)'
+        :attachment='entry'
+        :variant='variant'
+        :canDelete='canDelete'
+        :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
+        @download='downloadAttachment(entry)'
+        @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
+      )
+
     .c-video-card-container(v-if='hasAttachmentType(config.CHATROOM_ATTACHMENT_TYPES.VIDEO)')
       attachment-download-item(
         v-for='(entry, entryIndex) in sortedAttachments[config.CHATROOM_ATTACHMENT_TYPES.VIDEO]'
@@ -43,13 +55,14 @@
     send-area-attachments-gallery
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
-          v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA'
+          v-if='[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA, config.CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(fileType(entry))'
           :key='entry.url'
           :class='"is-" + fileType(entry)'
         )
           .c-preview-non-media(@click.stop='')
             .c-non-media-icon
-              i.icon-file
+              i.icon-headphones(v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.AUDIO')
+              i.icon-file(v-else)
 
             .c-non-media-file-info
               .c-file-name.has-ellipsis {{ entry.name }}
@@ -114,7 +127,8 @@ export default {
     return {
       mediaObjectURLList: {
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
-        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: [],
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: []
       },
       settledImgURLList: [],
       config: {
@@ -127,7 +141,8 @@ export default {
       const collections = {
         [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: [],
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: [],
-        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: []
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: [],
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: []
       }
 
       for (const entry of this.attachmentList) {
@@ -143,8 +158,11 @@ export default {
     hasVideoAttachments () {
       return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO].length > 0
     },
+    hasAudioAttachments () {
+      return this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.AUDIO].length > 0
+    },
     hasMediaAttachments () {
-      return this.hasImgAttachments || this.hasVideoAttachments
+      return this.hasImgAttachments || this.hasVideoAttachments || this.hasAudioAttachments
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -157,30 +175,57 @@ export default {
     }
   },
   mounted () {
-    if (this.hasImgAttachments) {
-      const promiseToRetrieveURLs = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.IMAGE]
-        .map(attachment => this.getAttachmentObjectURL(attachment))
-
-      Promise.all(promiseToRetrieveURLs).then(urls => {
-        this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.IMAGE] = urls
-      })
-    }
-
-    if (this.hasVideoAttachments) {
-      this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
-        .map(attachment => attachment.url || '')
-    }
-
     if (this.hasMediaAttachments) {
+      this.initMediaObjectURLLists()
       sbp('okTurtles.events/on', DELETE_ATTACHMENT, this.deleteAttachment)
     }
   },
   beforeDestroy () {
     if (this.hasMediaAttachments) {
       sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
+        this.revokeAllMediaObjectURLs()
+      }
     }
   },
   methods: {
+    initMediaObjectURLLists () {
+      const types = [
+        CHATROOM_ATTACHMENT_TYPES.IMAGE,
+        CHATROOM_ATTACHMENT_TYPES.VIDEO,
+        CHATROOM_ATTACHMENT_TYPES.AUDIO
+      ]
+
+      for (const mediaType of types) {
+        if (this.sortedAttachments[mediaType].length === 0) { continue }
+
+        const promiseToRetrieveURLs = this.sortedAttachments[mediaType]
+          .map(async attachment => {
+            try {
+              if (mediaType === CHATROOM_ATTACHMENT_TYPES.IMAGE) {
+                return this.getAttachmentObjectURL(attachment)
+              } else {
+                if (attachment.url) {
+                  return attachment.url
+                } else if (attachment.downloadData?.manifestCid) {
+                  const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', attachment.downloadData.manifestCid)
+                  return cachedArrayBuffer ? URL.createObjectURL(new Blob([cachedArrayBuffer])) : ''
+                }
+                return ''
+              }
+            } catch (err) {
+              console.error('[ChatAttachmentPreview/initMediaObjectURLList] Error:', err)
+              return ''
+            }
+          })
+
+        Promise.all(promiseToRetrieveURLs).then(urls => {
+          this.mediaObjectURLList[mediaType] = urls
+        })
+      }
+    },
     hasAttachmentType (type) {
       return this.sortedAttachments[type].length > 0
     },
@@ -192,7 +237,9 @@ export default {
     },
     deleteAttachment ({ index, url, type }) {
       // If index is not explicitly provided, look up the index by the URL.
-      if (index === undefined && [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO].includes(type) && url) {
+      if (index === undefined &&
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO, CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(type) &&
+        url) {
         index = this.mediaObjectURLList[type].indexOf(url)
       }
 
@@ -207,27 +254,51 @@ export default {
       if (attachment.url) {
         return attachment.url
       } else if (attachment.downloadData) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
-        return URL.createObjectURL(blob)
+        const manifestCid = attachment.downloadData.manifestCid
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+
+        if (cachedArrayBuffer) {
+          return URL.createObjectURL(new Blob([cachedArrayBuffer]))
+        } else {
+          const blob = await sbp('chelonia/fileDownload', new Secret(attachment.downloadData))
+          const arrayBuffer = await blob.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
+          return URL.createObjectURL(blob)
+        }
       }
     },
-    async loadVideoObjectURL (attachment) {
+    revokeAllMediaObjectURLs () {
+      Object.values(this.mediaObjectURLList).forEach(urlList => {
+        urlList.forEach(url => URL.revokeObjectURL(url))
+      })
+    },
+    async loadMediaObjectURL (attachment, mediaType) {
       const downloadData = attachment.downloadData
 
       if (downloadData?.manifestCid) {
-        const blob = await sbp('chelonia/fileDownload', new Secret(downloadData))
-        const index = this.sortedAttachments[CHATROOM_ATTACHMENT_TYPES.VIDEO]
+        const manifestCid = downloadData.manifestCid
+        const cachedArrayBuffer = await sbp('gi.db/filesCache/temporary/load', manifestCid)
+        const blobToUse = cachedArrayBuffer
+          ? new Blob([cachedArrayBuffer], { type: attachment.mimeType })
+          : (await sbp('chelonia/fileDownload', new Secret(downloadData)))
+
+        const index = this.sortedAttachments[mediaType]
           .findIndex(a => a.downloadData?.manifestCid === downloadData.manifestCid)
 
         if (index >= 0) {
-          this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO] = this.mediaObjectURLList[CHATROOM_ATTACHMENT_TYPES.VIDEO].map((url, i) => {
+          this.mediaObjectURLList[mediaType] = this.mediaObjectURLList[mediaType].map((url, i) => {
             if (i !== index) { return url }
 
             if (url) {
               URL.revokeObjectURL(url)
             }
-            return URL.createObjectURL(blob)
+            return URL.createObjectURL(blobToUse)
           })
+        }
+
+        if (!cachedArrayBuffer) {
+          const arrayBuffer = await blobToUse.arrayBuffer()
+          sbp('gi.db/filesCache/temporary/save', manifestCid, arrayBuffer)
         }
       }
     },
@@ -340,7 +411,7 @@ export default {
     sortedAttachments (to, from) {
       if (!this.isForDownload) { return }
 
-      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO]
+      const mediaTypes = [CHATROOM_ATTACHMENT_TYPES.IMAGE, CHATROOM_ATTACHMENT_TYPES.VIDEO, CHATROOM_ATTACHMENT_TYPES.AUDIO]
       for (const mediaType of mediaTypes) {
         const fromList = from[mediaType]
         const toList = to[mediaType]
@@ -382,7 +453,7 @@ export default {
         openImageViewer: this.openImageViewer,
         openVideoViewer: this.openVideoViewer,
         onImageSrcSettled: this.onImageSrcSettled,
-        loadVideoObjectURL: this.loadVideoObjectURL
+        loadMediaObjectURL: this.loadMediaObjectURL
       }
     }
   }
@@ -417,6 +488,7 @@ export default {
   border-radius: 0.25rem;
   flex-shrink: 0;
 
+  &.is-audio,
   &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;
@@ -494,6 +566,7 @@ export default {
 }
 
 .c-non-media-card-container,
+.c-audio-card-container,
 .c-image-card-container,
 .c-video-card-container {
   position: relative;
@@ -502,8 +575,13 @@ export default {
   gap: 1rem;
 }
 
+.c-audio-card-container,
 .c-video-card-container {
   flex-direction: column;
   flex-wrap: nowrap;
+}
+
+.c-image-card-container {
+  align-items: flex-end;
 }
 </style>

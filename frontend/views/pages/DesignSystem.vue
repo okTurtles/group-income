@@ -199,6 +199,7 @@ page(
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
               i.icon-heart icon-heart
+              i.icon-headphones icon-headphones
               i.icon-info icon-info
               i.icon-info-circle icon-info-circle
               i.icon-italic icon-italic
@@ -1178,7 +1179,7 @@ page(
               |   )
               |     i.icon-ellipsis-v
               |   menu-content
-              |     ul
+              |     menu
               |       menu-item(
               |         tag='button'
               |         item-id='profile'
@@ -1190,7 +1191,7 @@ page(
                 i.icon-ellipsis-v
 
               menu-content.c-menu-content
-                ul
+                menu
                   menu-item(
                     tag='button'
                     item-id='profile'

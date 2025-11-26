@@ -125,7 +125,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     // cy.getByDT('chatMembers').find('ul > li:nth-child(0)').get('.c-unreadcount-wrapper').contains('2')
     openDMByMembers([user2])
 
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 2)
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '2')
 
     cy.giSendMessage(me, 'I am fine. Thanks.')
   })
@@ -137,7 +137,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     createPrivateDM(user1)
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 1)
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '0')
 
     cy.giSendMessage(me, 'Hello. How are you?')
   })
@@ -149,7 +149,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     openDMByMembers([user3])
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 2)
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 1)
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '1')
     cy.getByDT('channelName').should('contain', user3)
 
     cy.giSendMessage(me, 'Fine. You?')
@@ -192,12 +192,15 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     cy.getByDT('channelName').should('contain', `${user3}, ${user1}`)
     // NOTE: no notification messages in DM
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '0')
     cy.giSendMessage(me, message)
 
     cy.url().then(url => url).as('groupMessageLink')
 
     openDMByMembers([user3])
+
+    // This is a fix for a heisenbug: https://github.com/okTurtles/group-income/issues/2931
+    cy.wait(4 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
@@ -234,7 +237,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     cy.getByDT('channelName').should('contain', `${user4}, ${user1}, ${user2}`)
     cy.giWaitUntilMessagesLoaded(false)
     // NOTE: no notification messages in DM
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 0)
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').should('eq', '0')
 
     cy.giLogout({ bypassUI: true })
   })

@@ -266,9 +266,6 @@ export default ({
   groupCurrency (state, getters) {
     return getters.groupCurrencyForGroup(getters.currentGroupState)
   },
-  groupMincomeFormatted (state, getters) {
-    return getters.withGroupCurrency?.(getters.groupMincomeAmount)
-  },
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },
@@ -289,18 +286,6 @@ export default ({
   },
   groupTotalPledgeAmount (state, getters): number {
     return getters.currentGroupState.totalPledgeAmount || 0
-  },
-  withGroupCurrencyForGroup (state, getters) {
-    return state => {
-      // TODO: If this group has no defined mincome currency, not even a default one like
-      //       USD, then calling this function is probably an error which should be reported.
-      //       Just make sure the UI doesn't break if an exception is thrown, since this is
-      //       bound to the UI in some location.
-      return getters.groupCurrencyForGroup(state)?.displayWithCurrency
-    }
-  },
-  withGroupCurrency (state, getters) {
-    return getters.withGroupCurrencyForGroup(getters.currentGroupState)
   },
   groupChatRooms (state, getters) {
     return getters.currentGroupState.chatRooms
