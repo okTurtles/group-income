@@ -79,9 +79,12 @@ export default ({
       return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.VIEW_PERMISSIONS)
     },
     groupPermissionsToDisplay () {
+      const myEntry = this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)
+      const otherEntries = this.allGroupMemberPermissions.filter(entry => entry.memberID !== this.ourIdentityContractId)
+      const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberPermissions
       return this.canViewOtherMembersPermissions
-        ? this.allGroupMemberPermissions
-        : [this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)]
+        ? sortedEntries
+        : [myEntry]
     }
   },
   methods: {
