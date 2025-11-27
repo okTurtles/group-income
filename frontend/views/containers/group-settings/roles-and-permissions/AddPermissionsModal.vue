@@ -56,6 +56,7 @@ modal-base-template.has-background(
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { uniq } from 'turtledash'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import GroupMembersDropdown from '@components/GroupMembersDropdown.vue'
@@ -140,6 +141,10 @@ export default ({
         })
 
         this.closeModal()
+        sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {
+          groupContractID: this.$store.state.currentGroupId,
+          action: GROUP_PERMISSION_UPDATE_ACTIONS.ADD
+        })
       } catch (e) {
         console.error('AddPermissionsModal.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

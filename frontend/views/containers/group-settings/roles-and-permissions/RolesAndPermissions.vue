@@ -79,9 +79,12 @@ export default ({
       return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.VIEW_PERMISSIONS)
     },
     groupPermissionsToDisplay () {
+      const myEntry = this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)
+      const otherEntries = this.allGroupMemberPermissions.filter(entry => entry.memberID !== this.ourIdentityContractId)
+      const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberPermissions
       return this.canViewOtherMembersPermissions
-        ? this.allGroupMemberPermissions
-        : [this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)]
+        ? sortedEntries
+        : [myEntry]
     }
   },
   methods: {
@@ -95,8 +98,9 @@ export default ({
       if (groupContractID !== this.$store.state.currentGroupId) { return }
 
       const messageMap = {
-        remove: L('Role removed successfully.'),
-        edit: L('Permission details updated successfully.')
+        add: L('Successfully created a role.'),
+        remove: L('Successfully removed a role.'),
+        edit: L('Permission details have been updated successfully.')
       }
       this.$refs.formMsg.success(messageMap[action])
     }
