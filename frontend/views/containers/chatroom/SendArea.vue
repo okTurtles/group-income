@@ -775,7 +775,9 @@ export default ({
           img.src = fileUrl
 
           // Determine if the image needs lossy-compression before upload.
-          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
+          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE &&
+            // Skip the compression for GIF images so they don't lose animation.
+            file.type !== 'image/gif'
         }
 
         list.push(attachment)
@@ -785,6 +787,7 @@ export default ({
       const priority = {
         [CHATROOM_ATTACHMENT_TYPES.VIDEO]: 0,
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: 1,
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: 2,
         [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: 2
       }
       list.sort((a, b) => priority[getFileType(a.mimeType)] - priority[getFileType(b.mimeType)])

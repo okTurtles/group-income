@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-attachment-download-item(:class='{ "is-video": isVideo }')
+.c-attachment-download-item(:class='{ "is-video": isVideo, "is-audio": isAudio }')
   .c-non-media-card(v-if='!isMediaType')
     .c-non-media-icon
       i.icon-file
@@ -8,6 +8,14 @@
       .c-file-ext-and-size
         .c-file-ext {{ fileExt }}
         .c-file-size(v-if='fileSizeDisplay') {{ fileSizeDisplay }}
+
+  .c-audio-card-container(v-if='isAudio')
+    audio-player-card(
+      :mimeType='attachment.mimeType'
+      :src='mediaObjectURL'
+      :attachment='attachment'
+      :size='fileSizeDisplay'
+    )
 
   .c-image-card(v-else-if='isImage')
     img(
@@ -33,7 +41,7 @@
         i.icon-video.c-video-icon(v-if='isVideoStatus("idle")')
         i.icon-exclamation-triangle.c-video-icon.is-error(v-else-if='isVideoStatus("error")')
         .c-video-icon(v-else-if='isVideoStatus("loading")')
-          .c-spinner
+          .simple-spinner.c-spinner
 
         .c-details-text
           .c-filename.has-ellipsis(:title='attachment.name') {{ attachment.name }}
@@ -91,12 +99,14 @@ import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/f
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
+import AudioPlayerCard from '../audio-player/AudioPlayerCard.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'AttachmentDownloadItem',
   components: {
     Tooltip,
+    AudioPlayerCard,
     VideoPlayer
   },
   inject: ['attachmentUtils'],
@@ -136,11 +146,14 @@ export default {
     isVideo () {
       return this.fileType === CHATROOM_ATTACHMENT_TYPES.VIDEO
     },
+    isAudio () {
+      return this.fileType === CHATROOM_ATTACHMENT_TYPES.AUDIO
+    },
     isVideoPlayable () {
       return this.isVideo && this.mediaObjectURL
     },
     isMediaType () {
-      return this.isImage || this.isVideo
+      return this.isImage || this.isVideo || this.isAudio
     },
     fileExt () {
       return getFileExtension(this.attachment.name, true)
@@ -188,7 +201,7 @@ export default {
     async loadVideo () {
       try {
         this.ephemeral.videoLoadingStatus = 'loading'
-        await this.attachmentUtils.loadVideoObjectURL(this.attachment)
+        await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.VIDEO)
         this.ephemeral.videoLoadingStatus = 'idle'
       } catch (err) {
         console.error('AttachmentDownloadItem.vue caught:', err)
@@ -229,7 +242,8 @@ $mobile-narrow: 441px;
     border-color: $text_0;
   }
 
-  &.is-video {
+  &.is-video,
+  &.is-audio {
     display: block;
     max-width: 28.25rem;
   }
@@ -296,6 +310,8 @@ $mobile-narrow: 441px;
     }
   }
 }
+
+// image card
 
 .c-image-card {
   position: relative;
@@ -384,6 +400,8 @@ $mobile-narrow: 441px;
   opacity: 0;
   pointer-events: none;
 }
+
+// video card
 
 .c-video-card {
   position: relative;
@@ -484,13 +502,8 @@ $mobile-narrow: 441px;
 
     .c-spinner {
       position: relative;
-      display: inline-block;
       width: 0.75rem;
       height: 0.75rem;
-      border: 2px solid currentColor;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: video-loader-spin 1.75s infinite linear;
 
       @include from($mobile-narrow) {
         width: 1rem;
@@ -513,8 +526,15 @@ $mobile-narrow: 441px;
   }
 }
 
-@keyframes video-loader-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+// audio card.
+
+.c-audio-card-container {
+  position: relative;
+  border-radius: inherit;
+  max-width: 28.25rem;
+  width: 100%;
+  background-color: $general_2;
+  display: block;
+  padding: 0.5rem;
 }
 </style>
