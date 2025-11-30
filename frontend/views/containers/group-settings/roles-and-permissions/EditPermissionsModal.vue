@@ -140,6 +140,9 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
+        console.log('---------------------------------------------------')
+        console.log('!@# this.ephemeral.role: ', this.ephemeral.role)
+        console.log('!@# this.ephemeral.permissions: ', this.ephemeral.permissions)
         await sbp('gi.actions/group/updatePermissions', {
           contractID: this.$store.state.currentGroupId,
           data: [{
@@ -174,7 +177,7 @@ export default {
           ? this.data.permissions
           : []
       } else {
-        this.ephemeral.permissions = GROUP_PERMISSIONS_PRESET[value]
+        this.ephemeral.permissions = this.config.permissionPresets[value]
       }
     },
     onPermissionItemChange (payload) {
