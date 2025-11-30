@@ -23,7 +23,7 @@
             )
               i18n(tag='option' disabled value='') Select a role
               option(
-                v-for='role in config.roles'
+                v-for='role in roleDropdownOptions'
                 :key='role'
                 :value='role'
               ) {{ getRoleDisplayName(role) }}
@@ -59,7 +59,7 @@ import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { CLOSE_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
@@ -84,11 +84,6 @@ export default {
     return {
       config: {
         title: L('Edit member permissions'),
-        roles: [
-          GROUP_ROLES.MODERATOR_DELEGATOR,
-          GROUP_ROLES.MODERATOR,
-          GROUP_ROLES.CUSTOM
-        ],
         permissionPresets: {
           [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
           [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
@@ -104,7 +99,8 @@ export default {
   computed: {
     ...mapGetters([
       'userDisplayNameFromID',
-      'usernameFromID'
+      'usernameFromID',
+      'ourGroupPermissionsHas'
     ]),
     isCustomRole () {
       return this.ephemeral.role === GROUP_ROLES.CUSTOM
@@ -129,6 +125,13 @@ export default {
           ? permissions.length > 0
           : role !== this.data.roleName
       }
+    },
+    roleDropdownOptions () {
+      return [
+        this.ourGroupPermissionsHas(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && GROUP_ROLES.MODERATOR_DELEGATOR,
+        GROUP_ROLES.MODERATOR,
+        GROUP_ROLES.CUSTOM
+      ].filter(Boolean)
     }
   },
   methods: {

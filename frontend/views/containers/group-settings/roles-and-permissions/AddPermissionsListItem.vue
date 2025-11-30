@@ -15,7 +15,7 @@ li.c-update-permissions-list-item
         )
           i18n(tag='option' disabled value='') Select a role
           option(
-            v-for='role in config.roles'
+            v-for='role in roleDropdownOptions'
             :key='role'
             :value='role'
           ) {{ getRoleDisplayName(role) }}
@@ -48,7 +48,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import MemberName from './MemberName.vue'
 import RolePill from './RolePill.vue'
 import PermissionPiece from './PermissionPiece.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { uniq } from 'turtledash'
 import { L } from '@common/common.js'
@@ -70,11 +70,6 @@ export default {
   data () {
     return {
       config: {
-        roles: [
-          GROUP_ROLES.MODERATOR_DELEGATOR,
-          GROUP_ROLES.MODERATOR,
-          GROUP_ROLES.CUSTOM
-        ],
         permissionPresets: {
           [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET.ADMIN,
           [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
@@ -90,7 +85,8 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'globalProfile'
+      'globalProfile',
+      'ourGroupPermissionsHas'
     ]),
     profile () {
       return this.globalProfile(this.data.userId)
@@ -100,6 +96,13 @@ export default {
     },
     permissionSectionLabel () {
       return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
+    },
+    roleDropdownOptions () {
+      return [
+        this.ourGroupPermissionsHas(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && GROUP_ROLES.MODERATOR_DELEGATOR,
+        GROUP_ROLES.MODERATOR,
+        GROUP_ROLES.CUSTOM
+      ].filter(Boolean)
     }
   },
   methods: {
