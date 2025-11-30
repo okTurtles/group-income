@@ -77,7 +77,7 @@ export default ({
     return {
       ephemeral: {
         selectedUser: null,
-        roleEntries: [] // Array<{ userId: string, role: string, permissions: string[] }>
+        roleEntries: [] // Array<{userId: string, role: string, permissions: string[]}>
       }
     }
   },
