@@ -113,7 +113,7 @@
     "@babel/preset-flow": "7.12.1",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
-    "@chelonia/cli": "3.0.0",
+    "@chelonia/cli": "3.1.0",
     "@chelonia/crypto": "1.0.1",
     "@chelonia/lib": "1.2.6",
     "@chelonia/multiformats": "1.0.0",
