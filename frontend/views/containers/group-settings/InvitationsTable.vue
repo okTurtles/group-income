@@ -13,7 +13,7 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
-  banner-scoped(ref='inviteError' data-test='inviteError')
+  banner-scoped(ref='inviteError' allow-a data-test='inviteError')
 
   table.table.table-in-card.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
