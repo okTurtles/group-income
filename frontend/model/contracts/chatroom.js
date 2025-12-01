@@ -21,7 +21,8 @@ import {
   MESSAGE_TYPES,
   POLL_STATUS,
   POLL_OPTION_MAX_CHARS,
-  POLL_QUESTION_MAX_CHARS
+  POLL_QUESTION_MAX_CHARS,
+  GROUP_PERMISSIONS
 } from './shared/constants.js'
 import {
   createMessage,
@@ -278,9 +279,12 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/delete': {
-      validate: actionRequireInnerSignature((_, { state, meta, message: { innerSigningContractID } }) => {
-        if (state.attributes.creatorID !== innerSigningContractID) {
-          throw new TypeError(L('Only the channel creator can delete channel.'))
+      validate: actionRequireInnerSignature((_, { state, getters, meta, message: { innerSigningContractID } }) => {
+        const myProfile = getters.groupProfile(innerSigningContractID)
+        const myPermissions = myProfile?.role?.permissions || []
+
+        if (state.attributes.creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL)) {
+          throw new TypeError(L('You do not have permission to delete this channel.'))
         }
       }),
       process ({ meta, contractID }, { state, getters }) {

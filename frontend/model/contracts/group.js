@@ -981,8 +981,6 @@ sbp('chelonia/defineContract', {
         if (!invite.creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.REVOKE_INVITE)) {
           throw new TypeError(L('You do not have permission to revoke this invite.'))
         }
-
-        return true
       }),
       process () {
         // Handled by Chelonia
@@ -1257,8 +1255,11 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
         objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID') })(data)
 
-        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
-          throw new TypeError(L('Only the channel creator can delete channel.'))
+        const myProfile = getters.groupProfile(innerSigningContractID)
+        const myPermissions = myProfile?.role?.permissions || []
+
+        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL)) {
+          throw new TypeError(L('You do not have permission to delete this channel.'))
         }
       }),
       process ({ contractID, data }, { state }) {
