@@ -124,7 +124,7 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
@@ -165,7 +165,8 @@ export default ({
       'ourUserDisplayName',
       'currentGroupOwnerID',
       'currentWelcomeInvite',
-      'groupShouldPropose'
+      'groupShouldPropose',
+      'ourGroupPermissionsHas'
     ]),
     ...mapState([
       'currentGroupId'
@@ -178,7 +179,11 @@ export default ({
 
       const invitesList = Object.entries(vmInvites)
         .map(([id, invite]) => [id, { ...invite, creatorID: invites[id]?.creatorID, invitee: invites[id]?.invitee }])
-        .filter(([, invite]) => invite.creatorID === INVITE_INITIAL_CREATOR || invite.creatorID === this.ourIdentityContractId)
+        .filter(([, invite]) => {
+          return invite.creatorID === INVITE_INITIAL_CREATOR ||
+            invite.creatorID === this.ourIdentityContractId ||
+            this.ourGroupPermissionsHas(GROUP_PERMISSIONS.REVOKE_INVITE)
+        })
         .map(this.mapInvite)
 
       const options = {
@@ -338,7 +343,14 @@ export default ({
       */
     },
     async handleRevokeClick (inviteKeyId) {
-      if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
+      const yesSelected = await sbp('gi.ui/prompt', {
+        heading: L('Revoke invite link'),
+        question: L('Are you sure you want to revoke this link? This action cannot be undone.'),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
+      })
+
+      if (!yesSelected) {
         return null
       }
 
