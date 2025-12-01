@@ -59,7 +59,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
                 i18n(:args='{ channelName: summary.title }') Leave {channelName}
 
             menu-item.has-text-danger(
-              v-if='!summary.isGeneral && isChatRoomCreator && !isGroupDirectMessage()'
+              v-if='canDeleteChatRoom'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
@@ -140,7 +140,7 @@ import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -172,6 +172,7 @@ export default ({
       'isJoinedChatRoom',
       'groupChatRooms',
       'chatRoomPinnedMessages',
+      'ourGroupPermissionsHas',
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
@@ -209,6 +210,10 @@ export default ({
     },
     isChatRoomCreator () {
       return this.ourIdentityContractId === this.summary.attributes.creatorID
+    },
+    canDeleteChatRoom () {
+      const hasPermission = this.isChatRoomCreator || this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELETE_CHANNEL)
+      return !this.summary.isGeneral && hasPermission && !this.isGroupDirectMessage()
     }
   },
   methods: {

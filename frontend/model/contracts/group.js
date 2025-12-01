@@ -964,14 +964,25 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteRevoke': {
-      validate: actionRequireActiveMember((data, { state }) => {
+      validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID } }) => {
         objectOf({
           inviteKeyId: stringMax(MAX_HASH_LEN, 'inviteKeyId')
         })(data)
 
-        if (!state._vm.invites[data.inviteKeyId]) {
+        const invite = state._vm.invites[data.inviteKeyId]
+
+        if (!invite) {
           throw new TypeError(L('The link does not exist.'))
         }
+
+        const myProfile = getters.groupProfile(innerSigningContractID)
+        const myPermissions = myProfile?.role?.permissions || []
+
+        if (!invite.creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.REVOKE_INVITE)) {
+          throw new TypeError(L('You do not have permission to revoke this invite.'))
+        }
+
+        return true
       }),
       process () {
         // Handled by Chelonia
