@@ -67,7 +67,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.id)'
+                  @click.stop='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
         td.c-state
@@ -96,7 +96,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.id)'
+                  @click.stop='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
 
