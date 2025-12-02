@@ -91,7 +91,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     return getters.ourGroupProfileForGroup(getters.currentGroupState)
   },
   ourGroupPermissions (state, getters) {
-    return getters.ourGroupProfile.role?.permissions || []
+    return getters.ourGroupProfile?.role?.permissions || []
   },
   ourGroupPermissionsHas (state, getters) {
     return (permission) => getters.ourGroupPermissions.includes(permission)

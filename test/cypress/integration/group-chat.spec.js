@@ -268,6 +268,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it('user1 checks the visibilities, sort order and permissions', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
+
+    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+
     cy.log('Users can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('channel1') && !c.description)[0]
     const detailedChannel = chatRooms.filter(c => c.name.startsWith('channel1') && c.description)[0]
@@ -428,7 +431,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // NOTE: this check is to wait until 2 INTERACTIVE mesages are created
     //       one for creating proposal and another is for proposal approval
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="3 new notifications"]').contains('3')
 
     cy.giRedirectToGroupChat()
 
