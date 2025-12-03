@@ -155,12 +155,12 @@ export default (sbp('sbp/selectors/register', {
       }
       const promptConfig = enforceDunbar
         ? {
-            heading: 'Large group size',
+            heading: L('Large group size'),
             question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
             primaryButton: L('OK')
           }
         : {
-            heading: 'Large group size',
+            heading: L('Large group size'),
             question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
             primaryButton: L('Yes'),
             secondaryButton: L('Cancel')
