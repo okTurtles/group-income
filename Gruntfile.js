@@ -420,7 +420,7 @@ module.exports = (grunt) => {
     const done = this.async() // Tell Grunt we're async.
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
-    const child = spawn('./node_modules/.bin/chel', ['serve', 'dist'])
+    const child = spawn('./node_modules/.bin/chel', ['serve', '--dev', '-m', 'dist/contracts', 'dist'])
     child.stdout.on('data', (data) => {
       grunt.log.write(data)
     })
