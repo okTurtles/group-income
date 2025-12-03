@@ -942,7 +942,9 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
-                this.ephemeral.uploadingAttachments[temporaryMessage.hash] = true
+                if (temporaryMessage) {
+                  Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
+                }
               })
 
               return false
@@ -955,7 +957,7 @@ export default ({
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
               if (this.ephemeral.uploadingAttachments[messageHash]) {
-                delete this.ephemeral.uploadingAttachments[messageHash]
+                Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
               }
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
