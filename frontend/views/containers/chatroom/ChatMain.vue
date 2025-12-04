@@ -92,6 +92,7 @@
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
             :isEditing='ephemeral.isEditing[message.hash]'
+            :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
             @message-is-editing='status => triggerEditMessage(message.hash, status)'
             @retry='retryMessage(message)'
@@ -157,7 +158,9 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
-import { CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
+import {
+  CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
+} from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
@@ -324,6 +327,7 @@ export default ({
         loadingUp: undefined,
         messages: [],
         isEditing: {},
+        uploadingAttachments: {},
         scrollActionId: null,
         focusedEffect: null,
         currentLowestHeight: undefined,
@@ -879,7 +883,6 @@ export default ({
             attachments,
             billableContractID: contractID
           })
-          return true
         } catch (e) {
           console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
           throw e
@@ -916,6 +919,9 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
+                if (temporaryMessage) {
+                  Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
+                }
               })
 
               return false
@@ -926,8 +932,12 @@ export default ({
           const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
+              const messageHash = temporaryMessage.hash
+              if (this.ephemeral.uploadingAttachments[messageHash]) {
+                Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
+              }
               const messages = this.messageState.contract.messages
-              const msgIndex = findMessageIdx(temporaryMessage.hash, messages)
+              const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
             }
@@ -1286,6 +1296,7 @@ export default ({
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}
+      this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
       // NOTE: mhash is a query for scrolling to a particular message

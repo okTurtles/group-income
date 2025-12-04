@@ -55,6 +55,11 @@
             :edited='edited'
           )
 
+      upload-animation-feedback(
+        v-if='showAttachmentsLoader'
+        size='1.5em'
+      )
+
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
@@ -132,6 +137,7 @@ import MessageReactions from './MessageReactions.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
+import UploadAnimationFeedback from './UploadAnimationFeedback.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
@@ -157,6 +163,7 @@ export default ({
     MessageActions,
     MessageReactions,
     SendArea,
+    UploadAnimationFeedback,
     ChatAttachmentPreview,
     RenderMessageText,
     RenderMessageWithMarkdown
@@ -202,6 +209,10 @@ export default ({
       validator (value) {
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
+    },
+    uploadingAttachments: {
+      type: Boolean,
+      default: false
     },
     pinnedBy: String,
     isSameSender: Boolean,
@@ -262,6 +273,12 @@ export default ({
     isMessageCropped () {
       // Check if the truncate-toggle is enabled and the message is folded.
       return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
+    },
+    isPending () {
+      return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    showAttachmentsLoader () {
+      return this.isPending && this.uploadingAttachments
     }
   },
   methods: {
