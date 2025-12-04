@@ -145,6 +145,7 @@ export default ({
   },
   watch: {
     'value' (newVal) {
+      // For the proper two-way binding via v-model between the component and the parent.
       this.ephemeral.selected = newVal
     },
     'ephemeral.selected' (newVal) {
