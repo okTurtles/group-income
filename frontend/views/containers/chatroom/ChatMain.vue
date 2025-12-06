@@ -1767,6 +1767,8 @@ export default ({
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
+        this.ephemeral.loadingDown = undefined
+        this.ephemeral.loadingUp = undefined
 
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
