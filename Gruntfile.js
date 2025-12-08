@@ -416,18 +416,34 @@ module.exports = (grunt) => {
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
-  grunt.registerTask('backend:launch', '[internal]', function () {
+  let child
+  grunt.registerTask('backend:launch', '[internal]', async function () {
     const done = this.async() // Tell Grunt we're async.
+    if (child) {
+      grunt.log.writeln('backend: terminating dangling child...')
+      await new Promise((resolve, reject) => {
+        child.on('close', resolve)
+        setTimeout(resolve, 500)
+        child.kill()
+      })
+      if (child) {
+        grunt.log.writeln('backend: force terminating dangling child...')
+        child.kill('SIGKILL')
+      }
+    }
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
-    const child = spawn('./node_modules/.bin/chel', ['serve', '--dev', '-m', 'dist/contracts', 'dist'])
+    child = spawn('./node_modules/.bin/chel', ['serve', '--dev', '-m', 'dist/contracts', 'dist'])
     child.stdout.on('data', (data) => {
       grunt.log.write(data)
     })
     child.stderr.on('data', (data) => {
       grunt.log.write(data)
     })
-    child.on('close', done)
+    child.on('close', () => {
+      child = undefined
+      done()
+    })
   })
 
   grunt.registerTask('build', function () {
@@ -671,6 +687,16 @@ module.exports = (grunt) => {
 
   process.on('exit', () => {
     // Note: 'beforeExit' doesn't work.
+    // In cases where 'watch' fails while child (server) is still running
+    // we will exit and child will continue running in the background.
+    // This can happen, for example, when running two GIS instances via
+    // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
+    // cannot bind to the port for some reason, then the parent process
+    // will exit leaving a dangling child server process.
+    if (child) {
+      grunt.log.writeln('Quitting dangling child!')
+      child.kill('SIGKILL')
+    }
     // Stops the Flowtype server.
     exec('./node_modules/.bin/flow stop')
   })
