@@ -173,9 +173,9 @@ import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrolle
 const ignorableScrollDistanceInPixel = 500
 
 const enqueue = function (fn) {
-  const chatroomID = this.ephemeral.renderingChatRoomId
+  const signal = this.ephemeral.signal
   return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
-    if (this.chatroomHasSwitchedFrom(chatroomID)) return
+    if (signal.aborted) return
 
     return fn()
   })
@@ -332,6 +332,8 @@ export default ({
         focusedEffect: null,
         currentLowestHeight: undefined,
         currentHighestHeight: undefined,
+        abort: () => {},
+        signal: undefined,
         // Used for non-joined chatrooms
         latestHeight: undefined
       },
@@ -426,7 +428,7 @@ export default ({
     isLoaded () {
       return (
         // Initial load attempt
-        this.ephemeral.messagesInitiated &&
+        !!this.ephemeral.messagesInitiated &&
         // No active load attemps
         !this.ephemeral.loadingUp &&
         !this.ephemeral.loadingDown &&
@@ -544,12 +546,12 @@ export default ({
         yield msg
       }
     },
-    async loadMoreMessages (chatRoomID, direction = 'down') {
+    async loadMoreMessages (chatRoomID: string, signal: AbortSignal, direction = 'down') {
       // NOTE: 'this.ephemeral.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
       //       it's true when user gets entered channel page or switches to another channel
-      if (!chatRoomID || this.chatroomHasSwitchedFrom(chatRoomID)) return
+      if (!chatRoomID || signal.aborted) return
 
       let limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
@@ -573,18 +575,18 @@ export default ({
         if (this.ephemeral.loadingUp) return
         this.ephemeral.loadingUp = instance
 
-        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        if (signal.aborted) return
         let events
         if (this.needsFromScratch) {
           // TODO: Implement snapshots or `keyOps` logic to make this
           // more efficient
           const { head: { height } } = await sbp('chelonia/out/deserializedHEAD', messageHashToScroll, { contractID: chatRoomID })
-          if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+          if (signal.aborted) return
           events = await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight: 0, limit: height + limit / 2, stream: false })
         } else {
           events = await sbp('chelonia/out/eventsBetween', chatRoomID, { startHash: messageHashToScroll, offset: limit / 2, limit, stream: false })
         }
-        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        if (signal.aborted) return
         try {
           await this.processEvents(events, direction, true)
         } finally {
@@ -611,13 +613,13 @@ export default ({
         }
 
         await sbp('chelonia/out/eventsAfter', chatRoomID, { sinceHeight, limit, stream: false }).then((events) => {
-          if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+          if (signal.aborted) return
           return this.processEvents(events, direction).then(() => {
             // Special case: if loading events for a chatroom we're not part
             // of, scroll to bottom
             if (limit !== undefined || sinceHeight !== 0) return
             this.ephemeral.postSetMessageState = () => {
-              if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+              if (signal.aborted) return
               if (!this.isJoinedChatRoom(chatRoomID)) {
                 this.jumpToLatest('instant')
               }
@@ -636,7 +638,7 @@ export default ({
         this.ephemeral.loadingUp = instance
 
         await sbp('chelonia/out/eventsBefore', chatRoomID, { beforeHeight: Math.max(0, beforeHeight - 1), limit, stream: false }).then((events) => {
-          if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+          if (signal.aborted) return
           return this.processEvents(events, direction)
         }).finally(() => {
           if (this.ephemeral.loadingUp === instance) {
@@ -702,18 +704,19 @@ export default ({
         }
 
         const entryHeight = this.latestEvents[currentLatestEventIdx].height()
+        const signal = this.ephemeral.signal
         const chatroomID = this.ephemeral.renderingChatRoomId
         // If we haven't fetched messages dynamically or if we found a
         // currentLatestEventIdx, re-use the existing contract state. This
         // avoids fetching or processing messages unnecessarily. Otherwise, we
         // generate a fetch state with no messages.
         let state = currentLatestEventIdx || !this.messageState.fetched ? this.messageState.contract : await this.generateNewChatRoomState(true, entryHeight)
-        if (this.chatroomHasSwitchedFrom(chatroomID)) return
+        if (signal.aborted) return
 
         for (const event of this.latestEvents.slice(currentLatestEventIdx)) {
           state = await sbp('chelonia/in/processMessage', event.serialize(), state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
-          if (this.chatroomHasSwitchedFrom(chatroomID)) return
+          if (signal.aborted) return
         }
 
         if (this.messageState.fetched) {
@@ -740,7 +743,7 @@ export default ({
         ) {
           // Then, fetch more messages from the server
           // No `await` to prevent a deadlock
-          this.loadMoreMessages(chatroomID, direction).catch(e => {
+          this.loadMoreMessages(chatroomID, signal, direction).catch(e => {
             console.error('[ChatMain.vue/processEvents] Error on `loadMoreMessages`', e)
           })
         }
@@ -754,11 +757,6 @@ export default ({
       return messageBCR.top < (conversationBCR.bottom - 10) && messageBCR.bottom > (conversationBCR.top + 10)
     },
     proximityDate,
-    chatroomHasSwitchedFrom (chatroomID) {
-      // Some async operations (eg. this.rerenderEvents) are time-consuming, and user could switch away from the chatroom until the operation is not completed.
-      // This method checks if that has happened.
-      return chatroomID !== this.ephemeral.renderingChatRoomId
-    },
     messageType (message) {
       return {
         [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
@@ -812,6 +810,7 @@ export default ({
     },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
+      const signal = this.ephemeral.signal
       const contractID = this.ephemeral.renderingChatRoomId
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
@@ -822,7 +821,7 @@ export default ({
       const sendMessage = (beforePrePublish) => {
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
-          if (this.chatroomHasSwitchedFrom(contractID)) return
+          if (signal.aborted) return
           enqueue.call(this, async () => {
             beforePrePublish?.()
 
@@ -832,7 +831,7 @@ export default ({
             if (!msg) {
               const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
               this.ephemeral.postSetMessageState = () => {
-                if (this.chatroomHasSwitchedFrom(contractID)) {
+                if (signal.aborted) {
                   return
                 }
                 if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
@@ -909,10 +908,10 @@ export default ({
               //       it always returns false, so it doesn't affect the contract state
               this.stopReplying()
 
-              if (this.chatroomHasSwitchedFrom(contractID)) return
+              if (signal.aborted) return
               await enqueue.call(this, async () => {
                 this.ephemeral.postSetMessageState = () => {
-                  if (this.chatroomHasSwitchedFrom(contractID)) return
+                  if (signal.aborted) return
                   if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) return
                   this.jumpToLatest()
                 }
@@ -979,6 +978,7 @@ export default ({
       if (!messageHash || !this.ephemeral.messages.length) {
         return
       }
+      const signal = this.ephemeral.signal
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
@@ -986,7 +986,7 @@ export default ({
 
         if (effect) {
           this.$nextTick(() => {
-            if (this.chatroomHasSwitchedFrom(contractID)) return
+            if (signal.aborted) return
             this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
@@ -1009,15 +1009,15 @@ export default ({
           // TODO: Implement snapshots or `keyOps` logic to make this
           // more efficient
           const { height } = await sbp('chelonia/out/deserializedHEAD', messageHash, { contractID })
-          if (this.chatroomHasSwitchedFrom(contractID)) return
+          if (signal.aborted) return
           events = await sbp('chelonia/out/eventsAfter', contractID, { sinceHeight: 0, limit: height + limit / 2, stream: false })
         } else {
           events = await sbp('chelonia/out/eventsBetween', contractID, { startHash: messageHash, offset: limit / 2, limit, stream: false })
         }
-        if (this.chatroomHasSwitchedFrom(contractID)) return
+        if (signal.aborted) return
         if (events && events.length) {
           this.ephemeral.postSetMessageState = () => {
-            if (this.chatroomHasSwitchedFrom(contractID)) return
+            if (signal.aborted) return
 
             const msgIndex = findMessageIdx(messageHash, this.ephemeral.messages)
             if (msgIndex >= 0) {
@@ -1038,13 +1038,14 @@ export default ({
       this.ephemeral.scrollActionId = setTimeout(action, 0)
     },
     updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
+      const signal = this.ephemeral.signal
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
           // force conversation viewport to be at the bottom (most recent messages)
           setTimeout(async () => {
             if (scrollTargetMessage) {
-              if (this.chatroomHasSwitchedFrom(contractID)) return
+              if (signal.aborted) return
               await this.scrollToMessage(scrollTargetMessage, effect)
             } else {
               this.jumpToLatest()
@@ -1274,11 +1275,12 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
+      const signal = this.ephemeral.signal
       const chatRoomID = this.ephemeral.renderingChatRoomId
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
 
       // If user has since switched to another chatroom, no need to update 'this.messageState'
-      if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+      if (signal.aborted) return
 
       this.latestEvents = []
       this.ephemeral.currentLowestHeight = undefined
@@ -1289,7 +1291,7 @@ export default ({
       }
       if (!this.isJoinedChatRoom(chatRoomID)) {
         const { height: latestHeight } = await sbp('chelonia/out/latestHEADInfo', chatRoomID)
-        if (this.chatroomHasSwitchedFrom(chatRoomID)) return
+        if (signal.aborted) return
         this.ephemeral.latestHeight = latestHeight
       } else {
         this.ephemeral.latestHeight = undefined
@@ -1309,7 +1311,7 @@ export default ({
       // At this point, we've not fetched any messages dynamically, so `fetched`
       // is set to false.
       Vue.set(this.messageState, 'fetched', false)
-      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID)
+      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID, signal)
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -1344,9 +1346,9 @@ export default ({
           return
         }
 
-        const contractID = this.ephemeral.renderingChatRoomId
+        const signal = this.ephemeral.signal
         this.$nextTick(() => {
-          if (this.chatroomHasSwitchedFrom(contractID) || conversation.scrollHeight <= conversation.clientHeight) {
+          if (signal.aborted || conversation.scrollHeight <= conversation.clientHeight) {
             return
           }
           const visibleMessageIterator = this.visibleMessageIterator()
@@ -1492,7 +1494,7 @@ export default ({
       }
     },
     listenChatRoomActions (contractID: string, message?: SPMessage) {
-      if (this.chatroomHasSwitchedFrom(contractID)) return
+      if (this.ephemeral.renderingChatRoomId !== contractID) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
 
@@ -1628,11 +1630,12 @@ export default ({
       // clearTimeout(this.ephemeral.initialScroll.timeoutId)
       // }
 
+      const signal = this.ephemeral.signal
       const targetChatroomID = this.ephemeral.renderingChatRoomId
       // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
       try {
-        const completed = await this.loadMoreMessages(targetChatroomID, direction)
-        if (this.chatroomHasSwitchedFrom(targetChatroomID)) return
+        const completed = await this.loadMoreMessages(targetChatroomID, signal, direction)
+        if (signal.aborted) return
 
         if (completed !== undefined && !this.ephemeral.messagesInitiated) {
           // NOTE: 'this.ephemeral.messagesInitiated' can be set true only when loadMoreMessages are successfully proceeded
@@ -1706,6 +1709,9 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = null
 
       if (targetChatroomId === this.ephemeral.renderingChatRoomId) return
+      const controller = new AbortController()
+      this.ephemeral.abort = controller.abort.bind(controller)
+      this.ephemeral.signal = controller.signal
       this.ephemeral.renderingChatRoomId = targetChatroomId
 
       try {
@@ -1721,7 +1727,7 @@ export default ({
       } catch (e) {
         console.error('ChatMain.vue processChatroomSwitch() error:', e)
 
-        if (!this.chatroomHasSwitchedFrom(targetChatroomId)) {
+        if (!controller.signal.aborted) {
           sbp('gi.ui/prompt', {
             heading: L('Failed to initialize chatroom'),
             question: L('Error details: {reportError}', LError(e)),
@@ -1755,7 +1761,7 @@ export default ({
       }
 
       if (toChatRoomId !== fromChatRoomId) {
-        this.ephemeral.onChatScroll?.flush()
+        this.ephemeral.abort(new Error('Switched chatrooms'))
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()
         // Skeleton state is to render what basic information we can get synchronously.
