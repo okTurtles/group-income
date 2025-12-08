@@ -33,7 +33,7 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
     isValid: false,
     isHttpValid: false,
     isMailtoValid: false,
-    isExternal: false,
+    isExternalLink: false,
     url: null
   }
 
@@ -73,7 +73,7 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
     const objURL = new URL(url)
     response.isValid = true
     response.isHttpValid = objURL.protocol === 'http:' || objURL.protocol === 'https:'
-    response.isExternal = response.isHttpValid && objURL.hostname !== window.location.hostname
+    response.isExternalLink = response.isHttpValid && objURL.hostname !== window.location.hostname
     response.isMailtoValid = objURL.protocol === 'mailto:'
     response.url = objURL
   } catch (err) {
