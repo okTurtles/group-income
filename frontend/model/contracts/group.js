@@ -118,6 +118,7 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
+
   // Update the '.end' field of the previous in-memory period, if any.
   if (previousPeriod in state.paymentsByPeriod) {
     state.paymentsByPeriod[previousPeriod].end = period
@@ -1360,14 +1361,17 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/updateDistributionDate': {
       validate: actionRequireActiveMember(optional),
-      process ({ meta }, { state, getters }) {
+      process ({ meta, contractID }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
         const current = state.settings?.distributionDate
+
         if (current !== period) {
           // right before updating to the new distribution period, make sure to update various payment-related group streaks.
           updateGroupStreaks({ state, getters })
           state.settings.distributionDate = period
         }
+
+        initFetchPeriodPayments({ contractID, meta, state, getters })
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
