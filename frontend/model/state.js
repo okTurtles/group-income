@@ -342,8 +342,7 @@ store.watch(
           })
       }
     }
-  },
-  { immediate: true }
+  }
 )
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
