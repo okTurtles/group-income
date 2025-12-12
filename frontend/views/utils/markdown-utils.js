@@ -13,11 +13,11 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        const { isValid, isExternal } = validateURL(token.href, true)
+        const { isValid, isExternalLink } = validateURL(token.href, true)
 
         if (isValid) {
           const { href, text } = token
-          return `<a class="link" href="${href}" ${isExternal ? 'target="_blank"' : ''}>${text}</a>`
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank"' : ''}>${text}</a>`
         }
         return token.raw
       }
