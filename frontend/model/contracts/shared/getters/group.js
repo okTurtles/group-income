@@ -250,7 +250,9 @@ export default ({
     return getters.groupMembersCount >= 3
   },
   groupDistributionStarted (state, getters) {
-    return (currentDate: string) => currentDate >= getters.groupSettings?.distributionDate
+    return (currentDate: string) => {
+      return new Date(currentDate) >= new Date(getters.groupSettings?.distributionDate)
+    }
   },
   groupProposalSettings (state, getters) {
     return (proposalType = PROPOSAL_GENERIC) => {

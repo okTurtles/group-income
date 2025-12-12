@@ -24,6 +24,7 @@ import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'SupportHistory',
@@ -40,7 +41,6 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
-      'withGroupCurrency',
       'groupTotalPledgeAmount',
       'groupCreatedDate',
       'thisPeriodPaymentInfo'
@@ -50,6 +50,7 @@ export default ({
     this.updateHistory()
   },
   methods: {
+    withGroupCurrency,
     async updateHistory () {
       const allPeriods = await this.getAllSortedPeriodKeys()
       const periods = allPeriods.slice(-MAX_HISTORY_PERIODS)
