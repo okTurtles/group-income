@@ -114,6 +114,11 @@ export default ({
   groupProfiles (state, getters) {
     return getters.groupProfilesForGroup(getters.currentGroupState)
   },
+  groupPledgerProfiles (state, getters) {
+    return Object.fromEntries(Object.entries(getters.groupProfiles).filter(
+      ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'pledgeAmount' && profile.pledgeAmount > 0
+    ))
+  },
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
   },

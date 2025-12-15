@@ -1368,14 +1368,14 @@ sbp('chelonia/defineContract', {
 
         console.log('!@# updating DistributionDate: (update-to, current)', periodTo, current)
         if (comparePeriodStamps(periodTo, current) > 0) {
-          const getAllPeriodsBetween = (from, to) => {
+          const getAllEmptyPeriodsBetween = () => {
             const periods = []
-            let current = from
+            let recorded = current
             while (true) {
-              const period = plusOnePeriodLength(current, periodLength)
-              if (comparePeriodStamps(to, period) > 0) {
+              const period = plusOnePeriodLength(recorded, periodLength)
+              if (comparePeriodStamps(periodTo, period) > 0) {
                 periods.push(period)
-                current = period
+                recorded = period
               } else {
                 break
               }
@@ -1383,8 +1383,13 @@ sbp('chelonia/defineContract', {
             return periods
           }
 
+          // There can be one or more distribution periods without any payments (empty-periods) between current 'distributionDate'
+          // and the distribution period to update to. (eg. No one in the group hasn't logged in for a long time)
+          // 'paymentsByPeriod' object in the group state and the payment-related group streaks need to be populated/updated accordingly for those empty periods in this case.
+          // (Reference issue: https://github.com/okTurtles/group-income/issues/2982)
+          const emptyPeriodsBetweenCurrentAndTo = getAllEmptyPeriodsBetween()
           const allPeriodsToUpdate = [
-            ...getAllPeriodsBetween(current, periodTo),
+            ...emptyPeriodsBetweenCurrentAndTo,
             periodTo
           ]
           console.log('!@# allPeriodsToUpdate: ', allPeriodsToUpdate)
@@ -1398,7 +1403,7 @@ sbp('chelonia/defineContract', {
           // 2) There are one or more empty periods (periods with no payments made) between current period and the period to update.
           // In case of 1), we add +1 to the payment-related group streaks.
           // In case of 2), those streaks need to be reset except for 'missedPayments' streak.
-          if (allPeriodsToUpdate.length === 1) {
+          if (emptyPeriodsBetweenCurrentAndTo.length === 0) {
             updateGroupStreaks({ state, getters })
           } else {
             state.streaks = {
@@ -1411,10 +1416,11 @@ sbp('chelonia/defineContract', {
               })
             }
 
-            // update 'missedPayments' streaks
-            const emptyPeriodsCount = allPeriodsToUpdate.length - 1
-            for (const memberID in state.streaks.missedPayments) {
-              state.streaks.missedPayments[memberID] += emptyPeriodsCount
+            // Add the number of empty periods to 'missedPayments' streaks
+            const allPledgerIds = Object.keys(getters.groupPledgerProfiles)
+            for (const pledgerId of allPledgerIds) {
+              const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
+              state.streaks.missedPayments[pledgerId] = currentValue + emptyPeriodsBetweenCurrentAndTo.length
             }
           }
 
