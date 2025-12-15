@@ -212,7 +212,7 @@ export default ({
       return this.ourIdentityContractId === this.summary.attributes.creatorID
     },
     canDeleteChatRoom () {
-      const hasPermission = this.isChatRoomCreator || this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELETE_CHANNEL)
+      const hasPermission = this.isChatRoomCreator || (this.isJoinedChatRoom(this.summary.chatRoomID) && this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELETE_CHANNEL))
       return !this.summary.isGeneral && hasPermission && !this.isGroupDirectMessage()
     }
   },

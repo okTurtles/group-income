@@ -83,7 +83,7 @@ export default {
   data () {
     return {
       config: {
-        title: L('Edit member permissions'),
+        title: L('Edit permissions'),
         permissionPresets: {
           [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
           [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
