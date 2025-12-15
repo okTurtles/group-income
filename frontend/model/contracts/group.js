@@ -1397,7 +1397,7 @@ sbp('chelonia/defineContract', {
             initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters })
           })
 
-          // There can be two cases -
+          // There can be two cases:
           // 1) The period to update comes right after current period
           // 2) There are one or more empty periods (periods with no payments made) between current period and the period to update.
           // In case of 1), we add +1 to the payment-related group streaks.
