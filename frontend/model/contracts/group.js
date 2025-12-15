@@ -1365,8 +1365,8 @@ sbp('chelonia/defineContract', {
         const periodTo = getters.periodStampGivenDate(meta.createdDate)
         const periodLength = getters.groupSettings.distributionPeriodLength
         const current = state.settings?.distributionDate
+        const currentPeriodPayments = cloneDeep(getters.groupPeriodPayments[current])
 
-        console.log('!@# updating DistributionDate: (update-to, current)', periodTo, current)
         if (comparePeriodStamps(periodTo, current) > 0) {
           const getAllEmptyPeriodsBetween = () => {
             const periods = []
@@ -1392,7 +1392,6 @@ sbp('chelonia/defineContract', {
             ...emptyPeriodsBetweenCurrentAndTo,
             periodTo
           ]
-          console.log('!@# allPeriodsToUpdate: ', allPeriodsToUpdate)
 
           allPeriodsToUpdate.forEach((period, index) => {
             initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters })
@@ -1417,10 +1416,22 @@ sbp('chelonia/defineContract', {
             }
 
             // Add the number of empty periods to 'missedPayments' streaks
-            const allPledgerIds = Object.keys(getters.groupPledgerProfiles)
-            for (const pledgerId of allPledgerIds) {
-              const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
-              state.streaks.missedPayments[pledgerId] = currentValue + emptyPeriodsBetweenCurrentAndTo.length
+            const groupHasReceivers = Object.keys(getters.groupReceiverProfiles).length > 0
+
+            if (groupHasReceivers) {
+              const allPledgerIds = Object.keys(getters.groupPledgerProfiles)
+              const missedInCurrentPeriod = (memberID) => {
+                return !currentPeriodPayments ||
+                  !currentPeriodPayments?.lastAdjustedDistribution ||
+                  currentPeriodPayments.lastAdjustedDistribution?.some(entry => entry.fromMemberID === memberID)
+              }
+
+              for (const pledgerId of allPledgerIds) {
+                const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
+                state.streaks.missedPayments[pledgerId] = missedInCurrentPeriod(pledgerId)
+                  ? 1 + currentValue + emptyPeriodsBetweenCurrentAndTo.length
+                  : emptyPeriodsBetweenCurrentAndTo.length
+              }
             }
           }
 

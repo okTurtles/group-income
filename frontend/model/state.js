@@ -333,8 +333,6 @@ store.watch(
 
     if (distributionStarted) {
       const distributionDateInSettings = store.getters.groupSettings.distributionDate
-      console.log('!@# distributionDateInSettings: ', distributionDateInSettings)
-      console.log('!@# getters.currentPaymentPeriod: ', newPeriod)
 
       if (newPeriod && (newPeriod !== distributionDateInSettings)) {
         sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })

@@ -119,6 +119,11 @@ export default ({
       ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'pledgeAmount' && profile.pledgeAmount > 0
     ))
   },
+  groupReceiverProfiles (state, getters) {
+    return Object.fromEntries(Object.entries(getters.groupProfiles).filter(
+      ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'incomeAmount'
+    ))
+  },
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
   },
