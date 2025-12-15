@@ -67,7 +67,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.id)'
+                  @click.stop='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
         td.c-state
@@ -96,7 +96,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.id)'
+                  @click.stop='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
 
@@ -127,7 +127,7 @@ import { INVITE_STATUS } from '@chelonia/lib/constants'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
-import { L } from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { timeLeft } from '@view-utils/time.js'
 
@@ -338,7 +338,14 @@ export default ({
       */
     },
     async handleRevokeClick (inviteKeyId) {
-      if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
+      const yesSelected = await sbp('gi.ui/prompt', {
+        heading: L('Revoke invite link'),
+        question: L('Are you sure you want to revoke this link?{br_}This action cannot be undone.', LTags()),
+        primaryButton: L('Yes'),
+        secondaryButton: L('Cancel')
+      })
+
+      if (!yesSelected) {
         return null
       }
 
