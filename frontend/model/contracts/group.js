@@ -69,11 +69,10 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
   }
 }
 
-function initPaymentPeriod ({ meta, getters }) {
-  const start = getters.periodStampGivenDate(meta.createdDate)
+function initPaymentPeriod ({ period, getters }) {
   return {
-    start,
-    end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
+    start: period,
+    end: plusOnePeriodLength(period, getters.groupSettings.distributionPeriodLength),
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -116,7 +115,7 @@ function clearOldPayments ({ contractID, state, getters }) {
 
 function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, getters }) {
   const period = periodTo || getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
+  const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ period, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
 
   // Update the '.end' field of the previous in-memory period, if any.
