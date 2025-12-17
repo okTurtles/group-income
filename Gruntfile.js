@@ -440,10 +440,15 @@ module.exports = (grunt) => {
     child.stderr.on('data', (data) => {
       grunt.log.write(data)
     })
-    child.on('close', () => {
+    child.on('close', (rc) => {
       child = undefined
-      done()
+      if (rc !== 0) {
+        grunt.log.error(`child exited with error code: ${rc}`.bold)
+        // ^C can cause c to be null, which is an OK error.
+        process.exit(rc || 0)
+      }
     })
+    done()
   })
 
   grunt.registerTask('build', function () {

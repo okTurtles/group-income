@@ -5,7 +5,7 @@
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
-    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
+    "backend": "npx nodemon -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
