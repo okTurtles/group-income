@@ -436,14 +436,26 @@ module.exports = (grunt) => {
     }
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
-    child = spawn('./node_modules/.bin/chel', ['serve', '--dev', '-m', 'dist/contracts', 'dist'])
-    child.stdout.on('data', (data) => {
+    const redirectOutput = (data) => {
       grunt.log.write(data)
-    })
-    child.stderr.on('data', (data) => {
-      grunt.log.write(data)
-    })
+    }
+    const pinoPrettyChild = production ? null : spawn('./node_modules/.bin/pino-pretty', ['--colorize'])
+    pinoPrettyChild?.stdout.on('data', redirectOutput)
+    pinoPrettyChild?.stderr.on('data', redirectOutput)
+    const output = production
+      ? redirectOutput
+      : (data) => {
+          pinoPrettyChild.stdin.write(data)
+        }
+    child = spawn('./node_modules/.bin/chel',
+      production
+        ? ['serve', 'dist']
+        : ['serve', '--dev', '-m', 'dist/contracts', 'dist']
+    )
+    child.stdout.on('data', output)
+    child.stderr.on('data', output)
     child.on('close', (rc) => {
+      pinoPrettyChild?.kill('SIGKILL')
       child = undefined
       if (rc !== 0) {
         grunt.log.error(`child exited with error code: ${rc}`.bold)
