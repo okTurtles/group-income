@@ -20,4 +20,4 @@ jobs:
         node-version: 22
         cache: 'npm'
     - run: npm ci
-    - run: DENO_DIR=$PWD/.deno npm test
+    - run: npm test

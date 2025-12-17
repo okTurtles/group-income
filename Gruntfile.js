@@ -39,6 +39,7 @@ const packageJSON = require('./package.json')
 // require('@babel/register')
 
 const {
+  DENO_DIR = path.join(process.cwd(), '.deno'),
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
   MAX_EVENTS_AFTER = '',
@@ -59,6 +60,8 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
+// Make some important runtime variables available to subprocesses
+Object.assign(process.env, { DENO_DIR, NODE_ENV })
 
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`

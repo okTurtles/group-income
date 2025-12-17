@@ -16,6 +16,7 @@ key.pub.json
 
 # Configs
 /database-router-config.json
+/chel.toml
 
 # Database
 /sqlite.db
@@ -41,6 +42,7 @@ key.pub.json
 /ignored
 /data/*
 !/data/.gitkeep
+.deno
 
 # Cypress
 /test/cypress/videos
