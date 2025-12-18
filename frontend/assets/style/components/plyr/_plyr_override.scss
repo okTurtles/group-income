@@ -47,6 +47,7 @@ $phone_narrow: 430px;
     }
 
     &.for-video-modal.is-taller-than-wider {
+      // If the video is taller than wider, no need to squash it into 16/9 ratio container.
       height: 100%;
 
       .plyr {
