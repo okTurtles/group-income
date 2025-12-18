@@ -26,36 +26,39 @@
         i.icon-times
 
     section.c-video-viewer-body
-      video-player.c-video-player(
-        v-if='currentVideo'
-        ref='videoPlayer'
-        :key='currentVideo.videoUrl'
-        :src='currentVideo.videoUrl'
-        :mimeType='currentVideo.mimeType'
-        :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
-        @play='onVideoPlay'
-        @pause='onVideoPause'
-        @enterfullscreen='onVideoFullscreenChange'
-        @exitfullscreen='onVideoFullscreenChange'
+      .c-video-viewer-body-inner
+        video-player.c-video-player.for-video-modal(
+          v-if='currentVideo'
+          ref='videoPlayer'
+          :class='{ "is-taller-than-wider": ephemeral.isVideoTallerThanWider }'
+          :key='currentVideo.videoUrl'
+          :src='currentVideo.videoUrl'
+          :mimeType='currentVideo.mimeType'
+          :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
+          @play='onVideoPlay'
+          @pause='onVideoPause'
+          @dimension-resolved='onVideoDimensionsResolved'
+          @enterfullscreen='onVideoFullscreenChange'
+          @exitfullscreen='onVideoFullscreenChange'
+        )
+
+      button.is-icon.c-video-nav-btn.is-prev(
+        v-if='showPrevButton'
+        @click='selectPrevVideo'
+        title='L("Previous video")'
+        aria-label='L("Previous video")'
+        type='button'
       )
+        i.icon-chevron-left
 
-    button.is-icon.c-video-nav-btn.is-prev(
-      v-if='showPrevButton'
-      @click='selectPrevVideo'
-      title='L("Previous video")'
-      aria-label='L("Previous video")'
-      type='button'
-    )
-      i.icon-chevron-left
-
-    button.is-icon.c-video-nav-btn.is-next(
-      v-if='showNextButton'
-      @click='selectNextVideo'
-      title='L("Next video")'
-      aria-label='L("Next video")'
-      type='button'
-    )
-      i.icon-chevron-right
+      button.is-icon.c-video-nav-btn.is-next(
+        v-if='showNextButton'
+        @click='selectNextVideo'
+        title='L("Next video")'
+        aria-label='L("Next video")'
+        type='button'
+      )
+        i.icon-chevron-right
 </template>
 
 <script>
@@ -99,6 +102,7 @@ export default {
       ephemeral: {
         videosToShow: [],
         currentIndex: 0,
+        isVideoTallerThanWider: false,
         hideCtas: {
           header: false,
           navButtons: false
@@ -191,6 +195,9 @@ export default {
       if (e.code === 'Space') {
         this.$refs.videoPlayer.togglePlay()
       }
+    },
+    onVideoDimensionsResolved ({ w, h }) {
+      this.ephemeral.isVideoTallerThanWider = h > w
     }
   },
   created () {
@@ -254,17 +261,13 @@ export default {
 
 .c-modal-header {
   @include media-viewer-modal-header;
-  position: relative;
+  position: absolute;
   transition: transform 350ms ease-in-out;
   flex-shrink: 0;
 
-  @include from($tablet) {
-    position: absolute;
-
-    &::after {
-      background: linear-gradient(rgba(0, 0, 0, 0.7490196078) 10%, rgba(0, 0, 0, 0));
-      height: 120%;
-    }
+  &::after {
+    background: linear-gradient(rgba(0, 0, 0, 0.7490196078) 10%, rgba(0, 0, 0, 0));
+    height: 120%;
   }
 
   .is-hidden {
@@ -283,11 +286,19 @@ button.c-close-btn {
 .c-video-viewer-body {
   position: relative;
   width: 100%;
+  flex-grow: 1;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.c-video-viewer-body-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  flex-grow: 1;
 
   @include from($tablet) {
     display: block;
@@ -302,6 +313,10 @@ button.c-close-btn {
   max-height: 100%;
   aspect-ratio: 16/9;
   transform: translateY(-2rem);
+
+  &.is-taller-than-wider {
+    transform: translateY(0);
+  }
 
   @include from($tablet) {
     transform: translateY(0);

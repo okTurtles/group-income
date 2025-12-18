@@ -45,6 +45,14 @@ $phone_narrow: 430px;
         }
       }
     }
+
+    &.for-video-modal.is-taller-than-wider {
+      height: 100%;
+
+      .plyr {
+        height: 100%;
+      }
+    }
   }
 
   // style-overrides for the audio player.
