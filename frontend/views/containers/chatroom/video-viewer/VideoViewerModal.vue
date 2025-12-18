@@ -221,22 +221,26 @@ export default {
 
 .c-video-viewer-modal {
   @include media-viewer-modal-container($zindex:$zindex-modal);
+  display: flex;
+  flex-direction: column;
 
   .is-dark-theme & {
     --viewer-bg-color: var(--general_2);
+  }
+
+  @include from($tablet) {
+    display: block;
   }
 }
 
 .c-video-viewer-content {
   @include media-viewer-modal-content;
   background-color: var(--viewer-bg-color);
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "c-header"
-    "c-body";
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  flex-grow: 1;
 
   @include from($tablet) {
     display: block;
@@ -251,8 +255,8 @@ export default {
 .c-modal-header {
   @include media-viewer-modal-header;
   position: relative;
-  grid-area: c-header;
   transition: transform 350ms ease-in-out;
+  flex-shrink: 0;
 
   @include from($tablet) {
     position: absolute;
@@ -277,17 +281,18 @@ button.c-close-btn {
 }
 
 .c-video-viewer-body {
-  grid-area: c-body;
   position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
+  flex-grow: 1;
 
   @include from($tablet) {
     display: block;
     aspect-ratio: 16/9;
+    flex-grow: unset;
   }
 }
 
