@@ -78,7 +78,6 @@ export default {
       const intrinsicWidth = this.$refs.videoEl.videoWidth
       const intrinsicHeight = this.$refs.videoEl.videoHeight
       this.ephemeral.isTallerThanWider = intrinsicHeight > intrinsicWidth
-      this.$emit('dimension-resolved', { w: intrinsicWidth, h: intrinsicHeight })
 
       if (this.initialTime > 0) {
         this.config.player.currentTime = this.initialTime

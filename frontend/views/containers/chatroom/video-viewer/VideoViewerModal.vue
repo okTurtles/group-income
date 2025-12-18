@@ -30,14 +30,12 @@
         video-player.c-video-player.for-video-modal(
           v-if='currentVideo'
           ref='videoPlayer'
-          :class='{ "is-taller-than-wider": ephemeral.isVideoTallerThanWider }'
           :key='currentVideo.videoUrl'
           :src='currentVideo.videoUrl'
           :mimeType='currentVideo.mimeType'
           :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
           @play='onVideoPlay'
           @pause='onVideoPause'
-          @dimension-resolved='onVideoDimensionsResolved'
           @enterfullscreen='onVideoFullscreenChange'
           @exitfullscreen='onVideoFullscreenChange'
         )
@@ -102,7 +100,6 @@ export default {
       ephemeral: {
         videosToShow: [],
         currentIndex: 0,
-        isVideoTallerThanWider: false,
         hideCtas: {
           header: false,
           navButtons: false
@@ -195,9 +192,6 @@ export default {
       if (e.code === 'Space') {
         this.$refs.videoPlayer.togglePlay()
       }
-    },
-    onVideoDimensionsResolved ({ w, h }) {
-      this.ephemeral.isVideoTallerThanWider = h > w
     }
   },
   created () {
@@ -312,15 +306,6 @@ button.c-close-btn {
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
-  transform: translateY(-2rem);
-
-  &.is-taller-than-wider {
-    transform: translateY(0);
-  }
-
-  @include from($tablet) {
-    transform: translateY(0);
-  }
 }
 
 button.c-video-nav-btn {
