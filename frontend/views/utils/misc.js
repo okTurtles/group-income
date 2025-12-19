@@ -73,7 +73,7 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
     const objURL = new URL(url)
     response.isValid = true
     response.isHttpValid = objURL.protocol === 'http:' || objURL.protocol === 'https:'
-    response.isExternalLink = response.isHttpValid && objURL.hostname !== window.location.hostname
+    response.isExternalLink = response.isHttpValid && objURL.origin !== window.location.origin
     response.isMailtoValid = objURL.protocol === 'mailto:'
     response.url = objURL
   } catch (err) {

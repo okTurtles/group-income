@@ -17,7 +17,7 @@ marked.use({
 
         if (isValid) {
           const { href, text } = token
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank"' : ''}>${text}</a>`
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
         }
         return token.raw
       }
