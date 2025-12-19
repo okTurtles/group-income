@@ -173,7 +173,7 @@ import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrolle
 const ignorableScrollDistanceInPixel = 500
 
 const enqueue = function (fn) {
-  const { hasChatroomSwitchedSince } = this
+  const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
   return sbp('okTurtles.eventQueue/queueEvent', CHATROOM_EVENTS, () => {
     if (hasChatroomSwitchedSince()) return
 
@@ -360,8 +360,6 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    //
-    window.CHATMAIN = this
     // setup various event listeners.
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), process.env.CI ? 30 : 300)
     this.ephemeral.onScrollStart = debounce(onScrollStart.bind(this), process.env.CI ? 20 : 200)
@@ -474,6 +472,18 @@ export default ({
     // This method returns a method that checks if that has happened.
     // (Indirection is needed so that we can correctly bind to the state at the
     // time invocation happened, rather than the current state.)
+    // This property is meant to be called at the beginning of a method
+    // (because it binds to `this.ephemeral.switchController.signal`) and then
+    // called as needed.
+    // @example
+    // ```
+    // myMethod () {
+    //   const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
+    //   await someLongRunningAction()
+    //   if (hasChatroomSwitchedSince()) return
+    //   this.somethingElse()
+    // }
+    // ```
     hasChatroomSwitchedSince () {
       const signal = this.ephemeral.switchController.signal
       return () => signal.aborted
@@ -713,7 +723,7 @@ export default ({
         }
 
         const entryHeight = this.latestEvents[currentLatestEventIdx].height()
-        const { hasChatroomSwitchedSince } = this
+        const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
         const chatroomID = this.ephemeral.renderingChatRoomId
         // If we haven't fetched messages dynamically or if we found a
         // currentLatestEventIdx, re-use the existing contract state. This
@@ -819,7 +829,7 @@ export default ({
     },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
-      const { hasChatroomSwitchedSince } = this
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
 
       const data = { type: MESSAGE_TYPES.TEXT, text }
@@ -987,7 +997,7 @@ export default ({
       if (!messageHash || !this.ephemeral.messages.length) {
         return
       }
-      const { hasChatroomSwitchedSince } = this
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
@@ -1047,7 +1057,7 @@ export default ({
       this.ephemeral.scrollActionId = setTimeout(action, 0)
     },
     updateScroll (scrollTargetMessage = null, effect = false, delay = 100) {
-      const { hasChatroomSwitchedSince } = this
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
         return new Promise((resolve) => {
@@ -1284,7 +1294,7 @@ export default ({
     async initializeState (forceClearMessages = false) {
       // NOTE: this state is rendered using the chatroom contract functions
       //       so should be CAREFUL of updating the fields
-      const { hasChatroomSwitchedSince } = this
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const chatRoomID = this.ephemeral.renderingChatRoomId
       const messageState = await this.generateNewChatRoomState(forceClearMessages)
 
@@ -1355,7 +1365,7 @@ export default ({
           return
         }
 
-        const { hasChatroomSwitchedSince } = this
+        const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
         this.$nextTick(() => {
           if (hasChatroomSwitchedSince() || conversation.scrollHeight <= conversation.clientHeight) {
             return
@@ -1639,7 +1649,7 @@ export default ({
       // clearTimeout(this.ephemeral.initialScroll.timeoutId)
       // }
 
-      const { hasChatroomSwitchedSince } = this
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const targetChatroomID = this.ephemeral.renderingChatRoomId
       // NOTE: invocations in CHATROOM_EVENTS queue should run in synchronous
       try {
