@@ -484,7 +484,7 @@ export default ({
     //   this.somethingElse()
     // }
     // ```
-    hasChatroomSwitchedSince () {
+    hasChatroomSwitchedSince (): () => boolean {
       const signal = this.ephemeral.switchController.signal
       return () => signal.aborted
     }
@@ -1519,6 +1519,7 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) return
 
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
         // TODO: The next line will _not_ get information about any inner signatures,
         // which is used for determininng the sender of a message. Update with
@@ -1585,11 +1586,13 @@ export default ({
               // NOTE: waiting for the animation to be completed with the duration of 500ms
               //       .c-disappeared class is defined in MessageBase.vue
               await delay(500)
+              if (hasChatroomSwitchedSince()) return
             }
           }
 
           const serializedMessage = message.serialize()
           await this.processEvents([serializedMessage], 'down', false)
+          if (hasChatroomSwitchedSince()) return
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (this.ephemeral.scrollableDistance < 50) {
