@@ -1,5 +1,5 @@
 <template lang="pug">
-.video-player-container.plyr_override.for-video
+.video-player-container.plyr_override.for-video(:class='{ "is-taller-than-wider": ephemeral.isTallerThanWider }')
   video.c-video-el(
     ref='videoEl'
     playsinline
@@ -42,6 +42,9 @@ export default {
     return {
       config: {
         player: null
+      },
+      ephemeral: {
+        isTallerThanWider: false
       }
     }
   },
@@ -72,6 +75,10 @@ export default {
       })
     },
     onVideoSrcLoaded () {
+      const intrinsicWidth = this.$refs.videoEl.videoWidth
+      const intrinsicHeight = this.$refs.videoEl.videoHeight
+      this.ephemeral.isTallerThanWider = intrinsicHeight > intrinsicWidth
+
       if (this.initialTime > 0) {
         this.config.player.currentTime = this.initialTime
       }
