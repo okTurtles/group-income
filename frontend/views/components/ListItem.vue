@@ -11,7 +11,7 @@ li.c-item(@click='$emit("click")')
       v-if='icon'
       :class='{ [`icon-${icon}`]: icon }'
     )
-      badge(v-if='badgeCount' type='compact') {{ badgeCount }}
+      badge(v-if='badgeCount' type='compact' :count='badgeCount')
     span.c-item-slot
       slot
 </template>

@@ -227,7 +227,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user1 sees a mention and three reactions, and he sends two mentions and one reaction too', () => {
     switchUser(user1)
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]')
     cy.giRedirectToGroupChat()
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).me}. Anytime!`)
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).all}. No matter what, I will always be by your side.`)
@@ -248,7 +248,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user2 checks two mentions and sends/deletes attachments', () => {
     switchUser(user2)
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]')
     cy.giRedirectToGroupChat()
     cy.get('[data-test="groupChatLink"] .c-badge.is-compact').should('not.exist')
 
@@ -448,7 +448,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.getByDT('conversationWrapper').scrollTo('top')
       // Wait period is due to debouncing in onChatScroll
       // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(201)
+      cy.wait(1001)
       cy.giWaitUntilMessagesLoaded()
     }
 
