@@ -18,7 +18,7 @@ export default ({
         // [modalName]: { queryKey: queryValue }
       },
       replacementQueries: {}, // queries to be used for REPLACE_MODAL
-      replacementChildData: {}, // child data to be used for REPLACE_MODAL
+      replacementChildData: {}, // child-data to be used for REPLACE_MODAL
       childData: {},
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
