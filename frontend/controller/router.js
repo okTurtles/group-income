@@ -190,7 +190,7 @@ const router: any = new Router({
 
 router.beforeEach((to, from, next) => {
   if (to.query.modal &&
-    !['Prompt', 'SignupModal', 'LoginModal'].includes(to.query.modal) &&
+    !['Prompt', 'SignupModal', 'LoginModal', 'LoginErrorModal'].includes(to.query.modal) &&
     !store.state.loggedIn) {
     // if modal is queried and,
     // the requested modal is only meant to be used post authentication and
