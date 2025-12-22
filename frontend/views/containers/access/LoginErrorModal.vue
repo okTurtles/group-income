@@ -7,12 +7,12 @@ modal-template.is-prompt(
     i18n Login error
 
   .c-container
-    .c-prompt-content.label(v-safe-html:a='contentMessage')
+    .c-prompt-content(v-safe-html:a='contentMessage')
 
-  .buttons
-    i18n.is-outlined(tag='button' type='button' @click.stop='refresh') Refresh
+    .buttons.is-centered.c-buttons
+      i18n.is-outlined(tag='button' type='button' @click.stop='refresh') Refresh
 
-  i18n.c-logout-msg(:args='{ sp_: `<span class="link">`, _sp: "</span>"}' ) If refreshing doesn't work, trying {sp_}logging out{_sp}.
+    i18n.c-logout-msg(:args='{ sp_: `<span class="link">`, _sp: "</span>"}' @click='onLogoutMsgClick') If refreshing doesn't work, try {sp_}logging out{_sp}.
 </template>
 
 <script>
@@ -40,9 +40,11 @@ export default {
     refresh () {
       window.location.reload()
     },
-    logout () {
-      this.$refs.modal.close()
-      sbp('gi.app/identity/_private/logout', this.errorState)
+    onLogoutMsgClick (e) {
+      if (e.target.matches('span.link')) {
+        this.$refs.modal.close()
+        sbp('gi.app/identity/_private/logout', this.errorState)
+      }
     }
   }
 }
@@ -57,13 +59,19 @@ export default {
   text-align: center;
 }
 
-::v-deep .c-modal-header {
-  max-width: 37rem;
-  align-self: center;
+::v-deep header.c-modal-header {
+  width: 100%;
+  align-items: center;
   text-align: center;
+}
 
-  h1 {
-    padding: 1.2rem 0;
-  }
+.c-buttons {
+  margin-top: 1.5rem;
+}
+
+.c-logout-msg {
+  display: block;
+  margin-top: 0.75rem;
+  color: $text_1;
 }
 </style>
