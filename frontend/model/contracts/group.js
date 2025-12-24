@@ -1400,7 +1400,8 @@ sbp('chelonia/defineContract', {
           if (emptyPeriodsBetweenCurrentAndTo.length === 0) {
             updateGroupStreaks({ state, getters })
           } else {
-            // 'lastStreakPeriod', 'fullMonthlyPledges', 'fullMonthlySupport' and 'onTimePayments' need to be reset when there are empty periods.
+            // Below 4 group streaks ('lastStreakPeriod', 'fullMonthlyPledges', 'fullMonthlySupport' and 'onTimePayments') need to be reset
+            // when there are empty periods between current period and the period to update.
             state.streaks.lastStreakPeriod = null
             state.streaks.fullMonthlyPledges = 0
             state.streaks.fullMonthlySupport = 0
@@ -1419,6 +1420,10 @@ sbp('chelonia/defineContract', {
 
               for (const pledgerId of allPledgerIds) {
                 const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
+                // Two cases here:
+                // (Ther term 'current period' means the distribution period the group setting 'currently has'. So it could be months ago if there are many empty periods.)
+                // 1) If the pledger has missed payments in the current period - their current missed-payments streaks so far + 1 (for the current period) + the number of empty periods.
+                // 2) If the pledger has completed  payments in the current period - No need to consider the member's missed payments streak so far. Just add the number of empty periods.
                 state.streaks.missedPayments[pledgerId] = missedInCurrentPeriod(pledgerId)
                   ? 1 + currentValue + emptyPeriodsBetweenCurrentAndTo.length
                   : emptyPeriodsBetweenCurrentAndTo.length
