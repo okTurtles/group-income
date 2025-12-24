@@ -1400,7 +1400,7 @@ sbp('chelonia/defineContract', {
           if (emptyPeriodsBetweenCurrentAndTo.length === 0) {
             updateGroupStreaks({ state, getters })
           } else {
-            // 'lastStreakPeriod', 'fullMonthlyPledges', 'fullMonthlySupport', 'onTimePayments' need to be reset when there are empty periods.
+            // 'lastStreakPeriod', 'fullMonthlyPledges', 'fullMonthlySupport' and 'onTimePayments' need to be reset when there are empty periods.
             state.streaks.lastStreakPeriod = null
             state.streaks.fullMonthlyPledges = 0
             state.streaks.fullMonthlySupport = 0
