@@ -415,7 +415,6 @@ export default ({
       'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
-      'chatRoomMembers',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
