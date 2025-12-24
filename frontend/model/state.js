@@ -334,7 +334,7 @@ store.watch(
     if (distributionStarted) {
       const distributionDateInSettings = store.getters.groupSettings.distributionDate
 
-      if (newPeriod && (newPeriod !== distributionDateInSettings)) {
+      if (newPeriod && distributionDateInSettings && (newPeriod !== distributionDateInSettings)) {
         sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           .catch((e) => {
             console.error('getters.currentPaymentPeriod watcher Error calling updateDistributionDate', e)
