@@ -113,6 +113,8 @@
     "@babel/preset-flow": "7.12.1",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
+    "@capacitor/core": "8.0.0",
+    "@capacitor/ios": "8.0.0",
     "@chelonia/cli": "3.0.0",
     "@chelonia/crypto": "1.0.1",
     "@chelonia/lib": "1.2.9",
@@ -164,6 +166,7 @@
     "ws": "8.5.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.0.0",
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",
     "browser-sync": "2.27.10",
