@@ -60,7 +60,9 @@
     "ignored/*",
     "node_modules/*",
     "test/cypress/cache/*",
-    "contracts/*"
+    "contracts/*",
+    "android/*",
+    "ios/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
