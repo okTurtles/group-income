@@ -244,7 +244,7 @@ describe('Group Payments', () => {
 
       cy.log('assert payment detail is correct')
       cy.getByDT('menuTrigger').click()
-      cy.getByDT('menuContent').find('ul > li:nth-child(1)').as('btnDetails')
+      cy.getByDT('menuContent').find('menu > li:nth-child(1)').as('btnDetails')
       cy.get('@btnDetails').should('contain', 'Payment details')
       cy.get('@btnDetails').click()
     })
@@ -268,7 +268,7 @@ describe('Group Payments', () => {
       // after feels hackish/buggy. If anyone knows the "proper" way to do this
       // please fix!
       cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
-      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1,000')
     })
     cy.closeModal()
 
@@ -307,7 +307,7 @@ describe('Group Payments', () => {
     cy.getByDT('paymentsLink').click()
     cy.getByDT('payList').within(() => {
       cy.getByDT('menuTrigger').click()
-      cy.getByDT('menuContent').find('ul > li:nth-child(3)').as('btnThankYou')
+      cy.getByDT('menuContent').find('menu > li:nth-child(3)').as('btnThankYou')
 
       cy.get('@btnThankYou').should('contain', 'Send thank you')
       cy.get('@btnThankYou').click()
@@ -444,7 +444,7 @@ describe('Group Payments', () => {
 
       cy.log('assert payment detail is correct')
       cy.getByDT('menuTrigger').eq(0).click()
-      cy.getByDT('menuContent').find('ul > li:nth-child(1)').as('btnDetails')
+      cy.getByDT('menuContent').eq(0).find('menu > li:nth-child(1)').as('btnDetails')
       cy.get('@btnDetails').should('contain', 'Payment details')
       cy.get('@btnDetails').click()
     })
@@ -454,7 +454,7 @@ describe('Group Payments', () => {
       cy.getByDT('subtitle').should('contain', `Sent to user3-${userId}`)
 
       cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric', day: 'numeric' }))
-      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1,000')
     })
     cy.closeModal()
 

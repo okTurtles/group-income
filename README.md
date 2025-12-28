@@ -5,6 +5,7 @@
     <a title="Slack" href="https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ"><img src="https://img.shields.io/badge/slack-%23groupincome-green"></a>
     <a title="Build Status" href="https://app.travis-ci.com/github/okTurtles/group-income"><img src="https://app.travis-ci.com/okTurtles/group-income.svg?branch=master"></a>
     <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income"><img src="https://img.shields.io/badge/visual-source-orange"></a>
+    <a title="Ask DeepWiki" href="https://deepwiki.com/okTurtles/group-income"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
     <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
 </p>
 
@@ -74,7 +75,7 @@ grunt dev --tunnel
 
 > [!IMPORTANT]
 > This service (localtunnel) doesn't seem to work anymore.
-> Instead please try [ngrok](https://ngrok.com/) (recommended) or [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
+> Instead please try [ngrok](https://ngrok.com/) (recommended), [tunnl.gg](https://tunnl.gg/), [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
 > ```
 > $ grunt dev
 > # then, in another terminal:
@@ -154,6 +155,8 @@ For details, see: **[`Docker.md`](docs/src/Docker.md)**
 ## Troubleshooting
 
 If you run into any errors [during the setup](docs/src/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/src/Troubleshooting.md).
+
+Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/okTurtles/group-income)
 
 ## Donating
 

@@ -9,6 +9,7 @@ import {
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import type { ChelKeyRequestParams } from '@chelonia/lib'
 import type { GIActionParams } from '../actions/types.js'
 
@@ -154,12 +155,12 @@ export default (sbp('sbp/selectors/register', {
       }
       const promptConfig = enforceDunbar
         ? {
-            heading: 'Large group size',
+            heading: L('Large group size'),
             question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
             primaryButton: L('OK')
           }
         : {
-            heading: 'Large group size',
+            heading: L('Large group size'),
             question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
             primaryButton: L('Yes'),
             secondaryButton: L('Cancel')
@@ -189,13 +190,10 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.app/group/displayMincomeChangedPrompt': async function ({ contractID, data }: GIActionParams) {
-    const rootGetters = sbp('state/vuex/getters')
     const rootState = sbp('state/vuex/state')
     if (rootState.currentGroupId !== contractID) {
       sbp('state/vuex/commit', 'setCurrentGroupId', { contractID })
     }
-
-    const { withGroupCurrency } = rootGetters
     const promptOptions = data.increased
       ? {
           heading: L('Mincome changed'),

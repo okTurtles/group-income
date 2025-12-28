@@ -14,6 +14,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
+import { withCurrency } from '@model/contracts/shared/currencies.js'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {
@@ -409,19 +410,21 @@ export default ({
       }]
     }
   },
-  PAYMENT_RECEIVED (data: { groupID: string, creatorID: string, amount: string, paymentHash: string }) {
+  PAYMENT_RECEIVED (data: { groupID: string, creatorID: string, amount: number, currency: string, paymentHash: string }) {
     const rootState = sbp('state/vuex/state')
+    // [backward-compat] data.amount could be a string in older versions.
+    const formattedAmount = (typeof data.amount === 'string' ? data.amount : withCurrency(data.currency, data.amount))
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Payment received'),
       avatarUserID: data.creatorID,
       body: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
         name: `${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${data.creatorID}`,
-        amount: data.amount,
+        amount: formattedAmount,
         ...LTags('strong')
       }),
       plaintextBody: L('{strong_}{name}{_strong} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
         name: sbp('state/vuex/getters').userDisplayNameFromID(data.creatorID),
-        amount: data.amount
+        amount: formattedAmount
       }),
       creatorID: data.creatorID,
       icon: '',
@@ -453,12 +456,13 @@ export default ({
   },
   MINCOME_CHANGED (data: { groupID: string, creatorID: string, to: number, memberType: string, increased: boolean }) {
     const rootState = sbp('state/vuex/state')
-    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const { mincomeCurrency } = rootState[data.groupID].settings
+    const amount = withCurrency(mincomeCurrency, data.to)
     return {
       title: rootState[data.groupID]?.settings?.groupName || L('Mincome changes'),
       avatarUserID: data.creatorID,
-      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
-      plaintextBody: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
+      body: L('The mincome has changed to {amount}.', { amount }),
+      plaintextBody: L('The mincome has changed to {amount}.', { amount }),
       creatorID: data.creatorID,
       icon: 'dollar-sign',
       level: 'info',

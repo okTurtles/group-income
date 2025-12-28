@@ -55,6 +55,7 @@ import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 
 export default ({
   name: 'PaymentRowSent',
@@ -74,8 +75,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourGroupProfile',
-      'withGroupCurrency'
+      'ourGroupProfile'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
@@ -87,6 +87,7 @@ export default ({
   },
   methods: {
     humanDate,
+    withGroupCurrency,
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },

@@ -2,6 +2,7 @@
 .c-message.force-motion(
   :class='componentRootClasses'
   @click='$emit("wrapperAction")'
+  @mouseleave='mouseLeave'
   v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
@@ -36,7 +37,7 @@
         )
 
         send-area.c-edit-send-area(
-          v-if='isEditing'
+          v-if='isEditing && text'
           :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
           @send='onMessageEdited'
@@ -53,6 +54,11 @@
             :text='text'
             :edited='edited'
           )
+
+      upload-animation-feedback(
+        v-if='showAttachmentsLoader'
+        size='1.5em'
+      )
 
       .c-attachments-wrapper(v-if='hasAttachments')
         chat-attachment-preview(
@@ -131,6 +137,7 @@ import MessageReactions from './MessageReactions.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import SendArea from './SendArea.vue'
+import UploadAnimationFeedback from './UploadAnimationFeedback.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
@@ -156,13 +163,13 @@ export default ({
     MessageActions,
     MessageReactions,
     SendArea,
+    UploadAnimationFeedback,
     ChatAttachmentPreview,
     RenderMessageText,
     RenderMessageWithMarkdown
   },
   data () {
     return {
-      isEditing: false,
       ephemeral: {
         truncateToggle: {
           enabled: false,
@@ -190,6 +197,7 @@ export default ({
       required: false
     },
     edited: Boolean,
+    isEditing: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -202,10 +210,15 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
+    uploadingAttachments: {
+      type: Boolean,
+      default: false
+    },
     pinnedBy: String,
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
+    isFocused: Boolean,
     shouldRenderMarkdown: Boolean
   },
   computed: {
@@ -218,16 +231,17 @@ export default ({
           'same-sender': this.isSameSender,
           'pinned': this.isAlreadyPinned,
           'has-truncate-toggle': this.ephemeral.truncateToggle.enabled,
-          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll
+          'truncate-toggle__showing-all': this.ephemeral.truncateToggle.isShowingAll,
+          'c-focused': this.isFocused
         }
       ]
     },
     hasAttachments () {
       return Boolean(this.attachments?.length)
     },
-    hasImageAttachment () {
+    hasMediaAttachment () {
       return Array.isArray(this.attachments) &&
-        this.attachments.some(attachment => getFileType(attachment.mimeType) === 'image')
+        this.attachments.some(attachment => ['image', 'video'].includes(getFileType(attachment.mimeType)))
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
@@ -259,29 +273,41 @@ export default ({
     isMessageCropped () {
       // Check if the truncate-toggle is enabled and the message is folded.
       return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
+    },
+    isPending () {
+      return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    showAttachmentsLoader () {
+      return this.isPending && this.uploadingAttachments
     }
   },
   methods: {
     humanDate,
     swapMentionIDForDisplayname,
+    mouseLeave () {
+      if (this.$refs.messageAction?.$refs?.menu && this.$refs.messageAction.$refs.menu.isActive) {
+        this.$refs.messageAction.$refs.menu.closeMenu()
+      }
+    },
     editMessage () {
-      this.isEditing = true
+      this.$emit('message-is-editing', true)
     },
     onMessageEdited (newMessage) {
-      this.isEditing = false
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
 
         // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
         this.ephemeral.truncateToggle.enabled = false
         this.ephemeral.truncateToggle.isShowingAll = false
+      } else {
+        this.$emit('message-is-editing', false)
       }
     },
     deleteAttachment (manifestCid) {
       this.$emit('delete-attachment', manifestCid)
     },
     cancelEdit () {
-      this.isEditing = false
+      this.$emit('message-is-editing', false)
     },
     reply () {
       this.$emit('reply')
@@ -368,7 +394,7 @@ export default ({
       this.shouldCheckToTruncate &&
       // NOTE: If the message has any image attached, defer this check until the <img /> DOMs are rendered.
       //       (which is detected via 'image-attachments-render-complete' custom event in ChatAttachmentPreview.vue)
-      !this.hasImageAttachment
+      !this.hasMediaAttachment
     ) {
       this.determineToEnableTruncationToggle()
     }
@@ -419,7 +445,8 @@ export default ({
     }
   }
 
-  &:hover {
+  &:hover,
+  &:has(.c-menu .is-active) {
     background-color: $general_2;
 
     &:not(.pending, .failed) {

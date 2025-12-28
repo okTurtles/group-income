@@ -8,8 +8,9 @@
     i.icon-exclamation-triangle.is-prefix
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
 
-  .c-send.inputgroup(
+  fieldset.c-send.inputgroup(
     :class='{"is-editing": isEditing}'
+    :disabled='loading'
     data-test='messageInputWrapper'
   )
     .c-mentions(
@@ -60,10 +61,11 @@
 
     textarea.textarea.c-send-textarea(
       ref='textarea'
-      :disabled='loading'
       :placeholder='L("Write your message...")'
       :style='textareaStyles'
       :maxlength='config.messageMaxChar'
+      @click='textAreaFocus'
+      @focus='textAreaFocus'
       @blur='textAreaBlur'
       @keydown.enter.exact='handleKeyDownEnter'
       @keydown.tab.exact='handleKeyDownTab'
@@ -249,9 +251,9 @@
                   @change='fileAttachmentHandler($event.target.files)'
                 )
 
-          .c-send-button(
+          button.c-send-button(
             id='mobileSendButton'
-            tag='button'
+            type='submit'
             data-test='sendMessageButton'
             :class='{ isActive }'
             @click='sendMessage'
@@ -262,7 +264,7 @@
       ref='mask'
     )
 
-    create-poll.c-poll(ref='poll')
+    create-poll.c-poll(ref='poll' @created-poll='$emit("jump-to-latest")')
 </template>
 
 <script>
@@ -279,7 +281,8 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
-  CHATROOM_MAX_MESSAGE_LEN
+  CHATROOM_MAX_MESSAGE_LEN,
+  CHATROOM_ATTACHMENT_TYPES
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
@@ -399,6 +402,10 @@ export default ({
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
+    // The following causes inconsistent focusing on iOS depending on whether
+    // iOS determines the action to be a result of user interaction.
+    // Commenting this out will result on focus being triggered the 'normal'
+    // way, when the chatroom is ready.
     this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
@@ -419,14 +426,20 @@ export default ({
     ...mapGetters([
       'chatRoomMembers',
       'currentChatRoomId',
+      'isDirectMessage',
       'chatRoomAttributes',
       'ourContactProfilesById',
       'globalProfile',
+      'groupProfiles',
       'ourIdentityContractId',
       'mentionableChatroomsInDetails'
     ]),
-    members () {
+    activeMembers () {
+      const activeGroupMemberIds = Object.keys(this.groupProfiles)
+      const isInDM = this.isDirectMessage(this.currentChatRoomId)
+
       return Object.keys(this.chatRoomMembers)
+        .filter(memberID => isInDM || activeGroupMemberIds.includes(memberID))
         .map(memberID => {
           const { username, displayName, picture } = this.ourContactProfilesById[memberID] || {}
           return {
@@ -474,6 +487,18 @@ export default ({
     focusOnTextArea () {
       if (this.$refs.textarea) {
         this.$refs.textarea.focus()
+      }
+    },
+    textAreaFocus (event) {
+      // Sometimes, on mobile, the virtual hardware keyboard appears
+      // over the page. This doesn't seem to be detectable, but scrolling
+      // seems to work around it.
+      // This issue seems to affect Blink on Android. A delay is needed to
+      // compensate for the keyboard animation.
+      // NOTE: This test will not work when requesting a 'desktop website', as
+      // then the user agent typically will not mention Android.
+      if (/android/i.test(navigator.userAgent)) {
+        setTimeout(() => this.$el.scrollIntoView(), 500)
       }
     },
     textAreaBlur (event) {
@@ -575,7 +600,7 @@ export default ({
     },
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
-        this.fileAttachmentHandler(e.clipboardData.files, true)
+        this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
     addSelectedMention (index) {
@@ -666,7 +691,7 @@ export default ({
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
         const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
         const availableMentions = type === 'member'
-          ? this.members.map(memberID => memberID.username)
+          ? this.activeMembers.map(member => member.username)
           : this.mentionableChatroomsInDetails.map(channel => channel.name)
 
         return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
@@ -723,29 +748,22 @@ export default ({
       e.target.blur()
       this.$refs.fileAttachmentInputEl.click()
     },
-    fileAttachmentHandler (filesList, appendItems = false) {
+    fileAttachmentHandler (filesList) {
       filesList = Array.from(filesList)
 
       // User clicked 'Cancel button'.
       if (!filesList.length) { return }
 
-      const list = appendItems && this.hasAttachments
-        ? [...this.ephemeral.attachments]
-        : []
-
-      if (this.hasAttachments) {
-        // make sure to clear the previous state if there is already attached file(s).
-        this.clearAllAttachments()
-      }
+      const list = this.hasAttachments ? [...this.ephemeral.attachments] : []
 
       for (const file of filesList) {
-        const fileUrl = URL.createObjectURL(file)
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
+        const fileUrl = URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
@@ -763,13 +781,25 @@ export default ({
           img.src = fileUrl
 
           // Determine if the image needs lossy-compression before upload.
-          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE
+          attachment.needsImageCompression = fileSize > IMAGE_ATTACHMENT_MAX_SIZE &&
+            // Skip the compression for GIF images so they don't lose animation.
+            file.type !== 'image/gif'
         }
 
         list.push(attachment)
       }
 
+      // sort the list so that the media types come first in the array. (videos -> images -> non-media files)
+      const priority = {
+        [CHATROOM_ATTACHMENT_TYPES.VIDEO]: 0,
+        [CHATROOM_ATTACHMENT_TYPES.IMAGE]: 1,
+        [CHATROOM_ATTACHMENT_TYPES.AUDIO]: 2,
+        [CHATROOM_ATTACHMENT_TYPES.NON_MEDIA]: 2
+      }
+      list.sort((a, b) => priority[getFileType(a.mimeType)] - priority[getFileType(b.mimeType)])
+
       this.ephemeral.attachments = list
+      this.$refs.fileAttachmentInputEl.value = '' // clear the input value
     },
     clearAllAttachments () {
       this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
@@ -806,7 +836,7 @@ export default ({
       switch (mentionType) {
         case 'member': {
           const all = makeMentionFromUsername('').all
-          const availableMentions = Array.from(this.members)
+          const availableMentions = Array.from(this.activeMembers)
           // NOTE: '@all' mention should only be needed when the members are more than 3
           if (availableMentions.length > 2) {
             availableMentions.push({
@@ -965,6 +995,7 @@ export default ({
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
   border-radius: 0.25rem;
+  min-width: 0;
 
   &-textarea,
   &-mask {
@@ -1208,8 +1239,10 @@ export default ({
   justify-content: center;
   align-items: center;
   border-radius: 0.25rem;
+  padding: 0;
+  min-height: 0;
 
-  &.isActive {
+  &.isActive:not(:disabled) {
     background: $primary_0;
 
     &:hover {
@@ -1237,7 +1270,7 @@ export default ({
 
   .c-send-actions {
     button.is-icon:focus,
-    button.is-icon:hover {
+    button.is-icon:hover:not(:disabled) {
       color: $general_0 !important;
     }
   }

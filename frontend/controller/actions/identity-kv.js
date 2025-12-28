@@ -33,6 +33,17 @@ const checkAndAugmentNames = async (currentNames: string[]) => {
   return union(unconflictedNames, recheckedNames)
 }
 
+const updateKVPreferences = (updater: Function) => {
+  return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
+    const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
+      return [updater(currentPreferences), etag]
+    }
+
+    const data = getUpdatedPreferences()[0]
+    await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+  })
+}
+
 sbp('okTurtles.events/on', ONLINE, () => {
   if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
     return
@@ -241,18 +252,16 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
-        const hideDistributionBanner = {
-          ...(currentPreferences.hideDistributionBanner || {}),
-          [contractID]: hidden
-        }
-        return [{ ...currentPreferences, hideDistributionBanner }, etag]
+    return updateKVPreferences((currentPreferences) => {
+      const hideDistributionBanner = {
+        ...(currentPreferences.hideDistributionBanner || {}),
+        [contractID]: hidden
       }
-
-      const data = getUpdatedPreferences()[0]
-      await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+      return { ...currentPreferences, hideDistributionBanner }
     })
+  },
+  'gi.actions/identity/kv/updatePreference': ({ key, value }: { key: string, value: any }) => {
+    return updateKVPreferences((currentPreferences) => ({ ...currentPreferences, [key]: value }))
   },
   // Notifications
   'gi.actions/identity/kv/fetchNotificationStatus': async () => {

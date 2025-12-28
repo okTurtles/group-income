@@ -19,11 +19,11 @@ form(@submit.prevent='')
   banner-scoped(ref='errBanner')
 
   .buttons.c-buttons-container
-    template(v-if='enableSubmitBtn')
-      button-submit.is-small(v-if='isChangeMode' data-test='submit' type='button' @click='changeVotes')
+    template
+      button-submit.is-small(v-if='isChangeMode' data-test='submit' type='button' @click='changeVotes' :disabled='!enableSubmitBtn')
         i18n Change vote
 
-      button-submit.is-small(v-else type='button' data-test='submit' @click='submitVotes')
+      button-submit.is-small(v-else type='button' data-test='submit' @click='submitVotes' :disabled='!enableSubmitBtn')
         i18n Submit
 
     i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='onCancelClick') Cancel
@@ -159,11 +159,24 @@ export default ({
 
 .c-poll-title {
   margin-bottom: 1.375rem;
+  word-break: break-word;
 }
 
 .c-poll-option {
   &-value {
+    display: flex;
+    align-items: flex-start;
     white-space: normal;
+    word-break: break-word;
+
+    &::before,
+    &::after {
+      flex-shrink: 0;
+    }
+
+    &::before {
+      transform: translateY(4px);
+    }
   }
 
   &:not(:first-of-type) {

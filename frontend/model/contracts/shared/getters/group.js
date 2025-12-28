@@ -123,8 +123,13 @@ export default ({
   groupMincomeAmount (state, getters) {
     return getters.groupMincomeAmountForGroup(getters.currentGroupState)
   },
+  groupMincomeCurrencyForGroup (state, getters) {
+    return state => {
+      return getters.groupSettingsForGroup(state).mincomeCurrency
+    }
+  },
   groupMincomeCurrency (state, getters) {
-    return getters.groupSettings.mincomeCurrency
+    return getters.groupMincomeCurrencyForGroup(getters.currentGroupState)
   },
   // Oldest period key first.
   groupSortedPeriodKeysForGroup (state, getters) {
@@ -252,12 +257,14 @@ export default ({
       return getters.groupSettings.proposals?.[proposalType]
     }
   },
-  groupCurrency (state, getters) {
-    const mincomeCurrency = getters.groupMincomeCurrency
-    return mincomeCurrency && currencies[mincomeCurrency]
+  groupCurrencyForGroup (state, getters) {
+    return state => {
+      const mincomeCurrency = getters.groupMincomeCurrencyForGroup(state)
+      return mincomeCurrency && currencies[mincomeCurrency]
+    }
   },
-  groupMincomeFormatted (state, getters) {
-    return getters.withGroupCurrency?.(getters.groupMincomeAmount)
+  groupCurrency (state, getters) {
+    return getters.groupCurrencyForGroup(getters.currentGroupState)
   },
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
@@ -279,13 +286,6 @@ export default ({
   },
   groupTotalPledgeAmount (state, getters): number {
     return getters.currentGroupState.totalPledgeAmount || 0
-  },
-  withGroupCurrency (state, getters) {
-    // TODO: If this group has no defined mincome currency, not even a default one like
-    //       USD, then calling this function is probably an error which should be reported.
-    //       Just make sure the UI doesn't break if an exception is thrown, since this is
-    //       bound to the UI in some location.
-    return getters.groupCurrency?.displayWithCurrency
   },
   groupChatRooms (state, getters) {
     return getters.currentGroupState.chatRooms

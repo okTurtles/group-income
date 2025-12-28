@@ -6,6 +6,7 @@ message-base(
   @retry='$emit("retry")'
   @reply-message-clicked='$emit("scroll-to-replying-message")'
   @message-edited='editMessage'
+  @message-is-editing='triggerEdit'
   @pin-to-channel='$emit("pin-to-channel")'
   @unpin-from-channel='$emit("unpin-from-channel")'
   @delete-attachment='deleteAttachment'
@@ -43,6 +44,8 @@ export default ({
       required: false
     },
     edited: Boolean,
+    isEditing: Boolean,
+    uploadingAttachments: Boolean,
     variant: {
       type: String,
       validator (value) {
@@ -59,9 +62,13 @@ export default ({
     isSameSender: Boolean,
     isGroupCreator: Boolean,
     isMsgSender: Boolean,
+    isFocused: Boolean,
     replyingMessage: String
   },
   methods: {
+    triggerEdit (status) {
+      this.$emit('message-is-editing', status)
+    },
     editMessage (newMessage) {
       this.$emit('edit-message', newMessage)
     },

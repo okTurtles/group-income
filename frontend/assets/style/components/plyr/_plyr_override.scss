@@ -1,0 +1,131 @@
+@use "../../variables" as v;
+@use "./plyr_default";
+
+$phone_narrow: 430px;
+
+.plyr_override {
+  // To override default colors of the player, refer to this css color variable table:
+  // https://www.npmjs.com/package/plyr#customizing-the-css
+  --plyr-color-main: var(--primary_0);
+
+  // style-overrides for the video player.
+  &.for-video {
+    aspect-ratio: 16/9;
+
+    .plyr {
+      aspect-ratio: inherit;
+      max-height: 100%;
+    }
+
+    // NOTE: When the screen size is narrow, there is an issue where the play/resume button and the progress-bar UI becomes too small
+    //       (Even smaller than the volume-control UI). To get more space for the play progess bar, we hide some buttons that are not absolutely essential
+    //       when compared to others.
+    //       (eg.) Essential -  play button / progress-bar / mute button / volume-control / full-screen button.
+    //             Not absolutely essential - play-speed control menu / PIP (picture-in-picture) button.
+    .plyr__controls {
+      button.plyr__control {
+        min-height: unset;
+
+        &:focus {
+          box-shadow: none;
+        }
+      }
+
+      @include v.until($phone_narrow) {
+        .plyr__controls__item[data-plyr="pip"],
+        .plyr__controls__item.plyr__menu {
+          display: none;
+        }
+      }
+
+      @include v.phone {
+        input[data-plyr="volume"] {
+          min-width: 0;
+          max-width: 60px;
+        }
+      }
+    }
+
+    &.for-video-modal.is-taller-than-wider {
+      // If the video is taller than wider, no need to squash it into 16/9 ratio container.
+      height: 100%;
+
+      .plyr {
+        height: 100%;
+      }
+    }
+  }
+
+  // style-overrides for the audio player.
+  &.for-audio {
+    --plyr-color-main: var(--primary_0);
+    --plyr-audio-controls-background: var(--general_2);
+    --plyr-audio-control-color: var(--text_0);
+    --plyr-audio-control-color-hover: var(--background_0);
+    --plyr-audio-control-background-hover: var(--text_0);
+    --plyr-audio-progress-buffered-background: var(--general_0);
+    --plyr-range-thumb-background: var(--background_0);
+    --plyr-range-thumb-shadow: 0 0 0 1px var(--general_0);
+    --plyr-tooltip-background: var(--text_0);
+    --plyr-tooltip-color: var(--background_0);
+    --plyr-menu-background: var(--general_0);
+
+    .plyr__controls {
+      border-radius: v.$radius-large;
+      border: 1px solid var(--general_2);
+      padding: 0;
+
+      button.plyr__control {
+        // override default button style in the app
+        min-height: unset;
+
+        &:focus {
+          background-color: var(--plyr-audio-control-color);
+          color: var(--plyr-audio-control-color-hover);
+          box-shadow: none;
+        }
+      }
+
+      .plyr__controls__item.plyr__menu {
+        display: none;
+      }
+
+      input[data-plyr="volume"] {
+        min-width: 0;
+        max-width: 60px;
+      }
+
+      @include v.from ($phone_narrow) {
+        .plyr__controls__item.plyr__menu {
+          display: block;
+        }
+      }
+
+      @include v.from (v.$tablet) {
+        input[data-plyr="volume"] {
+          max-width: 70px;
+        }
+      }
+    }
+
+    .plyr__menu__container .plyr__control[role=menuitemradio]:hover::before {
+      background-color: var(--general_2);
+    }
+
+    &.hide-default-play-button {
+      [data-plyr="play"] {
+        display: none;
+      }
+    }
+
+    &.is-unplayable {
+      .plyr__progress {
+        pointer-events: none;
+      }
+
+      .plyr__controls__item.plyr__time {
+        display: none;
+      }
+    }
+  }
+}

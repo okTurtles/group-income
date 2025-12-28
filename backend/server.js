@@ -106,22 +106,6 @@ const creditsWorker = process.env.CHELONIA_ARCHIVE_MODE || !CREDITS_WORKER_TASK_
   ? undefined
   : createWorker(join(__dirname, 'creditsWorker.js'))
 
-// Node.js version 18 and lower don't have global.crypto defined
-// by default
-if (
-  !('crypto' in global) &&
-  typeof require === 'function'
-) {
-  const { webcrypto } = require('crypto')
-  if (webcrypto) {
-    Object.defineProperty(global, 'crypto', {
-      'enumerable': true,
-      'configurable': true,
-      'get': () => webcrypto
-    })
-  }
-}
-
 const { CONTRACTS_VERSION, GI_VERSION } = process.env
 
 const securityHeaders = {

@@ -1,5 +1,9 @@
 'use strict'
+
+import sbp from '@sbp/sbp'
 import VueRouter from 'vue-router'
+import { L } from '@common/common.js'
+import { withCurrency } from '@model/contracts/shared/currencies.js'
 
 export function logExceptNavigationDuplicated (err: Object) {
   err.name !== 'NavigationDuplicated' && console.error(err)
@@ -24,28 +28,52 @@ export const showNavMixin = {
   }
 }
 
-export function validateURL (url: string): Object {
-  const pathOnlyRegExp = /^\/[^\s]*$/
-
+export function validateURL (url: string, acceptPathOnly: boolean = false): Object {
   const response: any = {
     isValid: false,
     isHttpValid: false,
     isMailtoValid: false,
+    isExternalLink: false,
     url: null
   }
 
-  if (pathOnlyRegExp.test(url)) {
-    // If the passed URL is a path only string such as '/app/chatroom/chatID', we consider it as a valid URL.
-    response.isValid = true
-    response.isHttpValid = true
-    response.url = url
-    return response
+  if (acceptPathOnly) {
+    const regExpMap = {
+      pathOnly: /^\/[^\s]*$/, // eg. /app/chatroom/chatID, /to-a-path,
+      slugPiece: /^[a-zA-Z0-9_-]+$/, // eg. contributions, payments, dashboard, abc_123
+      slugPieceWithLeadingSharp: /^#[a-zA-Z0-9_-]+$/, // eg. #hello, #user_123, #valid-ID
+      queryString: /^\?(?:[a-zA-Z0-9_-]+=[^&]*)(?:&[a-zA-Z0-9_-]+=[^&]*)*$/ // eg. ?modal=ModalName&userId=abcd123
+    }
+
+    if (regExpMap.pathOnly.test(url) && url.startsWith('/app')) {
+      // Case 1. if the url is a path starts with '/app', take it as a route to an in-app page.
+      const path = url.split('/app')[1]
+      url = location.origin + '/app' + path
+    } else if (regExpMap.queryString.test(url)) {
+      // Case 2. if the url is a query string, add it to the current url origin so it can be handled by the app router.
+      url = location.origin + '/app' + url
+    } else if (regExpMap.slugPiece.test(url)) {
+      // Case 3. if the passed url is a string that does not contain any URL-related special characters(/, #, etc.), add a leading slash to it.
+      response.isValid = true
+      response.url = `/${url}`
+
+      return response
+    } else if (regExpMap.pathOnly.test(url) || regExpMap.slugPieceWithLeadingSharp.test(url)) {
+      // Case 4. Rest of the valid cases:
+      // 1. a path-only string that is not an in-app route eg. /to-a-path
+      // 2. anchor-link eg. #hello, #user_123, #valid-ID
+      response.isValid = true
+      response.url = url
+
+      return response
+    }
   }
 
   try {
     const objURL = new URL(url)
     response.isValid = true
     response.isHttpValid = objURL.protocol === 'http:' || objURL.protocol === 'https:'
+    response.isExternalLink = response.isHttpValid && objURL.origin !== window.location.origin
     response.isMailtoValid = objURL.protocol === 'mailto:'
     response.url = objURL
   } catch (err) {
@@ -53,4 +81,23 @@ export function validateURL (url: string): Object {
   }
 
   return response
+}
+
+export function withGroupCurrency (amount: number): string {
+  // Group currency code.
+  const code = sbp('state/vuex/getters').groupSettings?.mincomeCurrency
+  // https://github.com/okTurtles/group-income/pull/2923#discussion_r2456246025
+  if (code === undefined) {
+    console.error('missing currency')
+    return L('ERROR: missing currency')
+  }
+  return withCurrency(code, amount)
+}
+
+export async function fetchNews (): Promise<Array<Object>> {
+  const response = await fetch('https://groupincome.org/news.json')
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return await response.json()
 }

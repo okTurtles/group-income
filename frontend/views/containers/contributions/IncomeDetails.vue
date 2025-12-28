@@ -79,6 +79,7 @@ import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import PaymentMethods from './PaymentMethods.vue'
 import NonMonetaryPledges from './NonMonetaryPledges.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -117,13 +118,15 @@ export default ({
       'groupSettings',
       'groupProfile',
       'groupProfiles',
-      'groupMincomeFormatted',
+      'groupMincomeAmount',
       'groupMincomeSymbolWithCode',
       'ourIdentityContractId',
-      'withGroupCurrency',
       'ourGroupProfile',
       'usernameFromID'
     ]),
+    groupMincomeFormatted () {
+      return withGroupCurrency(this.groupMincomeAmount)
+    },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },
@@ -265,7 +268,7 @@ export default ({
           [L('Your income must be lower than the group mincome')]: function (value) {
             return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
           },
-          [L('Pledge amount cannot exceed {max}', { max: this.withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) })]: function (value) {
+          [L('Pledge amount cannot exceed {max}', { max: withGroupCurrency(GROUP_MAX_PLEDGE_AMOUNT) })]: function (value) {
             return !this.isPledging || normalizeCurrency(value) < GROUP_MAX_PLEDGE_AMOUNT
           }
         }

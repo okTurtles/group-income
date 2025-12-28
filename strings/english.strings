@@ -708,7 +708,7 @@
 /* views/containers/group-settings/roles-and-permissions/permissions-utils.js */
 "Delegate permissions" = "Delegate permissions";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue */
 "Delete" = "Delete";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
@@ -798,10 +798,10 @@
 /* views/containers/payments/SendPaymentsViaLightning.vue */
 "Donation fee" = "Donation fee";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue, views/containers/user-settings/AppLogs.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/chatroom/image-viewer/PreviewImageArea.vue, views/containers/user-settings/AppLogs.vue */
 "Download" = "Download";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Download ({size})" = "Download ({size})";
 
 /* views/containers/payments/RecordPaymentsList.vue */
@@ -875,6 +875,9 @@
 
 /* main.js */
 "Error while setting up service worker: {err}" = "Error while setting up service worker: {err}";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Expand" = "Expand";
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
@@ -1010,6 +1013,9 @@
 
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
+
+/* views/containers/global-dashboard/NewsAndUpdates.vue */
+"Failed to load news: {reportError}" = "Failed to load news: {reportError}";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to log in: {reportError}" = "Failed to log in: {reportError}";
@@ -1389,6 +1395,9 @@
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
+/* views/containers/chatroom/MessageNotification.vue */
+"Kicked a member {displayName}" = "Kicked a member {displayName}";
+
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "LEAVE {GROUP_NAME}";
 
@@ -1414,6 +1423,9 @@
 "Leaving the group when you're the the admin will delete it and all its associated data." = "Leaving the group when you're the the admin will delete it and all its associated data.";
 
 /* views/containers/chatroom/MessageNotification.vue */
+"Left" = "Left";
+
+/* views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Left {title}";
 
 /* model/notifications/templates.js */
@@ -1437,13 +1449,16 @@
 /* views/containers/chatroom/SendArea.vue */
 "Link" = "Link";
 
-/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/AppLogs.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Load video" = "Load video";
+
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/chatroom/ChatMain.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/AppLogs.vue */
 "Loading" = "Loading";
 
 /* main.js */
 "Loading events from server..." = "Loading events from server...";
 
-/* views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
 "Loading..." = "Loading...";
 
 /* views/containers/user-settings/AppLogs.vue */
@@ -1637,6 +1652,9 @@
 
 /* views/containers/payments/PaymentsPagination.vue */
 "Next page" = "Next page";
+
+/* views/containers/chatroom/video-viewer/VideoViewerModal.vue */
+"Next video" = "Next video";
 
 /* controller/app/group.js, views/components/modal/Prompt.vue */
 "No" = "No";
@@ -1968,6 +1986,9 @@
 /* views/containers/payments/PaymentsPagination.vue */
 "Previous page" = "Previous page";
 
+/* views/containers/chatroom/video-viewer/VideoViewerModal.vue */
+"Previous video" = "Previous video";
+
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
 
@@ -2154,7 +2175,7 @@
 /* views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
 "Remove Member" = "Remove Member";
 
-/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue */
 "Remove attachment" = "Remove attachment";
 
 /* views/containers/proposals/AddMembers.vue */
@@ -2211,7 +2232,7 @@
 /* views/containers/user-settings/Troubleshooting.vue */
 "Reset Group Income" = "Reset Group Income";
 
-/* views/containers/chatroom/MessageActions.vue, views/containers/loading-error/ErrorPage.vue */
+/* views/containers/chatroom/MessageActions.vue, views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/ErrorPage.vue */
 "Retry" = "Retry";
 
 /* views/containers/contributions/ContributionsWidget.vue */
@@ -2240,6 +2261,12 @@
 
 /* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
 "Save changes" = "Save changes";
+
+/* views/containers/chatroom/file-attachment/SendAreaAttachmentsGallery.vue */
+"Scroll left" = "Scroll left";
+
+/* views/containers/chatroom/file-attachment/SendAreaAttachmentsGallery.vue */
+"Scroll right" = "Scroll right";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Search";

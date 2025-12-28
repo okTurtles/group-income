@@ -595,7 +595,8 @@ sbp('chelonia/defineContract', {
                 groupID: contractID,
                 creatorID: innerSigningContractID,
                 paymentHash: data.paymentHash,
-                amount: getters.withGroupCurrency(payment.data.amount)
+                amount: payment.data.amount,
+                currency: getters.groupSettings.mincomeCurrency
               })
             }
           }
@@ -905,7 +906,7 @@ sbp('chelonia/defineContract', {
 
           const { profiles = {} } = state
 
-          if (profiles[innerSigningContractID].status !== PROFILE_STATUS.ACTIVE) {
+          if (profiles[innerSigningContractID]?.status !== PROFILE_STATUS.ACTIVE) {
             return
           }
 
@@ -914,11 +915,7 @@ sbp('chelonia/defineContract', {
           // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
           // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
           if (innerSigningContractID === userID) {
-          // we're the person who just accepted the group invite
-            // Add the group's CSK to our identity contract so that we can receive
-            // DMs.
-            await sbp('gi.actions/identity/addJoinDirectMessageKey', userID, contractID, 'csk')
-
+            // we're the person who just accepted the group invite
             const generalChatRoomId = state.generalChatRoomId
             if (generalChatRoomId) {
               // Join the general chatroom

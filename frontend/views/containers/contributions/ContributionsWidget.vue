@@ -55,7 +55,7 @@ import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
-import currencies from '@model/contracts/shared/currencies.js'
+import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
@@ -83,9 +83,6 @@ export default ({
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
     },
-    withCurrency () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
-    },
     copy () {
       const {
         givingMonetary,
@@ -106,16 +103,16 @@ export default ({
         copy.monetary = {
           title: L('You need {br_}{amount}', {
             ...LTags(),
-            amount: this.withCurrency(receivingMonetary.needed)
+            amount: this.withGroupCurrency(receivingMonetary.needed)
           }),
           status: L('You will receive {amount}.', {
-            amount: this.withCurrency(receivingMonetary.total)
+            amount: this.withGroupCurrency(receivingMonetary.total)
           })
         }
       } else if (givingMonetary) {
         const copyMonetaryTitle = (amount) => L('You are pledging {br_}{amount}', {
           ...LTags(),
-          amount: this.withCurrency(amount)
+          amount: this.withGroupCurrency(amount)
         })
 
         if (givingMonetary.pledged > 0) {
@@ -131,7 +128,7 @@ export default ({
           copy.monetary = {
             title: copyMonetaryTitle(givingMonetary.pledged),
             status: L('{amount} will be used.', {
-              amount: this.withCurrency(givingMonetary.total)
+              amount: this.withGroupCurrency(givingMonetary.total)
             })
           }
         } else {
@@ -190,6 +187,7 @@ export default ({
     }
   },
   methods: {
+    withGroupCurrency,
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     },
