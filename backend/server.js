@@ -668,3 +668,34 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
     // Repeat every 1 hour
   }, 1 * 60 * 60 * 1000)
 })()
+
+if (process.env.NODE_ENV === 'development') {
+  ;(async () => {
+    const imports = {
+      sbp,
+      chel: await import('@chelonia/lib'),
+      chelfunctions: await import('@chelonia/lib/functions'),
+      database: await import('./database.js'),
+      pubsub: await import('@chelonia/lib/pubsub'),
+      pushlib: await import('./push.js'),
+      zkpp: await import('./zkppSalt.js')
+    }
+    // Starts a REPL server TCP socket on the given port.
+    require('node:net').createServer((socket) => {
+      const repl = require('repl').start({
+        prompt: `socket ${socket.remoteAddress}:${socket.remotePort}> `,
+        input: socket,
+        output: socket,
+        terminal: true,
+        useGlobal: true
+      })
+      repl.on('exit', () => {
+        socket.end()
+      })
+      // $FlowIgnore
+      repl.context.socket = socket
+      // $FlowIgnore
+      Object.assign(repl.context, imports)
+    }).listen(1337)
+  })()
+}
