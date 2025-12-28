@@ -1366,7 +1366,10 @@ sbp('chelonia/defineContract', {
         const current = state.settings?.distributionDate
         const currentPeriodPayments = getters.groupPeriodPayments[current] ? cloneDeep(getters.groupPeriodPayments[current]) : null
 
-        if (comparePeriodStamps(periodTo, current) > 0) {
+        if (!current && periodTo) {
+          updateGroupStreaks({ state, getters })
+          state.settings.distributionDate = periodTo
+        } else if (current && comparePeriodStamps(periodTo, current) > 0) {
           // There can be one or more distribution periods without any payments (empty-periods) between current 'distributionDate'
           // and the distribution period to update to. (eg. No one in the group hasn't logged in for a long time)
           // 'paymentsByPeriod' object in the group state and the payment-related group streaks need to be populated/updated accordingly for those empty periods in this case.
@@ -1413,9 +1416,11 @@ sbp('chelonia/defineContract', {
 
             if (groupHasReceivers && allPledgerIds.length > 0) {
               const missedInCurrentPeriod = (memberID) => {
+                // 'lastAdjustedDistribution' is null if no payments have been made in the period.
+                // If there has been payments made in the period, 'lastAdjustedDistribution' is an array of todo paymentitems that have not been completed yet.
                 return !currentPeriodPayments ||
-                  !currentPeriodPayments?.lastAdjustedDistribution ||
-                  currentPeriodPayments.lastAdjustedDistribution?.some(entry => entry.fromMemberID === memberID)
+                  !currentPeriodPayments.lastAdjustedDistribution ||
+                  currentPeriodPayments.lastAdjustedDistribution.some(entry => entry.fromMemberID === memberID)
               }
 
               for (const pledgerId of allPledgerIds) {
