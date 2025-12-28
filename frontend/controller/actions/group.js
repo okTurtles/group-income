@@ -646,8 +646,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/shareNewKeys': async (contractID: string, newKeys) => {
-    const rootState = sbp('chelonia/rootState')
-    const state = rootState[contractID]
+    const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // $FlowFixMe
@@ -655,28 +654,42 @@ export default (sbp('sbp/selectors/register', {
       Object.entries(state.profiles)
         .filter(([_, p]) => (p: any).status === PROFILE_STATUS.ACTIVE)
         .map(async ([pContractID]) => {
-          const CEKid = await sbp('chelonia/contract/currentKeyIdByName', rootState[pContractID], 'cek')
-          if (!CEKid) {
-            console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
+          const retained = await sbp('chelonia/contract/retain', pContractID, { ephemeral: true }).then(() => [true], (e) => [false, e])
+          if (!retained[0]) {
+            const e = retained[1]
+            if (e?.name === 'ChelErrorResourceGone') {
+              console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: ${pContractID} does not exist`, e)
+            } else {
+              console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Error retaining ${pContractID}`, e)
+            }
             return
           }
-          return [
-            'chelonia/out/keyShare',
-            {
-              data: encryptedOutgoingData(contractID, mainCEKid, {
-                contractID,
-                foreignContractID: pContractID,
-                // $FlowFixMe
-                keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-                  id: newId,
-                  meta: {
-                    private: {
-                      content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
+          try {
+            const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
+            if (!CEKid) {
+              console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
+              return
+            }
+            return [
+              'chelonia/out/keyShare',
+              {
+                data: encryptedOutgoingData(contractID, mainCEKid, {
+                  contractID,
+                  foreignContractID: pContractID,
+                  // $FlowFixMe
+                  keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+                    id: newId,
+                    meta: {
+                      private: {
+                        content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
+                      }
                     }
-                  }
-                }))
-              })
-            }]
+                  }))
+                })
+              }]
+          } finally {
+            await sbp('chelonia/contract/release', pContractID, { ephemeral: true })
+          }
         })).then((keys) => [keys.filter(Boolean)])
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {

@@ -444,7 +444,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
 
     // Scroll up a few times to ensure we reach the top
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       cy.getByDT('conversationWrapper').scrollTo('top')
       // Wait period is due to debouncing in onChatScroll
       // eslint-disable-next-line cypress/no-unnecessary-waiting
