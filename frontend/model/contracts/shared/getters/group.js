@@ -114,6 +114,16 @@ export default ({
   groupProfiles (state, getters) {
     return getters.groupProfilesForGroup(getters.currentGroupState)
   },
+  groupPledgerProfiles (state, getters) {
+    return Object.fromEntries(Object.entries(getters.groupProfiles).filter(
+      ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'pledgeAmount' && profile.pledgeAmount > 0
+    ))
+  },
+  groupReceiverProfiles (state, getters) {
+    return Object.fromEntries(Object.entries(getters.groupProfiles).filter(
+      ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'incomeAmount'
+    ))
+  },
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate
   },
@@ -250,7 +260,9 @@ export default ({
     return getters.groupMembersCount >= 3
   },
   groupDistributionStarted (state, getters) {
-    return (currentDate: string) => currentDate >= getters.groupSettings?.distributionDate
+    return (currentDate: string) => {
+      return new Date(currentDate) >= new Date(getters.groupSettings?.distributionDate)
+    }
   },
   groupProposalSettings (state, getters) {
     return (proposalType = PROPOSAL_GENERIC) => {
