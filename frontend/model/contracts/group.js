@@ -1630,8 +1630,13 @@ sbp('chelonia/defineContract', {
 
         // Using the group's CEK allows for everyone to have an overview of the
         // membership (which is also part of the group contract). This way,
-        // non-members can remove members when they leave the group
-        const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+        // non-members can remove members when they leave the group.
+        // The call to 'chelonia/contract/foreignKeysByContractID' is to find
+        // the group CEK that's currently valid in the chatroom contract (in
+        // case key rotation is out of sync)
+        const encryptionKeyId = (await sbp('chelonia/contract/foreignKeysByContractID', chatRoomID, contractID))?.filter((id) => {
+          return state._vm.authorizedKeys[id].name === 'cek'
+        })
 
         sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
