@@ -19,7 +19,8 @@
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
     "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js",
+    "dev:ios": "npx cap sync ios && npx cap open ios"
   },
   "eslintConfig": {
     "root": true,
@@ -116,6 +117,7 @@
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
     "@capacitor/core": "8.0.0",
+    "@capacitor/dialog": "8.0.0",
     "@capacitor/ios": "8.0.0",
     "@chelonia/cli": "3.0.0",
     "@chelonia/crypto": "1.0.1",

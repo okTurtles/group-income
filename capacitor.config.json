@@ -2,5 +2,9 @@
   "appId": "app.groupincome",
   "appName": "group-income",
   "webDir": "dist",
-  "plugins": {}
+  "plugins": {},
+  "server": {
+    "url": "http://localhost:3000",
+    "cleartext": true
+  }
 }
