@@ -1333,7 +1333,7 @@ sbp('chelonia/defineContract', {
 
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
-        if (Math.random() > 0.5 && innerSigningContractID === identityContractID) {
+        if (innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, identityContractID, memberID, height)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
