@@ -1333,7 +1333,7 @@ sbp('chelonia/defineContract', {
 
         // If we added someone to the chatroom (including ourselves), we issue
         // the relevant action to the chatroom contract
-        if (innerSigningContractID === identityContractID) {
+        if (Math.random() > 0.5 && innerSigningContractID === identityContractID) {
           sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/joinGroupChatrooms', contractID, data.chatRoomID, identityContractID, memberID, height)).catch((e) => {
             console.warn(`[gi.contracts/group/joinChatRoom/sideEffect] Error adding member to group chatroom for ${contractID}`, { e, data })
           })
@@ -1605,6 +1605,7 @@ sbp('chelonia/defineContract', {
         return
       }
 
+      // eslint-disable-next-line no-lone-blocks
       {
         // We need to be subscribed to the chatroom before writing to it, and
         // also because of the following check (hasKeysToPerformOperation),
@@ -1634,14 +1635,10 @@ sbp('chelonia/defineContract', {
         // The call to 'chelonia/contract/foreignKeysByContractID' is to find
         // the group CEK that's currently valid in the chatroom contract (in
         // case key rotation is out of sync)
-        const encryptionKeyId = (await sbp('chelonia/contract/foreignKeysByContractID', chatRoomID, contractID))?.filter((id) => {
-          return state._vm.authorizedKeys[id].name === 'cek'
-        })
-
         sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
-          encryptionKeyId
+          encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return

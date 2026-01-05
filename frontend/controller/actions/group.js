@@ -804,6 +804,15 @@ export default (sbp('sbp/selectors/register', {
 
     return sendMessage({
       ...omit(params, ['options', 'action'])
+    }).catch(e => {
+      if (memberID !== identityContractID || e.name !== 'GIGroupAlreadyJoinedError') throw e
+
+      const state = sbp('chelonia/contract/state', params.contractID)
+      return sbp('gi.actions/chatroom/join', {
+        contractID: chatRoomID,
+        data: {},
+        encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
+      })
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
