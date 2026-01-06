@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_REGISTERED } from '@chelonia/lib/events'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import Vue from 'vue'
@@ -313,6 +313,37 @@ store.watch(function (state, getters) {
   reactiveDate.date = new Date()
 })
 
+store.watch(
+  (state, getters) => getters.currentPaymentPeriod,
+  (newPeriod, oldPeriod) => {
+    // This watcher is for automatically syncing 'currentPaymentPeriod' with 'groupSettings.distributionDate'.
+    // Before bringing this logic in, how the app updates the state related to group distribution period was,
+    // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
+    // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
+    // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
+
+    // Note: if this code gets called when we're in the period before the 1st distribution
+    //       period, then the distributionDate will get updated to the previous distribution date
+    //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
+    //       before it should.
+    // NOTE: `distributionStarted` allows distributionDate can be updated automatically ONLY after
+    //       the distribution is started. And it fixes the issue mentioned above.
+
+    const distributionStarted = store.getters.groupDistributionStarted(reactiveDate.date)
+
+    if (distributionStarted) {
+      const distributionDateInSettings = store.getters.groupSettings.distributionDate
+
+      if (newPeriod && distributionDateInSettings && (newPeriod !== distributionDateInSettings)) {
+        sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+          .catch((e) => {
+            console.error('getters.currentPaymentPeriod watcher Error calling updateDistributionDate', e)
+          })
+      }
+    }
+  }
+)
+
 // save the state each time it's modified, but debounce it to avoid saving too frequently
 let logoutInProgress = false
 const debouncedSave = debounce(() => !logoutInProgress && sbp('state/vuex/save'), 500)
@@ -336,40 +367,5 @@ if (process.env.NODE_ENV === 'development') {
     store.commit('noop')
   }, 500))
 }
-
-sbp('okTurtles.events/on', CONTRACT_REGISTERED, async (contract) => {
-  const { contracts: { manifests } } = await sbp('chelonia/config')
-  // check to make sure we're only loading the getters for the version of the contract
-  // that this build of GI was compiled with
-  if (manifests[contract.name] === contract.manifest) {
-    if (contract.name === 'gi.contracts/group') {
-      store.watch(
-        (state, getters) => getters.currentPaymentPeriod,
-        (newPeriod, oldPeriod) => {
-          // This watcher is for automatically syncing 'currentPaymentPeriod' with 'groupSettings.distributionDate'.
-          // Before bringing this logic in, how the app updates the state related to group distribution period was,
-          // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
-          // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
-          // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
-
-          // Note: if this code gets called when we're in the period before the 1st distribution
-          //       period, then the distributionDate will get updated to the previous distribution date
-          //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
-          //       before it should.
-          // NOTE: `distributionStarted` allows distributionDate can be updated automatically ONLY after
-          //       the distribution is started. And it fixes the issue mentioned above.
-          const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          const distributionStarted = store.getters.groupDistributionStarted(reactiveDate.date)
-          if (oldPeriod && newPeriod && distributionStarted && (newPeriod !== distributionDateInSettings)) {
-            sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
-              .catch((e) => {
-                console.error('okTurtles.events/on CONTRACT_REGISTERED Error calling updateDistributionDate', e)
-              })
-          }
-        }
-      )
-    }
-  }
-})
 
 export default store
