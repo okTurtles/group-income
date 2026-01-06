@@ -113,7 +113,7 @@ function clearOldPayments ({ contractID, state, getters }) {
   )
 }
 
-function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, getters }) {
+function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, getters, cleanup = true }) {
   const period = periodTo || getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ period, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
@@ -122,7 +122,9 @@ function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, gett
   if (previousPeriod in state.paymentsByPeriod) {
     state.paymentsByPeriod[previousPeriod].end = period
   }
-  clearOldPayments({ contractID, state, getters })
+  if (cleanup) {
+    clearOldPayments({ contractID, state, getters })
+  }
   return periodPayments
 }
 
@@ -1392,7 +1394,11 @@ sbp('chelonia/defineContract', {
           ]
 
           allPeriodsToUpdate.forEach((period, index) => {
-            initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters })
+            const isLast = index === allPeriodsToUpdate.length - 1
+            // initFetchPeriodPayments calls clearOldPayments() inside, which in turn pushes a side-effect to archive payments.
+            // This can be excessive and problematic if there is multiple periods to update (eg. The group has been inactive for a long time.)
+            // Using 'cleanup' flag here to call clearOldPayments() only for the last period.
+            initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters, cleanup: isLast })
           })
 
           // There can be two cases:
@@ -1426,7 +1432,7 @@ sbp('chelonia/defineContract', {
               for (const pledgerId of allPledgerIds) {
                 const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
                 // Two cases here:
-                // (Ther term 'current period' means the distribution period the group setting 'currently has'. So it could be months ago if there are many empty periods.)
+                // (The term 'current period' means the distribution period the group setting 'currently has'. So it could be months ago if there are many empty periods.)
                 // 1) If the pledger has missed payments in the current period - their current missed-payments streaks so far + 1 (for the current period) + the number of empty periods.
                 // 2) If the pledger has completed  payments in the current period - No need to consider the member's missed payments streak so far. Just add the number of empty periods.
                 state.streaks.missedPayments[pledgerId] = missedInCurrentPeriod(pledgerId)

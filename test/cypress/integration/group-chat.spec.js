@@ -269,6 +269,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
+    // This is put here to fix a frequent heisenbug happening after cy.giSwitchChannel() below, which never happens when running test locally.
+    // The intention is to give it a bit of extra time for async operations to complete in relatively unstable environment like CI.
     cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.log('Users can update details(name, description) of the channels they created.')
