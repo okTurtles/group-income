@@ -33,7 +33,7 @@ export default {
           {
             section: 'access-and-rules',
             items: [
-              { id: 'invite-links', name: L('Invite links') },
+              { id: 'invite-links', name: L('Invite Links') },
               { id: 'roles-and-permissions', name: L('Roles & Permissions') },
               { id: 'voting-rules', name: L('Voting Rules') }
             ]

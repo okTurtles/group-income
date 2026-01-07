@@ -58,7 +58,11 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-group-settings-main {
-  margin-top: 3rem;
+  margin-top: 1rem;
+
+  @include desktop {
+    margin-top: 3rem;
+  }
 }
 
 .c-menu-block {
