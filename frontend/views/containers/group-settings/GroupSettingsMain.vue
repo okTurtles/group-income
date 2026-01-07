@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-group-settings-main
   .c-menu-block(
-    v-for='block in config.menus'
+    v-for='block in groupSettingsMenus'
     :key='block.section'
   )
     legend.tab-legend(v-if='getSectionLegend(block.section)')
@@ -25,6 +25,7 @@ import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'GroupSettingsMain',
+  inject: ['groupSettingsMenus'],
   data () {
     return {
       config: {
@@ -32,30 +33,7 @@ export default {
           'general': { text: L('General'), icon: 'cog' },
           'access-and-rules': { text: L('Access & Rules'), icon: 'vote-yea' },
           'danger-zone': { text: L('Danger Zone'), icon: 'exclamation-triangle' }
-        },
-        menus: [
-          {
-            section: 'general',
-            items: [
-              { id: 'group-profile', name: L('Group Profile') },
-              { id: 'group-currency', name: L('Group Currency') }
-            ]
-          },
-          {
-            section: 'access-and-rules',
-            items: [
-              { id: 'invite-links', name: L('Invite links') },
-              { id: 'roles-and-permissions', name: L('Roles & Permissions') },
-              { id: 'voting-rules', name: L('Voting Rules') }
-            ]
-          },
-          {
-            section: 'danger-zone',
-            items: [
-              { id: 'leave-group', name: L('Leave Group') }
-            ]
-          }
-        ]
+        }
       }
     }
   },
