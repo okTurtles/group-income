@@ -4,28 +4,35 @@ page.c-page
   template(#description='')
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
-  .c-content-container
-    .c-section(
-      v-for='block in config.menus'
-      :key='block.section'
-    )
-      legend.tab-legend(v-if='getSectionLegend(block.section)')
-        i(:class='["icon-" + getSectionIcon(block.section), "legend-icon"]')
-        span.legend-text {{ getSectionLegend(block.section) }}
+  transition(:name='transitionName' mode='out-in' appear)
+    .c-tab-content-container(v-if='tabId')
+      div Current tab ID: {{ tabId }}
+      button.link(@click.stop='backToMenu') Back to menu
 
-      menu.c-menu
-        button.is-unstyled.menu-tile(
-          v-for='item in block.items'
-          :key='item.id'
-          :class='{ "is-style-danger": item.id === "leave-group" }'
-        )
-          .tile-text {{ item.name }}
-          i.icon-chevron-right.tile-icon
+    .c-settings-menu-container(v-else)
+      .c-menu-block(
+        v-for='block in config.menus'
+        :key='block.section'
+      )
+        legend.tab-legend(v-if='getSectionLegend(block.section)')
+          i(:class='["icon-" + getSectionIcon(block.section), "legend-icon"]')
+          span.legend-text {{ getSectionLegend(block.section) }}
+
+        menu.c-menu
+          button.is-unstyled.menu-tile(
+            v-for='item in block.items'
+            :key='item.id'
+            :class='{ "is-style-danger": item.id === "leave-group" }'
+            @click.stop='navigateToTab(item.id)'
+          )
+            .tile-text {{ item.name }}
+            i.icon-chevron-right.tile-icon
 </template>
 
 <script>
 import Page from '@components/Page.vue'
 import { L } from '@common/common.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'GroupSettings',
@@ -65,12 +72,29 @@ export default {
       }
     }
   },
+  computed: {
+    tabId () {
+      return this.$route.params.tabId || ''
+    },
+    transitionName () {
+      return this.tabId ? 'slide-prev' : 'slide-next'
+    }
+  },
   methods: {
     getSectionLegend (section) {
       return this.config.legends[section]?.text || ''
     },
     getSectionIcon (section) {
       return this.config.legends[section]?.icon || ''
+    },
+    navigateToTab (tabId) {
+      this.$router.push({
+        name: 'GroupSettingsNewTab',
+        params: { tabId }
+      }).catch(logExceptNavigationDuplicated)
+    },
+    backToMenu () {
+      this.$router.push({ name: 'GroupSettingsNew' }).catch(logExceptNavigationDuplicated)
     }
   }
 }
@@ -92,11 +116,12 @@ export default {
   }
 }
 
-.c-content-container {
+.c-settings-menu-container,
+.c-tab-content-container {
   margin-top: 3rem;
 }
 
-.c-section {
+.c-menu-block {
   width: 100%;
   margin-bottom: 2.5rem;
 }

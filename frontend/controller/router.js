@@ -168,6 +168,13 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
+      path: '/group-settings-new/:tabId',
+      component: lazyGroupSettingsNew,
+      name: 'GroupSettingsNewTab',
+      meta: { title: L('Group Settings') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
+    },
+    {
       path: '/join',
       name: Join.name,
       component: Join,
