@@ -9,12 +9,15 @@ page.c-page
       v-for='block in config.menus'
       :key='block.section'
     )
-      legend.tab-legend(v-if='getSectionLegend(block.section)') {{ getSectionLegend(block.section) }}
+      legend.tab-legend(v-if='getSectionLegend(block.section)')
+        i(:class='["icon-" + getSectionIcon(block.section), "legend-icon"]')
+        span.legend-text {{ getSectionLegend(block.section) }}
 
       menu.c-menu
         button.is-unstyled.menu-tile(
           v-for='item in block.items'
           :key='item.id'
+          :class='{ "is-style-danger": item.id === "leave-group" }'
         )
           .tile-text {{ item.name }}
           i.icon-chevron-right.tile-icon
@@ -32,9 +35,9 @@ export default {
   data () {
     return {
       config: {
-        sectionLegends: {
-          'general': L('General'),
-          'access-and-rules': L('Access & Rules')
+        legends: {
+          'general': { text: L('General'), icon: 'cog' },
+          'access-and-rules': { text: L('Access & Rules'), icon: 'vote-yea' }
         },
         menus: [
           {
@@ -47,9 +50,9 @@ export default {
           {
             section: 'access-and-rules',
             items: [
-              { id: 'voting-rules', name: L('Voting Rules') },
               { id: 'invite-links', name: L('Invite links') },
-              { id: 'roles-and-permissions', name: L('Roles & Permissions') }
+              { id: 'roles-and-permissions', name: L('Roles & Permissions') },
+              { id: 'voting-rules', name: L('Voting Rules') }
             ]
           },
           {
@@ -64,7 +67,10 @@ export default {
   },
   methods: {
     getSectionLegend (section) {
-      return this.config.sectionLegends[section]
+      return this.config.legends[section]?.text || ''
+    },
+    getSectionIcon (section) {
+      return this.config.legends[section]?.icon || ''
     }
   }
 }
@@ -100,6 +106,12 @@ export default {
   font-size: $size_5;
   text-transform: uppercase;
   margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+
+  .legend-icon {
+    display: inline-block;
+    margin-right: 0.375rem;
+  }
 
   @include desktop {
     letter-spacing: 0.1px;

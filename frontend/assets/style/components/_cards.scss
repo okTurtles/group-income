@@ -2,6 +2,7 @@
 
 $card-radius: 0.625rem;
 $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+$danger_2_opacity: rgba(94, 58, 56, 0.5);
 
 .card {
   padding: 1.5rem 1rem;
@@ -21,6 +22,10 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   @include desktop {
     padding: 2.5rem;
   }
+}
+
+.is-dark-theme .card {
+  box-shadow: none;
 }
 
 .card-header {
@@ -76,12 +81,12 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   align-items: flex-start;
   padding: 0.75rem 1rem;
   width: 100%;
-  background-color: $background_0;
-  box-shadow: $card-shadow;
+  background-color: $general_1;
   border-radius: $card-radius;
-  border: 1px solid rgba(0, 0, 0, 0);
-  color: $text_1;
+  border: 1px solid $general_1;
+  color: $text_0;
   column-gap: 0.5rem;
+  transition: border-color 120ms ease-out;
 
   @include tablet {
     padding: 0.875rem 1.25rem;
@@ -93,23 +98,71 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   }
 
   .tile-icon {
-    color: inherit;
+    color: $text_1;
     flex-shrink: 0;
+    transition: color 120ms ease-out;
   }
 
   &:hover,
   &:focus,
   &:focus-within {
+    border: 1px solid $general_0;
     background-color: $general_1;
-    box-shadow: $card-shadow;
-    border: 1px solid $text_1;
-    color: $text_0;
-  }
-}
 
-.is-dark-theme {
-  .card,
-  .menu-tile {
-    box-shadow: none;
+    .tile-icon {
+      color: inherit;
+    }
+  }
+
+  .is-dark-theme & {
+    background-color: $general_1;
+    border: 1px solid $general_1;
+
+    .tile-icon {
+      color: $general_0;
+    }
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      border: 1px solid $general_0;
+      background-color: $general_1;
+    }
+  }
+
+  &.is-style-danger {
+    background-color: $danger_2;
+    border: 1px solid $danger_2;
+
+    .tile-text {
+      color: $danger_0;
+    }
+
+    .tile-icon {
+      color: $danger_1;
+    }
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      border: 1px solid $danger_1;
+      background-color: $danger_2;
+
+      .tile-icon {
+        color: $danger_0;
+      }
+    }
+  }
+
+  .is-dark-theme &.is-style-danger {
+    background-color: $danger_2_opacity;
+    border: 1px solid $danger_2_opacity;
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      background-color: $danger_2_opacity;
+      border: 1px solid $danger_1;
+    }
   }
 }
