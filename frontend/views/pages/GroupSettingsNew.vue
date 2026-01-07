@@ -4,7 +4,7 @@ page.c-page
   template(#description='')
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
-  transition(:name='transitionName' mode='out-in' appear)
+  transition(:name='transitionName' mode='out-in')
     component(:is='componentToRender' :tabId='tabId')
 </template>
 

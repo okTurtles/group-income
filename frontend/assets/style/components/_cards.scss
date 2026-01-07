@@ -86,7 +86,7 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
   border: 1px solid $general_1;
   color: $text_0;
   column-gap: 0.5rem;
-  transition: border-color 120ms ease-out;
+  transition: all 120ms ease-out;
 
   @include tablet {
     padding: 0.875rem 1.25rem;
@@ -118,10 +118,6 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
     background-color: $general_1;
     border: 1px solid $general_1;
 
-    .tile-icon {
-      color: $general_0;
-    }
-
     &:hover,
     &:focus,
     &:focus-within {
@@ -131,38 +127,21 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
   }
 
   &.is-style-danger {
-    background-color: $danger_2;
-    border: 1px solid $danger_2;
+    background-color: rgba(0, 0, 0, 0);
+    color: $danger_0;
+    border: 1px solid currentColor;
 
-    .tile-text {
-      color: $danger_0;
-    }
-
+    .tile-text,
     .tile-icon {
-      color: $danger_1;
+      color: inherit;
     }
 
     &:hover,
     &:focus,
     &:focus-within {
-      border: 1px solid $danger_1;
-      background-color: $danger_2;
-
-      .tile-icon {
-        color: $danger_0;
-      }
-    }
-  }
-
-  .is-dark-theme &.is-style-danger {
-    background-color: $danger_2_opacity;
-    border: 1px solid $danger_2_opacity;
-
-    &:hover,
-    &:focus,
-    &:focus-within {
-      background-color: $danger_2_opacity;
-      border: 1px solid $danger_1;
+      background-color: rgba(0, 0, 0, 0);
+      border: 1px solid currentColor;
+      color: $danger_0_1;
     }
   }
 }

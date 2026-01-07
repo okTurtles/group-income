@@ -30,7 +30,8 @@ export default {
       config: {
         legends: {
           'general': { text: L('General'), icon: 'cog' },
-          'access-and-rules': { text: L('Access & Rules'), icon: 'vote-yea' }
+          'access-and-rules': { text: L('Access & Rules'), icon: 'vote-yea' },
+          'danger-zone': { text: L('Danger Zone'), icon: 'exclamation-triangle' }
         },
         menus: [
           {
@@ -49,7 +50,7 @@ export default {
             ]
           },
           {
-            section: 'misc',
+            section: 'danger-zone',
             items: [
               { id: 'leave-group', name: L('Leave Group') }
             ]
