@@ -11,13 +11,13 @@ page.c-page
     )
       legend.tab-legend(v-if='getSectionLegend(block.section)') {{ getSectionLegend(block.section) }}
 
-      menu
-        li.c-settings-menu-item(
+      menu.c-menu
+        button.is-unstyled.menu-tile(
           v-for='item in block.items'
           :key='item.id'
         )
-          button.is-unstyled.c-menu-item-name {{ item.name }}
-          i.icon-chevron-right
+          .tile-text {{ item.name }}
+          i.icon-chevron-right.tile-icon
 </template>
 
 <script>
@@ -90,14 +90,27 @@ export default {
   margin-top: 3rem;
 }
 
+.c-section {
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
 .tab-legend {
   color: $text_1;
   font-size: $size_5;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 
   @include desktop {
     letter-spacing: 0.1px;
   }
+}
+
+.c-menu {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.75rem;
+  width: 100%;
 }
 </style>

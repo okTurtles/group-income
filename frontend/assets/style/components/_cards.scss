@@ -1,10 +1,13 @@
 @use "../variables" as *;
 
+$card-radius: 0.625rem;
+$card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+
 .card {
   padding: 1.5rem 1rem;
   background-color: $background_0;
-  border-radius: 0.625rem; // 10px
-  box-shadow: 0 0 20px rgba(219, 219, 219, 0.6); // $general_0
+  border-radius: $card-radius;
+  box-shadow: $card-shadow;
   margin-bottom: 1rem;
 
   &:last-child {
@@ -18,10 +21,6 @@
   @include desktop {
     padding: 2.5rem;
   }
-}
-
-.is-dark-theme .card {
-  box-shadow: none;
 }
 
 .card-header {
@@ -69,5 +68,48 @@
 
   &.isActive {
     border-color: $primary_0;
+  }
+}
+
+.menu-tile {
+  display: flex;
+  align-items: flex-start;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  background-color: $background_0;
+  box-shadow: $card-shadow;
+  border-radius: $card-radius;
+  border: 1px solid rgba(0, 0, 0, 0);
+  color: $text_1;
+  column-gap: 0.5rem;
+
+  @include tablet {
+    padding: 0.875rem 1.25rem;
+  }
+
+  .tile-text {
+    display: block;
+    flex-grow: 1;
+  }
+
+  .tile-icon {
+    color: inherit;
+    flex-shrink: 0;
+  }
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: $general_1;
+    box-shadow: $card-shadow;
+    border: 1px solid $text_1;
+    color: $text_0;
+  }
+}
+
+.is-dark-theme {
+  .card,
+  .menu-tile {
+    box-shadow: none;
   }
 }
