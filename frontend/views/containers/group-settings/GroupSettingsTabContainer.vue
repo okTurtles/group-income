@@ -13,6 +13,8 @@
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import UpdateGroupProfile from './UpdateGroupProfile.vue'
 import UpdateGroupCurrency from './UpdateGroupCurrency.vue'
+import InvitationsTable from './InvitationsTable.vue'
+import RolesAndPermissions from './roles-and-permissions/RolesAndPermissions.vue'
 
 export default {
   name: 'GroupSettingsTabContainer',
@@ -23,7 +25,9 @@ export default {
     componentToRender () {
       return ({
         'group-profile': UpdateGroupProfile,
-        'group-currency': UpdateGroupCurrency
+        'group-currency': UpdateGroupCurrency,
+        'roles-and-permissions': RolesAndPermissions,
+        'invite-links': InvitationsTable
       })[this.tabId]
     }
   },

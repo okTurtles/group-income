@@ -4,41 +4,6 @@ page.c-page
   template(#description='')
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section
-    form(@submit.prevent='')
-      label.field
-        .c-current-label-container
-          i18n.label Default currency
-          .c-coming-soon
-            i.icon-info-circle
-            i18n Feature coming soon
-
-        .selectbox.c-currency
-          select.select(
-            name='mincomeCurrency'
-            v-model='form.mincomeCurrency'
-            :disabled='true'
-          )
-            option(
-              v-for='(currency, code) in currencies'
-              :value='code'
-              :key='code'
-            ) {{ currency.symbolWithCode }}
-
-        i18n.helper This is the currency that will be displayed for every member of the group, across the platform.
-
-      banner-scoped(ref='formMsg' data-test='formMsg' :allowA='true')
-
-      .buttons
-        button-submit.is-success(
-          @click='saveSettings'
-          data-test='saveBtn'
-        ) {{ L('Save changes') }}
-
-  roles-and-permissions
-
-  invitations-table
-
   page-section(
     v-if='configurePublicChannel'
     :title='L("Public Channels")'
@@ -92,51 +57,33 @@ page.c-page
 
 <script>
 import sbp from '@sbp/sbp'
-import { validationMixin } from 'vuelidate'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
-import currencies from '@model/contracts/shared/currencies.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
-import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
-import RolesAndPermissions from '@containers/group-settings/roles-and-permissions/RolesAndPermissions.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupSettings',
-  mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     AvatarUpload,
     BannerScoped,
     ButtonSubmit,
     GroupRulesSettings,
-    InvitationsTable,
-    RolesAndPermissions,
-    CharLengthIndicator,
     Page,
     PageSection
   },
   data () {
-    const { mincomeCurrency } = this.$store.getters.groupSettings
     return {
-      form: {
-        mincomeCurrency
-      },
       allowPublicChannels: false
     }
   },
   computed: {
     ...mapState(['currentGroupId']),
     ...mapGetters(['currentGroupOwnerID', 'groupSettings', 'ourIdentityContractId']),
-    currencies () {
-      return currencies
-    },
     isGroupAdmin () {
       // TODO: https://github.com/okTurtles/group-income/issues/202
       return false
@@ -153,40 +100,11 @@ export default ({
     openProposal (component) {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
-    async saveSettings (e) {
-      if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger(L('The form is invalid.'))
-        return
-      }
-      const attrs = {}
-
-      for (const key in this.form) {
-        if (this.form[key] !== this.groupSettings[key]) {
-          attrs[key] = this.form[key]
-        }
-      }
-
-      try {
-        await sbp('gi.actions/group/updateSettings', {
-          contractID: this.currentGroupId, data: attrs
-        })
-        this.$refs.formMsg.success(L('Your changes were saved!'))
-      } catch (e) {
-        console.error('GroupSettings saveSettings() error:', e)
-        this.$refs.formMsg.danger(e.message)
-      }
-    },
     handleLeaveGroup () {
       if (this.currentGroupOwnerID === this.ourIdentityContractId) {
         this.openProposal('GroupDeletionModal')
       } else {
         this.openProposal('GroupLeaveModal')
-      }
-    },
-    refreshForm () {
-      const { mincomeCurrency } = this.groupSettings
-      this.form = {
-        mincomeCurrency
       }
     },
     async togglePublicChannelCreateAllownace (v) {
@@ -201,12 +119,6 @@ export default ({
         this.allowPublicChannels = checked
       }
     }
-  },
-  watch: {
-    groupSettings () {
-      // re-fetch the latest correct values whenever the user switches groups
-      this.refreshForm()
-    }
   }
 }: Object)
 </script>
@@ -216,28 +128,6 @@ export default ({
 
 .c-page ::v-deep .p-main {
   max-width: 37rem;
-}
-
-.c-current-label-container {
-  display: flex;
-  align-items: flex-end;
-  column-gap: 0.5rem;
-
-  .c-coming-soon {
-    color: $text_1;
-    margin-bottom: 0.5rem;
-    user-select: none;
-
-    i {
-      margin-right: 0.2rem;
-    }
-  }
-}
-
-.c-currency {
-  @include tablet {
-    width: 50%;
-  }
 }
 
 .p-descritpion {
