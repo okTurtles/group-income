@@ -6,20 +6,26 @@
       i18n Back to menu
 
   .c-tab-content-wrapper
-    update-group-profile
+    component(:is='componentToRender')
 </template>
 
 <script>
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import UpdateGroupProfile from './UpdateGroupProfile.vue'
+import UpdateGroupCurrency from './UpdateGroupCurrency.vue'
 
 export default {
   name: 'GroupSettingsTabContainer',
-  components: {
-    UpdateGroupProfile
-  },
   props: {
     tabId: String
+  },
+  computed: {
+    componentToRender () {
+      return ({
+        'group-profile': UpdateGroupProfile,
+        'group-currency': UpdateGroupCurrency
+      })[this.tabId]
+    }
   },
   methods: {
     backToMenu () {
@@ -41,7 +47,7 @@ export default {
 }
 
 .c-back-btn-container {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .c-back-btn {
