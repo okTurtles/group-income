@@ -97,20 +97,22 @@ export default {
   opacity: 0;
 }
 
-.show-main-menu-enter {
-  transform: translateX(-35%);
-}
-
-.show-main-menu-leave-to {
-  transform: translateX(35%);
-}
-
-.show-tab-content-enter {
-  transform: translateX(35%);
-}
-
+.show-main-menu-enter,
 .show-tab-content-leave-to {
   transform: translateX(-35%);
+
+  @include from($tablet) {
+    transform: translateX(-20%);
+  }
+}
+
+.show-tab-content-enter,
+.show-main-menu-leave-to {
+  transform: translateX(35%);
+
+  @include from($tablet) {
+    transform: translateX(20%);
+  }
 }
 
 .show-main-menu-enter-active,

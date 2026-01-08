@@ -5,7 +5,6 @@ page.c-page
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
   page-section(
-    v-if='configurePublicChannel'
     :title='L("Public Channels")'
   )
     .c-subcontent(data-test='allowPublicChannels')
@@ -19,9 +18,6 @@ page.c-page
           :checked='allowPublicChannels'
           @change='togglePublicChannelCreateAllownace'
         )
-
-  page-section(:title='L("Voting System")')
-    group-rules-settings
 
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
@@ -62,7 +58,6 @@ import { OPEN_MODAL } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
-import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
@@ -72,7 +67,6 @@ export default ({
     AvatarUpload,
     BannerScoped,
     ButtonSubmit,
-    GroupRulesSettings,
     Page,
     PageSection
   },
