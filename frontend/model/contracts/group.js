@@ -1681,6 +1681,7 @@ sbp('chelonia/defineContract', {
         return
       }
 
+      // eslint-disable-next-line no-lone-blocks
       {
         // We need to be subscribed to the chatroom before writing to it, and
         // also because of the following check (hasKeysToPerformOperation),
@@ -1706,13 +1707,14 @@ sbp('chelonia/defineContract', {
 
         // Using the group's CEK allows for everyone to have an overview of the
         // membership (which is also part of the group contract). This way,
-        // non-members can remove members when they leave the group
-        const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
-
+        // non-members can remove members when they leave the group.
+        // The call to 'chelonia/contract/foreignKeysByContractID' is to find
+        // the group CEK that's currently valid in the chatroom contract (in
+        // case key rotation is out of sync)
         sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
-          encryptionKeyId
+          encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
