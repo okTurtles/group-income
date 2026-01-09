@@ -134,9 +134,3 @@ export default ({
   }
 }: Object)
 </script>
-
-<style lang="scss" scoped>
-.modal-card-body {
-  padding-top: 0;
-}
-</style>
