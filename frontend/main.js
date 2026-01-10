@@ -34,7 +34,7 @@ import './views/utils/i18n.js'
 import './views/utils/ui.js'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
-import './views/utils/capacitor/dialog.js'
+import './views/utils/capacitor/utils.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import hasAllRequiredFeatures from '@model/featureCheck.js'
 import Vue from 'vue'

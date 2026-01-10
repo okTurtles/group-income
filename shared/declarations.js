@@ -79,6 +79,7 @@ declare module 'bottleneck' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/decrypt' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encodings' { declare module.exports: any }
 declare module '@apeleghq/rfc8188/encrypt' { declare module.exports: any }
+declare module '@capacitor/dialog' { declare module.exports: any }
 
 declare module '@chelonia/crypto' {
     declare type Key = {
