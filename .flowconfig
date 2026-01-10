@@ -27,6 +27,7 @@
 .*/test/backend.js
 .*/test/.*
 .*/test/frontend.js
+.*/src-tauri/.*
 .*.test.js
 
 [libs]
