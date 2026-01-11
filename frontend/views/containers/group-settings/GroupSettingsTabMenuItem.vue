@@ -1,12 +1,12 @@
 <template lang='pug'>
 button.is-unstyled.menu-tile.c-menu-tile(
   @click.stop='navigateToTab'
-  :class='"is-style-" + variant'
+  :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
 )
   .tile-text {{ menuName }}
   .tile-info-segment(v-if='$slots.info')
     slot(name='info')
-  i.icon-chevron-right.tile-icon
+  i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
 </template>
 
 <script>
@@ -24,6 +24,17 @@ export default {
       type: String,
       default: 'default',
       validator: v => ['default', 'danger'].includes(v)
+    },
+    isExpandable: {
+      type: Boolean,
+      default: false
+    }
+  },
+  data () {
+    return {
+      ephemeral: {
+        expanded: false
+      }
     }
   },
   computed: {

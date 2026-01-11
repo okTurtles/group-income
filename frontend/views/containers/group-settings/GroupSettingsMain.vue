@@ -7,7 +7,7 @@
 
     menu.c-menu
       MenuItem(tabId='group-profile')
-      MenuItem(tabId='group-currency')
+      MenuItem(tabId='group-currency' :isExpandable='true')
         template(#info='')
           span.has-text-1 {{ groupCurrency }}
   .c-menu-block
@@ -34,7 +34,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
-import { getPercentFromDecimal, RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
+import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import { L } from '@common/common.js'
 
 export default {
@@ -55,7 +55,9 @@ export default {
       const threshold = proposalSettings.ruleSettings[proposalSettings.rule].threshold
       return proposalSettings.rule === RULE_PERCENTAGE
         ? getPercentFromDecimal(threshold) + '%'
-        : L('{threshold} disagreements', { threshold })
+        : proposalSettings.rule === RULE_DISAGREEMENT
+          ? L('{threshold} disagreements', { threshold })
+          : threshold
     }
   }
 }
