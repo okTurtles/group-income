@@ -1,55 +1,40 @@
 <template lang='pug'>
 .c-group-settings-main
-  .c-menu-block(
-    v-for='block in groupSettingsMenus'
-    :key='block.section'
-  )
-    legend.tab-legend(v-if='getSectionLegend(block.section)')
-      i(:class='["icon-" + getSectionIcon(block.section), "legend-icon"]')
-      span.legend-text {{ getSectionLegend(block.section) }}
+  .c-menu-block
+    legend.tab-legend
+      i.icon-cog.legend-icon
+      i18n.legend-text General
 
     menu.c-menu
-      button.is-unstyled.menu-tile(
-        v-for='item in block.items'
-        :key='item.id'
-        :class='{ "is-style-danger": item.id === "leave-group" }'
-        @click.stop='navigateToTab(item.id)'
-      )
-        .tile-text {{ item.name }}
-        i.icon-chevron-right.tile-icon
+      MenuItem(tabId='group-profile')
+      MenuItem(tabId='group-currency')
+
+  .c-menu-block
+    legend.tab-legend
+      i.icon-vote-yea.legend-icon
+      i18n.legend-text Access & Rules
+
+    menu.c-menu
+      MenuItem(tabId='invite-links')
+      MenuItem(tabId='roles-and-permissions')
+      MenuItem(tabId='voting-rules')
+
+  .c-menu-block
+    legend.tab-legend
+      i.icon-exclamation-triangle.legend-icon
+      i18n.legend-text Danger Zone
+
+    menu.c-menu
+      MenuItem(tabId='leave-group' variant='danger')
 </template>
 
 <script>
-import { L } from '@common/common.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 
 export default {
   name: 'GroupSettingsMain',
-  inject: ['groupSettingsMenus'],
-  data () {
-    return {
-      config: {
-        legends: {
-          'general': { text: L('General'), icon: 'cog' },
-          'access-and-rules': { text: L('Access & Rules'), icon: 'vote-yea' },
-          'danger-zone': { text: L('Danger Zone'), icon: 'exclamation-triangle' }
-        }
-      }
-    }
-  },
-  methods: {
-    getSectionLegend (section) {
-      return this.config.legends[section]?.text || ''
-    },
-    getSectionIcon (section) {
-      return this.config.legends[section]?.icon || ''
-    },
-    navigateToTab (tabId) {
-      this.$router.push({
-        name: 'GroupSettingsNewTab',
-        params: { tabId }
-      }).catch(logExceptNavigationDuplicated)
-    }
+  components: {
+    MenuItem: GroupSettingsTabMenuItem
   }
 }
 </script>

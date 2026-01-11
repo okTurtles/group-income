@@ -44,7 +44,16 @@ export default {
               { id: 'leave-group', name: L('Leave Group') }
             ]
           }
-        ]
+        ],
+        tabNamesMap: {
+          'main': L('Group Settings'),
+          'group-profile': L('Group Profile'),
+          'group-currency': L('Group Currency'),
+          'invite-links': L('Invite Links'),
+          'roles-and-permissions': L('Roles & Permissions'),
+          'voting-rules': L('Voting Rules'),
+          'leave-group': L('Leave Group')
+        }
       }
     }
   },
@@ -52,23 +61,23 @@ export default {
     tabId () {
       return this.$route.params.tabId || 'main'
     },
+    isMainTab () {
+      return this.tabId === 'main'
+    },
     componentToRender () {
-      return this.tabId === 'main' ? GroupSettingsMain : GroupSettingsTabContainer
+      return this.isMainTab ? GroupSettingsMain : GroupSettingsTabContainer
     },
     transitionName () {
-      return this.tabId === 'main' ? 'show-main-menu' : 'show-tab-content'
+      return this.isMainTab ? 'show-main-menu' : 'show-tab-content'
     },
     pageTitle () {
-      const allMenuItems = this.config.menus.flatMap(menu => menu.items)
-
-      return this.tabId === 'main'
-        ? L('Group Settings')
-        : allMenuItems.find(item => item.id === this.tabId)?.name || L('Group Settings')
+      return this.config.tabNamesMap[this.tabId] || this.config.tabNamesMap.main
     }
   },
   provide () {
     return {
-      groupSettingsMenus: this.config.menus
+      groupSettingsMenus: this.config.menus,
+      groupSettingsTabNames: this.config.tabNamesMap
     }
   }
 }

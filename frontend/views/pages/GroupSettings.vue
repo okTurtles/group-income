@@ -19,20 +19,6 @@ page.c-page
           @change='togglePublicChannelCreateAllownace'
         )
 
-  page-section(:title='L("Leave Group")')
-    i18n.has-text-1(
-      tag='p'
-      :args='LTags("b")'
-    ) This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
-
-    .buttons
-      i18n.is-danger.is-outlined(
-        tag='button'
-        ref='leave'
-        @click='handleLeaveGroup'
-        data-test='leaveModalBtn'
-      ) Leave group
-
   //- | ::: Delete Group won't be implemented for prototype.
   //- page-section(:title='L("Delete Group")')
   //-   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
@@ -54,7 +40,6 @@ page.c-page
 <script>
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
@@ -77,7 +62,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentGroupOwnerID', 'groupSettings', 'ourIdentityContractId']),
+    ...mapGetters(['groupSettings']),
     isGroupAdmin () {
       // TODO: https://github.com/okTurtles/group-income/issues/202
       return false
@@ -91,16 +76,6 @@ export default ({
     this.allowPublicChannels = this.groupSettings.allowPublicChannels
   },
   methods: {
-    openProposal (component) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, component)
-    },
-    handleLeaveGroup () {
-      if (this.currentGroupOwnerID === this.ourIdentityContractId) {
-        this.openProposal('GroupDeletionModal')
-      } else {
-        this.openProposal('GroupLeaveModal')
-      }
-    },
     async togglePublicChannelCreateAllownace (v) {
       const checked = v.target.checked
       if (this.groupSettings.allowPublicChannels !== checked) {
