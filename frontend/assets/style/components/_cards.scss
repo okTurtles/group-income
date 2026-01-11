@@ -90,11 +90,18 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
 
   @include tablet {
     padding: 0.875rem 1.25rem;
+    column-gap: 0.75rem;
   }
 
   .tile-text {
     display: block;
     flex-grow: 1;
+  }
+
+  .tile-info-segment {
+    display: block;
+    flex-shrink: 0;
+    text-align: right;
   }
 
   .tile-icon {

@@ -1,9 +1,11 @@
 <template lang='pug'>
 button.is-unstyled.menu-tile.c-menu-tile(
-  @click.stop='navigateToTab(item.id)'
+  @click.stop='navigateToTab'
   :class='"is-style-" + variant'
 )
   .tile-text {{ menuName }}
+  .tile-info-segment(v-if='$slots.info')
+    slot(name='info')
   i.icon-chevron-right.tile-icon
 </template>
 
@@ -30,10 +32,10 @@ export default {
     }
   },
   methods: {
-    navigateToTab (tabId) {
+    navigateToTab () {
       this.$router.push({
         name: 'GroupSettingsNewTab',
-        params: { tabId }
+        params: { tabId: this.tabId }
       }).catch(logExceptNavigationDuplicated)
     }
   }

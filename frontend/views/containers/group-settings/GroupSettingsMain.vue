@@ -8,7 +8,8 @@
     menu.c-menu
       MenuItem(tabId='group-profile')
       MenuItem(tabId='group-currency')
-
+        template(#info='')
+          span.has-text-1 {{ groupCurrency }}
   .c-menu-block
     legend.tab-legend
       i.icon-vote-yea.legend-icon
@@ -18,6 +19,8 @@
       MenuItem(tabId='invite-links')
       MenuItem(tabId='roles-and-permissions')
       MenuItem(tabId='voting-rules')
+        template(#info='')
+          span.has-text-1 {{ currentVotingThreshold }}
 
   .c-menu-block
     legend.tab-legend
@@ -29,12 +32,31 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
+import { getPercentFromDecimal, RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
+import { L } from '@common/common.js'
 
 export default {
   name: 'GroupSettingsMain',
   components: {
     MenuItem: GroupSettingsTabMenuItem
+  },
+  computed: {
+    ...mapGetters([
+      'groupSettings',
+      'groupProposalSettings'
+    ]),
+    groupCurrency () {
+      return this.groupSettings.mincomeCurrency
+    },
+    currentVotingThreshold () {
+      const proposalSettings = this.groupProposalSettings()
+      const threshold = proposalSettings.ruleSettings[proposalSettings.rule].threshold
+      return proposalSettings.rule === RULE_PERCENTAGE
+        ? getPercentFromDecimal(threshold) + '%'
+        : L('{threshold} disagreements', { threshold })
+    }
   }
 }
 </script>
