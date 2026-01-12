@@ -16,13 +16,12 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapState, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'LeaveGroup',
   computed: {
-    ...mapState(['currentGroupId']),
     ...mapGetters(['currentGroupOwnerID', 'ourIdentityContractId'])
   },
   methods: {

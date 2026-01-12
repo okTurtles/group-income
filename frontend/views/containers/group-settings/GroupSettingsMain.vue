@@ -48,7 +48,8 @@
       i18n.legend-text Danger Zone
 
     menu.c-menu
-      MenuItem(tabId='leave-group' variant='danger')
+      MenuItem(v-if='groupMembersCount > 1' tabId='leave-group' variant='danger')
+      MenuItem(v-else tabId='delete-group' variant='danger')
 </template>
 
 <script>
@@ -77,7 +78,8 @@ export default {
     ]),
     ...mapGetters([
       'groupSettings',
-      'groupProposalSettings'
+      'groupProposalSettings',
+      'groupMembersCount'
     ]),
     isGroupAdmin () {
       // TODO: https://github.com/okTurtles/group-income/issues/202

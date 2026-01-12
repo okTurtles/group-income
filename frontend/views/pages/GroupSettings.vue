@@ -22,29 +22,6 @@ export default {
   data () {
     return {
       config: {
-        menus: [
-          {
-            section: 'general',
-            items: [
-              { id: 'group-profile', name: L('Group Profile') },
-              { id: 'group-currency', name: L('Group Currency') }
-            ]
-          },
-          {
-            section: 'access-and-rules',
-            items: [
-              { id: 'invite-links', name: L('Invite Links') },
-              { id: 'roles-and-permissions', name: L('Roles & Permissions') },
-              { id: 'voting-rules', name: L('Voting Rules') }
-            ]
-          },
-          {
-            section: 'danger-zone',
-            items: [
-              { id: 'leave-group', name: L('Leave Group') }
-            ]
-          }
-        ],
         tabNamesMap: {
           'public-channels': L('Public Channels'),
           'main': L('Group Settings'),
@@ -53,7 +30,8 @@ export default {
           'invite-links': L('Invite Links'),
           'roles-and-permissions': L('Roles & Permissions'),
           'voting-rules': L('Voting Rules'),
-          'leave-group': L('Leave Group')
+          'leave-group': L('Leave Group'),
+          'delete-group': L('Delete Group')
         }
       }
     }
@@ -77,7 +55,6 @@ export default {
   },
   provide () {
     return {
-      groupSettingsMenus: this.config.menus,
       groupSettingsTabNames: this.config.tabNamesMap
     }
   }

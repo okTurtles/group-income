@@ -17,6 +17,7 @@ import InvitationsTable from './InvitationsTable.vue'
 import RolesAndPermissions from './roles-and-permissions/RolesAndPermissions.vue'
 import GroupRulesSettings from './GroupRulesSettings.vue'
 import LeaveGroup from './LeaveGroup.vue'
+import DeleteGroup from './DeleteGroup.vue'
 
 export default {
   name: 'GroupSettingsTabContainer',
@@ -31,7 +32,8 @@ export default {
         'roles-and-permissions': RolesAndPermissions,
         'invite-links': InvitationsTable,
         'voting-rules': GroupRulesSettings,
-        'leave-group': LeaveGroup
+        'leave-group': LeaveGroup,
+        'delete-group': DeleteGroup
       })[this.tabId]
     }
   },
