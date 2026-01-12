@@ -12,7 +12,7 @@ modal-template.is-prompt(
     .buttons.is-centered.c-buttons
       i18n.is-outlined(tag='button' type='button' @click.stop='refresh') Refresh
 
-    i18n.c-logout-msg(:args='{ sp_: `<span class="link">`, _sp: "</span>"}' @click='onLogoutMsgClick') If refreshing doesn't work, try {sp_}logging out{_sp}.
+    i18n.c-logout-msg(:args='{ btn_: `<button class="link" type="button">`, _btn: "</button>"}' @click='onLogoutMsgClick') If refreshing doesn't work, try {btn_}logging out{_btn}.
 </template>
 
 <script>
@@ -41,7 +41,7 @@ export default {
       window.location.reload()
     },
     onLogoutMsgClick (e) {
-      if (e.target.matches('span.link')) {
+      if (e.target.closest('button.link')) {
         this.$refs.modal.close()
         sbp('gi.app/identity/_private/logout', this.errorState)
       }

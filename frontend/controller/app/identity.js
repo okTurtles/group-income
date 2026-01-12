@@ -474,7 +474,7 @@ export default (sbp('sbp/selectors/register', {
               primaryButton: L('Log out'),
               // secondaryButton: L('No'),
               primaryButtonStyle: 'primary', // make primary button 'filled' style
-              isContentCentered: !forkedChain && !deleted
+              isContentCentered: false
             }
 
             const result = await sbp('gi.ui/prompt', promptOptions)
@@ -487,6 +487,7 @@ export default (sbp('sbp/selectors/register', {
             }
           } else {
             sbp('okTurtles.events/emit', REPLACE_MODAL, 'LoginErrorModal', null, { errorMessage: errMessage, errorState: state })
+            return
           }
         }
 

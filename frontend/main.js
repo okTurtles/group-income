@@ -1,7 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import { L, LError } from '@common/common.js'
+import { L } from '@common/common.js'
 import '@model/captureLogs.js'
 import { setupNativeNotificationsListeners } from '@model/notifications/nativeNotification.js'
 import '@sbp/okturtles.data'
@@ -405,12 +405,7 @@ async function startApp () {
             console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
           }) // https://github.com/okTurtles/group-income/issues/2194
           console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-          await sbp('gi.app/identity/logout')
-          await sbp('gi.ui/prompt', {
-            heading: L('Failed to login'),
-            question: L('Error details: {reportError}', LError(e)),
-            primaryButton: L('Close')
-          })
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginErrorModal', null, { errorMessage: e?.message || String(e) })
         }
       })()
     },
