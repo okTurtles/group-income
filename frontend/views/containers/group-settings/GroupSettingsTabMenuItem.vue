@@ -61,7 +61,7 @@ export default {
     },
     navigateToTab () {
       this.$router.push({
-        name: 'GroupSettingsNewTab',
+        name: 'GroupSettingsTab',
         params: { tabId: this.tabId }
       }).catch(logExceptNavigationDuplicated)
     }

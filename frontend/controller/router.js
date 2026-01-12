@@ -21,7 +21,6 @@ const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGlobalDashboard = lazyPage(() => import('@pages/GlobalDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
-const lazyGroupSettingsNew = lazyPage(() => import('@pages/GroupSettingsNew.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
@@ -161,16 +160,9 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
-      path: '/group-settings-new',
-      component: lazyGroupSettingsNew,
-      name: 'GroupSettingsNew',
-      meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
-    },
-    {
-      path: '/group-settings-new/:tabId',
-      component: lazyGroupSettingsNew,
-      name: 'GroupSettingsNewTab',
+      path: '/group-settings/:tabId',
+      component: lazyGroupSettings,
+      name: 'GroupSettingsTab',
       meta: { title: L('Group Settings') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },

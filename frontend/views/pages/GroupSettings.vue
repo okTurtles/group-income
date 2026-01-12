@@ -1,95 +1,87 @@
 <template lang='pug'>
 page.c-page
-  template(#title='') {{ L('Group Settings') }}
+  template(#title='') {{ pageTitle }}
   template(#description='')
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(
-    :title='L("Public Channels")'
-  )
-    .c-subcontent(data-test='allowPublicChannels')
-      .c-text-content
-        i18n.c-smaller-title(tag='h3') Allow members to create public channels
-        i18n.c-description(tag='p') Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
-      .switch-wrapper
-        input.switch(
-          type='checkbox'
-          name='switch'
-          :checked='allowPublicChannels'
-          @change='togglePublicChannelCreateAllownace'
-        )
-
-  //- | ::: Delete Group won't be implemented for prototype.
-  //- page-section(:title='L("Delete Group")')
-  //-   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
-
-  //-   .buttons(v-if='membersLeft === 0')
-  //-     i18n.is-danger.is-outlined(
-  //-       tag='button'
-  //-       ref='delete'
-  //-       @click='openProposal("GroupDeletionModal")'
-  //-       data-test='deleteBtn'
-  //-     ) Delete group
-
-  //-   banner-simple(severity='info' v-else)
-  //-     i18n(
-  //-       :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
-  //-     ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
+  transition(:name='transitionName' mode='out-in')
+    component(:is='componentToRender' :tabId='tabId')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { mapState, mapGetters } from 'vuex'
+import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
-import PageSection from '@components/PageSection.vue'
-import AvatarUpload from '@components/AvatarUpload.vue'
-import BannerScoped from '@components/banners/BannerScoped.vue'
-import ButtonSubmit from '@components/ButtonSubmit.vue'
+import GroupSettingsMain from '@containers/group-settings/GroupSettingsMain.vue'
+import GroupSettingsTabContainer from '@containers/group-settings/GroupSettingsTabContainer.vue'
 
-export default ({
+export default {
   name: 'GroupSettings',
   components: {
-    AvatarUpload,
-    BannerScoped,
-    ButtonSubmit,
-    Page,
-    PageSection
+    Page
   },
   data () {
     return {
-      allowPublicChannels: false
+      config: {
+        menus: [
+          {
+            section: 'general',
+            items: [
+              { id: 'group-profile', name: L('Group Profile') },
+              { id: 'group-currency', name: L('Group Currency') }
+            ]
+          },
+          {
+            section: 'access-and-rules',
+            items: [
+              { id: 'invite-links', name: L('Invite Links') },
+              { id: 'roles-and-permissions', name: L('Roles & Permissions') },
+              { id: 'voting-rules', name: L('Voting Rules') }
+            ]
+          },
+          {
+            section: 'danger-zone',
+            items: [
+              { id: 'leave-group', name: L('Leave Group') }
+            ]
+          }
+        ],
+        tabNamesMap: {
+          'public-channels': L('Public Channels'),
+          'main': L('Group Settings'),
+          'group-profile': L('Group Profile'),
+          'group-currency': L('Group Currency'),
+          'invite-links': L('Invite Links'),
+          'roles-and-permissions': L('Roles & Permissions'),
+          'voting-rules': L('Voting Rules'),
+          'leave-group': L('Leave Group')
+        }
+      }
     }
   },
   computed: {
-    ...mapState(['currentGroupId']),
-    ...mapGetters(['groupSettings']),
-    isGroupAdmin () {
-      // TODO: https://github.com/okTurtles/group-income/issues/202
-      return false
+    tabId () {
+      return this.$route.params.tabId || 'main'
     },
-    configurePublicChannel () {
-      // TODO: check if Chelonia server admin allows to create public channels
-      return this.isGroupAdmin && false
+    isMainTab () {
+      return this.tabId === 'main'
+    },
+    componentToRender () {
+      return this.isMainTab ? GroupSettingsMain : GroupSettingsTabContainer
+    },
+    transitionName () {
+      return this.isMainTab ? 'show-main-menu' : 'show-tab-content'
+    },
+    pageTitle () {
+      return this.config.tabNamesMap[this.tabId] || this.config.tabNamesMap.main
     }
   },
-  mounted () {
-    this.allowPublicChannels = this.groupSettings.allowPublicChannels
-  },
-  methods: {
-    async togglePublicChannelCreateAllownace (v) {
-      const checked = v.target.checked
-      if (this.groupSettings.allowPublicChannels !== checked) {
-        await sbp('gi.actions/group/updateSettings', {
-          contractID: this.currentGroupId,
-          data: {
-            allowPublicChannels: checked
-          }
-        })
-        this.allowPublicChannels = checked
-      }
+  provide () {
+    return {
+      groupSettingsMenus: this.config.menus,
+      groupSettingsTabNames: this.config.tabNamesMap
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -102,33 +94,41 @@ export default ({
 .p-descritpion {
   display: none;
   margin-top: 0.25rem;
-  padding-bottom: 3rem;
 
   @include desktop {
     display: block;
   }
 }
 
-.c-subcontent {
-  border: none;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+.show-main-menu-enter,
+.show-main-menu-leave-to,
+.show-tab-content-enter,
+.show-tab-content-leave-to {
+  opacity: 0;
+}
 
-  &:last-child {
-    margin-bottom: 1.5rem;
+.show-main-menu-enter,
+.show-tab-content-leave-to {
+  transform: translateX(-35%);
+
+  @include from($tablet) {
+    transform: translateX(-20%);
   }
 }
 
-.c-smaller-title {
-  font-size: $size_4;
-  font-weight: bold;
+.show-tab-content-enter,
+.show-main-menu-leave-to {
+  transform: translateX(35%);
+
+  @include from($tablet) {
+    transform: translateX(20%);
+  }
 }
 
-.c-description {
-  margin-top: 0.125rem;
-  font-size: $size_4;
-  color: $text_1;
+.show-main-menu-enter-active,
+.show-main-menu-leave-active,
+.show-tab-content-enter-active,
+.show-tab-content-leave-active {
+  transition: transform 0.3s ease, opacity 200ms ease;
 }
 </style>

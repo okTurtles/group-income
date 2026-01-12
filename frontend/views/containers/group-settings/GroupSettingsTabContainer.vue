@@ -37,7 +37,7 @@ export default {
   },
   methods: {
     backToMenu () {
-      this.$router.push({ name: 'GroupSettingsNew' }).catch(logExceptNavigationDuplicated)
+      this.$router.push({ name: 'GroupSettings' }).catch(logExceptNavigationDuplicated)
     }
   }
 }

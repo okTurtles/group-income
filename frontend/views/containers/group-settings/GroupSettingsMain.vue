@@ -20,6 +20,7 @@
       MenuItem(tabId='invite-links')
       MenuItem(tabId='roles-and-permissions')
       MenuItem(
+        v-if='configurePublicChannelSupported'
         tabId='public-channels'
         :isExpandable='true'
       )
