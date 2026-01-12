@@ -45,7 +45,7 @@ const PaymentsMixin: Object = {
         ...this.groupSortedPeriodKeys
       ].filter(period => {
         const dPeriod = new Date(period)
-        return dPeriod > new Date(groupCreatedDate) && dPeriod <= currentDate // show only started periods & filter out the 'waiting' period
+        return dPeriod > groupCreatedDate && dPeriod <= currentDate // show only started periods & filter out the 'waiting' period
       })
       // remove the waiting period from the list. it's useful for the contract but not in the UI
       if (periods.length === 1 && new Date(periods[0]) < distributionDate) {

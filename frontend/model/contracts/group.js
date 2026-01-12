@@ -69,11 +69,10 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
   }
 }
 
-function initPaymentPeriod ({ meta, getters }) {
-  const start = getters.periodStampGivenDate(meta.createdDate)
+function initPaymentPeriod ({ period, getters }) {
   return {
-    start,
-    end: plusOnePeriodLength(start, getters.groupSettings.distributionPeriodLength),
+    start: period,
+    end: plusOnePeriodLength(period, getters.groupSettings.distributionPeriodLength),
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -114,15 +113,18 @@ function clearOldPayments ({ contractID, state, getters }) {
   )
 }
 
-function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
-  const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
+function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, getters, cleanup = true }) {
+  const period = periodTo || getters.periodStampGivenDate(meta.createdDate)
+  const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ period, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
+
   // Update the '.end' field of the previous in-memory period, if any.
   if (previousPeriod in state.paymentsByPeriod) {
     state.paymentsByPeriod[previousPeriod].end = period
   }
-  clearOldPayments({ contractID, state, getters })
+  if (cleanup) {
+    clearOldPayments({ contractID, state, getters })
+  }
   return periodPayments
 }
 
@@ -1360,13 +1362,87 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/updateDistributionDate': {
       validate: actionRequireActiveMember(optional),
-      process ({ meta }, { state, getters }) {
-        const period = getters.periodStampGivenDate(meta.createdDate)
+      process ({ meta, contractID }, { state, getters }) {
+        const periodTo = getters.periodStampGivenDate(meta.createdDate)
+        const periodLength = getters.groupSettings.distributionPeriodLength
         const current = state.settings?.distributionDate
-        if (current !== period) {
-          // right before updating to the new distribution period, make sure to update various payment-related group streaks.
+        const currentPeriodPayments = getters.groupPeriodPayments[current] ? cloneDeep(getters.groupPeriodPayments[current]) : null
+
+        if (!current && periodTo) {
           updateGroupStreaks({ state, getters })
-          state.settings.distributionDate = period
+          state.settings.distributionDate = periodTo
+        } else if (current && comparePeriodStamps(periodTo, current) > 0) {
+          // There can be one or more distribution periods without any payments (empty-periods) between current 'distributionDate'
+          // and the distribution period to update to. (eg. No one in the group hasn't logged in for a long time)
+          // 'paymentsByPeriod' object in the group state and the payment-related group streaks need to be populated/updated accordingly for those empty periods in this case.
+          // (Reference issue: https://github.com/okTurtles/group-income/issues/2982)
+          const emptyPeriodsBetweenCurrentAndTo = []
+          let recorded = current
+          while (true) {
+            const period = plusOnePeriodLength(recorded, periodLength)
+            if (comparePeriodStamps(periodTo, period) > 0) {
+              emptyPeriodsBetweenCurrentAndTo.push(period)
+              recorded = period
+            } else {
+              break
+            }
+          }
+
+          const allPeriodsToUpdate = [
+            ...emptyPeriodsBetweenCurrentAndTo,
+            periodTo
+          ]
+
+          allPeriodsToUpdate.forEach((period, index) => {
+            const isLast = index === allPeriodsToUpdate.length - 1
+            // initFetchPeriodPayments calls clearOldPayments() inside, which in turn pushes a side-effect to archive payments.
+            // This can be excessive and problematic if there is multiple periods to update (eg. The group has been inactive for a long time.)
+            // Using 'cleanup' flag here to call clearOldPayments() only for the last period.
+            initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters, cleanup: isLast })
+          })
+
+          // There can be two cases:
+          // 1) The period to update comes right after current period
+          // 2) There are one or more empty periods (periods with no payments made) between current period and the period to update.
+          // In case of 1), we add +1 to the payment-related group streaks.
+          // In case of 2), those streaks need to be reset except for 'missedPayments' streak.
+          if (emptyPeriodsBetweenCurrentAndTo.length === 0) {
+            updateGroupStreaks({ state, getters })
+          } else {
+            // Below 4 group streaks ('lastStreakPeriod', 'fullMonthlyPledges', 'fullMonthlySupport' and 'onTimePayments') need to be reset
+            // when there are empty periods between current period and the period to update.
+            state.streaks.lastStreakPeriod = null
+            state.streaks.fullMonthlyPledges = 0
+            state.streaks.fullMonthlySupport = 0
+            state.streaks.onTimePayments = {}
+
+            // Add the number of empty periods to 'missedPayments' streaks
+            const groupHasReceivers = Object.keys(getters.groupReceiverProfiles).length > 0
+            const allPledgerIds = Object.keys(getters.groupPledgerProfiles)
+
+            if (groupHasReceivers && allPledgerIds.length > 0) {
+              const missedInCurrentPeriod = (memberID) => {
+                // 'lastAdjustedDistribution' is null if no payments have been made in the period.
+                // If there has been payments made in the period, 'lastAdjustedDistribution' is an array of todo paymentitems that have not been completed yet.
+                return !currentPeriodPayments ||
+                  !currentPeriodPayments.lastAdjustedDistribution ||
+                  currentPeriodPayments.lastAdjustedDistribution.some(entry => entry.fromMemberID === memberID)
+              }
+
+              for (const pledgerId of allPledgerIds) {
+                const currentValue = fetchInitKV(state.streaks.missedPayments, pledgerId, 0)
+                // Two cases here:
+                // (The term 'current period' means the distribution period the group setting 'currently has'. So it could be months ago if there are many empty periods.)
+                // 1) If the pledger has missed payments in the current period - their current missed-payments streaks so far + 1 (for the current period) + the number of empty periods.
+                // 2) If the pledger has completed  payments in the current period - No need to consider the member's missed payments streak so far. Just add the number of empty periods.
+                state.streaks.missedPayments[pledgerId] = missedInCurrentPeriod(pledgerId)
+                  ? 1 + currentValue + emptyPeriodsBetweenCurrentAndTo.length
+                  : emptyPeriodsBetweenCurrentAndTo.length
+              }
+            }
+          }
+
+          state.settings.distributionDate = periodTo
         }
       }
     },
