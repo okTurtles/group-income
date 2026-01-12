@@ -46,6 +46,7 @@ export default {
           }
         ],
         tabNamesMap: {
+          'public-channels': L('Public Channels'),
           'main': L('Group Settings'),
           'group-profile': L('Group Profile'),
           'group-currency': L('Group Currency'),

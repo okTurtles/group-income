@@ -1,19 +1,28 @@
 <template lang='pug'>
 button.is-unstyled.menu-tile.c-menu-tile(
-  @click.stop='navigateToTab'
+  @click.stop='onTileClick'
   :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
 )
-  .tile-text {{ menuName }}
-  .tile-info-segment(v-if='$slots.info')
-    slot(name='info')
-  i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
+  .tile-upper-section
+    .tile-text {{ menuName }}
+    .tile-info-segment(v-if='$slots.info' @click.stop='')
+      slot(name='info')
+    i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
+
+  transition-expand
+    .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
+      slot(name='lower')
 </template>
 
 <script>
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import TransitionExpand from '@components/TransitionExpand.vue'
 
 export default {
   name: 'GroupSettingsTabMenuItem',
+  components: {
+    TransitionExpand
+  },
   inject: ['groupSettingsTabNames'],
   props: {
     tabId: {
@@ -43,6 +52,13 @@ export default {
     }
   },
   methods: {
+    onTileClick () {
+      if (this.isExpandable) {
+        this.ephemeral.expanded = !this.ephemeral.expanded
+      } else {
+        this.navigateToTab()
+      }
+    },
     navigateToTab () {
       this.$router.push({
         name: 'GroupSettingsNewTab',

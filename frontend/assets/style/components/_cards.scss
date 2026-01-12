@@ -77,37 +77,55 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
 }
 
 .menu-tile {
-  display: flex;
-  align-items: flex-start;
+  display: block;
   padding: 0.75rem 1rem;
   width: 100%;
   background-color: $general_1;
   border-radius: $card-radius;
   border: 1px solid $general_1;
   color: $text_0;
-  column-gap: 0.5rem;
   transition: all 120ms ease-out;
 
   @include tablet {
     padding: 0.875rem 1.25rem;
-    column-gap: 0.75rem;
+  }
+
+  .tile-upper-section {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    column-gap: 0.725rem;
+
+    @include tablet {
+      column-gap: 0.875rem;
+    }
+  }
+
+  .tile-lower-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   .tile-text {
     display: block;
     flex-grow: 1;
+    line-height: 1.5;
   }
 
   .tile-info-segment {
     display: block;
     flex-shrink: 0;
     text-align: right;
+    line-height: 1;
   }
 
   .tile-icon {
     color: $text_1;
     flex-shrink: 0;
-    transition: color 120ms ease-out;
+    transition:
+      color 120ms ease-out,
+      transform 200ms ease-out;
   }
 
   &:hover,
@@ -149,6 +167,12 @@ $danger_2_opacity: rgba(94, 58, 56, 0.5);
       background-color: rgba(0, 0, 0, 0);
       border: 1px solid currentColor;
       color: $danger_0_1;
+    }
+  }
+
+  &.is-expanded {
+    .tile-icon {
+      transform: rotate(180deg);
     }
   }
 }

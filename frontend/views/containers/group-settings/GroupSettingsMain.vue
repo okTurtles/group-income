@@ -7,9 +7,10 @@
 
     menu.c-menu
       MenuItem(tabId='group-profile')
-      MenuItem(tabId='group-currency' :isExpandable='true')
+      MenuItem(tabId='group-currency')
         template(#info='')
           span.has-text-1 {{ groupCurrency }}
+
   .c-menu-block
     legend.tab-legend
       i.icon-vote-yea.legend-icon
@@ -18,6 +19,24 @@
     menu.c-menu
       MenuItem(tabId='invite-links')
       MenuItem(tabId='roles-and-permissions')
+      MenuItem(
+        tabId='public-channels'
+        :isExpandable='true'
+      )
+        template(#info='')
+          input.switch.is-small.c-switch(
+            type='checkbox'
+            name='switch'
+            :checked='allowPublicChannels.value'
+            :disabled='allowPublicChannels.updating'
+            @change='togglePublicChannelCreateAllownace'
+          )
+
+        template(#lower='')
+          .c-public-channels-toggle-content
+            i18n.c-smaller-title(tag='h3') Allow members to create public channels
+            i18n.c-description Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
+
       MenuItem(tabId='voting-rules')
         template(#info='')
           span.has-text-1 {{ currentVotingThreshold }}
@@ -32,7 +51,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapState, mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import { L } from '@common/common.js'
@@ -42,11 +62,30 @@ export default {
   components: {
     MenuItem: GroupSettingsTabMenuItem
   },
+  data () {
+    return {
+      allowPublicChannels: {
+        updating: false,
+        value: false
+      }
+    }
+  },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
       'groupSettings',
       'groupProposalSettings'
     ]),
+    isGroupAdmin () {
+      // TODO: https://github.com/okTurtles/group-income/issues/202
+      return false
+    },
+    configurePublicChannelSupported () {
+      // TODO: check if Chelonia server admin allows to create public channels
+      return this.isGroupAdmin && false
+    },
     groupCurrency () {
       return this.groupSettings.mincomeCurrency
     },
@@ -59,6 +98,30 @@ export default {
           ? L('{threshold} disagreements', { threshold })
           : threshold
     }
+  },
+  methods: {
+    async togglePublicChannelCreateAllownace (v) {
+      const checked = v.target.checked
+
+      if (!this.allowPublicChannels.updating && (this.allowPublicChannels.value !== checked)) {
+        this.allowPublicChannels.updating = true
+
+        try {
+          await sbp('gi.actions/group/updateSettings', {
+            contractID: this.currentGroupId,
+            data: { allowPublicChannels: checked }
+          })
+          this.allowPublicChannels.value = checked
+        } catch (err) {
+          console.error('GroupSettings togglePublicChannelCreateAllownace() error:', err)
+        } finally {
+          this.allowPublicChannels.updating = false
+        }
+      }
+    }
+  },
+  mounted () {
+    this.allowPublicChannels.value = this.groupSettings.allowPublicChannels
   }
 }
 </script>
@@ -102,5 +165,29 @@ export default {
   flex-direction: column;
   row-gap: 0.75rem;
   width: 100%;
+}
+
+.c-public-channels-toggle-content {
+  position: relative;
+  width: 100%;
+  padding-top: 1.5rem;
+}
+
+.c-smaller-title {
+  font-size: $size_4;
+  font-weight: bold;
+  white-space: normal;
+  margin-bottom: 0.25rem;
+}
+
+.c-description {
+  margin-top: 0.125rem;
+  font-size: $size_4;
+  color: $text_1;
+  white-space: normal;
+}
+
+input.c-switch {
+  vertical-align: middle;
 }
 </style>
