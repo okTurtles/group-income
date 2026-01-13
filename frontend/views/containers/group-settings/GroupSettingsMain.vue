@@ -48,8 +48,24 @@
       i18n.legend-text Danger Zone
 
     menu.c-menu
-      MenuItem(v-if='groupMembersCount > 1' tabId='leave-group' variant='danger')
-      MenuItem(v-else tabId='delete-group' variant='danger')
+      MenuItem(
+        :tabId='hasMultipleMembers ? "leave-group" : "delete-group"'
+        variant='danger'
+        :isExpandable='true'
+      )
+        template(#lower='')
+          .c-leave-group-container
+            p.has-text-1.c-leave-group-text
+              i18n(v-if='hasMultipleMembers' :args='LTags("b")') This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
+              i18n(v-else) This will delete all the data associated with this group permanently.
+
+            .buttons
+              i18n.is-danger.is-outlined(
+                tag='button'
+                ref='leave'
+                @click='handleLeaveOrDeleteGroup'
+                data-test='leaveModalBtn'
+              ) Leave group  
 </template>
 
 <script>
@@ -100,6 +116,9 @@ export default {
         : proposalSettings.rule === RULE_DISAGREEMENT
           ? L('{threshold} disagreements', { threshold })
           : threshold
+    },
+    hasMultipleMembers () {
+      return this.groupMembersCount > 1
     }
   },
   methods: {
@@ -121,6 +140,9 @@ export default {
           this.allowPublicChannels.updating = false
         }
       }
+    },
+    handleLeaveOrDeleteGroup () {
+      console.log('TODO')
     }
   },
   mounted () {
@@ -192,5 +214,9 @@ export default {
 
 input.c-switch {
   vertical-align: middle;
+}
+
+.c-leave-group-text {
+  margin-bottom: 1.5rem;
 }
 </style>
