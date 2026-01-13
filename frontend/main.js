@@ -397,15 +397,18 @@ async function startApp () {
             removeHandler()
             await sbp('chelonia/contract/wait', identityContractID)
           }
-          this.ephemeral.ready = true
           this.removeLoadingAnimation()
         } catch (e) {
           this.removeLoadingAnimation()
           oldIdentityContractID && sbp('appLogs/clearLogs', oldIdentityContractID).catch(e => {
             console.error('[main] Error clearing logs for old session', oldIdentityContractID, e)
           }) // https://github.com/okTurtles/group-income/issues/2194
-          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${e?.message || e}`, e)
-          sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginErrorModal', null, { errorMessage: e?.message || String(e) })
+          const errMsg = e?.message || String(e)
+          console.error(`[main] caught ${e?.name} while fetching settings or handling a login error: ${errMsg}`, e)
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginErrorModal', null, { errorMessage: errMsg })
+        } finally {
+          // Event after login-error occurs, the main page content should be shown instead of blank screen. Hence, placing it here instead of at the end of the try block.
+          this.ephemeral.ready = true
         }
       })()
     },

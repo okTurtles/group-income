@@ -1,6 +1,5 @@
 <template lang='pug'>
 modal-template.is-prompt(
-  ref='modal'
   :a11yTitle='L("Login error")'
 )
   template(slot='title')
@@ -18,6 +17,7 @@ modal-template.is-prompt(
 <script>
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 
 export default {
@@ -38,12 +38,14 @@ export default {
   },
   methods: {
     refresh () {
-      window.location.reload()
+      const { origin, pathname } = window.location
+      // Reload page but without ?modal=LoginErrorModal in the url query string
+      window.location.href = `${origin}${pathname}`
     },
     onLogoutMsgClick (e) {
       if (e.target.closest('button.link')) {
-        this.$refs.modal.close()
         sbp('gi.app/identity/_private/logout', this.errorState)
+        sbp('okTurtles.events/emit', CLOSE_MODAL, 'LoginErrorModal')
       }
     }
   }

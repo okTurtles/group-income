@@ -126,7 +126,7 @@ export default ({
       if (this.content === componentName) return
 
       this.lastFocus = document.activeElement
-      if (this.content) {
+      if (this.content && !this.subcontent.includes(componentName)) {
         this.subcontent.push(componentName)
       } else {
         this.content = componentName
