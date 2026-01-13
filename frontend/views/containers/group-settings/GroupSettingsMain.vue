@@ -31,10 +31,11 @@
             :checked='allowPublicChannels.value'
             :disabled='allowPublicChannels.updating'
             @change='togglePublicChannelCreateAllownace'
+            @click.stop=''
           )
 
         template(#lower='')
-          .c-public-channels-toggle-content
+          .c-menu-item-lower-section-container
             i18n.c-smaller-title(tag='h3') Allow members to create public channels
             i18n.c-description Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
 
@@ -49,23 +50,24 @@
 
     menu.c-menu
       MenuItem(
-        :tabId='hasMultipleMembers ? "leave-group" : "delete-group"'
+        tabId='leave-group'
         variant='danger'
         :isExpandable='true'
       )
         template(#lower='')
-          .c-leave-group-container
-            p.has-text-1.c-leave-group-text
-              i18n(v-if='hasMultipleMembers' :args='LTags("b")') This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
-              i18n(v-else) This will delete all the data associated with this group permanently.
+          .c-menu-item-lower-section-container
+            i18n.has-text-1.c-leave-group-text(
+              :args='LTags("b")'
+              tag='p'
+            ) This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
             .buttons
               i18n.is-danger.is-outlined(
                 tag='button'
                 ref='leave'
-                @click='handleLeaveOrDeleteGroup'
+                @click='handleLeaveGroup'
                 data-test='leaveModalBtn'
-              ) Leave group  
+              ) Leave group
 </template>
 
 <script>
@@ -73,6 +75,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 
 export default {
@@ -94,8 +97,9 @@ export default {
     ]),
     ...mapGetters([
       'groupSettings',
-      'groupProposalSettings',
-      'groupMembersCount'
+      'currentGroupOwnerID',
+      'ourIdentityContractId',
+      'groupProposalSettings'
     ]),
     isGroupAdmin () {
       // TODO: https://github.com/okTurtles/group-income/issues/202
@@ -116,9 +120,6 @@ export default {
         : proposalSettings.rule === RULE_DISAGREEMENT
           ? L('{threshold} disagreements', { threshold })
           : threshold
-    },
-    hasMultipleMembers () {
-      return this.groupMembersCount > 1
     }
   },
   methods: {
@@ -141,8 +142,15 @@ export default {
         }
       }
     },
-    handleLeaveOrDeleteGroup () {
-      console.log('TODO')
+    openProposal (component) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, component)
+    },
+    handleLeaveGroup () {
+      if (this.currentGroupOwnerID === this.ourIdentityContractId) {
+        this.openProposal('GroupDeletionModal')
+      } else {
+        this.openProposal('GroupLeaveModal')
+      }
     }
   },
   mounted () {
@@ -192,16 +200,19 @@ export default {
   width: 100%;
 }
 
-.c-public-channels-toggle-content {
+.c-menu-item-lower-section-container {
   position: relative;
   width: 100%;
   padding-top: 1.5rem;
+
+  > * {
+    white-space: normal;
+  }
 }
 
 .c-smaller-title {
   font-size: $size_4;
   font-weight: bold;
-  white-space: normal;
   margin-bottom: 0.25rem;
 }
 
@@ -209,7 +220,6 @@ export default {
   margin-top: 0.125rem;
   font-size: $size_4;
   color: $text_1;
-  white-space: normal;
 }
 
 input.c-switch {

@@ -30,8 +30,7 @@ export default {
           'invite-links': L('Invite Links'),
           'roles-and-permissions': L('Roles & Permissions'),
           'voting-rules': L('Voting Rules'),
-          'leave-group': L('Leave Group'),
-          'delete-group': L('Delete Group')
+          'leave-group': L('Leave Group')
         }
       }
     }

@@ -16,8 +16,6 @@ import UpdateGroupCurrency from './UpdateGroupCurrency.vue'
 import InvitationsTable from './InvitationsTable.vue'
 import RolesAndPermissions from './roles-and-permissions/RolesAndPermissions.vue'
 import GroupRulesSettings from './GroupRulesSettings.vue'
-import LeaveGroup from './LeaveGroup.vue'
-import DeleteGroup from './DeleteGroup.vue'
 
 export default {
   name: 'GroupSettingsTabContainer',
@@ -31,9 +29,7 @@ export default {
         'group-currency': UpdateGroupCurrency,
         'roles-and-permissions': RolesAndPermissions,
         'invite-links': InvitationsTable,
-        'voting-rules': GroupRulesSettings,
-        'leave-group': LeaveGroup,
-        'delete-group': DeleteGroup
+        'voting-rules': GroupRulesSettings
       })[this.tabId]
     }
   },

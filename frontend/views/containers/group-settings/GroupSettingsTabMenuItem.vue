@@ -52,11 +52,15 @@ export default {
     }
   },
   methods: {
-    onTileClick () {
-      if (this.isExpandable) {
-        this.ephemeral.expanded = !this.ephemeral.expanded
-      } else {
-        this.navigateToTab()
+    onTileClick (e) {
+      const isLowerSectionClicked = e.target.closest('.tile-lower-section')
+
+      if (!isLowerSectionClicked) {
+        if (this.isExpandable) {
+          this.ephemeral.expanded = !this.ephemeral.expanded
+        } else {
+          this.navigateToTab()
+        }
       }
     },
     navigateToTab () {

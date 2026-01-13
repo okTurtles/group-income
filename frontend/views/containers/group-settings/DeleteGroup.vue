@@ -1,4 +1,6 @@
 <template lang='pug'>
+// This card isn't currently used anywhere and originally was just commented out in GroupSettings.vue
+// But keeping it as a component in case it's needed in the future.
 .card
   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
