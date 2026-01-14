@@ -18,7 +18,10 @@
 
     menu.c-menu
       MenuItem(tabId='invite-links')
-      MenuItem(tabId='roles-and-permissions')
+      MenuItem(
+        v-if='displayRolesAndPermissions'
+        tabId='roles-and-permissions'
+      )
       MenuItem(
         v-if='configurePublicChannelSupported'
         tabId='public-channels'
@@ -108,6 +111,10 @@ export default {
     configurePublicChannelSupported () {
       // TODO: check if Chelonia server admin allows to create public channels
       return this.isGroupAdmin && false
+    },
+    displayRolesAndPermissions () {
+      // TODO: Remove this once the development is complete and the feature is ready for release.
+      return process.env.NODE_ENV === 'development'
     },
     groupCurrency () {
       return this.groupSettings.mincomeCurrency
