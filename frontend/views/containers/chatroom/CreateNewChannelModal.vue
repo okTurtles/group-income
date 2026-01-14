@@ -24,6 +24,7 @@
           @blur='updateField("name")'
           v-error:name=''
         )
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can only contain letters, numbers, and hyphens(-).
 
       label.field
         .c-desc-label-container
@@ -248,9 +249,11 @@ export default ({
     }
   },
   watch: {
-    'form.name' (newVal, oldVal) {
+    'form.name' (newVal) {
       if (newVal.length) {
-        this.form.name = newVal.replaceAll(/\s/g, '-').toLowerCase()
+        this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
+          .replace(/[^a-zA-Z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
+          .toLowerCase()
       }
     }
   }
