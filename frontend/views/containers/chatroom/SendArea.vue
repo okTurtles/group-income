@@ -717,7 +717,8 @@ export default ({
           // in this case the rest of the code is treated as code content too.
           msgSplitByCodeMarkdown[index - 1]?.text !== '```'
         ) {
-          entry.text = convertAllMentions(entry.text)
+          const mentionConvertedText = convertAllMentions(entry.text)
+          entry.text = mentionConvertedText
         }
       })
       msgToSend = combineMarkdownSegmentListIntoString(msgSplitByCodeMarkdown)

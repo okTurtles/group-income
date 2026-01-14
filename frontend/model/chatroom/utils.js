@@ -11,6 +11,7 @@ export function makeChannelMention (str: string, withId: boolean = false): strin
 }
 
 export function getIdFromChannelMention (str: string): string {
+  console.log('!@# str', str)
   return str.includes(':chatID:')
     ? str.split(':chatID:')[1]
     : ''
@@ -31,9 +32,8 @@ export function swapMentionIDForDisplayname (
   const { reverseNamespaceLookups } = sbp('state/vuex/state')
   const possibleMentions = [
     ...Object.keys(reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
-    makeChannelMention('[^\\s]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
+    makeChannelMention('[a-zA-Z0-9]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
   ]
-
   const { escaped, forChat } = options
   const regEx = escaped
     ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
