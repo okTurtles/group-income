@@ -460,8 +460,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogin(user2, { bypassUI: true })
     me = user2
 
-    cy.getByDT('groupSettingsLink').click()
-    cy.getByDT('leaveModalBtn').click()
+    cy.giLeaveGroup()
 
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.getByDT('username').type('{selectall}{del}' + user2)

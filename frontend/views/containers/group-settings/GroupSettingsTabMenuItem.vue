@@ -3,7 +3,7 @@ button.is-unstyled.menu-tile.c-menu-tile(
   @click.stop='onTileClick'
   :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
 )
-  .tile-upper-section
+  .tile-upper-section(:data-test='testId')
     .tile-text {{ menuName }}
     .tile-info-segment(v-if='$slots.info' @click.stop='')
       slot(name='info')
@@ -48,7 +48,10 @@ export default {
   },
   computed: {
     menuName () {
-      return this.groupSettingsTabNames[this.tabId] || ''
+      return this.groupSettingsTabNames[this.tabId]?.displayName || ''
+    },
+    testId () {
+      return this.groupSettingsTabNames[this.tabId]?.dataTest || ''
     }
   },
   methods: {

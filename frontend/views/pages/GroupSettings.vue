@@ -23,14 +23,14 @@ export default {
     return {
       config: {
         tabNamesMap: {
-          'public-channels': L('Public Channels'),
-          'main': L('Group Settings'),
-          'group-profile': L('Group Profile'),
-          'group-currency': L('Group Currency'),
-          'invite-links': L('Invite Links'),
-          'roles-and-permissions': L('Roles & Permissions'),
-          'voting-rules': L('Voting Rules'),
-          'leave-group': L('Leave Group')
+          'public-channels': { displayName: L('Public Channels'), dataTest: 'tabPublicChannels' },
+          'main': { displayName: L('Group Settings') },
+          'group-profile': { displayName: L('Group Profile'), dataTest: 'tabGroupProfile' },
+          'group-currency': { displayName: L('Group Currency'), dataTest: 'tabGroupCurrency' },
+          'invite-links': { displayName: L('Invite Links'), dataTest: 'tabInviteLinks' },
+          'roles-and-permissions': { displayName: L('Roles & Permissions'), dataTest: 'tabRolesAndPermissions' },
+          'voting-rules': { displayName: L('Voting Rules'), dataTest: 'tabVotingRules' },
+          'leave-group': { displayName: L('Leave Group'), dataTest: 'tabLeaveGroup' }
         }
       }
     }
@@ -49,7 +49,9 @@ export default {
       return this.isMainTab ? 'show-main-menu' : 'show-tab-content'
     },
     pageTitle () {
-      return this.config.tabNamesMap[this.tabId] || this.config.tabNamesMap.main
+      return this.config.tabNamesMap[this.tabId]
+        ? this.config.tabNamesMap[this.tabId].displayName
+        : this.config.tabNamesMap.main.displayName
     }
   },
   provide () {
