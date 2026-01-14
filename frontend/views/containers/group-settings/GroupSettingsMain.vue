@@ -109,7 +109,7 @@ export default {
       return false
     },
     configurePublicChannelSupported () {
-      // TODO: check if Chelonia server admin allows to create public channels
+      // TODO: check if Chelonia server admin allows to create public channels.
       return this.isGroupAdmin && false
     },
     displayRolesAndPermissions () {
