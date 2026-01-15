@@ -11,7 +11,6 @@ export function makeChannelMention (str: string, withId: boolean = false): strin
 }
 
 export function getIdFromChannelMention (str: string): string {
-  console.log('!@# str', str)
   return str.includes(':chatID:')
     ? str.split(':chatID:')[1]
     : ''
