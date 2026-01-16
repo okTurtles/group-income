@@ -45,7 +45,7 @@ export default {
     },
     onLogoutMsgClick (e) {
       if (e.target.closest('button.link')) {
-        sbp('gi.actions/identity/_private/logout')
+        sbp('gi.app/identity/logout') 
         this.$refs.modal.close()
       }
     }
