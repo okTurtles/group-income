@@ -342,8 +342,9 @@ describe('Proposals - Add members', () => {
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
 
     cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('tabInviteLinks').click()
     cy.get('td.c-name:contains("user6")').should('not.exist')
-    cy.get('.c-title-wrapper select').select('All links')
+    cy.getByDT('inviteLinksFilter').select('All links')
     cy.get('td.c-name:contains("user6")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
 
     cy.getByDT('dashboard').click()

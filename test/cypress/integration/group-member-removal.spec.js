@@ -238,8 +238,7 @@ describe('Group - Removing a member', () => {
   it('user2 leaves the groupA - is left with groupB', () => {
     cy.giLogin(`user2-${userId}`, { bypassUI: true })
 
-    cy.getByDT('groupSettingsLink').click()
-    cy.getByDT('leaveModalBtn').click()
+    cy.giLeaveGroup()
 
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.log('Fill the form incorrectly...')
