@@ -17,6 +17,14 @@ import InvitationsTable from './InvitationsTable.vue'
 import RolesAndPermissions from './roles-and-permissions/RolesAndPermissions.vue'
 import GroupRulesSettings from './GroupRulesSettings.vue'
 
+const componentMap = {
+  'group-profile': UpdateGroupProfile,
+  'group-currency': UpdateGroupCurrency,
+  'roles-and-permissions': RolesAndPermissions,
+  'invite-links': InvitationsTable,
+  'voting-rules': GroupRulesSettings
+}
+
 export default {
   name: 'GroupSettingsTabContainer',
   props: {
@@ -24,18 +32,22 @@ export default {
   },
   computed: {
     componentToRender () {
-      return ({
-        'group-profile': UpdateGroupProfile,
-        'group-currency': UpdateGroupCurrency,
-        'roles-and-permissions': RolesAndPermissions,
-        'invite-links': InvitationsTable,
-        'voting-rules': GroupRulesSettings
-      })[this.tabId]
+      return componentMap[this.tabId]
     }
   },
   methods: {
     backToMenu () {
       this.$router.push({ name: 'GroupSettings' }).catch(logExceptNavigationDuplicated)
+    }
+  },
+  watch: {
+    tabId: {
+      handler (newVal) {
+        if (this.tabId && !componentMap[newVal]) {
+          this.backToMenu()
+        }
+      },
+      immediate: true
     }
   }
 }

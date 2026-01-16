@@ -33,7 +33,7 @@
             name='switch'
             :checked='allowPublicChannels.value'
             :disabled='allowPublicChannels.updating'
-            @change='togglePublicChannelCreateAllownace'
+            @change='togglePublicChannelCreateAllowance'
             @click.stop=''
           )
 
@@ -41,6 +41,8 @@
           .c-menu-item-lower-section-container
             i18n.c-smaller-title(tag='h3') Allow members to create public channels
             i18n.c-description Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
+
+            banner-scoped(ref='configPublicChannelFormMsg')
 
       MenuItem(tabId='voting-rules')
         template(#info='')
@@ -79,7 +81,7 @@ import { mapState, mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { L } from '@common/common.js'
+import { L, LError } from '@common/common.js'
 
 export default {
   name: 'GroupSettingsMain',
@@ -130,7 +132,7 @@ export default {
     }
   },
   methods: {
-    async togglePublicChannelCreateAllownace (v) {
+    async togglePublicChannelCreateAllowance (v) {
       const checked = v.target.checked
 
       if (!this.allowPublicChannels.updating && (this.allowPublicChannels.value !== checked)) {
@@ -143,7 +145,9 @@ export default {
           })
           this.allowPublicChannels.value = checked
         } catch (err) {
-          console.error('GroupSettings togglePublicChannelCreateAllownace() error:', err)
+          console.error('GroupSettings togglePublicChannelCreateAllowance() error:', err)
+          this.$refs.configPublicChannelFormMsg.danger(L('Failed to change the setting: {reportError}', LError(err)))
+          this.allowPublicChannels.value = !checked
         } finally {
           this.allowPublicChannels.updating = false
         }

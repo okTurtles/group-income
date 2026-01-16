@@ -73,11 +73,6 @@ export default {
       }
     },
     async saveGroupCurrency () {
-      if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger(L('The form is invalid.'))
-        return
-      }
-
       try {
         await sbp('gi.actions/group/updateSettings', {
           contractID: this.currentGroupId,
