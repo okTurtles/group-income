@@ -239,18 +239,4 @@ export default ({
     }
   }
 }
-
-.is-centered {
-  .modal-card {
-    &-body {
-      width: 100%;
-      max-width: calc(400px + 2rem);
-      align-self: center;
-
-      @include desktop {
-        text-align: center;
-      }
-    }
-  }
-}
 </style>
