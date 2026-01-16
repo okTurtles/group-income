@@ -40,7 +40,7 @@ export default {
   methods: {
     refresh () {
       const { origin, pathname } = window.location
-      // Reload page but without ?modal=LoginErrorModal in the url query string
+      // Reload page but without ?modal=LoginErrorModal in the url query string.
       window.location.href = `${origin}${pathname}`
     },
     onLogoutMsgClick (e) {
