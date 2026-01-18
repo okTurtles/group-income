@@ -27,6 +27,7 @@
     }
   }
 
+  // inline code styles
   code {
     display: inline-block;
     border-radius: $radius;
@@ -39,6 +40,7 @@
     margin-right: 1px;
   }
 
+  // multi-line code styles
   pre > code {
     display: block;
     width: 100%;
@@ -60,6 +62,7 @@
     margin-right: 1px;
   }
 
+  // list styles
   ul,
   ol {
     margin: 0.75rem 0;
@@ -113,6 +116,7 @@
     }
   }
 
+  // blockquote styles
   blockquote {
     position: relative;
     padding-left: 1rem;
@@ -137,6 +141,15 @@
     }
   }
 
+  // table styles
+  table {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  // miscellaneous
   .link {
     border-bottom-color: currentColor;
   }
@@ -149,5 +162,15 @@
 
   .chat-emoji {
     font-size: 1.2em;
+  }
+}
+
+// hover styles
+.c-message {
+  &:hover,
+  &:has(.c-menu .is-active) {
+    table {
+      position: relative;
+    }
   }
 }
