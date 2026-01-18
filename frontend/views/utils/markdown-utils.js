@@ -22,7 +22,12 @@ marked.use({
         return token.raw
       }
     }
-  ]
+  ],
+  renderer: {
+    table (header, body) {
+      return `<div class="table-container"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>`
+    }
+  }
 })
 
 export function renderMarkdown (str: string): any {
