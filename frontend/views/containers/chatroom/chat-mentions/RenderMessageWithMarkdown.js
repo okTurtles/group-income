@@ -27,7 +27,6 @@ const RenderMessageWithMarkdown: any = {
       if (entry.tagName) {
         const hasChildren = Array.isArray(entry.children)
         const isCodeElement = entry.tagName === 'CODE'
-
         const routerOptions = { isInAppRouter: false, route: {}, href: '' }
         if (entry.tagName === 'A' && entry.attributes.href) {
           const { href } = entry.attributes
