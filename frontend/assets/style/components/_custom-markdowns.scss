@@ -142,11 +142,54 @@
   }
 
   // table styles
-  table {
+  .table-container {
     position: relative;
     width: 100%;
-    overflow-x: auto;
     max-width: 100%;
+    overflow-x: auto;
+    padding: 1rem 0;
+  }
+
+  table {
+    --cell-padding: 0.5rem;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    max-width: 100%;
+
+    thead {
+      background-color: $general_2;
+
+      tr {
+        border-bottom: none;
+      }
+    }
+
+    tr {
+      height: auto;
+      box-shadow: none;
+      border-bottom: 1px solid $general_2;
+    }
+
+    th,
+    td {
+      min-width: max-content;
+      padding: var(--cell-padding);
+      padding-left: 0;
+      word-break: break-word;
+
+      &:first-child {
+        padding-left: var(--cell-padding);
+      }
+    }
+
+    th {
+      font-weight: 600;
+    }
+
+    @include from ($tablet) {
+      --cell-padding: 0.75rem;
+    }
   }
 
   // miscellaneous
@@ -170,7 +213,17 @@
   &:hover,
   &:has(.c-menu .is-active) {
     table {
-      position: relative;
+      thead {
+        background-color: $general_1;
+      }
+
+      tr {
+        border-bottom: 1px solid $general_1;
+      }
+
+      th {
+        color: $text_0;
+      }
     }
   }
 }
