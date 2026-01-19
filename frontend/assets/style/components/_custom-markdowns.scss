@@ -148,10 +148,17 @@
     max-width: 100%;
     overflow-x: auto;
     padding: 1rem 0;
+
+    &:has(+ br) {
+      padding-bottom: 0;
+    }
+  }
+
+  br + .table-container {
+    padding-top: 0;
   }
 
   table {
-    --cell-padding: 0.5rem;
     position: relative;
     width: 100%;
     overflow: hidden;
@@ -159,10 +166,6 @@
 
     thead {
       background-color: $general_2;
-
-      tr {
-        border-bottom: none;
-      }
     }
 
     tr {
@@ -174,21 +177,25 @@
     th,
     td {
       min-width: max-content;
-      padding: var(--cell-padding);
-      padding-left: 0;
+      padding: 0.5rem 1rem 0.5rem 0;
       word-break: break-word;
 
       &:first-child {
-        padding-left: var(--cell-padding);
+        padding-left: 0.75rem;
+      }
+
+      .c-message-text {
+        word-break: keep-all;
+      }
+
+      @include from ($tablet) {
+        padding: 0.75rem 1.25rem 0.75rem 0;
       }
     }
 
     th {
+      color: $text_0;
       font-weight: 600;
-    }
-
-    @include from ($tablet) {
-      --cell-padding: 0.75rem;
     }
   }
 
@@ -219,10 +226,6 @@
 
       tr {
         border-bottom: 1px solid $general_1;
-      }
-
-      th {
-        color: $text_0;
       }
     }
   }

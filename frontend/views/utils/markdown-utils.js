@@ -24,6 +24,7 @@ marked.use({
     }
   ],
   renderer: {
+    // reference: https://marked.js.org/using_pro#renderer
     table (header, body) {
       return `<div class="table-container"><table><thead>${header}</thead><tbody>${body}</tbody></table></div>`
     }
