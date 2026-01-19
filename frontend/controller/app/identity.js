@@ -5,7 +5,7 @@ import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { Buffer } from 'buffer'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS, REPLACE_MODAL } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS, OPEN_MODAL } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
@@ -486,7 +486,7 @@ export default (sbp('sbp/selectors/register', {
               throw e
             }
           } else {
-            sbp('okTurtles.events/emit', REPLACE_MODAL, 'LoginErrorModal', null, { errorMessage: errMessage, errorState: state })
+            sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginErrorModal', null, { errorMessage: errMessage, errorState: state })
             return
           }
         }
