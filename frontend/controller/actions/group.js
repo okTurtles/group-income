@@ -22,7 +22,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
-import { merge, omit, randomIntFromRange } from 'turtledash'
+import { debounce, merge, omit, randomIntFromRange } from 'turtledash'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
 import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
@@ -666,6 +666,10 @@ export default (sbp('sbp/selectors/register', {
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
+            if (Math.random() > 0.2 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
+              console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
+              return
+            }
             if (!CEKid) {
               console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
               return
@@ -687,11 +691,45 @@ export default (sbp('sbp/selectors/register', {
                   }))
                 })
               }]
+          } catch (e) {
+            // TODO
+            // This must be done to prevent a single failure on a single contract
+            // from blocking a key rotation.
+            return
           } finally {
             await sbp('chelonia/contract/release', pContractID, { ephemeral: true })
           }
         })).then((keys) => [keys.filter(Boolean)])
   },
+  'gi.actions/group/findAndRequestMissingGroupKeys': debounce((contractID) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state.profiles) return
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+    // If we have all keys, we don't have anything to request
+    if (CEKid && CSKid) return
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn.identityContractID
+    if (!cheloniaState[identityContractID].groups[contractID]) {
+      return
+    }
+
+    sbp('chelonia/out/keyReRequest', {
+      originatingContractID: identityContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID,
+      contractName: 'gi.contracts/group',
+      reference: cheloniaState[identityContractID].groups[contractID].hash,
+      signingKeyId: cheloniaState[identityContractID].groups[contractID].inviteSecretId,
+      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      innerEncryptionKeyId: CEKid,
+      encryptKeyRequestMetadata: true
+    })
+  }, 200),
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')
     const contractState = rootState[params.contractID]
