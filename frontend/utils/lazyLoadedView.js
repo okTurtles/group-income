@@ -72,6 +72,7 @@ lazyModal('GroupDeletionModal', () => import('../views/containers/group-settings
 lazyModal('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))
 lazyModal('LeaveChannelModal', () => import('../views/containers/chatroom/LeaveChannelModal.vue'))
 lazyModal('LoginModal', () => import('../views/containers/access/LoginModal.vue'))
+lazyModal('LoginErrorModal', () => import('../views/containers/access/LoginErrorModal.vue'))
 lazyModal('NotificationModal', () => import('../views/containers/notifications/NotificationModal.vue'))
 lazyModal('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 lazyModal('SignupModal', () => import('../views/containers/access/SignupModal.vue'))
