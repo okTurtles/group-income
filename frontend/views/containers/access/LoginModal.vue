@@ -3,6 +3,7 @@
     class='has-background'
     ref='modal'
     :a11yTitle='L("Log in")'
+    modalName='LoginModal'
     :loading='ephemeral.isLoggingIn'
   )
     template(slot='title')

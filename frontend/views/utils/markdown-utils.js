@@ -22,7 +22,15 @@ marked.use({
         return token.raw
       }
     }
-  ]
+  ],
+  renderer: {
+    // reference: https://marked.js.org/using_pro#renderer
+    table (header, body) {
+      // If table has long content, we need to be able to scroll horizontally.
+      // But <table> element itself doesn't support horizontal scrolling, so it needs to be wrapped in a <div> as a scrollable container.
+      return `<div class="table-container"><table class="table"><thead>${header}</thead><tbody>${body}</tbody></table></div>`
+    }
+  }
 })
 
 export function renderMarkdown (str: string): any {
