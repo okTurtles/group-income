@@ -1,27 +1,25 @@
 <template lang='pug'>
-button.is-unstyled.menu-tile.c-menu-tile(
-  @click.stop='onTileClick'
-  :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
+settings-menu-tile(
+  :isExpandable='isExpandable'
+  :variant='variant'
+  :testId='testId'
+  :menuName='menuName'
+  @click='onTileClick'
 )
-  .tile-upper-section(:data-test='testId')
-    .tile-text {{ menuName }}
-    .tile-info-segment(v-if='$slots.info' @click.stop='')
-      slot(name='info')
-    i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
-
-  transition-expand
-    .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
-      slot(name='lower')
+  template(v-if='$slots.info' #info='')
+    slot(name='info')
+  template(v-if='$slots.lower' #lower='')
+    slot(name='lower')
 </template>
 
 <script>
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import TransitionExpand from '@components/TransitionExpand.vue'
+import SettingsMenuTile from '@components/SettingsMenuTile.vue'
 
 export default {
   name: 'GroupSettingsTabMenuItem',
   components: {
-    TransitionExpand
+    SettingsMenuTile
   },
   inject: ['groupSettingsTabNames'],
   props: {
@@ -55,15 +53,9 @@ export default {
     }
   },
   methods: {
-    onTileClick (e) {
-      const isLowerSectionClicked = e.target.closest('.tile-lower-section')
-
-      if (!isLowerSectionClicked) {
-        if (this.isExpandable) {
-          this.ephemeral.expanded = !this.ephemeral.expanded
-        } else {
-          this.navigateToTab()
-        }
+    onTileClick () {
+      if (!this.isExpandable) {
+        this.navigateToTab()
       }
     },
     navigateToTab () {
@@ -75,11 +67,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-@import "@assets/style/_variables.scss";
-
-.c-menu-tile {
-  position: relative;
-}
-</style>
