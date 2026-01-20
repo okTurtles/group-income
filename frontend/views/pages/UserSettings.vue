@@ -4,29 +4,31 @@ page.c-page
     i18n User settings
 
   transition(:name='transitionName' mode='out-in')
-    i18n(v-if='isMainTab') Main
-    span(v-else) {{ config.tabs[tabIds.tab].name }}
+    UserSettingsMain
 </template>
 
 <script>
 import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
+import UserSettingsMain from '@containers/user-settings/UserSettingsMain.vue'
 
 export default {
   name: 'UserSettings',
   components: {
-    Page
+    Page,
+    UserSettingsMain
   },
   data () {
     return {
       config: {
         tabs: {
-          'my-account': { name: L('My account'), dataTest: 'tabMyAccount' },
+          'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile', subPath: 'my-profile' },
           'notifications': { name: L('Notifications'), dataTest: 'tabNotifications' },
           'appearance': { name: L('Appearance'), dataTest: 'tabAppearance' },
           'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs' },
           'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting' },
-          'logout': { name: L('Logout'), dataTest: 'tabLogout' }
+          'logout': { name: L('Logout'), dataTest: 'tabLogout' },
+          'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' }
         }
       }
     }
@@ -59,8 +61,10 @@ export default {
       this.$router.push({ name: 'UserSettings' })
     }
   },
-  mounted () {
-    console.log('!@# tabIds: ', this.tabIds)
+  provide () {
+    return {
+      userSettingsTabNames: this.config.tabs
+    }
   }
 }
 </script>

@@ -75,6 +75,8 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   }
 }
 
+// settings menu tile common styles
+
 .menu-tile {
   display: block;
   padding: 0.75rem 1rem;
@@ -174,5 +176,22 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     .tile-icon {
       transform: rotate(180deg);
     }
+  }
+}
+
+.tab-legend {
+  color: $text_1;
+  font-size: $size_5;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+
+  .legend-icon {
+    display: inline-block;
+    margin-right: 0.375rem;
+  }
+
+  @include desktop {
+    letter-spacing: 0.1px;
   }
 }

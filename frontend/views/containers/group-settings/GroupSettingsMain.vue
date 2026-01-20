@@ -188,23 +188,6 @@ export default {
   margin-bottom: 2.5rem;
 }
 
-.tab-legend {
-  color: $text_1;
-  font-size: $size_5;
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  padding-left: 0.25rem;
-
-  .legend-icon {
-    display: inline-block;
-    margin-right: 0.375rem;
-  }
-
-  @include desktop {
-    letter-spacing: 0.1px;
-  }
-}
-
 .c-menu {
   position: relative;
   display: flex;
