@@ -27,7 +27,8 @@ const modalMixins = {
     loading: {
       type: Boolean,
       default: false
-    }
+    },
+    modalName: String
   },
   data (): {|modalIsActive: boolean|} {
     return {
@@ -49,7 +50,9 @@ const modalMixins = {
       'setTemporaryReducedMotion'
     ]): any),
     close (e: any) {
-      this.unload()
+      // If optional modalName prop is provided, explicitly pass it as the targetModal to unload
+      // Otherwise, the modal system will unload the latest modal(Last in, First out).
+      this.unload(this.modalName)
     },
     unload (targetModal?: string) {
       if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL, targetModal)
