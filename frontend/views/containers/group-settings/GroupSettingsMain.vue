@@ -79,6 +79,7 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L, LError } from '@common/common.js'
@@ -86,7 +87,8 @@ import { L, LError } from '@common/common.js'
 export default {
   name: 'GroupSettingsMain',
   components: {
-    MenuItem: GroupSettingsTabMenuItem
+    MenuItem: GroupSettingsTabMenuItem,
+    BannerScoped
   },
   data () {
     return {
@@ -146,7 +148,7 @@ export default {
           this.allowPublicChannels.value = checked
         } catch (err) {
           console.error('GroupSettings togglePublicChannelCreateAllowance() error:', err)
-          this.$refs.configPublicChannelFormMsg.danger(L('Failed to change the setting: {reportError}', LError(err)))
+          this.$refs.configPublicChannelFormMsg?.danger(L('Failed to change the setting: {reportError}', LError(err)))
           this.allowPublicChannels.value = !checked
         } finally {
           this.allowPublicChannels.updating = false
