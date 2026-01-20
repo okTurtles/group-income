@@ -46,7 +46,7 @@ export default {
       return this.isMainTab ? GroupSettingsMain : GroupSettingsTabContainer
     },
     transitionName () {
-      return this.isMainTab ? 'show-main-menu' : 'show-tab-content'
+      return this.isMainTab ? 'in-left-out-right' : 'in-right-out-left'
     },
     pageTitle () {
       return this.config.tabNamesMap[this.tabId]
@@ -76,37 +76,5 @@ export default {
   @include desktop {
     display: block;
   }
-}
-
-.show-main-menu-enter,
-.show-main-menu-leave-to,
-.show-tab-content-enter,
-.show-tab-content-leave-to {
-  opacity: 0;
-}
-
-.show-main-menu-enter,
-.show-tab-content-leave-to {
-  transform: translateX(-35%);
-
-  @include from($tablet) {
-    transform: translateX(-20%);
-  }
-}
-
-.show-tab-content-enter,
-.show-main-menu-leave-to {
-  transform: translateX(35%);
-
-  @include from($tablet) {
-    transform: translateX(20%);
-  }
-}
-
-.show-main-menu-enter-active,
-.show-main-menu-leave-active,
-.show-tab-content-enter-active,
-.show-tab-content-leave-active {
-  transition: transform 0.3s ease, opacity 200ms ease;
 }
 </style>

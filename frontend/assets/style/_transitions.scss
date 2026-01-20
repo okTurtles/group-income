@@ -200,3 +200,36 @@
     background-color: $danger_2;
   }
 }
+
+// menu structure transitions
+.in-left-out-right-enter,
+.in-left-out-right-leave-to,
+.in-right-out-left-enter,
+.in-right-out-left-leave-to {
+  opacity: 0;
+}
+
+.in-left-out-right-enter,
+.in-right-out-left-leave-to {
+  transform: translateX(-35%);
+
+  @include from($tablet) {
+    transform: translateX(-20%);
+  }
+}
+
+.in-right-out-left-enter,
+.in-left-out-right-leave-to {
+  transform: translateX(35%);
+
+  @include from($tablet) {
+    transform: translateX(20%);
+  }
+}
+
+.in-left-out-right-enter-active,
+.in-left-out-right-leave-active,
+.in-right-out-left-enter-active,
+.in-right-out-left-leave-active {
+  transition: transform 0.3s ease, opacity 200ms ease;
+}

@@ -17,6 +17,7 @@
         ) @{{ ourUsername }}
 
   button.is-icon-small(
+    :title='L("User settings")'
     data-test='settingsBtn'
     @click='openModalUserSettings'
   )
