@@ -253,8 +253,8 @@ export default ({
     'form.name' (newVal) {
       if (newVal.length) {
         this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
-          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
           .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
       }
     }
   }
