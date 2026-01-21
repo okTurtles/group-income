@@ -36,6 +36,11 @@ legend.legend {
     display: block;
     color: $text_1;
     margin-top: 0.5rem;
+
+    &.with-icon::before {
+      @include i.icon(info-circle);
+      margin-right: 0.25rem;
+    }
   }
 }
 
