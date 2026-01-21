@@ -1,5 +1,6 @@
 <template lang='pug'>
 button.is-unstyled.menu-tile(
+  ref='tile'
   @click.stop='onTileClick'
   :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
 )
@@ -54,7 +55,15 @@ export default {
 
       if (!isLowerSectionClicked) {
         if (this.isExpandable) {
-          this.ephemeral.expanded = !this.ephemeral.expanded
+          const valToSet = !this.ephemeral.expanded
+          this.ephemeral.expanded = valToSet
+
+          if (valToSet) {
+            // If expanded, scroll to the tile to make the content visible
+            setTimeout(() => {
+              this.$refs.tile.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }, 300)
+          }
         }
 
         this.$emit('click')
