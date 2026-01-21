@@ -169,6 +169,10 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
+.settings-container {
+  width: 100%;
+}
+
 .c-username {
   display: none;
   margin-bottom: 2rem;

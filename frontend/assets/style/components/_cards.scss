@@ -192,10 +192,10 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     &:focus,
     &:focus-within {
       background-color: $background_0;
-      border: 1px solid $primary_0_1;
+      border-color: $text_1;
 
       .tile-upper-section {
-        color: $primary_0_1;
+        color: $text_0;
       }
     }
   }

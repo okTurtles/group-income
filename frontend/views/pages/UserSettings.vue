@@ -4,29 +4,31 @@ page.c-page
     i18n User settings
 
   transition(:name='transitionName' mode='out-in')
-    UserSettingsMain
+    component(:is='componentToRender' :tabId='tabIds.tab')
 </template>
 
 <script>
 import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import UserSettingsMain from '@containers/user-settings/UserSettingsMain.vue'
+import UserSettingsTabContainer from '@containers/user-settings/UserSettingsTabContainer.vue'
 
 export default {
   name: 'UserSettings',
   components: {
     Page,
-    UserSettingsMain
+    UserSettingsMain,
+    UserSettingsTabContainer
   },
   data () {
     return {
       config: {
         tabs: {
           'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile', subPath: 'my-profile' },
-          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications' },
-          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance' },
-          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs' },
-          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting' },
+          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications', subPath: 'notifications' },
+          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance', subPath: 'appearance' },
+          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs', subPath: 'application-logs' },
+          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting', subPath: 'troubleshooting' },
           'logout': { name: L('Logout'), dataTest: 'tabLogout' },
           'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' }
         }
@@ -46,6 +48,9 @@ export default {
     },
     isMainTab () {
       return this.tabIds.tab === 'main'
+    },
+    componentToRender () {
+      return this.isMainTab ? UserSettingsMain : UserSettingsTabContainer
     },
     transitionName () {
       return this.isMainTab ? 'in-left-out-right' : 'in-right-out-left'
