@@ -223,3 +223,21 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     letter-spacing: 0.1px;
   }
 }
+
+.menu-tile-block {
+  width: 100%;
+  margin-bottom: 2.5rem;
+
+  menu {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.75rem;
+    width: 100%;
+  }
+
+  &.has-bottom-separator {
+    border-bottom: 1px solid $general_0;
+    padding-bottom: 2.5rem;
+  }
+}

@@ -1,41 +1,41 @@
 <template lang='pug'>
 .c-user-settings-main
-  .c-menu-block
+  .menu-tile-block
     legend.tab-legend
       i.icon-user.legend-icon
       i18n.legend-text Account
 
-    menu.c-menu
+    menu
       MenuItem(tabId='my-profile')
 
-  .c-menu-block
+  .menu-tile-block
     legend.tab-legend
       i.icon-cog.legend-icon
       i18n.legend-text App settings
 
-    menu.c-menu
+    menu
       MenuItem(tabId='notifications')
       MenuItem(tabId='appearance')
 
-  .c-menu-block
+  .menu-tile-block.has-bottom-separator
     legend.tab-legend
       i.icon-search.legend-icon
       i18n.legend-text Advanced
 
-    menu.c-menu
+    menu
       MenuItem(tabId='application-logs')
       MenuItem(tabId='troubleshooting')
 
-  .c-menu-block
-    menu.c-menu
+  .menu-tile-block
+    menu
       MenuItem(tabId='logout' variant='outlined')
 
-  .c-menu-block
+  .menu-tile-block
     legend.tab-legend
       i.icon-exclamation-triangle.legend-icon
       i18n.legend-text Danger Zone
 
-    menu.c-menu
+    menu
       MenuItem(
         tabId='delete-account'
         variant='danger'
@@ -86,23 +86,9 @@ export default {
   }
 }
 
-.c-menu-block {
-  width: 100%;
-  margin-bottom: 2.5rem;
-}
-
-.c-menu {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  row-gap: 0.75rem;
-  width: 100%;
-}
-
 .c-menu-item-lower-section-container {
   position: relative;
   width: 100%;
-  padding-top: 1.5rem;
 
   > * {
     white-space: normal;
