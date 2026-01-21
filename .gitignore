@@ -38,6 +38,7 @@ key.pub.json
 *.sublime-workspace
 *.sublime-project
 .vscode
+/.continue
 
 # Misc
 /ignored
