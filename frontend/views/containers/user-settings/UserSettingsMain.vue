@@ -13,7 +13,7 @@
     legend.tab-legend
       i.icon-cog.legend-icon
       i18n.legend-text App settings
-    
+
     menu.c-menu
       MenuItem(tabId='notifications')
       MenuItem(tabId='appearance')

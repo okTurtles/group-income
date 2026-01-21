@@ -67,22 +67,6 @@
             @click='saveProfile'
             data-test='saveAccount'
           ) {{ L('Save account changes') }}
-
-    section.card
-      form(name='DeleteProfileForm' @submit.prevent='')
-        i18n.is-title-3(tag='h3' class='card-header') Delete account
-        p
-          i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
-          | {{ ' ' }}
-          i18n.is-danger This action cannot be undone.
-
-        .buttons
-          i18n.button.error.is-outlined(
-            tag='button'
-            type='submit'
-            data-test='deleteAccount'
-            @click='handleDeleteAccount'
-          ) Delete account
 </template>
 
 <script>
@@ -98,6 +82,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
+
 export default ({
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
@@ -176,9 +161,6 @@ export default ({
           this.$refs.formMsg.danger(e.message)
         }
       }
-    },
-    handleDeleteAccount () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     }
   }
 }: Object)
