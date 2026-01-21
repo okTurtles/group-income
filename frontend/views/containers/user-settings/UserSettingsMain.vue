@@ -7,7 +7,6 @@
 
     menu.c-menu
       MenuItem(tabId='my-profile')
-      MenuItem(tabId='logout')
 
   .c-menu-block
     legend.tab-legend
@@ -26,6 +25,10 @@
     menu.c-menu
       MenuItem(tabId='application-logs')
       MenuItem(tabId='troubleshooting')
+
+  .c-menu-block
+    menu.c-menu
+      MenuItem(tabId='logout' variant='outlined')
 
   .c-menu-block
     legend.tab-legend
