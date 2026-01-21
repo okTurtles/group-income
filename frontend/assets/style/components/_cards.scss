@@ -155,8 +155,11 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
 
   &.is-style-danger {
     background-color: rgba(0, 0, 0, 0);
-    color: $danger_0;
-    border: 1px solid currentColor;
+    border: 1px solid $danger_0;
+
+    .tile-upper-section {
+      color: $danger_0;
+    }
 
     .tile-text,
     .tile-icon {
@@ -167,8 +170,11 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     &:focus,
     &:focus-within {
       background-color: rgba(0, 0, 0, 0);
-      border: 1px solid currentColor;
-      color: $danger_0_1;
+      border: 1px solid $danger_0_1;
+
+      .tile-upper-section {
+        color: $danger_0_1;
+      }
     }
   }
 
