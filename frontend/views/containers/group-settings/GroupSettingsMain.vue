@@ -23,7 +23,7 @@
         tabId='roles-and-permissions'
       )
       MenuItem(
-        v-if='configurePublicChannelSupported'
+        v-if='configurePublicChannelSupported || true'
         tabId='public-channels'
         :isExpandable='true'
       )
@@ -199,7 +199,6 @@ export default {
 .c-menu-item-lower-section-container {
   position: relative;
   width: 100%;
-  padding-top: 1.5rem;
 
   > * {
     white-space: normal;
