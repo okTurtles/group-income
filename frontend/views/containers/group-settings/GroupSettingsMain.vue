@@ -23,7 +23,7 @@
         tabId='roles-and-permissions'
       )
       MenuItem(
-        v-if='configurePublicChannelSupported || true'
+        v-if='configurePublicChannelSupported'
         tabId='public-channels'
         :isExpandable='true'
       )
