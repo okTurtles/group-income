@@ -1,10 +1,6 @@
 <template lang='pug'>
 settings-menu-tile(
-  :variant='variant'
-  :isExpandable='isExpandable'
-  :testId='testId'
-  :menuName='menuName'
-  :icon='icon'
+  v-bind='propFallThrough'
   @click='onTileClick'
 )
   template(v-if='$slots.info' #info='')
@@ -37,7 +33,8 @@ export default {
       type: Boolean,
       default: false
     },
-    icon: String
+    icon: String,
+    noIcon: Boolean
   },
   computed: {
     menuItem () {
@@ -48,6 +45,16 @@ export default {
     },
     testId () {
       return this.menuItem?.dataTest || ''
+    },
+    propFallThrough () {
+      return {
+        variant: this.variant,
+        isExpandable: this.isExpandable,
+        testId: this.testId,
+        menuName: this.menuName,
+        icon: this.icon,
+        noIcon: this.noIcon
+      }
     }
   },
   methods: {

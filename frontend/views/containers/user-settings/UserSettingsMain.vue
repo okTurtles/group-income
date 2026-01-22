@@ -28,7 +28,7 @@
 
   .menu-tile-block
     menu
-      MenuItem(tabId='logout' variant='outlined' icon='minus')
+      MenuItem(tabId='logout' variant='outlined' :noIcon='true')
 
   .menu-tile-block.has-bottom-separator
     legend.tab-legend

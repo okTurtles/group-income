@@ -5,16 +5,6 @@ import { L } from '@common/common.js'
 export default {
   activeTab: 3,
   settings: [{
-    legend: (L('User settings'): string),
-    links: [
-      {
-        title: (L('My account'): string),
-        url: 'my-account',
-        component: 'UserProfile',
-        index: 0
-      }
-    ]
-  }, {
     legend: (L('App settings'): string),
     links: [
       {

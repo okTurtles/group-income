@@ -12,9 +12,11 @@
 <script>
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import UserProfile from './UserProfile.vue'
+import NotificationSettings from './NotificationSettings.vue'
 
 const componentMap = {
-  'my-profile': UserProfile
+  'my-profile': UserProfile,
+  'notifications': NotificationSettings
 }
 
 export default {

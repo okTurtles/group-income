@@ -8,7 +8,7 @@ button.is-unstyled.menu-tile(
     .tile-text {{ menuName }}
     .tile-info-segment(v-if='$slots.info' @click.stop='')
       slot(name='info')
-    i(:class='iconClasses')
+    i(v-if='!noIcon' :class='iconClasses')
 
   transition-expand
     .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
@@ -44,6 +44,10 @@ export default {
     icon: {
       type: String,
       default: ''
+    },
+    noIcon: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -55,12 +59,14 @@ export default {
   },
   computed: {
     iconClasses () {
-      return [
-        this.isExpandable
-          ? 'icon-chevron-down'
-          : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
-        'tile-icon'
-      ]
+      return this.noIcon
+        ? ''
+        : [
+            this.isExpandable
+              ? 'icon-chevron-down'
+              : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
+            'tile-icon'
+          ]
     }
   },
   methods: {
