@@ -3,6 +3,6 @@
 [transfer]
     fsckObjects = true
 [fetch]
-    fsckoOjects = true
+    fsckObjects = true
 [receive]
     fsckObjects = true
