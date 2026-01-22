@@ -55,9 +55,10 @@ export default {
       }
     },
     navigateToTab () {
-      if (this.menuItem.subPath) {
+      if (this.tabId) {
         this.$router.push({
-          path: `/user-settings/${this.menuItem.subPath}`
+          name: 'UserSettingsTab',
+          params: { tabId: this.tabId }
         }).catch(logExceptNavigationDuplicated)
       }
     }

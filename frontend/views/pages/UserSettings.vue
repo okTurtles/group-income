@@ -4,7 +4,7 @@ page.c-page
     i18n User settings
 
   transition(:name='transitionName' mode='out-in')
-    component(:is='componentToRender' :tabId='tabIds.tab')
+    component(:is='componentToRender' :tabId='tabId')
 </template>
 
 <script>
@@ -24,11 +24,11 @@ export default {
     return {
       config: {
         tabs: {
-          'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile', subPath: 'my-profile' },
-          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications', subPath: 'notifications' },
-          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance', subPath: 'appearance' },
-          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs', subPath: 'application-logs' },
-          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting', subPath: 'troubleshooting' },
+          'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile' },
+          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications' },
+          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance' },
+          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs' },
+          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting' },
           'logout': { name: L('Logout'), dataTest: 'tabLogout' },
           'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' }
         }
@@ -36,18 +36,11 @@ export default {
     }
   },
   computed: {
-    tabIds () {
-      const pathMatch = this.$route.params.pathMatch || ''
-
-      if (!pathMatch) {
-        return { tab: 'main', subTab: null }
-      } else {
-        const subPaths = pathMatch.split('/')
-        return { tab: subPaths[0], subTab: subPaths[1] }
-      }
+    tabId () {
+      return this.$route.params.tabId || 'main'
     },
     isMainTab () {
-      return this.tabIds.tab === 'main'
+      return this.tabId === 'main'
     },
     componentToRender () {
       return this.isMainTab ? UserSettingsMain : UserSettingsTabContainer

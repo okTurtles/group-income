@@ -30,7 +30,7 @@
     menu
       MenuItem(tabId='logout' variant='outlined')
 
-  .menu-tile-block
+  .menu-tile-block.has-bottom-separator
     legend.tab-legend
       i.icon-exclamation-triangle.legend-icon
       i18n.legend-text Danger Zone
@@ -55,22 +55,73 @@
                 data-test='deleteAccount'
                 @click='handleDeleteAccount'
               ) Delete account
+
+  .c-version-info-block
+    .version-item
+      i18n App Version:
+      span.c-version-value {{ ephemeral.versions.app }}
+    .version-item
+      i18n Contracts Version:
+      span.c-version-value {{ ephemeral.versions.contracts }}
+    .version-item
+      i18n SW Version:
+      span.c-version-value(
+        :class='{ "is-loading": ephemeral.versions.loadingSWVersion }'
+      ) {{ ephemeral.versions.loadingSWVersion ? '' : ephemeral.versions.sw }}
+
+    i18n.is-unstyled.c-acknowledgements(tag='button' @click.stop='onAcknowledgementsClick') Acknowledgements
+
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'UserSettingsMain',
   components: {
     MenuItem: UserSettingsTabMenuItem
   },
+  data () {
+    return {
+      ephemeral: {
+        versions: {
+          loadingSWVersion: false,
+          app: '-',
+          contracts: '-',
+          sw: '-'
+        }
+      }
+    }
+  },
   methods: {
     handleDeleteAccount () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
+    },
+    async loadVersionInfo () {
+      this.ephemeral.versions.app = process.env.GI_VERSION.split('@')[0]
+      this.ephemeral.versions.contracts = process.env.CONTRACTS_VERSION
+
+      try {
+        this.ephemeral.versions.loadingSWVersion = true
+        this.ephemeral.versions.sw = (await sbp('sw/version')).GI_GIT_VERSION.slice(1)
+      } catch (e) {
+        console.error('UserSettingsMain.vue failed to load sw version info:', e)
+      } finally {
+        this.ephemeral.versions.loadingSWVersion = false
+      }
+    },
+    onAcknowledgementsClick () {
+      this.$router.push({
+        name: 'UserSettingsTab',
+        params: { tabId: 'acknowledgements' }
+      }).catch(logExceptNavigationDuplicated)
     }
+  },
+  created () {
+    this.loadVersionInfo()
   }
 }
 </script>
@@ -80,10 +131,6 @@ export default {
 
 .c-user-settings-main {
   margin-top: 1rem;
-
-  @include desktop {
-    margin-top: 3rem;
-  }
 }
 
 .c-menu-item-lower-section-container {
@@ -97,5 +144,56 @@ export default {
 
 .c-delete-account-text {
   margin-bottom: 1.5rem;
+}
+
+.c-version-info-block {
+  position: relative;
+  width: 100%;
+  color: $text_1;
+  font-size: $size_5;
+  margin-bottom: 4.25rem;
+}
+
+.version-item {
+  display: flex;
+  column-gap: 0.325rem;
+  align-items: center;
+}
+
+.c-version-value {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+
+  &.is-loading {
+    width: 1.75rem;
+    height: 0.825rem;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: $radius;
+      z-index: 1;
+      background-color: $general_1;
+      animation: loading-heartbeat 3s infinite;
+    }
+  }
+}
+
+.c-acknowledgements {
+  display: inline-block;
+  text-decoration: underline;
+  margin-top: 1rem;
+  transition: color 0.2s ease-out;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    color: $text_0;
+  }
 }
 </style>
