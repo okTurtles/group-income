@@ -6,16 +6,26 @@
       i18n Back to menu
 
   .c-tab-content-wrapper
-    | {{ tabId }}
+    component(:is='componentToRender')
 </template>
 
 <script>
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import UserProfile from './UserProfile.vue'
+
+const componentMap = {
+  'my-profile': UserProfile
+}
 
 export default {
   name: 'UserSettingsTabContainer',
   props: {
     tabId: String
+  },
+  computed: {
+    componentToRender () {
+      return componentMap[this.tabId] || UserProfile
+    }
   },
   methods: {
     backToMenu () {
@@ -30,10 +40,6 @@ export default {
 
 .c-user-settings-tab-container {
   margin-top: 1rem;
-
-  @include desktop {
-    margin-top: 3rem;
-  }
 }
 
 .c-back-btn-container {

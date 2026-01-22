@@ -1,7 +1,6 @@
 <template lang='pug'>
 page.c-page
-  template(#title='')
-    i18n User settings
+  template(#title='') {{ pageTitle }}
 
   transition(:name='transitionName' mode='out-in')
     component(:is='componentToRender' :tabId='tabId')
@@ -24,6 +23,7 @@ export default {
     return {
       config: {
         tabs: {
+          'main': { name: L('User Settings') },
           'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile' },
           'notifications': { name: L('Notifications'), dataTest: 'tabNotifications' },
           'appearance': { name: L('Appearance'), dataTest: 'tabAppearance' },
@@ -47,6 +47,11 @@ export default {
     },
     transitionName () {
       return this.isMainTab ? 'in-left-out-right' : 'in-right-out-left'
+    },
+    pageTitle () {
+      return this.config.tabs[this.tabId]
+        ? this.config.tabs[this.tabId].name
+        : this.config.tabs.main.name
     }
   },
   methods: {

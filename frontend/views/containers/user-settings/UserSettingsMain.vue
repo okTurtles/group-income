@@ -152,12 +152,14 @@ export default {
   color: $text_1;
   font-size: $size_5;
   margin-bottom: 4.25rem;
+  text-align: right;
 }
 
 .version-item {
   display: flex;
   column-gap: 0.325rem;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .c-version-value {

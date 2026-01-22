@@ -1,8 +1,6 @@
 <template lang='pug'>
   .settings-container
-    span.c-username @{{ ourUsername }}
-
-    avatar-upload(
+    avatar-upload.c-avatar-upload(
       :avatar='attributes.picture'
       :sbpParams='sbpParams'
       avatarType='user'
@@ -123,7 +121,7 @@ export default ({
   },
   computed: {
     ...mapState(['loggedIn']),
-    ...mapGetters(['ourUsername', 'currentIdentityState']),
+    ...mapGetters(['currentIdentityState']),
     attributes () {
       return this.currentIdentityState.attributes || {}
     },
@@ -173,15 +171,8 @@ export default ({
   width: 100%;
 }
 
-.c-username {
-  display: none;
+.c-avatar-upload {
   margin-bottom: 2rem;
-  margin-top: 0.5rem;
-  color: $text_1;
-
-  @include desktop {
-    display: block;
-  }
 }
 
 .c-display-name-label-container,
@@ -208,5 +199,4 @@ export default ({
 .icon-check {
   margin-right: 1rem;
 }
-
 </style>
