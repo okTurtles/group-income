@@ -4,6 +4,7 @@ settings-menu-tile(
   :isExpandable='isExpandable'
   :testId='testId'
   :menuName='menuName'
+  :icon='icon'
   @click='onTileClick'
 )
   template(v-if='$slots.info' #info='')
@@ -35,7 +36,8 @@ export default {
     isExpandable: {
       type: Boolean,
       default: false
-    }
+    },
+    icon: String
   },
   computed: {
     menuItem () {

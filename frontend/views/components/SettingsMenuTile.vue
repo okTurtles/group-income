@@ -8,7 +8,7 @@ button.is-unstyled.menu-tile(
     .tile-text {{ menuName }}
     .tile-info-segment(v-if='$slots.info' @click.stop='')
       slot(name='info')
-    i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
+    i(:class='iconClasses')
 
   transition-expand
     .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
@@ -40,6 +40,10 @@ export default {
     menuName: {
       type: String,
       default: ''
+    },
+    icon: {
+      type: String,
+      default: ''
     }
   },
   data () {
@@ -47,6 +51,16 @@ export default {
       ephemeral: {
         expanded: false
       }
+    }
+  },
+  computed: {
+    iconClasses () {
+      return [
+        this.isExpandable
+          ? 'icon-chevron-down'
+          : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
+        'tile-icon'
+      ]
     }
   },
   methods: {
