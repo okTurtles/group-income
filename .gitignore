@@ -6,6 +6,7 @@
 key.json
 key.pub.json
 /docs/book/
+/.deno/
 
 # prevent accidental addition of yarn.lock from making Travis builds longer
 /yarn.lock
@@ -37,6 +38,7 @@ key.pub.json
 *.sublime-workspace
 *.sublime-project
 .vscode
+/.continue
 
 # Misc
 /ignored

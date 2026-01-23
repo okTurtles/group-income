@@ -26,36 +26,37 @@
         i.icon-times
 
     section.c-video-viewer-body
-      video-player.c-video-player(
-        v-if='currentVideo'
-        ref='videoPlayer'
-        :key='currentVideo.videoUrl'
-        :src='currentVideo.videoUrl'
-        :mimeType='currentVideo.mimeType'
-        :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
-        @play='onVideoPlay'
-        @pause='onVideoPause'
-        @enterfullscreen='onVideoFullscreenChange'
-        @exitfullscreen='onVideoFullscreenChange'
+      .c-video-viewer-body-inner
+        video-player.c-video-player.for-video-modal(
+          v-if='currentVideo'
+          ref='videoPlayer'
+          :key='currentVideo.videoUrl'
+          :src='currentVideo.videoUrl'
+          :mimeType='currentVideo.mimeType'
+          :initialTime='ephemeral.currentIndex === initialIndex ? initialTime : undefined'
+          @play='onVideoPlay'
+          @pause='onVideoPause'
+          @enterfullscreen='onVideoFullscreenChange'
+          @exitfullscreen='onVideoFullscreenChange'
+        )
+
+      button.is-icon.c-video-nav-btn.is-prev(
+        v-if='showPrevButton'
+        @click='selectPrevVideo'
+        title='L("Previous video")'
+        aria-label='L("Previous video")'
+        type='button'
       )
+        i.icon-chevron-left
 
-    button.is-icon.c-video-nav-btn.is-prev(
-      v-if='showPrevButton'
-      @click='selectPrevVideo'
-      title='L("Previous video")'
-      aria-label='L("Previous video")'
-      type='button'
-    )
-      i.icon-chevron-left
-
-    button.is-icon.c-video-nav-btn.is-next(
-      v-if='showNextButton'
-      @click='selectNextVideo'
-      title='L("Next video")'
-      aria-label='L("Next video")'
-      type='button'
-    )
-      i.icon-chevron-right
+      button.is-icon.c-video-nav-btn.is-next(
+        v-if='showNextButton'
+        @click='selectNextVideo'
+        title='L("Next video")'
+        aria-label='L("Next video")'
+        type='button'
+      )
+        i.icon-chevron-right
 </template>
 
 <script>
@@ -221,22 +222,26 @@ export default {
 
 .c-video-viewer-modal {
   @include media-viewer-modal-container($zindex:$zindex-modal);
+  display: flex;
+  flex-direction: column;
 
   .is-dark-theme & {
     --viewer-bg-color: var(--general_2);
+  }
+
+  @include from($tablet) {
+    display: block;
   }
 }
 
 .c-video-viewer-content {
   @include media-viewer-modal-content;
   background-color: var(--viewer-bg-color);
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "c-header"
-    "c-body";
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  flex-grow: 1;
 
   @include from($tablet) {
     display: block;
@@ -250,17 +255,13 @@ export default {
 
 .c-modal-header {
   @include media-viewer-modal-header;
-  position: relative;
-  grid-area: c-header;
+  position: absolute;
   transition: transform 350ms ease-in-out;
+  flex-shrink: 0;
 
-  @include from($tablet) {
-    position: absolute;
-
-    &::after {
-      background: linear-gradient(rgba(0, 0, 0, 0.7490196078) 10%, rgba(0, 0, 0, 0));
-      height: 120%;
-    }
+  &::after {
+    background: linear-gradient(rgba(0, 0, 0, 0.7490196078) 10%, rgba(0, 0, 0, 0));
+    height: 120%;
   }
 
   .is-hidden {
@@ -277,9 +278,17 @@ button.c-close-btn {
 }
 
 .c-video-viewer-body {
-  grid-area: c-body;
   position: relative;
   width: 100%;
+  flex-grow: 1;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.c-video-viewer-body-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -288,6 +297,7 @@ button.c-close-btn {
   @include from($tablet) {
     display: block;
     aspect-ratio: 16/9;
+    flex-grow: unset;
   }
 }
 
@@ -296,11 +306,6 @@ button.c-close-btn {
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
-  transform: translateY(-2rem);
-
-  @include from($tablet) {
-    transform: translateY(0);
-  }
 }
 
 button.c-video-nav-btn {

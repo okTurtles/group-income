@@ -77,6 +77,10 @@ const manifestJSON = path.join(contractsDir, 'manifests.json')
 const development = NODE_ENV === 'development'
 const production = !development
 
+const isValidPort = (port) => {
+  return Number.isInteger(port) && port >= 1024 && port <= 65535
+}
+
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
@@ -87,7 +91,7 @@ module.exports = (grunt) => {
   ;(function defineApiEnvars () {
     const API_PORT = Number.parseInt(grunt.option('port') ?? process.env.API_PORT ?? '8000', 10)
 
-    if (Number.isNaN(API_PORT) || API_PORT < 1024 || API_PORT > 65535) {
+    if (!isValidPort(API_PORT)) {
       throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
     }
     process.env.API_PORT = String(API_PORT)
@@ -612,6 +616,13 @@ module.exports = (grunt) => {
 
     // BrowserSync setup.
     const browserSync = require('browser-sync').create('esbuild')
+
+    // If there is port override, use it.
+    const portOverride = grunt.option('browsersync-port') || process.env.BROWSER_SYNC_PORT
+    if (portOverride && isValidPort(portOverride)) {
+      browserSyncOptions.port = Number(portOverride)
+    }
+
     browserSync.init(browserSyncOptions)
 
     ;[
