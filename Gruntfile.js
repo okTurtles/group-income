@@ -109,16 +109,16 @@ module.exports = (grunt) => {
   const clone = o => JSON.parse(JSON.stringify(o))
 
   async function execWithErrMsg (cmd, errMsg) {
-    const p = execP(cmd, {
+    try {
+      const { stdout } = await execP(cmd, {
       // this is needed to get it to work in certain Windows environments
-      shell: process.env.SHELL || '/bin/sh'
-    })
-    const { stdout, stderr } = await p
-    if (p.child.exitCode !== 0) {
-      console.error(chalk`{red ${errMsg}:}`, stderr)
+        shell: process.env.SHELL || '/bin/sh'
+      })
+      return { stdout }
+    } catch (e) {
+      console.error(chalk`{red ${errMsg}:}`, e.stderr)
       throw new Error(errMsg)
     }
-    return { stdout }
   }
 
   async function generateManifests (dir, version) {
