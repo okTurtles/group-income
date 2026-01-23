@@ -645,7 +645,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys, options) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
@@ -662,17 +662,25 @@ export default (sbp('sbp/selectors/register', {
             } else {
               console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Error retaining ${pContractID}`, e)
             }
-            return
+            if (options.lastAttempt) {
+              return
+            } else {
+              throw new Error('Unable to share rotated keys')
+            }
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-            if (Math.random() > 0.2 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
+            if (Math.random() > 1.2 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
               console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
               return
             }
             if (!CEKid) {
               console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
-              return
+              if (options.lastAttempt) {
+                return
+              } else {
+                throw new Error('Unable to share rotated keys')
+              }
             }
             return [
               'chelonia/out/keyShare',
@@ -692,10 +700,13 @@ export default (sbp('sbp/selectors/register', {
                 })
               }]
           } catch (e) {
-            // TODO
             // This must be done to prevent a single failure on a single contract
             // from blocking a key rotation.
-            return
+            if (options.lastAttempt) {
+              return
+            } else {
+              throw e
+            }
           } finally {
             await sbp('chelonia/contract/release', pContractID, { ephemeral: true })
           }

@@ -598,49 +598,81 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys, options) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
     await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
-      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
-      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
-
-      if (!CEKid || !CSKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
-        // We intentionally don't throw here to be able to share keys with the
-        // remaining groups
-        return
+      const retained = await sbp('chelonia/contract/retain', groupID, { ephemeral: true }).then(() => [true], (e) => [false, e])
+      if (!retained[0]) {
+        const e = retained[1]
+        if (e?.name === 'ChelErrorResourceGone') {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: ${groupID} does not exist`, e)
+        } else {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Error retaining ${groupID}`, e)
+        }
+        if (options.lastAttempt) {
+          return
+        } else {
+          throw new Error('Unable to share rotated keys')
+        }
       }
-      return sbp('chelonia/out/keyShare', {
-        contractID: groupID,
-        contractName: rootState.contracts[groupID].type,
-        data: encryptedOutgoingData(groupID, CEKid, {
-          contractID,
-          // $FlowFixMe
-          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-            id: newId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
-              }
-            }
-          }))
-        }),
-        signingKeyId: CSKid,
-        hooks: {
-          preSendCheck: (_, state) => {
-            // Don't send this message if we're no longer a group member
-            return state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+      try {
+        const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+        const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
+
+        if (!CEKid || !CSKid) {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
+          // We intentionally don't throw here to be able to share keys with the
+          // remaining groups
+          if (options.lastAttempt) {
+            return
+          } else {
+            throw new Error('Unable to share rotated keys')
           }
         }
-      }).catch(e => {
+        return sbp('chelonia/out/keyShare', {
+          contractID: groupID,
+          contractName: rootState.contracts[groupID].type,
+          data: encryptedOutgoingData(groupID, CEKid, {
+            contractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
+          }),
+          signingKeyId: CSKid,
+          hooks: {
+            preSendCheck: (_, state) => {
+              return (
+                // Don't send this message if we're no longer a group member
+                state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+              )
+            }
+          }
+        }).catch(e => {
         // We may no longer be a member of the group, so we ignore errors
         // related to missing keys
-        if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+          if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+            throw e
+          }
+        })
+      } catch (e) {
+        // This must be done to prevent a single failure on a single contract
+        // from blocking a key rotation.
+        if (options.lastAttempt) {
+          return
+        } else {
           throw e
         }
-      })
+      } finally {
+        await sbp('chelonia/contract/release', groupID, { ephemeral: true })
+      }
     }))
 
     // This selector is called by rotateKeys, which will include the keys to
