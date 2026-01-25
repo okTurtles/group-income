@@ -1500,6 +1500,27 @@ sbp('chelonia/defineContract', {
         console.error('[gi.contracts/group/hook/ku] Error', e)
       })
     },
+    'gi.contracts/group/keyRequest': ({
+      contractID,
+      request,
+      state,
+      originatingContractID
+    }) => {
+      if (request === 'missing' && state.profiles[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
+        return {
+          keyIds: Object.entries(state._vm.authorizedKeys)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .map(([kId]) => kId),
+          skipInviteAccounting: true
+        }
+      } else {
+        return {
+          keyIds: [],
+          skipInviteAccounting: true
+        }
+      }
+    },
     'gi.contracts/group/_cleanup': ({ contractID, state }) => {
       // unsubscribe from other group members identity contract
       const { identityContractID } = sbp('state/vuex/state').loggedIn
