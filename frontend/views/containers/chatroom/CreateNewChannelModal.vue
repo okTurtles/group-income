@@ -24,6 +24,7 @@
           @blur='updateField("name")'
           v-error:name=''
         )
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can only contain lowercase letters, numbers, and hyphens(-).
 
       label.field
         .c-desc-label-container
@@ -196,6 +197,7 @@ export default ({
     async submit () {
       const { name, description } = this.form
       try {
+        this.$refs.formMsg.clean()
         await sbp('gi.app/group/addAndJoinChatRoom', {
           contractID: this.currentGroupId,
           data: {
@@ -248,9 +250,11 @@ export default ({
     }
   },
   watch: {
-    'form.name' (newVal, oldVal) {
+    'form.name' (newVal) {
       if (newVal.length) {
-        this.form.name = newVal.replaceAll(/\s/g, '-').toLowerCase()
+        this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
       }
     }
   }

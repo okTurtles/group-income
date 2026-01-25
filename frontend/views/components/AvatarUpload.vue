@@ -1,5 +1,8 @@
 <template lang='pug'>
-  form.c-avatar-form(@submit.prevent='')
+  form.c-avatar-form(
+    :class='"is-type-" + avatarType'
+    @submit.prevent=''
+  )
     .c-avatar-wrapper
       label.c-avatar-label
         avatar.c-avatar-img(
@@ -101,34 +104,16 @@ export default ({
     flex-direction: column;
     text-align: center;
     align-items: center;
-
-    @include desktop {
-      align-items: flex-end;
-    }
   }
 
   &-label {
     @include touch {
       margin-bottom: 1.5rem;
     }
-
-    @include desktop {
-      position: absolute;
-      top: -6.5rem;
-      right: 0;
-      align-items: flex-end;
-      margin-bottom: -0.5rem;
-      z-index: 3;
-    }
   }
 
   &-img.is-xl.is-xl { // need .is-xl 2x for specificity
     margin: 0 auto;
-
-    @include desktop {
-      width: 4.5rem;
-      height: 4.5rem;
-    }
   }
 
   &-text {
@@ -144,6 +129,28 @@ export default ({
 
     @include desktop {
       margin: 0.5rem 0 1.5rem;
+    }
+  }
+}
+
+@include desktop {
+  .is-type-user {
+    .c-avatar-wrapper {
+      align-items: flex-end;
+    }
+
+    .c-avatar-label {
+      position: absolute;
+      top: -6.5rem;
+      right: 0;
+      align-items: flex-end;
+      margin-bottom: -0.5rem;
+      z-index: 3;
+    }
+
+    .c-avatar-img.is-xl.is-xl {
+      width: 4.5rem;
+      height: 4.5rem;
     }
   }
 }

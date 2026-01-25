@@ -269,6 +269,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
+    // This is put here to fix a frequent heisenbug happening after cy.giSwitchChannel() below, which never happens when running test locally.
+    // The intention is to give it a bit of extra time for async operations to complete in relatively unstable environment like CI.
     cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
 
     cy.log('Users can update details(name, description) of the channels they created.')
@@ -429,7 +431,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
 
-    // NOTE: this check is to wait until 2 INTERACTIVE mesages are created
+    // NOTE: this check is to wait until 2 additional notifications for the INTERACTIVE mesages are created
     //       one for creating proposal and another is for proposal approval
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="3 new notifications"]').contains('3')
 
@@ -458,8 +460,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogin(user2, { bypassUI: true })
     me = user2
 
-    cy.getByDT('groupSettingsLink').click()
-    cy.getByDT('leaveModalBtn').click()
+    cy.giLeaveGroup()
 
     cy.getByDT('leaveGroup', 'form').within(() => {
       cy.getByDT('username').type('{selectall}{del}' + user2)

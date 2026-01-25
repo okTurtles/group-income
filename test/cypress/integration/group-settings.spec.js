@@ -45,6 +45,7 @@ describe('Changing Group Settings', () => {
 
     cy.getByDT('groupSettingsLink').click()
 
+    cy.getByDT('tabGroupProfile').click()
     cy.fixture(groupPicture, 'base64').then(fileContent => {
       groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.getByDT('avatar').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
@@ -82,6 +83,7 @@ describe('Group Voting Rules', () => {
     cy.log(`Update group Voting Rule: ${ruleName}, ${threshold}`)
 
     cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('tabVotingRules').click()
     cy.getByDT('votingRules', 'ul').find(`li[data-test='${ruleName}']`).within(() => {
       cy.getByDT('changeRule', 'button').click()
     })
@@ -113,6 +115,7 @@ describe('Group Voting Rules', () => {
     cy.log(`Verify selected group Voting Rule: ${ruleName}`)
 
     cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('tabVotingRules').click()
     cy.get('ul[data-test="votingRules"] > li')
       .should('have.length', 1)
       .first()

@@ -426,14 +426,20 @@ export default ({
     ...mapGetters([
       'chatRoomMembers',
       'currentChatRoomId',
+      'isDirectMessage',
       'chatRoomAttributes',
       'ourContactProfilesById',
       'globalProfile',
+      'groupProfiles',
       'ourIdentityContractId',
       'mentionableChatroomsInDetails'
     ]),
-    members () {
+    activeMembers () {
+      const activeGroupMemberIds = Object.keys(this.groupProfiles)
+      const isInDM = this.isDirectMessage(this.currentChatRoomId)
+
       return Object.keys(this.chatRoomMembers)
+        .filter(memberID => isInDM || activeGroupMemberIds.includes(memberID))
         .map(memberID => {
           const { username, displayName, picture } = this.ourContactProfilesById[memberID] || {}
           return {
@@ -685,7 +691,7 @@ export default ({
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
         const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
         const availableMentions = type === 'member'
-          ? this.members.map(memberID => memberID.username)
+          ? this.activeMembers.map(member => member.username)
           : this.mentionableChatroomsInDetails.map(channel => channel.name)
 
         return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
@@ -830,7 +836,7 @@ export default ({
       switch (mentionType) {
         case 'member': {
           const all = makeMentionFromUsername('').all
-          const availableMentions = Array.from(this.members)
+          const availableMentions = Array.from(this.activeMembers)
           // NOTE: '@all' mention should only be needed when the members are more than 3
           if (availableMentions.length > 2) {
             availableMentions.push({

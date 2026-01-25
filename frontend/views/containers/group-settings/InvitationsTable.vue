@@ -4,6 +4,7 @@ page-section.c-section(:title='L("Invite links")')
     label.selectsolo(:class='{ focus: ephemeral.selectbox.focused }')
       i18n.sr-only Filter links
       select.select(
+        data-test='inviteLinksFilter'
         ref='select'
         v-model='ephemeral.selectbox.selectedOption'
         @change='unfocusSelect'
