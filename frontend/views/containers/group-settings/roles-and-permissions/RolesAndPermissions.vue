@@ -1,6 +1,5 @@
 <template lang="pug">
 page-section.c-section(
-  v-if='displayComponent'
   :title='L("Roles and Permissions")'
 )
   p.has-text-1.c-section-description
@@ -63,15 +62,10 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourGroupProfile',
       'ourGroupPermissionsHas',
       'allGroupMemberPermissions',
       'ourIdentityContractId'
     ]),
-    displayComponent () {
-      return process.env.NODE_ENV === 'development' && // TODO: Remove this once the development is complete and the feature is ready for release.
-        this.ourGroupProfile.role
-    },
     canDelegatePermissions () {
       return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
     },
