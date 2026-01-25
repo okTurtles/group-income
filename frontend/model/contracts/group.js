@@ -1141,6 +1141,7 @@ sbp('chelonia/defineContract', {
         }))(data)
 
         const myProfile = getters.groupProfile(innerSigningContractID)
+        const targetProfile = state.profiles[data.memberID]
         const myPermissions = myProfile?.role?.permissions || []
 
         if (data.some(item => item?.roleName === GROUP_ROLES.ADMIN)) {
@@ -1153,8 +1154,12 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('You do not have permission to assign delegator role.'))
         }
 
-        if (!myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL)) {
+        if (!myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
           throw new TypeError(L('You do not have permission to delegate permissions.'))
+        }
+
+        if (data?.action === GROUP_PERMISSION_UPDATE_ACTIONS.EDIT && !targetProfile?.role) {
+          throw new TypeError(L('Cannot edit permissions for a member who does not have a role.'))
         }
 
         for (const item of data) {
@@ -1172,19 +1177,19 @@ sbp('chelonia/defineContract', {
           const groupProfile = state.profiles[item.memberID]
 
           switch (item.action) {
-            case 'add':
+            case GROUP_PERMISSION_UPDATE_ACTIONS.ADD:
               groupProfile.role = {
                 name: item.roleName,
                 permissions: item.permissions
               }
               break
-            case 'edit':
+            case GROUP_PERMISSION_UPDATE_ACTIONS.EDIT:
               groupProfile.role = {
                 name: item.roleName || groupProfile.role.name,
                 permissions: item.permissions || groupProfile.role.permissions
               }
               break
-            case 'remove':
+            case GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE:
               groupProfile.role = null
               break
           }
