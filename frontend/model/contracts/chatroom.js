@@ -247,6 +247,10 @@ sbp('chelonia/defineContract', {
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
+        if (itsMe) {
+          sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        }
       },
       async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
@@ -702,7 +706,6 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/rotateKeys': (contractID) => {
       sbp('chelonia/queueInvocation', contractID, async () => {
-        await sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
         await sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
       }).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)

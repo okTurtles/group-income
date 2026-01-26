@@ -853,15 +853,14 @@ sbp('chelonia/defineContract', {
           { memberID, dateLeft: meta.createdDate, heightLeft: height, ourselvesLeaving: memberID === identityContractID },
           { contractID, meta, state, getters }
         )
-      },
-      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
-        const memberID = data.memberID || innerSigningContractID
         // When a member is leaving, we need to mark the CSK and the CEK as needing
         // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
         // (to actually perform the rotation) and Chelonia (to unset the flag if
         // they are rotated by somebody else)
-        sbp('chelonia/queueInvocation', contractID, () => sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk']))
-
+        sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+      },
+      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
+        const memberID = data.memberID || innerSigningContractID
         sbp('gi.contracts/group/referenceTally', contractID, memberID, 'release')
         // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
@@ -1844,9 +1843,13 @@ sbp('chelonia/defineContract', {
             })
           }
 
+          const potentialPEKids = state._vm.sharedKeyIds?.filter(({ contractID, height: sharedHeight }) => {
+            return sharedHeight < height && contractID === identityContractID
+          }).map(({ id }) => id)
+
           Promise.resolve()
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID))
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, potentialPEKids))
             .catch((e) => {
               console.warn(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
@@ -1868,12 +1871,12 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown:`, e)
       })
     },
-    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, potentialPEKids) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
 
       sbp('chelonia/queueInvocation', identityContractID, async () => {
-        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'])
+        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'], potentialPEKids)
         await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
       }).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)

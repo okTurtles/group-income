@@ -670,7 +670,7 @@ export default (sbp('sbp/selectors/register', {
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-            if (Math.random() > -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
+            if (Math.random() < -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
               console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
               return
             }
