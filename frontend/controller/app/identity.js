@@ -5,7 +5,7 @@ import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { Buffer } from 'buffer'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS, OPEN_MODAL } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
@@ -465,26 +465,29 @@ export default (sbp('sbp/selectors/register', {
           const forkedChain = (e && (e.name === 'ChelErrorForkedChain' || e.cause?.name === 'ChelErrorForkedChain'))
           const deleted = (e && (e.name === 'ChelErrorResourceGone' || e.cause?.name === 'ChelErrorResourceGone'))
 
-          const promptOptions = {
-            heading: L('Login error'),
-            question: forkedChain
-              ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
-              : deleted
-                ? L('Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}.', { err: errMessage, ...LTags() })
-                : L('An error occurred while logging in. Please try logging in again. {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
-            primaryButton: L('Log out'),
-            // secondaryButton: L('No'),
-            primaryButtonStyle: 'primary', // make primary button 'filled' style
-            isContentCentered: !forkedChain && !deleted
-          }
+          if (forkedChain || deleted) {
+            const promptOptions = {
+              heading: L('Login error'),
+              question: forkedChain
+                ? L('The server\'s history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.', { err: errMessage, ...LTags() })
+                : L('Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}.', { err: errMessage, ...LTags() }),
+              primaryButton: L('Log out'),
+              // secondaryButton: L('No'),
+              primaryButtonStyle: 'primary', // make primary button 'filled' style
+              isContentCentered: false
+            }
 
-          const result = await sbp('gi.ui/prompt', promptOptions)
-          if (result) {
-            sbp('gi.ui/clearBanner')
-            return sbp('gi.app/identity/_private/logout', state, forkedChain)
+            const result = await sbp('gi.ui/prompt', promptOptions)
+            if (result) {
+              sbp('gi.ui/clearBanner')
+              return sbp('gi.app/identity/_private/logout', state, forkedChain)
+            } else {
+              sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
+              throw e
+            }
           } else {
-            sbp('okTurtles.events/emit', LOGIN_ERROR, { username, identityContractID, error: e })
-            throw e
+            sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginErrorModal', null, { errorMessage: errMessage, errorState: state })
+            return
           }
         }
 

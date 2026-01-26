@@ -10,8 +10,7 @@ describe('Group Income - Removing contracts', () => {
 
     cy.giCreateGroup(groupName, { bypassUI: true })
 
-    cy.getByDT('groupSettingsLink').click()
-    cy.getByDT('leaveModalBtn').click()
+    cy.giLeaveGroup()
 
     cy.getByDT('modal', 'div').within(() => {
       cy.window().its('sbp').then(sbp => {

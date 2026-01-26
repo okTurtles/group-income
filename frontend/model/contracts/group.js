@@ -1138,11 +1138,13 @@ sbp('chelonia/defineContract', {
           attributes: chatRoomAttributesType
         })(data)
 
-        // Validation on the chatroom name (reference: https://github.com/okTurtles/group-income/issues/1987)
+        // Validation on the chatroom name - references:
+        // https://github.com/okTurtles/group-income/issues/1987
+        // https://github.com/okTurtles/group-income/issues/2999
         const chatroomName = data.attributes.name
         const nameValidationMap: {[string]: Function} = {
           [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-          [L('Chatroom name must be lower-case only')]: (v: string): boolean => /[A-Z]/g.test(v)
+          [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
         }
 
         for (const key in nameValidationMap) {

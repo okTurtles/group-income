@@ -889,3 +889,9 @@ Cypress.Commands.add('giSwitchChannel', (channelName) => {
   cy.giWaitUntilMessagesLoaded()
   cy.getByDT('channelName').should('contain', channelName)
 })
+
+Cypress.Commands.add('giLeaveGroup', () => {
+  cy.getByDT('groupSettingsLink').click()
+  cy.getByDT('tabLeaveGroup').click()
+  cy.getByDT('leaveModalBtn').click()
+})
