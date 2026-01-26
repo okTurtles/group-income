@@ -247,8 +247,12 @@ sbp('chelonia/defineContract', {
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
+        // If someone else has left, mark the CEK and CSK as needing rotation
+        // The actual rotation, if it's still needed (i.e., keys still marked
+        // as 'pending' due to not having been rotated), will be done later
+        // as a side effect. This avoids unnecessary rotations.
         const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
-        if (itsMe) {
+        if (!itsMe) {
           sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
         }
       },

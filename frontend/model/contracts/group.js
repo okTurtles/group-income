@@ -856,8 +856,10 @@ sbp('chelonia/defineContract', {
         // When a member is leaving, we need to mark the CSK and the CEK as needing
         // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
         // (to actually perform the rotation) and Chelonia (to unset the flag if
-        // they are rotated by somebody else)
-        sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        // they are rotated by somebody else).
+        if (memberID !== identityContractID) {
+          sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        }
       },
       sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
@@ -1876,6 +1878,10 @@ sbp('chelonia/defineContract', {
       const { identityContractID } = rootState.loggedIn
 
       sbp('chelonia/queueInvocation', identityContractID, async () => {
+        // If someone else has left, mark our own CEK and CSK as needing rotation
+        // The actual rotation will be done later by 'gi.actions/out/rotateKeys'.
+        // `potentialPEKids` restricts the list of posssible PEKs to use to
+        // avoid unnecessary rotations.
         await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'], potentialPEKids)
         await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
       }).catch(e => {
