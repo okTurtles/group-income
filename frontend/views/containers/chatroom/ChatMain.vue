@@ -201,7 +201,7 @@ const onChatScroll = function (ev) {
 
   if (curScrollTop < 5) {
     this.onScrollStart()
-  } else if (curScrollTop + 5 > curScrollTopMax) {
+  } else if (curScrollTop + 5 > scrollTopMax) {
     this.onScrollEnd()
   }
 
