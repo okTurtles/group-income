@@ -176,7 +176,7 @@ const router: any = new Router({
     },
     {
       // reference: https://v3.router.vuejs.org/guide/essentials/dynamic-matching.html#catch-all-404-not-found-route
-      path: '/user-settings/:tabId',
+      path: '/user-settings/*',
       component: lazyUserSettings,
       name: 'UserSettingsTab',
       meta: { title: L('User Settings') },

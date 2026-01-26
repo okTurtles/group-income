@@ -21,12 +21,10 @@ const componentMap = {
 
 export default {
   name: 'UserSettingsTabContainer',
-  props: {
-    tabId: String
-  },
+  inject: ['userSettingsTabIds'],
   computed: {
     componentToRender () {
-      return componentMap[this.tabId] || UserProfile
+      return componentMap[this.userSettingsTabIds.tab] || UserProfile
     }
   },
   methods: {

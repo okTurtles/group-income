@@ -64,10 +64,10 @@ export default {
       }
     },
     navigateToTab () {
-      if (this.tabId) {
+      console.log('!@# here', this.menuItem)
+      if (this.menuItem?.pathTo) {
         this.$router.push({
-          name: 'UserSettingsTab',
-          params: { tabId: this.tabId }
+          path: `/user-settings/${this.menuItem.pathTo}`
         }).catch(logExceptNavigationDuplicated)
       }
     }

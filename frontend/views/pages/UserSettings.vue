@@ -3,7 +3,7 @@ page.c-page
   template(#title='') {{ pageTitle }}
 
   transition(:name='transitionName' mode='out-in')
-    component(:is='componentToRender' :tabId='tabId')
+    component(:is='componentToRender')
 </template>
 
 <script>
@@ -24,11 +24,14 @@ export default {
       config: {
         tabs: {
           'main': { name: L('User Settings') },
-          'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile' },
-          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications' },
-          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance' },
-          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs' },
-          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting' },
+          'my-profile': { name: L('My profile'), dataTest: 'tabMyProfile', pathTo: 'my-profile' },
+          'notifications': { name: L('Notifications'), dataTest: 'tabNotifications', pathTo: 'notifications' },
+          'appearance': { name: L('Appearance'), dataTest: 'tabAppearance', pathTo: 'appearance' },
+          'theme': { name: L('Theme'), dataTest: 'tabTheme', pathTo: 'appearance/theme' },
+          'text-size': { name: L('Text size'), dataTest: 'tabTextSize', pathTo: 'appearance/text-size' },
+          'reduced-motion': { name: L('Reduced motion'), dataTest: 'tabReducedMotion', pathTo: 'appearance/reduced-motion' },
+          'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs', pathTo: 'application-logs' },
+          'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting', pathTo: 'troubleshooting' },
           'logout': { name: L('Logout'), dataTest: 'tabLogout' },
           'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' }
         }
@@ -36,11 +39,18 @@ export default {
     }
   },
   computed: {
-    tabId () {
-      return this.$route.params.tabId || 'main'
+    tabIds () {
+      const pathMatch = this.$route.params.pathMatch || ''
+
+      if (!pathMatch) {
+        return { tab: 'main', subTab: null }
+      } else {
+        const subPaths = pathMatch.split('/')
+        return { tab: subPaths[0], subTab: subPaths[1] }
+      }
     },
     isMainTab () {
-      return this.tabId === 'main'
+      return this.tabIds.tab === 'main'
     },
     componentToRender () {
       return this.isMainTab ? UserSettingsMain : UserSettingsTabContainer
@@ -49,8 +59,8 @@ export default {
       return this.isMainTab ? 'in-left-out-right' : 'in-right-out-left'
     },
     pageTitle () {
-      return this.config.tabs[this.tabId]
-        ? this.config.tabs[this.tabId].name
+      return this.config.tabs[this.tabIds.tab]
+        ? this.config.tabs[this.tabIds.tab].name
         : this.config.tabs.main.name
     }
   },
@@ -65,8 +75,22 @@ export default {
     }
   },
   provide () {
+    const tabIds = {}
+    // Defining properties like below ensures these are reactive across the component tree. (Vue 2 only)
+    Object.defineProperties(tabIds, {
+      tab: {
+        enumerable: true,
+        get: () => this.tabIds.tab
+      },
+      subTab: {
+        enumerable: true,
+        get: () => this.tabIds.subTab
+      }
+    })
+
     return {
-      userSettingsTabNames: this.config.tabs
+      userSettingsTabNames: this.config.tabs,
+      userSettingsTabIds: tabIds
     }
   }
 }
