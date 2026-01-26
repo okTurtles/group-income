@@ -123,12 +123,6 @@ export default ({
           }, 100)
         }
       }
-    },
-    'isGroupChatPage': {
-      immediate: true,
-      handler (isGroupChatPage) {
-        console.log('!@# isGroupChatPage', isGroupChatPage)
-      }
     }
   }
 }: Object)
