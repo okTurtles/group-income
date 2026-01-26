@@ -13,10 +13,12 @@
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import UserProfile from './UserProfile.vue'
 import NotificationSettings from './NotificationSettings.vue'
+import AppearanceSettings from './AppearanceSettings.vue'
 
 const componentMap = {
   'my-profile': UserProfile,
-  'notifications': NotificationSettings
+  'notifications': NotificationSettings,
+  'appearance': AppearanceSettings
 }
 
 export default {
