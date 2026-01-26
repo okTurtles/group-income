@@ -92,24 +92,28 @@ export default (sbp('sbp/selectors/register', {
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const inviteKey = keygen(EDWARDS25519SHA512BATCH)
     const SAK = keygen(EDWARDS25519SHA512BATCH)
+    const creatorInviteKey = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
     const inviteKeyId = keyId(inviteKey)
     const SAKid = keyId(SAK)
+    const creatorInviteKeyId = keyId(creatorInviteKey)
 
     // Public keys to be stored in the contract
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
     const inviteKeyP = serializeKey(inviteKey, false)
     const SAKp = serializeKey(SAK, false)
+    const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CSK, true))
     const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
     const inviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(inviteKey, true))
     const SAKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(SAK, true))
+    const creatorInviteKeyS = encryptedOutgoingDataWithRawKey(CEK, serializeKey(creatorInviteKey, true))
 
     try {
       const proposalSettings = {
@@ -210,6 +214,20 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: SAKp
+          },
+          {
+            id: creatorInviteKeyId,
+            name: '#inviteKey-' + creatorInviteKeyId,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            permissions: [SPMessage.OP_KEY_REQUEST],
+            meta: {
+              quantity: 1,
+              private: {
+                content: creatorInviteKeyS
+              }
+            },
+            data: creatorInviteKeyP
           }
         ],
         data: {
@@ -294,7 +312,7 @@ export default (sbp('sbp/selectors/register', {
           contractID: userID,
           data: {
             groupContractID: contractID,
-            inviteSecret: serializeKey(CSK, true),
+            inviteSecret: serializeKey(creatorInviteKey, true),
             creatorID: true
           }
         })
@@ -714,7 +732,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/findAndRequestMissingGroupKeys': debounce((contractID) => {
     const state = sbp('chelonia/contract/state', contractID)
-    if (!state.profiles) return
+    if (!state || !state.profiles) return
 
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
