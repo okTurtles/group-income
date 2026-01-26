@@ -1016,7 +1016,7 @@ export default ({
           this.$refs.conversation.scrollToItem(index)
 
           // Sometimes, scrollToItem() above doesn't necessarily lead to 'scroll' event (eg. target message is the latest message but the scroll position is already at the bottom)
-          // and in that case, some scroll-position related states (chatroomReadUntilMessageHash, chatroomScrollPosotion) doesn't get updated which leads to a bug
+          // and in that case, some scroll-position related states (currentChatRoomReadUntil etc.) doesn't get updated which leads to a bug
           // where unread-message count doesn't get reset even after the user reads the latest message. (https://github.com/okTurtles/group-income/issues/2962)
           // So triggering 'onChatScroll()' here manually once to ensure these states are updated.
           this.onChatScroll()
