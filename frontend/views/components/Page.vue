@@ -87,7 +87,7 @@ export default ({
     toggleProps () {
       return {
         element: this.isGroupChatPage ? 'chat' : 'sidebar',
-        ariaExpanded: this.ephemeral.isActive
+        'aria-expanded': this.ephemeral.isActive
       }
     }
   },
