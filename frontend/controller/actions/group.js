@@ -688,7 +688,7 @@ export default (sbp('sbp/selectors/register', {
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-            if (Math.random() < -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
+            if (Math.random() > -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
               console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
               return
             }
@@ -747,17 +747,6 @@ export default (sbp('sbp/selectors/register', {
       return
     }
 
-    const keyRequestResponseKey = Object.values(contractState._vm.authorizedKeys)
-      .find((k: any) => {
-        return (
-          k._notAfterHeight == null && k.meta?.keyRequest?.contractID === contractID
-        )
-      })
-    if (!keyRequestResponseKey) {
-      console.warn('gi.actions/group/findAndRequestMissingGroupKeys: Unable to find a suitable response key, will attempt to create a new one')
-      return
-    }
-
     sbp('chelonia/out/keyRequest', {
       originatingContractID: identityContractID,
       originatingContractName: 'gi.contracts/identity',
@@ -767,8 +756,6 @@ export default (sbp('sbp/selectors/register', {
       signingKeyId: cheloniaState[identityContractID].groups[contractID].inviteSecretId,
       innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-      // $FlowFixMe[incompatible-use]
-      keyRequestResponseId: keyRequestResponseKey?.id,
       request: 'missing',
       innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
