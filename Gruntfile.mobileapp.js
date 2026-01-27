@@ -1,42 +1,15 @@
 'use strict'
 
-// TODO: REMOVEME. This prevents tests from running
-// if (process.env['CI']) process.exit(1)
-
-// =======================
-// Entry point.
-//
-// Ensures:
-//
-// - Babel support is available on the backend, in Mocha tests, etc.
-// - Environment variables are set to different values depending
-//   on whether we're in a production environment or otherwise.
-//
-// =======================
-
 const util = require('util')
 const chalk = require('chalk')
-const crypto = require('crypto')
-const { exec, execSync, fork } = require('child_process')
+const { exec, execSync } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
+const { mkdir, access, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
+
 const { resolve } = path
 const packageJSON = require('./package.json')
-
-// =======================
-// Global environment variables setup
-//
-// - Esbuild's `define` option allows to replace e.g. `process.env.VARIABLE`
-// with its corresponding value at build-time, similar to C macros.
-//
-// See https://esbuild.github.io/api/#define
-// =======================
-
-// Not loading babel-register here since it is quite a heavy import and is not always used.
-// We will rather load it later, and only if necessary.
-// require('@babel/register')
 
 const {
   CI = '',
@@ -48,19 +21,13 @@ const {
   UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS = 'false'
 } = process.env
 
-if (!['development', 'production'].includes(NODE_ENV)) {
-  throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
-}
-// 'grunt pin' can override this
-let CONTRACTS_VERSION = packageJSON.contractsVersion
+const CONTRACTS_VERSION = packageJSON.contractsVersion
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
 const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
-
-// Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
-const backendIndex = './backend/index.js'
+// file paths
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
@@ -88,19 +55,14 @@ const isValidPort = (port) => {
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
-  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('utf8').trim()
+  const GI_GIT_VERSION = process.env.CI
+    ? process.env.GI_VERSION
+    : execSync('git describe --dirty').toString('utf8').trim()
   Object.assign(process.env, { GI_GIT_VERSION })
 
-  // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
-  ;(function defineApiEnvars () {
-    const API_PORT = Number.parseInt(grunt.option('port') ?? process.env.API_PORT ?? '8000', 10)
-
-    if (!isValidPort(API_PORT)) {
-      throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
-    }
-    process.env.API_PORT = String(API_PORT)
-    process.env.API_URL = 'http://127.0.0.1:' + API_PORT
-  })()
+  process.env.MOBILE_APP_API_URL = development
+    ? 'https://debug.groupincome.org'
+    : 'https://groupincome.app'
 
   // Helper functions
 
@@ -110,7 +72,9 @@ module.exports = (grunt) => {
     return x
   }
 
-  const clone = o => JSON.parse(JSON.stringify(o))
+  function clone (o) {
+    return JSON.parse(JSON.stringify(o))
+  }
 
   async function execWithErrMsg (cmd, errMsg) {
     const { stdout, stderr } = await execP(cmd, {
@@ -152,6 +116,7 @@ module.exports = (grunt) => {
     } catch {
       await access(dest).catch(async () => await mkdir(dest))
     }
+
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
@@ -187,6 +152,7 @@ module.exports = (grunt) => {
   // https://browsersync.io/docs/options
   const browserSyncOptions = {
     cors: true,
+    // files option - browserSync watches these files and reloads the page when they change.
     files: [
       // Glob matching uses https://github.com/micromatch/picomatch
       `${distJS}/main.js`,
@@ -194,14 +160,17 @@ module.exports = (grunt) => {
       `${distAssets}/**/*`,
       `${distCSS}/**/*`
     ],
+
     ghostMode: false,
     logLevel: grunt.option('debug') ? 'debug' : 'info',
     open: false,
     port: 3000,
-    proxy: {
-      target: process.env.API_URL,
-      ws: true
+
+    // Instead of specifying a proxy for the hapi server, watch&serve the `dist` directory directly.
+    server: {
+      baseDir: 'dist'
     },
+
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
@@ -234,7 +203,8 @@ module.exports = (grunt) => {
         'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
         'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
         'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`,
-        'process.env.IS_MOBILE_APP': '"false"'
+        'process.env.MOBILE_APP_API_URL': `'${process.env.MOBILE_APP_API_URL}'`,
+        'process.env.IS_MOBILE_APP': '"true"'
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
@@ -259,9 +229,12 @@ module.exports = (grunt) => {
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js'],
+      outdir: distDir // this is `${distDir}/assets/js` in the web-app build(Gruntfile.js)
     }
   }
+
+  // esbuild options for building contracts files
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle'
@@ -364,8 +337,6 @@ module.exports = (grunt) => {
     flowtype: flowRemoveTypesPluginOptions
   }
 
-  // Helper functions
-
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
@@ -414,73 +385,8 @@ module.exports = (grunt) => {
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  let child = null
-
-  grunt.registerTask('copyAndMoveContracts', async function () {
-    const done = this.async()
-    const { contractsVersion } = packageJSON
-
-    // NOTE: the latest version
-    await mkdir(`${distContracts}/${contractsVersion}`)
-    for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
-      if (dirent.isFile()) {
-        const fileName = dirent.name
-        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${contractsVersion}/${fileName}`)
-        await rm(`${distContracts}/${fileName}`)
-      }
-    }
-
-    // NOTE: all previously pinned versions
-    const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
-      return dirent.isDirectory() && dirent.name !== contractsVersion
-    }).map(dirent => dirent.name)
-    for (const version of versions) {
-      await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
-    }
-
-    done()
-  })
-
   grunt.registerTask('chelDeploy', function () {
     grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
-  })
-
-  // Used with `grunt dev` only, makes it possible to restart just the server when
-  // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
-    const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: { NODE_ENV, ...process.env },
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      done()
-    }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
   })
 
   grunt.registerTask('build', function () {
@@ -491,90 +397,8 @@ module.exports = (grunt) => {
     }
   })
 
-  grunt.registerTask('cypress', function () {
-    const cypress = require('cypress')
-    const done = this.async()
-    const command = grunt.option('browser') === 'debug' ? 'open' : 'run'
-
-    // https://docs.cypress.io/guides/guides/module-api.html
-    const options = {
-      run: {
-        headed: grunt.option('browser') === true,
-        ...(process.env.CYPRESS_RECORD_KEY && {
-          record: true,
-          key: process.env.CYPRESS_RECORD_KEY
-        })
-      },
-      open: {
-        // add cypress.open() options here
-      }
-    }[command]
-    grunt.log.writeln(`cypress: running in "${command}" mode...`)
-    cypress[command]({
-      config: { baseUrl: process.env.API_URL },
-      // Exclude some spec files for CI runs
-      // group-large|group-proposals are excluded because they take
-      // comparatively long
-      ...process.env.CI && { spec: 'test/cypress/integration/!(group-large|group-proposals).spec.js' },
-      ...options
-    })
-      .then(r => done(r.totalFailed === 0)).catch(done)
-  })
-
-  grunt.registerTask('_pin', async function (version) {
-    // a task internally executed in 'pin' task below
-    const done = this.async()
-    const dirPath = `contracts/${version}`
-
-    if (fs.existsSync(dirPath)) {
-      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
-        fs.rmSync(dirPath, { recursive: true })
-      } else {
-        throw new Error(`already exists: ${dirPath}`)
-      }
-    }
-    if (!fs.existsSync('contracts')) {
-      console.error(chalk`{red folder needed but doesn't exist:} {bold contracts/}`)
-      throw new Error("doesn't exist: contracts/")
-    }
-    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
-    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    done()
-  })
-
-  grunt.registerTask('pin', function (version) {
-    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
-    // it's possible for the UI to get updated without the contracts getting updated,
-    // so we keep their version numbers separate.
-    // we do this here first so that any code that uses `process.env.CONTRACTS_VERSION` inside the contracts
-    // themselves will be built using this latest version number, and so that the contract manifests
-    // are generated using this version number
-    packageJSON.contractsVersion = CONTRACTS_VERSION = process.env.CONTRACTS_VERSION = version
-    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated package.json "contractsVersion" to:'), packageJSON.contractsVersion)
-    // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
-    // registering handlers for 'unhandledRejection' or 'uncaughtException'
-    grunt.task.run(['build', `_pin:${version}`])
-  })
-
-  grunt.registerTask('deploy', function () {
-    if (!production) {
-      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
-    }
-    grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
-  })
-  grunt.registerTask('serve', function () {
-    if (!production) {
-      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
-    }
-    // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
-    // contract manifests match the ones that are the dist archive. We do this in both production
-    // and development environments to make sure they match when serving the site using grunt serve.
-    grunt.task.run(['exec:chelProdDeploy', 'backend:relaunch', 'keepalive'])
-  })
-
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'keepalive'])
 
   // --------------------
   // - Our esbuild task
@@ -640,7 +464,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
+      [['shared/**/*.js'], [eslint]],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -689,7 +513,7 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
+              const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
@@ -722,26 +546,11 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
-
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
 
   process.on('exit', () => {
-    // Note: 'beforeExit' doesn't work.
-    // In cases where 'watch' fails while child (server) is still running
-    // we will exit and child will continue running in the background.
-    // This can happen, for example, when running two GIS instances via
-    // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
-    // cannot bind to the port for some reason, then the parent process
-    // will exit leaving a dangling child server process.
-    if (child) {
-      grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
-    }
     // Stops the Flowtype server.
     exec('./node_modules/.bin/flow stop')
   })

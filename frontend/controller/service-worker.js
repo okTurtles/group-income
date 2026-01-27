@@ -96,7 +96,14 @@ sbp('sbp/selectors/register', {
         ['routerBase', sbp('controller/router').options.base ?? ''],
         ['standalone', isPwa() ? '1' : '0']
       ])
-      const swRegistration = await navigator.serviceWorker.register(`/assets/js/sw-primary.js?${params}`, { scope: '/' })
+
+      // When the front-end files are served from the local file system instead of the hapi server (eg. mobile app),
+      // 'sw-primary.js' file cannot be moved to the 'dist/assets/js' directory because in this case
+      // we can't handle the mismatch problem between the service worker scope('/') and its path('/assets/js/sw-primary.js')
+      // via 'Service-Worker-Allowed' response header. (reference: backend/routes.js L:958)
+      // So sw-primary.js file remains in the '/dist' directory in this case. (reference: Gruntfile.mobileapp.js L:233)
+      const swFilePath = process.env.IS_MOBILE_APP === 'true' ? '/sw-primary.js' : '/assets/js/sw-primary.js'
+      const swRegistration = await navigator.serviceWorker.register(`${swFilePath}?${params}`, { scope: '/' })
 
       // This probably happens if the SW immediately crashed after registration
       // (e.g., trying to access indexedDB if it's undefined). In any case, we

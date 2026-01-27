@@ -316,7 +316,11 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
   currentVersionInfo = versionInfo
 })
 
-sbp('okTurtles.data/set', 'API_URL', self.location.origin)
+sbp(
+  'okTurtles.data/set',
+  'API_URL',
+  process.env.IS_MOBILE_APP === 'true' ? process.env.MOBILE_APP_API_URL : self.location.origin
+)
 setupRootState()
 const setupPromise = setupChelonia()
 

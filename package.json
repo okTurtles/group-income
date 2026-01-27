@@ -19,7 +19,8 @@
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
     "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js",
+    "dev:remote-server": "grunt --gruntfile Gruntfile.mobileapp.js --browsersync-port=4321"
   },
   "eslintConfig": {
     "root": true,

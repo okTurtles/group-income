@@ -9,6 +9,7 @@
 .*/Gruntfile.js
 .*/cypress.config.js
 .*/Gruntfile.dashboard.js
+.*/Gruntfile.mobileapp.js
 .*/dist/.*
 .*/dist-dashboard/.*
 <PROJECT_ROOT>/contracts/.*
