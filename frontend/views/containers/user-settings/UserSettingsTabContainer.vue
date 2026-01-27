@@ -14,11 +14,15 @@ import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import UserProfile from './UserProfile.vue'
 import NotificationSettings from './NotificationSettings.vue'
 import AppearanceSettings from './appearance/AppearanceSettings.vue'
+import AppLogs from './AppLogs.vue'
+import Troubleshooting from './Troubleshooting.vue'
 
 const componentMap = {
   'my-profile': UserProfile,
   'notifications': NotificationSettings,
-  'appearance': AppearanceSettings
+  'appearance': AppearanceSettings,
+  'application-logs': AppLogs,
+  'troubleshooting': Troubleshooting
 }
 
 export default {

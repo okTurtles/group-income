@@ -63,9 +63,9 @@ export default {
       if (!this.isExpandable) {
         this.navigateToTab()
       }
+      this.$emit('click')
     },
     navigateToTab () {
-      console.log('!@# here', this.menuItem)
       if (this.menuItem?.pathTo) {
         this.$router.push({
           path: `/user-settings/${this.menuItem.pathTo}`

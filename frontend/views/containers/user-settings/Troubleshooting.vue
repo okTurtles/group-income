@@ -1,5 +1,5 @@
 <template lang='pug'>
-  .settings-container
+  .c-troubleshooting-container
     section.card
       i18n.is-title-3(tag='h3') Re-sync and rebuild data
       p.c-desc.has-text-1
@@ -102,12 +102,6 @@ Are you sure?`)
 
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
-
-.settings-container {
-  @include desktop {
-    padding-top: 1.5rem;
-  }
-}
 
 .c-desc {
   margin: 1rem 0;

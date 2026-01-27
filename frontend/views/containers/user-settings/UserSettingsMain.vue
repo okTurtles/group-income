@@ -28,7 +28,12 @@
 
   .menu-tile-block
     menu
-      MenuItem(tabId='logout' variant='outlined' :noIcon='true')
+      MenuItem(
+        tabId='logout'
+        variant='outlined'
+        :noIcon='true'
+        @click='handleLogout'
+      )
 
   .menu-tile-block.has-bottom-separator
     legend.tab-legend
@@ -118,6 +123,14 @@ export default {
         name: 'UserSettingsTab',
         params: { tabId: 'acknowledgements' }
       }).catch(logExceptNavigationDuplicated)
+    },
+    async handleLogout () {
+      try {
+        await sbp('gi.app/identity/logout')
+      } catch (e) {
+        console.error('Error in handleLogout:', e)
+        alert(`An error occurred while logging out: ${e}`)
+      }
     }
   },
   created () {

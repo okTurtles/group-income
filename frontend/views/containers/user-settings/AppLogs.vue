@@ -1,5 +1,5 @@
 <template lang='pug'>
-  .settings-container
+  .c-app-logs-container
     section.card
       .c-loader-container(v-if='ephemeral.versionInfos.loading')
         .loading-box
@@ -299,12 +299,8 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.settings-container {
+.c-app-logs-container {
   width: 100%;
-
-  @include desktop {
-    padding-top: 1.5rem;
-  }
 }
 
 .c-header {

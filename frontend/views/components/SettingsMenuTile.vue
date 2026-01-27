@@ -85,7 +85,7 @@ export default {
             // If expanded, scroll to the tile to make the content visible
             setTimeout(() => {
               this.$refs.tile.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 250)
+            }, 300)
           }
         }
 
