@@ -1,9 +1,6 @@
 <template lang='pug'>
   .settings-container
     section.card
-      i18n.is-title-2.c-title(tag='h2') Theme
-      SelectorTheme
-
       //- .c-subcontent
       //-   .c-text-content
       //-     i18n.c-smaller-title(tag='h3') Use high-contrast colors
@@ -37,13 +34,11 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import SelectorTheme from './Theme.vue'
 import SelectorFontSize from './FontSize.vue'
 
 export default ({
   name: 'SettingsAppearence',
   components: {
-    SelectorTheme,
     SelectorFontSize
   },
   methods: {

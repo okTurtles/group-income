@@ -10,7 +10,7 @@
 <script>
 import { L } from '@common/common.js'
 import { mapGetters, mapMutations } from 'vuex'
-import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
+import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
 import ThemeTile from './ThemeTile.vue'
 
 export default {
