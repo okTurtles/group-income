@@ -7,9 +7,9 @@ MenuItem(tabId='theme' :isExpandable='true')
     .c-theme-list
       fieldset.c-theme-item(@click.prevent='setTheme("system")')
         label(for='system')
-          .c-combined-color
+          .c-color
             ThemeSvg(:color='config.themes.light')
-            ThemeSvg(:color='config.themes.dark')
+            ThemeSvg.c-absolute-svg(:color='config.themes.dark')
 
           .radio.c-radio
             input.input(type='radio' name='theme' value='system' id='system' v-model='theme')
@@ -63,50 +63,50 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+$grid-layout-breakpoint: 630px;
+
 .c-theme-list {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.75rem, 1fr));
+  width: 100%;
   gap: 1rem;
 
-  @include from($tablet) {
+  @include from($grid-layout-breakpoint) {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto;
   }
 }
 
 .c-radio {
   margin-top: 0.5rem;
+  margin-right: 0;
+  width: 100%;
 }
 
 .c-theme-item {
-  max-width: 9.75rem;
-
   &:hover {
-    .c-combined-color,
     .c-color {
       transform: scale(1.05);
     }
   }
-
-  @include from($tablet) {
-    max-width: unset;
-  }
 }
 
-.c-combined-color,
 .c-color {
+  position: relative;
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
   border: 1px solid $general_0;
   border-radius: 0.25rem;
   overflow: hidden;
-}
 
-.c-combined-color {
-  display: flex;
-
-  svg {
-    margin-right: -50%;
+  .c-absolute-svg {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    top: 0;
+    left: 50%;
   }
 }
 </style>
