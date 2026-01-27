@@ -103,7 +103,6 @@ lazyComponent('RecordPayment', () => import('../views/containers/payments/Record
 lazyComponent('SendPaymentsViaLightning', () => import('../views/containers/payments/SendPaymentsViaLightning.vue'))
 lazyComponent('ExportPaymentsModal', () => import('../views/containers/payments/ExportPaymentsModal.vue'))
 
-lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
 lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))
 lazyComponent('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
 lazyComponent('NewDirectMessageModal', () => import('../views/containers/chatroom/NewDirectMessageModal.vue'))

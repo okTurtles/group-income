@@ -12,11 +12,6 @@ export default {
         url: 'notifications',
         component: 'NotificationSettings',
         index: 2
-      }, {
-        title: (L('Appearance'): string),
-        url: 'appearance',
-        component: 'Appearence',
-        index: 3
       }
     ]
   }, {

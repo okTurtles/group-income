@@ -9,13 +9,41 @@
         :isExpandable='true'
       )
         template(#info='')
-          input.switch.is-small.c-switch(
-            type='checkbox'
-            name='switch'
-            :checked='$store.state.settings.reducedMotion'
-            @change='handleReducedMotion'
-            @click.stop=''
-          )
+          label
+            i18n.sr-only Reduced motion
+            input.switch.is-small.c-switch(
+              type='checkbox'
+              name='switch'
+              :checked='$store.state.settings.reducedMotion'
+              @change='handleReducedMotion'
+              @click.stop=''
+            )
+
+        template(#lower='')
+          .c-reduced-motion-content
+            i18n.has-text-1(tag='p') When enabled the amount of animations you see around are reduced.
+
+      MenuItem(
+        v-if='increasedContrastEnabled'
+        tabId='increased-contrast'
+        :isExpandable='true'
+      )
+        template(#info='')
+          label
+            i18n.sr-only Increases contrast
+            input.switch.is-small.c-switch(
+              type='checkbox'
+              name='switch'
+              :checked='$store.state.settings.increasedContrast'
+              @change='handleIncreasedContrast'
+              @click.stop=''
+            )
+
+        template(#lower='')
+          .c-increased-contrast-content
+            i18n.c-smaller-title(tag='h3') Use high-contrast colors
+            i18n.has-text-1(tag='p') Increases contrast and improves readability.
+
 </template>
 
 <script>
@@ -32,12 +60,22 @@ export default {
     ThemeTile,
     TextSizeTile
   },
+  computed: {
+    increasedContrastEnabled () {
+      // This was commented out in the original user-settings page, so keeping it here disabled for now.
+      return false
+    }
+  },
   methods: {
     ...mapMutations([
-      'setReducedMotion'
+      'setReducedMotion',
+      'setIncreasedContrast'
     ]),
     handleReducedMotion (e) {
       this.setReducedMotion(e.target.checked)
+    },
+    handleIncreasedContrast (e) {
+      this.setIncreasedContrast(e.target.checked)
     }
   }
 }
@@ -52,5 +90,10 @@ export default {
 
 input.c-switch {
   vertical-align: middle;
+}
+
+.c-smaller-title {
+  font-size: $size_4;
+  font-weight: bold;
 }
 </style>

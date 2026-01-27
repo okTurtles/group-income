@@ -2,7 +2,6 @@
 MenuItem(
   tabId='text-size'
   :isExpandable='true'
-  @expand='refreshSlider'
 )
   template(#info='')
     span.has-text-1 {{ currentSizeName }}
@@ -84,3 +83,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.c-slider-container {
+  padding: 0 0.75rem;
+}
+</style>
