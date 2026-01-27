@@ -76,6 +76,9 @@ export default {
       if (!isLowerSectionClicked) {
         if (this.isExpandable) {
           const valToSet = !this.ephemeral.expanded
+          const evtName = valToSet ? 'expand' : 'fold'
+
+          this.$emit(evtName)
           this.ephemeral.expanded = valToSet
 
           if (valToSet) {

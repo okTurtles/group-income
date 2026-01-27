@@ -3,39 +3,22 @@
   .menu-tile-block
     menu
       ThemeTile
-      MenuItem(tabId='text-size')
+      TextSizeTile
       MenuItem(tabId='reduced-motion')
 </template>
 
 <script>
-import { L } from '@common/common.js'
-import { mapGetters, mapMutations } from 'vuex'
 import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
 import ThemeTile from './ThemeTile.vue'
+import TextSizeTile from './TextSizeTile.vue'
 
 export default {
   name: 'AppearanceSettings',
   inject: ['userSettingsTabNames'],
   components: {
     MenuItem: UserSettingsTabMenuItem,
-    ThemeTile
-  },
-  data () {
-    return {
-      config: {
-        themeValueNames: {
-          'light': L('Light'),
-          'dark': L('Dark'),
-          'system': L('System')
-        }
-      }
-    }
-  },
-  computed: {
-    ...mapGetters(['theme'])
-  },
-  methods: {
-    ...mapMutations(['setTheme'])
+    ThemeTile,
+    TextSizeTile
   }
 }
 </script>

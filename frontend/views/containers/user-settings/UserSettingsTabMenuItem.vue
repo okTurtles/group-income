@@ -2,6 +2,7 @@
 settings-menu-tile(
   v-bind='propFallThrough'
   @click='onTileClick'
+  @expand='$emit("expand")'
 )
   template(v-if='$slots.info' #info='')
     slot(name='info')
