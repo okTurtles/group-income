@@ -87,7 +87,6 @@ lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/grou
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
 lazyModalFullScreen('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
-lazyModalFullScreen('UserSettingsModal', () => import('../views/containers/user-settings/UserSettingsModal.vue'))
 
 lazyComponent('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 lazyComponent('ChangeVotingRules', () => import('../views/containers/proposals/ChangeVotingRules.vue'))

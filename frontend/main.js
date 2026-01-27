@@ -364,9 +364,10 @@ async function startApp () {
         sbp('okTurtles.events/emit', OFFLINE)
       }
       if (this.ephemeral.isCorrupted) {
+        const baseRoute = sbp('controller/router').options.base
         sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
-            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&tab=troubleshooting">`,
+            'a_': `<a class="link" href="${baseRoute}/user-settings/troubleshooting">`,
             '_a': '</a>'
           }),
           'times-circle'

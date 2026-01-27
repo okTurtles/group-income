@@ -70,7 +70,7 @@ export default ({
         : L("{errName} during {activity} for '{action}' to '{contract}': '{errMsg}'", LplaintextParams),
       icon: 'exclamation-triangle',
       level: 'danger',
-      linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(error.message)}`,
+      linkTo: `/app/user-settings/application-logs?errorMsg=${encodeURIComponent(error.message)}`,
       scope: 'app'
     }
   },
@@ -103,7 +103,7 @@ export default ({
       plaintextBody: data.message,
       icon: 'exclamation-triangle',
       level: 'danger',
-      linkTo: `/app/dashboard?modal=UserSettingsModal&tab=application-logs&errorMsg=${encodeURIComponent(data.message)}`,
+      linkTo: `/app/user-settings/application-logs?errorMsg=${encodeURIComponent(data.message)}`,
       scope: 'app'
     }
   },

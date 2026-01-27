@@ -25,12 +25,10 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
       i18n.is-outlined.c-cta(tag='button' @click.prevent='close') OK
 </template>
 <script>
-import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { REPLACE_MODAL } from '@utils/events.js'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.js'
@@ -74,10 +72,8 @@ export default ({
     },
     handleBrokenInviteClick (e) {
       if (e.target.classList.contains('js-click')) {
-        sbp('okTurtles.events/emit', REPLACE_MODAL, 'UserSettingsModal', {
-          section: 'application-logs',
-          errorMsg: 'Undefined key for invite'
-        })
+        const errorMsg = 'Undefined key for invite'
+        this.$router.push({ path: `/user-settings/application-logs?errorMsg=${errorMsg}` })
       }
     }
   }
