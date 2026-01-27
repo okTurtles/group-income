@@ -132,9 +132,6 @@ export default ({
         hidden: false
       })
     }
-  },
-  mounted () {
-    console.log('!@# baseroute:', sbp('controller/router').options.base)
   }
 }: Object)
 </script>

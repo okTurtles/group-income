@@ -50,7 +50,6 @@ export default ({
   },
   methods: {
     toUserSettings () {
-      console.log('!@# toUserSettings')
       sbp('okTurtles.events/emit', CLOSE_NAVIGATION_SIDEBAR)
       this.$router.push({ name: 'UserSettings' }).catch(logExceptNavigationDuplicated)
     }
