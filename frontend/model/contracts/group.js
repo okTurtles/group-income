@@ -1489,21 +1489,14 @@ sbp('chelonia/defineContract', {
   //
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
-    'gi.contracts/group/hook/a': ({ contractID, state }) => {
-      sbp('chelonia/queueInvocation', contractID, () => {
-        return sbp('gi.actions/group/findAndRequestMissingGroupKeys', contractID, state)
-      }).catch((e) => {
-        console.error('[gi.contracts/group/hook/a] Error', e)
-      })
-    },
-    'gi.contracts/group/hook/ku': ({ contractID, state }) => {
+    'gi.contracts/group/_postOpHook/ku': ({ contractID, state }) => {
       sbp('chelonia/queueInvocation', contractID, () => {
         return sbp('gi.actions/group/findAndRequestMissingGroupKeys', contractID, state)
       }).catch((e) => {
         console.error('[gi.contracts/group/hook/ku] Error', e)
       })
     },
-    'gi.contracts/group/keyRequest': ({
+    'gi.contracts/group/_responseOptionsForKeyRequest': ({
       contractID,
       request,
       state,

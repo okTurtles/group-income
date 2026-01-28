@@ -6,7 +6,7 @@ import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
-import { has, omit } from 'turtledash'
+import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
@@ -199,7 +199,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-csk',
                   purpose: ['sig'],
                   ringLevel: 2,
-                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST],
                   allowedActions: ['gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[0].foreignKey,
                   meta: params.options.groupKeys[0].meta,
@@ -357,6 +357,47 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
+  'gi.actions/group/findAndRequestMissingChatroomKeys': debounce((contractID) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state || !state.profiles) return
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+    const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
+
+    // If we have all keys, we don't have anything to request
+    if (CEKid && CSKid) return
+    if (!groupCSKid) {
+      console.error(`[gi.actions/group/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
+    }
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const contractState = cheloniaState[identityContractID]
+
+    const groupID = Object.entries(contractState?.groups || {}).find(([id, { hasLeft }]) => {
+      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].type === 'group'
+    })?.[0]
+
+    if (!groupID) {
+      return
+    }
+
+    // TODO: Missing '/disconnect' logic for chatrooms
+    sbp('chelonia/out/keyRequest', {
+      originatingContractID: identityContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID,
+      contractName: 'gi.contracts/chatroom',
+      reference: cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID,
+      signingKeyId: groupCSKid,
+      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      request: 'missing',
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+      encryptKeyRequestMetadata: true
+    })
+  }, 200),
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

@@ -688,7 +688,7 @@ export default (sbp('sbp/selectors/register', {
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-            if (Math.random() > -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
+            if (Math.random() < -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
               console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
               return
             }
@@ -743,7 +743,7 @@ export default (sbp('sbp/selectors/register', {
     const cheloniaState = sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn.identityContractID
     const contractState = cheloniaState[identityContractID]
-    if (!contractState || !cheloniaState[identityContractID].groups[contractID]) {
+    if (!contractState || !cheloniaState[identityContractID].groups?.[contractID] || cheloniaState[identityContractID].groups[contractID].hasLeft) {
       return
     }
 

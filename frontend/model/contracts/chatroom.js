@@ -699,6 +699,35 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    'gi.contracts/chatroom/_postOpHook/ku': ({ contractID, state }) => {
+      sbp('chelonia/queueInvocation', contractID, () => {
+        return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID, state)
+      }).catch((e) => {
+        console.error('[gi.contracts/chatroom/hook/ku] Error', e)
+      })
+    },
+    'gi.contracts/chatroom/_responseOptionsForKeyRequest': ({
+      contractID,
+      request,
+      state,
+      originatingContractID
+    }) => {
+      if (!state.profiles) return
+      if (request === 'missing' && state.profiles[originatingContractID] && !state.profiles[originatingContractID].hasLeft) {
+        return {
+          keyIds: Object.entries(state._vm.authorizedKeys)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .map(([kId]) => kId),
+          skipInviteAccounting: true
+        }
+      } else {
+        return {
+          keyIds: [],
+          skipInviteAccounting: true
+        }
+      }
+    },
     'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
       if (state?.members) {
         // Not using a getter because _cleanup doesn't currently take a getter

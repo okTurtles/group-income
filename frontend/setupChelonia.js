@@ -178,7 +178,8 @@ const setupChelonia = async (): Promise<*> => {
           'gi.actions/identity/kv/initChatRoomUnreadMessages', 'gi.actions/identity/kv/deleteChatRoomUnreadMessages',
           'gi.actions/identity/kv/setChatRoomReadUntil',
           'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage',
-          'gi.actions/group/findAndRequestMissingGroupKeys'
+          'gi.actions/group/findAndRequestMissingGroupKeys',
+          'gi.actions/chatroom/findAndRequestMissingChatroomKeys'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
