@@ -56,7 +56,7 @@ console.info('IS_MOBILE_APP:', process.env.IS_MOBILE_APP)
 sbp(
   'okTurtles.data/set',
   'API_URL',
-  process.env.IS_MOBILE_APP === 'true' ? process.env.MOBILE_APP_API_URL : self.location.origin
+  process.env.MOBILE_APP_API_URL || self.location.origin
 )
 if (process.env.CI) {
   const originalFetch = self.fetch
