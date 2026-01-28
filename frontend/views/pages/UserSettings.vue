@@ -43,6 +43,8 @@ export default {
     tabIds () {
       const pathMatch = this.$route.params.pathMatch || ''
 
+      // NOTE: subTab here is currently not used anywhere. It was created for implementing nested tabs in user settings which aren't used now
+      //       but might be used in the future as the app grows with more features. So leaving it here.
       if (!pathMatch) {
         return { tab: 'main', subTab: null }
       } else {
