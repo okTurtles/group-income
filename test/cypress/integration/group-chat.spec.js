@@ -431,9 +431,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
 
-    // NOTE: this check is to wait until 2 additional notifications for the INTERACTIVE mesages are created
+    // NOTE: this check is to wait until 2 notifications for the INTERACTIVE mesages are created
     //       one for creating proposal and another is for proposal approval
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="3 new notifications"]').contains('3')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
 
     cy.giRedirectToGroupChat()
 
