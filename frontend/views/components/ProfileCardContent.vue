@@ -151,6 +151,8 @@ export default {
       this.onPostCtaClick && this.onPostCtaClick()
     },
     toMyProfile () {
+      if (this.deactivated) { return }
+
       this.$router.push({ path: '/user-settings/my-profile' }).catch(logExceptNavigationDuplicated)
       this.onPostCtaClick && this.onPostCtaClick()
     },

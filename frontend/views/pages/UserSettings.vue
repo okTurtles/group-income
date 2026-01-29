@@ -34,7 +34,8 @@ export default {
           'application-logs': { name: L('Application logs'), dataTest: 'tabApplicationLogs', pathTo: 'application-logs' },
           'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting', pathTo: 'troubleshooting' },
           'logout': { name: L('Logout'), dataTest: 'tabLogout' },
-          'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' }
+          'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' },
+          'acknowledgements': { name: L('Acknowledgements') }
         }
       }
     }
