@@ -165,7 +165,8 @@ export default ({
       'colors',
       'totalUnreadNotificationCount',
       'groupUnreadMessages',
-      'ourPreferences'
+      'ourPreferences',
+      'ourProfileActive'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -179,7 +180,8 @@ export default ({
     },
     notApprovedToGroupYet () {
       // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
-      return this.$route.path === '/pending-approval'
+      return this.$route.path === '/pending-approval' ||
+        (this.currentGroupId && !this.ourProfileActive)
     },
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard')

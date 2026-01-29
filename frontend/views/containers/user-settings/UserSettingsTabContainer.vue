@@ -1,7 +1,10 @@
 <template lang='pug'>
 .c-user-settings-tab-container
   .c-back-btn-container
-    button.link.c-back-btn(@click.stop='backToMenu')
+    button.link.c-back-btn(
+      data-test='backToMenu'
+      @click.stop='backToMenu'
+    )
       i.icon-angle-left.c-back-icon
       i18n Back to menu
 

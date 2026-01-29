@@ -23,6 +23,7 @@ describe('Signup, Profile and Login', () => {
     let profilePictureDataURI
 
     cy.getByDT('settingsBtn').click()
+    cy.getByDT('tabMyProfile').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
       profilePictureDataURI = `data:image/jpeg;base64, ${fileContent}`

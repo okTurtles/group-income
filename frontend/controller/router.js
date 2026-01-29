@@ -172,7 +172,7 @@ const router: any = new Router({
       component: lazyUserSettings,
       name: 'UserSettings',
       meta: { title: L('User Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       // reference: https://v3.router.vuejs.org/guide/essentials/dynamic-matching.html#catch-all-404-not-found-route
@@ -180,7 +180,7 @@ const router: any = new Router({
       component: lazyUserSettings,
       name: 'UserSettingsTab',
       meta: { title: L('User Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/join',
