@@ -76,6 +76,7 @@ import { L, LError } from '@common/common.js'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'AppLogs',
@@ -183,12 +184,7 @@ export default ({
       }
     },
     openTroubleshooting () {
-      this.$router.push({
-        query: {
-          ...this.$route.query,
-          tab: 'troubleshooting'
-        }
-      })
+      this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
     downloadOrShareLogs () {
       const actionType = this.ephemeral.useWebShare ? 'share' : 'download'

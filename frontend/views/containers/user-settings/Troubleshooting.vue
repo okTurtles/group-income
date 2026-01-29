@@ -4,7 +4,7 @@
       i18n.is-title-3(tag='h3') Re-sync and rebuild data
       p.c-desc.has-text-1
         i18n If you're having trouble with the app, you can try resetting Group Income. This will delete the current app state, and log you out. After you log back in, it may take a few minutes for the app to reset, but that should fix most problems. THIS WILL LOG YOU OUT.
-        i18n.link(tag='button' @click='openAppLogs') For diagnostic info, see application logs.
+        i18n.link.c-link(tag='button' @click='openAppLogs') For diagnostic info, see application logs.
 
       banner-scoped(ref='doneMsg' data-test='doneMsg')
 
@@ -23,6 +23,7 @@ import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'Troubleshooting',
@@ -66,12 +67,7 @@ export default ({
   },
   methods: {
     openAppLogs () {
-      this.$router.push({
-        query: {
-          ...this.$route.query,
-          tab: 'application-logs'
-        }
-      })
+      this.$router.push({ path: '/user-settings/application-logs' }).catch(logExceptNavigationDuplicated)
     },
     async startResync () {
       const confirmString = L(`This will reset Group Income and log you out.
@@ -173,5 +169,10 @@ Are you sure?`)
   i {
     margin-right: 0.2rem;
   }
+}
+
+.c-link {
+  display: inline-block;
+  margin-left: 0.25rem;
 }
 </style>

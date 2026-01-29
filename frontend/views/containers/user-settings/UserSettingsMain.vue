@@ -119,10 +119,7 @@ export default {
       }
     },
     onAcknowledgementsClick () {
-      this.$router.push({
-        name: 'UserSettingsTab',
-        params: { tabId: 'acknowledgements' }
-      }).catch(logExceptNavigationDuplicated)
+      this.$router.push({ path: '/user-settings/acknowledgements' }).catch(logExceptNavigationDuplicated)
     },
     async handleLogout () {
       try {

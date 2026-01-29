@@ -19,13 +19,15 @@ import NotificationSettings from './NotificationSettings.vue'
 import AppearanceSettings from './appearance/AppearanceSettings.vue'
 import AppLogs from './AppLogs.vue'
 import Troubleshooting from './Troubleshooting.vue'
+import Acknowledgements from './Acknowledgements.vue'
 
 const componentMap = {
   'my-profile': UserProfile,
   'notifications': NotificationSettings,
   'appearance': AppearanceSettings,
   'application-logs': AppLogs,
-  'troubleshooting': Troubleshooting
+  'troubleshooting': Troubleshooting,
+  'acknowledgements': Acknowledgements
 }
 
 export default {
@@ -33,12 +35,22 @@ export default {
   inject: ['userSettingsTabIds'],
   computed: {
     componentToRender () {
-      return componentMap[this.userSettingsTabIds.tab] || UserProfile
+      return componentMap[this.userSettingsTabIds.tab] || null
     }
   },
   methods: {
     backToMenu () {
       this.$router.push({ name: 'UserSettings' }).catch(logExceptNavigationDuplicated)
+    }
+  },
+  watch: {
+    componentToRender: {
+      handler (newVal) {
+        if (!newVal) {
+          this.backToMenu()
+        }
+      },
+      immediate: true
     }
   }
 }
