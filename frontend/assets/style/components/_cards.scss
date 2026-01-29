@@ -75,6 +75,8 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   }
 }
 
+// settings menu tile common styles
+
 .menu-tile {
   display: block;
   width: 100%;
@@ -158,8 +160,11 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
 
   &.is-style-danger {
     background-color: rgba(0, 0, 0, 0);
-    color: $danger_0;
-    border: 1px solid currentColor;
+    border: 1px solid $danger_0;
+
+    .tile-upper-section {
+      color: $danger_0;
+    }
 
     .tile-text,
     .tile-icon {
@@ -170,8 +175,28 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     &:focus,
     &:focus-within {
       background-color: rgba(0, 0, 0, 0);
-      border: 1px solid currentColor;
-      color: $danger_0_1;
+      border: 1px solid $danger_0_1;
+
+      .tile-upper-section {
+        color: $danger_0_1;
+      }
+    }
+  }
+
+  &.is-style-outlined {
+    background-color: $background_0;
+    border-color: $general_0;
+    color: $text_0;
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      background-color: $background_0;
+      border-color: $text_1;
+
+      .tile-upper-section {
+        color: $text_0;
+      }
     }
   }
 
@@ -179,5 +204,40 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     .tile-icon {
       transform: rotate(180deg);
     }
+  }
+}
+
+.tab-legend {
+  color: $text_1;
+  font-size: $size_5;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+
+  .legend-icon {
+    display: inline-block;
+    margin-right: 0.375rem;
+  }
+
+  @include desktop {
+    letter-spacing: 0.1px;
+  }
+}
+
+.menu-tile-block {
+  width: 100%;
+  margin-bottom: 2.5rem;
+
+  menu {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    row-gap: 0.75rem;
+    width: 100%;
+  }
+
+  &.has-bottom-separator {
+    border-bottom: 1px solid $general_0;
+    padding-bottom: 2.5rem;
   }
 }

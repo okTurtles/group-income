@@ -32,10 +32,10 @@ tooltip(
 <script>
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'
 import NotificationList from './NotificationList.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'NotificationCard',
@@ -49,10 +49,7 @@ export default {
       this.$refs.tooltip.toggle()
     },
     handleSettingsClick () {
-      // BUG - Section notification does not open. Fixed at #946
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
-        tab: 'notifications'
-      })
+      this.$router.push({ path: '/user-settings/notifications' }).catch(logExceptNavigationDuplicated)
       this.toggleTooltip()
     },
     markAllNotificationsAsRead () {

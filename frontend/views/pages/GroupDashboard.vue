@@ -52,7 +52,6 @@ import GroupMincome from '@containers/dashboard/GroupMincome.vue'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
-// import GroupSettings from '@components/GroupSettings.vue'
 import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
@@ -69,7 +68,6 @@ export default ({
     GroupMembers,
     GroupPurpose,
     BannerSimple
-    // GroupSettings
   },
   computed: {
     ...mapState(['currentGroupId']),

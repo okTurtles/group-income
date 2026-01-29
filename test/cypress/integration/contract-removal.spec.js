@@ -42,7 +42,7 @@ describe('Group Income - Removing contracts', () => {
 
       cy.giLogin(`user1-${userId}`, { bypassUI: true })
       cy.getByDT('settingsBtn').click()
-      cy.getByDT('link-my-account').click()
+      cy.getByDT('tabDeleteAccount').click()
       cy.getByDT('deleteAccount').click()
 
       cy.getByDT('deleteAccount', 'form').within(() => {

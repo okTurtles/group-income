@@ -18,14 +18,14 @@
     i18n.c-bio-link.is-unstyled.link(
       v-if='isSelf'
       tag='button'
-      @click='openModal("UserSettingsModal")'
+      @click='toMyProfile'
       data-test='linkEditBio'
     ) Edit bio
 
   i18n.button.is-small.is-outlined.c-bio-button(
     v-else-if='isSelf && hasIncomeDetails'
     tag='button'
-    @click='openModal("UserSettingsModal")'
+    @click='toMyProfile'
     data-test='buttonEditBio'
   ) Add a bio
 
@@ -81,6 +81,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import DMMixin from '@containers/chatroom/DMMixin.js'
 import { OPEN_MODAL, REPLACE_MODAL } from '@utils/events.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
@@ -147,6 +148,12 @@ export default {
       if (this.deactivated) { return }
 
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+      this.onPostCtaClick && this.onPostCtaClick()
+    },
+    toMyProfile () {
+      if (this.deactivated) { return }
+
+      this.$router.push({ path: '/user-settings/my-profile' }).catch(logExceptNavigationDuplicated)
       this.onPostCtaClick && this.onPostCtaClick()
     },
     onRemoveMemberClick () {

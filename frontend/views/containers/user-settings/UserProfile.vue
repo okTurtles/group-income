@@ -1,8 +1,6 @@
 <template lang='pug'>
   .settings-container
-    span.c-username @{{ ourUsername }}
-
-    avatar-upload(
+    avatar-upload.c-avatar-upload(
       :avatar='attributes.picture'
       :sbpParams='sbpParams'
       avatarType='user'
@@ -67,22 +65,6 @@
             @click='saveProfile'
             data-test='saveAccount'
           ) {{ L('Save account changes') }}
-
-    section.card
-      form(name='DeleteProfileForm' @submit.prevent='')
-        i18n.is-title-3(tag='h3' class='card-header') Delete account
-        p
-          i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
-          | {{ ' ' }}
-          i18n.is-danger This action cannot be undone.
-
-        .buttons
-          i18n.button.error.is-outlined(
-            tag='button'
-            type='submit'
-            data-test='deleteAccount'
-            @click='handleDeleteAccount'
-          ) Delete account
 </template>
 
 <script>
@@ -98,6 +80,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
+
 export default ({
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
@@ -138,7 +121,7 @@ export default ({
   },
   computed: {
     ...mapState(['loggedIn']),
-    ...mapGetters(['ourUsername', 'currentIdentityState']),
+    ...mapGetters(['currentIdentityState']),
     attributes () {
       return this.currentIdentityState.attributes || {}
     },
@@ -176,9 +159,6 @@ export default ({
           this.$refs.formMsg.danger(e.message)
         }
       }
-    },
-    handleDeleteAccount () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     }
   }
 }: Object)
@@ -187,15 +167,12 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.c-username {
-  display: none;
-  margin-bottom: 2rem;
-  margin-top: 0.5rem;
-  color: $text_1;
+.settings-container {
+  width: 100%;
+}
 
-  @include desktop {
-    display: block;
-  }
+.c-avatar-upload {
+  margin-bottom: 2rem;
 }
 
 .c-display-name-label-container,
@@ -222,5 +199,4 @@ export default ({
 .icon-check {
   margin-right: 1rem;
 }
-
 </style>

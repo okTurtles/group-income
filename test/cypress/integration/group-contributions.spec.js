@@ -77,6 +77,7 @@ describe('Contributions', () => {
 
     cy.giSetDisplayName(usersDisplayName[1])
 
+    cy.getByDT('dashboard').click()
     cy.giGetInvitationAnyone().then(url => {
       invitationLinks.anyone = url
     })
