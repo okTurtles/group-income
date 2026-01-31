@@ -14,6 +14,7 @@ import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
+import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
 
 const messageReceivedRawQueue = []
 
@@ -357,7 +358,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'gi.actions/group/findAndRequestMissingChatroomKeys': debounce((contractID) => {
+  'gi.actions/chatroom/findAndRequestMissingChatroomKeys': debounce((contractID) => {
     const state = sbp('chelonia/contract/state', contractID)
     if (!state || !state.profiles) return
 
@@ -368,15 +369,16 @@ export default (sbp('sbp/selectors/register', {
     // If we have all keys, we don't have anything to request
     if (CEKid && CSKid) return
     if (!groupCSKid) {
-      console.error(`[gi.actions/group/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
     }
 
     const cheloniaState = sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn.identityContractID
     const contractState = cheloniaState[identityContractID]
 
+    // $FlowFixMe[incompatible-use]
     const groupID = Object.entries(contractState?.groups || {}).find(([id, { hasLeft }]) => {
-      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].type === 'group'
+      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     })?.[0]
 
     if (!groupID) {
@@ -398,6 +400,35 @@ export default (sbp('sbp/selectors/register', {
       encryptKeyRequestMetadata: true
     })
   }, 200),
+  'gi.actions/chatroom/upgradeGroupCskPermissions': (chatRoomIds) => {
+    chatRoomIds.forEach((chatRoomID) => {
+      const state = sbp('chelonia/contract/state', chatRoomID)
+      if (!state) return
+
+      const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk')
+      // Return if we've already upgraded this chatroom
+      if (state._vm.authorizedKeys[groupCSKid].permissions.includes(SPMessage.OP_KEY_REQUEST)) return
+
+      const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+      if (!groupCSKid || !CSKid) return
+
+      sbp('chelonia/out/keyUpdate', {
+        contractID: chatRoomID,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          {
+            name: 'group-csk',
+            oldKeyId: groupCSKid,
+            permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST]
+          }
+        ],
+        signingKeyId: CSKid
+      }).catch(e => {
+        console.error(`[gi.actions/chatroom/upgradeGroupCskPermissions] Error updating group CSK for ${chatRoomID}`, e)
+      })
+    })
+  },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

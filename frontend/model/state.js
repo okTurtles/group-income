@@ -11,12 +11,14 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import getters from './getters.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
+import { PROFILE_STATUS } from './contracts/shared/constants.js'
 
 // Wrapper function for performing contract upgrades and migrations
 // Unused as of https://github.com/okTurtles/group-income/pull/2525. For
@@ -219,6 +221,43 @@ sbp('sbp/selectors/register', {
         })
       }
       await internal()
+    })()
+
+    ;(() => {
+      // TODO Add invite key to group
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+      console.log(groupIds)
+    })()
+
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .flatMap(([id]) => {
+          return Object.entries(state[id].chatRooms || {})
+            // $FlowFixMe[incompatible-use]
+            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+              // Not deleted
+              !deletedDate &&
+              // This upgrade only makes sense for private chatrooms
+              privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE &&
+              // We should be a member with an active profile
+              members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
+              // and have synced the chatroom
+              state[id]
+            )
+            .map(([id]) => id)
+        })
+
+      sbp('gi.actions/chatroom/upgradeGroupCskPermissions', chatRoomIds).catch(e => {
+        console.error('[chatroom/upgradeGroupCskPermissions] Error', e)
+      })
     })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
