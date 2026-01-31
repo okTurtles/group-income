@@ -229,8 +229,13 @@ sbp('sbp/selectors/register', {
       if (!ourIdentityContractId) return
       const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
         // $FlowFixMe[incompatible-use]
-        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
-      console.log(groupIds)
+        .filter(([id, { hasLeft, inviteSecretId }]) => !hasLeft && state[id]?._vm.authorizedKeys[inviteSecretId]?.name === 'csk')
+        .map(([id]) => id)
+
+      if (!groupIds.length) return
+      sbp('gi.actions/identity/upgradeCreatorGroupInvite', groupIds).catch(e => {
+        console.error('[identity/upgradeCreatorGroupInvite] Error', e)
+      })
     })()
 
     ;(() => {
@@ -249,12 +254,16 @@ sbp('sbp/selectors/register', {
               privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE &&
               // We should be a member with an active profile
               members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
-              // and have synced the chatroom
-              state[id]
+              // have synced the chatroom
+              state[id] &&
+              // and the group CSK doesn't have 'kr' (OP_KEY_REQUEST) permission
+              // $FlowFixMe[incompatible-use]
+              Object.values(state[id]._vm.authorizedKeys).some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes('kr'))
             )
             .map(([id]) => id)
         })
 
+      if (!chatRoomIds.length) return
       sbp('gi.actions/chatroom/upgradeGroupCskPermissions', chatRoomIds).catch(e => {
         console.error('[chatroom/upgradeGroupCskPermissions] Error', e)
       })
