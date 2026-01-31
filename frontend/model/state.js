@@ -229,7 +229,7 @@ sbp('sbp/selectors/register', {
       if (!ourIdentityContractId) return
       const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
         // $FlowFixMe[incompatible-use]
-        .filter(([id, { hasLeft, inviteSecretId }]) => !hasLeft && state[id]?._vm.authorizedKeys[inviteSecretId]?.name === 'csk')
+        .filter(([id, { hasLeft, inviteSecretId }]) => !hasLeft && state[id]?._vm?.authorizedKeys[inviteSecretId]?.name === 'csk')
         .map(([id]) => id)
 
       if (!groupIds.length) return
@@ -255,10 +255,11 @@ sbp('sbp/selectors/register', {
               // We should be a member with an active profile
               members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
               // have synced the chatroom
-              state[id] &&
+              state[id]._vm?.authorizedKeys &&
               // and the group CSK doesn't have 'kr' (OP_KEY_REQUEST) permission
-              // $FlowFixMe[incompatible-use]
-              Object.values(state[id]._vm.authorizedKeys).some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes('kr'))
+              Object.values(state[id]._vm.authorizedKeys)
+                // $FlowFixMe[incompatible-use]
+                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes('kr'))
             )
             .map(([id]) => id)
         })
