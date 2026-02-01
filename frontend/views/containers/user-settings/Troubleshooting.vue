@@ -81,7 +81,7 @@ Are you sure?`)
 
       try {
         this.ephemeral.status = 'recovering'
-        await sbp('gi.actions/identity/logout', null, true)
+        await sbp('gi.app/identity/logout', null, true)
         this.ephemeral.status = 'ok'
       } catch (e) {
         this.ephemeral.status = 'failed'

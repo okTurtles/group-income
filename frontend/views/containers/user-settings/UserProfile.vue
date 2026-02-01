@@ -1,5 +1,8 @@
 <template lang='pug'>
   .settings-container
+    .c-username-container
+      span.c-username.has-text-1.has-ellipsis @{{ ourUsername }}
+
     avatar-upload.c-avatar-upload(
       :avatar='attributes.picture'
       :sbpParams='sbpParams'
@@ -121,7 +124,7 @@ export default ({
   },
   computed: {
     ...mapState(['loggedIn']),
-    ...mapGetters(['currentIdentityState']),
+    ...mapGetters(['currentIdentityState', 'ourUsername']),
     attributes () {
       return this.currentIdentityState.attributes || {}
     },
@@ -169,6 +172,15 @@ export default ({
 
 .settings-container {
   width: 100%;
+}
+
+.c-username-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 14.25rem;
+  padding: 0 1rem;
+  margin: 0 auto 0.5rem;
 }
 
 .c-avatar-upload {
