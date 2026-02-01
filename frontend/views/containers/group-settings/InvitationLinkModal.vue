@@ -73,7 +73,10 @@ export default ({
     handleBrokenInviteClick (e) {
       if (e.target.classList.contains('js-click')) {
         const errorMsg = 'Undefined key for invite'
-        this.$router.push({ path: `/user-settings/application-logs?errorMsg=${errorMsg}` })
+        this.$router.push({
+          path: '/user-settings/application-logs',
+          query: { errorMsg }
+        })
       }
     }
   }

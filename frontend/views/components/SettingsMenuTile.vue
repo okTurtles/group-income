@@ -59,14 +59,12 @@ export default {
   },
   computed: {
     iconClasses () {
-      return this.noIcon
-        ? ''
-        : [
-            this.isExpandable
-              ? 'icon-chevron-down'
-              : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
-            'tile-icon'
-          ]
+      return [
+        this.isExpandable
+          ? 'icon-chevron-down'
+          : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
+        'tile-icon'
+      ]
     }
   },
   methods: {

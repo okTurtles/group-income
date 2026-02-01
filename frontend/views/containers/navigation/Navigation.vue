@@ -179,6 +179,7 @@ export default ({
       return !this.ephemeral.isActive && this.ephemeral.isTouch
     },
     notApprovedToGroupYet () {
+      // User is on pending approval page, or has a group but their profile isn't active yet
       // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
       return this.$route.path === '/pending-approval' ||
         (this.currentGroupId && !this.ourProfileActive)
