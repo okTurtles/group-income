@@ -380,6 +380,8 @@ p.error {
 }
 
 .radio {
+  $top-position: calc(0.615 * var(--text-size));
+
   > :last-child {
     white-space: nowrap;
 
@@ -408,7 +410,7 @@ p.error {
       height: 6px;
       background-color: $background_0;
       margin-top: 1px;
-      top: 10px;
+      top: $top-position;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;

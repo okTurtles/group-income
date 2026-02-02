@@ -414,7 +414,13 @@ async function startApp () {
       })()
     },
     computed: {
-      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters([
+        'groupsByName',
+        'ourUnreadMessages',
+        'totalUnreadNotificationCount',
+        'isDarkTheme',
+        'fontSize'
+      ]),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
@@ -424,13 +430,21 @@ async function startApp () {
       shouldSetBadge () {
         return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
       },
+      textSizeAlias () {
+        return ({
+          '14': 'sm',
+          '16': 'md',
+          '18': 'lg',
+          '20': 'xl'
+        })[`${this.fontSize}`]
+      },
       appClasses () {
-        return {
+        return [{
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.settings.reducedMotion,
-          'is-dark-theme': this.$store.getters.isDarkTheme
-        }
+          'is-dark-theme': this.isDarkTheme
+        }, `has-text-size-${this.textSizeAlias}`]
       },
       isInCypress () {
         return !!window.Cypress
