@@ -21,6 +21,7 @@ const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGlobalDashboard = lazyPage(() => import('@pages/GlobalDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
+const lazyUserSettings = lazyPage(() => import('@pages/UserSettings.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
@@ -165,6 +166,21 @@ const router: any = new Router({
       name: 'GroupSettingsTab',
       meta: { title: L('Group Settings') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
+    },
+    {
+      path: '/user-settings',
+      component: lazyUserSettings,
+      name: 'UserSettings',
+      meta: { title: L('User Settings') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      // reference: https://v3.router.vuejs.org/guide/essentials/dynamic-matching.html#catch-all-404-not-found-route
+      path: '/user-settings/*',
+      component: lazyUserSettings,
+      name: 'UserSettingsTab',
+      meta: { title: L('User Settings') },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/join',

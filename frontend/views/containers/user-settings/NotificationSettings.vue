@@ -149,10 +149,6 @@ export default ({
 .settings-container {
   width: 100%;
 
-  @include desktop {
-    padding-top: 1.5rem;
-  }
-
   .c-title {
     margin-bottom: 2rem;
   }
@@ -179,19 +175,6 @@ export default ({
   margin-top: 0.125rem;
   font-size: $size_4;
   color: $text_1;
-}
-
-.c-divider {
-  margin: -0.5rem -1rem 1.5rem -1rem;
-  border: solid 1px $general_1;
-
-  @include tablet {
-    margin: -0.5rem -1.5rem 1.5rem -1.5rem;
-  }
-
-  @include desktop {
-    margin: -0.5rem -2.5rem 1.5rem -2.5rem;
-  }
 }
 
 .c-name {

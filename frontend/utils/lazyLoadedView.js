@@ -87,7 +87,6 @@ lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/grou
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
 lazyModalFullScreen('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
-lazyModalFullScreen('UserSettingsModal', () => import('../views/containers/user-settings/UserSettingsModal.vue'))
 
 lazyComponent('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 lazyComponent('ChangeVotingRules', () => import('../views/containers/proposals/ChangeVotingRules.vue'))
@@ -103,7 +102,6 @@ lazyComponent('RecordPayment', () => import('../views/containers/payments/Record
 lazyComponent('SendPaymentsViaLightning', () => import('../views/containers/payments/SendPaymentsViaLightning.vue'))
 lazyComponent('ExportPaymentsModal', () => import('../views/containers/payments/ExportPaymentsModal.vue'))
 
-lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
 lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))
 lazyComponent('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
 lazyComponent('NewDirectMessageModal', () => import('../views/containers/chatroom/NewDirectMessageModal.vue'))
