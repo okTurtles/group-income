@@ -42,6 +42,7 @@ import './model/notifications/periodicNotifications.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.js'
+import { getTextSizeAlias } from '@model/settings/textsizes.js'
 import './views/utils/vStyle.js'
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
@@ -430,21 +431,13 @@ async function startApp () {
       shouldSetBadge () {
         return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
       },
-      textSizeAlias () {
-        return ({
-          '14': 'sm',
-          '16': 'md',
-          '18': 'lg',
-          '20': 'xl'
-        })[`${this.fontSize}`]
-      },
       appClasses () {
         return [{
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.settings.reducedMotion,
           'is-dark-theme': this.isDarkTheme
-        }, `has-text-size-${this.textSizeAlias}`]
+        }, `has-text-size-${getTextSizeAlias(this.fontSize)}`]
       },
       isInCypress () {
         return !!window.Cypress
