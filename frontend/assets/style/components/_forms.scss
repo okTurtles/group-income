@@ -336,8 +336,20 @@ p.error {
   }
 }
 
+$radio-checkbox-inner-element-top-positions: (
+  "sm": 8px,
+  "md": 9px,
+  "lg": 11px,
+  "xl": 14px
+);
+
 .radio,
 .checkbox {
+  @each $text-size-alias, $position in $radio-checkbox-inner-element-top-positions {
+    .has-text-size-#{$text-size-alias} & {
+      --radio-checkbox-inner-element-top-position: #{$position};
+    }
+  }
   position: relative;
   display: inline-block;
   cursor: pointer;
@@ -380,8 +392,6 @@ p.error {
 }
 
 .radio {
-  $top-position: calc(0.615 * var(--text-size));
-
   > :last-child {
     white-space: nowrap;
 
@@ -410,7 +420,7 @@ p.error {
       height: 6px;
       background-color: $background_0;
       margin-top: 1px;
-      top: $top-position;
+      top: var(--radio-checkbox-inner-element-top-position);
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;
@@ -456,7 +466,7 @@ p.error {
       position: absolute;
       width: 6px;
       height: 6px;
-      top: 9px;
+      top: var(--radio-checkbox-inner-element-top-position);
       left: 5px;
       color: $background_0;
       transform: translate(-50%, -50%) scale(0);
