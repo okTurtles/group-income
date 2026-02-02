@@ -21,7 +21,7 @@ MenuItem(
 import { mapGetters, mapMutations } from 'vuex'
 import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
 import Slider from '@components/Slider.vue'
-import { sizeOptions } from '@model/settings/textsizes.js'
+import { textSizeOptions } from '@view-utils/textSizes.js'
 
 export default {
   name: 'TextSizeTile',
@@ -32,7 +32,6 @@ export default {
   },
   data () {
     return {
-      fontVariations: 4,
       fontRange: [],
       fontData: []
     }
@@ -50,8 +49,7 @@ export default {
       'fontSize'
     ]),
     currentSizeName () {
-      const sizeNameMap = Object.fromEntries(sizeOptions.map(option => [`${option.value}`, option.label]))
-      return sizeNameMap[`${this.fontSize}`]
+      return textSizeOptions.find(option => option.value === this.fontSize)?.label || ''
     }
   },
   watch: {
@@ -60,7 +58,7 @@ export default {
     }
   },
   created () {
-    this.fontData = sizeOptions.map(option => option.value).sort((a, b) => a - b)
+    this.fontData = textSizeOptions.map(option => option.value).sort((a, b) => a - b)
     this.fontRange = this.fontData.map((_) => ({ label: 'Aa' }))
   }
 }

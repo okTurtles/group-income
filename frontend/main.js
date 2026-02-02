@@ -42,7 +42,7 @@ import './model/notifications/periodicNotifications.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.js'
-import { getTextSizeAlias } from '@model/settings/textsizes.js'
+import { getTextSizeAlias } from '@view-utils/textSizes.js'
 import './views/utils/vStyle.js'
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
