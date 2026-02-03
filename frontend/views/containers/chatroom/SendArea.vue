@@ -398,16 +398,7 @@ export default ({
     this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
-    this.$refs.textarea.value = this.defaultText || ''
-    // Get actionsWidth to add a dynamic padding to textarea,
-    // so those actions don't be above the textarea's value
-    this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
-    this.updateTextArea()
-    // The following causes inconsistent focusing on iOS depending on whether
-    // iOS determines the action to be a result of user interaction.
-    // Commenting this out will result on focus being triggered the 'normal'
-    // way, when the chatroom is ready.
-    this.focusOnTextArea()
+    this.initializeTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -746,9 +737,18 @@ export default ({
 
       this.clearMessageDraft()
     },
-    shouldSaveMessageDraft () {
-      const currentText = this.ephemeral.textWithLines.trim()
-      return !this.isEditing && currentText.length > 0
+    async initializeTextArea () {
+      const initialText = this.defaultText || (await this.loadMessageDraft()) || ''
+      this.$refs.textarea.value = initialText
+      // Get actionsWidth to add a dynamic padding to textarea,
+      // so those actions don't be above the textarea's value
+      this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
+      this.updateTextArea()
+      // The following causes inconsistent focusing on iOS depending on whether
+      // iOS determines the action to be a result of user interaction.
+      // Commenting this out will result on focus being triggered the 'normal'
+      // way, when the chatroom is ready.
+      this.focusOnTextArea()
     },
     getMessageDraftKey () {
       return `ChatMDraft/${this.currentChatRoomId}`
@@ -768,8 +768,14 @@ export default ({
         this.ephemeral.hasDraftSaved = true
       })
     },
-    loadMessageDraft () {
-      console.log('TODO!')
+    async loadMessageDraft () {
+      try {
+        return await sbp('gi.db/chatDrafts/load', this.getMessageDraftKey())
+      } catch (e) {
+        // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
+        console.error('SendArea.vue: Error loading message draft - ', e)
+        return ''
+      }
     },
     clearMessageDraft () {
       sbp('gi.db/chatDrafts/delete', this.getMessageDraftKey()).then(() => {
