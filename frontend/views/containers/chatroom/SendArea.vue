@@ -358,7 +358,8 @@ export default ({
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
-        typingUsers: []
+        typingUsers: [],
+        hasDraftSaved: false
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -597,6 +598,10 @@ export default ({
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
       }
+
+      if (!this.isEditing) {
+        this.saveOrDeleteMessageDraft()
+      }
     },
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
@@ -730,10 +735,46 @@ export default ({
           : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
+
+      this.clearTextArea()
+    },
+    clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
+
+      this.clearMessageDraft()
+    },
+    shouldSaveMessageDraft () {
+      const currentText = this.ephemeral.textWithLines.trim()
+      return !this.isEditing && currentText.length > 0
+    },
+    getMessageDraftKey () {
+      return `ChatMDraft/${this.currentChatRoomId}`
+    },
+    saveOrDeleteMessageDraft: debounce(function () {
+      const hasContent = this.ephemeral.textWithLines.trim().length > 0
+      const shouldDeleteDraft = !hasContent && this.ephemeral.hasDraftSaved
+
+      if (shouldDeleteDraft) {
+        this.clearMessageDraft()
+      } else if (hasContent) {
+        this.saveMessageDraft()
+      }
+    }, 700),
+    saveMessageDraft () {
+      sbp('gi.db/chatDrafts/save', this.getMessageDraftKey(), this.ephemeral.textWithLines).then(() => {
+        this.ephemeral.hasDraftSaved = true
+      })
+    },
+    loadMessageDraft () {
+      console.log('TODO!')
+    },
+    clearMessageDraft () {
+      sbp('gi.db/chatDrafts/delete', this.getMessageDraftKey()).then(() => {
+        this.ephemeral.hasDraftSaved = false
+      })
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
