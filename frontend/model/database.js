@@ -474,3 +474,27 @@ sbp('sbp/selectors/register', {
     return logs.clear()
   }
 })
+
+// ======================================
+// Chatroom message drafts.
+// ======================================
+
+const chatMsgs = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Chat Messages'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/chatMsgs/save': function (key: string, value: any): Promise<*> {
+    return chatMsgs.setItem(key, value)
+  },
+  'gi.db/chatMsgs/load': function (key: string): Promise<any> {
+    return chatMsgs.getItem(key)
+  },
+  'gi.db/chatMsgs/delete': function (key: string): Promise<Object> {
+    return chatMsgs.removeItem(key)
+  },
+  'gi.db/chatMsgs/clear': function (): Promise<any> {
+    return chatMsgs.clear()
+  }
+})
