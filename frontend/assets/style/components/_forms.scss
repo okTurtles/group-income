@@ -420,7 +420,7 @@ $radio-checkbox-inner-element-top-positions: (
       height: 6px;
       background-color: $background_0;
       margin-top: 1px;
-      top: var(--radio-checkbox-inner-element-top-position);
+      top: var(--radio-checkbox-inner-element-top-position, 9px);
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;
@@ -466,7 +466,7 @@ $radio-checkbox-inner-element-top-positions: (
       position: absolute;
       width: 6px;
       height: 6px;
-      top: var(--radio-checkbox-inner-element-top-position);
+      top: var(--radio-checkbox-inner-element-top-position, 9px);
       left: 5px;
       color: $background_0;
       transform: translate(-50%, -50%) scale(0);
