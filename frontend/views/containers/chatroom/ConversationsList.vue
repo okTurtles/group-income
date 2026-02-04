@@ -66,11 +66,19 @@ export default ({
     list: Object,
     routeName: String
   },
+  data () {
+    return {
+      ephemeral: {
+        chatroomsWithDrafts: [] // list of chatroom IDs that have a draft saved
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'isChatRoomManuallyMarkedUnread',
       'groupChatRooms',
-      'ourUnreadMessages'
+      'ourUnreadMessages',
+      'currentChatRoomId'
     ]),
     hasNotReadTheLatestMessage () {
       // This computed props check if the chatrooms in the list have any messages that are not seen by the user yet.
@@ -139,7 +147,19 @@ export default ({
         this.hasNotReadTheLatestMessage[chatRoomID] === true
     },
     hasDraft (chatRoomID) {
-      return false // TODO: implement this
+      return this.ephemeral.chatroomsWithDrafts.includes(chatRoomID)
+    }
+  },
+  watch: {
+    currentChatRoomId: {
+      handler (newVal) {
+        sbp('gi.db/chatDrafts/getAllKeys').then((keys) => {
+          if (Array.isArray(keys)) {
+            this.ephemeral.chatroomsWithDrafts = keys.map(key => key.split('ChatMessageDraft/')[1])
+          }
+        })
+      },
+      immediate: true
     }
   }
 }: Object)

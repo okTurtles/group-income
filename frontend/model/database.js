@@ -100,6 +100,20 @@ const localforage = {
           }
         })
       },
+      async getAllKeys () {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readonly')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.getAllKeys()
+        return new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            resolve(event.target.result)
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
+        })
+      },
       async removeItem (key: string) {
         const db = await lazyInitDb()
         const transaction = db.transaction([storeName], 'readwrite')
@@ -496,5 +510,8 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/chatDrafts/clear': function (): Promise<any> {
     return chatDrafts.clear()
+  },
+  'gi.db/chatDrafts/getAllKeys': function (): Promise<any> {
+    return chatDrafts.getAllKeys()
   }
 })

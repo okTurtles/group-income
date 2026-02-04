@@ -751,7 +751,7 @@ export default ({
       this.focusOnTextArea()
     },
     getMessageDraftKey () {
-      return `ChatMDraft/${this.currentChatRoomId}`
+      return `ChatMessageDraft/${this.currentChatRoomId}`
     },
     saveOrDeleteMessageDraft: debounce(function () {
       const hasContent = this.ephemeral.textWithLines.trim().length > 0
