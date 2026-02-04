@@ -738,8 +738,26 @@ export default ({
       this.clearMessageDraft()
     },
     async initializeTextArea () {
-      const initialText = this.defaultText || (await this.loadMessageDraft()) || ''
-      this.$refs.textarea.value = initialText
+      if (this.defaultText) {
+        this.$refs.textarea.value = this.defaultText
+      } else {
+        const draft = await this.loadMessageDraft()
+
+        if (draft?.text) {
+          this.$refs.textarea.value = draft.text
+        }
+
+        if (draft?.attachments) {
+          this.ephemeral.attachments = draft.attachments.map(attachment => ({
+            url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+            name: attachment.name,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+            downloadData: null
+          }))
+        }
+      }
+
       // Get actionsWidth to add a dynamic padding to textarea,
       // so those actions don't be above the textarea's value
       this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
@@ -764,12 +782,11 @@ export default ({
     },
     saveOrDeleteMessageDraft: debounce(function () {
       const hasContent = this.ephemeral.textWithLines.trim().length > 0 || this.hasAttachments
-      const shouldDeleteDraft = !hasContent && this.ephemeral.chatroomHasDraftSaved
 
-      if (shouldDeleteDraft) {
-        this.clearMessageDraft()
-      } else if (hasContent) {
+      if (hasContent) {
         this.saveMessageDraft()
+      } else if (this.ephemeral.chatroomHasDraftSaved) {
+        this.clearMessageDraft()
       }
     }, 500),
     async saveMessageDraft () {
@@ -777,7 +794,7 @@ export default ({
         const draftData = { text: this.ephemeral.textWithLines || '' }
 
         if (this.hasAttachments) {
-          draftData.attachments =  await Promise.all(
+          draftData.attachments = await Promise.all(
             this.ephemeral.attachments.map(async attachment => {
               return {
                 name: attachment.name,
@@ -845,7 +862,7 @@ export default ({
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
- 
+
         const fileUrl = URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
@@ -883,10 +900,13 @@ export default ({
 
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
+
+      this.saveOrDeleteMessageDraft()
     },
     clearAllAttachments () {
       this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
       this.ephemeral.attachments = []
+      this.saveOrDeleteMessageDraft()
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
@@ -897,6 +917,8 @@ export default ({
         URL.revokeObjectURL(targetUrl)
         this.ephemeral.attachments.splice(targetIndex, 1)
       }
+
+      this.saveOrDeleteMessageDraft()
     },
     selectEmoticon (emoticon) {
       // Making sure the emoticon is added to the cursor position
