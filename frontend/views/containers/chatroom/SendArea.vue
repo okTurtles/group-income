@@ -359,7 +359,7 @@ export default ({
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
         typingUsers: [],
-        hasDraftSaved: false
+        chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -755,22 +755,28 @@ export default ({
     },
     saveOrDeleteMessageDraft: debounce(function () {
       const hasContent = this.ephemeral.textWithLines.trim().length > 0
-      const shouldDeleteDraft = !hasContent && this.ephemeral.hasDraftSaved
+      const shouldDeleteDraft = !hasContent && this.ephemeral.chatroomHasDraftSaved
 
       if (shouldDeleteDraft) {
         this.clearMessageDraft()
       } else if (hasContent) {
         this.saveMessageDraft()
       }
-    }, 700),
+    }, 500),
     saveMessageDraft () {
       sbp('gi.db/chatDrafts/save', this.getMessageDraftKey(), this.ephemeral.textWithLines).then(() => {
-        this.ephemeral.hasDraftSaved = true
+        if (!this.ephemeral.chatroomHasDraftSaved) {
+          this.ephemeral.chatroomHasDraftSaved = true
+        }
       })
     },
     async loadMessageDraft () {
       try {
-        return await sbp('gi.db/chatDrafts/load', this.getMessageDraftKey())
+        const draft = await sbp('gi.db/chatDrafts/load', this.getMessageDraftKey())
+        if (draft && !this.ephemeral.chatroomHasDraftSaved) {
+          this.ephemeral.chatroomHasDraftSaved = true
+        }
+        return draft
       } catch (e) {
         // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
         console.error('SendArea.vue: Error loading message draft - ', e)
@@ -779,7 +785,7 @@ export default ({
     },
     clearMessageDraft () {
       sbp('gi.db/chatDrafts/delete', this.getMessageDraftKey()).then(() => {
-        this.ephemeral.hasDraftSaved = false
+        this.ephemeral.chatroomHasDraftSaved = false
       })
     },
     openCreatePollModal () {
