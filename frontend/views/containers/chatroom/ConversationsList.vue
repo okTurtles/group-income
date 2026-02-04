@@ -32,7 +32,7 @@
       ) {{list.channels[id].displayName || list.channels[id].name}}
 
       .c-badge-elements-wrapper
-        i.icon-pencil-alt.c-draft-icon(v-if='hasDraft(id)')
+        i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(id)')
         .pill.is-danger(
           v-if='list.channels[id].unreadMessagesCount > 0'
         ) {{ limitedUnreadCount(list.channels[id].unreadMessagesCount) }}
@@ -146,17 +146,15 @@ export default ({
         this.list.channels[chatRoomID].unreadMessagesCount > 0 ||
         this.hasNotReadTheLatestMessage[chatRoomID] === true
     },
-    hasDraft (chatRoomID) {
-      return this.ephemeral.chatroomsWithDrafts.includes(chatRoomID)
+    showDraftIcon (chatID) {
+      return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
     }
   },
   watch: {
     currentChatRoomId: {
       handler (newVal) {
-        sbp('gi.db/chatDrafts/getAllKeys').then((keys) => {
-          if (Array.isArray(keys)) {
-            this.ephemeral.chatroomsWithDrafts = keys.map(key => key.split('ChatMessageDraft/')[1])
-          }
+        sbp('gi.db/chatDrafts/getAllChatroomIds').then((chatroomIds) => {
+          this.ephemeral.chatroomsWithDrafts = chatroomIds
         })
       },
       immediate: true

@@ -389,6 +389,8 @@ export default ({
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
       }
+
+      this.initializeTextArea()
     }
   },
   created () {
@@ -743,9 +745,7 @@ export default ({
       } else {
         const draft = await this.loadMessageDraft()
 
-        if (draft?.text) {
-          this.$refs.textarea.value = draft.text
-        }
+        this.$refs.textarea.value = draft?.text || ''
 
         if (draft?.attachments) {
           this.ephemeral.attachments = draft.attachments.map(attachment => ({
@@ -755,6 +755,8 @@ export default ({
             size: attachment.size,
             downloadData: null
           }))
+        } else {
+          this.ephemeral.attachments = []
         }
       }
 

@@ -511,7 +511,15 @@ sbp('sbp/selectors/register', {
   'gi.db/chatDrafts/clear': function (): Promise<any> {
     return chatDrafts.clear()
   },
-  'gi.db/chatDrafts/getAllKeys': function (): Promise<any> {
-    return chatDrafts.getAllKeys()
+  'gi.db/chatDrafts/getAllChatroomIds': async function (): Promise<any> {
+    // Get all contractIDs of the chatrooms that have a draft saved
+    try {
+      const allKeys = await chatDrafts.getAllKeys()
+      return allKeys.filter(key => key.startsWith('ChatMessageDraft/'))
+        .map(key => key.split('ChatMessageDraft/')[1])
+    } catch (e) {
+      console.error('[gi.db/chatDrafts/getAllChatroomIds] Error getting all chatroom IDs', e)
+      return []
+    }
   }
 })
