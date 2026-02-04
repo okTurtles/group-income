@@ -31,7 +31,8 @@
         :class='{ "has-text-bold": shouldStyleBold(id) }'
       ) {{list.channels[id].displayName || list.channels[id].name}}
 
-      .c-unreadcount-wrapper
+      .c-badge-elements-wrapper
+        i.icon-pencil-alt.c-draft-icon(v-if='hasDraft(id)')
         .pill.is-danger(
           v-if='list.channels[id].unreadMessagesCount > 0'
         ) {{ limitedUnreadCount(list.channels[id].unreadMessagesCount) }}
@@ -136,6 +137,9 @@ export default ({
       return this.isChatRoomManuallyMarkedUnread(chatRoomID) ||
         this.list.channels[chatRoomID].unreadMessagesCount > 0 ||
         this.hasNotReadTheLatestMessage[chatRoomID] === true
+    },
+    hasDraft (chatRoomID) {
+      return false // TODO: implement this
     }
   }
 }: Object)
@@ -160,9 +164,20 @@ export default ({
   width: 100px; // HACK: to truncate
 }
 
-.c-unreadcount-wrapper {
-  width: 2rem;
+.c-badge-elements-wrapper {
+  position: relative;
+  width: max-content;
+  padding: 0 0.675rem;
   display: flex;
   justify-content: center;
+  align-items: center;
+  column-gap: 0.5rem;
+  flex-shrink: 0;
+
+  i.c-draft-icon {
+    color: $general_0;
+    font-size: $text_1;
+    margin-right: 0;
+  }
 }
 </style>
