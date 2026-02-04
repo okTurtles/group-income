@@ -753,8 +753,17 @@ export default ({
     getMessageDraftKey () {
       return `ChatMessageDraft/${this.currentChatRoomId}`
     },
+    async objectURLtoArrayBuffer (url) {
+      try {
+        const blob = await fetch(url).then(r => r.blob())
+        return await blob.arrayBuffer()
+      } catch (e) {
+        console.error('SendArea.vue: Error converting object URL to array buffer - ', e)
+        return null
+      }
+    },
     saveOrDeleteMessageDraft: debounce(function () {
-      const hasContent = this.ephemeral.textWithLines.trim().length > 0
+      const hasContent = this.ephemeral.textWithLines.trim().length > 0 || this.hasAttachments
       const shouldDeleteDraft = !hasContent && this.ephemeral.chatroomHasDraftSaved
 
       if (shouldDeleteDraft) {
@@ -763,12 +772,33 @@ export default ({
         this.saveMessageDraft()
       }
     }, 500),
-    saveMessageDraft () {
-      sbp('gi.db/chatDrafts/save', this.getMessageDraftKey(), this.ephemeral.textWithLines).then(() => {
+    async saveMessageDraft () {
+      try {
+        const draftData = { text: this.ephemeral.textWithLines || '' }
+
+        if (this.hasAttachments) {
+          draftData.attachments =  await Promise.all(
+            this.ephemeral.attachments.map(async attachment => {
+              return {
+                name: attachment.name,
+                mimeType: attachment.mimeType,
+                size: attachment.size,
+                // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
+                // Converting them into Arraybuffers solves the problem.
+                fileData: await this.objectURLtoArrayBuffer(attachment.url)
+              }
+            })
+          )
+        }
+
+        await sbp('gi.db/chatDrafts/save', this.getMessageDraftKey(), draftData)
+
         if (!this.ephemeral.chatroomHasDraftSaved) {
           this.ephemeral.chatroomHasDraftSaved = true
         }
-      })
+      } catch (e) {
+        console.error('SendArea.vue: Error saving message draft - ', e)
+      }
     },
     async loadMessageDraft () {
       try {
@@ -815,7 +845,7 @@ export default ({
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
-
+ 
         const fileUrl = URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
