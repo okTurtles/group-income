@@ -100,6 +100,20 @@ const localforage = {
           }
         })
       },
+      async getAllKeys () {
+        const db = await lazyInitDb()
+        const transaction = db.transaction([storeName], 'readonly')
+        const objectStore = transaction.objectStore(storeName)
+        const request = objectStore.getAllKeys()
+        return new Promise((resolve, reject) => {
+          request.onsuccess = (event) => {
+            resolve(event.target.result)
+          }
+          request.onerror = (e) => {
+            reject(e)
+          }
+        })
+      },
       async removeItem (key: string) {
         const db = await lazyInitDb()
         const transaction = db.transaction([storeName], 'readwrite')
@@ -472,5 +486,46 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/logs/clear': function (): Promise<any> {
     return logs.clear()
+  }
+})
+
+// ======================================
+// Chatroom message drafts.
+// ======================================
+
+const chatDrafts = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Chat Drafts'
+})
+const queueChatDraftTransaction = fn => {
+  return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/chatDrafts', fn)
+}
+
+sbp('sbp/selectors/register', {
+  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      return chatDrafts.setItem(key, value)
+    })
+  },
+  'gi.db/chatDrafts/load': function (key: string): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      return chatDrafts.getItem(key)
+    })
+  },
+  'gi.db/chatDrafts/delete': function (key: string): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      chatDrafts.removeItem(key)
+    })
+  },
+  'gi.db/chatDrafts/clear': function (): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      chatDrafts.clear()
+    })
+  },
+  'gi.db/chatDrafts/getAllChatroomIds': function (): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      // Get all contractIDs of the chatrooms that have a draft saved
+      return chatDrafts.getAllKeys()
+    })
   }
 })

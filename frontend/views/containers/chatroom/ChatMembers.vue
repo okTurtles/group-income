@@ -47,7 +47,8 @@
             :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
           ) {{ title }}
 
-      .c-unreadcount-wrapper
+      .c-badge-elements-wrapper
+        i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(chatRoomID)')
         .pill.is-danger(
           v-if='getUnreadMsgCount(chatRoomID)'
         ) {{ limitedUnreadCount(getUnreadMsgCount(chatRoomID)) }}
@@ -84,13 +85,21 @@ export default ({
       validator: (value) => ['addDirectMessage'].includes(value)
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        chatroomsWithDrafts: [] // list of chatroom IDs that have a draft saved
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
       'ourIdentityContractId',
       'chatRoomUnreadMessages',
-      'isChatRoomManuallyMarkedUnread'
+      'isChatRoomManuallyMarkedUnread',
+      'currentChatRoomId'
     ])
   },
   methods: {
@@ -128,6 +137,19 @@ export default ({
       } else {
         return `${n}`
       }
+    },
+    showDraftIcon (chatID) {
+      return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
+    }
+  },
+  watch: {
+    currentChatRoomId: {
+      handler (newVal) {
+        sbp('gi.db/chatDrafts/getAllChatroomIds').then((chatroomIds) => {
+          this.ephemeral.chatroomsWithDrafts = chatroomIds
+        })
+      },
+      immediate: true
     }
   }
 }: Object)
@@ -182,10 +204,21 @@ export default ({
   min-width: 13rem;
 }
 
-.c-unreadcount-wrapper {
-  width: 2rem;
+.c-badge-elements-wrapper {
+  position: relative;
+  width: max-content;
+  padding: 0 0.675rem;
   display: flex;
   justify-content: center;
+  align-items: center;
+  column-gap: 0.5rem;
+  flex-shrink: 0;
+
+  i.c-draft-icon {
+    color: $general_0;
+    font-size: $text_1;
+    margin-right: 0;
+  }
 }
 
 .profile-wrapper {

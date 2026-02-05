@@ -358,7 +358,8 @@ export default ({
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
-        typingUsers: []
+        typingUsers: [],
+        chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -384,9 +385,13 @@ export default ({
         })
       }
     },
-    currentChatRoomId () {
+    currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
+      }
+
+      if (newVal) {
+        this.initializeTextArea()
       }
     }
   },
@@ -397,16 +402,7 @@ export default ({
     this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
-    this.$refs.textarea.value = this.defaultText || ''
-    // Get actionsWidth to add a dynamic padding to textarea,
-    // so those actions don't be above the textarea's value
-    this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
-    this.updateTextArea()
-    // The following causes inconsistent focusing on iOS depending on whether
-    // iOS determines the action to be a result of user interaction.
-    // Commenting this out will result on focus being triggered the 'normal'
-    // way, when the chatroom is ready.
-    this.focusOnTextArea()
+    this.initializeTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -597,6 +593,10 @@ export default ({
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
       }
+
+      if (!this.isEditing) {
+        this.saveOrDeleteMessageDraft()
+      }
     },
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
@@ -730,10 +730,117 @@ export default ({
           : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
+
+      this.clearTextArea()
+    },
+    clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
+
+      this.clearMessageDraft()
+    },
+    async initializeTextArea () {
+      if (this.defaultText) {
+        this.$refs.textarea.value = this.defaultText
+      } else {
+        const draft = await this.loadMessageDraft()
+
+        if (!this.$refs.textarea) {
+          // There is a cypress heisen-bug where it enters and chatroom and leaves almost immediately, before this.loadMessageDraft() above isn't completed.
+          // In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
+          return
+        }
+
+        this.$refs.textarea.value = draft?.text || ''
+
+        if (draft?.attachments) {
+          this.ephemeral.attachments = draft.attachments.map(attachment => ({
+            url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+            name: attachment.name,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+            downloadData: null
+          }))
+        } else {
+          this.ephemeral.attachments = []
+        }
+      }
+
+      // Get actionsWidth to add a dynamic padding to textarea,
+      // so those actions don't be above the textarea's value
+      this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
+      this.updateTextArea()
+      // The following causes inconsistent focusing on iOS depending on whether
+      // iOS determines the action to be a result of user interaction.
+      // Commenting this out will result on focus being triggered the 'normal'
+      // way, when the chatroom is ready.
+      this.focusOnTextArea()
+    },
+    async objectURLtoArrayBuffer (url) {
+      try {
+        const blob = await fetch(url).then(r => r.blob())
+        return await blob.arrayBuffer()
+      } catch (e) {
+        console.error('SendArea.vue: Error converting object URL to array buffer - ', e)
+        return null
+      }
+    },
+    saveOrDeleteMessageDraft: debounce(function () {
+      const hasContent = this.ephemeral.textWithLines.trim().length > 0 || this.hasAttachments
+
+      if (hasContent) {
+        this.saveMessageDraft()
+      } else if (this.ephemeral.chatroomHasDraftSaved) {
+        this.clearMessageDraft()
+      }
+    }, 450),
+    async saveMessageDraft () {
+      try {
+        const draftData = { text: this.ephemeral.textWithLines || '' }
+
+        if (this.hasAttachments) {
+          draftData.attachments = await Promise.all(
+            this.ephemeral.attachments.map(async attachment => {
+              return {
+                name: attachment.name,
+                mimeType: attachment.mimeType,
+                size: attachment.size,
+                // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
+                // Converting them into Arraybuffers solves the problem.
+                fileData: await this.objectURLtoArrayBuffer(attachment.url)
+              }
+            })
+          )
+        }
+
+        await sbp('gi.db/chatDrafts/save', this.currentChatRoomId, draftData)
+
+        if (!this.ephemeral.chatroomHasDraftSaved) {
+          this.ephemeral.chatroomHasDraftSaved = true
+        }
+      } catch (e) {
+        console.error('SendArea.vue: Error saving message draft - ', e)
+      }
+    },
+    async loadMessageDraft () {
+      try {
+        const draft = await sbp('gi.db/chatDrafts/load', this.currentChatRoomId)
+        if (draft && !this.ephemeral.chatroomHasDraftSaved) {
+          this.ephemeral.chatroomHasDraftSaved = true
+        }
+        return draft
+      } catch (e) {
+        // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
+        console.error('SendArea.vue: Error loading message draft - ', e)
+        return ''
+      }
+    },
+    clearMessageDraft () {
+      sbp('gi.db/chatDrafts/delete', this.currentChatRoomId).then(() => {
+        this.ephemeral.chatroomHasDraftSaved = false
+      })
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -800,10 +907,13 @@ export default ({
 
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
+
+      this.saveOrDeleteMessageDraft()
     },
     clearAllAttachments () {
       this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
       this.ephemeral.attachments = []
+      this.saveOrDeleteMessageDraft()
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
@@ -814,6 +924,8 @@ export default ({
         URL.revokeObjectURL(targetUrl)
         this.ephemeral.attachments.splice(targetIndex, 1)
       }
+
+      this.saveOrDeleteMessageDraft()
     },
     selectEmoticon (emoticon) {
       // Making sure the emoticon is added to the cursor position
