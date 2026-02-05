@@ -770,9 +770,6 @@ export default ({
       // way, when the chatroom is ready.
       this.focusOnTextArea()
     },
-    getMessageDraftKey () {
-      return `ChatMessageDraft/${this.currentChatRoomId}`
-    },
     async objectURLtoArrayBuffer (url) {
       try {
         const blob = await fetch(url).then(r => r.blob())
@@ -790,7 +787,7 @@ export default ({
       } else if (this.ephemeral.chatroomHasDraftSaved) {
         this.clearMessageDraft()
       }
-    }, 500),
+    }, 450),
     async saveMessageDraft () {
       try {
         const draftData = { text: this.ephemeral.textWithLines || '' }
@@ -810,7 +807,7 @@ export default ({
           )
         }
 
-        await sbp('gi.db/chatDrafts/save', this.getMessageDraftKey(), draftData)
+        await sbp('gi.db/chatDrafts/save', this.currentChatRoomId, draftData)
 
         if (!this.ephemeral.chatroomHasDraftSaved) {
           this.ephemeral.chatroomHasDraftSaved = true
@@ -821,7 +818,7 @@ export default ({
     },
     async loadMessageDraft () {
       try {
-        const draft = await sbp('gi.db/chatDrafts/load', this.getMessageDraftKey())
+        const draft = await sbp('gi.db/chatDrafts/load', this.currentChatRoomId)
         if (draft && !this.ephemeral.chatroomHasDraftSaved) {
           this.ephemeral.chatroomHasDraftSaved = true
         }
@@ -833,7 +830,7 @@ export default ({
       }
     },
     clearMessageDraft () {
-      sbp('gi.db/chatDrafts/delete', this.getMessageDraftKey()).then(() => {
+      sbp('gi.db/chatDrafts/delete', this.currentChatRoomId).then(() => {
         this.ephemeral.chatroomHasDraftSaved = false
       })
     },

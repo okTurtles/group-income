@@ -523,16 +523,9 @@ sbp('sbp/selectors/register', {
     })
   },
   'gi.db/chatDrafts/getAllChatroomIds': function (): Promise<any> {
-    return queueChatDraftTransaction(async () => {
+    return queueChatDraftTransaction(() => {
       // Get all contractIDs of the chatrooms that have a draft saved
-      try {
-        const allKeys = await chatDrafts.getAllKeys()
-        return allKeys.filter(key => key.startsWith('ChatMessageDraft/'))
-          .map(key => key.split('ChatMessageDraft/')[1])
-      } catch (e) {
-        console.error('[gi.db/chatDrafts/getAllChatroomIds] Error getting all chatroom IDs', e)
-        return []
-      }
+      return chatDrafts.getAllKeys()
     })
   }
 })
