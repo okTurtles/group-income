@@ -742,37 +742,41 @@ export default ({
       this.clearMessageDraft()
     },
     async initializeTextArea () {
-      if (this.$refs.textarea) {
-        if (this.defaultText) {
-          this.$refs.textarea.value = this.defaultText
-        } else {
-          const draft = await this.loadMessageDraft()
+      if (this.defaultText) {
+        this.$refs.textarea.value = this.defaultText
+      } else {
+        const draft = await this.loadMessageDraft()
 
-          this.$refs.textarea.value = draft?.text || ''
-
-          if (draft?.attachments) {
-            this.ephemeral.attachments = draft.attachments.map(attachment => ({
-              url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
-              name: attachment.name,
-              mimeType: attachment.mimeType,
-              size: attachment.size,
-              downloadData: null
-            }))
-          } else {
-            this.ephemeral.attachments = []
-          }
+        if (!this.$refs.textarea) {
+          // There is a cypress heisen-bug where it enters and chatroom and leaves almost immediately, before this.loadMessageDraft() above isn't completed.
+          // In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
+          return
         }
 
-        // Get actionsWidth to add a dynamic padding to textarea,
-        // so those actions don't be above the textarea's value
-        this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
-        this.updateTextArea()
-        // The following causes inconsistent focusing on iOS depending on whether
-        // iOS determines the action to be a result of user interaction.
-        // Commenting this out will result on focus being triggered the 'normal'
-        // way, when the chatroom is ready.
-        this.focusOnTextArea()
+        this.$refs.textarea.value = draft?.text || ''
+
+        if (draft?.attachments) {
+          this.ephemeral.attachments = draft.attachments.map(attachment => ({
+            url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+            name: attachment.name,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+            downloadData: null
+          }))
+        } else {
+          this.ephemeral.attachments = []
+        }
       }
+
+      // Get actionsWidth to add a dynamic padding to textarea,
+      // so those actions don't be above the textarea's value
+      this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
+      this.updateTextArea()
+      // The following causes inconsistent focusing on iOS depending on whether
+      // iOS determines the action to be a result of user interaction.
+      // Commenting this out will result on focus being triggered the 'normal'
+      // way, when the chatroom is ready.
+      this.focusOnTextArea()
     },
     async objectURLtoArrayBuffer (url) {
       try {
