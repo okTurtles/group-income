@@ -385,12 +385,14 @@ export default ({
         })
       }
     },
-    currentChatRoomId () {
+    currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
       }
 
-      this.initializeTextArea()
+      if (newVal) {
+        this.initializeTextArea()
+      }
     }
   },
   created () {
