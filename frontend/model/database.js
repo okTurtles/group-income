@@ -497,29 +497,42 @@ const chatDrafts = localforage.createInstance({
   name: 'Group Income',
   storeName: 'Chat Drafts'
 })
+const queueChatDraftTransaction = fn => {
+  return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/chatDrafts', fn)
+}
 
 sbp('sbp/selectors/register', {
-  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<*> {
-    return chatDrafts.setItem(key, value)
+  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      return chatDrafts.setItem(key, value)
+    })
   },
   'gi.db/chatDrafts/load': function (key: string): Promise<any> {
-    return chatDrafts.getItem(key)
+    return queueChatDraftTransaction(() => {
+      return chatDrafts.getItem(key)
+    })
   },
-  'gi.db/chatDrafts/delete': function (key: string): Promise<Object> {
-    return chatDrafts.removeItem(key)
+  'gi.db/chatDrafts/delete': function (key: string): Promise<any> {
+    return queueChatDraftTransaction(() => {
+      chatDrafts.removeItem(key)
+    })
   },
   'gi.db/chatDrafts/clear': function (): Promise<any> {
-    return chatDrafts.clear()
+    return queueChatDraftTransaction(() => {
+      chatDrafts.clear()
+    })
   },
-  'gi.db/chatDrafts/getAllChatroomIds': async function (): Promise<any> {
-    // Get all contractIDs of the chatrooms that have a draft saved
-    try {
-      const allKeys = await chatDrafts.getAllKeys()
-      return allKeys.filter(key => key.startsWith('ChatMessageDraft/'))
-        .map(key => key.split('ChatMessageDraft/')[1])
-    } catch (e) {
-      console.error('[gi.db/chatDrafts/getAllChatroomIds] Error getting all chatroom IDs', e)
-      return []
-    }
+  'gi.db/chatDrafts/getAllChatroomIds': function (): Promise<any> {
+    return queueChatDraftTransaction(async () => {
+      // Get all contractIDs of the chatrooms that have a draft saved
+      try {
+        const allKeys = await chatDrafts.getAllKeys()
+        return allKeys.filter(key => key.startsWith('ChatMessageDraft/'))
+          .map(key => key.split('ChatMessageDraft/')[1])
+      } catch (e) {
+        console.error('[gi.db/chatDrafts/getAllChatroomIds] Error getting all chatroom IDs', e)
+        return []
+      }
+    })
   }
 })
