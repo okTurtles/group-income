@@ -323,7 +323,7 @@ Cypress.Commands.add('giLogout', ({ bypassUI = false, hasNoGroup = false } = {})
     cy.window().its('sbp').then(async sbp => await sbp('gi.app/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
-    cy.getByDT('link-logout').click()
+    cy.getByDT('tabLogout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
   cy.url().should('eq', `${API_URL}/app/`)
@@ -345,10 +345,11 @@ Cypress.Commands.add('closeModal', () => {
 
 Cypress.Commands.add('giSetDisplayName', (name) => {
   cy.getByDT('settingsBtn').click()
+  cy.getByDT('tabMyProfile').click()
   cy.getByDT('displayName').type('{selectall}{del}' + name)
   cy.getByDT('saveAccount').click()
   cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
-  cy.closeModal()
+  cy.getByDT('backToMenu').click()
 })
 
 Cypress.Commands.add('giCreateGroup', (name, {
