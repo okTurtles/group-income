@@ -742,35 +742,37 @@ export default ({
       this.clearMessageDraft()
     },
     async initializeTextArea () {
-      if (this.defaultText) {
-        this.$refs.textarea.value = this.defaultText
-      } else {
-        const draft = await this.loadMessageDraft()
-
-        this.$refs.textarea.value = draft?.text || ''
-
-        if (draft?.attachments) {
-          this.ephemeral.attachments = draft.attachments.map(attachment => ({
-            url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
-            name: attachment.name,
-            mimeType: attachment.mimeType,
-            size: attachment.size,
-            downloadData: null
-          }))
+      if (this.$refs.textarea) {
+        if (this.defaultText) {
+          this.$refs.textarea.value = this.defaultText
         } else {
-          this.ephemeral.attachments = []
-        }
-      }
+          const draft = await this.loadMessageDraft()
 
-      // Get actionsWidth to add a dynamic padding to textarea,
-      // so those actions don't be above the textarea's value
-      this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
-      this.updateTextArea()
-      // The following causes inconsistent focusing on iOS depending on whether
-      // iOS determines the action to be a result of user interaction.
-      // Commenting this out will result on focus being triggered the 'normal'
-      // way, when the chatroom is ready.
-      this.focusOnTextArea()
+          this.$refs.textarea.value = draft?.text || ''
+
+          if (draft?.attachments) {
+            this.ephemeral.attachments = draft.attachments.map(attachment => ({
+              url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+              name: attachment.name,
+              mimeType: attachment.mimeType,
+              size: attachment.size,
+              downloadData: null
+            }))
+          } else {
+            this.ephemeral.attachments = []
+          }
+        }
+
+        // Get actionsWidth to add a dynamic padding to textarea,
+        // so those actions don't be above the textarea's value
+        this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
+        this.updateTextArea()
+        // The following causes inconsistent focusing on iOS depending on whether
+        // iOS determines the action to be a result of user interaction.
+        // Commenting this out will result on focus being triggered the 'normal'
+        // way, when the chatroom is ready.
+        this.focusOnTextArea()
+      }
     },
     async objectURLtoArrayBuffer (url) {
       try {
