@@ -78,6 +78,9 @@ export default ({
           contractID: this.currentGroupId,
           data: { chatRoomID }
         })
+
+        // Delete the saved draft for the chatroom from the indexedDB, if there is any.
+        sbp('gi.db/chatDrafts/delete', chatRoomID)
         this.close()
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
