@@ -1315,11 +1315,8 @@ sbp('chelonia/defineContract', {
         sbp('okTurtles.events/emit', DELETED_CHATROOM, { groupContractID: contractID, chatRoomID: data.chatRoomID })
         const { identityContractID } = sbp('state/vuex/state').loggedIn
         if (identityContractID === innerSigningContractID) {
-          const myPermissions = getMemberPermissions({ getters, memberID: innerSigningContractID })
-
           sbp('gi.actions/chatroom/delete', {
-            contractID: data.chatRoomID,
-            data: { byPermission: myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL) }
+            contractID: data.chatRoomID
           }).catch(e => {
             console.error(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
           })
