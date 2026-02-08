@@ -357,6 +357,7 @@ export default ({
           type: 'member' // enum of ['member', 'channel']
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
+        staleObjectURLs: [],
         typingUsers: [],
         chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
       },
@@ -413,6 +414,9 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
+    this.ephemeral.staleObjectURLs.forEach(url => {
+      URL.revokeObjectURL(url)
+    })
   },
   computed: {
     ...mapGetters([
@@ -591,7 +595,7 @@ export default ({
       }
 
       if (!this.isEditing) {
-        this.saveOrDeleteMessageDraft()
+        this.saveOrDeleteMessageDraft(this.currentChatRoomId)
       }
     },
     handlePaste (e) {
@@ -741,6 +745,7 @@ export default ({
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
+      this.ephemeral.chatroomHasDraftSaved = false
 
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
@@ -787,16 +792,16 @@ export default ({
         return null
       }
     },
-    saveOrDeleteMessageDraft: debounce(function () {
+    saveOrDeleteMessageDraft: debounce(function (chatroomId) {
       const hasContent = this.ephemeral.textWithLines.trim().length > 0 || this.hasAttachments
 
       if (hasContent) {
-        this.saveMessageDraft()
+        this.saveMessageDraft(chatroomId)
       } else if (this.ephemeral.chatroomHasDraftSaved) {
-        this.clearMessageDraft()
+        this.clearMessageDraft(chatroomId)
       }
     }, 450),
-    async saveMessageDraft () {
+    async saveMessageDraft (chatroomId) {
       try {
         const draftData = { text: this.ephemeral.textWithLines || '' }
 
@@ -815,7 +820,7 @@ export default ({
           )
         }
 
-        await sbp('gi.db/chatDrafts/save', this.currentChatRoomId, draftData)
+        await sbp('gi.db/chatDrafts/save', chatroomId || this.currentChatRoomId, draftData)
 
         if (!this.ephemeral.chatroomHasDraftSaved) {
           this.ephemeral.chatroomHasDraftSaved = true
@@ -827,9 +832,7 @@ export default ({
     async loadMessageDraft () {
       try {
         const draft = await sbp('gi.db/chatDrafts/load', this.currentChatRoomId)
-        if (draft && !this.ephemeral.chatroomHasDraftSaved) {
-          this.ephemeral.chatroomHasDraftSaved = true
-        }
+        this.ephemeral.chatroomHasDraftSaved = !!draft
         return draft
       } catch (e) {
         // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
@@ -837,8 +840,8 @@ export default ({
         return ''
       }
     },
-    clearMessageDraft () {
-      sbp('gi.db/chatDrafts/delete', this.currentChatRoomId).then(() => {
+    clearMessageDraft (chatroomId) {
+      sbp('gi.db/chatDrafts/delete', chatroomId || this.currentChatRoomId).then(() => {
         this.ephemeral.chatroomHasDraftSaved = false
       })
     },
@@ -908,13 +911,11 @@ export default ({
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
 
-      this.saveOrDeleteMessageDraft()
+      this.saveOrDeleteMessageDraft(this.currentChatRoomId)
     },
     clearAllAttachments () {
       if (this.ephemeral.attachments.length) {
-        this.ephemeral.attachments.forEach(attachment => {
-          URL.revokeObjectURL(attachment.url)
-        })
+        this.ephemeral.staleObjectURLs.push(...this.ephemeral.attachments.map(({ url }) => url))
         this.ephemeral.attachments = []
       }
     },
@@ -928,7 +929,7 @@ export default ({
         this.ephemeral.attachments.splice(targetIndex, 1)
       }
 
-      this.saveOrDeleteMessageDraft()
+      this.saveOrDeleteMessageDraft(this.currentChatRoomId)
     },
     selectEmoticon (emoticon) {
       // Making sure the emoticon is added to the cursor position
