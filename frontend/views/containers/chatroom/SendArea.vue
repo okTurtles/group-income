@@ -357,7 +357,6 @@ export default ({
           type: 'member' // enum of ['member', 'channel']
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
-        staleObjectURLs: [],
         typingUsers: [],
         chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
       },
@@ -414,9 +413,6 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
-    this.ephemeral.staleObjectURLs.forEach(url => {
-      URL.revokeObjectURL(url)
-    })
   },
   computed: {
     ...mapGetters([
@@ -742,6 +738,10 @@ export default ({
       this.clearMessageDraft()
     },
     async initializeTextArea () {
+      // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
+      // clear them and revoke all object URLs first to avoid memory leaks.
+      this.clearAllAttachments()
+
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
       } else {
@@ -911,9 +911,12 @@ export default ({
       this.saveOrDeleteMessageDraft()
     },
     clearAllAttachments () {
-      this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
-      this.ephemeral.attachments = []
-      this.saveOrDeleteMessageDraft()
+      if (this.ephemeral.attachments.length) {
+        this.ephemeral.attachments.forEach(attachment => {
+          URL.revokeObjectURL(attachment.url)
+        })
+        this.ephemeral.attachments = []
+      }
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.

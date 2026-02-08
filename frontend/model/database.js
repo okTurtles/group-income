@@ -497,33 +497,25 @@ const chatDrafts = localforage.createInstance({
   name: 'Group Income',
   storeName: 'Chat Drafts'
 })
-const queueChatDraftTransaction = fn => {
+const queueChatDraftOperation = fn => {
   return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/chatDrafts', fn)
 }
 
 sbp('sbp/selectors/register', {
   'gi.db/chatDrafts/save': function (key: string, value: any): Promise<any> {
-    return queueChatDraftTransaction(() => {
-      return chatDrafts.setItem(key, value)
-    })
+    return queueChatDraftOperation(() => chatDrafts.setItem(key, value))
   },
   'gi.db/chatDrafts/load': function (key: string): Promise<any> {
-    return queueChatDraftTransaction(() => {
-      return chatDrafts.getItem(key)
-    })
+    return queueChatDraftOperation(() => chatDrafts.getItem(key))
   },
   'gi.db/chatDrafts/delete': function (key: string): Promise<any> {
-    return queueChatDraftTransaction(() => {
-      chatDrafts.removeItem(key)
-    })
+    return queueChatDraftOperation(() => chatDrafts.removeItem(key))
   },
   'gi.db/chatDrafts/clear': function (): Promise<any> {
-    return queueChatDraftTransaction(() => {
-      chatDrafts.clear()
-    })
+    return queueChatDraftOperation(() => chatDrafts.clear())
   },
   'gi.db/chatDrafts/getAllChatroomIds': function (): Promise<any> {
-    return queueChatDraftTransaction(() => {
+    return queueChatDraftOperation(() => {
       // Get all contractIDs of the chatrooms that have a draft saved
       return chatDrafts.getAllKeys()
     })
