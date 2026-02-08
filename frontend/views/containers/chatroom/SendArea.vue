@@ -758,7 +758,9 @@ export default ({
           return
         }
 
-        this.$refs.textarea.value = draft?.text || ''
+        if (draft?.text) {
+          this.$refs.textarea.value = draft.text
+        }
 
         if (draft?.attachments) {
           this.ephemeral.attachments = draft.attachments.map(attachment => ({
