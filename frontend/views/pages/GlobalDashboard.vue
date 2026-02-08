@@ -5,14 +5,14 @@ page(
 )
   template(#title='') {{ currentTabSetting.title }}
 
-  component(:is='currentContent' :key='$route.params.id')
+  component(:is='currentContent' :key='tabIds.tab')
 </template>
 
 <script>
 import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
-import DirectMessages from '@containers/global-dashboard/DirectMessages.vue'
+import DirectMessages from '@containers/global-dashboard/direct-messages/DirectMessages.vue'
 
 export const GLOBAL_DASHBOARD_SETTINGS: {[string]: Object } = {
   'news-and-updates': {
@@ -38,11 +38,20 @@ export default ({
     Page
   },
   computed: {
+    tabIds () {
+      const pathMatch = this.$route.params.pathMatch || ''
+      if (!pathMatch) {
+        return { tab: 'news-and-updates', subTab: undefined }
+      } else {
+        const subPaths = pathMatch.split('/')
+        return { tab: subPaths[0], subTab: subPaths[1] }
+      }
+    },
     currentTabSetting () {
-      return GLOBAL_DASHBOARD_SETTINGS[this.$route.params.id || 'news-and-updates']
+      return GLOBAL_DASHBOARD_SETTINGS[this.tabIds.tab || 'news-and-updates']
     },
     currentContent () {
-      return contentComponentsMap[this.$route.params.id || 'news-and-updates']
+      return contentComponentsMap[this.tabIds.tab || 'news-and-updates']
     }
   }
 }: Object)

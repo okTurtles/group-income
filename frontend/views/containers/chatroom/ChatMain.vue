@@ -412,7 +412,6 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupOwnerID',
-      'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomAttributes',
       'ourIdentityContractId',

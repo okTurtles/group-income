@@ -111,7 +111,7 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
-      path: '/global-dashboard/:id',
+      path: '/global-dashboard/*',
       component: lazyGlobalDashboard,
       name: 'GlobalDashboard',
       meta: { title: L('Global Dashboard') },
