@@ -754,11 +754,14 @@ export default ({
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
       } else {
-        const draft = await this.loadMessageDraft()
+        const chatroomId = this.currentChatRoomId
+        const draft = await this.loadMessageDraft(chatroomId)
 
-        if (!this.$refs.textarea) {
-          // There is a cypress heisen-bug where it enters and chatroom and leaves almost immediately, before this.loadMessageDraft() above isn't completed.
-          // In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
+        if (!this.$refs.textarea ||
+          chatroomId !== this.currentChatRoomId) {
+          // NOTE 1: There is a cypress heisen-bug where it enters and chatroom and leaves almost immediately, before this.loadMessageDraft() above isn't completed.
+          //         In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
+          // NOTE 2: If the user has switched to another chatroom while the draft is being loaded, ignore the rest of initialization process.
           return
         }
 
@@ -835,9 +838,9 @@ export default ({
         console.error('SendArea.vue: Error saving message draft - ', e)
       }
     },
-    async loadMessageDraft () {
+    async loadMessageDraft (chatroomId) {
       try {
-        const draft = await sbp('gi.db/chatDrafts/load', this.currentChatRoomId)
+        const draft = await sbp('gi.db/chatDrafts/load', chatroomId || this.currentChatRoomId)
         this.ephemeral.chatroomHasDraftSaved = !!draft
         return draft
       } catch (e) {
