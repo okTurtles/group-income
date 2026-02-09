@@ -391,6 +391,10 @@ export default ({
       }
 
       if (newVal) {
+        if (this.$refs.textarea) {
+          // Clear the textarea value if the chatroom is changed.
+          this.$refs.textarea.value = ''
+        }
         this.initializeTextArea()
       }
     }
