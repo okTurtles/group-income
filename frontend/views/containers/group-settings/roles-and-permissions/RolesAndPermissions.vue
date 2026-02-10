@@ -63,7 +63,7 @@ export default ({
   computed: {
     ...mapGetters([
       'ourGroupPermissionsHas',
-      'allGroupMemberPermissions',
+      'allGroupMemberRolesAndPermissions',
       'ourIdentityContractId'
     ]),
     canDelegatePermissions () {
@@ -73,9 +73,9 @@ export default ({
       return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.VIEW_PERMISSIONS)
     },
     groupPermissionsToDisplay () {
-      const myEntry = this.allGroupMemberPermissions.find(entry => entry.memberID === this.ourIdentityContractId)
-      const otherEntries = this.allGroupMemberPermissions.filter(entry => entry.memberID !== this.ourIdentityContractId)
-      const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberPermissions
+      const myEntry = this.allGroupMemberRolesAndPermissions.find(entry => entry.memberID === this.ourIdentityContractId)
+      const otherEntries = this.allGroupMemberRolesAndPermissions.filter(entry => entry.memberID !== this.ourIdentityContractId)
+      const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberRolesAndPermissions
       return this.canViewOtherMembersPermissions
         ? sortedEntries
         : [myEntry]
@@ -92,9 +92,9 @@ export default ({
       if (groupContractID !== this.$store.state.currentGroupId) { return }
 
       const messageMap = {
-        add: L('Successfully created a role.'),
-        remove: L('Successfully removed a role.'),
-        edit: L('Permission details have been updated successfully.')
+        'add': L('Successfully added a role.'),
+        'update': L('Successfully updated a role.'),
+        'remove': L('Successfully removed a role.')
       }
       this.$refs.formMsg.success(messageMap[action])
     }

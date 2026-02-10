@@ -59,7 +59,7 @@ import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSION_CHANGE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { CLOSE_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
@@ -147,15 +147,14 @@ export default {
           contractID: this.$store.state.currentGroupId,
           data: [{
             memberID: this.data.memberID,
-            action: GROUP_PERMISSION_UPDATE_ACTIONS.EDIT,
-            roleName: this.ephemeral.role,
+            action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
             permissions: this.ephemeral.permissions
           }]
         })
 
         sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {
           groupContractID: this.$store.state.currentGroupId,
-          action: GROUP_PERMISSION_UPDATE_ACTIONS.EDIT
+          action: 'update'
         })
         this.close()
       } catch (e) {

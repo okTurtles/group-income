@@ -119,7 +119,7 @@ export default {
     },
     displayRolesAndPermissions () {
       // TODO: Remove this once the development is complete and the feature is ready for release.
-      return process.env.NODE_ENV === 'development' && this.ourGroupProfile.role
+      return process.env.NODE_ENV === 'development' && this.ourGroupProfile.permissions
     },
     groupCurrency () {
       return this.groupSettings.mincomeCurrency

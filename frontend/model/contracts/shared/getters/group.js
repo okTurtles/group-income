@@ -3,7 +3,9 @@ import {
   INVITE_INITIAL_CREATOR,
   MAX_SAVED_PERIODS,
   PROFILE_STATUS,
-  PROPOSAL_GENERIC
+  PROPOSAL_GENERIC,
+  GROUP_PERMISSIONS_PRESET,
+  GROUP_ROLES
 } from '../constants.js'
 import currencies from '../currencies.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '../functions.js'
@@ -123,6 +125,31 @@ export default ({
     return Object.fromEntries(Object.entries(getters.groupProfiles).filter(
       ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'incomeAmount'
     ))
+  },
+  getRoleNameFromPermissionsArray (state, getters) {
+    return (permissions) => {
+      if (!permissions?.length) return ''
+
+      const presetEntries = Object.entries(GROUP_PERMISSIONS_PRESET)
+      const foundEntry = presetEntries.find(
+        ([role, presetPermissions]: [string, any]) => presetPermissions.length === permissions.length &&
+          presetPermissions.every(permission => permissions.includes(permission))
+      )
+
+      return foundEntry ? GROUP_ROLES[foundEntry[0]] : GROUP_ROLES.CUSTOM
+    }
+  },
+  getGroupMemberPermissionsById (state, getters) {
+    return (memberID) => {
+      const profile = getters.groupProfiles[memberID]
+      return profile?.permissions || []
+    }
+  },
+  getGroupMemberRoleNameById (state, getters) {
+    return (memberID) => {
+      const permissions = getters.getGroupMemberPermissionsById(memberID)
+      return permissions.length ? getters.getRoleNameFromPermissionsArray(permissions) : ''
+    }
   },
   groupCreatedDate (state, getters) {
     return getters.groupProfile(getters.currentGroupOwnerID).joinedDate

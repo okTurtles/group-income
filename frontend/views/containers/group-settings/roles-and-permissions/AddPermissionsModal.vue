@@ -55,7 +55,7 @@ modal-base-template.has-background(
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GROUP_PERMISSION_UPDATE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSION_CHANGE_ACTIONS } from '@model/contracts/shared/constants.js'
 import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { uniq } from 'turtledash'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -83,14 +83,14 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'allGroupMemberPermissions',
+      'allGroupMemberRolesAndPermissions',
       'ourIdentityContractId'
     ]),
     addedMemberIds () {
       return this.ephemeral.roleEntries.map(entry => entry.userId)
     },
     memberIdsToExclude () {
-      const membersWhoHaveRole = this.allGroupMemberPermissions.map(entry => entry.memberID)
+      const membersWhoHaveRole = this.allGroupMemberRolesAndPermissions.map(entry => entry.memberID)
       return uniq([...membersWhoHaveRole, ...this.addedMemberIds])
     },
     enableUpdateBtn () {
@@ -134,8 +134,7 @@ export default ({
           contractID: this.$store.state.currentGroupId,
           data: this.ephemeral.roleEntries.map(entry => ({
             memberID: entry.userId,
-            action: GROUP_PERMISSION_UPDATE_ACTIONS.ADD,
-            roleName: entry.role,
+            action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
             permissions: entry.permissions
           }))
         })
@@ -143,7 +142,7 @@ export default ({
         this.closeModal()
         sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {
           groupContractID: this.$store.state.currentGroupId,
-          action: GROUP_PERMISSION_UPDATE_ACTIONS.ADD
+          action: 'add'
         })
       } catch (e) {
         console.error('AddPermissionsModal.vue submit() error:', e)

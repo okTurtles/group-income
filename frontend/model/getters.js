@@ -91,27 +91,19 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     return getters.ourGroupProfileForGroup(getters.currentGroupState)
   },
   ourGroupPermissions (state, getters) {
-    return getters.ourGroupProfile?.role?.permissions || []
+    return getters.ourGroupProfile?.permissions || []
   },
   ourGroupPermissionsHas (state, getters) {
     return (permission) => getters.ourGroupPermissions.includes(permission)
   },
-  getGroupMemberRoleNameById (state, getters) {
-    return (memberID) => {
-      const profile = getters.groupProfiles[memberID]
-      return profile?.role?.name || ''
-    }
-  },
-  getGroupMemberPermissionsById (state, getters) {
-    return (memberID) => {
-      const profile = getters.groupProfiles[memberID]
-      return profile?.role?.permissions || []
-    }
-  },
-  allGroupMemberPermissions (state, getters) {
+  allGroupMemberRolesAndPermissions (state, getters) {
     return Object.entries(getters.groupProfiles)
-      .filter(([, profile]: [string, any]) => Boolean(profile.role))
-      .map(([memberID, profile]: [string, any]) => ({ roleName: profile.role.name, permissions: profile.role.permissions, memberID }))
+      .filter(([, profile]: [string, any]) => !!profile.permissions?.length)
+      .map(([memberID, profile]: [string, any]) => ({
+        roleName: getters.getRoleNameFromPermissionsArray(profile.permissions),
+        permissions: profile.permissions,
+        memberID
+      }))
   },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this

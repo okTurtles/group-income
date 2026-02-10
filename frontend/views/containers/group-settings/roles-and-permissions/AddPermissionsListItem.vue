@@ -46,7 +46,6 @@ li.c-update-permissions-list-item
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import MemberName from './MemberName.vue'
-import RolePill from './RolePill.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
@@ -58,8 +57,7 @@ export default {
   components: {
     AvatarUser,
     PermissionPiece,
-    MemberName,
-    RolePill
+    MemberName
   },
   props: {
     data: {
@@ -98,11 +96,18 @@ export default {
       return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
     },
     roleDropdownOptions () {
-      return [
+      const availableRoles = [
         this.ourGroupPermissionsHas(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && GROUP_ROLES.MODERATOR_DELEGATOR,
         GROUP_ROLES.MODERATOR,
         GROUP_ROLES.CUSTOM
       ].filter(Boolean)
+
+      return availableRoles.filter(role => {
+        if (role === GROUP_ROLES.CUSTOM) return true
+        // Only allow selecting a role if we have all permissions required for that role
+        // This effectively hides roles that confer permissions the current user doesn't have
+        return this.config.permissionPresets[role].every(p => this.ourGroupPermissionsHas(p))
+      })
     }
   },
   methods: {

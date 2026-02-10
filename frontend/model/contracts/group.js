@@ -39,7 +39,7 @@ import {
   GROUP_ROLES,
   GROUP_PERMISSIONS_PRESET,
   GROUP_PERMISSIONS,
-  GROUP_PERMISSION_UPDATE_ACTIONS
+  GROUP_PERMISSION_CHANGE_ACTIONS
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
@@ -70,9 +70,7 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
     incomeDetailsLastUpdatedDate: null,
-    role: isGroupCreator
-      ? { name: GROUP_ROLES.ADMIN, permissions: GROUP_PERMISSIONS_PRESET.ADMIN }
-      : null
+    permissions: isGroupCreator ? GROUP_PERMISSIONS_PRESET.ADMIN : null
   }
 }
 
@@ -377,7 +375,7 @@ const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
 
 const getMemberPermissions = ({ getters, memberID }) => {
   const profile = getters.groupProfile(memberID)
-  return profile?.role?.permissions || []
+  return profile?.permissions || []
 }
 
 export const actionRequireActiveMember = (next: Function): Function => (data, props) => {
@@ -1135,32 +1133,32 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID } }) => {
         arrayOf(objectMaybeOf({
           memberID: stringMax(MAX_HASH_LEN, 'memberID'),
-          action: validatorFrom(x => Object.values(GROUP_PERMISSION_UPDATE_ACTIONS).includes(x)),
-          roleName: validatorFrom(x => Object.values(GROUP_ROLES).includes(x)),
+          action: validatorFrom(x => Object.values(GROUP_PERMISSION_CHANGE_ACTIONS).includes(x)),
           permissions: arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x)))
         }))(data)
 
         const myProfile = getters.groupProfile(innerSigningContractID)
-        const myPermissions = myProfile?.role?.permissions || []
+        const myRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
+        const myPermissions = myProfile?.permissions || []
 
-        if (data.some(item => item?.roleName === GROUP_ROLES.ADMIN)) {
-          throw new TypeError(L('Cannot assign admin role.'))
-        }
+        if (data.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
+          if (data.some(item => item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) &&
+            myRoleName !== GROUP_ROLES.ADMIN)) {
+            // Only the group admin can assign the delegator role
+            throw new TypeError(L('You do not have permission to assign delegator role.'))
+          }
 
-        if (data.some(item => item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) &&
-          myProfile?.role?.name !== GROUP_ROLES.ADMIN)) {
-          // Only the group admin can assign the delegator role
-          throw new TypeError(L('You do not have permission to assign delegator role.'))
+          if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR && data.some(item => item.permissions.some(permission => !myPermissions.includes(permission)))) {
+            throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
+          }
+
+          if (data.some(item => getters.getRoleNameFromPermissionsArray(item.permissions) === GROUP_ROLES.ADMIN)) {
+            throw new TypeError(L('Cannot assign admin role.'))
+          }
         }
 
         if (!myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
           throw new TypeError(L('You do not have permission to delegate permissions.'))
-        }
-
-        if (data.some(item => {
-          return item.action === GROUP_PERMISSION_UPDATE_ACTIONS.EDIT && !state.profiles[item.memberID]?.role
-        })) {
-          throw new TypeError(L('Cannot edit permissions for a member who does not have a role.'))
         }
 
         for (const item of data) {
@@ -1178,20 +1176,12 @@ sbp('chelonia/defineContract', {
           const groupProfile = state.profiles[item.memberID]
 
           switch (item.action) {
-            case GROUP_PERMISSION_UPDATE_ACTIONS.ADD:
-              groupProfile.role = {
-                name: item.roleName,
-                permissions: item.permissions
-              }
+            // TODO: merge ADD/EDIT to UPDATE
+            case GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT:
+              groupProfile.permissions = item.permissions
               break
-            case GROUP_PERMISSION_UPDATE_ACTIONS.EDIT:
-              groupProfile.role = {
-                name: item.roleName || groupProfile.role.name,
-                permissions: item.permissions || groupProfile.role.permissions
-              }
-              break
-            case GROUP_PERMISSION_UPDATE_ACTIONS.REMOVE:
-              groupProfile.role = null
+            case GROUP_PERMISSION_CHANGE_ACTIONS.REMOVE:
+              groupProfile.permissions = null
               break
           }
         }
