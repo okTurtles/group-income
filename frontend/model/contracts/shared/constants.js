@@ -79,8 +79,8 @@ export const GROUP_PERMISSIONS = {
   ASSIGN_DELEGATOR: 'assign-delegator',
   DELEGATE_PERMISSIONS: 'delegate-permissions', // add/edit/remove permissions
   REMOVE_MEMBER: 'remove-member',
-  REVOKE_INVITE: 'revoke-invite',
-  DELETE_CHANNEL: 'delete-channel'
+  REVOKE_INVITE: 'revoke-invite'
+  // DELETE_CHANNEL: 'delete-channel' TODO: Implement this
 }
 const GP = GROUP_PERMISSIONS
 
@@ -90,29 +90,29 @@ export const GROUP_PERMISSIONS_PRESET: { [string]: Array<string> } = {
     GP.ASSIGN_DELEGATOR,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ],
   [GROUP_ROLES.MODERATOR_DELEGATOR]: [
     GP.VIEW_PERMISSIONS,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ],
   [GROUP_ROLES.MODERATOR]: [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ]
 }
 
 export const GROUP_PERMISSIONS_CUSTOM_OPTIONS: Array<string> = [
   GP.VIEW_PERMISSIONS,
   GP.REMOVE_MEMBER,
-  GP.REVOKE_INVITE,
-  GP.DELETE_CHANNEL
+  GP.REVOKE_INVITE
+  // GP.DELETE_CHANNEL
 ]
 
 // chatroom.js related

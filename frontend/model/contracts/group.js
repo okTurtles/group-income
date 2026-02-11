@@ -1168,7 +1168,7 @@ sbp('chelonia/defineContract', {
           }
         }
       }),
-      process ({ data }, { state }) {
+      process ({ data, contractID }, { state }) {
         for (const item of data) {
           const groupProfile = state.profiles[item.memberID]
 
@@ -1284,9 +1284,8 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
         objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID') })(data)
 
-        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
-
-        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL)) {
+        if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
+          // TODO: add DELETE_CHANNEL permission check when it's implemented
           throw new TypeError(L('You do not have permission to delete this channel.'))
         }
       }),

@@ -140,7 +140,7 @@ import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -212,7 +212,8 @@ export default ({
       return this.ourIdentityContractId === this.summary.attributes.creatorID
     },
     canDeleteChatRoom () {
-      const hasPermission = this.isChatRoomCreator || (this.isJoinedChatRoom(this.summary.chatRoomID) && this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELETE_CHANNEL))
+      // TODO: add DELETE_CHANNEL permission related check here when it's implemented
+      const hasPermission = this.isChatRoomCreator || this.isJoinedChatRoom(this.summary.chatRoomID)
       return !this.summary.isGeneral && hasPermission && !this.isGroupDirectMessage()
     }
   },

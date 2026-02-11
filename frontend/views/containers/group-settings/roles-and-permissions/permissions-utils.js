@@ -13,8 +13,8 @@ export const GROUP_PERIMSSIONS_DISPLAY_NAME: { [string]: string } = {
   [GROUP_PERMISSIONS.ASSIGN_DELEGATOR]: L('Assign delegator'),
   [GROUP_PERMISSIONS.DELEGATE_PERMISSIONS]: L('Delegate permissions'),
   [GROUP_PERMISSIONS.REMOVE_MEMBER]: L('Remove member'),
-  [GROUP_PERMISSIONS.REVOKE_INVITE]: L('Revoke invites'),
-  [GROUP_PERMISSIONS.DELETE_CHANNEL]: L('Delete channels')
+  [GROUP_PERMISSIONS.REVOKE_INVITE]: L('Revoke invites')
+  // [GROUP_PERMISSIONS.DELETE_CHANNEL]: L('Delete channels')
 }
 
 export function getPermissionDisplayName (permissionId: string): string {

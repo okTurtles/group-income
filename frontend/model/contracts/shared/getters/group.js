@@ -127,6 +127,7 @@ export default ({
     ))
   },
   allGroupMemberRolesAndPermissions (state, getters) {
+    // Get the list of { roleName: string, permissions: string[], memberID: string } for all members in the group.
     return Object.entries(getters.groupProfiles)
       .filter(([, profile]: [string, any]) => !!profile.role)
       .map(([memberID, profile]: [string, any]) => ({
@@ -137,7 +138,16 @@ export default ({
         memberID
       }))
   },
+  getAllMemberIdsWithPermission (state, getters) {
+    // Get all members with a specific permission as a list of { roleName: string, permissions: string[], memberID: string }.
+    // Maybe make this getter takes an array of permissions(instead of a single permission) in the future if there is a need for it.
+    return (permission) => {
+      return getters.allGroupMemberRolesAndPermissions.filter(({ permissions }) => permissions.includes(permission))
+        .map(({ memberID }) => memberID)
+    }
+  },
   getGroupMemberPermissionsById (state, getters) {
+    // Pass the group memberID and get all the permissions that the member has if any.
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]
       if (!profile?.role) return []
@@ -147,6 +157,7 @@ export default ({
     }
   },
   getGroupMemberRoleNameById (state, getters) {
+    // Pass the group memberID and get the role name of the member if any.
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]
       return profile?.role?.name || ''
