@@ -59,7 +59,10 @@ import MemberName from './MemberName.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSION_CHANGE_ACTIONS } from '@model/contracts/shared/constants.js'
+import {
+  GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS,
+  GROUP_PERMISSION_CHANGE_ACTIONS, GROUP_PERMISSIONS_CUSTOM_OPTIONS
+} from '@model/contracts/shared/constants.js'
 import { CLOSE_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { L } from '@common/common.js'
@@ -85,9 +88,9 @@ export default {
       config: {
         title: L('Edit permissions'),
         permissionPresets: {
-          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
-          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
-          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
+          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR],
+          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR],
+          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_CUSTOM_OPTIONS
         }
       },
       ephemeral: {
@@ -143,13 +146,18 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
+        const payload = {
+          memberID: this.data.memberID,
+          action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
+          roleName: this.ephemeral.role
+        }
+        if (this.ephemeral.role === GROUP_ROLES.CUSTOM) {
+          payload.permissions = this.ephemeral.permissions
+        }
+
         await sbp('gi.actions/group/updatePermissions', {
           contractID: this.$store.state.currentGroupId,
-          data: [{
-            memberID: this.data.memberID,
-            action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
-            permissions: this.ephemeral.permissions
-          }]
+          data: [payload]
         })
 
         sbp('okTurtles.events/emit', GROUP_PERMISSIONS_UPDATE_SUCCESS, {

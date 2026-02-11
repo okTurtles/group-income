@@ -55,7 +55,7 @@ modal-base-template.has-background(
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { GROUP_PERMISSION_CHANGE_ACTIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_PERMISSION_CHANGE_ACTIONS, GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import { GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { uniq } from 'turtledash'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -132,11 +132,19 @@ export default ({
       try {
         await sbp('gi.actions/group/updatePermissions', {
           contractID: this.$store.state.currentGroupId,
-          data: this.ephemeral.roleEntries.map(entry => ({
-            memberID: entry.userId,
-            action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
-            permissions: entry.permissions
-          }))
+          data: this.ephemeral.roleEntries.map(entry => {
+            const payload = {
+              memberID: entry.userId,
+              action: GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT,
+              roleName: entry.role
+            }
+
+            if (entry.role === GROUP_ROLES.CUSTOM) {
+              payload.permissions = entry.permissions
+            }
+
+            return payload
+          })
         })
 
         this.closeModal()

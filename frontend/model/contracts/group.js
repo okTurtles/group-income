@@ -37,7 +37,6 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN,
   GROUP_ROLES,
-  GROUP_PERMISSIONS_PRESET,
   GROUP_PERMISSIONS,
   GROUP_PERMISSION_CHANGE_ACTIONS
 } from './shared/constants.js'
@@ -70,7 +69,9 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
     incomeDetailsLastUpdatedDate: null,
-    permissions: isGroupCreator ? GROUP_PERMISSIONS_PRESET.ADMIN : null
+    role: isGroupCreator
+      ? { name: GROUP_ROLES.ADMIN }
+      : null
   }
 }
 
@@ -371,11 +372,6 @@ const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
       true
     ))
   )
-}
-
-const getMemberPermissions = ({ getters, memberID }) => {
-  const profile = getters.groupProfile(memberID)
-  return profile?.permissions || []
 }
 
 export const actionRequireActiveMember = (next: Function): Function => (data, props) => {
@@ -819,7 +815,7 @@ sbp('chelonia/defineContract', {
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
         const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
-        const myPermissions = getMemberPermissions({ getters, memberID: innerSigningContractID })
+        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
 
         if (!state.profiles[memberToRemove]) {
           throw new GIGroupNotJoinedError(L('Not part of the group.'))
@@ -977,7 +973,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('The link does not exist.'))
         }
 
-        const myPermissions = getMemberPermissions({ getters, memberID: innerSigningContractID })
+        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
         const inviteCreatorID = state.invites?.[data.inviteKeyId]?.creatorID
 
         // Only the creator and members with the REVOKE_INVITE permission can revoke an invite
@@ -1134,12 +1130,12 @@ sbp('chelonia/defineContract', {
         arrayOf(objectMaybeOf({
           memberID: stringMax(MAX_HASH_LEN, 'memberID'),
           action: validatorFrom(x => Object.values(GROUP_PERMISSION_CHANGE_ACTIONS).includes(x)),
+          roleName: validatorFrom(x => Object.values(GROUP_ROLES).includes(x)),
           permissions: arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x)))
         }))(data)
 
-        const myProfile = getters.groupProfile(innerSigningContractID)
         const myRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
-        const myPermissions = myProfile?.permissions || []
+        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
 
         if (data.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
           if (data.some(item => item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) &&
@@ -1148,11 +1144,12 @@ sbp('chelonia/defineContract', {
             throw new TypeError(L('You do not have permission to assign delegator role.'))
           }
 
-          if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR && data.some(item => item.permissions.some(permission => !myPermissions.includes(permission)))) {
+          if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
+            data.some(item => item.permissions.some(permission => !myPermissions.includes(permission)))) {
             throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
           }
 
-          if (data.some(item => getters.getRoleNameFromPermissionsArray(item.permissions) === GROUP_ROLES.ADMIN)) {
+          if (data.some(item => item.roleName === GROUP_ROLES.ADMIN)) {
             throw new TypeError(L('Cannot assign admin role.'))
           }
         }
@@ -1176,12 +1173,18 @@ sbp('chelonia/defineContract', {
           const groupProfile = state.profiles[item.memberID]
 
           switch (item.action) {
-            // TODO: merge ADD/EDIT to UPDATE
-            case GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT:
-              groupProfile.permissions = item.permissions
+            case GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT: {
+              const role: any = {
+                name: item.roleName
+              }
+              if (item.permissions) {
+                role.permissions = item.permissions
+              }
+              groupProfile.role = role
               break
+            }
             case GROUP_PERMISSION_CHANGE_ACTIONS.REMOVE:
-              groupProfile.permissions = null
+              groupProfile.role = null
               break
           }
         }
@@ -1281,7 +1284,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireActiveMember((data, { getters, message: { innerSigningContractID } }) => {
         objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID') })(data)
 
-        const myPermissions = getMemberPermissions({ getters, memberID: innerSigningContractID })
+        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
 
         if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.DELETE_CHANNEL)) {
           throw new TypeError(L('You do not have permission to delete this channel.'))

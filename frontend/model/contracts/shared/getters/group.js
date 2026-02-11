@@ -126,29 +126,29 @@ export default ({
       ([memberID, profile]: [string, any]) => profile.incomeDetailsType === 'incomeAmount'
     ))
   },
-  getRoleNameFromPermissionsArray (state, getters) {
-    return (permissions) => {
-      if (!permissions?.length) return ''
-
-      const presetEntries = Object.entries(GROUP_PERMISSIONS_PRESET)
-      const foundEntry = presetEntries.find(
-        ([role, presetPermissions]: [string, any]) => presetPermissions.length === permissions.length &&
-          presetPermissions.every(permission => permissions.includes(permission))
-      )
-
-      return foundEntry ? GROUP_ROLES[foundEntry[0]] : GROUP_ROLES.CUSTOM
-    }
+  allGroupMemberRolesAndPermissions (state, getters) {
+    return Object.entries(getters.groupProfiles)
+      .filter(([, profile]: [string, any]) => !!profile.role)
+      .map(([memberID, profile]: [string, any]) => ({
+        roleName: profile.role.name,
+        permissions: profile.role.name === GROUP_ROLES.CUSTOM
+          ? profile.role.permissions
+          : GROUP_PERMISSIONS_PRESET[profile.role.name],
+        memberID
+      }))
   },
   getGroupMemberPermissionsById (state, getters) {
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]
-      return profile?.permissions || []
+      return profile?.role?.name === GROUP_ROLES.CUSTOM
+        ? profile.role.permissions
+        : GROUP_PERMISSIONS_PRESET[profile.role.name]
     }
   },
   getGroupMemberRoleNameById (state, getters) {
     return (memberID) => {
-      const permissions = getters.getGroupMemberPermissionsById(memberID)
-      return permissions.length ? getters.getRoleNameFromPermissionsArray(permissions) : ''
+      const profile = getters.groupProfiles[memberID]
+      return profile?.role?.name || ''
     }
   },
   groupCreatedDate (state, getters) {

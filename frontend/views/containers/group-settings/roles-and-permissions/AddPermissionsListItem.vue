@@ -25,10 +25,10 @@ li.c-update-permissions-list-item
 
       .c-perimission-items-container
         permission-piece(
-          v-for='permission in config.permissionPresets[ephemeral.selectedRole]'
+          v-for='permission in ephemeral.permissionOptionsToDisplay'
           :key='permission'
           :permission='permission'
-          :isSelectable='isCustomRole'
+          :isSelectable='isCustomRoleSelected'
           :active='checkPermissionActive(permission)'
           @change='onPermissionItemChange'
         )
@@ -47,7 +47,7 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import MemberName from './MemberName.vue'
 import PermissionPiece from './PermissionPiece.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSIONS_CUSTOM_OPTIONS } from '@model/contracts/shared/constants.js'
 import { getRoleDisplayName } from './permissions-utils.js'
 import { uniq } from 'turtledash'
 import { L } from '@common/common.js'
@@ -69,45 +69,43 @@ export default {
     return {
       config: {
         permissionPresets: {
-          [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET.ADMIN,
-          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR,
-          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR,
-          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_PRESET.CUSTOM
+          [GROUP_ROLES.ADMIN]: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.ADMIN],
+          [GROUP_ROLES.MODERATOR]: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR],
+          [GROUP_ROLES.MODERATOR_DELEGATOR]: GROUP_PERMISSIONS_PRESET[GROUP_ROLES.MODERATOR_DELEGATOR],
+          [GROUP_ROLES.CUSTOM]: GROUP_PERMISSIONS_CUSTOM_OPTIONS
         }
       },
       ephemeral: {
         selectedRole: '',
-        selectedPermissions: []
+        selectedPermissions: [],
+        permissionOptionsToDisplay: []
       }
     }
   },
   computed: {
     ...mapGetters([
       'globalProfile',
-      'ourGroupPermissionsHas'
+      'ourGroupPermissionsHas',
+      'ourRoleName'
     ]),
     profile () {
       return this.globalProfile(this.data.userId)
     },
-    isCustomRole () {
+    isAdminRole () {
+      return this.ourRoleName === GROUP_ROLES.ADMIN
+    },
+    isCustomRoleSelected () {
       return this.ephemeral.selectedRole === GROUP_ROLES.CUSTOM
     },
     permissionSectionLabel () {
-      return this.isCustomRole ? L('Customize permissions:') : L('Permissions granted:')
+      return this.isCustomRoleSelected ? L('Customize permissions:') : L('Permissions granted:')
     },
     roleDropdownOptions () {
-      const availableRoles = [
+      return [
         this.ourGroupPermissionsHas(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && GROUP_ROLES.MODERATOR_DELEGATOR,
         GROUP_ROLES.MODERATOR,
         GROUP_ROLES.CUSTOM
       ].filter(Boolean)
-
-      return availableRoles.filter(role => {
-        if (role === GROUP_ROLES.CUSTOM) return true
-        // Only allow selecting a role if we have all permissions required for that role
-        // This effectively hides roles that confer permissions the current user doesn't have
-        return this.config.permissionPresets[role].every(p => this.ourGroupPermissionsHas(p))
-      })
     }
   },
   methods: {
@@ -120,6 +118,17 @@ export default {
     },
     remove () {
       this.$emit('remove', this.data.userId)
+    },
+    updatePermissionOptionsToDisplay () {
+      const role = this.ephemeral.selectedRole
+
+      if (role === GROUP_ROLES.CUSTOM) {
+        this.ephemeral.permissionOptionsToDisplay = this.isAdminRole
+          ? GROUP_PERMISSIONS_CUSTOM_OPTIONS
+          : GROUP_PERMISSIONS_CUSTOM_OPTIONS.filter(p => this.ourGroupPermissionsHas(p)) // Member with delegator role should only be able to set permissions that they have themselves.
+      } else {
+        this.ephemeral.permissionOptionsToDisplay = GROUP_PERMISSIONS_PRESET[role]
+      }
     },
     updateRole (e) {
       const value = e.target.value
@@ -137,7 +146,7 @@ export default {
       this.emitUpdateEvent()
     },
     checkPermissionActive (permission) {
-      if (!this.isCustomRole) { return false }
+      if (!this.isCustomRoleSelected) { return false }
 
       return this.ephemeral.selectedPermissions.includes(permission)
     },
@@ -161,6 +170,16 @@ export default {
         role: this.ephemeral.selectedRole,
         permissions: this.ephemeral.selectedPermissions
       })
+    }
+  },
+  watch: {
+    'ephemeral.selectedRole': {
+      handler (newRole) {
+        if (newRole) {
+          this.updatePermissionOptionsToDisplay()
+        }
+      },
+      immediate: true
     }
   },
   created () {
