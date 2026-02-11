@@ -84,8 +84,8 @@ export const GROUP_PERMISSIONS = {
 }
 const GP = GROUP_PERMISSIONS
 
-export const GROUP_PERMISSIONS_PRESET: { [string]: Array<string> } = {
-  [GROUP_ROLES.ADMIN]: [
+export const GROUP_PERMISSIONS_PRESET = {
+  'admin': [
     GP.VIEW_PERMISSIONS,
     GP.ASSIGN_DELEGATOR,
     GP.DELEGATE_PERMISSIONS,
@@ -93,14 +93,14 @@ export const GROUP_PERMISSIONS_PRESET: { [string]: Array<string> } = {
     GP.REVOKE_INVITE
     // GP.DELETE_CHANNEL
   ],
-  [GROUP_ROLES.MODERATOR_DELEGATOR]: [
+  'moderator-delegator': [
     GP.VIEW_PERMISSIONS,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE
     // GP.DELETE_CHANNEL
   ],
-  [GROUP_ROLES.MODERATOR]: [
+  'moderator': [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
     GP.REVOKE_INVITE
@@ -108,7 +108,7 @@ export const GROUP_PERMISSIONS_PRESET: { [string]: Array<string> } = {
   ]
 }
 
-export const GROUP_PERMISSIONS_CUSTOM_OPTIONS: Array<string> = [
+export const GROUP_PERMISSIONS_CUSTOM_OPTIONS = [
   GP.VIEW_PERMISSIONS,
   GP.REMOVE_MEMBER,
   GP.REVOKE_INVITE
