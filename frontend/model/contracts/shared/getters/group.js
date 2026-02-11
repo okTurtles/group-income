@@ -140,7 +140,8 @@ export default ({
   getGroupMemberPermissionsById (state, getters) {
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]
-      return profile?.role?.name === GROUP_ROLES.CUSTOM
+      if (!profile?.role) return []
+      return profile.role.name === GROUP_ROLES.CUSTOM
         ? profile.role.permissions
         : GROUP_PERMISSIONS_PRESET[profile.role.name]
     }

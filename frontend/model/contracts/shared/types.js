@@ -37,7 +37,6 @@ export const chatRoomAttributesType: any = objectOf({
   //       in group contract function gi.actions/group/addChatRoom
   creatorID: optional(string),
   adminIDs: optional(arrayOf(string)),
-  membersWithDeletePermission: optional(arrayOf(string)),
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
   privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
 })

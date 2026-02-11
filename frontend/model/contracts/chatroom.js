@@ -104,7 +104,6 @@ sbp('chelonia/defineContract', {
           },
           attributes: {
             adminIDs: [],
-            membersWithDeletePermission: [],
             deletedDate: null
           },
           members: {},
