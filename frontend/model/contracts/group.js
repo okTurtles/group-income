@@ -1137,23 +1137,6 @@ sbp('chelonia/defineContract', {
         const myRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
         const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
 
-        if (data.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
-          if (data.some(item => item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) &&
-            myRoleName !== GROUP_ROLES.ADMIN)) {
-            // Only the group admin can assign the delegator role
-            throw new TypeError(L('You do not have permission to assign delegator role.'))
-          }
-
-          if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
-            data.some(item => item.permissions.some(permission => !myPermissions.includes(permission)))) {
-            throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
-          }
-
-          if (data.some(item => item.roleName === GROUP_ROLES.ADMIN)) {
-            throw new TypeError(L('Cannot assign admin role.'))
-          }
-        }
-
         if (!myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
           throw new TypeError(L('You do not have permission to delegate permissions.'))
         }
@@ -1165,6 +1148,21 @@ sbp('chelonia/defineContract', {
 
           if (item.memberID === innerSigningContractID) {
             throw new TypeError(L('You cannot modify your own permissions.'))
+          }
+
+          if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
+            if (item.roleName === GROUP_ROLES.ADMIN) {
+              throw new TypeError(L('Cannot assign admin role.'))
+            }
+
+            if (item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && myRoleName !== GROUP_ROLES.ADMIN) {
+              throw new TypeError(L('You do not have permission to assign delegator role.'))
+            }
+
+            if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
+              item.permissions.some(permission => !myPermissions.includes(permission))) {
+              throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
+            }
           }
         }
       }),

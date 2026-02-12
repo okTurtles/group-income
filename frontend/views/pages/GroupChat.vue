@@ -213,8 +213,7 @@ export default ({
     },
     canDeleteChatRoom () {
       // TODO: add DELETE_CHANNEL permission related check here when it's implemented
-      const hasPermission = this.isChatRoomCreator || this.isJoinedChatRoom(this.summary.chatRoomID)
-      return !this.summary.isGeneral && hasPermission && !this.isGroupDirectMessage()
+      return !this.summary.isGeneral && this.isChatRoomCreator && !this.isGroupDirectMessage()
     }
   },
   methods: {
