@@ -5,7 +5,7 @@ import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contract
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
-    return state.currentChatRoomIDs[rootState.currentGroupId] || null
+    return state.currentChatRoomIDs[rootState.inGlobalDashboard ? 'global-dm' : rootState.currentGroupId] || null
   },
   currentChatRoomState (state, getters, rootState) {
     return rootState[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
@@ -25,74 +25,89 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   ourUnreadMessages (state) {
     return state.unreadMessages || {}
   },
-  directMessagesByGroup (state, getters, rootState) {
-    return groupID => {
-      const currentGroupDirectMessages = {}
+  allDirectMessagesDetails (state, getters, rootState) {
+    const details = {}
 
-      if (!groupID) {
-        // NOTE: groupID could be null before finish syncing group contracts
-        return currentGroupDirectMessages
+    for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
+      const chatRoomState = rootState[chatRoomID]
+      const directMessageSettings = getters.ourDirectMessages[chatRoomID]
+      const myIdentityId = getters.ourIdentityContractId
+
+      if (!directMessageSettings.visible ||
+        // NOTE: skip DMs whose chatroom contracts are not synced yet
+        !getters.isJoinedChatRoom(chatRoomID, myIdentityId)) {
+        continue
       }
 
-      for (const chatRoomID of Object.keys(getters.ourDirectMessages)) {
-        const chatRoomState = rootState[chatRoomID]
-        const directMessageSettings = getters.ourDirectMessages[chatRoomID]
-        const myIdentityId = getters.ourIdentityContractId
+      // NOTE: direct messages should be filtered to the ones which are visible and of active group members
+      // Explicitly don't filter out on `hasLeft` attribute, so that DMs can
+      // still show all participants, past and present.
+      const members = Object.keys(chatRoomState.members)
+      const isDMToMyself = members.length === 1 && members[0] === myIdentityId
+      const partners = members
+        .filter(memberID => memberID !== myIdentityId)
+        .sort((p1, p2) => {
+          const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
+          const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
+          return p1JoinedDate - p2JoinedDate
+        })
+      // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
+      //       His profile picture can be used as the picture of the direct message
+      //       possibly with the badge of the number of partners.
+      const lastJoinedPartner = isDMToMyself ? myIdentityId : partners[partners.length - 1]
+      const lastMsgTimeStamp = chatRoomState.messages?.length > 0
+        ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
+        : 0
 
-        // NOTE: skip DMs whose chatroom contracts are not synced yet
-        if (!getters.isJoinedChatRoom(chatRoomID, myIdentityId)) {
-          continue
-        }
-        // NOTE: direct messages should be filtered to the ones which are visible and of active group members
-        const members = Object.keys(chatRoomState.members)
-        const isDMToMyself = members.length === 1 && members[0] === myIdentityId
-        // Explicitly don't filter out on `hasLeft` attribute, so that DMs can
-        // still show all participants, past and present.
-        const partners = members
-          .filter(memberID => memberID !== myIdentityId)
-          .sort((p1, p2) => {
-            const p1JoinedDate = new Date(chatRoomState.members[p1].joinedDate).getTime()
-            const p2JoinedDate = new Date(chatRoomState.members[p2].joinedDate).getTime()
-            return p1JoinedDate - p2JoinedDate
-          })
+      details[chatRoomID] = {
+        ...directMessageSettings,
+        members,
+        latestMessages: chatRoomState.messages,
+        partners: partners.map(memberID => ({
+          contractID: memberID,
+          username: getters.usernameFromID(memberID),
+          displayName: getters.userDisplayNameFromID(memberID)
+        })),
+        lastJoinedPartner,
+        // TODO: The UI should display display names, usernames and (in the future)
+        // identity contract IDs differently in some way (e.g., font, font size,
+        // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
+        // users (e.g., 'user1' changing their display name to 'user2')
+        title: isDMToMyself
+          ? getters.userDisplayNameFromID(myIdentityId)
+          : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+        lastMsgTimeStamp,
+        picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
+        isDMToMyself // Can be useful when certain things in UI are meant only for 'DM to myself'
+      }
+    }
+
+    return details
+  },
+  directMessagesByGroup (state, getters, rootState) {
+    return groupID => {
+      const currentGroupDirectMessagesDetails = {}
+      if (!groupID) {
+        // NOTE: groupID could be null before finish syncing group contracts
+        return currentGroupDirectMessagesDetails
+      }
+
+      for (const entry of Object.entries(getters.allDirectMessagesDetails)) {
+        const [chatRoomID, directMessageDetails]: [string, any] = entry
+        const { partners, isDMToMyself } = directMessageDetails
         // The following line ensured that DMs for former members were hidden.
         // Until the DM global dashboard is implemented, this check has been
         // replaced with a check for all members (past and present), so that
         // a conversation doesn't suddenly become inaccessible.
         // // const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
-        const hasActiveMember = partners.some(memberID => !!rootState[groupID]?.profiles[memberID])
-        if (directMessageSettings.visible && (isDMToMyself || hasActiveMember)) {
-          // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
-          //       His profile picture can be used as the picture of the direct message
-          //       possibly with the badge of the number of partners.
-          const lastJoinedPartner = isDMToMyself ? myIdentityId : partners[partners.length - 1]
-          const lastMsgTimeStamp = chatRoomState.messages?.length > 0
-            ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
-            : 0
-
-          currentGroupDirectMessages[chatRoomID] = {
-            ...directMessageSettings,
-            members,
-            partners: partners.map(memberID => ({
-              contractID: memberID,
-              username: getters.usernameFromID(memberID),
-              displayName: getters.userDisplayNameFromID(memberID)
-            })),
-            lastJoinedPartner,
-            // TODO: The UI should display display names, usernames and (in the future)
-            // identity contract IDs differently in some way (e.g., font, font size,
-            // prefix (@), etc.) to make it impossible (or at least obvious) to impersonate
-            // users (e.g., 'user1' changing their display name to 'user2')
-            title: isDMToMyself
-              ? getters.userDisplayNameFromID(myIdentityId)
-              : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
-            lastMsgTimeStamp,
-            picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
-            isDMToMyself // Can be useful when certain things in UI are meant only for 'DM to myself'
-          }
+        const hasActiveMember = partners.some(partner => !!rootState[groupID]?.profiles[partner.contractID])
+        if (isDMToMyself || hasActiveMember) {
+          currentGroupDirectMessagesDetails[chatRoomID] = directMessageDetails
+          delete currentGroupDirectMessagesDetails[chatRoomID].latestMessages
         }
       }
-      return currentGroupDirectMessages
+
+      return currentGroupDirectMessagesDetails
     }
   },
   ourGroupDirectMessages (state, getters, rootState) {

@@ -86,6 +86,7 @@ const initialState = {
   contractSigningKeys: Object.create(null),
   lastLoggedIn: {}, // Group last logged in information
   preferences: {}, // { hideDistributionBanner: { [groupContractID]: boolean }, lastSeenNewsDate: string }
+  inGlobalDashboard: false, // A flag for various vuex getters to know if the user is in the global dashboard
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number },
@@ -277,6 +278,9 @@ const mutations = {
       }
       state.kvStoreStatus[name] = status
     }
+  },
+  setInGlobalDashboard (state, value) {
+    Vue.set(state, 'inGlobalDashboard', value)
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state

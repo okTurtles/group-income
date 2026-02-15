@@ -9,6 +9,7 @@ page(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
@@ -53,6 +54,12 @@ export default ({
     currentContent () {
       return contentComponentsMap[this.tabIds.tab || 'news-and-updates']
     }
+  },
+  created () {
+    sbp('state/vuex/commit', 'setInGlobalDashboard', true)
+  },
+  beforeDestroy () {
+    sbp('state/vuex/commit', 'setInGlobalDashboard', false)
   }
 }: Object)
 </script>
