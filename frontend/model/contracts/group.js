@@ -376,6 +376,23 @@ export const actionRequireActiveMember = (next: Function): Function => (data, pr
   return next(data, props)
 }
 
+const validateChatRoomName = (name: string) => {
+  // Validation on the chatroom name - references:
+  // https://github.com/okTurtles/group-income/issues/1987
+  // https://github.com/okTurtles/group-income/issues/2999
+  const nameValidationMap: {[string]: Function} = {
+    [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
+    [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
+  }
+
+  for (const key in nameValidationMap) {
+    const check = nameValidationMap[key]
+    if (check(name)) {
+      throw new TypeError(key)
+    }
+  }
+}
+
 export const GIGroupAlreadyJoinedError: typeof Error = ChelErrorGenerator('GIGroupAlreadyJoinedError')
 export const GIGroupNotJoinedError: typeof Error = ChelErrorGenerator('GIGroupNotJoinedError')
 
@@ -1137,21 +1154,7 @@ sbp('chelonia/defineContract', {
           attributes: chatRoomAttributesType
         })(data)
 
-        // Validation on the chatroom name - references:
-        // https://github.com/okTurtles/group-income/issues/1987
-        // https://github.com/okTurtles/group-income/issues/2999
-        const chatroomName = data.attributes.name
-        const nameValidationMap: {[string]: Function} = {
-          [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-          [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
-        }
-
-        for (const key in nameValidationMap) {
-          const check = nameValidationMap[key]
-          if (check(chatroomName)) {
-            throw new TypeError(key)
-          }
-        }
+        validateChatRoomName(data.attributes.name)
       },
       process ({ data, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes
@@ -1345,10 +1348,14 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/renameChatRoom': {
-      validate: actionRequireActiveMember(objectOf({
-        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
-        name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name')
-      })),
+      validate: (data, props) => {
+        actionRequireActiveMember(objectOf({
+          chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
+          name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name')
+        }))(data, props)
+
+        validateChatRoomName(data.name)
+      },
       process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['name'] = data.name
       }
