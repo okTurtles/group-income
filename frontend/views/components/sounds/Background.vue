@@ -18,16 +18,22 @@ export default ({
   computed: {
     volumeFromStore () {
       return this.$store.getters.notificationVolume ?? 1 // The volume value in the store can be 0 too and we use it if that's the case.
-    },
-    isAppIdle () {
-      // NOTE: idle-vue plugin will provide this.isAppIdle
-      //       but sometimes it returns undefined, so redefine here
-      return this.$store.state.idleVue?.isIdle
     }
   },
   methods: {
     shouldPlay (contractID: string) {
-      return !isPwa() && !((this.$route.name === 'GroupChatConversation' && this.$route.params.chatRoomID === contractID) && !this.isAppIdle)
+      if (isPwa()) {
+        return false
+      }
+
+      // document.hidden doesn't get set to false when the current tab is open in the browser that has not been used for a while.
+      // (eg. Users can have multiple 'browser' windows open and the window where the GI chatroom is open stays in the background for a while.)
+      // document.hasFocus() is used here to capture this kind of case.
+      const isTabInactive = () => document.hidden || !document.hasFocus()
+      // Don't play the sound if the user is actively viewing this chatroom.
+      const isViewingThisChatroom = this.$route.name === 'GroupChatConversation' &&
+        this.$route.params.chatRoomID === contractID
+      return isTabInactive() || !isViewingThisChatroom
     },
     playMessageReceive ({ contractID }: {
       contractID: string,

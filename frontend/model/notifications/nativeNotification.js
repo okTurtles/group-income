@@ -141,9 +141,12 @@ export async function makeNotification ({ title, body, icon, path, groupID, sbpI
       if (clientList.some(client => client.focused)) {
         return
       }
+
       return self.registration.showNotification(title,
         { body, icon, data: { groupID, path, sbpInvocation } }
-      ).catch(console.warn)
+      ).catch((e) => {
+        console.warn('[makeNotification] registration.showNotification() failed', e)
+      })
     })
   }
 }
