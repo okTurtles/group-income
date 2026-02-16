@@ -300,7 +300,8 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
-        startedUnreadMessageHash: null,
+        // A message to show 'is-new' UI Element on
+        startedUnreadMessage: null,
         // Below contains the message hash on which the user manually marked as unread
         messageHashToMarkUnread: null,
         scrollableDistance: 0,
@@ -641,7 +642,7 @@ export default ({
         this.ephemeral.messagesInitiated = true
       }
 
-      if (!this.ephemeral.startedUnreadMessageHash) {
+      if (!this.ephemeral.startedUnreadMessage) {
         this.setStartNewMessageIndex()
       }
 
@@ -1247,7 +1248,7 @@ export default ({
       return false
     },
     isNew (msgHash) {
-      return this.ephemeral.startedUnreadMessageHash === msgHash
+      return this.ephemeral.startedUnreadMessage?.hash === msgHash
     },
     addEmoticon (message, emoticon) {
       const contractID = this.ephemeral.renderingChatRoomId
@@ -1398,16 +1399,18 @@ export default ({
         })
       }
     },
-    setStartNewMessageIndex (forceTo) {
-      if (forceTo) {
-        this.ephemeral.startedUnreadMessageHash = forceTo
+    setStartNewMessageIndex (messageTo) {
+      if (!this.ephemeral.messageHashToMarkUnread) { return }
+
+      if (messageTo) {
+        this.ephemeral.startedUnreadMessage = messageTo
       } else {
-        this.ephemeral.startedUnreadMessageHash = null
+        this.ephemeral.startedUnreadMessage = null
         if (this.currentChatRoomReadUntil) {
           const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
 
           if (index >= 0) {
-            this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+            this.ephemeral.startedUnreadMessage = this.ephemeral.messages[index]
           }
         }
       }
@@ -1489,12 +1492,12 @@ export default ({
       }
     },
     markUnreadPostActions () {
-      this.ephemeral.startedUnreadMessageHash = null
+      this.ephemeral.startedUnreadMessage = null
       if (this.currentChatRoomReadUntil) {
         const foundIndex = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
 
         if (foundIndex >= 0) {
-          this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[foundIndex].hash
+          this.ephemeral.startedUnreadMessage = this.ephemeral.messages[foundIndex]
         }
       }
     },
@@ -1607,14 +1610,14 @@ export default ({
             if (isLastEvent) {
               const isMessageFromMe = lastValidMessage && lastValidMessage.from === this.ourIdentityContractId
 
-              if (!this.ephemeral.startedUnreadMessageHash) {
+              if (!this.ephemeral.startedUnreadMessage) {
                 this.setStartNewMessageIndex(
                   !isMessageFromMe
-                    ? lastValidMessage.hash
+                    ? lastValidMessage
                     : undefined
                 )
               } else if (isMessageFromMe) {
-                this.ephemeral.startedUnreadMessageHash = null
+                this.ephemeral.startedUnreadMessage = null
               }
             }
           }
@@ -1644,7 +1647,7 @@ export default ({
       }
     },
     windowFocusHandler () {
-      console.log('!@# TODO: Add a logic to clear the startedUnreadMessageHash here!')
+      console.log('!@# TODO: Add a logic to clear the startedUnreadMessage here!')
       this.onChatScroll()
     },
     throttledJumpToLatest: throttle(function (_this) {
@@ -1808,7 +1811,8 @@ export default ({
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
     },
-    'currentChatRoomReadUntil' (newReadUntil) {
+    'currentChatRoomReadUntil' (newReadUntil, previousReadUntil) {
+      console.log(`!@# currentChatRoomReadUntil: ${newReadUntil?.messageHash}, ${previousReadUntil?.messageHash}`)
       const msgHash = newReadUntil?.messageHash
       if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
         this.$nextTick(this.markUnreadPostActions)
