@@ -366,48 +366,20 @@ export default ({
     this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
+    window.addEventListener('focus', this.windowFocusHandler)
 
     if (this.summary.chatRoomID) {
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
 
-    /*
-    if (typeof ResizeObserver !== 'function') return
-    this.resizeObserver = new ResizeObserver((entries) => {
-      if (!entries.length) return
-      requestAnimationFrame(() => this.applyTopPadding())
-    })
-    // Mutation observer needed because resize observer won't trigger on
-    // scroll height changes
-    if (typeof MutationObserver === 'function') {
-      this.mutationObserver = new MutationObserver((entries) => {
-        if (!this.resizeObserver || !this.mutationObserver) return
-        for (const entry of entries) {
-          if (entry.type !== 'childList') continue
-          for (const addedNode of entry.addedNodes) {
-            this.resizeObserver.observe(addedNode)
-          }
-          for (const removedNode of entry.removedNodes) {
-            this.resizeObserver.unobserve(removedNode)
-          }
-        }
-      })
-    }
-    */
+    window.chatMainEphemeral = this.ephemeral
   },
   beforeDestroy () {
-    // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
     // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
-    /*
-    this.resizeObserver?.disconnect()
-    this.mutationObserver?.disconnect()
-    this.resizeObserver = null
-    this.mutationObserver = null
-    this.matchMediaPhone.onchange = null
-    */
+    window.removeEventListener('focus', this.windowFocusHandler)
   },
   computed: {
     ...mapGetters([
@@ -667,6 +639,9 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.ephemeral.messagesInitiated = true
+      }
+
+      if (!this.ephemeral.startedUnreadMessageHash) {
         this.setStartNewMessageIndex()
       }
 
@@ -1423,13 +1398,17 @@ export default ({
         })
       }
     },
-    setStartNewMessageIndex () {
-      this.ephemeral.startedUnreadMessageHash = null
-      if (this.currentChatRoomReadUntil) {
-        const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+    setStartNewMessageIndex (forceTo) {
+      if (forceTo) {
+        this.ephemeral.startedUnreadMessageHash = forceTo
+      } else {
+        this.ephemeral.startedUnreadMessageHash = null
+        if (this.currentChatRoomReadUntil) {
+          const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
 
-        if (index >= 0) {
-          this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+          if (index >= 0) {
+            this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+          }
         }
       }
     },
@@ -1440,7 +1419,9 @@ export default ({
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
       forceUpdate = false
     }) {
-      if (this.ephemeral.messageHashToMarkUnread) {
+      const isTabInactive = document.hidden || !document.hasFocus()
+      if (isTabInactive || this.ephemeral.messageHashToMarkUnread) {
+        // NOTE regarding 'this.ephemeral.messageHashToMarkUnread' here:
         // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
         // So if user has used this functionality at least once in the current chatroom,
         // the chatroom should stop auto-updating the 'readUntil' data in various situations (eg. while scrolling),
@@ -1525,10 +1506,11 @@ export default ({
       if (!this.ephemeral.messagesInitiated) return
 
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
-      this.ephemeral.unprocessedEvents.splice(0).forEach((message) => {
+      this.ephemeral.unprocessedEvents.splice(0).forEach((message, index, array) => {
         // TODO: The next line will _not_ get information about any inner signatures,
         // which is used for determininng the sender of a message. Update with
         // another call to SPMessage to get signature information
+        const isLastEvent = index === array.length - 1
         const value = message.decryptedValue()
         if (!value) throw new Error('Unable to decrypt message')
 
@@ -1566,6 +1548,7 @@ export default ({
 
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         const { addedOrDeleted } = isMessageAddedOrDeleted(message)
+        const newMessageAdded = addedOrDeleted === 'ADDED'
 
         ;(async () => {
           // Messages are processed twice: before sending (outgoing direction,
@@ -1599,9 +1582,11 @@ export default ({
           await this.processEvents([serializedMessage], 'down', false)
           if (hasChatroomSwitchedSince()) return
 
-          // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
-          if (this.ephemeral.scrollableDistance < 50) {
-            if (addedOrDeleted === 'ADDED' && this.messageState.contract.messages.length) {
+          if (newMessageAdded) {
+            const lastValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+
+            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
+              // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
@@ -1610,13 +1595,26 @@ export default ({
               } else {
                 // If there are any temporary messages that do not exist in the
                 // contract, they should not be used for updateReadUntilMessageHash
-                const msg = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
-                if (msg) {
+                if (lastValidMessage) {
                   this.updateReadUntilMessageHash({
-                    messageHash: msg.hash,
-                    createdHeight: msg.height
+                    messageHash: lastValidMessage.hash,
+                    createdHeight: lastValidMessage.height
                   })
                 }
+              }
+            }
+
+            if (isLastEvent) {
+              const isMessageFromMe = lastValidMessage && lastValidMessage.from === this.ourIdentityContractId
+
+              if (!this.ephemeral.startedUnreadMessageHash) {
+                this.setStartNewMessageIndex(
+                  !isMessageFromMe
+                    ? lastValidMessage.hash
+                    : undefined
+                )
+              } else if (isMessageFromMe) {
+                this.ephemeral.startedUnreadMessageHash = null
               }
             }
           }
@@ -1624,7 +1622,7 @@ export default ({
           if (addedOrDeleted !== 'NONE' && this.ephemeral.messageHashToMarkUnread) {
             // If user has used 'Mark unread' but then messages are either added or deleted,
             // 'unreadMessages' data in the store should be updated accordingly.
-            const action = addedOrDeleted === 'ADDED' ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
+            const action = newMessageAdded ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
             sbp(`gi.actions/identity/kv/${action}`, {
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
@@ -1644,6 +1642,10 @@ export default ({
         //       should ignore the scroll position, and scroll to the bottom
         this.throttledJumpToLatest(this)
       }
+    },
+    windowFocusHandler () {
+      console.log('!@# TODO: Add a logic to clear the startedUnreadMessageHash here!')
+      this.onChatScroll()
     },
     throttledJumpToLatest: throttle(function (_this) {
       // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
