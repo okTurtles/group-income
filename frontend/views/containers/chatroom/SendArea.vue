@@ -771,13 +771,14 @@ export default ({
         }
 
         if (draft?.attachments) {
-          this.ephemeral.attachments = draft.attachments.map(attachment => ({
-            url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
-            name: attachment.name,
-            mimeType: attachment.mimeType,
-            size: attachment.size,
-            downloadData: null
-          }))
+          this.ephemeral.attachments = draft.attachments.filter(attachment => Boolean(attachment.fileData))
+            .map(attachment => ({
+              url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+              name: attachment.name,
+              mimeType: attachment.mimeType,
+              size: attachment.size,
+              downloadData: null
+            }))
         } else {
           this.ephemeral.attachments = []
         }
@@ -807,6 +808,10 @@ export default ({
       return `${chatroomType}:${this.ourIdentityContractId}:${chatroomId}`
     },
     saveOrDeleteMessageDraft () {
+      // manually implementing debounce here by clearing the timeout and setting a new one to avoid the issue where
+      // draftKey/text/attachments can become stale when user switches chatrooms quickly.
+      // (eg. user has switched to chatroom B before the debounce delay times out, so the draft of chatroom A is saved for chatroom B)
+      // This way, draftKey/draft are captured at call time, not at the execution time.
       const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
       const textContent = this.ephemeral.textWithLines.trim()
       const attachments = this.ephemeral.attachments
@@ -857,7 +862,7 @@ export default ({
       } catch (e) {
         // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
         console.error('SendArea.vue: Error loading message draft - ', e)
-        return ''
+        return null
       }
     },
     clearMessageDraft (draftKey) {

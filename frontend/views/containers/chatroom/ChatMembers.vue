@@ -88,7 +88,8 @@ export default ({
   data () {
     return {
       ephemeral: {
-        chatroomsWithDrafts: [] // list of chatroom IDs that have a draft saved
+        chatroomsWithDrafts: [], // list of chatroom IDs that have a draft saved,
+        clearedStaleDrafts: false
       }
     }
   },
@@ -141,16 +142,33 @@ export default ({
     },
     showDraftIcon (chatID) {
       return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
+    },
+    clearStaleDrafts () {
+      // check and clear stale drafts for the DMs that are no longer used for this user from indexedDB.
+      // No need to perform this action eagerly.
+      if (this.ephemeral.clearedStaleDrafts) { return }
+
+      this.ephemeral.clearedStaleDrafts = true
+      const allActiveDMIds = Object.keys(this.ourGroupDirectMessages)
+      const keysToClear = this.ephemeral.chatroomsWithDrafts.filter(id => !allActiveDMIds.includes(id))
+        .map(chatroomId => `dm:${this.ourIdentityContractId}:${chatroomId}`)
+
+      sbp('gi.db/chatDrafts/deleteMany', keysToClear).catch((e) => {
+        console.error('ConversationsList.vue: Error clearing stale drafts - ', e)
+      })
     }
   },
   watch: {
     currentChatRoomId: {
       handler (newVal) {
-        sbp('gi.db/chatDrafts/getAllChatroomIds', 'dm').then((keys) => {
-          const chatroomIds = keys.filter(str => str.startsWith(this.ourIdentityContractId)).map(str => str.split(':')[1])
+        sbp('gi.db/chatDrafts/getAllChatroomIds', 'dm', this.ourIdentityContractId).then((chatroomIds) => {
           if (chatroomIds.length) {
             this.ephemeral.chatroomsWithDrafts = chatroomIds
           }
+
+          this.clearStaleDrafts()
+        }).catch((e) => {
+          console.error('ChatMembers.vue: Error getting all chatroom IDs - ', e)
         })
       },
       immediate: true
