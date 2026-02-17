@@ -371,7 +371,8 @@ export default ({
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
-      mediaIsPhone: null
+      mediaIsPhone: null,
+      draftDebounceTimeoutId: null
     }
   },
   watch: {
@@ -599,7 +600,7 @@ export default ({
       }
 
       if (!this.isEditing) {
-        this.saveOrDeleteMessageDraft(this.currentChatRoomId)
+        this.saveOrDeleteMessageDraft()
       }
     },
     handlePaste (e) {
@@ -743,7 +744,7 @@ export default ({
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
 
-      this.clearMessageDraft()
+      this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
     },
     async initializeTextArea () {
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
@@ -755,7 +756,7 @@ export default ({
         this.$refs.textarea.value = this.defaultText
       } else {
         const chatroomId = this.currentChatRoomId
-        const draft = await this.loadMessageDraft(chatroomId)
+        const draft = await this.loadMessageDraft(this.getMessageDraftKey(chatroomId))
 
         if (!this.$refs.textarea ||
           chatroomId !== this.currentChatRoomId) {
@@ -801,22 +802,32 @@ export default ({
         return null
       }
     },
-    saveOrDeleteMessageDraft: debounce(function (chatroomId) {
-      const hasContent = this.ephemeral.textWithLines.trim().length > 0 || this.hasAttachments
+    getMessageDraftKey (chatroomId) {
+      const chatroomType = this.isDirectMessage(chatroomId) ? 'dm' : 'channel'
+      return `${chatroomType}:${this.ourIdentityContractId}:${chatroomId}`
+    },
+    saveOrDeleteMessageDraft () {
+      const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
+      const textContent = this.ephemeral.textWithLines.trim()
+      const attachments = this.ephemeral.attachments
+      const hasContent = textContent.length > 0 || attachments.length > 0
 
-      if (hasContent) {
-        this.saveMessageDraft(chatroomId)
-      } else if (this.ephemeral.chatroomHasDraftSaved) {
-        this.clearMessageDraft(chatroomId)
-      }
-    }, 450),
-    async saveMessageDraft (chatroomId) {
+      clearTimeout(this.draftDebounceTimeoutId)
+      this.draftDebounceTimeoutId = setTimeout(() => {
+        if (hasContent) {
+          this.saveMessageDraft(draftKey, textContent, attachments)
+        } else if (this.ephemeral.chatroomHasDraftSaved) {
+          this.clearMessageDraft(draftKey)
+        }
+      }, 450)
+    },
+    async saveMessageDraft (draftKey, textContent, attachments) {
       try {
-        const draftData = { text: this.ephemeral.textWithLines || '' }
+        const draftData = { text: textContent || '' }
 
-        if (this.hasAttachments) {
+        if (attachments?.length > 0) {
           draftData.attachments = await Promise.all(
-            this.ephemeral.attachments.map(async attachment => {
+            attachments.map(async attachment => {
               return {
                 name: attachment.name,
                 mimeType: attachment.mimeType,
@@ -829,7 +840,7 @@ export default ({
           )
         }
 
-        await sbp('gi.db/chatDrafts/save', chatroomId || this.currentChatRoomId, draftData)
+        await sbp('gi.db/chatDrafts/save', draftKey, draftData)
 
         if (!this.ephemeral.chatroomHasDraftSaved) {
           this.ephemeral.chatroomHasDraftSaved = true
@@ -840,7 +851,7 @@ export default ({
     },
     async loadMessageDraft (chatroomId) {
       try {
-        const draft = await sbp('gi.db/chatDrafts/load', chatroomId || this.currentChatRoomId)
+        const draft = await sbp('gi.db/chatDrafts/load', chatroomId)
         this.ephemeral.chatroomHasDraftSaved = !!draft
         return draft
       } catch (e) {
@@ -849,8 +860,8 @@ export default ({
         return ''
       }
     },
-    clearMessageDraft (chatroomId) {
-      sbp('gi.db/chatDrafts/delete', chatroomId || this.currentChatRoomId).then(() => {
+    clearMessageDraft (draftKey) {
+      sbp('gi.db/chatDrafts/delete', draftKey).then(() => {
         this.ephemeral.chatroomHasDraftSaved = false
       })
     },
@@ -920,7 +931,7 @@ export default ({
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
 
-      this.saveOrDeleteMessageDraft(this.currentChatRoomId)
+      this.saveOrDeleteMessageDraft()
     },
     clearAllAttachments () {
       if (this.ephemeral.attachments.length) {
@@ -938,7 +949,7 @@ export default ({
         this.ephemeral.attachments.splice(targetIndex, 1)
       }
 
-      this.saveOrDeleteMessageDraft(this.currentChatRoomId)
+      this.saveOrDeleteMessageDraft()
     },
     selectEmoticon (emoticon) {
       // Making sure the emoticon is added to the cursor position

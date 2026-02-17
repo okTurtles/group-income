@@ -99,7 +99,8 @@ export default ({
       'ourIdentityContractId',
       'chatRoomUnreadMessages',
       'isChatRoomManuallyMarkedUnread',
-      'currentChatRoomId'
+      'currentChatRoomId',
+      'ourIdentityContractId'
     ])
   },
   methods: {
@@ -145,8 +146,11 @@ export default ({
   watch: {
     currentChatRoomId: {
       handler (newVal) {
-        sbp('gi.db/chatDrafts/getAllChatroomIds').then((chatroomIds) => {
-          this.ephemeral.chatroomsWithDrafts = chatroomIds
+        sbp('gi.db/chatDrafts/getAllChatroomIds', 'dm').then((keys) => {
+          const chatroomIds = keys.filter(str => str.startsWith(this.ourIdentityContractId)).map(str => str.split(':')[1])
+          if (chatroomIds.length) {
+            this.ephemeral.chatroomsWithDrafts = chatroomIds
+          }
         })
       },
       immediate: true

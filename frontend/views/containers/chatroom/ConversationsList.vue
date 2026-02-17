@@ -78,7 +78,8 @@ export default ({
       'isChatRoomManuallyMarkedUnread',
       'groupChatRooms',
       'ourUnreadMessages',
-      'currentChatRoomId'
+      'currentChatRoomId',
+      'ourIdentityContractId'
     ]),
     hasNotReadTheLatestMessage () {
       // This computed props check if the chatrooms in the list have any messages that are not seen by the user yet.
@@ -153,8 +154,11 @@ export default ({
   watch: {
     currentChatRoomId: {
       handler (newVal) {
-        sbp('gi.db/chatDrafts/getAllChatroomIds').then((chatroomIds) => {
-          this.ephemeral.chatroomsWithDrafts = chatroomIds
+        sbp('gi.db/chatDrafts/getAllChatroomIds', 'channel').then((keys) => {
+          const chatroomIds = keys.filter(str => str.startsWith(this.ourIdentityContractId)).map(str => str.split(':')[1])
+          if (chatroomIds.length) {
+            this.ephemeral.chatroomsWithDrafts = chatroomIds
+          }
         })
       },
       immediate: true
