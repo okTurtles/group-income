@@ -314,7 +314,8 @@ const result = await sbp('namespace/functionName', arg1, arg2)
 SBP domains in this codebase:
 - `chelonia/` - Contract system
 - `group/` - Group-related actions
-- `gi.actions/` - General actions
+- `gi.app/` - Mostly user-generated actions on the frontend
+- `gi.actions/` - These live in the service worker and are triggered either by `gi.app/` or from within contracts. They are usually for creating `SPMessage`s
 - `controller/router/` - Navigation
 - `backend/` - Server-side operations (handleEntry, broadcastEntry, saveOwner, deleteContract, deleteFile)
 
