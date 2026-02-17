@@ -777,6 +777,7 @@ export default ({
               name: attachment.name,
               mimeType: attachment.mimeType,
               size: attachment.size,
+              needsImageCompression: attachment.needsImageCompression || false,
               downloadData: null
             }))
         } else {
@@ -833,16 +834,19 @@ export default ({
         if (attachments?.length > 0) {
           draftData.attachments = await Promise.all(
             attachments.map(async attachment => {
+              // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
+              // Converting them into Arraybuffers solves the problem.
+              const fileData = await this.objectURLtoArrayBuffer(attachment.url)
+              if (!fileData) { return null }
               return {
                 name: attachment.name,
                 mimeType: attachment.mimeType,
                 size: attachment.size,
-                // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
-                // Converting them into Arraybuffers solves the problem.
-                fileData: await this.objectURLtoArrayBuffer(attachment.url)
+                needsImageCompression: attachment.needsImageCompression || false,
+                fileData
               }
             })
-          )
+          ).filter(Boolean)
         }
 
         await sbp('gi.db/chatDrafts/save', draftKey, draftData)
@@ -965,6 +969,9 @@ export default ({
 
       this.closeEmoticon()
       this.updateTextWithLines()
+      if (!this.isEditing) {
+        this.saveOrDeleteMessageDraft()
+      }
     },
     startMention (keyword, position, mentionType = 'member') {
       const checkIfContainsKeyword = str => {
