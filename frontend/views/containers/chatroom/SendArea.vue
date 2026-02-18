@@ -295,6 +295,7 @@ import {
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 
+const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
   ArrowLeft: 37,
   ArrowUp: 38,
@@ -421,14 +422,25 @@ export default ({
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
 
     // Revoke all object URLs to avoid memory leaks.
-    if (this.ephemeral.attachments.length) {
-      this.ephemeral.attachments.forEach(attachment => {
-        URL.revokeObjectURL(attachment.url)
-      })
-    }
+    // 1. Stale ones
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
+
+    // 2. Current ones
+    if (this.ephemeral.attachments.length) {
+      const urls = this.ephemeral.attachments.map(attachment => attachment.url)
+      const revokeObjectURLs = () => {
+        urls.forEach(url => URL.revokeObjectURL(url))
+      }
+
+      if (this.draftDebounceTimeoutId) {
+        // if it's waiting for the draft-save debounce delay, revoke the object URLs after the delay. (So that no null values are saved in the draft)
+        setTimeout(revokeObjectURLs, DRAFT_SAVE_DEBOUNCE_DELAY)
+      } else {
+        revokeObjectURLs()
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -832,7 +844,7 @@ export default ({
         } else if (this.ephemeral.chatroomHasDraftSaved) {
           this.clearMessageDraft(draftKey)
         }
-      }, 450)
+      }, DRAFT_SAVE_DEBOUNCE_DELAY)
     },
     async saveMessageDraft (draftKey, textContent, attachments) {
       try {
