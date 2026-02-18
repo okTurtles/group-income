@@ -763,6 +763,10 @@ export default ({
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
 
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
+        // If there is a pending draft-save, discard it.
+        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      }
       this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
     },
     async initializeTextArea () {
