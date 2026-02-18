@@ -435,3 +435,15 @@ jobs:
           gh pr comment "${{ steps.pr-info.outputs.number }}" \
             --repo "${{ github.repository }}" \
             --body-file /tmp/review_comment.txt
+
+      - name: Post failure comment
+        if: failure() && steps.pr-info.outputs.number
+        run: |
+          gh pr comment "${{ steps.pr-info.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "## Advanced AI Review
+
+          - Type: Error
+          - Model: ${REVIEW_MODEL}
+
+          The review workflow failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details. Comment \`/review\` to re-run."
