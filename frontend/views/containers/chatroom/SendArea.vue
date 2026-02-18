@@ -840,6 +840,7 @@ export default ({
       const textContent = this.ephemeral.textWithLines.trim()
       const attachments = this.ephemeral.attachments
       const hasContent = textContent.length > 0 || attachments.length > 0
+      const hasDraftSaved = this.ephemeral.chatroomHasDraftSaved
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
         clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
@@ -847,7 +848,7 @@ export default ({
       this.draftDebounceTimeoutIds[this.currentChatRoomId] = setTimeout(() => {
         if (hasContent) {
           this.saveMessageDraft(draftKey, textContent, attachments)
-        } else if (this.ephemeral.chatroomHasDraftSaved) {
+        } else if (hasDraftSaved) {
           this.clearMessageDraft(draftKey)
         }
       }, DRAFT_SAVE_DEBOUNCE_DELAY)
