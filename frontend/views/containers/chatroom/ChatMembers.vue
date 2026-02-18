@@ -162,10 +162,7 @@ export default ({
     currentChatRoomId: {
       handler (newVal) {
         sbp('gi.db/chatDrafts/getAllChatroomIds', 'dm', this.ourIdentityContractId).then((chatroomIds) => {
-          if (chatroomIds.length) {
-            this.ephemeral.chatroomsWithDrafts = chatroomIds
-          }
-
+          this.ephemeral.chatroomsWithDrafts = chatroomIds.length ? chatroomIds : []
           this.clearStaleDrafts()
         }).catch((e) => {
           console.error('ChatMembers.vue: Error getting all chatroom IDs - ', e)

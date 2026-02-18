@@ -839,7 +839,7 @@ export default ({
         const draftData = { text: textContent || '' }
 
         if (attachments?.length > 0) {
-          draftData.attachments = await Promise.all(
+          draftData.attachments = (await Promise.all(
             attachments.map(async attachment => {
               // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
               // Converting them into Arraybuffers solves the problem.
@@ -853,7 +853,7 @@ export default ({
                 fileData
               }
             })
-          ).filter(Boolean)
+          )).filter(Boolean)
         }
 
         await sbp('gi.db/chatDrafts/save', draftKey, draftData)
