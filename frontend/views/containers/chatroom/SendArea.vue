@@ -373,7 +373,7 @@ export default ({
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
       mediaIsPhone: null,
-      draftDebounceTimeoutId: null
+      draftDebounceTimeoutIds: {}
     }
   },
   watch: {
@@ -434,7 +434,7 @@ export default ({
         urls.forEach(url => URL.revokeObjectURL(url))
       }
 
-      if (this.draftDebounceTimeoutId) {
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
         // if it's waiting for the draft-save debounce delay, revoke the object URLs after the delay. (So that no null values are saved in the draft)
         setTimeout(revokeObjectURLs, DRAFT_SAVE_DEBOUNCE_DELAY)
       } else {
@@ -837,8 +837,10 @@ export default ({
       const attachments = this.ephemeral.attachments
       const hasContent = textContent.length > 0 || attachments.length > 0
 
-      clearTimeout(this.draftDebounceTimeoutId)
-      this.draftDebounceTimeoutId = setTimeout(() => {
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
+        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      }
+      this.draftDebounceTimeoutIds[this.currentChatRoomId] = setTimeout(() => {
         if (hasContent) {
           this.saveMessageDraft(draftKey, textContent, attachments)
         } else if (this.ephemeral.chatroomHasDraftSaved) {
