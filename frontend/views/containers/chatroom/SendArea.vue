@@ -419,6 +419,13 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
+
+    // Revoke all object URLs to avoid memory leaks.
+    if (this.ephemeral.attachments.length) {
+      this.ephemeral.attachments.forEach(attachment => {
+        URL.revokeObjectURL(attachment.url)
+      })
+    }
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
@@ -760,7 +767,7 @@ export default ({
 
         if (!this.$refs.textarea ||
           chatroomId !== this.currentChatRoomId) {
-          // NOTE 1: There is a cypress heisen-bug where it enters and chatroom and leaves almost immediately, before this.loadMessageDraft() above isn't completed.
+          // NOTE 1: There is a cypress heisen-bug where it enters the chatroom and leaves almost immediately, before this.loadMessageDraft() above is completed.
           //         In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
           // NOTE 2: If the user has switched to another chatroom while the draft is being loaded, ignore the rest of initialization process.
           return
@@ -872,6 +879,8 @@ export default ({
     clearMessageDraft (draftKey) {
       sbp('gi.db/chatDrafts/delete', draftKey).then(() => {
         this.ephemeral.chatroomHasDraftSaved = false
+      }).catch((e) => {
+        console.error('SendArea.vue: Error clearing message draft - ', e)
       })
     },
     openCreatePollModal () {
