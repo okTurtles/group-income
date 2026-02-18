@@ -764,7 +764,7 @@ export default ({
       if (this.hasAttachments) { this.clearAllAttachments() }
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        // If there is a pending draft-save, discard it.
+        // If there is a pending draft-save, discard it, as the message is being sent now.
         clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
       }
       this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
