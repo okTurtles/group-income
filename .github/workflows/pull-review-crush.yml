@@ -389,7 +389,7 @@ jobs:
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
         run: |
-          crush run -m "$CRUSH_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
+          crush run -m "$CRUSH_MODEL" --small-model "$CRUSH_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
             echo "::warning::Agentic review via crush failed"
             cat /tmp/crush_stderr.txt >&2
             echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
