@@ -1,4 +1,4 @@
-name: PR Review
+name: AI PR Review
 
 on:
   issue_comment:
@@ -24,6 +24,7 @@ jobs:
       issues: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       # ── Provider configuration ─────────────────────────────
       # Set via Settings → Secrets and variables → Actions → Variables:
       #   REVIEW_PROVIDER: openrouter | zai-coding-plan
@@ -94,29 +95,13 @@ jobs:
             echo "issue_number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Post missing issue comment
-        if: steps.check-issue.outputs.has_issue == 'false'
-        run: |
-          gh pr comment "${{ steps.pr-info.outputs.number }}" \
-            --repo "${{ github.repository }}" \
-            --body "$(cat << 'EOF'
-          **Automated Review Notice**
-
-          This PR does not appear to have an associated issue. Every PR must have an assigned issue linked in its description.
-
-          Please update the PR description to reference an issue (e.g., `Fixes #123` or `Closes #456`), then comment `/review` to trigger the automated review.
-          EOF
-          )"
-
       - name: Checkout repository
-        if: steps.check-issue.outputs.has_issue == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr-details.outputs.head_sha }}
           fetch-depth: 0
 
       - name: Merge master into PR branch
-        if: steps.check-issue.outputs.has_issue == 'true'
         env:
           BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
         run: |
@@ -130,7 +115,6 @@ jobs:
           }
 
       - name: Generate diff
-        if: steps.check-issue.outputs.has_issue == 'true'
         env:
           BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
         run: |
@@ -141,7 +125,10 @@ jobs:
             ':!yarn.lock' ':!**/yarn.lock' \
             ':!go.sum' ':!**/go.sum' \
             ':!*.min.js' ':!*.min.css' \
-            ':!**/node_modules/**' ':!**/vendor/**' \
+            ':!node_modules/**' ':!**/node_modules/**' \
+            ':!vendor/**' ':!**/vendor/**' \
+            ':!dist/**' ':!**/dist/**' \
+            ':!build/**' ':!**/build/**' \
             ':!*.svg' ':!**/*.svg' \
             ':!*.png' ':!**/*.png' \
             ':!*.jpg' ':!**/*.jpg' ':!*.jpeg' ':!**/*.jpeg' \
@@ -162,22 +149,102 @@ jobs:
 
           echo "Diff size: $DIFF_SIZE bytes"
 
-      - name: Fetch issue contents
-        if: steps.check-issue.outputs.has_issue == 'true'
+          echo "::group::PR diff"
+          cat /tmp/pr_diff.txt
+          echo "::endgroup::"
+
+      - name: Generate helpful context
+        env:
+          HAS_ISSUE: ${{ steps.check-issue.outputs.has_issue }}
+          ISSUE_NUMBER: ${{ steps.check-issue.outputs.issue_number }}
         run: |
-          if ! gh api "/repos/${{ github.repository }}/issues/${{ steps.check-issue.outputs.issue_number }}" > issue_data.json 2>/dev/null; then
-            echo "::warning::Could not fetch issue #${{ steps.check-issue.outputs.issue_number }}"
-            echo "Issue context unavailable." > /tmp/issue_context.txt
-          else
+          if [ "$HAS_ISSUE" = "true" ]; then
+            # Fetch the issue
+            if ! gh api "/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" > issue_data.json 2>/dev/null; then
+              echo "::warning::Could not fetch issue #$ISSUE_NUMBER"
+              echo "<issue_summary>Issue context unavailable.</issue_summary>" > /tmp/helpful_context.txt
+              exit 0
+            fi
+
+            # Build issue conversation text (title + body + all comments)
             {
-              echo "## Issue #${{ steps.check-issue.outputs.issue_number }}: $(jq -r '.title // ""' issue_data.json)"
+              echo "## Issue #$ISSUE_NUMBER: $(jq -r '.title // ""' issue_data.json)"
               echo ""
               jq -r '.body // ""' issue_data.json
-            } > /tmp/issue_context.txt
+              echo ""
+            } > /tmp/issue_conversation.txt
+
+            # Fetch all comments on the issue
+            gh api "/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" --paginate \
+              | jq -s 'add // []' > issue_comments.json 2>/dev/null || echo "[]" > issue_comments.json
+
+            COMMENT_COUNT=$(jq 'length' issue_comments.json 2>/dev/null || echo "0")
+            if [ "$COMMENT_COUNT" -gt 0 ]; then
+              {
+                echo "---"
+                echo ""
+                echo "### Comments"
+                echo ""
+                jq -r '.[] | "**\(.user.login)** (\(.created_at)):\n\(.body)\n\n---\n"' issue_comments.json
+              } >> /tmp/issue_conversation.txt
+            fi
+
+            # Summarize the issue conversation via LLM
+            jq -n \
+              --arg model "$REVIEW_MODEL" \
+              --rawfile conversation /tmp/issue_conversation.txt \
+              '{
+                model: $model,
+                messages: [{role: "user", content: ("Summarize the following GitHub issue conversation. Focus on: 1) What the issue is about, 2) Key discussion points, 3) Any final decision or conclusion reached about what to do (if one exists). Be concise but thorough.\n\n" + $conversation)}]
+              }' > /tmp/context_payload.json
+
+            HTTP_CODE=$(curl -s -w '%{http_code}' \
+              "$PROVIDER_API_URL" \
+              -H "Authorization: Bearer $PROVIDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/context_payload.json \
+              -o /tmp/context_response.json)
+
+            if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/context_response.json > /dev/null 2>&1; then
+              SUMMARY=$(jq -r '.choices[0].message.content' /tmp/context_response.json)
+            else
+              echo "::warning::Issue summarization failed (HTTP $HTTP_CODE), using raw issue text"
+              SUMMARY=$(cat /tmp/issue_conversation.txt)
+            fi
+
+            printf '<issue_summary>\n%s\n</issue_summary>\n' "$SUMMARY" > /tmp/helpful_context.txt
+          else
+            # No referenced issue — summarize the PR description instead
+            jq -n \
+              --arg model "$REVIEW_MODEL" \
+              --rawfile pr_body /tmp/pr_body.txt \
+              '{
+                model: $model,
+                messages: [{role: "user", content: ("Summarize the following pull request description. Ignore any HTML markup from GitHub tools or AI review agents (such as Devin review badges, Copilot comments, etc.). If the PR description is blank or contains only HTML markup from tools/agents, output nothing (an empty string). Be concise.\n\nPR Description:\n" + $pr_body)}]
+              }' > /tmp/context_payload.json
+
+            HTTP_CODE=$(curl -s -w '%{http_code}' \
+              "$PROVIDER_API_URL" \
+              -H "Authorization: Bearer $PROVIDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/context_payload.json \
+              -o /tmp/context_response.json)
+
+            if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/context_response.json > /dev/null 2>&1; then
+              SUMMARY=$(jq -r '.choices[0].message.content' /tmp/context_response.json)
+            else
+              echo "::warning::PR description summarization failed (HTTP $HTTP_CODE)"
+              SUMMARY=""
+            fi
+
+            printf '<pr_description>\n%s\n</pr_description>\n' "$SUMMARY" > /tmp/helpful_context.txt
           fi
 
+          echo "::group::Helpful context"
+          cat /tmp/helpful_context.txt
+          echo "::endgroup::"
+
       - name: Build review prompts
-        if: steps.check-issue.outputs.has_issue == 'true'
         run: |
           cat > /tmp/raw_prompt.txt << 'PROMPT_END'
           Attached are a set of changes to a JavaScript project that uses StandardJS formatting with Flowtype.
@@ -203,7 +270,7 @@ jobs:
           PROMPT_END
 
           {
-            cat /tmp/issue_context.txt
+            cat /tmp/helpful_context.txt
             cat << 'SECTION_END'
 
           ### Changes to Review
@@ -240,7 +307,7 @@ jobs:
           PROMPT_END
 
           {
-            cat /tmp/issue_context.txt
+            cat /tmp/helpful_context.txt
             cat << 'SECTION_END'
 
           ### Changes to Review
@@ -252,7 +319,6 @@ jobs:
           } >> /tmp/agentic_prompt.txt
 
       - name: Check prompt size
-        if: steps.check-issue.outputs.has_issue == 'true'
         id: size-check
         run: |
           MAX_TOKEN_CHARS=260000
@@ -265,7 +331,7 @@ jobs:
           fi
 
       - name: Post size limit comment
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'true'
+        if: steps.size-check.outputs.too_large == 'true'
         run: |
           PROMPT_SIZE=$(wc -c < /tmp/raw_prompt.txt)
           TOKEN_EST=$((PROMPT_SIZE / 4))
@@ -275,10 +341,12 @@ jobs:
 
           This PR exceeds the 260k character limit (~${TOKEN_EST} tokens estimated). The review cannot be performed automatically.
 
-          Please break the PR into smaller pieces, or request a manual review."
+          Please break the PR into smaller pieces, or request a manual review.
+
+          _[🔧 Workflow Run](${RUN_URL})_"
 
       - name: Run raw review
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         run: |
           jq -n \
             --arg model "$REVIEW_MODEL" \
@@ -310,12 +378,16 @@ jobs:
           echo "Raw review complete ($(wc -c < /tmp/raw_review.txt) bytes)"
           echo "RAW_REVIEW_OK=${RAW_REVIEW_OK:-false}" >> "$GITHUB_ENV"
 
+          echo "::group::Raw LLM review"
+          cat /tmp/raw_review.txt
+          echo "::endgroup::"
+
       - name: Install opencode
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         run: curl -fsSL https://opencode.ai/install | bash
 
       - name: Configure opencode
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         run: |
           mkdir -p ~/.config/opencode
           jq -n \
@@ -331,7 +403,7 @@ jobs:
             }' > ~/.config/opencode/opencode.json
 
       - name: Run agentic review
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         env:
           OPENCODE_PERMISSION: '{ "edit": "deny", "write": "deny", "patch": "deny", "multiedit": "deny", "bash": "deny", "read": "allow", "grep": "allow", "glob": "allow", "list": "allow" }'
         run: |
@@ -343,18 +415,23 @@ jobs:
 
           echo "Agentic review complete ($(wc -c < /tmp/agentic_review.txt) bytes)"
 
+          echo "::group::Agentic (opencode) review"
+          cat /tmp/agentic_review.txt
+          echo "::endgroup::"
+
       - name: Combine reviews
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         run: |
           cat > /tmp/combine_prompt.txt << 'COMBINE_HEADER'
           You are given two code reviews of the same PR. Combine them into a single comprehensive review:
 
           1. De-duplicate issues that appear in both reviews (keep the better description)
           2. Sort all issues by priority: 🔴 (high importance & high confidence) first, then 🟡 (medium), then ⚪️ (low)
-          3. Keep the rating and checkbox format for each issue
-          4. Preserve specific code references (file:line) and code suggestions
-          5. Do not place a header like `# Combined Code Review` at the top of the review, just immediately output the issues (if there are any)
-          6. If there are no issues, state that and do nothing else.
+          3. Make sure the issue headings are all numbered sequentially, starting from 1, and preserve the priority indicator in the heading
+          4. The Addressed/Dismissed checkboxes in the issues should immediately follow the heading for each issue
+          5. Preserve specific code references (file:line) and code suggestions
+          6. Do not place a header like `# Combined Code Review` at the top of the combined review, just immediately output the issues (if there are any)
+          7. If there are no issues, state that and do nothing else.
 
           Output ONLY the combined review in Markdown. No preamble about the combining process.
 
@@ -413,7 +490,7 @@ jobs:
           fi
 
       - name: Post review comment
-        if: steps.check-issue.outputs.has_issue == 'true' && steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false'
         run: |
           {
             echo "## Advanced AI Review"
@@ -429,7 +506,7 @@ jobs:
             echo "</details>"
             echo ""
             echo "---"
-            echo "*Review generated using \`${REVIEW_MODEL}\` via ${PROVIDER_DISPLAY}. Comment \`/review\` to re-run.*"
+            echo "*Review [generated](${RUN_URL}) using \`${REVIEW_MODEL}\` via ${PROVIDER_DISPLAY}. Comment \`/review\` to re-run.*"
           } > /tmp/review_comment.txt
 
           gh pr comment "${{ steps.pr-info.outputs.number }}" \
@@ -446,4 +523,4 @@ jobs:
           - Type: Error
           - Model: ${REVIEW_MODEL}
 
-          The review workflow failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details. Comment \`/review\` to re-run."
+          The review workflow failed. Check the [workflow run](${RUN_URL}) for details. Comment \`/review\` to re-run."
