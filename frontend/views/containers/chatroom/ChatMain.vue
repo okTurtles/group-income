@@ -217,12 +217,21 @@ const onChatScroll = function (ev) {
     if (this.isMessageVisible(msg.hash)) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
+      const startedUnreadMessageCreatedHeight = this.ephemeral.startedUnreadMessage?.height
       // No need to check for pending here as it's checked above
       if (!latestMessageCreatedHeight || latestMessageCreatedHeight <= bottomMessageCreatedHeight) {
         this.updateReadUntilMessageHash({
           messageHash: msg.hash,
           createdHeight: msg.height
         })
+      }
+
+      // If (1) 'is-new' UI element is being displayed and (2) user has seen that 'is-new' message (checking by comparing message heights)
+      // and (3) user has not used 'mark unread' feature, then clear the 'startedUnreadMessage' data.
+      if (!this.isTabInactive() &&
+        bottomMessageCreatedHeight >= startedUnreadMessageCreatedHeight &&
+        !this.userManuallyMarkedUnread) {
+        this.ephemeral.startedUnreadMessage = null
       }
       break
     }
@@ -459,6 +468,10 @@ export default ({
     hasChatroomSwitchedSince (): () => boolean {
       const signal = this.ephemeral.switchController.signal
       return () => signal.aborted
+    },
+    userManuallyMarkedUnread () {
+      // A flag to indicate if the user has manually marked a message as unread
+      return Boolean(this.ephemeral.messageHashToMarkUnread)
     }
   },
   methods: {
@@ -1400,7 +1413,7 @@ export default ({
       }
     },
     setStartNewMessageIndex (messageTo) {
-      if (!this.ephemeral.messageHashToMarkUnread) { return }
+      if (this.userManuallyMarkedUnread) { return }
 
       if (messageTo) {
         this.ephemeral.startedUnreadMessage = messageTo
@@ -1415,6 +1428,9 @@ export default ({
         }
       }
     },
+    isTabInactive () {
+      return document.hidden || !document.hasFocus()
+    },
     updateReadUntilMessageHash ({
       messageHash,
       createdHeight,
@@ -1422,9 +1438,8 @@ export default ({
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
       forceUpdate = false
     }) {
-      const isTabInactive = document.hidden || !document.hasFocus()
-      if (isTabInactive || this.ephemeral.messageHashToMarkUnread) {
-        // NOTE regarding 'this.ephemeral.messageHashToMarkUnread' here:
+      if (this.isTabInactive() || this.userManuallyMarkedUnread) {
+        // NOTE regarding 'this.userManuallyMarkedUnread' here:
         // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
         // So if user has used this functionality at least once in the current chatroom,
         // the chatroom should stop auto-updating the 'readUntil' data in various situations (eg. while scrolling),
@@ -1608,22 +1623,17 @@ export default ({
             }
 
             if (isLastEvent) {
-              const isMessageFromMe = lastValidMessage && lastValidMessage.from === this.ourIdentityContractId
-
-              if (!this.ephemeral.startedUnreadMessage) {
-                this.setStartNewMessageIndex(
-                  !isMessageFromMe
-                    ? lastValidMessage
-                    : undefined
-                )
-              } else if (isMessageFromMe) {
-                this.ephemeral.startedUnreadMessage = null
+              const isMessageFromOther = lastValidMessage && lastValidMessage.from !== this.ourIdentityContractId
+              if (isMessageFromOther &&!this.ephemeral.startedUnreadMessage) {
+                // TODO: Currently there is an bug where 'is-new' UI randomly appears when user is sending multiple messages in a row.
+                // check everywhere this.setStartNewMessageIndex() is called including here and fix this bug.
+                this.setStartNewMessageIndex(lastValidMessage)
               }
             }
           }
 
-          if (addedOrDeleted !== 'NONE' && this.ephemeral.messageHashToMarkUnread) {
-            // If user has used 'Mark unread' but then messages are either added or deleted,
+          if (addedOrDeleted !== 'NONE' && this.userManuallyMarkedUnread) {
+            // If user has used 'Mark unread' feature but then messages are either added or deleted,
             // 'unreadMessages' data in the store should be updated accordingly.
             const action = newMessageAdded ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
             sbp(`gi.actions/identity/kv/${action}`, {
@@ -1647,7 +1657,6 @@ export default ({
       }
     },
     windowFocusHandler () {
-      console.log('!@# TODO: Add a logic to clear the startedUnreadMessage here!')
       this.onChatScroll()
     },
     throttledJumpToLatest: throttle(function (_this) {
@@ -1812,7 +1821,6 @@ export default ({
       }
     },
     'currentChatRoomReadUntil' (newReadUntil, previousReadUntil) {
-      console.log(`!@# currentChatRoomReadUntil: ${newReadUntil?.messageHash}, ${previousReadUntil?.messageHash}`)
       const msgHash = newReadUntil?.messageHash
       if (msgHash && msgHash === this.ephemeral.messageHashToMarkUnread) {
         this.$nextTick(this.markUnreadPostActions)
