@@ -853,15 +853,16 @@ sbp('chelonia/defineContract', {
           { memberID, dateLeft: meta.createdDate, heightLeft: height, ourselvesLeaving: memberID === identityContractID },
           { contractID, meta, state, getters }
         )
-      },
-      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
-        const memberID = data.memberID || innerSigningContractID
         // When a member is leaving, we need to mark the CSK and the CEK as needing
         // to be rotated. Later, this will be used by 'gi.contracts/group/rotateKeys'
         // (to actually perform the rotation) and Chelonia (to unset the flag if
-        // they are rotated by somebody else)
-        sbp('chelonia/queueInvocation', contractID, () => sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk']))
-
+        // they are rotated by somebody else).
+        if (memberID !== identityContractID) {
+          sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        }
+      },
+      sideEffect ({ data, meta, contractID, height, innerSigningContractID, proposalHash }, { state, getters }) {
+        const memberID = data.memberID || innerSigningContractID
         sbp('gi.contracts/group/referenceTally', contractID, memberID, 'release')
         // Put this invocation at the end of a sync to ensure that leaving and re-joining works
         sbp('chelonia/queueInvocation', contractID, () => sbp('gi.contracts/group/leaveGroup', {
@@ -1488,6 +1489,34 @@ sbp('chelonia/defineContract', {
   //
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
+    'gi.contracts/group/_postOpHook/ku': ({ contractID, state }) => {
+      sbp('chelonia/queueInvocation', contractID, () => {
+        return sbp('gi.actions/group/findAndRequestMissingGroupKeys', contractID, state)
+      }).catch((e) => {
+        console.error('[gi.contracts/group/hook/ku] Error', e)
+      })
+    },
+    'gi.contracts/group/_responseOptionsForKeyRequest': ({
+      contractID,
+      request,
+      state,
+      originatingContractID
+    }) => {
+      if (request === 'missing' && state.profiles[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
+        return {
+          keyIds: Object.entries(state._vm.authorizedKeys)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .map(([kId]) => kId),
+          skipInviteAccounting: true
+        }
+      } else {
+        return {
+          keyIds: [],
+          skipInviteAccounting: true
+        }
+      }
+    },
     'gi.contracts/group/_cleanup': ({ contractID, state }) => {
       // unsubscribe from other group members identity contract
       const { identityContractID } = sbp('state/vuex/state').loggedIn
@@ -1683,6 +1712,7 @@ sbp('chelonia/defineContract', {
         return
       }
 
+      // eslint-disable-next-line no-lone-blocks
       {
         // We need to be subscribed to the chatroom before writing to it, and
         // also because of the following check (hasKeysToPerformOperation),
@@ -1708,13 +1738,14 @@ sbp('chelonia/defineContract', {
 
         // Using the group's CEK allows for everyone to have an overview of the
         // membership (which is also part of the group contract). This way,
-        // non-members can remove members when they leave the group
-        const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
-
+        // non-members can remove members when they leave the group.
+        // The call to 'chelonia/contract/foreignKeysByContractID' is to find
+        // the group CEK that's currently valid in the chatroom contract (in
+        // case key rotation is out of sync)
         sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
           data: actorID === memberID ? {} : { memberID },
-          encryptionKeyId
+          encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return
@@ -1809,9 +1840,13 @@ sbp('chelonia/defineContract', {
             })
           }
 
+          const potentialPEKids = state._vm.sharedKeyIds?.filter(({ contractID, height: sharedHeight }) => {
+            return sharedHeight < height && contractID === identityContractID
+          }).map(({ id }) => id)
+
           Promise.resolve()
             .then(() => sbp('gi.contracts/group/rotateKeys', contractID))
-            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID))
+            .then(() => sbp('gi.contracts/group/revokeGroupKeyAndRotateOurPEK', contractID, potentialPEKids))
             .catch((e) => {
               console.warn(`[gi.contracts/group/leaveGroup] for ${contractID}: Error rotating group keys or our PEK`, e)
             })
@@ -1833,12 +1868,16 @@ sbp('chelonia/defineContract', {
         console.warn(`rotateKeys: ${e.name} thrown:`, e)
       })
     },
-    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID) => {
+    'gi.contracts/group/revokeGroupKeyAndRotateOurPEK': (groupContractID, potentialPEKids) => {
       const rootState = sbp('state/vuex/state')
       const { identityContractID } = rootState.loggedIn
 
       sbp('chelonia/queueInvocation', identityContractID, async () => {
-        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'])
+        // If someone else has left, mark our own CEK and CSK as needing rotation
+        // The actual rotation will be done later by 'gi.actions/out/rotateKeys'.
+        // `potentialPEKids` restricts the list of posssible PEKs to use to
+        // avoid unnecessary rotations.
+        await sbp('chelonia/contract/setPendingKeyRevocation', identityContractID, ['pek'], potentialPEKids)
         await sbp('gi.actions/out/rotateKeys', identityContractID, 'gi.contracts/identity', 'pending', 'gi.actions/identity/shareNewPEK')
       }).catch(e => {
         console.warn(`revokeGroupKeyAndRotateOurPEK: ${e.name} thrown during queueEvent to ${identityContractID}:`, e)
