@@ -52,6 +52,19 @@ jobs:
 
           _AI review [started](${RUN_URL})._"
 
+      - name: Detect fast mode
+        run: |
+          COMMENT_BODY=$(cat <<'EOF'
+          ${{ github.event.comment.body }}
+          EOF
+          )
+          if echo "$COMMENT_BODY" | grep -qP '^\s*/crush_fast'; then
+            echo "FAST_MODE=true" >> "$GITHUB_ENV"
+            echo "Fast mode enabled — skipping raw review and combine step"
+          else
+            echo "FAST_MODE=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Resolve provider settings
         run: |
           case "$REVIEW_PROVIDER" in
@@ -303,7 +316,7 @@ jobs:
           - `file.js:841`
           - `file.vue:50-70`
 
-          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least.
+          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least and number the issues sequentially in their headings.
 
           Also, for each issue, immediately after the issue heading please add these two checkboxes:
 
@@ -358,7 +371,7 @@ jobs:
           _[🔧 Workflow Run](${RUN_URL})_"
 
       - name: Run raw review
-        if: steps.size-check.outputs.too_large == 'false'
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE != 'true'
         run: |
           jq -n \
             --arg model "$REVIEW_MODEL" \
@@ -401,7 +414,7 @@ jobs:
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
         run: |
-          crush run -m "$CRUSH_MODEL" --small-model "$CRUSH_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
+          crush run -q -m "$CRUSH_MODEL" --small-model "$CRUSH_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
             echo "::warning::Agentic review via crush failed"
             cat /tmp/crush_stderr.txt >&2
             echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
@@ -413,8 +426,38 @@ jobs:
           cat /tmp/agentic_review.txt
           echo "::endgroup::"
 
-      - name: Combine reviews
+      # This step can be removed if crush ever closes this issue: https://github.com/charmbracelet/crush/issues/2265
+      - name: Extract review from agentic output
         if: steps.size-check.outputs.too_large == 'false'
+        run: |
+          jq -n \
+            --arg model "$REVIEW_MODEL" \
+            --rawfile text /tmp/agentic_review.txt \
+            '{
+              model: $model,
+              messages: [{role: "user", content: ("The following text is the full output of an AI coding assistant that was asked to review a pull request. The output contains the assistant'\''s entire thought process, but the actual review with the found issues (if any) is only at the very end.\n\nExtract ONLY the final review portion and output it verbatim. Do not summarize, rephrase, or add anything. If there is no review in the text (e.g. the assistant failed or produced no review), output exactly: \"No review found in agentic output.\"\n\n---\n\n" + $text)}]
+            }' > /tmp/extract_payload.json
+
+          HTTP_CODE=$(curl -s -w '%{http_code}' \
+            "$PROVIDER_API_URL" \
+            -H "Authorization: Bearer $PROVIDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/extract_payload.json \
+            -o /tmp/extract_response.json)
+
+          if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/extract_response.json > /dev/null 2>&1; then
+            jq -r '.choices[0].message.content' /tmp/extract_response.json > /tmp/agentic_review.txt
+            echo "Extracted review ($(wc -c < /tmp/agentic_review.txt) bytes)"
+          else
+            echo "::warning::Review extraction failed (HTTP $HTTP_CODE), using full agentic output"
+          fi
+
+          echo "::group::Extracted agentic review"
+          cat /tmp/agentic_review.txt
+          echo "::endgroup::"
+
+      - name: Combine reviews
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE != 'true'
         run: |
           cat > /tmp/combine_prompt.txt << 'COMBINE_HEADER'
           You are given two code reviews of the same PR. Combine them into a single comprehensive review:
@@ -482,6 +525,12 @@ jobs:
               echo "REVIEW_TYPE=Error" >> "$GITHUB_ENV"
             fi
           fi
+
+      - name: Use agentic review as final (fast mode)
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE == 'true'
+        run: |
+          cp /tmp/agentic_review.txt /tmp/final_review.txt
+          echo "REVIEW_TYPE=Agentic" >> "$GITHUB_ENV"
 
       - name: Post review comment
         if: steps.size-check.outputs.too_large == 'false'
