@@ -890,7 +890,7 @@ export default ({
         this.ephemeral.chatroomHasDraftSaved = !!draft
         return draft
       } catch (e) {
-        // Silently ignore errors and return an empty string if any error occurs while loading the message draft.
+        // Silently ignore errors and return an empty string if any error occurs while loading the message draft
         console.error('SendArea.vue: Error loading message draft - ', e)
         return null
       }
