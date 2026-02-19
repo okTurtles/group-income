@@ -256,7 +256,7 @@ jobs:
           - `file.js:841`
           - `file.vue:50-70`
 
-          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance &  high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least.
+          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least.
 
           Also, for each issue, immediately after the issue heading please add these two checkboxes:
 
