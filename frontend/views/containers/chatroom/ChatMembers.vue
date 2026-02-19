@@ -97,7 +97,6 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'ourIdentityContractId',
       'chatRoomUnreadMessages',
       'isChatRoomManuallyMarkedUnread',
       'currentChatRoomId',
@@ -154,7 +153,7 @@ export default ({
         .map(chatroomId => `dm:${this.ourIdentityContractId}:${chatroomId}`)
 
       sbp('gi.db/chatDrafts/deleteMany', keysToClear).catch((e) => {
-        console.error('ConversationsList.vue: Error clearing stale drafts - ', e)
+        console.error('ChatMembers.vue: Error clearing stale drafts - ', e)
       })
     }
   },

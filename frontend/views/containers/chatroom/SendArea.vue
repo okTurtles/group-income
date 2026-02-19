@@ -884,9 +884,9 @@ export default ({
         console.error('SendArea.vue: Error saving message draft - ', e)
       }
     },
-    async loadMessageDraft (chatroomId) {
+    async loadMessageDraft (draftKey) {
       try {
-        const draft = await sbp('gi.db/chatDrafts/load', chatroomId)
+        const draft = await sbp('gi.db/chatDrafts/load', draftKey)
         this.ephemeral.chatroomHasDraftSaved = !!draft
         return draft
       } catch (e) {
