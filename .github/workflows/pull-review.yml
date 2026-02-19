@@ -495,7 +495,7 @@ jobs:
           {
             echo "## Advanced AI Review"
             echo ""
-            echo "- Type: ${REVIEW_TYPE}"
+            echo "- Type: ${REVIEW_TYPE} (opencode)"
             echo "- Model: ${REVIEW_MODEL}"
             echo ""
             echo "<details>"
