@@ -40,6 +40,18 @@ jobs:
           gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
             -f content='eyes'
 
+      - name: Update comment with status
+        env:
+          ORIGINAL_BODY: ${{ github.event.comment.body }}
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}" \
+            -X PATCH \
+            -f body="${ORIGINAL_BODY}
+
+          ---
+
+          _AI review [started](${RUN_URL})._"
+
       - name: Resolve provider settings
         run: |
           case "$REVIEW_PROVIDER" in
