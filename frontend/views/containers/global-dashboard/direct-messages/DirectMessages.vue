@@ -5,7 +5,7 @@
 
 <script>
 export default ({
-  name: 'NewAndUpdates'
+  name: 'DirectMessages'
 }: Object)
 </script>
 

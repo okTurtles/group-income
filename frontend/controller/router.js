@@ -19,7 +19,7 @@ const lazyContributions = lazyPage(() => import('@pages/Contributions.vue'))
 const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
 const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
-const lazyGlobalDashboard = lazyPage(() => import('@pages/GlobalDashboard.vue'))
+const lazyGlobalNewsAndUpdates = lazyPage(() => import('@pages/global-dashboard/NewsAndUpdates.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyUserSettings = lazyPage(() => import('@pages/UserSettings.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
@@ -111,14 +111,19 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
-      path: '/global-dashboard/:id',
-      component: lazyGlobalDashboard,
-      name: 'GlobalDashboard',
-      meta: { title: L('Global Dashboard') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      path: '/global-dashboard/news-and-updates',
+      component: lazyGlobalNewsAndUpdates,
+      name: 'GlobalNewsAndUpdates',
+      meta: { title: L('News & Updates') },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
-      path: '/global-dashboard', redirect: '/global-dashboard/news-and-updates'
+      path: '/global-dashboard',
+      redirect: '/global-dashboard/news-and-updates'
+    },
+    {
+      path: '/global-dashboard/*',
+      redirect: '/global-dashboard/news-and-updates'
     },
     {
       path: '/contributions',

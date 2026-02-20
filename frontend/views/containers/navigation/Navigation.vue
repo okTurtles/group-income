@@ -109,7 +109,7 @@ import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL, CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin, fetchNews } from '@view-utils/misc.js'
-import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
+import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/global-dashboard/global-dashboard-settings.js'
 import { debounce } from 'turtledash'
 
 export default ({
