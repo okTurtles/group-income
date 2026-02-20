@@ -5,8 +5,10 @@ page(
 )
   template(#title='') {{ L('Direct Messages') }}
 
-  .c-direct-messages-container
-    i18n(tag='p') Direct Messages: Coming soon!
+  .card.c-direct-messages-container
+    .c-up-to-date-container
+      i.icon-check-circle.c-check-icon
+      i18n.has-text-1 You're up to date!
 </template>
 
 <script>
@@ -24,6 +26,25 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-direct-messages-container {
+  margin-top: 1.25rem;
+}
+
+.c-up-to-date-container {
   position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 0.25rem;
+
+  .c-check-icon {
+    font-size: 2.75rem;
+    color: $success_0;
+    line-height: 1.25;
+
+    @include tablet {
+      font-size: 3.25rem;
+    }
+  }
 }
 </style>
