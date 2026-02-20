@@ -272,7 +272,7 @@ jobs:
       - name: Build review prompts
         run: |
           cat > /tmp/raw_prompt.txt << 'PROMPT_END'
-          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with Flowtype.
+          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with TypeScript.
 
           Please have a look at these changes and thoroughly check it for any bugs or security issues. Also check if anything could be improved through simplification. When providing feedback, be specific and quote the concrete lines that are problematic, and then give your code improvement suggestions complete with actual code. When replying, always use Markdown and Markdown code fences to quote any lines. Avoid commenting on code that has no issues (no "you did a good job here!" fluff).
 
@@ -307,7 +307,7 @@ jobs:
           } >> /tmp/raw_prompt.txt
 
           cat > /tmp/agentic_prompt.txt << 'PROMPT_END'
-          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with Flowtype.
+          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with TypeScript.
 
           Please have a look at these changes and thoroughly check it for any bugs or security issues. Also check if anything could be improved through simplification. When providing feedback, be specific and quote the concrete lines that are problematic, and then give your code improvement suggestions complete with actual code. When replying, always use Markdown and Markdown code fences to quote any lines. Avoid commenting on code that has no issues (no "you did a good job here!" fluff).
 
@@ -443,7 +443,10 @@ jobs:
                 "ls",
                 "glob",
                 "grep",
-                "fetch"
+                "fetch",
+                "agentic_fetch",
+                "agent",
+                "todos"
               ]
             }
           }
