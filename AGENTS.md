@@ -2,16 +2,6 @@
 
 Guide for AI agents working in the Group Income codebase.
 
-## Quick Start
-
-```bash
-npm install                    # Install dependencies
-grunt dev                      # Start dev server at http://localhost:8000
-grunt test                     # Run all tests (build + unit + Cypress)
-grunt test:unit                # Run Mocha unit tests only
-npm run cy:open                # Open Cypress interactive mode
-```
-
 ## Project Overview
 
 Group Income is a voluntary, decentralized, end-to-end encrypted basic income application.
@@ -121,17 +111,19 @@ Pattern for long-running background tasks:
 ## Essential Commands
 
 ### Development
+
 ```bash
-grunt dev                      # Start dev server with hot reload (port 8000)
+npm install     # Install dependencies
+grunt dev       # Starts dev server on port 8000 with hot reload on port 3000
 ```
 
 ### Testing
 ```bash
 grunt test                     # All tests (build + unit + Cypress)
 grunt test:unit                # Mocha unit tests only
-grunt test --browser           # Cypress tests live in browser
-grunt test --browser=debug     # Cypress in "open" mode
-npm run cy:open                # Open Cypress interactive mode
+grunt test --browser           # Runs Cypress tests live in browser
+grunt test --browser=debug     # Runs Cypress tests in "open" mode
+npm run cy:open                # Used with `grunt dev`. Opens Cypress in interactive mode
 
 # Run specific Cypress spec against running dev server:
 npx cypress run -c 'baseUrl=http://localhost:8000' --spec "test/cypress/integration/group-chat.spec.js"
@@ -162,7 +154,7 @@ NODE_ENV=production grunt pin:0.1.0  # Pin contracts to versioned folder
 ## Directory Structure
 
 ```
-/tmp/group-income/
+./
 ├── frontend/
 │   ├── assets/           # Static assets (images, svgs, style)
 │   ├── common/           # Shared utilities and constants
@@ -192,7 +184,7 @@ NODE_ENV=production grunt pin:0.1.0  # Pin contracts to versioned folder
 ├── test/
 │   ├── backend.test.js   # Backend unit tests
 │   └── cypress/          # E2E tests
-└── docs/src/             # Documentation (Style-Guide.md, Getting-Started-frontend.md)
+└── docs/src/             # Documentation (Style-Guide.md, Information-Flow.md, etc.)
 ```
 
 ## Path Aliases
@@ -295,11 +287,11 @@ export default {
 
 ### Action Handlers
 
-Located in `frontend/controller/actions/` - implement SBP selectors that dispatch contract actions.
+Located in `frontend/controller/actions/` - implement SBP selectors that dispatch contract actions by creating SPMessages and sending them to the server (which rebroadcasts them to all clients interested in that contract).
 
 ## SBP Paradigm
 
-SBP (Selector-based programming) is used throughout - **avoid OOP classes**.
+SBP (Selector-based programming) is used throughout - avoid OOP classes except for defining encapsulated types (like `SPMessage`).
 
 ```javascript
 // Register a selector
@@ -411,21 +403,25 @@ sbp('sbp/selectors/register', {
 ```
 
 ### Contract Versioning
+
 When changing contracts:
+
 1. Update contract definition
 2. Run `NODE_ENV=production grunt pin:x.x.x`
 3. This creates a frozen snapshot in `contracts/x.x.x/`
 4. Old versions remain for backwards compatibility
 
 ### Environment Variables
+
 - `NODE_ENV=production` - Required for production builds and contract pinning
 - `grunt dev` defaults to development mode
 
 ## Key Files to Read
 
 - `docs/src/Style-Guide.md` - Comprehensive coding standards
-- `docs/src/Getting-Started-frontend.md` - Frontend architecture overview
 - `docs/src/Information-Flow.md` - Contract/Chelonia deep dive
+- `docs/src/LOGIN_FLOW.md` - Explains how the service worker interacts with browser tabs through a unique event-driven system to manage shared and local application states for logging in and logging out
+- `docs/src/Calls-From-Contracts.md` - explains the risks of modifying code that is called by Chelonia contracts—such as app actions, events, and shared functions—since contracts are frozen in time through pinning, meaning any externally referenced code (like selectors and event handlers) must maintain backward-compatible behavior forever, while shared functions are safer to modify because they are bundled into the pinned contract at creation time
 - `CONTRIBUTING.md` - PR requirements and contribution policy
 
 ## CI/CD
