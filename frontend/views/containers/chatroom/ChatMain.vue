@@ -653,9 +653,6 @@ export default ({
 
       if (!this.ephemeral.messagesInitiated) {
         this.ephemeral.messagesInitiated = true
-      }
-
-      if (!this.ephemeral.startedUnreadMessage) {
         this.setStartNewMessageIndex()
       }
 
@@ -1624,9 +1621,7 @@ export default ({
 
             if (isLastEvent) {
               const isMessageFromOther = lastValidMessage && lastValidMessage.from !== this.ourIdentityContractId
-              if (isMessageFromOther &&!this.ephemeral.startedUnreadMessage) {
-                // TODO: Currently there is an bug where 'is-new' UI randomly appears when user is sending multiple messages in a row.
-                // check everywhere this.setStartNewMessageIndex() is called including here and fix this bug.
+              if (isMessageFromOther && !this.ephemeral.startedUnreadMessage) {
                 this.setStartNewMessageIndex(lastValidMessage)
               }
             }
