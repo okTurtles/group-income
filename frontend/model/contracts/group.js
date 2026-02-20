@@ -38,7 +38,7 @@ import {
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
-import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
+import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.js'
 import groupGetters from './shared/getters/group.js'
 import { cloneDeep, deepEqualJSONType, merge, omit } from 'turtledash'
 import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
@@ -374,23 +374,6 @@ export const actionRequireActiveMember = (next: Function): Function => (data, pr
     throw new Error('Missing inner signature')
   }
   return next(data, props)
-}
-
-const validateChatRoomName = (name: string) => {
-  // Validation on the chatroom name - references:
-  // https://github.com/okTurtles/group-income/issues/1987
-  // https://github.com/okTurtles/group-income/issues/2999
-  const nameValidationMap: {[string]: Function} = {
-    [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-    [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
-  }
-
-  for (const key in nameValidationMap) {
-    const check = nameValidationMap[key]
-    if (check(name)) {
-      throw new TypeError(key)
-    }
-  }
 }
 
 export const GIGroupAlreadyJoinedError: typeof Error = ChelErrorGenerator('GIGroupAlreadyJoinedError')

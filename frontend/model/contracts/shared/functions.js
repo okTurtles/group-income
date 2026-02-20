@@ -192,6 +192,23 @@ export function makeMentionFromUserID (userID: string): {
   }
 }
 
+export const validateChatRoomName = (name: string) => {
+  // Validation on the chatroom name - references:
+  // https://github.com/okTurtles/group-income/issues/1987
+  // https://github.com/okTurtles/group-income/issues/2999
+  const nameValidationMap: {[string]: Function} = {
+    [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/.test(v),
+    [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
+  }
+
+  for (const key in nameValidationMap) {
+    const check = nameValidationMap[key]
+    if (check(name)) {
+      throw new TypeError(key)
+    }
+  }
+}
+
 // The `referenceTally` function is meant as an utility function to handle
 // reference counting in contracts that import other contracts.
 // The selector returned is to be called in side-effects that 'retain' or

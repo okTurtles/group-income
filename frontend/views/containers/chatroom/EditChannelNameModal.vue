@@ -69,7 +69,6 @@ export default ({
   },
   data () {
     return {
-      channelId: this.$route.query.channel,
       submitting: false,
       form: {
         name: null,
@@ -99,21 +98,13 @@ export default ({
       try {
         if (this.submitting) return
         this.submitting = true
-        if (this.currentChatRoomState.attributes.name === this.form.name) {
-          // TODO: No need to update chatroom name. Display message box or toast or sth else
-          console.log('TODO: Channel name is not changed')
-        } else if (this.currentChatRoomId === this.groupGeneralChatRoomId) {
-          // TODO: display warning message '"General" chatroom can not be renamed'
-          console.log('TODO: "General" chatroom can not be renamed')
-        } else {
-          await sbp('gi.actions/group/renameChatRoom', {
-            contractID: this.currentGroupId,
-            data: {
-              chatRoomID: this.currentChatRoomId,
-              name: this.form.name
-            }
-          })
-        }
+        await sbp('gi.actions/group/renameChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            chatRoomID: this.currentChatRoomId,
+            name: this.form.name
+          }
+        })
         this.close()
       } catch (e) {
         console.error('RenameChannelModal submit() error:', e)
