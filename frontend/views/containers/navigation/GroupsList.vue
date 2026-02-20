@@ -25,7 +25,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
       direction='right'
       :text='group.groupName'
     )
-      button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
+      button.c-group-picture.is-unstyled(@click='handleGroupSelect(group.contractID)')
         avatar.c-avatar(:src='groupPictureForContract(group.contractID)')
       badge(
         v-if='badgeVisiblePerGroup[group.contractID]'
@@ -110,7 +110,7 @@ export default ({
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
-    handleMenuSelect (id) {
+    handleGroupSelect (id) {
       id && this.changeGroup(id)
 
       if (this.isInGlobalDashboard) {

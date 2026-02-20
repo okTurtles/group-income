@@ -20,6 +20,7 @@ const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
 const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGlobalNewsAndUpdates = lazyPage(() => import('@pages/global-dashboard/NewsAndUpdates.vue'))
+const lazyGlobalDirectMessages = lazyPage(() => import('@pages/global-dashboard/DirectMessages.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyUserSettings = lazyPage(() => import('@pages/UserSettings.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
@@ -115,6 +116,20 @@ const router: any = new Router({
       component: lazyGlobalNewsAndUpdates,
       name: 'GlobalNewsAndUpdates',
       meta: { title: L('News & Updates') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/global-dashboard/direct-messages',
+      component: lazyGlobalDirectMessages,
+      name: 'GlobalDirectMessages',
+      meta: { title: L('Direct Messages') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/global-dashboard/direct-messages/:chatRoomID',
+      component: lazyGlobalDirectMessages,
+      name: 'GlobalDirectMessagesConversation',
+      meta: { title: L('Direct Messages') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {

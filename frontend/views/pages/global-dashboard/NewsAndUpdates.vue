@@ -1,6 +1,6 @@
 <template lang='pug'>
 page(
-  pageTestName='GlobalDashboard'
+  pageTestName='GlobalNewsAndUpdates'
   pageTestHeaderName='pageHeaderName'
 )
   template(#title='') {{ L('News & Updates') }}
