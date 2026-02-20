@@ -413,8 +413,10 @@ jobs:
 
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
+        # HACK: currently hard-coding zai/glm-4.7 as the small model which is provider-specific and will break if openrouter is used!
+        # reason for this is to using a non-stupid model and to avoid hitting Z.ai's concurrency limit in case many agents are spun up
         run: |
-          crush run -q -m "$CRUSH_MODEL" --small-model "$CRUSH_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
+          crush run -q -m "$CRUSH_MODEL" --small-model zai/glm-4.7 < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
             echo "::warning::Agentic review via crush failed"
             cat /tmp/crush_stderr.txt >&2
             echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
