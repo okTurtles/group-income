@@ -78,6 +78,7 @@ export default ({
           contractID: this.currentGroupId,
           data: { chatRoomID }
         })
+
         this.close()
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
