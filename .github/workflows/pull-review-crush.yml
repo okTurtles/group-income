@@ -409,7 +409,45 @@ jobs:
 
       - name: Install crush
         if: steps.size-check.outputs.too_large == 'false'
-        run: npm install -g @charmland/crush
+        run: |
+          npm install -g @charmland/crush
+          mkdir -p ~/.config/crush
+          cat > ~/.config/crush/crush.json << 'EOF'
+          {
+            "$schema": "https://charm.land/crush.json",
+            "providers": {
+              "zai": {
+                "models": [
+                  {
+                    "id": "glm-5",
+                    "name": "GLM-5",
+                    "context_window": 202752,
+                    "default_max_tokens": 65536
+                  }
+                ]
+              }
+            },
+            "options": {
+              "context_paths": [
+                "AGENTS.md",
+                "CRUSH.md",
+                "CLAUDE.md",
+                "README.md"
+              ],
+              "disable_metrics": true
+            },
+            "permissions": {
+              "allowed_tools": [
+                "view",
+                "read",
+                "ls",
+                "glob",
+                "grep",
+                "fetch"
+              ]
+            }
+          }
+          EOF
 
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
