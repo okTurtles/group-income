@@ -430,7 +430,7 @@ jobs:
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
         env:
-          OPENCODE_PERMISSION: '{ "edit": "deny", "write": "deny", "patch": "deny", "multiedit": "deny", "bash": "deny", "read": "allow", "grep": "allow", "glob": "allow", "list": "allow" }'
+          OPENCODE_PERMISSION: '{ "edit": "deny", "write": "deny", "bash": "deny", "read": "allow", "grep": "allow", "glob": "allow", "list": "allow", "task": "allow", "todowrite": "allow" }'
         run: |
           opencode run -m "$OPENCODE_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/opencode_stderr.txt || {
             echo "::warning::Agentic review via opencode failed"
