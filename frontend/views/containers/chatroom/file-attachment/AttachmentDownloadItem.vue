@@ -210,7 +210,7 @@ export default {
     }
   },
   mounted () {
-    if (this.isImage) {
+    if (this.isImage && this.attachment.dimension) {
       this.ephemeral.imgLoadingBoxStyles = this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
     }
   }
