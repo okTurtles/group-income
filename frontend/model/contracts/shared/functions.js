@@ -193,7 +193,7 @@ export function makeMentionFromUserID (userID: string): {
 }
 
 export const validateChatRoomName = (name: string) => {
-  // Validation on the chatroom name - references:
+  // Validation on the chatroom name - reference issues:
   // https://github.com/okTurtles/group-income/issues/1987
   // https://github.com/okTurtles/group-income/issues/2999
   const nameValidationMap: {[string]: Function} = {
