@@ -422,6 +422,10 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
+        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
+        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
+
+        try {
         // When syncing from scratch, we need to call `retain` on our own
         // identity contract to ensure the reference count is positive and we
         // don't accidentally remove it.
@@ -436,26 +440,22 @@ export default (sbp('sbp/selectors/register', {
         // and then restored) and the reference count lost, we call `/retain`
         // again, which will succeed and also ensure our own identity contract
         // won't get removed.
-        if (!cheloniaState?.contracts[identityContractID]?.references) {
+          if (!cheloniaState?.contracts[identityContractID]?.references) {
           // Make sure we don't unsubscribe from our own identity contract
           // Note that this should be done _after_ calling
           // `chelonia/storeSecretKeys`: If the following line results in
           // syncing the identity contract and fetching events, the secret keys
           // for processing them will not be available otherwise.
-          await sbp('chelonia/contract/retain', identityContractID)
-        } else {
+            await sbp('chelonia/contract/retain', identityContractID)
+          } else {
           // If there is a state, we've already retained the identity contract
           // but might need to fetch the latest events
-          await sbp('chelonia/contract/sync', identityContractID)
+            await sbp('chelonia/contract/sync', identityContractID)
+          }
+        } catch (e) {
+          console.error('[gi.actions/identity] Error during login contract sync', e)
+          throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
         }
-      } catch (e) {
-        console.error('[gi.actions/identity] Error during login contract sync', e)
-        throw new GIErrorUIRuntimeError(L('Error during login contract sync'), { cause: e })
-      }
-
-      try {
-        await sbp('gi.db/settings/save', SETTING_CURRENT_USER, identityContractID)
-        sbp('okTurtles.events/emit', LOGIN, { identityContractID, encryptionParams, state })
 
         const contractIDs = groupContractsByType(cheloniaState?.contracts)
         await syncContractsInOrder(contractIDs)
