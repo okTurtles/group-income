@@ -35,29 +35,24 @@ jobs:
       ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
 
     steps:
-      - name: React to comment
+      - name: Update comment with status
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
             -f content='eyes'
-
-      - name: Update comment with status
-        env:
-          ORIGINAL_BODY: ${{ github.event.comment.body }}
-        run: |
           gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}" \
             -X PATCH \
-            -f body="${ORIGINAL_BODY}
+            -f body="${COMMENT_BODY}
 
           ---
 
           _AI review [started](${RUN_URL})._"
 
       - name: Detect fast mode
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
-          COMMENT_BODY=$(cat <<'EOF'
-          ${{ github.event.comment.body }}
-          EOF
-          )
           if echo "$COMMENT_BODY" | grep -qP '^\s*/review_fast'; then
             echo "FAST_MODE=true" >> "$GITHUB_ENV"
             echo "Fast mode enabled — skipping raw review and combine step"
