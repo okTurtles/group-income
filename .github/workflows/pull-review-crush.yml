@@ -60,6 +60,30 @@ jobs:
             echo "FAST_MODE=false" >> "$GITHUB_ENV"
           fi
 
+      - name: Parse provider/model override
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          # Check for {{provider, model}} or {{provider, model, small_model}} override syntax after /crush or /crush_fast command
+          if [[ "$COMMENT_BODY" =~ ^[[:space:]]*/crush(_fast)?[[:space:]]+\{\{[[:space:]]*([^,]+)[[:space:]]*,[[:space:]]*([^,}]+)[[:space:]]*(,[[:space:]]*([^}]+)[[:space:]]*)?\}\} ]]; then
+            PROVIDER=$(echo "${BASH_REMATCH[2]}" | xargs)
+            MODEL=$(echo "${BASH_REMATCH[3]}" | xargs)
+            SMALL_MODEL=$(echo "${BASH_REMATCH[5]}" | xargs)
+            # Validate provider and models contain only safe characters
+            if [[ "$PROVIDER" =~ ^[a-zA-Z0-9_-]+$ ]] && [[ "$MODEL" =~ ^[a-zA-Z0-9_./-]+$ ]] && { [[ -z "$SMALL_MODEL" ]] || [[ "$SMALL_MODEL" =~ ^[a-zA-Z0-9_./-]+$ ]]; }; then
+              echo "Overriding provider to: $PROVIDER"
+              echo "Overriding model to: $MODEL"
+              echo "REVIEW_PROVIDER=$PROVIDER" >> "$GITHUB_ENV"
+              echo "REVIEW_MODEL=$MODEL" >> "$GITHUB_ENV"
+              if [[ -n "$SMALL_MODEL" ]]; then
+                echo "Overriding small model to: $SMALL_MODEL"
+                echo "REVIEW_SMALL_MODEL=$SMALL_MODEL" >> "$GITHUB_ENV"
+              fi
+            else
+              echo "::warning::Invalid provider or model format in override, using defaults"
+            fi
+          fi
+
       - name: Resolve provider settings
         run: |
           case "$REVIEW_PROVIDER" in
@@ -87,6 +111,22 @@ jobs:
               ;;
           esac
 
+          # Set SMALL_MODEL based on provider (with override support)
+          if [ -n "$REVIEW_SMALL_MODEL" ]; then
+            SMALL_MODEL="$REVIEW_SMALL_MODEL"
+          elif [ "$REVIEW_PROVIDER" = "zai-coding-plan" ]; then
+            SMALL_MODEL="glm-4.7"
+          else
+            SMALL_MODEL="google/gemini-3-flash-preview"
+          fi
+
+          # Prefix small model with provider for crush
+          case "$REVIEW_PROVIDER" in
+            openrouter) echo "SMALL_MODEL=openrouter/$SMALL_MODEL" >> "$GITHUB_ENV" ;;
+            zai-coding-plan) echo "SMALL_MODEL=zai/$SMALL_MODEL" >> "$GITHUB_ENV" ;;
+            *) echo "SMALL_MODEL=zai/glm-4.7" >> "$GITHUB_ENV" ;;
+          esac
+
       - name: Get PR number
         id: pr-info
         run: |
@@ -102,6 +142,7 @@ jobs:
             echo "base_ref=$(jq -r '.base.ref' pr_data.json)"
           } >> "$GITHUB_OUTPUT"
           jq -r '.body // ""' pr_data.json > /tmp/pr_body.txt
+          jq -r '.title // ""' pr_data.json > /tmp/pr_title.txt
 
       - name: Check for linked issue
         id: check-issue
@@ -178,11 +219,14 @@ jobs:
           HAS_ISSUE: ${{ steps.check-issue.outputs.has_issue }}
           ISSUE_NUMBER: ${{ steps.check-issue.outputs.issue_number }}
         run: |
+          # Start with PR title
+          printf '<pr_title>\n%s\n</pr_title>\n' "$(cat /tmp/pr_title.txt)" > /tmp/helpful_context.txt
+
           if [ "$HAS_ISSUE" = "true" ]; then
             # Fetch the issue
             if ! gh api "/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" > issue_data.json 2>/dev/null; then
               echo "::warning::Could not fetch issue #$ISSUE_NUMBER"
-              echo "<issue_summary>Issue context unavailable.</issue_summary>" > /tmp/helpful_context.txt
+              echo "<issue_summary>Issue context unavailable.</issue_summary>" >> /tmp/helpful_context.txt
               exit 0
             fi
 
@@ -232,7 +276,7 @@ jobs:
               SUMMARY=$(cat /tmp/issue_conversation.txt)
             fi
 
-            printf '<issue_summary>\n%s\n</issue_summary>\n' "$SUMMARY" > /tmp/helpful_context.txt
+            printf '<issue_summary>\n%s\n</issue_summary>\n' "$SUMMARY" >> /tmp/helpful_context.txt
           else
             # No referenced issue — summarize the PR description instead
             jq -n \
@@ -257,7 +301,7 @@ jobs:
               SUMMARY=""
             fi
 
-            printf '<pr_description>\n%s\n</pr_description>\n' "$SUMMARY" > /tmp/helpful_context.txt
+            printf '<pr_description>\n%s\n</pr_description>\n' "$SUMMARY" >> /tmp/helpful_context.txt
           fi
 
           echo "::group::Helpful context"
@@ -422,10 +466,8 @@ jobs:
 
       - name: Run agentic review
         if: steps.size-check.outputs.too_large == 'false'
-        # HACK: currently hard-coding zai/glm-4.7 as the small model which is provider-specific and will break if openrouter is used!
-        # reason for this is to using a non-stupid model and to avoid hitting Z.ai's concurrency limit in case many agents are spun up
         run: |
-          crush run -q -m "$CRUSH_MODEL" --small-model zai/glm-4.7 < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
+          crush run -q -m "$CRUSH_MODEL" --small-model "$SMALL_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
             echo "::warning::Agentic review via crush failed"
             cat /tmp/crush_stderr.txt >&2
             echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
