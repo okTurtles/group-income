@@ -1,0 +1,622 @@
+name: AI PR Review (Crush)
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    name: Automated PR Review
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/crush') &&
+      (github.event.comment.author_association == 'MEMBER' ||
+      github.event.comment.author_association == 'OWNER' ||
+      github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-review-crush-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # ── Provider configuration ─────────────────────────────
+      # Set via Settings → Secrets and variables → Actions → Variables:
+      #   REVIEW_PROVIDER: openrouter | zai-coding-plan
+      #   REVIEW_MODEL:    stepfun/step-3.5-flash | glm-5
+      REVIEW_PROVIDER: ${{ vars.REVIEW_PROVIDER || 'openrouter' }}
+      REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'stepfun/step-3.5-flash' }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+
+    steps:
+      - name: Update comment with status
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content='eyes'
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}" \
+            -X PATCH \
+            -f body="${COMMENT_BODY}
+
+          ---
+
+          _AI review [started](${RUN_URL})._"
+
+      - name: Detect fast mode
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          if echo "$COMMENT_BODY" | grep -qP '^\s*/crush_fast'; then
+            echo "FAST_MODE=true" >> "$GITHUB_ENV"
+            echo "Fast mode enabled — skipping raw review and combine step"
+          else
+            echo "FAST_MODE=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Parse provider/model override
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          # Check for {{provider, model}} or {{provider, model, small_model}} override syntax after /crush or /crush_fast command
+          if [[ "$COMMENT_BODY" =~ ^[[:space:]]*/crush(_fast)?[[:space:]]+\{\{[[:space:]]*([^,]+)[[:space:]]*,[[:space:]]*([^,}]+)[[:space:]]*(,[[:space:]]*([^}]+)[[:space:]]*)?\}\} ]]; then
+            PROVIDER=$(echo "${BASH_REMATCH[2]}" | xargs)
+            MODEL=$(echo "${BASH_REMATCH[3]}" | xargs)
+            SMALL_MODEL=$(echo "${BASH_REMATCH[5]}" | xargs)
+            # Validate provider and models contain only safe characters
+            if [[ "$PROVIDER" =~ ^[a-zA-Z0-9_-]+$ ]] && [[ "$MODEL" =~ ^[a-zA-Z0-9_./-]+$ ]] && { [[ -z "$SMALL_MODEL" ]] || [[ "$SMALL_MODEL" =~ ^[a-zA-Z0-9_./-]+$ ]]; }; then
+              echo "Overriding provider to: $PROVIDER"
+              echo "Overriding model to: $MODEL"
+              echo "REVIEW_PROVIDER=$PROVIDER" >> "$GITHUB_ENV"
+              echo "REVIEW_MODEL=$MODEL" >> "$GITHUB_ENV"
+              if [[ -n "$SMALL_MODEL" ]]; then
+                echo "Overriding small model to: $SMALL_MODEL"
+                echo "REVIEW_SMALL_MODEL=$SMALL_MODEL" >> "$GITHUB_ENV"
+              fi
+            else
+              echo "::warning::Invalid provider or model format in override, using defaults"
+            fi
+          fi
+
+      - name: Resolve provider settings
+        run: |
+          case "$REVIEW_PROVIDER" in
+            openrouter)
+              {
+                echo "PROVIDER_API_URL=https://openrouter.ai/api/v1/chat/completions"
+                echo "PROVIDER_API_KEY=$OPENROUTER_API_KEY"
+                echo "CRUSH_MODEL=openrouter/$REVIEW_MODEL"
+                echo "PROVIDER_DISPLAY=OpenRouter"
+                echo "PROVIDER_API_KEY_REF={env:OPENROUTER_API_KEY}"
+              } >> "$GITHUB_ENV"
+              ;;
+            zai-coding-plan)
+              {
+                echo "PROVIDER_API_URL=https://api.z.ai/api/coding/paas/v4/chat/completions"
+                echo "PROVIDER_API_KEY=$ZAI_API_KEY"
+                echo "CRUSH_MODEL=zai/$REVIEW_MODEL"
+                echo "PROVIDER_DISPLAY=Z.AI"
+                echo "PROVIDER_API_KEY_REF={env:ZAI_API_KEY}"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unknown REVIEW_PROVIDER '$REVIEW_PROVIDER' (supported: openrouter, zai-coding-plan)"
+              exit 1
+              ;;
+          esac
+
+          # Set SMALL_MODEL based on provider (with override support)
+          if [ -n "$REVIEW_SMALL_MODEL" ]; then
+            SMALL_MODEL="$REVIEW_SMALL_MODEL"
+          elif [ "$REVIEW_PROVIDER" = "zai-coding-plan" ]; then
+            SMALL_MODEL="glm-4.7"
+          else
+            SMALL_MODEL="google/gemini-3-flash-preview"
+          fi
+
+          # Prefix small model with provider for crush
+          case "$REVIEW_PROVIDER" in
+            openrouter) echo "SMALL_MODEL=openrouter/$SMALL_MODEL" >> "$GITHUB_ENV" ;;
+            zai-coding-plan) echo "SMALL_MODEL=zai/$SMALL_MODEL" >> "$GITHUB_ENV" ;;
+            *) echo "SMALL_MODEL=zai/glm-4.7" >> "$GITHUB_ENV" ;;
+          esac
+
+      - name: Get PR number
+        id: pr-info
+        run: |
+          echo "number=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Get PR details
+        id: pr-details
+        run: |
+          gh api "/repos/${{ github.repository }}/pulls/${{ steps.pr-info.outputs.number }}" > pr_data.json
+          {
+            echo "head_ref=$(jq -r '.head.ref' pr_data.json)"
+            echo "head_sha=$(jq -r '.head.sha' pr_data.json)"
+            echo "base_ref=$(jq -r '.base.ref' pr_data.json)"
+          } >> "$GITHUB_OUTPUT"
+          jq -r '.body // ""' pr_data.json > /tmp/pr_body.txt
+          jq -r '.title // ""' pr_data.json > /tmp/pr_title.txt
+
+      - name: Check for linked issue
+        id: check-issue
+        run: |
+          ISSUE_NUM=$(grep -oiP '\b(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?|ref(?:erences?)?|see)\s*#(\d+)' /tmp/pr_body.txt | grep -oP '\d+' | head -1 || true)
+
+          if [ -z "$ISSUE_NUM" ]; then
+            echo "has_issue=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_issue=true" >> "$GITHUB_OUTPUT"
+            echo "issue_number=$ISSUE_NUM" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr-details.outputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Merge master into PR branch
+        env:
+          BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BASE_REF"
+          git merge "origin/$BASE_REF" --no-edit -m "Merge $BASE_REF for review" || {
+            echo "::warning::Merge conflict detected, reviewing PR branch as-is"
+            git merge --abort
+            git reset --hard HEAD
+          }
+
+      - name: Generate diff
+        env:
+          BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
+        run: |
+          git diff "origin/$BASE_REF" -U15 \
+            -- . \
+            ':!package-lock.json' ':!**/package-lock.json' \
+            ':!pnpm-lock.yaml' ':!**/pnpm-lock.yaml' \
+            ':!yarn.lock' ':!**/yarn.lock' \
+            ':!go.sum' ':!**/go.sum' \
+            ':!*.min.js' ':!*.min.css' \
+            ':!node_modules/**' ':!**/node_modules/**' \
+            ':!vendor/**' ':!**/vendor/**' \
+            ':!dist/**' ':!**/dist/**' \
+            ':!build/**' ':!**/build/**' \
+            ':!*.svg' ':!**/*.svg' \
+            ':!*.png' ':!**/*.png' \
+            ':!*.jpg' ':!**/*.jpg' ':!*.jpeg' ':!**/*.jpeg' \
+            ':!*.gif' ':!**/*.gif' \
+            ':!*.ico' ':!**/*.ico' \
+            ':!*.webp' ':!**/*.webp' \
+            ':!*.woff' ':!**/*.woff' ':!*.woff2' ':!**/*.woff2' \
+            ':!*.ttf' ':!**/*.ttf' ':!*.eot' ':!**/*.eot' \
+            > /tmp/pr_diff.txt
+
+          MAX_CHARS=100000
+          DIFF_SIZE=$(wc -c < /tmp/pr_diff.txt)
+          if [ "$DIFF_SIZE" -gt "$MAX_CHARS" ]; then
+            head -c "$MAX_CHARS" /tmp/pr_diff.txt > /tmp/pr_diff_truncated.txt
+            printf '\n\n... [diff truncated — %s bytes total, showing first %s]\n' "$DIFF_SIZE" "$MAX_CHARS" >> /tmp/pr_diff_truncated.txt
+            mv /tmp/pr_diff_truncated.txt /tmp/pr_diff.txt
+          fi
+
+          echo "Diff size: $DIFF_SIZE bytes"
+
+          echo "::group::PR diff"
+          cat /tmp/pr_diff.txt
+          echo "::endgroup::"
+
+      - name: Generate helpful context
+        env:
+          HAS_ISSUE: ${{ steps.check-issue.outputs.has_issue }}
+          ISSUE_NUMBER: ${{ steps.check-issue.outputs.issue_number }}
+        run: |
+          # Start with PR title
+          printf '<pr_title>\n%s\n</pr_title>\n' "$(cat /tmp/pr_title.txt)" > /tmp/helpful_context.txt
+
+          if [ "$HAS_ISSUE" = "true" ]; then
+            # Fetch the issue
+            if ! gh api "/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER" > issue_data.json 2>/dev/null; then
+              echo "::warning::Could not fetch issue #$ISSUE_NUMBER"
+              echo "<issue_summary>Issue context unavailable.</issue_summary>" >> /tmp/helpful_context.txt
+              exit 0
+            fi
+
+            # Build issue conversation text (title + body + all comments)
+            {
+              echo "## Issue #$ISSUE_NUMBER: $(jq -r '.title // ""' issue_data.json)"
+              echo ""
+              jq -r '.body // ""' issue_data.json
+              echo ""
+            } > /tmp/issue_conversation.txt
+
+            # Fetch all comments on the issue
+            gh api "/repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/comments" --paginate \
+              | jq -s 'add // []' > issue_comments.json 2>/dev/null || echo "[]" > issue_comments.json
+
+            COMMENT_COUNT=$(jq 'length' issue_comments.json 2>/dev/null || echo "0")
+            if [ "$COMMENT_COUNT" -gt 0 ]; then
+              {
+                echo "---"
+                echo ""
+                echo "### Comments"
+                echo ""
+                jq -r '.[] | "**\(.user.login)** (\(.created_at)):\n\(.body)\n\n---\n"' issue_comments.json
+              } >> /tmp/issue_conversation.txt
+            fi
+
+            # Summarize the issue conversation via LLM
+            jq -n \
+              --arg model "$REVIEW_MODEL" \
+              --rawfile conversation /tmp/issue_conversation.txt \
+              '{
+                model: $model,
+                messages: [{role: "user", content: ("Summarize the following GitHub issue conversation. Focus on: 1) What the issue is about, 2) Key discussion points, 3) Any final decision or conclusion reached about what to do (if one exists). Be concise but thorough.\n\n" + $conversation)}]
+              }' > /tmp/context_payload.json
+
+            HTTP_CODE=$(curl -s -w '%{http_code}' \
+              "$PROVIDER_API_URL" \
+              -H "Authorization: Bearer $PROVIDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/context_payload.json \
+              -o /tmp/context_response.json)
+
+            if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/context_response.json > /dev/null 2>&1; then
+              SUMMARY=$(jq -r '.choices[0].message.content' /tmp/context_response.json)
+            else
+              echo "::warning::Issue summarization failed (HTTP $HTTP_CODE), using raw issue text"
+              SUMMARY=$(cat /tmp/issue_conversation.txt)
+            fi
+
+            printf '<issue_summary>\n%s\n</issue_summary>\n' "$SUMMARY" >> /tmp/helpful_context.txt
+          else
+            # No referenced issue — summarize the PR description instead
+            jq -n \
+              --arg model "$REVIEW_MODEL" \
+              --rawfile pr_body /tmp/pr_body.txt \
+              '{
+                model: $model,
+                messages: [{role: "user", content: ("Summarize the following pull request description. Ignore any HTML markup from GitHub tools or AI review agents (such as Devin review badges, Copilot comments, etc.). If the PR description is blank or contains only HTML markup from tools/agents, output nothing (an empty string). Be concise.\n\nPR Description:\n" + $pr_body)}]
+              }' > /tmp/context_payload.json
+
+            HTTP_CODE=$(curl -s -w '%{http_code}' \
+              "$PROVIDER_API_URL" \
+              -H "Authorization: Bearer $PROVIDER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/context_payload.json \
+              -o /tmp/context_response.json)
+
+            if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/context_response.json > /dev/null 2>&1; then
+              SUMMARY=$(jq -r '.choices[0].message.content' /tmp/context_response.json)
+            else
+              echo "::warning::PR description summarization failed (HTTP $HTTP_CODE)"
+              SUMMARY=""
+            fi
+
+            printf '<pr_description>\n%s\n</pr_description>\n' "$SUMMARY" >> /tmp/helpful_context.txt
+          fi
+
+          echo "::group::Helpful context"
+          cat /tmp/helpful_context.txt
+          echo "::endgroup::"
+
+      - name: Build review prompts
+        run: |
+          cat > /tmp/raw_prompt.txt << 'PROMPT_END'
+          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with Flowtype.
+
+          Please have a look at these changes and thoroughly check it for any bugs or security issues. Also check if anything could be improved through simplification. When providing feedback, be specific and quote the concrete lines that are problematic, and then give your code improvement suggestions complete with actual code. When replying, always use Markdown and Markdown code fences to quote any lines. Avoid commenting on code that has no issues (no "you did a good job here!" fluff).
+
+          When referencing sections of code, always mention the specific lines being referenced in the following manner to make it easy for developers to know where to look:
+
+          - `file.js:841`
+          - `file.vue:50-70`
+
+          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least.
+
+          Also, for each issue, immediately after the issue heading please add these two checkboxes:
+
+          - [ ] Addressed
+          - [ ] Dismissed
+
+          If no problems are found, state that and do nothing else.
+
+          ### Helpful Context
+
+          PROMPT_END
+
+          {
+            cat /tmp/helpful_context.txt
+            cat << 'SECTION_END'
+
+          ### Changes to Review
+
+          ```diff
+          SECTION_END
+            cat /tmp/pr_diff.txt
+            printf '\n```\n'
+          } >> /tmp/raw_prompt.txt
+
+          cat > /tmp/agentic_prompt.txt << 'PROMPT_END'
+          Attached are a set of changes to a JavaScript project that uses StandardJS formatting with Flowtype.
+
+          Please have a look at these changes and thoroughly check it for any bugs or security issues. Also check if anything could be improved through simplification. When providing feedback, be specific and quote the concrete lines that are problematic, and then give your code improvement suggestions complete with actual code. When replying, always use Markdown and Markdown code fences to quote any lines. Avoid commenting on code that has no issues (no "you did a good job here!" fluff).
+
+          When referencing sections of code, always mention the specific lines being referenced in the following manner to make it easy for developers to know where to look:
+
+          - `file.js:841`
+          - `file.vue:50-70`
+
+          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least and number the issues sequentially in their headings.
+
+          Also, for each issue, immediately after the issue heading please add these two checkboxes:
+
+          - [ ] Addressed
+          - [ ] Dismissed
+
+          You have full access to all of the source code. You can query different parts of the project if you need additional context to help with your review. If you have access to a subagent tool please make use of it when investigating specific questions about the codebase (e.g. "where are all the locations where this function is called?", etc.) to help conserve on tokens. Pay attention to any parts of the project that might break or conflict because of the changes, or any bits that are no longer relevant and should be removed as a result of the changes.
+
+          DO NOT make any edits or modifications to the code! DO NOT modify any files! Just output your review. If no problems are found, state that and do nothing else.
+
+          ### Helpful Context
+
+          PROMPT_END
+
+          {
+            cat /tmp/helpful_context.txt
+            cat << 'SECTION_END'
+
+          ### Changes to Review
+
+          ```diff
+          SECTION_END
+            cat /tmp/pr_diff.txt
+            printf '\n```\n'
+          } >> /tmp/agentic_prompt.txt
+
+      - name: Check prompt size
+        id: size-check
+        run: |
+          MAX_TOKEN_CHARS=260000
+          PROMPT_SIZE=$(wc -c < /tmp/raw_prompt.txt)
+          echo "Prompt size: $PROMPT_SIZE chars (~$((PROMPT_SIZE / 4)) tokens)"
+          if [ "$PROMPT_SIZE" -gt "$MAX_TOKEN_CHARS" ]; then
+            echo "too_large=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "too_large=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post size limit comment
+        if: steps.size-check.outputs.too_large == 'true'
+        run: |
+          PROMPT_SIZE=$(wc -c < /tmp/raw_prompt.txt)
+          TOKEN_EST=$((PROMPT_SIZE / 4))
+          gh pr comment "${{ steps.pr-info.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "**Automated Review Notice**
+
+          This PR exceeds the 260k character limit (~${TOKEN_EST} tokens estimated). The review cannot be performed automatically.
+
+          Please break the PR into smaller pieces, or request a manual review.
+
+          _[🔧 Workflow Run](${RUN_URL})_"
+
+      - name: Run raw review
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE != 'true'
+        run: |
+          jq -n \
+            --arg model "$REVIEW_MODEL" \
+            --rawfile prompt /tmp/raw_prompt.txt \
+            '{
+              model: $model,
+              messages: [{role: "user", content: $prompt}]
+            }' > /tmp/raw_payload.json
+
+          HTTP_CODE=$(curl -s -w '%{http_code}' \
+            "$PROVIDER_API_URL" \
+            -H "Authorization: Bearer $PROVIDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/raw_payload.json \
+            -o /tmp/raw_response.json)
+
+          RAW_REVIEW_OK=false
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::warning::Raw review API call failed with HTTP $HTTP_CODE"
+            echo "Raw review unavailable (API returned HTTP $HTTP_CODE)." > /tmp/raw_review.txt
+          elif jq -e '.choices[0].message.content' /tmp/raw_response.json > /dev/null 2>&1; then
+            jq -r '.choices[0].message.content' /tmp/raw_response.json > /tmp/raw_review.txt
+            RAW_REVIEW_OK=true
+          else
+            echo "::warning::Raw review returned unexpected response"
+            echo "Raw review unavailable (unexpected API response)." > /tmp/raw_review.txt
+          fi
+
+          echo "Raw review complete ($(wc -c < /tmp/raw_review.txt) bytes)"
+          echo "RAW_REVIEW_OK=${RAW_REVIEW_OK:-false}" >> "$GITHUB_ENV"
+
+          echo "::group::Raw LLM review"
+          cat /tmp/raw_review.txt
+          echo "::endgroup::"
+
+      - name: Install crush
+        if: steps.size-check.outputs.too_large == 'false'
+        run: |
+          npm install -g @charmland/crush
+          mkdir -p ~/.config/crush
+          cat > ~/.config/crush/crush.json << 'EOF'
+          {
+            "$schema": "https://charm.land/crush.json",
+            "options": {
+              "context_paths": ["AGENTS.md", "CRUSH.md", "CLAUDE.md", "README.md"],
+              "disable_metrics": true
+            },
+            "permissions": {
+              "allowed_tools": ["view", "read", "ls", "glob", "grep", "fetch", "agentic_fetch", "agent", "todos"]
+            }
+          }
+          EOF
+
+      - name: Run agentic review
+        if: steps.size-check.outputs.too_large == 'false'
+        run: |
+          crush run -q -m "$CRUSH_MODEL" --small-model "$SMALL_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
+            echo "::warning::Agentic review via crush failed"
+            cat /tmp/crush_stderr.txt >&2
+            echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
+          }
+
+          echo "Agentic review complete ($(wc -c < /tmp/agentic_review.txt) bytes)"
+
+          echo "::group::Agentic (crush) review"
+          cat /tmp/agentic_review.txt
+          echo "::endgroup::"
+
+      # This step can be removed if crush ever closes this issue: https://github.com/charmbracelet/crush/issues/2265
+      - name: Extract review from agentic output
+        if: steps.size-check.outputs.too_large == 'false'
+        run: |
+          jq -n \
+            --arg model "$REVIEW_MODEL" \
+            --rawfile text /tmp/agentic_review.txt \
+            '{
+              model: $model,
+              messages: [{role: "user", content: ("The following text is the full output of an AI coding assistant that was asked to review a pull request. The output contains the assistant'\''s entire thought process, but the actual review with the found issues (if any) is only at the very end.\n\nExtract ONLY the final review portion and output it verbatim. Do not summarize, rephrase, or add anything. If there is no review in the text (e.g. the assistant failed or produced no review), output exactly: \"No review found in agentic output.\"\n\n---\n\n" + $text)}]
+            }' > /tmp/extract_payload.json
+
+          HTTP_CODE=$(curl -s -w '%{http_code}' \
+            "$PROVIDER_API_URL" \
+            -H "Authorization: Bearer $PROVIDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/extract_payload.json \
+            -o /tmp/extract_response.json)
+
+          if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/extract_response.json > /dev/null 2>&1; then
+            jq -r '.choices[0].message.content' /tmp/extract_response.json > /tmp/agentic_review.txt
+            echo "Extracted review ($(wc -c < /tmp/agentic_review.txt) bytes)"
+          else
+            echo "::warning::Review extraction failed (HTTP $HTTP_CODE), using full agentic output"
+          fi
+
+          echo "::group::Extracted agentic review"
+          cat /tmp/agentic_review.txt
+          echo "::endgroup::"
+
+      - name: Combine reviews
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE != 'true'
+        run: |
+          cat > /tmp/combine_prompt.txt << 'COMBINE_HEADER'
+          You are given two code reviews of the same PR. Combine them into a single comprehensive review:
+
+          1. De-duplicate issues that appear in both reviews (keep the better description)
+          2. Sort all issues by priority: 🔴 (high importance & high confidence) first, then 🟡 (medium), then ⚪️ (low)
+          3. Make sure the issue headings are all numbered sequentially, starting from 1, and preserve the priority indicator in the heading
+          4. The Addressed/Dismissed checkboxes in the issues should immediately follow the heading for each issue
+          5. Preserve specific code references (file:line) and code suggestions
+          6. Do not place a header like `# Combined Code Review` at the top of the combined review, just immediately output the issues (if there are any)
+          7. If there are no issues, state that and do nothing else.
+
+          Output ONLY the combined review in Markdown. No preamble about the combining process.
+
+          ---
+
+          ## Raw Review
+
+          COMBINE_HEADER
+
+          {
+            cat /tmp/raw_review.txt
+            cat << 'COMBINE_SEPARATOR'
+
+          ---
+
+          ## Agentic Review
+
+          COMBINE_SEPARATOR
+            cat /tmp/agentic_review.txt
+          } >> /tmp/combine_prompt.txt
+
+          jq -n \
+            --arg model "$REVIEW_MODEL" \
+            --rawfile prompt /tmp/combine_prompt.txt \
+            '{
+              model: $model,
+              messages: [{role: "user", content: $prompt}]
+            }' > /tmp/combine_payload.json
+
+          HTTP_CODE=$(curl -s -w '%{http_code}' \
+            "$PROVIDER_API_URL" \
+            -H "Authorization: Bearer $PROVIDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/combine_payload.json \
+            -o /tmp/combine_response.json)
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::warning::Combine step failed with HTTP $HTTP_CODE, falling back to raw review"
+            cp /tmp/raw_review.txt /tmp/final_review.txt
+            if [ "$RAW_REVIEW_OK" = "true" ]; then
+              echo "REVIEW_TYPE=Raw" >> "$GITHUB_ENV"
+            else
+              echo "REVIEW_TYPE=Error" >> "$GITHUB_ENV"
+            fi
+          elif jq -e '.choices[0].message.content' /tmp/combine_response.json > /dev/null 2>&1; then
+            jq -r '.choices[0].message.content' /tmp/combine_response.json > /tmp/final_review.txt
+            echo "REVIEW_TYPE=Combined" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Combine step returned unexpected response, falling back to raw review"
+            cp /tmp/raw_review.txt /tmp/final_review.txt
+            if [ "$RAW_REVIEW_OK" = "true" ]; then
+              echo "REVIEW_TYPE=Raw" >> "$GITHUB_ENV"
+            else
+              echo "REVIEW_TYPE=Error" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Use agentic review as final (fast mode)
+        if: steps.size-check.outputs.too_large == 'false' && env.FAST_MODE == 'true'
+        run: |
+          cp /tmp/agentic_review.txt /tmp/final_review.txt
+          echo "REVIEW_TYPE=Agentic" >> "$GITHUB_ENV"
+
+      - name: Post review comment
+        if: steps.size-check.outputs.too_large == 'false'
+        run: |
+          {
+            echo "## Advanced AI Review"
+            echo ""
+            echo "- Type: ${REVIEW_TYPE} (crush)"
+            echo "- Model: ${REVIEW_MODEL}"
+            echo ""
+            echo "<details>"
+            echo "<summary>Click to expand review</summary>"
+            echo ""
+            cat /tmp/final_review.txt
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "---"
+            echo "*Review [generated](${RUN_URL}) using \`${REVIEW_MODEL}\` via ${PROVIDER_DISPLAY}. Comment \`/review\` to re-run.*"
+          } > /tmp/review_comment.txt
+
+          gh pr comment "${{ steps.pr-info.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body-file /tmp/review_comment.txt
+
+      - name: Post failure comment
+        if: failure() && steps.pr-info.outputs.number
+        run: |
+          gh pr comment "${{ steps.pr-info.outputs.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "## Advanced AI Review
+
+          - Type: Error
+          - Model: ${REVIEW_MODEL}
+
+          The review workflow failed. Check the [workflow run](${RUN_URL}) for details. Comment \`/review\` to re-run."

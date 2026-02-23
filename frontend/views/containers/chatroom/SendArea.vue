@@ -295,6 +295,7 @@ import {
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 
+const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
   ArrowLeft: 37,
   ArrowUp: 38,
@@ -358,7 +359,8 @@ export default ({
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
-        typingUsers: []
+        typingUsers: [],
+        chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -370,7 +372,8 @@ export default ({
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
-      mediaIsPhone: null
+      mediaIsPhone: null,
+      draftDebounceTimeoutIds: {}
     }
   },
   watch: {
@@ -384,9 +387,17 @@ export default ({
         })
       }
     },
-    currentChatRoomId () {
+    currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
+      }
+
+      if (newVal) {
+        if (this.$refs.textarea) {
+          // Clear the textarea value if the chatroom is changed.
+          this.$refs.textarea.value = ''
+        }
+        this.initializeTextArea()
       }
     }
   },
@@ -397,16 +408,7 @@ export default ({
     this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
-    this.$refs.textarea.value = this.defaultText || ''
-    // Get actionsWidth to add a dynamic padding to textarea,
-    // so those actions don't be above the textarea's value
-    this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
-    this.updateTextArea()
-    // The following causes inconsistent focusing on iOS depending on whether
-    // iOS determines the action to be a result of user interaction.
-    // Commenting this out will result on focus being triggered the 'normal'
-    // way, when the chatroom is ready.
-    this.focusOnTextArea()
+    this.initializeTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -418,9 +420,27 @@ export default ({
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
+
+    // Revoke all object URLs to avoid memory leaks.
+    // 1. Stale ones
     this.ephemeral.staleObjectURLs.forEach(url => {
       URL.revokeObjectURL(url)
     })
+
+    // 2. Current ones
+    if (this.ephemeral.attachments.length) {
+      const urls = this.ephemeral.attachments.map(attachment => attachment.url)
+      const revokeObjectURLs = () => {
+        urls.forEach(url => URL.revokeObjectURL(url))
+      }
+
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
+        // if it's waiting for the draft-save debounce delay, revoke the object URLs after the delay. (So that no null values are saved in the draft)
+        setTimeout(revokeObjectURLs, DRAFT_SAVE_DEBOUNCE_DELAY)
+      } else {
+        revokeObjectURLs()
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -597,6 +617,10 @@ export default ({
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
       }
+
+      if (!this.isEditing) {
+        this.saveOrDeleteMessageDraft()
+      }
     },
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
@@ -730,10 +754,153 @@ export default ({
           : null,
         this.replyingMessage
       ) // TODO remove first / last empty lines
+
+      this.clearTextArea()
+    },
+    clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endMention()
       if (this.hasAttachments) { this.clearAllAttachments() }
+
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
+        // If there is a pending draft-save, discard it, as the message is being sent now.
+        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      }
+      this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
+    },
+    async initializeTextArea () {
+      // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
+      // clear them and revoke all object URLs first to avoid memory leaks.
+      this.clearAllAttachments()
+      this.ephemeral.chatroomHasDraftSaved = false
+
+      if (this.defaultText) {
+        this.$refs.textarea.value = this.defaultText
+      } else {
+        const chatroomId = this.currentChatRoomId
+        const draft = await this.loadMessageDraft(this.getMessageDraftKey(chatroomId))
+
+        if (!this.$refs.textarea ||
+          chatroomId !== this.currentChatRoomId) {
+          // NOTE 1: There is a cypress heisen-bug where it enters the chatroom and leaves almost immediately, before this.loadMessageDraft() above is completed.
+          //         In that case, the destroyed textarea element causes a runtime error. So checking for the textarea element existence here.
+          // NOTE 2: If the user has switched to another chatroom while the draft is being loaded, ignore the rest of initialization process.
+          return
+        }
+
+        if (draft?.text) {
+          this.$refs.textarea.value = draft.text
+        }
+
+        if (draft?.attachments) {
+          this.ephemeral.attachments = draft.attachments.filter(attachment => Boolean(attachment.fileData))
+            .map(attachment => ({
+              url: URL.createObjectURL(new Blob([attachment.fileData], { type: attachment.mimeType })),
+              name: attachment.name,
+              mimeType: attachment.mimeType,
+              size: attachment.size,
+              needsImageCompression: attachment.needsImageCompression || false,
+              downloadData: null
+            }))
+        } else {
+          this.ephemeral.attachments = []
+        }
+      }
+
+      // Get actionsWidth to add a dynamic padding to textarea,
+      // so those actions don't be above the textarea's value
+      this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
+      this.updateTextArea()
+      // The following causes inconsistent focusing on iOS depending on whether
+      // iOS determines the action to be a result of user interaction.
+      // Commenting this out will result on focus being triggered the 'normal'
+      // way, when the chatroom is ready.
+      this.focusOnTextArea()
+    },
+    async objectURLtoArrayBuffer (url) {
+      try {
+        const blob = await fetch(url).then(r => r.blob())
+        return await blob.arrayBuffer()
+      } catch (e) {
+        console.error('SendArea.vue: Error converting object URL to array buffer - ', e)
+        return null
+      }
+    },
+    getMessageDraftKey (chatroomId) {
+      const chatroomType = this.isDirectMessage(chatroomId) ? 'dm' : 'channel'
+      return `${chatroomType}:${this.ourIdentityContractId}:${chatroomId}`
+    },
+    saveOrDeleteMessageDraft () {
+      // manually implementing debounce here by clearing the timeout and setting a new one to avoid the issue where
+      // draftKey/text/attachments can become stale when user switches chatrooms quickly.
+      // (eg. user has switched to chatroom B before the debounce delay times out, so the draft of chatroom A is saved for chatroom B)
+      // This way, draftKey/draft are captured at call time, not at the execution time.
+      const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
+      const textContent = this.ephemeral.textWithLines.trim()
+      const attachments = this.ephemeral.attachments
+      const hasContent = textContent.length > 0 || attachments.length > 0
+      const hasDraftSaved = this.ephemeral.chatroomHasDraftSaved
+
+      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
+        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      }
+      this.draftDebounceTimeoutIds[this.currentChatRoomId] = setTimeout(() => {
+        if (hasContent) {
+          this.saveMessageDraft(draftKey, textContent, attachments)
+        } else if (hasDraftSaved) {
+          this.clearMessageDraft(draftKey)
+        }
+      }, DRAFT_SAVE_DEBOUNCE_DELAY)
+    },
+    async saveMessageDraft (draftKey, textContent, attachments) {
+      try {
+        const draftData = { text: textContent || '' }
+
+        if (attachments?.length > 0) {
+          draftData.attachments = (await Promise.all(
+            attachments.map(async attachment => {
+              // There is a Safari issue where saving blobs in the indexedDB doesn't work properly.
+              // Converting them into Arraybuffers solves the problem.
+              const fileData = await this.objectURLtoArrayBuffer(attachment.url)
+              if (!fileData) { return null }
+              return {
+                name: attachment.name,
+                mimeType: attachment.mimeType,
+                size: attachment.size,
+                needsImageCompression: attachment.needsImageCompression || false,
+                fileData
+              }
+            })
+          )).filter(Boolean)
+        }
+
+        await sbp('gi.db/chatDrafts/save', draftKey, draftData)
+
+        if (!this.ephemeral.chatroomHasDraftSaved) {
+          this.ephemeral.chatroomHasDraftSaved = true
+        }
+      } catch (e) {
+        console.error('SendArea.vue: Error saving message draft - ', e)
+      }
+    },
+    async loadMessageDraft (draftKey) {
+      try {
+        const draft = await sbp('gi.db/chatDrafts/load', draftKey)
+        this.ephemeral.chatroomHasDraftSaved = !!draft
+        return draft
+      } catch (e) {
+        // Silently ignore errors and return an empty string if any error occurs while loading the message draft
+        console.error('SendArea.vue: Error loading message draft - ', e)
+        return null
+      }
+    },
+    clearMessageDraft (draftKey) {
+      sbp('gi.db/chatDrafts/delete', draftKey).then(() => {
+        this.ephemeral.chatroomHasDraftSaved = false
+      }).catch((e) => {
+        console.error('SendArea.vue: Error clearing message draft - ', e)
+      })
     },
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
@@ -800,10 +967,14 @@ export default ({
 
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
+
+      this.saveOrDeleteMessageDraft()
     },
     clearAllAttachments () {
-      this.ephemeral.staleObjectURLs.push(this.ephemeral.attachments.map(({ url }) => url))
-      this.ephemeral.attachments = []
+      if (this.ephemeral.attachments.length) {
+        this.ephemeral.staleObjectURLs.push(...this.ephemeral.attachments.map(({ url }) => url))
+        this.ephemeral.attachments = []
+      }
     },
     removeAttachment (targetUrl) {
       // when a URL is no longer needed, it needs to be released from the memory.
@@ -814,6 +985,8 @@ export default ({
         URL.revokeObjectURL(targetUrl)
         this.ephemeral.attachments.splice(targetIndex, 1)
       }
+
+      this.saveOrDeleteMessageDraft()
     },
     selectEmoticon (emoticon) {
       // Making sure the emoticon is added to the cursor position
@@ -824,6 +997,9 @@ export default ({
 
       this.closeEmoticon()
       this.updateTextWithLines()
+      if (!this.isEditing) {
+        this.saveOrDeleteMessageDraft()
+      }
     },
     startMention (keyword, position, mentionType = 'member') {
       const checkIfContainsKeyword = str => {

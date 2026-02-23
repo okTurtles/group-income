@@ -980,6 +980,9 @@ export default ({
             const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
             const extension = compressedImageBlob.type.split('/')[1]
 
+            // Since a new object URL is created for the compressed image, revoke the old object URL.
+            URL.revokeObjectURL(attachment.url)
+
             return {
               ...attachment,
               mimeType: compressedImageBlob.type,

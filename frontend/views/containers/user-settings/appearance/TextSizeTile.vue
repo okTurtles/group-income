@@ -18,17 +18,10 @@ MenuItem(
 </template>
 
 <script>
-import { L } from '@common/common.js'
 import { mapGetters, mapMutations } from 'vuex'
 import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
 import Slider from '@components/Slider.vue'
-
-const sizeOptionNames = {
-  '14': L('Small'),
-  '16': L('Medium'),
-  '18': L('Large'),
-  '20': L('Extra large')
-}
+import { textSizeOptions } from '@view-utils/textSizes.js'
 
 export default {
   name: 'TextSizeTile',
@@ -39,10 +32,6 @@ export default {
   },
   data () {
     return {
-      config: {
-        sizeOptionNames
-      },
-      fontVariations: 4,
       fontRange: [],
       fontData: []
     }
@@ -60,7 +49,7 @@ export default {
       'fontSize'
     ]),
     currentSizeName () {
-      return this.config.sizeOptionNames[`${this.fontSize}`]
+      return textSizeOptions.find(option => option.value === this.fontSize)?.label || ''
     }
   },
   watch: {
@@ -69,17 +58,8 @@ export default {
     }
   },
   created () {
-    let size = 14
-    for (let index = 0; index < this.fontVariations; index++) {
-      // Add data to the slider
-      this.fontData.push(size)
-      size += 2
-
-      // Hise one label out of two
-      this.fontRange.push({
-        label: 'Aa'
-      })
-    }
+    this.fontData = textSizeOptions.map(option => option.value).sort((a, b) => a - b)
+    this.fontRange = this.fontData.map((_) => ({ label: 'Aa' }))
   }
 }
 </script>
