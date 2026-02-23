@@ -23,7 +23,7 @@ li.c-update-permissions-list-item
     .c-select-permissions-section(v-if='ephemeral.selectedRole')
       .c-select-permissions-title.has-text-1 {{ permissionSectionLabel }}
 
-      .c-perimission-items-container
+      .c-permission-items-container
         permission-piece(
           v-for='permission in ephemeral.permissionOptionsToDisplay'
           :key='permission'
@@ -270,7 +270,7 @@ export default {
   }
 }
 
-.c-perimission-items-container {
+.c-permission-items-container {
   position: relative;
   width: 100%;
   display: flex;

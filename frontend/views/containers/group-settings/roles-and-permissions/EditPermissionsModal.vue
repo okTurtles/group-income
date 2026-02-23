@@ -30,7 +30,7 @@
 
         li.c-table-list-item
           label.c-label {{ permissionSectionLabel }}
-          .c-list-item-content.c-perimission-items-container
+          .c-list-item-content.c-permission-items-container
             permission-piece(
               v-for='permission in permissionsToDisplay'
               :key='permission'
@@ -293,7 +293,7 @@ $modal_narrow_point: 450px;
   }
 }
 
-.c-perimission-items-container {
+.c-permission-items-container {
   position: relative;
   width: 100%;
   display: flex;

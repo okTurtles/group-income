@@ -1160,7 +1160,7 @@ sbp('chelonia/defineContract', {
             }
 
             if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
-              item.permissions.some(permission => !myPermissions.includes(permission))) {
+              item.permissions?.some(permission => !myPermissions.includes(permission))) {
               throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
             }
           }
@@ -1284,7 +1284,7 @@ sbp('chelonia/defineContract', {
 
         if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
           // TODO: add DELETE_CHANNEL permission check when it's implemented
-          throw new TypeError(L('You do not have permission to delete this channel.'))
+          throw new TypeError(L('Only the channel creator can delete this channel.'))
         }
       }),
       process ({ contractID, data }, { state }) {
