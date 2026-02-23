@@ -1400,13 +1400,17 @@ export default ({
         })
       }
     },
-    setStartNewMessageIndex () {
-      this.ephemeral.startedUnreadMessageHash = null
-      if (this.currentChatRoomReadUntil) {
-        const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+    setStartNewMessageIndex (messageHashTo) {
+      if (messageHashTo) {
+        this.ephemeral.startedUnreadMessageHash = messageHashTo
+      } else {
+        this.ephemeral.startedUnreadMessageHash = null
+        if (this.currentChatRoomReadUntil) {
+          const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
 
-        if (index >= 0) {
-          this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+          if (index >= 0) {
+            this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+          }
         }
       }
     },
@@ -1545,6 +1549,7 @@ export default ({
 
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         const { addedOrDeleted } = isMessageAddedOrDeleted(message)
+        const isMessageAdded = addedOrDeleted === 'ADDED'
 
         ;(async () => {
           // Messages are processed twice: before sending (outgoing direction,
@@ -1579,23 +1584,30 @@ export default ({
           if (hasChatroomSwitchedSince()) return
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
-          if (this.ephemeral.scrollableDistance < 50) {
-            if (addedOrDeleted === 'ADDED' && this.messageState.contract.messages.length) {
+          if (isMessageAdded) {
+            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+
+            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
                 // Scroll-query to the latest message.
                 this.updateScroll()
-              } else {
+              } else if (latestValidMessage) {
                 // If there are any temporary messages that do not exist in the
                 // contract, they should not be used for updateReadUntilMessageHash
-                const msg = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
-                if (msg) {
-                  this.updateReadUntilMessageHash({
-                    messageHash: msg.hash,
-                    createdHeight: msg.height
-                  })
-                }
+                this.updateReadUntilMessageHash({
+                  messageHash: latestValidMessage.hash,
+                  createdHeight: latestValidMessage.height
+                })
+              }
+            }
+
+            if (!this.ephemeral.startedUnreadMessageHash && latestValidMessage) {
+              const isMessageFromOther = latestValidMessage.from !== this.ourIdentityContractId
+
+              if (isMessageFromOther) {
+                this.setStartNewMessageIndex(latestValidMessage.hash)
               }
             }
           }
