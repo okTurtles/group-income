@@ -238,7 +238,7 @@ sbp('sbp/selectors/register', {
         const secretDeleteTokenSeeds = identityState.secretDeleteTokenSeeds
 
         if (
-          !secretDeleteTokenSeeds ||
+          !secretDeleteTokenSeeds?.length ||
           secretDeleteTokenSeeds[secretDeleteTokenSeeds.length - 1][0] < cekHeight
         ) {
           await sbp('gi.actions/identity/rotateSecretDeleteTokenSeed', ourIdentityContractId)
