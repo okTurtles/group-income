@@ -220,6 +220,33 @@ sbp('sbp/selectors/register', {
       }
       await internal()
     })()
+
+    ;(async () => {
+      let count = 0
+      const internal = async () => {
+        // When logging in in a fresh session, loggedIn isn't populated yet
+        if (!state.loggedIn?.identityContractID && count++ <= 3) {
+          setTimeout(internal, 300)
+          return
+        }
+
+        const ourIdentityContractId = state.loggedIn.identityContractID
+
+        const cekId = await sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek')
+        const identityState = await sbp('chelonia/contract/state', ourIdentityContractId)
+        const cekHeight = !identityState._vm.authorizedKeys[cekId]._notBeforeHeight
+        const secretDeleteTokenSeeds = identityState.secretDeleteTokenSeeds
+
+        if (
+          !secretDeleteTokenSeeds ||
+          secretDeleteTokenSeeds[secretDeleteTokenSeeds.length - 1][1] < cekHeight
+        ) {
+          await sbp('gi.actions/identity/rotateSecretDeleteTokenSeed', ourIdentityContractId)
+        }
+      }
+
+      await internal()
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
