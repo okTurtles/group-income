@@ -1401,6 +1401,11 @@ export default ({
       }
     },
     setStartNewMessageIndex (messageHashTo) {
+      if (this.userManuallyMarkedUnread) {
+        // If user has used manual 'mark as unread' functionality, disable all the automatic 'is-new' UI related logics.
+        return
+      }
+
       if (messageHashTo) {
         this.ephemeral.startedUnreadMessageHash = messageHashTo
       } else {
@@ -1603,16 +1608,19 @@ export default ({
               }
             }
 
-            if (!this.ephemeral.startedUnreadMessageHash && latestValidMessage) {
+            if (latestValidMessage) {
               const isMessageFromOther = latestValidMessage.from !== this.ourIdentityContractId
-
               if (isMessageFromOther) {
-                this.setStartNewMessageIndex(latestValidMessage.hash)
+                // If a new message added is from other user but there is no 'is-new' UI displayed now, show 'is-new' UI.
+                !this.ephemeral.startedUnreadMessageHash && this.setStartNewMessageIndex(latestValidMessage.hash)
+              } else if (this.ephemeral.startedUnreadMessageHash && !this.userManuallyMarkedUnread) {
+                // If the current user just sent a new message but there is 'is-new' UI displayed now, hide 'is-new' UI(unless the user has used mark as unread functionality).
+                this.ephemeral.startedUnreadMessageHash = null
               }
             }
           }
 
-          if (addedOrDeleted !== 'NONE' && this.ephemeral.messageHashToMarkUnread) {
+          if (addedOrDeleted !== 'NONE' && this.userManuallyMarkedUnread) {
             // If user has used 'Mark unread' but then messages are either added or deleted,
             // 'unreadMessages' data in the store should be updated accordingly.
             const action = addedOrDeleted === 'ADDED' ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
