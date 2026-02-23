@@ -42,6 +42,7 @@ import './model/notifications/periodicNotifications.js'
 import FaviconBadge from './utils/faviconBadge.js'
 import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.js'
+import { getTextSizeAlias } from '@view-utils/textSizes.js'
 import './views/utils/vStyle.js'
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
@@ -364,9 +365,10 @@ async function startApp () {
         sbp('okTurtles.events/emit', OFFLINE)
       }
       if (this.ephemeral.isCorrupted) {
+        const baseRoute = sbp('controller/router').options.base
         sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
-            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&tab=troubleshooting">`,
+            'a_': `<a class="link" href="${baseRoute}/user-settings/troubleshooting">`,
             '_a': '</a>'
           }),
           'times-circle'
@@ -413,7 +415,13 @@ async function startApp () {
       })()
     },
     computed: {
-      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters([
+        'groupsByName',
+        'ourUnreadMessages',
+        'totalUnreadNotificationCount',
+        'isDarkTheme',
+        'fontSize'
+      ]),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
@@ -424,12 +432,12 @@ async function startApp () {
         return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
       },
       appClasses () {
-        return {
+        return [{
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.settings.reducedMotion,
-          'is-dark-theme': this.$store.getters.isDarkTheme
-        }
+          'is-dark-theme': this.isDarkTheme
+        }, `has-text-size-${getTextSizeAlias(this.fontSize)}`]
       },
       isInCypress () {
         return !!window.Cypress

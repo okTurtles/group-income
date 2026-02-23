@@ -19,7 +19,7 @@
           :args='LTags("strong")'
         ) This action {strong_}cannot be undone{_strong}.
 
-      label.checkbox(data-test='deleteChannelConfirmation')
+      label.checkbox.c-consent-checkbox(data-test='deleteChannelConfirmation')
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
         i18n(:args='{ name: chatRoomAttributes.name, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
 
@@ -78,6 +78,7 @@ export default ({
           contractID: this.currentGroupId,
           data: { chatRoomID }
         })
+
         this.close()
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
@@ -112,6 +113,15 @@ export default ({
   .c-list-item {
     list-style: initial;
     margin: 0.5rem 1rem;
+  }
+}
+
+.c-consent-checkbox {
+  width: 100%;
+
+  > :last-child {
+    white-space: initial;
+    word-break: break-all;
   }
 }
 </style>

@@ -23,6 +23,7 @@ describe('Signup, Profile and Login', () => {
     let profilePictureDataURI
 
     cy.getByDT('settingsBtn').click()
+    cy.getByDT('tabMyProfile').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
       profilePictureDataURI = `data:image/jpeg;base64, ${fileContent}`
@@ -46,7 +47,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
 
     // Close Modal and verify the new profile names
-    cy.get('.c-modal-close').click()
+    cy.getByDT('backToMenu').click()
 
     cy.getByDT('profileDisplayName').should('contain', 'John Bot')
     cy.getByDT('profileName').should('contain', username)
@@ -117,6 +118,7 @@ describe('Signup, Profile and Login', () => {
   it('change user password', () => {
     cy.giLogin(username)
     cy.getByDT('settingsBtn').click()
+    cy.getByDT('tabMyProfile').click()
     cy.getByDT('passwordBtn').click()
     const oldPassword = '123456789'
     const newPassword = 'abcdefghi'

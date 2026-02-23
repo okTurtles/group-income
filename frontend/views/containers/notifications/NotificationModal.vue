@@ -22,9 +22,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 <script>
 import sbp from '@sbp/sbp'
 import { mapState } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationList from './NotificationList.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'NotificationModal',
@@ -44,9 +44,7 @@ export default {
   },
   methods: {
     clickSettings () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
-        tab: 'notifications'
-      })
+      this.$router.push({ path: '/user-settings/notifications' }).catch(logExceptNavigationDuplicated)
     },
     markAllNotificationsAsRead () {
       sbp('gi.notifications/markAllAsRead', this.currentGroupId)

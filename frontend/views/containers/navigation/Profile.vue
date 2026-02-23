@@ -17,8 +17,9 @@
         ) @{{ ourUsername }}
 
   button.is-icon-small(
+    :title='L("User settings")'
     data-test='settingsBtn'
-    @click='openModalUserSettings'
+    @click='toUserSettings'
   )
     i.icon-cog
 </template>
@@ -27,8 +28,9 @@
 import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 
 export default ({
   name: 'Profile',
@@ -47,8 +49,9 @@ export default ({
     }
   },
   methods: {
-    openModalUserSettings () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal')
+    toUserSettings () {
+      sbp('okTurtles.events/emit', CLOSE_NAVIGATION_SIDEBAR)
+      this.$router.push({ name: 'UserSettings' }).catch(logExceptNavigationDuplicated)
     }
   }
 }: Object)

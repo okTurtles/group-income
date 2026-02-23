@@ -101,12 +101,6 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.settings-container {
-  @include desktop {
-    padding-top: 1.5rem;
-  }
-}
-
 .c-header {
   display: flex;
   flex-wrap: wrap;

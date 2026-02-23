@@ -4,6 +4,8 @@ import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import localforage from './localforage.js'
 
+const CHATROOM_DRAFT_KEY_PREFIX = 'chatDraft:'
+
 export const generateEncryptionParams = async (stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<{ encryptionParams: {
   stateEncryptionKeyId: string,
   salt: string,
@@ -158,6 +160,34 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/settings/deleteEncrypted': function (key: string): Promise<Object> {
     return appSettings.removeItem('e' + key)
+  },
+  // Chatroom drafts related selectors
+  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<any> {
+    return appSettings.setItem(`${CHATROOM_DRAFT_KEY_PREFIX}${key}`, value)
+  },
+  'gi.db/chatDrafts/load': function (key: string): Promise<any> {
+    return appSettings.getItem(`${CHATROOM_DRAFT_KEY_PREFIX}${key}`)
+  },
+  'gi.db/chatDrafts/delete': function (key: string): Promise<any> {
+    return appSettings.removeItem(`${CHATROOM_DRAFT_KEY_PREFIX}${key}`)
+  },
+  'gi.db/chatDrafts/deleteMany': function (keys: string[]): Promise<any> {
+    return appSettings.removeMany(keys.map(k => `${CHATROOM_DRAFT_KEY_PREFIX}${k}`))
+  },
+  'gi.db/chatDrafts/clear': async function (): Promise<any> {
+    const keys = await appSettings.getAllKeys() ?? []
+    const allChatDraftKeys = keys.filter(k => k.startsWith(CHATROOM_DRAFT_KEY_PREFIX))
+    await appSettings.removeMany(allChatDraftKeys)
+  },
+  'gi.db/chatDrafts/getAllChatroomIds': async function (type: 'channel' | 'dm' = 'channel', identityContractId: string): Promise<any> {
+    if (!identityContractId) {
+      throw new Error('identityContractId is required')
+    }
+
+    const keys = await appSettings.getAllKeys() ?? []
+    const targetPrefix = `${CHATROOM_DRAFT_KEY_PREFIX}${type}:${identityContractId}:`
+    const allChatDraftKeys = keys.filter(k => k.startsWith(targetPrefix))
+    return allChatDraftKeys.map(k => k.replace(targetPrefix, ''))
   }
 })
 
