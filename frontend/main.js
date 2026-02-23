@@ -294,7 +294,7 @@ async function startApp () {
           this.checkAndEmitOneTimeNotifications()
         }
         // NOTE: should set IdleVue plugin here because state could be replaced while logging in
-        Vue.use(IdleVue, { store, idleTime: 2 * 60 * 1000 }) // 2 mins of idle config
+        Vue.use(IdleVue, { store, idleTime: 20 * 1000 }) // TODO: back to 2 * 60 * 100 // 2 mins of idle config
       })
 
       // The following are event handlers that affect the root application state.

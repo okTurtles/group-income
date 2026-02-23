@@ -33,7 +33,7 @@ export default ({
         // document.hidden - when current tab is not active
         // document.hasFocus() - There is a case where current tab is open but the browser window itself is not in focus(In the background).
         //                       document.hasFocus() is used to catch this kind of case.
-        return document.hidden || !document.hasFocus() 
+        return document.hidden || !document.hasFocus()
       }
 
       // Check if the app is showing the target chatroom now.
