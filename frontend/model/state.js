@@ -234,12 +234,12 @@ sbp('sbp/selectors/register', {
 
         const cekId = await sbp('chelonia/contract/currentKeyIdByName', ourIdentityContractId, 'cek')
         const identityState = await sbp('chelonia/contract/state', ourIdentityContractId)
-        const cekHeight = !identityState._vm.authorizedKeys[cekId]._notBeforeHeight
+        const cekHeight = identityState._vm.authorizedKeys[cekId]._notBeforeHeight
         const secretDeleteTokenSeeds = identityState.secretDeleteTokenSeeds
 
         if (
           !secretDeleteTokenSeeds ||
-          secretDeleteTokenSeeds[secretDeleteTokenSeeds.length - 1][1] < cekHeight
+          secretDeleteTokenSeeds[secretDeleteTokenSeeds.length - 1][0] < cekHeight
         ) {
           await sbp('gi.actions/identity/rotateSecretDeleteTokenSeed', ourIdentityContractId)
         }
