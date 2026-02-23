@@ -1427,7 +1427,8 @@ export default ({
       forceUpdate = false
     }) {
       const isTabInactive = document.hidden || !document.hasFocus()
-      if (isTabInactive || this.userManuallyMarkedUnread) {
+      if ((isTabInactive && !forceUpdate) ||
+        this.userManuallyMarkedUnread) {
         // NOTE regarding 'this.userManuallyMarkedUnread' here:
         // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
         // So if user has used this functionality at least once in the current chatroom,
