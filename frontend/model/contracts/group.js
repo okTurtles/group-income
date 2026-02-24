@@ -1127,11 +1127,11 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/updatePermissions': {
       validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID } }) => {
-        arrayOf(objectMaybeOf({
+        arrayOf(objectOf({
           memberID: stringMax(MAX_HASH_LEN, 'memberID'),
           action: validatorFrom(x => Object.values(GROUP_PERMISSION_CHANGE_ACTIONS).includes(x)),
-          roleName: validatorFrom(x => Object.values(GROUP_ROLES).includes(x)),
-          permissions: arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x)))
+          roleName: optional(validatorFrom(x => Object.values(GROUP_ROLES).includes(x))),
+          permissions: optional(arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x))))
         }))(data)
 
         const myRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
@@ -1151,17 +1151,28 @@ sbp('chelonia/defineContract', {
           }
 
           if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
+            const isMyRoleAdmin = myRoleName === GROUP_ROLES.ADMIN
             if (item.roleName === GROUP_ROLES.ADMIN) {
-              throw new TypeError(L('Cannot assign admin role.'))
+              throw new TypeError(L('Cannot assign or update admin role.'))
             }
 
-            if (item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR) && myRoleName !== GROUP_ROLES.ADMIN) {
-              throw new TypeError(L('You do not have permission to assign delegator role.'))
+            if (item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR)) {
+              throw new TypeError(L('Only the group admin can have assign-delegator permission and it cannot be granted to other roles.'))
+            }
+
+            if (item.roleName === GROUP_ROLES.MODERATOR_DELEGATOR && !isMyRoleAdmin) {
+              throw new TypeError(L('You do not have permission to assign moderator-delegator role.'))
             }
 
             if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
               item.permissions?.some(permission => !myPermissions.includes(permission))) {
               throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
+            }
+          }
+
+          if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.REMOVE) {
+            if (item.roleName === GROUP_ROLES.ADMIN) {
+              throw new TypeError(L('Cannot remove admin role.'))
             }
           }
         }
