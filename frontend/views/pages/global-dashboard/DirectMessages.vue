@@ -7,7 +7,7 @@ page(
 
   template(#sidebar='{ toggle }')
     chat-nav
-      chat-members(
+      chat-members.c-dm-list(
         @new='toggle'
         @redirect='toggle'
         :hideNewButton='true'
@@ -57,6 +57,12 @@ export default {
     @include tablet {
       font-size: 3.25rem;
     }
+  }
+}
+
+.c-dm-list {
+  @include desktop {
+    margin-top: 4rem;
   }
 }
 </style>

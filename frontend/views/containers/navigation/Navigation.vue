@@ -7,7 +7,11 @@ nav.c-navigation(
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive' data-test='NavigationToggleBtn')
     badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
     badge.c-toggle-badge(v-else-if='currentGroupUnreadMessagesCount' data-test='dashboardBadge') {{ currentGroupUnreadMessagesCount }}
-  groups-list(v-if='groupsByName.length >= 1' :inert='isInert')
+  groups-list(
+    v-if='groupsByName.length >= 1'
+    :inert='isInert'
+    @global-dashboard-click='navigateToGlobalDashboard'
+  )
 
   .c-navigation-wrapper(:inert='isInert')
     template(v-if='isInGlobalDashboard')
@@ -26,6 +30,7 @@ nav.c-navigation(
               :to='entry.routeTo'
               :badgeCount='entry.id === "news-and-updates" && hasNewNews ? 1 : 0'
               :data-test='"global-dashboard_" + entry.id'
+              @click='onGlobalDashboardTabClick(entry)'
             ) {{ entry.title }}
 
     template(v-else)
@@ -133,7 +138,8 @@ export default ({
       ephemeral: {
         isActive: false,
         isTouch: null,
-        latestNewsDate: null
+        latestNewsDate: null,
+        globalDashboardPrevRoute: ''
       }
     }
   },
@@ -224,6 +230,14 @@ export default ({
     onMenuItemsClick () {
       // Close the menu when a menu item is clicked.
       this.ephemeral.isActive = false
+    },
+    navigateToGlobalDashboard () {
+      this.$router.push(({
+        path: this.ephemeral.globalDashboardPrevRoute || '/global-dashboard/news-and-updates'
+      }))
+    },
+    onGlobalDashboardTabClick (entry) {
+      this.ephemeral.globalDashboardPrevRoute = entry.routeTo
     },
     async checkForNewNews () {
       try {

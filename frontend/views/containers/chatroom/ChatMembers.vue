@@ -272,6 +272,5 @@ export default ({
 .c-no-items {
   margin-top: 1.5rem;
   color: $text_1;
-  padding-left: 0.25rem;
 }
 </style>

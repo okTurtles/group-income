@@ -118,7 +118,7 @@ export default ({
       }
     },
     onGlobalDashboardClick () {
-      this.$router.push(({ path: '/global-dashboard' }))
+      this.$emit('global-dashboard-click')
     },
     changeGroup (hash) {
       const path = this.$route.path
