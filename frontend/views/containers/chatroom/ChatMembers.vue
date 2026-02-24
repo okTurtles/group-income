@@ -270,7 +270,7 @@ export default ({
 }
 
 .c-no-items {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   color: $text_1;
 }
 </style>

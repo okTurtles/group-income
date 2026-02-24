@@ -12,11 +12,19 @@ page(
         @redirect='toggle'
         :hideNewButton='true'
       )
+  .card.c-search-container
+    .inputgroup
+      .is-icon.prefix(aria-hidden='true')
+        i.icon-search
+      input.input(
+        type='text'
+        name='search'
+        :placeholder='L("Find a DM")'
+      )
 
-  .card.c-direct-messages-container
-    .c-up-to-date-container
-      i.icon-comment-dots.c-check-icon
-      i18n.has-text-1 You're up to date!
+  .c-no-active-dms-container
+    i.icon-comment-dots.c-check-icon
+    i18n.has-text-1 No active DMs yet.
 </template>
 
 <script>
@@ -37,32 +45,38 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-direct-messages-container {
-  margin-top: 1.25rem;
-}
-
-.c-up-to-date-container {
+.c-no-active-dms-container {
   position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   row-gap: 0.25rem;
+  margin-top: 3rem;
 
   .c-check-icon {
     font-size: 2.75rem;
     color: $text_1;
     line-height: 1.25;
+  }
 
-    @include tablet {
+  @include tablet {
+    margin-top: 4rem;
+
+    .c-check-icon {
       font-size: 3.25rem;
     }
   }
 }
 
+.c-search-container {
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
 .c-dm-list {
   @include desktop {
-    margin-top: 4rem;
+    margin-top: 5.25rem;
   }
 }
 </style>
