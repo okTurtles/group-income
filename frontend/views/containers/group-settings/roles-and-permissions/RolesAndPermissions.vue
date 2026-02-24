@@ -78,7 +78,7 @@ export default ({
       const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberRolesAndPermissions
       return this.canViewOtherMembersPermissions
         ? sortedEntries
-        : [myEntry]
+        : (myEntry ? [myEntry] : [])
     }
   },
   methods: {
