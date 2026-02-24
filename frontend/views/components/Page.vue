@@ -81,12 +81,12 @@ export default ({
     isInert () {
       return !this.ephemeral.isActive && this.ephemeral.isTouch
     },
-    isGroupChatPage () {
-      return ['GroupChat', 'GroupChatConversation'].includes(this.$route.name)
+    showChatToggleIcon () {
+      return ['GroupChat', 'GroupChatConversation', 'GlobalDirectMessages'].includes(this.$route.name)
     },
     toggleProps () {
       return {
-        element: this.isGroupChatPage ? 'chat' : 'sidebar',
+        element: this.showChatToggleIcon ? 'chat' : 'sidebar',
         'aria-expanded': this.ephemeral.isActive
       }
     }

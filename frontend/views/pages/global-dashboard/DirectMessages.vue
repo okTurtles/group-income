@@ -5,19 +5,31 @@ page(
 )
   template(#title='') {{ L('Direct Messages') }}
 
+  template(#sidebar='{ toggle }')
+    chat-nav
+      chat-members(
+        @new='toggle'
+        @redirect='toggle'
+        :hideNewButton='true'
+      )
+
   .card.c-direct-messages-container
     .c-up-to-date-container
-      i.icon-check-circle.c-check-icon
+      i.icon-comment-dots.c-check-icon
       i18n.has-text-1 You're up to date!
 </template>
 
 <script>
 import Page from '@components/Page.vue'
+import ChatNav from '@containers/chatroom/ChatNav.vue'
+import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 
 export default {
   name: 'DirectMessages',
   components: {
-    Page
+    Page,
+    ChatNav,
+    ChatMembers
   }
 }
 </script>
@@ -39,7 +51,7 @@ export default {
 
   .c-check-icon {
     font-size: 2.75rem;
-    color: $success_0;
+    color: $text_1;
     line-height: 1.25;
 
     @include tablet {
