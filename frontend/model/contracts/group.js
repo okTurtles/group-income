@@ -829,6 +829,10 @@ sbp('chelonia/defineContract', {
         }
 
         if (isGroupCreator || myPermissions.includes(GROUP_PERMISSIONS.REMOVE_MEMBER)) {
+          const targetRoleName = getters.getGroupMemberRoleNameById(memberToRemove)
+          if (targetRoleName === GROUP_ROLES.ADMIN && !isGroupCreator) {
+            throw new TypeError(L('Cannot remove an admin.'))
+          }
           return true
         } else if (membersCount < 3) {
           // In a small group only the creator can remove someone
@@ -1150,10 +1154,16 @@ sbp('chelonia/defineContract', {
             throw new TypeError(L('You cannot modify your own permissions.'))
           }
 
+          const targetRoleName = getters.getGroupMemberRoleNameById(item.memberID)
+
+          if (targetRoleName === GROUP_ROLES.ADMIN) {
+            throw new TypeError(L('Cannot modify the permissions of an admin.'))
+          }
+
           if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
             const isMyRoleAdmin = myRoleName === GROUP_ROLES.ADMIN
             if (item.roleName === GROUP_ROLES.ADMIN) {
-              throw new TypeError(L('Cannot assign or update admin role.'))
+              throw new TypeError(L('Cannot assign an admin role.'))
             }
 
             if (item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR)) {
