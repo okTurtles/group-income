@@ -12,19 +12,21 @@ page(
         @redirect='toggle'
         :hideNewButton='true'
       )
-  .card.c-search-container
-    .inputgroup
-      .is-icon.prefix(aria-hidden='true')
-        i.icon-search
-      input.input(
-        type='text'
-        name='search'
-        :placeholder='L("Find a DM")'
-      )
 
-  .c-no-active-dms-container
-    i.icon-comment-dots.c-check-icon
-    i18n.has-text-1 No active DMs yet.
+  .c-page-content-wrapper
+    .card.c-search-container
+      .inputgroup
+        .is-icon.prefix(aria-hidden='true')
+          i.icon-search
+        input.input(
+          type='text'
+          name='search'
+          :placeholder='L("Find a DM")'
+        )
+
+    .c-no-active-dms-container
+      i.icon-comment-dots.c-check-icon
+      i18n.has-text-1 No active DMs yet.
 </template>
 
 <script>
@@ -44,6 +46,11 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-page-content-wrapper {
+  margin-top: 1.5rem;
+  max-width: 42rem;
+}
 
 .c-no-active-dms-container {
   position: relative;
@@ -71,7 +78,6 @@ export default {
 
 .c-search-container {
   padding: 1rem 1.5rem;
-  margin-top: 1.5rem;
 }
 
 .c-dm-list {
