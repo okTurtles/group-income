@@ -133,8 +133,8 @@ export default ({
       .map(([memberID, profile]: [string, any]) => ({
         roleName: profile.role.name,
         permissions: profile.role.name === GROUP_ROLES.CUSTOM
-          ? profile.role.permissions
-          : GROUP_PERMISSIONS_PRESET[profile.role.name],
+          ? profile.role.permissions || []
+          : GROUP_PERMISSIONS_PRESET[profile.role.name] || [],
         memberID
       }))
   },

@@ -1162,6 +1162,11 @@ sbp('chelonia/defineContract', {
 
           if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
             const isMyRoleAdmin = myRoleName === GROUP_ROLES.ADMIN
+
+            if (!item.roleName) {
+              throw new TypeError(L('Role name is required for upsert action.'))
+            }
+
             if (item.roleName === GROUP_ROLES.ADMIN) {
               throw new TypeError(L('Cannot assign an admin role.'))
             }
