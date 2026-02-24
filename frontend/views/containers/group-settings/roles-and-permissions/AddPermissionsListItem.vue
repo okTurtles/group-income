@@ -44,7 +44,6 @@ li.c-update-permissions-list-item
 
 <script>
 import { mapGetters } from 'vuex'
-import AvatarUser from '@components/AvatarUser.vue'
 import MemberName from './MemberName.vue'
 import PermissionPiece from './PermissionPiece.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS, GROUP_PERMISSIONS_CUSTOM_OPTIONS } from '@model/contracts/shared/constants.js'
@@ -55,7 +54,6 @@ import { L } from '@common/common.js'
 export default {
   name: 'AddPermissionsListItem',
   components: {
-    AvatarUser,
     PermissionPiece,
     MemberName
   },

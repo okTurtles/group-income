@@ -14,10 +14,10 @@
           i18n.c-label(tag='span') Member:
           member-name.c-list-item-content.c-member-details-container(:memberID='data.memberID')
 
-          li.c-list-item
-            i18n.c-label(tag='span') Role:
-            .c-list-item-content
-              role-pill(:role='data.roleName')
+        li.c-list-item
+          i18n.c-label(tag='span') Role:
+          .c-list-item-content
+            role-pill(:role='data.roleName')
 
         li.c-list-item
           i18n.c-label(tag='span') Permissions:
@@ -40,7 +40,6 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import AvatarUser from '@components/AvatarUser.vue'
 import RolePill from './RolePill.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import MemberName from './MemberName.vue'
@@ -54,7 +53,6 @@ export default {
   components: {
     ModalTemplate,
     ButtonSubmit,
-    AvatarUser,
     BannerScoped,
     RolePill,
     MemberName

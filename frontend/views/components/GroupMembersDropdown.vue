@@ -98,6 +98,7 @@ export default ({
     allActiveMembers () {
       return Object.keys(this.profilesByGroup(this.groupID || this.currentGroupId))
         .map(memberId => this.globalProfile(memberId))
+        .filter(Boolean)
     },
     dropdownOptions () {
       const idsToExclude = uniq([

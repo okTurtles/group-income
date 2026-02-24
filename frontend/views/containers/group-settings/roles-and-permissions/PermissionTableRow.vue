@@ -33,10 +33,6 @@ import ViewPermissions from './ViewPermissions.vue'
 import RolePill from './RolePill.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
-import {
-  getRoleDisplayName,
-  getPermissionDisplayName
-} from './permissions-utils.js'
 import { L } from '@common/common.js'
 
 export default {
@@ -54,13 +50,6 @@ export default {
     isMobile: {
       type: Boolean,
       default: false
-    }
-  },
-  data () {
-    return {
-      ephemeral: {
-        isSubmitting: false
-      }
     }
   },
   computed: {
@@ -94,8 +83,6 @@ export default {
     }
   },
   methods: {
-    getRoleDisplayName,
-    getPermissionDisplayName,
     onActionMenuSelect (actionName) {
       const modalName = {
         'edit': 'EditPermissionsModal',
