@@ -24,9 +24,23 @@ page(
           :placeholder='L("Find a DM")'
         )
 
-    .c-no-active-dms-container
+    .c-no-active-dms-container(v-if='hasNoActiveDms')
       i.icon-comment-dots.c-check-icon
       i18n.has-text-1 No active DMs yet.
+
+    template(v-else)
+      .c-dm-group(
+        v-for='dmGroup in ephemeral.dmListSortedByLatest'
+        :key='dmGroup.dateDisplay'
+      )
+        .c-group-date.has-title-4 {{ dmGroup.dateDisplay }}
+
+        .c-dm-list-items
+          direct-message-list-item(
+            v-for='dm in dmGroup.items'
+            :key='dm.chatRoomID'
+            :dmDetails='dm'
+          )
 </template>
 
 <script>
@@ -35,25 +49,30 @@ import Page from '@components/Page.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
+import DirectMessageListItem from '@containers/global-dashboard/DirectMessageListItem.vue'
 
 export default {
   name: 'DirectMessages',
   components: {
     Page,
     ChatNav,
-    ChatMembers
+    ChatMembers,
+    DirectMessageListItem
   },
   data () {
     return {
       ephemeral: {
-        dmListSortedByLatest: [] // { dateDisplay: string, items: Array<chatroomDetails> }
+        dmListSortedByLatest: [] // Array<{ dateDisplay: string, items: Array<chatroomDetails> }>
       }
     }
   },
   computed: {
     ...mapGetters([
       'allDirectMessagesDetails'
-    ])
+    ]),
+    hasNoActiveDms () {
+      return this.ephemeral.dmListSortedByLatest.length === 0
+    }
   },
   methods: {
     initAndSortDMList () {
@@ -97,8 +116,12 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-page-content-wrapper {
-  margin-top: 1.5rem;
+  margin: 1.5rem auto 3rem;
   max-width: 42rem;
+
+  @include desktop {
+    margin: 1.5rem 0 3rem;
+  }
 }
 
 .c-no-active-dms-container {
@@ -133,5 +156,15 @@ export default {
   @include desktop {
     margin-top: 5.25rem;
   }
+}
+
+.c-group-date {
+  margin-bottom: 0.5rem;
+}
+
+.c-dm-group {
+  padding-bottom: 3rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid $general_0;
 }
 </style>
