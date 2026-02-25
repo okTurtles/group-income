@@ -250,10 +250,10 @@ It installs the dependencies that this project relies on and places them into th
 
 A lot of things. Its output will tell you exactly what it does, but the general idea is:
 
-- It runs the backend API server whose "start" file is: `backend/index.js`
+- It runs the backend API server by running `chel dev`
 - It creates a `dist/` folder and copies and compiles files from within the `frontend/` folder into it
 - It launches a web server to let you see the site
-- It watches files for changes, recompiling them and refreshing the browser anytime most files in `frontend/` are changed, and re-running the backend API server whenever files in `backend/` are changed
+- It watches files for changes, recompiling them and refreshing the browser anytime most files in `frontend/` are changed
 
 ----
 

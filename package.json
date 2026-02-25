@@ -5,7 +5,7 @@
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
-    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
+    "backend": "npx nodemon -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
@@ -16,10 +16,7 @@
     "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
-    "docker": "./scripts/docker.sh",
-    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
-    "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
-    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
+    "docker": "./scripts/docker.sh"
   },
   "eslintConfig": {
     "root": true,
@@ -113,7 +110,7 @@
     "@babel/preset-flow": "7.12.1",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
-    "@chelonia/cli": "3.0.0",
+    "@chelonia/cli": "3.2.0",
     "@chelonia/crypto": "1.0.1",
     "@chelonia/lib": "1.2.9",
     "@chelonia/multiformats": "1.0.0",
