@@ -46,7 +46,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        dmListSortedByLatest: {} // { [dateDisplay]: Array<chatroomDetails>, ... }
+        dmListSortedByLatest: [] // { dateDisplay: string, items: Array<chatroomDetails> }
       }
     }
   },
@@ -57,21 +57,34 @@ export default {
   },
   methods: {
     initAndSortDMList () {
-      for (const [chatRoomID, directMessageDetails] of Object.entries(this.allDirectMessagesDetails)) {
-        const { lastMsgTimeStamp } = directMessageDetails
-        const dateDisplay = humanDate(lastMsgTimeStamp, { month: 'long', day: 'numeric', year: 'numeric' })
+      const sortedList = []
+      const allDmEntries = Object.entries(this.allDirectMessagesDetails).sort((a, b) => {
+        // In case DM has no messages yet, use the chatroom creation date for sorting
+        const aTimeStamp = a[1].lastMsgTimeStamp || a[1].createdTimeStamp
+        const bTimeStamp = b[1].lastMsgTimeStamp || b[1].createdTimeStamp
+        return bTimeStamp - aTimeStamp
+      })
 
-        if (!this.ephemeral.dmListSortedByLatest[dateDisplay]) {
-          this.ephemeral.dmListSortedByLatest[dateDisplay] = []
+      for (const [chatRoomID, directMessageDetails] of allDmEntries) {
+        const { lastMsgTimeStamp, createdTimeStamp } = directMessageDetails
+        const dateDisplay = humanDate(lastMsgTimeStamp || createdTimeStamp, { month: 'long', day: 'numeric', year: 'numeric' })
+        let listEntry = sortedList.find(entry => entry.dateDisplay === dateDisplay)
+
+        if (!listEntry) {
+          listEntry = {
+            dateDisplay,
+            items: []
+          }
+          sortedList.push(listEntry)
         }
 
-        this.ephemeral.dmListSortedByLatest[dateDisplay].push({
+        listEntry.items.push({
           chatRoomID,
           ...directMessageDetails
         })
       }
 
-      console.log('!@# dm sorted list: ', this.ephemeral.dmListSortedByLatest)
+      this.ephemeral.dmListSortedByLatest = sortedList
     }
   },
   created () {

@@ -58,6 +58,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       const lastMsgTimeStamp = chatRoomState.messages?.length > 0
         ? new Date(chatRoomState.messages[chatRoomState.messages.length - 1].datetime).getTime()
         : 0
+      const memberJoinedDates = Object.values(chatRoomState.members || {})
+        .map((member: any) => member?.joinedDate)
+        .filter(Boolean)
+      const createdDate = memberJoinedDates.length > 0
+        ? memberJoinedDates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0]
+        : null
+      const createdTimeStamp = createdDate ? new Date(createdDate).getTime() : 0
 
       details[chatRoomID] = {
         ...directMessageSettings,
@@ -76,6 +83,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         title: isDMToMyself
           ? getters.userDisplayNameFromID(myIdentityId)
           : partners.map(cID => getters.userDisplayNameFromID(cID)).join(', '),
+        createdTimeStamp,
         lastMsgTimeStamp,
         picture: getters.ourContactProfilesById[lastJoinedPartner]?.picture,
         isDMToMyself // Can be useful when certain things in UI are meant only for 'DM to myself'
