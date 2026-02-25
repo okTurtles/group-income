@@ -38,7 +38,7 @@ import {
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
-import { paymentHashesFromPaymentPeriod, referenceTally } from './shared/functions.js'
+import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.js'
 import groupGetters from './shared/getters/group.js'
 import { cloneDeep, deepEqualJSONType, merge, omit } from 'turtledash'
 import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
@@ -1137,21 +1137,7 @@ sbp('chelonia/defineContract', {
           attributes: chatRoomAttributesType
         })(data)
 
-        // Validation on the chatroom name - references:
-        // https://github.com/okTurtles/group-income/issues/1987
-        // https://github.com/okTurtles/group-income/issues/2999
-        const chatroomName = data.attributes.name
-        const nameValidationMap: {[string]: Function} = {
-          [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/g.test(v),
-          [L('Chatroom name can only contain lowercase letters, numbers, and hyphens(-)')]: (v: string): boolean => /[^a-z0-9-]/g.test(v)
-        }
-
-        for (const key in nameValidationMap) {
-          const check = nameValidationMap[key]
-          if (check(chatroomName)) {
-            throw new TypeError(key)
-          }
-        }
+        validateChatRoomName(data.attributes.name)
       },
       process ({ data, contractID, innerSigningContractID }, { state }) {
         const { name, type, privacyLevel, description } = data.attributes
@@ -1345,10 +1331,14 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/renameChatRoom': {
-      validate: actionRequireActiveMember(objectOf({
-        chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
-        name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name')
-      })),
+      validate: (data, props) => {
+        actionRequireActiveMember(objectOf({
+          chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID'),
+          name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS, 'name')
+        }))(data, props)
+
+        validateChatRoomName(data.name)
+      },
       process ({ data }, { state }) {
         state.chatRooms[data.chatRoomID]['name'] = data.name
       }
