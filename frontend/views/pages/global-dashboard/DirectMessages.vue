@@ -30,9 +30,11 @@ page(
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default {
   name: 'DirectMessages',
@@ -40,6 +42,40 @@ export default {
     Page,
     ChatNav,
     ChatMembers
+  },
+  data () {
+    return {
+      ephemeral: {
+        dmListSortedByLatest: {} // { [dateDisplay]: Array<chatroomDetails>, ... }
+      }
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'allDirectMessagesDetails'
+    ])
+  },
+  methods: {
+    initAndSortDMList () {
+      for (const [chatRoomID, directMessageDetails] of Object.entries(this.allDirectMessagesDetails)) {
+        const { lastMsgTimeStamp } = directMessageDetails
+        const dateDisplay = humanDate(lastMsgTimeStamp, { month: 'long', day: 'numeric', year: 'numeric' })
+
+        if (!this.ephemeral.dmListSortedByLatest[dateDisplay]) {
+          this.ephemeral.dmListSortedByLatest[dateDisplay] = []
+        }
+
+        this.ephemeral.dmListSortedByLatest[dateDisplay].push({
+          chatRoomID,
+          ...directMessageDetails
+        })
+      }
+
+      console.log('!@# dm sorted list: ', this.ephemeral.dmListSortedByLatest)
+    }
+  },
+  created () {
+    this.initAndSortDMList()
   }
 }
 </script>
