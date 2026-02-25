@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, boolean, mixed, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import {
@@ -99,7 +99,8 @@ sbp('chelonia/defineContract', {
     'gi.contracts/identity': {
       validate: (data) => {
         objectMaybeOf({
-          attributes: attributesType
+          attributes: attributesType,
+          secretDeleteTokenSeeds: arrayOf(arrayOf(mixed))
         })(data)
         const { username } = data.attributes
         if (!username) {
@@ -113,7 +114,8 @@ sbp('chelonia/defineContract', {
           attributes: {},
           chatRooms: {},
           groups: {},
-          fileDeleteTokens: {}
+          fileDeleteTokens: {},
+          secretDeleteTokenSeeds: []
         }, data)
         for (const key in initialState) {
           state[key] = initialState[key]
@@ -386,6 +388,18 @@ sbp('chelonia/defineContract', {
         for (const manifestCid of data.manifestCids) {
           delete state.fileDeleteTokens[manifestCid]
         }
+      }
+    },
+    'gi.contracts/identity/setSecretDeleteTokenSeed': {
+      validate: objectOf({
+        secretSeed: stringMax(64, 'secretSeed')
+      }),
+      process ({ data, height }, { state }) {
+        if (!state.secretDeleteTokenSeeds) state.secretDeleteTokenSeeds = []
+        if (state.secretDeleteTokenSeeds.some(([, seed]) => seed === data.secretSeed)) {
+          throw new Error('Exact seed already set. Duplicate values are not allowed.')
+        }
+        state.secretDeleteTokenSeeds.push([height, data.secretSeed])
       }
     },
     'gi.contracts/identity/setGroupAttributes': {
