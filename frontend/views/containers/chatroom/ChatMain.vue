@@ -366,48 +366,18 @@ export default ({
     this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
+    window.addEventListener('focus', this.windowFocusHandler)
 
     if (this.summary.chatRoomID) {
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
-
-    /*
-    if (typeof ResizeObserver !== 'function') return
-    this.resizeObserver = new ResizeObserver((entries) => {
-      if (!entries.length) return
-      requestAnimationFrame(() => this.applyTopPadding())
-    })
-    // Mutation observer needed because resize observer won't trigger on
-    // scroll height changes
-    if (typeof MutationObserver === 'function') {
-      this.mutationObserver = new MutationObserver((entries) => {
-        if (!this.resizeObserver || !this.mutationObserver) return
-        for (const entry of entries) {
-          if (entry.type !== 'childList') continue
-          for (const addedNode of entry.addedNodes) {
-            this.resizeObserver.observe(addedNode)
-          }
-          for (const removedNode of entry.removedNodes) {
-            this.resizeObserver.unobserve(removedNode)
-          }
-        }
-      })
-    }
-    */
   },
   beforeDestroy () {
-    // if (this.scrollTimeoutId != null) clearTimeout(this.scrollTimeoutId)
     // Destroy various event listeners.
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
-    /*
-    this.resizeObserver?.disconnect()
-    this.mutationObserver?.disconnect()
-    this.resizeObserver = null
-    this.mutationObserver = null
-    this.matchMediaPhone.onchange = null
-    */
+    window.removeEventListener('focus', this.windowFocusHandler)
   },
   computed: {
     ...mapGetters([
@@ -486,6 +456,10 @@ export default ({
     hasChatroomSwitchedSince (): () => boolean {
       const signal = this.ephemeral.switchController.signal
       return () => signal.aborted
+    },
+    userManuallyMarkedUnread () {
+      // A flag to indicate if the user has manually marked a message as unread
+      return Boolean(this.ephemeral.messageHashToMarkUnread)
     }
   },
   methods: {
@@ -1426,13 +1400,22 @@ export default ({
         })
       }
     },
-    setStartNewMessageIndex () {
-      this.ephemeral.startedUnreadMessageHash = null
-      if (this.currentChatRoomReadUntil) {
-        const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+    setStartNewMessageIndex (messageHashTo) {
+      if (this.userManuallyMarkedUnread) {
+        // If user has used manual 'mark as unread' functionality, disable all the automatic 'is-new' UI related logics.
+        return
+      }
 
-        if (index >= 0) {
-          this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+      if (messageHashTo) {
+        this.ephemeral.startedUnreadMessageHash = messageHashTo
+      } else {
+        this.ephemeral.startedUnreadMessageHash = null
+        if (this.currentChatRoomReadUntil) {
+          const index = this.ephemeral.messages.findIndex(msg => msg.height > this.currentChatRoomReadUntil.createdHeight)
+
+          if (index >= 0) {
+            this.ephemeral.startedUnreadMessageHash = this.ephemeral.messages[index].hash
+          }
         }
       }
     },
@@ -1443,7 +1426,10 @@ export default ({
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
       forceUpdate = false
     }) {
-      if (this.ephemeral.messageHashToMarkUnread) {
+      const isTabInactive = document.hidden || !document.hasFocus()
+      if ((isTabInactive && !forceUpdate) ||
+        this.userManuallyMarkedUnread) {
+        // NOTE regarding 'this.userManuallyMarkedUnread' here:
         // 'Mark unread' feature allows user to set 'currentChatRoomReadUntil' to the message they want.
         // So if user has used this functionality at least once in the current chatroom,
         // the chatroom should stop auto-updating the 'readUntil' data in various situations (eg. while scrolling),
@@ -1569,6 +1555,7 @@ export default ({
 
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         const { addedOrDeleted } = isMessageAddedOrDeleted(message)
+        const isMessageAdded = addedOrDeleted === 'ADDED'
 
         ;(async () => {
           // Messages are processed twice: before sending (outgoing direction,
@@ -1603,28 +1590,38 @@ export default ({
           if (hasChatroomSwitchedSince()) return
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
-          if (this.ephemeral.scrollableDistance < 50) {
-            if (addedOrDeleted === 'ADDED' && this.messageState.contract.messages.length) {
+          if (isMessageAdded) {
+            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+
+            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
                 // Scroll-query to the latest message.
                 this.updateScroll()
-              } else {
+              } else if (latestValidMessage) {
                 // If there are any temporary messages that do not exist in the
                 // contract, they should not be used for updateReadUntilMessageHash
-                const msg = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
-                if (msg) {
-                  this.updateReadUntilMessageHash({
-                    messageHash: msg.hash,
-                    createdHeight: msg.height
-                  })
-                }
+                this.updateReadUntilMessageHash({
+                  messageHash: latestValidMessage.hash,
+                  createdHeight: latestValidMessage.height
+                })
+              }
+            }
+
+            if (latestValidMessage) {
+              const isMessageFromOther = latestValidMessage.from !== this.ourIdentityContractId
+              if (isMessageFromOther) {
+                // If a new message added is from other user but there is no 'is-new' UI displayed now, show 'is-new' UI.
+                !this.ephemeral.startedUnreadMessageHash && this.setStartNewMessageIndex(latestValidMessage.hash)
+              } else if (this.ephemeral.startedUnreadMessageHash && !this.userManuallyMarkedUnread) {
+                // If the current user just sent a new message but there is 'is-new' UI displayed now, hide 'is-new' UI(unless the user has used mark as unread functionality).
+                this.ephemeral.startedUnreadMessageHash = null
               }
             }
           }
 
-          if (addedOrDeleted !== 'NONE' && this.ephemeral.messageHashToMarkUnread) {
+          if (addedOrDeleted !== 'NONE' && this.userManuallyMarkedUnread) {
             // If user has used 'Mark unread' but then messages are either added or deleted,
             // 'unreadMessages' data in the store should be updated accordingly.
             const action = addedOrDeleted === 'ADDED' ? 'addChatRoomUnreadMessage' : 'removeChatRoomUnreadMessage'
@@ -1647,6 +1644,9 @@ export default ({
         //       should ignore the scroll position, and scroll to the bottom
         this.throttledJumpToLatest(this)
       }
+    },
+    windowFocusHandler () {
+      this.onChatScroll()
     },
     throttledJumpToLatest: throttle(function (_this) {
       // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
@@ -1799,6 +1799,7 @@ export default ({
 
         // Prevent the infinite scroll handler from rendering more messages
         this.ephemeral.messagesInitiated = undefined
+        this.ephemeral.startedUnreadMessageHash = null
         this.ephemeral.messages = []
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
