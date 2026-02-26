@@ -17,7 +17,7 @@
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
     i18n.c-no-message No messages yet
 
-  .c-dm-timestamp.has-text-color-1 {{ timestamp }}
+  .c-dm-timestamp.has-text-1 {{ timestamp }}
 </template>
 
 <script>
@@ -52,7 +52,10 @@ export default {
   },
   methods: {
     onTileClick () {
-      alert('TODO: open the DM conversation interface in Global Dashboard.')
+      this.$router.push({
+        name: 'GlobalDirectMessagesConversation',
+        params: { chatRoomID: this.dmDetails.chatRoomID }
+      })
     }
   }
 }
@@ -109,6 +112,7 @@ export default {
 .c-no-message {
   font-size: 0.875rem;
   color: $text_1;
+  font-style: italic;
 }
 
 .c-you {

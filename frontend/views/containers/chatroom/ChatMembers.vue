@@ -106,6 +106,9 @@ export default ({
       'currentChatRoomId',
       'ourIdentityContractId'
     ]),
+    isInGlobalDashboard () {
+      return this.$route.path.startsWith('/global-dashboard/direct-messages')
+    },
     hasNoListItems () {
       return Object.keys(this.ourGroupDirectMessages).length === 0
     }
@@ -119,7 +122,7 @@ export default ({
     },
     buildUrl (chatRoomID) {
       return {
-        name: 'GroupChatConversation',
+        name: this.isInGlobalDashboard ? 'GlobalDirectMessagesConversation' : 'GroupChatConversation',
         params: { chatRoomID }
       }
     },
