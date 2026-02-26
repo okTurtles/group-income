@@ -33,7 +33,7 @@ page(
         v-for='dmGroup in ephemeral.dmListSortedByLatest'
         :key='dmGroup.dateDisplay'
       )
-        .c-group-date.has-title-4 {{ dmGroup.dateDisplay }}
+        .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
 
         .c-dm-list-items
           direct-message-list-item(
@@ -150,6 +150,10 @@ export default {
 
 .c-search-container {
   padding: 1rem 1.5rem;
+
+  &:has(+ .c-dm-group) {
+    margin-bottom: 3rem;
+  }
 }
 
 .c-dm-list {
@@ -159,12 +163,14 @@ export default {
 }
 
 .c-group-date {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .c-dm-group {
-  padding-bottom: 3rem;
   margin-bottom: 3rem;
-  border-bottom: 1px solid $general_0;
+
+  &:first-of-type {
+    margin-top: 3rem;
+  }
 }
 </style>
