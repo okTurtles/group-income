@@ -14,7 +14,7 @@ page(
       )
 
   .c-page-content-wrapper
-    direct-message-chat-interface(v-if='showChatInterface')
+    direct-message-chat-interface(v-if='inChatInterfacePage')
     template(v-else)
       .card.c-search-container
         .inputgroup
@@ -77,7 +77,7 @@ export default {
     hasNoActiveDms () {
       return this.ephemeral.dmListSortedByLatest.length === 0
     },
-    showChatInterface () {
+    inChatInterfacePage () {
       return this.$route.name === 'GlobalDirectMessagesConversation' &&
         this.$route.params.chatRoomID
     }
@@ -107,11 +107,21 @@ export default {
 
         listEntry.items.push({
           chatRoomID,
-          ...directMessageDetails
+          ...directMessageDetails,
+          latestMessage: this.getChatroomLatestMessage(chatRoomID)
         })
       }
 
       this.ephemeral.dmListSortedByLatest = sortedList
+    },
+    getChatroomLatestMessage (chatRoomID) {
+      const chatroomState = this.$store.state[chatRoomID]
+      return chatroomState?.messages?.length > 0
+        ? chatroomState.messages[chatroomState.messages.length - 1]
+        : null
+    },
+    updateDMList () {
+      console.log('TODO: implement populating the list-item with the latest message and sort the list by latest.')
     }
   },
   created () {
@@ -166,7 +176,7 @@ export default {
 
 .c-dm-list {
   @include desktop {
-    margin-top: 5.25rem;
+    margin-top: 0.75rem;
   }
 }
 

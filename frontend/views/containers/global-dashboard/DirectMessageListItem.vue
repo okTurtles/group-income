@@ -1,9 +1,5 @@
 <template lang='pug'>
-.card.c-dm-list-item(
-  role='button'
-  tabindex='0'
-  @click.stop='onTileClick'
-)
+.card.c-dm-list-item
   .c-dm-avatar
     avatar-user(
       :contractID='avatarContractID'
@@ -12,19 +8,26 @@
     )
 
   .c-dm-info
-    .c-dm-title
-      span.is-title-4 {{ dmDetails.title }}
+    .c-dm-title(tabindex='0' role='link')
+      span.is-title-4(@click.stop='onTileClick') {{ dmDetails.title }}
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
-    i18n.c-no-message No messages yet
+
+    .c-dm-latest-message(v-if='dmDetails.latestMessage')
+      span.c-dm-preview-from(v-if='fromDisplay') {{ fromDisplay }}:
+      span.c-dm-preview-text {{ getPreviewText(dmDetails.latestMessage) }}
+    i18n.c-no-message(v-else) No messages yet
 
   .c-dm-timestamp.has-text-1 {{ timestamp }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import { L } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import { humanTimeString } from '@model/contracts/shared/time.js'
+import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'DirectMessageListItem',
@@ -48,6 +51,13 @@ export default {
     timestamp () {
       const t = this.dmDetails.lastMsgTimeStamp || this.dmDetails.createdTimeStamp
       return humanTimeString(t)
+    },
+    fromDisplay () {
+      return this.dmDetails.latestMessage
+        ? this.dmDetails.isDMToMyself
+          ? L('You')
+          : this.getSenderDisplayName(this.dmDetails.latestMessage.from)
+        : null
     }
   },
   methods: {
@@ -56,6 +66,21 @@ export default {
         name: 'GlobalDirectMessagesConversation',
         params: { chatRoomID: this.dmDetails.chatRoomID }
       })
+    },
+    getSenderDisplayName (contractID) {
+      return contractID === this.ourIdentityContractId
+        ? L('You')
+        : this.dmDetails.partners.find(partner => partner.contractID === contractID)?.displayName || L('Unknown')
+    },
+    getPreviewText (message) {
+      switch (message.type) {
+        case MESSAGE_TYPES.TEXT:
+          return stripMarkdownSyntax(message.text)
+        case MESSAGE_TYPES.POLL:
+          return L('Created a poll')
+        default:
+          return L('Sent a new message')
+      }
     }
   }
 }
@@ -70,7 +95,6 @@ export default {
   display: flex;
   align-items: flex-start;
   column-gap: 0.5rem;
-  cursor: pointer;
   border: 1px solid rgba(0, 0, 0, 0);
   transition: border-color 120ms ease-out;
 
@@ -78,15 +102,8 @@ export default {
     margin-bottom: 0;
   }
 
-  &:hover,
-  &:focus,
-  &:focus-within {
+  &:hover {
     border: 1px solid $general_0;
-
-    .c-dm-title,
-    .c-you {
-      text-decoration: underline;
-    }
   }
 
   @include tablet {
@@ -107,6 +124,19 @@ export default {
 .c-dm-title {
   font-weight: 600;
   color: $text_0;
+  cursor: pointer;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    text-decoration: underline;
+    appearance: none;
+    outline: none;
+
+    .c-you {
+      text-decoration: inherit;
+    }
+  }
 }
 
 .c-no-message {
@@ -126,5 +156,10 @@ export default {
   @include tablet {
     font-size: $size-4;
   }
+}
+
+.c-dm-preview-from {
+  display: inline-block;
+  margin-right: 0.25rem;
 }
 </style>

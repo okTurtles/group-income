@@ -69,7 +69,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       details[chatRoomID] = {
         ...directMessageSettings,
         members,
-        latestMessages: chatRoomState.messages,
         partners: partners.map(memberID => ({
           contractID: memberID,
           username: getters.usernameFromID(memberID),
@@ -112,7 +111,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         const hasActiveMember = partners.some(partner => !!rootState[groupID]?.profiles[partner.contractID])
         if (isDMToMyself || hasActiveMember) {
           currentGroupDirectMessagesDetails[chatRoomID] = directMessageDetails
-          delete currentGroupDirectMessagesDetails[chatRoomID].latestMessages
         }
       }
 
