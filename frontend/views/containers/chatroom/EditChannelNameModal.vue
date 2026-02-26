@@ -24,6 +24,8 @@
           data-test='updateChannelName'
         )
 
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can only contain lowercase letters, numbers, and hyphens(-).
+
       banner-scoped(ref='formMsg')
 
       .buttons
@@ -31,7 +33,7 @@
         i18n.is-success(
           tag='button'
           @click='submit'
-          :disabled='submitting || $v.form.$invalid'
+          :disabled='saveBtnDisabled'
           data-test='updateChannelNameSubmit'
         ) Save
 </template>
@@ -58,21 +60,29 @@ export default ({
     ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'groupGeneralChatRoomId', 'groupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
+    },
+    saveBtnDisabled () {
+      return this.submitting ||
+        this.form.name === this.form.currentName ||
+        this.$v.form.$invalid
     }
   },
   data () {
     return {
-      channelId: this.$route.query.channel,
       submitting: false,
       form: {
         name: null,
+        currentName: null,
         existingNames: []
       }
     }
   },
   created () {
-    this.form.name = this.currentChatRoomState.attributes.name
-    this.form.existingNames = Object.keys(this.groupChatRooms).map(cId => this.groupChatRooms[cId].name)
+    this.form.currentName = this.currentChatRoomState.attributes.name
+    this.form.name = this.form.currentName
+    this.form.existingNames = Object.keys(this.groupChatRooms)
+      .map(cId => this.groupChatRooms[cId].name)
+      .filter(name => name !== this.form.currentName)
   },
   mounted () {
     if (this.groupGeneralChatRoomId === this.currentChatRoomId) {
@@ -88,21 +98,13 @@ export default ({
       try {
         if (this.submitting) return
         this.submitting = true
-        if (this.currentChatRoomState.attributes.name === this.form.name) {
-          // TODO: No need to update chatroom name. Display message box or toast or sth else
-          console.log('TODO: Channel name is not changed')
-        } else if (this.currentChatRoomId === this.groupGeneralChatRoomId) {
-          // TODO: display warning message '"General" chatroom can not be renamed'
-          console.log('TODO: "General" chatroom can not be renamed')
-        } else {
-          await sbp('gi.actions/group/renameChatRoom', {
-            contractID: this.currentGroupId,
-            data: {
-              chatRoomID: this.currentChatRoomId,
-              name: this.form.name
-            }
-          })
-        }
+        await sbp('gi.actions/group/renameChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            chatRoomID: this.currentChatRoomId,
+            name: this.form.name
+          }
+        })
         this.close()
       } catch (e) {
         console.error('RenameChannelModal submit() error:', e)
@@ -127,6 +129,15 @@ export default ({
           }
           return true
         }
+      }
+    }
+  },
+  watch: {
+    'form.name' (newVal) {
+      if (newVal.length) {
+        this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
       }
     }
   }
