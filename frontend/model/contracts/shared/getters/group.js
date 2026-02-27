@@ -146,7 +146,7 @@ export default ({
         .map(({ memberID }) => memberID)
     }
   },
-  getGroupMemberPermissionsById (state, getters) {
+  getGroupPermissionsByMemberId (state, getters) {
     // Pass the group memberID and get all the permissions that the member has if any.
     return (memberID) => {
       const profile = getters.groupProfiles[memberID]

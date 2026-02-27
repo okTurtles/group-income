@@ -815,7 +815,7 @@ sbp('chelonia/defineContract', {
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
         const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
-        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
 
         if (!state.profiles[memberToRemove]) {
           throw new GIGroupNotJoinedError(L('Not part of the group.'))
@@ -828,7 +828,7 @@ sbp('chelonia/defineContract', {
           return true
         }
 
-        if (isGroupCreator || myPermissions.includes(GROUP_PERMISSIONS.REMOVE_MEMBER)) {
+        if (isGroupCreator || actorPermissions.includes(GROUP_PERMISSIONS.REMOVE_MEMBER)) {
           const targetRoleName = getters.getGroupMemberRoleNameById(memberToRemove)
           if (targetRoleName === GROUP_ROLES.ADMIN && !isGroupCreator) {
             throw new TypeError(L('Cannot remove an admin.'))
@@ -977,12 +977,12 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('The link does not exist.'))
         }
 
-        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
         const inviteCreatorID = state.invites?.[data.inviteKeyId]?.creatorID
 
         // Only the creator and members with the REVOKE_INVITE permission can revoke an invite
-        if (inviteCreatorID !== innerSigningContractID && !myPermissions.includes(GROUP_PERMISSIONS.REVOKE_INVITE)) {
-          throw new TypeError(L('You do not have permission to revoke this invite.'))
+        if (inviteCreatorID !== innerSigningContractID && !actorPermissions.includes(GROUP_PERMISSIONS.REVOKE_INVITE)) {
+          throw new TypeError(L('Insufficient permission to revoke invite'))
         }
       }),
       process () {
@@ -1138,11 +1138,11 @@ sbp('chelonia/defineContract', {
           permissions: optional(arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x))))
         }))(data)
 
-        const myRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
-        const myPermissions = getters.getGroupMemberPermissionsById(innerSigningContractID)
+        const actorRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
 
-        if (!myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
-          throw new TypeError(L('You do not have permission to delegate permissions.'))
+        if (!actorPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
+          throw new TypeError(L('Cannot add or modify permissions without permission to delegate permissions.'))
         }
 
         for (const item of data) {
@@ -1151,7 +1151,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (item.memberID === innerSigningContractID) {
-            throw new TypeError(L('You cannot modify your own permissions.'))
+            throw new TypeError(L('Cannot modify own permissions.'))
           }
 
           const targetRoleName = getters.getGroupMemberRoleNameById(item.memberID)
@@ -1161,7 +1161,7 @@ sbp('chelonia/defineContract', {
           }
 
           if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
-            const isMyRoleAdmin = myRoleName === GROUP_ROLES.ADMIN
+            const isActorRoleAdmin = actorRoleName === GROUP_ROLES.ADMIN
 
             if (!item.roleName) {
               throw new TypeError(L('Role name is required for upsert action.'))
@@ -1175,13 +1175,13 @@ sbp('chelonia/defineContract', {
               throw new TypeError(L('Only the group admin can have assign-delegator permission and it cannot be granted to other roles.'))
             }
 
-            if (item.roleName === GROUP_ROLES.MODERATOR_DELEGATOR && !isMyRoleAdmin) {
-              throw new TypeError(L('You do not have permission to assign moderator-delegator role.'))
+            if (item.roleName === GROUP_ROLES.MODERATOR_DELEGATOR && !isActorRoleAdmin) {
+              throw new TypeError(L('Only admin can assign moderator-delegator role.'))
             }
 
-            if (myRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
-              item.permissions?.some(permission => !myPermissions.includes(permission))) {
-              throw new TypeError(L("You(moderator-delegator) cannot assign permissions that you don't have to others."))
+            if (actorRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
+              item.permissions?.some(permission => !actorPermissions.includes(permission))) {
+              throw new TypeError(L("Moderator(delegator) cannot assign permissions that they don't have to others."))
             }
           }
 

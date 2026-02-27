@@ -284,7 +284,7 @@ sbp('chelonia/defineContract', {
       validate: actionRequireInnerSignature((data, { state, getters, meta, message: { innerSigningContractID } }) => {
         if (state.attributes.creatorID !== innerSigningContractID) {
           // TODO: add DELETE_CHANNEL permission related check here when it's implemented
-          throw new TypeError(L('You do not have permission to delete this channel.'))
+          throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
       process ({ meta, contractID }, { state, getters }) {
