@@ -53,7 +53,7 @@
           :class='submitStyleNonProposal'
           v-if='!isConfirmation && !shouldPropose'
           @click='submit'
-          :disabled='disabled || !isGroupCreator'
+          :disabled='disabled || (!isGroupCreator && !shouldImmediateChange)'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -309,5 +309,9 @@ export default ({
       display: none;
     }
   }
+}
+
+.buttons {
+  row-gap: 0.75rem;
 }
 </style>

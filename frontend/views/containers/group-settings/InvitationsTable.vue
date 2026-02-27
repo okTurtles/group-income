@@ -14,7 +14,7 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
-  banner-scoped(ref='inviteError' data-test='inviteError')
+  banner-scoped(ref='inviteError' allow-a data-test='inviteError')
 
   table.table.table-in-card.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
@@ -125,7 +125,7 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L, LTags } from '@common/common.js'
@@ -166,7 +166,8 @@ export default ({
       'ourUserDisplayName',
       'currentGroupOwnerID',
       'currentWelcomeInvite',
-      'groupShouldPropose'
+      'groupShouldPropose',
+      'ourGroupPermissionsHas'
     ]),
     ...mapState([
       'currentGroupId'
@@ -179,7 +180,11 @@ export default ({
 
       const invitesList = Object.entries(vmInvites)
         .map(([id, invite]) => [id, { ...invite, creatorID: invites[id]?.creatorID, invitee: invites[id]?.invitee }])
-        .filter(([, invite]) => invite.creatorID === INVITE_INITIAL_CREATOR || invite.creatorID === this.ourIdentityContractId)
+        .filter(([, invite]) => {
+          return invite.creatorID === INVITE_INITIAL_CREATOR ||
+            invite.creatorID === this.ourIdentityContractId ||
+            this.ourGroupPermissionsHas(GROUP_PERMISSIONS.REVOKE_INVITE)
+        })
         .map(this.mapInvite)
 
       const options = {

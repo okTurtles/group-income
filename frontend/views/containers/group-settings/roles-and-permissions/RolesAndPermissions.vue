@@ -1,11 +1,10 @@
 <template lang="pug">
 page-section.c-section(
-  v-if='displayComponent'
   :title='L("Roles and Permissions")'
 )
-  i18n.has-text-1.c-section-description(tag='p') Here's a list of roles and permissions granted to your group members.
-
-  banner-scoped(ref='feedbackMsg' :allowA='true')
+  p.has-text-1.c-section-description
+    i18n(v-if='canViewOtherMembersPermissions') Here's a list of roles and permissions granted to your group members.
+    i18n(v-else) Below is the role and permissions granted to you.
 
   table.table.table-in-card.c-permissions-table
     thead
@@ -16,19 +15,20 @@ page-section.c-section(
           i18n.th-user(tag='th') User
           i18n.th-role(tag='th') Role
         i18n.th-permissions(tag='th') Permissions
-        th.th-action(:aria-label='L("action")')
+        th.th-action(v-if='canDelegatePermissions' :aria-label='L("action")')
 
     tbody
       permission-table-row(
-        v-for='entry in ephemeral.fakeRolesData'
-        :key='entry.id'
+        v-for='entry in groupPermissionsToDisplay'
+        :key='entry.memberID'
         :data='entry'
         :is-mobile='ephemeral.isMobile'
       )
 
-  .c-buttons-container
+  banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+
+  .c-buttons-container(v-if='canDelegatePermissions')
     button.is-small.is-outlined(
-      v-if='canDelegatePermissions'
       type='button'
       @click='handleAddPermissionsClick'
     )
@@ -36,86 +36,71 @@ page-section.c-section(
 </template>
 
 <script>
-import PageSection from '@components/PageSection.vue'
-import BannerScoped from '@components/banners/BannerScoped.vue'
-import PermissionTableRow from './PermissionTableRow.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
-
-const fakeRolesData = [
-  // NOTE: This is a fake user data created for development purpose.
-  //       Should be removed once the roles & permissions features are implemented in the contract.
-  {
-    id: 'user-1',
-    username: 'Fake user 1',
-    role: GROUP_ROLES.ADMIN,
-    permissions: GROUP_PERMISSIONS_PRESET.ADMIN
-  },
-  {
-    id: 'user-2',
-    username: 'Fake user 2',
-    role: GROUP_ROLES.MODERATOR_DELEGATOR,
-    permissions: GROUP_PERMISSIONS_PRESET.MODERATOR_DELEGATOR
-  },
-  {
-    id: 'user-3',
-    username: 'Fake user 3',
-    role: GROUP_ROLES.MODERATOR,
-    permissions: GROUP_PERMISSIONS_PRESET.MODERATOR
-  },
-  {
-    id: 'user-4',
-    username: 'Fake user 4',
-    role: GROUP_ROLES.CUSTOM,
-    permissions: [
-      GROUP_PERMISSIONS.VIEW_PERMISSIONS,
-      GROUP_PERMISSIONS.DELETE_CHANNEL
-    ]
-  }
-]
+import PageSection from '@components/PageSection.vue'
+import PermissionTableRow from './PermissionTableRow.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import { OPEN_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
+import { GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'RolesAndPermissions',
   components: {
     PageSection,
-    BannerScoped,
-    PermissionTableRow
+    PermissionTableRow,
+    BannerScoped
   },
   data () {
     return {
       ephemeral: {
-        fakeRolesData,
         isMobile: false
       },
       matchMediaMobile: null
     }
   },
   computed: {
-    displayComponent () {
-      // TODO: Remove this once the development is complete and the feature is ready for release.
-      return process.env.NODE_ENV === 'development'
-    },
-    myPermissions () {
-      // NOTE: Using ADMIN preset here for a development purpose for now.
-      // (TODO: Replace with logic that uses actual permissions eg. Implement a vuex getter)
-      return GROUP_PERMISSIONS_PRESET.ADMIN
-    },
+    ...mapGetters([
+      'ourGroupPermissionsHas',
+      'allGroupMemberRolesAndPermissions',
+      'ourIdentityContractId'
+    ]),
     canDelegatePermissions () {
-      return this.myPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
+    },
+    canViewOtherMembersPermissions () {
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.VIEW_PERMISSIONS)
+    },
+    groupPermissionsToDisplay () {
+      const myEntry = this.allGroupMemberRolesAndPermissions.find(entry => entry.memberID === this.ourIdentityContractId)
+      const otherEntries = this.allGroupMemberRolesAndPermissions.filter(entry => entry.memberID !== this.ourIdentityContractId)
+      const sortedEntries = myEntry ? [myEntry, ...otherEntries] : this.allGroupMemberRolesAndPermissions
+      return this.canViewOtherMembersPermissions
+        ? sortedEntries
+        : (myEntry ? [myEntry] : [])
     }
   },
   methods: {
     handleAddPermissionsClick () {
-      alert(L('Coming soon!'))
+      this.openModal('AddPermissionsModal')
+    },
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
+    onGroupPermissionsUpdateSuccess ({ groupContractID, action }) {
+      if (groupContractID !== this.$store.state.currentGroupId) { return }
+
+      const messageMap = {
+        'add': L('Successfully added a role.'),
+        'update': L('Successfully updated a role.'),
+        'remove': L('Successfully removed a role.')
+      }
+      this.$refs.formMsg.success(messageMap[action])
     }
   },
-  provide () {
-    return {
-      permissionsUtils: {
-        myPermissions: this.myPermissions,
-        canDelegatePermissions: this.canDelegatePermissions
-      }
-    }
+  created () {
+    sbp('okTurtles.events/on', GROUP_PERMISSIONS_UPDATE_SUCCESS, this.onGroupPermissionsUpdateSuccess)
   },
   mounted () {
     this.matchMediaMobile = window.matchMedia('screen and (max-width: 570px)')
@@ -126,6 +111,7 @@ export default ({
   },
   beforeDestroy () {
     this.matchMediaMobile.onchange = null
+    sbp('okTurtles.events/off', GROUP_PERMISSIONS_UPDATE_SUCCESS, this.onGroupPermissionsUpdateSuccess)
   }
 }: Object)
 </script>

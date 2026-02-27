@@ -84,3 +84,5 @@ export const NEW_CHATROOM_NOTIFICATION_SETTINGS = 'new-chatroom-notification-set
 export const CONTRACT_SYNCS_RESET = 'new-current-syncs'
 
 export const SERIOUS_ERROR = 'serious-error'
+
+export const GROUP_PERMISSIONS_UPDATE_SUCCESS = 'group-permissions-update-success'

@@ -59,7 +59,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
                 i18n(:args='{ channelName: summary.title }') Leave {channelName}
 
             menu-item.has-text-danger(
-              v-if='!summary.isGeneral && isChatRoomCreator && !isGroupDirectMessage()'
+              v-if='canDeleteChatRoom'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
@@ -172,6 +172,7 @@ export default ({
       'isJoinedChatRoom',
       'groupChatRooms',
       'chatRoomPinnedMessages',
+      'ourGroupPermissionsHas',
       'ourIdentityContractId'
     ]),
     getChatRoomIDsInSort () {
@@ -209,6 +210,10 @@ export default ({
     },
     isChatRoomCreator () {
       return this.ourIdentityContractId === this.summary.attributes.creatorID
+    },
+    canDeleteChatRoom () {
+      // TODO: add DELETE_CHANNEL permission related check here when it's implemented
+      return !this.summary.isGeneral && this.isChatRoomCreator && !this.isGroupDirectMessage()
     }
   },
   methods: {
