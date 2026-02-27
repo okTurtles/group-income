@@ -1,5 +1,10 @@
 <template lang='pug'>
-.card.c-dm-list-item
+.card.c-dm-list-item(
+  @click.stop='onTileClick'
+  @keyup.enter='onTileClick'
+  role='button'
+  tabindex='0'
+)
   .c-dm-avatar
     avatar-user(
       :contractID='avatarContractID'
@@ -8,8 +13,8 @@
     )
 
   .c-dm-info
-    .c-dm-title(tabindex='0' role='link')
-      span.is-title-4(@click.stop='onTileClick') {{ dmDetails.title }}
+    .c-dm-title
+      span.is-title-4 {{ dmDetails.title }}
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
 
     .c-dm-latest-message(v-if='dmDetails.latestMessage')
@@ -97,13 +102,23 @@ export default {
   column-gap: 0.5rem;
   border: 1px solid rgba(0, 0, 0, 0);
   transition: border-color 120ms ease-out;
+  cursor: pointer;
 
   &:last-child {
     margin-bottom: 0;
   }
 
+  &:focus,
+  &:focus-within,
   &:hover {
     border: 1px solid $general_0;
+    outline: none;
+    appearance: none;
+
+    .c-dm-title,
+    .c-you {
+      text-decoration: underline;
+    }
   }
 
   @include tablet {
@@ -124,19 +139,6 @@ export default {
 .c-dm-title {
   font-weight: 600;
   color: $text_0;
-  cursor: pointer;
-
-  &:hover,
-  &:focus,
-  &:focus-within {
-    text-decoration: underline;
-    appearance: none;
-    outline: none;
-
-    .c-you {
-      text-decoration: inherit;
-    }
-  }
 }
 
 .c-no-message {

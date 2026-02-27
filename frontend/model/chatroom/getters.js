@@ -228,10 +228,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       (details.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && details.joined)
     )
   },
-  getChatroomNameById (state, getters) {
+  getChatroomNameById (state, getters, rootState) {
     return chatRoomID => {
-      const found: any = Object.values(getters.chatRoomsInDetail).find((details: any) => details.id === chatRoomID)
-      return found ? found.name : null
+      const chatroomState = rootState[chatRoomID]
+      return chatroomState?.attributes?.name || null
     }
   },
   chatRoomMembersInSort (state, getters) {
