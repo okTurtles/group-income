@@ -688,10 +688,6 @@ export default (sbp('sbp/selectors/register', {
           }
           try {
             const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-            if (Math.random() < -1 && pContractID !== sbp('chelonia/rootState').loggedIn.identityContractID) {
-              console.error(`@@@@@SKIPPING SHARE WITH ${pContractID} for ${contractID}`)
-              return
-            }
             if (!CEKid) {
               console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
               if (options.lastAttempt) {
