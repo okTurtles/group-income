@@ -302,15 +302,12 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     return
   }
 
-  const extraParams = {}
-
   // When a group is being left, we want to also leave chatrooms,
   // including private chatrooms. Since the user issuing the action
   // may not be a member of the chatroom, we use the group's CSK
   // unconditionally in this situation, which should be a key in the
   // chatroom (either the CSK or the groupKey)
   if (leavingGroup) {
-    const encryptionKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const signingKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
     // If we don't have a CSK, it is because we've already been removed.
@@ -318,22 +315,11 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     if (!signingKeyId) {
       return
     }
-
-    // Set signing key to the CEK; this allows for managing joining and leaving
-    // the chatroom transparently to group members
-    extraParams.encryptionKeyId = encryptionKeyId
-    // Set signing key to the CSK; this allows group members to remove members
-    // from chatrooms they're not part of (e.g., when a group member is removed)
-    extraParams.signingKeyId = signingKeyId
-    // Explicitly opt out of inner signatures. By default, actions will be signed
-    // by the currently logged in user.
-    extraParams.innerSigningContractID = null
   }
 
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
-    data: sendingData,
-    ...extraParams
+    data: sendingData
   }).catch((e) => {
     if (
       leavingGroup &&
@@ -1734,8 +1720,7 @@ sbp('chelonia/defineContract', {
         // case key rotation is out of sync)
         sbp('gi.actions/chatroom/join', {
           contractID: chatRoomID,
-          data: actorID === memberID ? {} : { memberID },
-          encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
+          data: actorID === memberID ? {} : { memberID }
         }).catch(e => {
           if (e.name === 'GIErrorUIRuntimeError' && e.cause?.name === 'GIChatroomAlreadyMemberError') {
             return

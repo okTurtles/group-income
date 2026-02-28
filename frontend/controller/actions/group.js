@@ -873,11 +873,9 @@ export default (sbp('sbp/selectors/register', {
     }).catch(e => {
       if (memberID !== identityContractID || e.name !== 'GIGroupAlreadyJoinedError') throw e
 
-      const state = sbp('chelonia/contract/state', params.contractID)
       return sbp('gi.actions/chatroom/join', {
         contractID: chatRoomID,
-        data: {},
-        encryptionKeyName: state.chatRooms[chatRoomID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE ? 'group-cek' : 'cek'
+        data: {}
       })
     })
   }),

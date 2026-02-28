@@ -35,17 +35,13 @@ export const encryptedAction = (
   signingKeyName?: string,
   innerSigningKeyName?: string
 ): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
     const invocation = [
       'chelonia/out/actionEncrypted',
       {
         ...params,
-        signingKeyId,
-        innerSigningKeyId,
-        encryptionKeyId,
-        action: action.replace('gi.actions', 'gi.contracts'),
-        originatingContractID
+        action: action.replace('gi.actions', 'gi.contracts')
       }
     ]
 
@@ -138,11 +134,18 @@ export const encryptedAction = (
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId || null, encryptionKeyId, params.originatingContractID)
+        const newParams: GIActionParams = {
+          ...params,
+          signingKeyId,
+          innerSigningKeyId: innerSigningKeyId || null,
+          encryptionKeyId
+        }
+
+        const sm = sendMessageFactory(newParams)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sm, params, signingKeyId, encryptionKeyId, params.originatingContractID)
+          return await handler(sm, newParams, signingKeyId, encryptionKeyId, params.originatingContractID)
         } else {
           return await sm()
         }
@@ -169,7 +172,7 @@ export const encryptedNotification = (
   signingKeyName?: string,
   innerSigningKeyName?: string
 ): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, innerSigningKeyId: ?string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
 
     const actionReplaced = action.replace('gi.actions', 'gi.contracts')
@@ -177,9 +180,9 @@ export const encryptedNotification = (
     return sbp('chelonia/out/encryptedOrUnencryptedPubMessage', {
       contractID: params.contractID,
       contractName: actionReplaced.split('/', 2).join('/'),
-      innerSigningKeyId,
-      encryptionKeyId,
-      signingKeyId,
+      innerSigningKeyId: params.innerSigningKeyId,
+      encryptionKeyId: params.encryptionKeyId,
+      signingKeyId: params.signingKeyId,
       data: [actionReplaced, params.data]
     })
   }
@@ -246,11 +249,18 @@ export const encryptedNotification = (
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, innerSigningKeyId || null, encryptionKeyId, params.originatingContractID)
+        const newParams: GIActionParams = {
+          ...params,
+          signingKeyId,
+          innerSigningKeyId: innerSigningKeyId || null,
+          encryptionKeyId
+        }
+
+        const sm = sendMessageFactory(newParams)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sm, params, signingKeyId, encryptionKeyId, params.originatingContractID)
+          return await handler(sm, newParams, signingKeyId, encryptionKeyId, params.originatingContractID)
         } else {
           return await sm()
         }
