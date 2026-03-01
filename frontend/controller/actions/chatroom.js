@@ -377,7 +377,7 @@ export default (sbp('sbp/selectors/register', {
     const contractState = cheloniaState[identityContractID]
 
     // $FlowFixMe[incompatible-use]
-    const groupID = Object.entries(contractState?.groups || {}).find(([id, { hasLeft }]) => {
+    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
       return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     })?.[0]
 
@@ -408,7 +408,7 @@ export default (sbp('sbp/selectors/register', {
 
       const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk')
       // Return if we've already upgraded this chatroom
-      if (state._vm.authorizedKeys[groupCSKid].permissions.includes(SPMessage.OP_KEY_REQUEST)) return
+      if (!groupCSKid || state._vm.authorizedKeys[groupCSKid].permissions.includes(SPMessage.OP_KEY_REQUEST)) return
 
       const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
