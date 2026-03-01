@@ -250,6 +250,14 @@ sbp('chelonia/defineContract', {
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
+        // If someone else has left, mark the CEK and CSK as needing rotation
+        // The actual rotation, if it's still needed (i.e., keys still marked
+        // as 'pending' due to not having been rotated), will be done later
+        // as a side effect. This avoids unnecessary rotations.
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
+        if (!itsMe) {
+          sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        }
       },
       async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
@@ -694,6 +702,35 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    'gi.contracts/chatroom/_postOpHook/ku': ({ contractID, state }) => {
+      sbp('chelonia/queueInvocation', contractID, () => {
+        return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID, state)
+      }).catch((e) => {
+        console.error('[gi.contracts/chatroom/hook/ku] Error', e)
+      })
+    },
+    'gi.contracts/chatroom/_responseOptionsForKeyRequest': ({
+      contractID,
+      request,
+      state,
+      originatingContractID
+    }) => {
+      if (!state.profiles) return
+      if (request === 'missing' && state.profiles[originatingContractID] && !state.profiles[originatingContractID].hasLeft) {
+        return {
+          keyIds: Object.entries(state._vm.authorizedKeys)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .map(([kId]) => kId),
+          skipInviteAccounting: true
+        }
+      } else {
+        return {
+          keyIds: [],
+          skipInviteAccounting: true
+        }
+      }
+    },
     'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
       if (state?.members) {
         // Not using a getter because _cleanup doesn't currently take a getter
@@ -705,7 +742,6 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/rotateKeys': (contractID) => {
       sbp('chelonia/queueInvocation', contractID, async () => {
-        await sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
         await sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
       }).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
