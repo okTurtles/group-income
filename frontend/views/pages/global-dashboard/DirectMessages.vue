@@ -28,11 +28,11 @@ page(
 
       .c-no-active-dms-container(v-if='hasNoActiveDms')
         i.icon-comment-dots.c-check-icon
-        i18n.has-text-1 No active DMs yet.
+        i18n.has-text-1 No active DMs now.
 
       template(v-else)
         .c-dm-group(
-          v-for='dmGroup in ephemeral.dmListSortedByLatest'
+          v-for='dmGroup in sortedDMList'
           :key='dmGroup.dateDisplay'
         )
           .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
@@ -63,27 +63,18 @@ export default {
     DirectMessageListItem,
     DirectMessageChatInterface
   },
-  data () {
-    return {
-      ephemeral: {
-        dmListSortedByLatest: [] // Array<{ dateDisplay: string, items: Array<chatroomDetails> }>
-      }
-    }
-  },
   computed: {
     ...mapGetters([
       'allDirectMessagesDetails'
     ]),
     hasNoActiveDms () {
-      return this.ephemeral.dmListSortedByLatest.length === 0
+      return this.sortedDMList.length === 0
     },
     inChatInterfacePage () {
       return this.$route.name === 'GlobalDirectMessagesConversation' &&
         this.$route.params.chatRoomID
-    }
-  },
-  methods: {
-    initAndSortDMList () {
+    },
+    sortedDMList () {
       const sortedList = []
       const allDmEntries = Object.entries(this.allDirectMessagesDetails).sort((a, b) => {
         // In case DM has no messages yet, use the chatroom creation date for sorting
@@ -111,9 +102,11 @@ export default {
           latestMessage: this.getChatroomLatestMessage(chatRoomID)
         })
       }
-
-      this.ephemeral.dmListSortedByLatest = sortedList
-    },
+      
+      return sortedList
+    }
+  },
+  methods: {
     getChatroomLatestMessage (chatRoomID) {
       const chatroomState = this.$store.state[chatRoomID]
       return chatroomState?.messages?.length > 0
@@ -124,8 +117,11 @@ export default {
       console.log('TODO: implement populating the list-item with the latest message and sort the list by latest.')
     }
   },
-  created () {
-    this.initAndSortDMList()
+  watch: {
+    allDirectMessagesDetails (newVal, oldVal) {
+      console.log('!@# allDirectMessagesDetails newVal: ', newVal)
+      console.log('!@# allDirectMessagesDetails oldVal: ', oldVal)
+    }
   }
 }
 </script>
