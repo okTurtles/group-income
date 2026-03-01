@@ -496,7 +496,7 @@ export default (sbp('sbp/selectors/register', {
               const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
               await sbp('chelonia/out/atomic', {
-                ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+                ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId', 'innerSigningKeyId']),
                 data: [
                   // Share our PEK with the group so that group members can see
                   // our name and profile information
@@ -913,7 +913,6 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
     await sbp('gi.actions/chatroom/rename', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: params.data.chatRoomID,
       data: {
         name: params.data.name
@@ -949,7 +948,6 @@ export default (sbp('sbp/selectors/register', {
     L('Failed to update description of chat channel.'),
     async function (sendMessage, params: GIActionParams) {
       await sbp('gi.actions/chatroom/changeDescription', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
         data: {
           description: params.data.description

@@ -728,7 +728,6 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('gi.actions/chatroom/join', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
       data: { memberID: [identityContractID, ...partnerIDs] }
     })
@@ -770,7 +769,6 @@ export default (sbp('sbp/selectors/register', {
 
       const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
       await sbp('gi.actions/identity/joinDirectMessage', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: partnerIDs[index],
         data: {
           // TODO: We need to handle multiple groups and the possibility of not

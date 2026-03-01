@@ -98,9 +98,9 @@ export const encryptedAction = (
         // no default value will be used.
         const innerSigningContractID = params.innerSigningContractID !== undefined
           ? params.innerSigningContractID
-          : contractID === rootState.loggedIn.identityContractID
-            ? null
-            : rootState.loggedIn.identityContractID
+          : (params.innerSigningKeyId === null || contractID === rootState.loggedIn.identityContractID)
+              ? null
+              : rootState.loggedIn.identityContractID
 
         if (innerSigningContractID && !state[innerSigningContractID]) {
           state[innerSigningContractID] = await sbp('chelonia/latestContractState', innerSigningContractID)
@@ -130,7 +130,7 @@ export const encryptedAction = (
         }
 
         if (innerSigningContractID && (!innerSigningKeyId || !await sbp('chelonia/haveSecretKey', innerSigningKeyId))) {
-          console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId })
+          console.warn(`Refusing to send action ${action} due to missing inner signing key ID`, { contractID, action, signingKeyName, encryptionKeyName, signingKeyId, encryptionKeyId, signingContractID: params.signingContractID, originatingContractID: params.originatingContractID, innerSigningKeyId, innerSigningContractID, innerSigningKeyName })
           throw new GIErrorMissingSigningKeyError(`No key found to send ${action} for contract ${contractID}`)
         }
 

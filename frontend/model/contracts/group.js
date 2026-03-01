@@ -319,7 +319,10 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
 
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
-    data: sendingData
+    data: sendingData,
+    // Explicitly opt out of inner signatures. By default, actions will be signed
+    // by the currently logged in user.
+    innerSigningContractID: leavingGroup ? null : undefined
   }).catch((e) => {
     if (
       leavingGroup &&

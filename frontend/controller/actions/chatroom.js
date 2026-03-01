@@ -521,14 +521,6 @@ export default (sbp('sbp/selectors/register', {
 
     if (isGroupChatroom) {
       const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
-
-      // Explicitly opt out of inner signatures. By default, actions will be signed
-      // by the currently logged in user. Leave actions could be sent by non-members.
-      // (For example, when someone leaves the group)
-      if (userID) {
-        params.innerSigningContractID = null
-      }
-
       // Set signing key to the CSK; this allows for managing joining and
       // leaving the chatroom transparently to group members
       if (groupCSKid) {
