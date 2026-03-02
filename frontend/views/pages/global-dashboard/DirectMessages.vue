@@ -117,9 +117,8 @@ export default {
     },
     chatroomHasNewMessages (chatRoomID) {
       const unReadMessagesEntry = this.ourUnreadMessages[chatRoomID]
-
       return unReadMessagesEntry
-        ? unReadMessagesEntry.readUntil?.isManuallyMarked || unReadMessagesEntry.unreadMessages?.length > 0
+        ? unReadMessagesEntry.unreadMessages?.length > 0
         : false
     }
   }

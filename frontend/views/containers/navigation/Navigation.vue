@@ -23,15 +23,24 @@ nav.c-navigation(
       .c-navigation-body
         .c-navigation-body-top
           ul.c-menu-list
-            list-item(v-for='entry in config.globalDashboard'
+            list-item(
               tag='router-link'
-              :key='entry.id'
-              :icon='entry.icon'
-              :to='entry.routeTo'
-              :badgeCount='entry.id === "news-and-updates" && hasNewNews ? 1 : 0'
-              :data-test='"global-dashboard_" + entry.id'
-              @click='onGlobalDashboardTabClick(entry)'
-            ) {{ entry.title }}
+              icon='newspaper'
+              to='/global-dashboard/news-and-updates'
+              :badgeCount='hasNewNews ? 1 : 0'
+              data-test='globalNewsAndUpdatesLink'
+              @click='onGlobalDashboardTabClick("news-and-updates")'
+            )
+              i18n News &amp; Updates
+            list-item(
+              tag='router-link'
+              icon='comment'
+              to='/global-dashboard/direct-messages'
+              :badgeCount='hasNewDirectMessages ? 1: 0'
+              data-test='globalDirectMessagesLink'
+              @click='onGlobalDashboardTabClick("direct-messages")'
+            )
+              i18n Direct Messages
 
     template(v-else)
       .c-navigation-header
@@ -114,7 +123,6 @@ import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL, CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin, fetchNews } from '@view-utils/misc.js'
-import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/global-dashboard/global-dashboard-settings.js'
 import { debounce } from 'turtledash'
 
 export default ({
@@ -131,15 +139,13 @@ export default ({
   data () {
     return {
       config: {
-        debounceResize: debounce(this.checkIsTouch, 250),
-        globalDashboard: Object.entries(GLOBAL_DASHBOARD_SETTINGS)
-          .map(([key, entry]) => ({ ...entry, id: key }))
+        debounceResize: debounce(this.checkIsTouch, 250)
       },
       ephemeral: {
         isActive: false,
         isTouch: null,
         latestNewsDate: null,
-        globalDashboardPrevRoute: ''
+        globalDashboardPrevTab: ''
       }
     }
   },
@@ -172,7 +178,9 @@ export default ({
       'totalUnreadNotificationCount',
       'groupUnreadMessages',
       'ourPreferences',
-      'ourProfileActive'
+      'ourProfileActive',
+      'ourDirectMessages',
+      'ourUnreadMessages'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -212,6 +220,13 @@ export default ({
       const latest = new Date(this.ephemeral.latestNewsDate)
 
       return latest > lastSeen
+    },
+    hasNewDirectMessages () {
+      const allDMIds = Object.entries(this.ourDirectMessages)
+        .filter(([, settings]) => settings.visible)
+        .map(([chatRoomID]) => chatRoomID)
+
+      return allDMIds.some(chatRoomID => this.ourUnreadMessages[chatRoomID]?.unreadMessages?.length > 0)
     }
   },
   methods: {
@@ -233,11 +248,11 @@ export default ({
     },
     navigateToGlobalDashboard () {
       this.$router.push(({
-        path: this.ephemeral.globalDashboardPrevRoute || '/global-dashboard/news-and-updates'
+        path: `/global-dashboard/${this.ephemeral.globalDashboardPrevTab || 'news-and-updates'}`
       }))
     },
-    onGlobalDashboardTabClick (entry) {
-      this.ephemeral.globalDashboardPrevRoute = entry.routeTo
+    onGlobalDashboardTabClick (tabId) {
+      this.ephemeral.globalDashboardPrevTab = tabId
     },
     async checkForNewNews () {
       try {
