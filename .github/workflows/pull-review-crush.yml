@@ -219,8 +219,9 @@ jobs:
           HAS_ISSUE: ${{ steps.check-issue.outputs.has_issue }}
           ISSUE_NUMBER: ${{ steps.check-issue.outputs.issue_number }}
         run: |
-          # Start with PR title
+          # Start with PR title, then always include PR description
           printf '<pr_title>\n%s\n</pr_title>\n' "$(cat /tmp/pr_title.txt)" > /tmp/helpful_context.txt
+          printf '<pr_description>\n%s\n</pr_description>\n' "$(cat /tmp/pr_body.txt)" >> /tmp/helpful_context.txt
 
           if [ "$HAS_ISSUE" = "true" ]; then
             # Fetch the issue
@@ -277,31 +278,6 @@ jobs:
             fi
 
             printf '<issue_summary>\n%s\n</issue_summary>\n' "$SUMMARY" >> /tmp/helpful_context.txt
-          else
-            # No referenced issue — summarize the PR description instead
-            jq -n \
-              --arg model "$REVIEW_MODEL" \
-              --rawfile pr_body /tmp/pr_body.txt \
-              '{
-                model: $model,
-                messages: [{role: "user", content: ("Summarize the following pull request description. Ignore any HTML markup from GitHub tools or AI review agents (such as Devin review badges, Copilot comments, etc.). If the PR description is blank or contains only HTML markup from tools/agents, output nothing (an empty string). Be concise.\n\nPR Description:\n" + $pr_body)}]
-              }' > /tmp/context_payload.json
-
-            HTTP_CODE=$(curl -s -w '%{http_code}' \
-              "$PROVIDER_API_URL" \
-              -H "Authorization: Bearer $PROVIDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d @/tmp/context_payload.json \
-              -o /tmp/context_response.json)
-
-            if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/context_response.json > /dev/null 2>&1; then
-              SUMMARY=$(jq -r '.choices[0].message.content' /tmp/context_response.json)
-            else
-              echo "::warning::PR description summarization failed (HTTP $HTTP_CODE)"
-              SUMMARY=""
-            fi
-
-            printf '<pr_description>\n%s\n</pr_description>\n' "$SUMMARY" >> /tmp/helpful_context.txt
           fi
 
           echo "::group::Helpful context"
