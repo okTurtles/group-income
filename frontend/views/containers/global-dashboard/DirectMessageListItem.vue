@@ -19,12 +19,12 @@
       span.is-title-4 {{ dmDetails.title }}
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
 
-    .c-dm-latest-message(
-      v-if='dmDetails.latestMessage'
-      :class='{ "is-italic": shouldStyleItalic(dmDetails.latestMessage) }'
+    .c-dm-message-preview(
+      v-if='dmDetails.previewMessage'
+      :class='{ "is-italic": dmDetails.previewMessage.previewType === "info" }'
     )
       span.c-dm-preview-from(v-if='fromDisplay') {{ fromDisplay }}:
-      span.c-dm-preview-text {{ getPreviewText(dmDetails.latestMessage) }}
+      span.c-dm-preview-text {{ dmDetails.previewMessage.text }}
     i18n.c-no-message(v-else) No messages yet
 
   .c-dm-timestamp.has-text-1 {{ timestamp }}
@@ -37,8 +37,6 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import Badge from '@components/Badge.vue'
 import { humanTimeString } from '@model/contracts/shared/time.js'
-import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'DirectMessageListItem',
@@ -65,10 +63,10 @@ export default {
       return humanTimeString(t)
     },
     fromDisplay () {
-      return this.dmDetails.latestMessage
+      return this.dmDetails.previewMessage
         ? this.dmDetails.isDMToMyself
           ? L('You')
-          : this.getSenderDisplayName(this.dmDetails.latestMessage.from)
+          : this.getSenderDisplayName(this.dmDetails.previewMessage.from)
         : null
     }
   },
@@ -83,21 +81,6 @@ export default {
       return contractID === this.ourIdentityContractId
         ? L('You')
         : this.dmDetails.partners.find(partner => partner.contractID === contractID)?.displayName || L('Unknown')
-    },
-    shouldStyleItalic (message) {
-      return message.type !== MESSAGE_TYPES.TEXT
-    },
-    getPreviewText (message) {
-      switch (message.type) {
-        case MESSAGE_TYPES.TEXT:
-          return stripMarkdownSyntax(message.text)
-        case MESSAGE_TYPES.POLL: {
-          const pollTitle = message.pollData.question
-          return L('Created a poll: "{pollTitle}"', { pollTitle })
-        }
-        default:
-          return L('Sent a new message')
-      }
     }
   }
 }
@@ -123,7 +106,7 @@ export default {
   &:focus,
   &:focus-within,
   &:hover {
-    border: 1px solid $text_1;
+    border: 1px solid $primary_0;
     outline: none;
     appearance: none;
 
@@ -161,7 +144,7 @@ export default {
   color: $text_0;
 }
 
-.c-dm-latest-message {
+.c-dm-message-preview {
   color: $text_1;
 
   &.is-italic {
@@ -196,15 +179,15 @@ export default {
 
 // has-new styles
 .card.c-dm-list-item.has-new {
-  border-color: $general_0;
+  border-color: $text_1;
 
   &:focus,
   &:focus-within,
   &:hover {
-    border-color: $text_1;
+    border-color: $primary_0;
   }
 
-  .c-dm-latest-message {
+  .c-dm-message-preview {
     color: $text_0;
   }
 }

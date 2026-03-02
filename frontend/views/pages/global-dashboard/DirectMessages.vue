@@ -58,6 +58,7 @@ import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import { L } from '@common/common.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
@@ -117,7 +118,7 @@ export default {
         listEntry.items.push({
           chatRoomID,
           ...directMessageDetails,
-          latestMessage: this.getChatroomLatestMessage(chatRoomID),
+          previewMessage: this.getChatroomMessagePreview(chatRoomID),
           hasNew: this.chatroomHasNewMessages(chatRoomID)
         })
       }
@@ -133,36 +134,68 @@ export default {
     },
     filteredDMList () {
       const searchText = this.ephemeral.searchText.toLowerCase()
-      const containsSearchText = (str) => str.toLowerCase().includes(searchText)
+      const containsSearchText = (str) => {
+        return str.toLowerCase().includes(searchText)
+      }
 
-      return this.sortedDMList.filter(dmGroup => {
-        return dmGroup.items.some(dm => {
-          return containsSearchText(dm.title) ||
-            dm.partners.some(partner => containsSearchText(partner.username) || containsSearchText(partner.displayName))
-        })
+      return this.sortedDMList.map(dmGroup => {
+        return {
+          ...dmGroup,
+          items: dmGroup.items.filter(dm => {
+            return containsSearchText(dm.title) ||
+              dm.partners.some(partner => containsSearchText(partner.username) ||
+              containsSearchText(partner.displayName))
+          })
+        }
       }).filter(dmGroup => dmGroup.items.length > 0)
     }
   },
   methods: {
-    getChatroomLatestMessage (chatRoomID) {
+    getChatroomMessagePreview (chatRoomID) {
       const chatroomState = this.$store.state[chatRoomID]
 
       if (chatroomState?.messages?.length > 0) {
-        const msg = chatroomState.messages[chatroomState.messages.length - 1]
+        const latestMsg = chatroomState.messages[chatroomState.messages.length - 1]
+        const from = latestMsg.from
 
-        if (msg.type === MESSAGE_TYPES.TEXT) {
-          const text = stripMarkdownSyntax(msg.text)
-          // Preview text doesn't need to be long. If the text contains a new line in the middle of the text,
-          //  split the text by \n and add an ellipsis. Also, if the text is longer than 100 characters, slice it and add an ellipsis too.
-          const shouldHaveTrailingEllipsis = /\n+(?=.*\S)/.test(text) || text.length > 100
+        switch (latestMsg.type) {
+          case MESSAGE_TYPES.TEXT: {
+            const text = stripMarkdownSyntax(latestMsg.text)
+            const hasAttachments = latestMsg.attachments?.length > 0
 
-          return {
-            ...msg,
-            text: `${text.split('\n')[0].slice(0, 100)}${shouldHaveTrailingEllipsis ? '...' : ''}`
+            if (!text && hasAttachments) {
+              // If the message only has attachments.
+              return {
+                previewType: 'info',
+                text: L('Sent a message with attachments.'),
+                from
+              }
+            }
+
+            // Use 100 characters of the text at most for the preview.
+            // Also, If the text contains a new line in the middle of it, split the text by \n and add an ellipsis.
+            const shouldHaveTrailingEllipsis = text.length > 100 || /\n+(?=.*\S)/.test(text)
+            return {
+              previewType: 'text',
+              text: `${text.slice(0, 100).split('\n')[0]}${shouldHaveTrailingEllipsis ? '...' : ''}`,
+              from
+            }
           }
+          case MESSAGE_TYPES.POLL: {
+            const pollTitle = latestMsg.pollData.question
+            return {
+              previewType: 'info',
+              text: L('Created a poll "{pollTitle}".', { pollTitle }),
+              from
+            }
+          }
+          default:
+            return {
+              previewType: 'info',
+              text: L('New message added.'),
+              from
+            }
         }
-
-        return msg
       }
 
       return null
