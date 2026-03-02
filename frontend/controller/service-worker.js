@@ -32,50 +32,64 @@ window.addEventListener('beforeinstallprompt', e => {
 
 const serviceWorkerMap = new WeakMap()
 const waitUntilSwReady = () => {
-  const promise = new Promise((resolve, reject) => {
-    const messageChannel = new MessageChannel()
-    messageChannel.port1.onmessage = (event) => {
-      if (event.data.type === 'ready') {
-        // For backward- and forward-compatibility (`currentSyncs` may not be
-        // defined in a different SW version)
-        if (event.data.currentSyncs) {
-          sbp('okTurtles.events/emit', CONTRACT_SYNCS_RESET, event.data.currentSyncs)
-        }
-        resolve()
-      } else {
-        reject(event.data.error)
-      }
-      messageChannel.port1.close()
-    }
-    messageChannel.port1.onmessageerror = () => {
-      reject(new Error('Message error'))
-      messageChannel.port1.close()
-    }
-    const oncontrollerchange = () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
-      // If the SW controller has changed (e.g., because of an update), we call
-      // `waitUntilSwReady` again and return the result of that call. That will
-      // also populate `serviceWorkerMap`
-      resolve(waitUntilSwReady())
-    }
-    navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
+  let cleanup, registration
 
+  const promise = new Promise((resolve, reject) => {
     navigator.serviceWorker.ready.then((worker) => {
-      if (serviceWorkerMap.has(worker.active)) {
-        resolve(serviceWorkerMap.get(worker.active))
+      registration = worker.active
+      // We have already called `waitUntilSwReady` on this SW -- return memoized
+      // result.
+      if (serviceWorkerMap.has(registration)) {
+        resolve(serviceWorkerMap.get(registration))
         return
       }
-      serviceWorkerMap.set(worker.active, promise)
+
+      const messageChannel = new MessageChannel()
+      messageChannel.port1.onmessage = (event) => {
+        if (event.data.type === 'ready') {
+        // For backward- and forward-compatibility (`currentSyncs` may not be
+        // defined in a different SW version)
+          if (event.data.currentSyncs) {
+            sbp('okTurtles.events/emit', CONTRACT_SYNCS_RESET, event.data.currentSyncs)
+          }
+          resolve()
+        } else {
+          reject(event.data.error)
+        }
+      }
+      messageChannel.port1.onmessageerror = () => {
+        reject(new Error('Message error'))
+      }
+      const oncontrollerchange = () => {
+        // If the SW controller has changed (e.g., because of an update), we call
+        // `waitUntilSwReady` again and return the result of that call. That will
+        // also populate `serviceWorkerMap`
+        cleanup()
+        cleanup = undefined
+        resolve(waitUntilSwReady())
+      }
+      cleanup = () => {
+        messageChannel.port1.close()
+        navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
+      }
+
+      navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
+
+      serviceWorkerMap.set(registration, promise)
       worker.active.postMessage({
         type: 'ready',
         port: messageChannel.port2,
         GI_VERSION: process.env.GI_VERSION
       }, [messageChannel.port2])
-    }).catch((e) => {
-      reject(e)
-      messageChannel.port1.close()
     })
   })
+    .catch((e) => {
+      serviceWorkerMap.delete()
+      throw e
+    })
+    .finally(() => {
+      cleanup?.()
+    })
 
   return promise
 }
@@ -382,12 +396,13 @@ const swRpc = (() => {
         messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
         navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
         messageChannel.port1.close()
+        revokables?.forEach(r => r.close())
       }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
       navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
       messageChannel.port1.start()
-      const { data, transferables } = serializer(args)
+      const { data, transferables, revokables } = serializer(args)
       controller.postMessage({
         type: 'sbp',
         port: messageChannel.port2,
