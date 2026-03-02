@@ -58,7 +58,9 @@ import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 import DirectMessageListItem from '@containers/global-dashboard/DirectMessageListItem.vue'
 import DirectMessageChatInterface from '@containers/global-dashboard/DirectMessageChatInterface.vue'
 
@@ -144,9 +146,26 @@ export default {
   methods: {
     getChatroomLatestMessage (chatRoomID) {
       const chatroomState = this.$store.state[chatRoomID]
-      return chatroomState?.messages?.length > 0
-        ? chatroomState.messages[chatroomState.messages.length - 1]
-        : null
+
+      if (chatroomState?.messages?.length > 0) {
+        const msg = chatroomState.messages[chatroomState.messages.length - 1]
+
+        if (msg.type === MESSAGE_TYPES.TEXT) {
+          const text = stripMarkdownSyntax(msg.text)
+          // Preview text doesn't need to be long. If the text contains a new line in the middle of the text,
+          //  split the text by \n and add an ellipsis. Also, if the text is longer than 100 characters, slice it and add an ellipsis too.
+          const shouldHaveTrailingEllipsis = /\n+(?=.*\S)/.test(text) || text.length > 100
+
+          return {
+            ...msg,
+            text: `${text.split('\n')[0].slice(0, 100)}${shouldHaveTrailingEllipsis ? '...' : ''}`
+          }
+        }
+
+        return msg
+      }
+
+      return null
     },
     chatroomHasNewMessages (chatRoomID) {
       const unReadMessagesEntry = this.ourUnreadMessages[chatRoomID]

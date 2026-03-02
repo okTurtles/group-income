@@ -181,6 +181,7 @@ export default {
 }
 
 .c-dm-timestamp {
+  flex-shrink: 0;
   font-size: $size_5;
 
   @include tablet {
