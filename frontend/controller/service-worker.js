@@ -84,7 +84,7 @@ const waitUntilSwReady = () => {
     })
   })
     .catch((e) => {
-      serviceWorkerMap.delete()
+      serviceWorkerMap.delete(registration)
       throw e
     })
     .finally(() => {
