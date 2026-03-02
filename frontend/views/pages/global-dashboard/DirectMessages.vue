@@ -12,6 +12,7 @@ page(
         @redirect='toggle'
         :hideNewButton='true'
         :title='L("Conversations")'
+        :noItemText='L("No active DMs yet.")'
       )
 
   .c-page-content-wrapper
@@ -30,7 +31,7 @@ page(
 
       .c-no-active-dms-container(v-if='hasNoActiveDms')
         i.icon-comment-dots.c-check-icon
-        i18n.has-text-1 No active DMs now.
+        i18n.has-text-1 No active DMs yet.
 
       template(v-else)
         .c-no-search-results(v-if='filteredDMList.length === 0')

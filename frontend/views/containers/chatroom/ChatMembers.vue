@@ -12,8 +12,8 @@
       i18n New
 
   ul.c-group-list
-    li.c-no-items(v-if='hasNoListItems')
-      i18n No direct messages yet
+    li.c-no-items(v-if='hasNoListItems && noItemText')
+      | {{ noItemText }}
 
     template(v-else)
       list-item(
@@ -87,6 +87,10 @@ export default ({
     hideNewButton: {
       type: Boolean,
       default: false
+    },
+    noItemText: {
+      type: String,
+      required: false
     }
   },
   data () {
