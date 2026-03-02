@@ -53,6 +53,8 @@ jobs:
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
+          REVIEW_COMMAND=$(echo "$COMMENT_BODY" | grep -m1 -oP '^\s*\K/\S+(\s+\{\{[^}]*\}\})?')
+          echo "REVIEW_COMMAND=$REVIEW_COMMAND" >> "$GITHUB_ENV"
           if echo "$COMMENT_BODY" | grep -qP '^\s*/review_fast'; then
             echo "FAST_MODE=true" >> "$GITHUB_ENV"
             echo "Fast mode enabled — skipping raw review and combine step"
@@ -557,7 +559,7 @@ jobs:
             echo "</details>"
             echo ""
             echo "---"
-            echo "*Review [generated](${RUN_URL}) using \`${REVIEW_MODEL}\` via ${PROVIDER_DISPLAY}. Comment \`/review\` to re-run.*"
+            echo "*Review [generated](${RUN_URL}) using \`${REVIEW_MODEL}\` via ${PROVIDER_DISPLAY}. Comment \`${REVIEW_COMMAND}\` to re-run.*"
           } > /tmp/review_comment.txt
 
           gh pr comment "${{ steps.pr-info.outputs.number }}" \
@@ -574,4 +576,4 @@ jobs:
           - Type: Error
           - Model: ${REVIEW_MODEL}
 
-          The review workflow failed. Check the [workflow run](${RUN_URL}) for details. Comment \`/review\` to re-run."
+          The review workflow failed. Check the [workflow run](${RUN_URL}) for details. Comment \`${REVIEW_COMMAND}\` to re-run."
