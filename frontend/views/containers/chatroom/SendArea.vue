@@ -471,7 +471,7 @@ export default ({
         })
     },
     isActive () {
-      return this.hasAttachments || this.ephemeral.textWithLines
+      return this.hasAttachments || this.ephemeral.textWithLines.trim()
     },
     textareaStyles () {
       return {
