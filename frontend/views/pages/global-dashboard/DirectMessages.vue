@@ -11,6 +11,7 @@ page(
         @new='toggle'
         @redirect='toggle'
         :hideNewButton='true'
+        :title='L("Conversations")'
       )
 
   .c-page-content-wrapper

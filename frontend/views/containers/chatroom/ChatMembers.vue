@@ -1,7 +1,7 @@
 <template lang="pug">
 .c-group-members(data-test='chatMembers')
   .c-group-members-header
-    h3.is-title-4 {{title}}
+    h3.is-title-4 {{ title }}
 
     button.button.is-small.is-outlined(
       v-if='!hideNewButton'
