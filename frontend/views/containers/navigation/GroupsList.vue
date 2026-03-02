@@ -11,7 +11,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
           alt='Global dashboard logo'
         )
       badge(
-        v-if='hasNewNews'
+        v-if='hasNewNews || hasNewDirectMessages'
         type='compact'
         data-test='globalDashboardBadge'
       )
@@ -81,7 +81,9 @@ export default ({
       'groupsByName',
       'groupUnreadMessages',
       'unreadGroupNotificationCountFor',
-      'ourPreferences'
+      'ourPreferences',
+      'ourDirectMessages',
+      'ourUnreadMessages'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
@@ -104,6 +106,13 @@ export default ({
       }
 
       return new Date(this.ephemeral.latestNewsDate) > new Date(this.ourPreferences.lastSeenNewsDate)
+    },
+    hasNewDirectMessages () {
+      const allDMIds = Object.entries(this.ourDirectMessages)
+        .filter(([, settings]) => settings.visible)
+        .map(([chatRoomID]) => chatRoomID)
+
+      return allDMIds.some(chatRoomID => this.ourUnreadMessages[chatRoomID]?.unreadMessages?.length > 0)
     }
   },
   methods: {

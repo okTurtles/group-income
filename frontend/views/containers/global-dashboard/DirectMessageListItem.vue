@@ -19,7 +19,10 @@
       span.is-title-4 {{ dmDetails.title }}
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
 
-    .c-dm-latest-message(v-if='dmDetails.latestMessage')
+    .c-dm-latest-message(
+      v-if='dmDetails.latestMessage'
+      :class='{ "is-italic": shouldStyleItalic(dmDetails.latestMessage) }'
+    )
       span.c-dm-preview-from(v-if='fromDisplay') {{ fromDisplay }}:
       span.c-dm-preview-text {{ getPreviewText(dmDetails.latestMessage) }}
     i18n.c-no-message(v-else) No messages yet
@@ -81,12 +84,17 @@ export default {
         ? L('You')
         : this.dmDetails.partners.find(partner => partner.contractID === contractID)?.displayName || L('Unknown')
     },
+    shouldStyleItalic (message) {
+      return message.type !== MESSAGE_TYPES.TEXT
+    },
     getPreviewText (message) {
       switch (message.type) {
         case MESSAGE_TYPES.TEXT:
           return stripMarkdownSyntax(message.text)
-        case MESSAGE_TYPES.POLL:
-          return L('Created a poll')
+        case MESSAGE_TYPES.POLL: {
+          const pollTitle = message.pollData.question
+          return L('Created a poll: "{pollTitle}"', { pollTitle })
+        }
         default:
           return L('Sent a new message')
       }
@@ -115,7 +123,7 @@ export default {
   &:focus,
   &:focus-within,
   &:hover {
-    border: 1px solid $general_0;
+    border: 1px solid $text_1;
     outline: none;
     appearance: none;
 
@@ -155,6 +163,10 @@ export default {
 
 .c-dm-latest-message {
   color: $text_1;
+
+  &.is-italic {
+    font-style: italic;
+  }
 }
 
 .c-no-message {
@@ -183,12 +195,12 @@ export default {
 
 // has-new styles
 .card.c-dm-list-item.has-new {
-  border-color: $text_1;
+  border-color: $general_0;
 
   &:focus,
   &:focus-within,
   &:hover {
-    border-color: $general_0;
+    border-color: $text_1;
   }
 
   .c-dm-latest-message {

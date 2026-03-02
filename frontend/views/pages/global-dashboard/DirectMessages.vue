@@ -24,6 +24,7 @@ page(
             type='text'
             name='search'
             :placeholder='L("Find a DM")'
+            v-model='ephemeral.searchText'
           )
 
       .c-no-active-dms-container(v-if='hasNoActiveDms')
@@ -31,17 +32,22 @@ page(
         i18n.has-text-1 No active DMs now.
 
       template(v-else)
-        .c-dm-group(
-          v-for='dmGroup in sortedDMList'
-          :key='dmGroup.dateDisplay'
-        )
-          .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
+        .c-no-search-results(v-if='filteredDMList.length === 0')
+          i18n.has-text-1(
+            :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
+          ) No DMs found for "{b_}{searchText}{_b}".
+        template(v-else)
+          .c-dm-group(
+            v-for='dmGroup in filteredDMList'
+            :key='dmGroup.dateDisplay'
+          )
+            .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
 
-          .c-dm-list-items
-            direct-message-list-item(
-              v-for='dm in dmGroup.items'
-              :key='dm.chatRoomID'
-              :dmDetails='dm'
+            .c-dm-list-items
+              direct-message-list-item(
+                v-for='dm in dmGroup.items'
+                :key='dm.chatRoomID'
+                :dmDetails='dm'
             )
 </template>
 
@@ -62,6 +68,13 @@ export default {
     ChatMembers,
     DirectMessageListItem,
     DirectMessageChatInterface
+  },
+  data () {
+    return {
+      ephemeral: {
+        searchText: ''
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -105,7 +118,25 @@ export default {
         })
       }
 
+      // The item with hasNew: true should be at the top of the list regardless of the date.
+      sortedList.forEach(dmGroup => {
+        dmGroup.items.sort((a, b) => {
+          return b.hasNew && !a.hasNew ? 1 : -1
+        })
+      })
+
       return sortedList
+    },
+    filteredDMList () {
+      const searchText = this.ephemeral.searchText.toLowerCase()
+      const containsSearchText = (str) => str.toLowerCase().includes(searchText)
+
+      return this.sortedDMList.filter(dmGroup => {
+        return dmGroup.items.some(dm => {
+          return containsSearchText(dm.title) ||
+            dm.partners.some(partner => containsSearchText(partner.username) || containsSearchText(partner.displayName))
+        })
+      }).filter(dmGroup => dmGroup.items.length > 0)
     }
   },
   methods: {
@@ -167,6 +198,11 @@ export default {
   &:has(+ .c-dm-group) {
     margin-bottom: 3rem;
   }
+}
+
+.c-no-search-results {
+  padding-left: 0.25rem;
+  margin-top: 1.5rem;
 }
 
 .c-dm-list {
