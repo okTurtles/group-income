@@ -1,5 +1,6 @@
 <template lang='pug'>
 .card.c-dm-list-item(
+  :class='{ "has-new": dmDetails.hasNew }'
   @click.stop='onTileClick'
   @keyup.enter='onTileClick'
   role='button'
@@ -11,6 +12,7 @@
       :picture='dmDetails.picture'
       size='md'
     )
+    badge.c-badge(v-if='dmDetails.hasNew' type='compact')
 
   .c-dm-info
     .c-dm-title
@@ -30,6 +32,7 @@ import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import Badge from '@components/Badge.vue'
 import { humanTimeString } from '@model/contracts/shared/time.js'
 import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
@@ -38,7 +41,8 @@ export default {
   name: 'DirectMessageListItem',
   components: {
     AvatarUser,
-    ProfileCard
+    ProfileCard,
+    Badge
   },
   props: {
     dmDetails: {
@@ -129,7 +133,15 @@ export default {
 }
 
 .c-dm-avatar {
+  position: relative;
   flex-shrink: 0;
+
+  .c-badge.is-compact {
+    min-width: 0.75rem;
+    height: 0.75rem;
+    top: -1px;
+    right: -1px;
+  }
 }
 
 .c-dm-info {
@@ -139,6 +151,10 @@ export default {
 .c-dm-title {
   font-weight: 600;
   color: $text_0;
+}
+
+.c-dm-latest-message {
+  color: $text_1;
 }
 
 .c-no-message {
@@ -163,5 +179,20 @@ export default {
 .c-dm-preview-from {
   display: inline-block;
   margin-right: 0.25rem;
+}
+
+// has-new styles
+.card.c-dm-list-item.has-new {
+  border-color: $text_1;
+
+  &:focus,
+  &:focus-within,
+  &:hover {
+    border-color: $general_0;
+  }
+
+  .c-dm-latest-message {
+    color: $text_0;
+  }
 }
 </style>

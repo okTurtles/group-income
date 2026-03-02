@@ -65,7 +65,8 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'allDirectMessagesDetails'
+      'allDirectMessagesDetails',
+      'ourUnreadMessages'
     ]),
     hasNoActiveDms () {
       return this.sortedDMList.length === 0
@@ -99,10 +100,11 @@ export default {
         listEntry.items.push({
           chatRoomID,
           ...directMessageDetails,
-          latestMessage: this.getChatroomLatestMessage(chatRoomID)
+          latestMessage: this.getChatroomLatestMessage(chatRoomID),
+          hasNew: this.chatroomHasNewMessages(chatRoomID)
         })
       }
-      
+
       return sortedList
     }
   },
@@ -113,14 +115,12 @@ export default {
         ? chatroomState.messages[chatroomState.messages.length - 1]
         : null
     },
-    updateDMList () {
-      console.log('TODO: implement populating the list-item with the latest message and sort the list by latest.')
-    }
-  },
-  watch: {
-    allDirectMessagesDetails (newVal, oldVal) {
-      console.log('!@# allDirectMessagesDetails newVal: ', newVal)
-      console.log('!@# allDirectMessagesDetails oldVal: ', oldVal)
+    chatroomHasNewMessages (chatRoomID) {
+      const unReadMessagesEntry = this.ourUnreadMessages[chatRoomID]
+
+      return unReadMessagesEntry
+        ? unReadMessagesEntry.readUntil?.isManuallyMarked || unReadMessagesEntry.unreadMessages?.length > 0
+        : false
     }
   }
 }
