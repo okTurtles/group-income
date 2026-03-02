@@ -715,8 +715,8 @@ sbp('chelonia/defineContract', {
       state,
       originatingContractID
     }) => {
-      if (!state.profiles) return
-      if (request === 'missing' && state.profiles[originatingContractID] && !state.profiles[originatingContractID].hasLeft) {
+      if (!state?.members) return
+      if (request === 'missing' && state.members[originatingContractID] && !state.members[originatingContractID].hasLeft) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
             // $FlowFixMe[incompatible-use]

@@ -187,7 +187,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 0,
-            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE],
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
@@ -360,7 +360,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/chatroom/findAndRequestMissingChatroomKeys': debounce((contractID) => {
     const state = sbp('chelonia/contract/state', contractID)
-    if (!state || !state.profiles) return
+    if (!state || !state.members) return
 
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
@@ -370,6 +370,7 @@ export default (sbp('sbp/selectors/register', {
     if (CEKid && CSKid) return
     if (!groupCSKid) {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
+      return
     }
 
     const cheloniaState = sbp('chelonia/rootState')
