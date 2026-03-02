@@ -13,6 +13,7 @@ import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import getters from './getters.js'
+import { SPMessage } from '@chelonia/lib/SPMessage'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
@@ -256,10 +257,10 @@ sbp('sbp/selectors/register', {
               members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
               // have synced the chatroom
               state[id]._vm?.authorizedKeys &&
-              // and the group CSK doesn't have 'kr' (OP_KEY_REQUEST) permission
+              // and the group CSK doesn't have OP_KEY_REQUEST permission
               Object.values(state[id]._vm.authorizedKeys)
                 // $FlowFixMe[incompatible-use]
-                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes('kr'))
+                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
             )
             .map(([id]) => id)
         })
@@ -267,6 +268,40 @@ sbp('sbp/selectors/register', {
       if (!chatRoomIds.length) return
       sbp('gi.actions/chatroom/upgradeGroupCskPermissions', chatRoomIds).catch(e => {
         console.error('[chatroom/upgradeGroupCskPermissions] Error', e)
+      })
+    })()
+
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .flatMap(([id]) => {
+          return Object.entries(state[id].chatRooms || {})
+            // $FlowFixMe[incompatible-use]
+            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+              // Not deleted
+              !deletedDate &&
+              // We should be a member with an active profile
+              members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
+              // have synced the chatroom
+              state[id]._vm?.authorizedKeys &&
+              // and the CEK doesn't have OP_KEY_SHARE permission
+              // and the CEK doesn't have OP_KEY_REQUEST_SEEN permission
+              Object.values(state[id]._vm.authorizedKeys)
+                // $FlowFixMe[incompatible-use]
+                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'cek' && (
+                  !permissions.includes(SPMessage.OP_KEY_SHARE) ||
+                  !permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
+                ))
+            )
+            .map(([id]) => id)
+        })
+
+      if (!chatRoomIds.length) return
+      sbp('gi.actions/chatroom/upgradeCekPermissions', chatRoomIds).catch(e => {
+        console.error('[chatroom/upgradeCekPermissions] Error', e)
       })
     })()
   },

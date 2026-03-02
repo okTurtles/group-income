@@ -431,6 +431,38 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
+  'gi.actions/chatroom/upgradeCekPermissions': (chatRoomIds) => {
+    chatRoomIds.forEach((chatRoomID) => {
+      const state = sbp('chelonia/contract/state', chatRoomID)
+      if (!state) return
+
+      const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+      // Return if we've already upgraded this chatroom
+      if (!CEKid || (
+        state._vm.authorizedKeys[CEKid].permissions.includes(SPMessage.OP_KEY_SHARE) &&
+        state._vm.authorizedKeys[CEKid].permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
+      )) return
+
+      const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+      if (!CEKid || !CSKid) return
+
+      sbp('chelonia/out/keyUpdate', {
+        contractID: chatRoomID,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          {
+            name: 'cek',
+            oldKeyId: CEKid,
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE]
+          }
+        ],
+        signingKeyId: CSKid
+      }).catch(e => {
+        console.error(`[gi.actions/chatroom/upgradeCekPermissions] Error updating group CSK for ${chatRoomID}`, e)
+      })
+    })
+  },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
