@@ -15,7 +15,7 @@
     badge.c-badge(v-if='dmDetails.hasNew' type='compact')
 
   .c-dm-info
-    .c-dm-title
+    .c-dm-title.has-ellipsis
       span.is-title-4 {{ dmDetails.title }}
       i18n.c-you(v-if='dmDetails.isDMToMyself') (you)
 
@@ -136,12 +136,15 @@ export default {
 }
 
 .c-dm-info {
+  position: relative;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .c-dm-title {
   font-weight: 600;
   color: $text_0;
+  width: 100%;
 }
 
 .c-dm-message-preview {
@@ -175,6 +178,10 @@ export default {
 .c-dm-preview-from {
   display: inline-block;
   margin-right: 0.25rem;
+}
+
+.c-dm-preview-text {
+  word-break: break-all;
 }
 
 // has-new styles
