@@ -6,51 +6,56 @@ page(
   template(#title='') {{ L('Direct Messages') }}
 
   template(#sidebar='{ toggle }')
-    chat-nav
-      chat-members.c-dm-list(
-        @new='toggle'
-        @redirect='toggle'
-        :hideNewButton='true'
-        :title='L("Conversations")'
-        :noItemText='L("No active DMs yet.")'
-      )
+    template(v-if='isDevelopmentMode')
+      chat-nav
+        chat-members.c-dm-list(
+          @new='toggle'
+          @redirect='toggle'
+          :hideNewButton='true'
+          :title='L("Conversations")'
+          :noItemText='L("No active DMs yet.")'
+        )
 
-  .c-page-content-wrapper
-    direct-message-chat-interface(v-if='inChatInterfacePage')
-    template(v-else)
-      .card.c-search-container
-        .inputgroup
-          .is-icon.prefix(aria-hidden='true')
-            i.icon-search
-          input.input(
-            type='text'
-            name='search'
-            :placeholder='L("Find a DM")'
-            v-model='ephemeral.searchText'
-          )
+  template(v-if='isDevelopmentMode')
+    .c-page-content-wrapper
+      transition(:name='transitionName' mode='out-in')
+        direct-message-chat-interface(v-if='inChatInterfacePage')
+        .c-dm-main-container(v-else)
+          .card.c-search-container
+            .inputgroup
+              .is-icon.prefix(aria-hidden='true')
+                i.icon-search
+              input.input(
+                type='text'
+                name='search'
+                :placeholder='L("Find a DM")'
+                v-model='ephemeral.searchText'
+              )
 
-      .c-no-active-dms-container(v-if='hasNoActiveDms')
-        i.icon-comment-dots.c-check-icon
-        i18n.has-text-1 No active DMs yet.
+          .c-no-active-dms-container(v-if='hasNoActiveDms')
+            i.icon-comment-dots.c-check-icon
+            i18n.has-text-1 No active DMs yet.
 
-      template(v-else)
-        .c-no-search-results(v-if='filteredDMList.length === 0')
-          i18n.has-text-1(
-            :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
-          ) No DMs found for "{b_}{searchText}{_b}".
-        template(v-else)
-          .c-dm-group(
-            v-for='dmGroup in filteredDMList'
-            :key='dmGroup.dateDisplay'
-          )
-            .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
+          template(v-else)
+            .c-no-search-results(v-if='filteredDMList.length === 0')
+              i18n.has-text-1(
+                :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
+              ) No DMs found for "{b_}{searchText}{_b}".
+            template(v-else)
+              .c-dm-group(
+                v-for='dmGroup in filteredDMList'
+                :key='dmGroup.dateDisplay'
+              )
+                .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
 
-            .c-dm-list-items
-              direct-message-list-item(
-                v-for='dm in dmGroup.items'
-                :key='dm.chatRoomID'
-                :dmDetails='dm'
-            )
+                .c-dm-list-items
+                  direct-message-list-item(
+                    v-for='dm in dmGroup.items'
+                    :key='dm.chatRoomID'
+                    :dmDetails='dm'
+                )
+  template(v-else)
+    i18n.has-text-1 Direct Messages: Coming soon!
 </template>
 
 <script>
@@ -86,12 +91,18 @@ export default {
       'allDirectMessagesDetails',
       'ourUnreadMessages'
     ]),
+    isDevelopmentMode () {
+      return process.env.NODE_ENV === 'development'
+    },
     hasNoActiveDms () {
       return this.sortedDMList.length === 0
     },
     inChatInterfacePage () {
       return this.$route.name === 'GlobalDirectMessagesConversation' &&
         this.$route.params.chatRoomID
+    },
+    transitionName () {
+      return this.inChatInterfacePage ? 'in-right-out-left' : 'in-left-out-right'
     },
     sortedDMList () {
       const sortedList = []
@@ -122,13 +133,6 @@ export default {
           hasNew: this.chatroomHasNewMessages(chatRoomID)
         })
       }
-
-      // The item with hasNew: true should be at the top of the list regardless of the date.
-      sortedList.forEach(dmGroup => {
-        dmGroup.items.sort((a, b) => {
-          return b.hasNew && !a.hasNew ? 1 : -1
-        })
-      })
 
       return sortedList
     },
@@ -220,6 +224,11 @@ export default {
   @include desktop {
     margin: 1.5rem 0 3rem;
   }
+}
+
+.c-dm-main-container {
+  position: relative;
+  width: 100%;
 }
 
 .c-no-active-dms-container {

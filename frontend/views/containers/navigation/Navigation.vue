@@ -222,6 +222,10 @@ export default ({
       return latest > lastSeen
     },
     hasNewDirectMessages () {
+      if (process.env.NODE_ENV !== 'development') {
+        return false
+      }
+
       const allDMIds = Object.entries(this.ourDirectMessages)
         .filter(([, settings]) => settings.visible)
         .map(([chatRoomID]) => chatRoomID)

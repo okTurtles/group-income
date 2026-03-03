@@ -108,6 +108,10 @@ export default ({
       return new Date(this.ephemeral.latestNewsDate) > new Date(this.ourPreferences.lastSeenNewsDate)
     },
     hasNewDirectMessages () {
+      if (process.env.NODE_ENV !== 'development') {
+        return false
+      }
+
       const allDMIds = Object.entries(this.ourDirectMessages)
         .filter(([, settings]) => settings.visible)
         .map(([chatRoomID]) => chatRoomID)

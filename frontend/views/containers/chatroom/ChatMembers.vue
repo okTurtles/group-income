@@ -17,7 +17,7 @@
 
     template(v-else)
       list-item(
-        v-for='({ partners, title, picture, isDMToMyself }, chatRoomID) in ourGroupDirectMessages'
+        v-for='({ partners, title, picture, isDMToMyself }, chatRoomID) in allActiveDMs'
         tag='router-link'
         :to='buildUrl(chatRoomID)'
         :data-test='chatRoomID'
@@ -105,6 +105,7 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
+      'allDirectMessagesDetails',
       'chatRoomUnreadMessages',
       'isChatRoomManuallyMarkedUnread',
       'currentChatRoomId',
@@ -113,8 +114,11 @@ export default ({
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard/direct-messages')
     },
+    allActiveDMs () {
+      return this.isInGlobalDashboard ? this.allDirectMessagesDetails : this.ourGroupDirectMessages
+    },
     hasNoListItems () {
-      return Object.keys(this.ourGroupDirectMessages).length === 0
+      return Object.keys(this.allActiveDMs).length === 0
     }
   },
   methods: {
@@ -158,7 +162,7 @@ export default ({
       if (this.ephemeral.clearedStaleDrafts) { return }
 
       this.ephemeral.clearedStaleDrafts = true
-      const allActiveDMIds = Object.keys(this.ourGroupDirectMessages)
+      const allActiveDMIds = Object.keys(this.allActiveDMs)
       const keysToClear = this.ephemeral.chatroomsWithDrafts.filter(id => !allActiveDMIds.includes(id))
         .map(chatroomId => `dm:${this.ourIdentityContractId}:${chatroomId}`)
 
