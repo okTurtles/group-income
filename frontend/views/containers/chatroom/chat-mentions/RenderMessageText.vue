@@ -98,8 +98,12 @@ export default ({
       const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
       const wrapEmojis = str => {
         const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
+        const isOnlyEmojis = str.replace(emojiRegex, '').trim().length === 0
+
         // We should be able to style the emojis in message-text (reference issue: https://github.com/okTurtles/group-income/issues/2464)
-        return str.replace(emojiRegex, '<span class="chat-emoji">$1</span>')
+        return isOnlyEmojis
+          ? `<span class="chat-emoji-only">${str}</span>`
+          : str.replace(emojiRegex, '<span class="chat-emoji">$1</span>')
       }
 
       if (!text) { return [] }
