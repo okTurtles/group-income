@@ -82,7 +82,7 @@ export default ({
       return !this.ephemeral.isActive && this.ephemeral.isTouch
     },
     showChatToggleIcon () {
-      return ['GroupChat', 'GroupChatConversation', 'GlobalDirectMessages'].includes(this.$route.name)
+      return ['GroupChat', 'GroupChatConversation', 'GlobalDirectMessages', 'GlobalDirectMessagesConversation'].includes(this.$route.name)
     },
     toggleProps () {
       return {
