@@ -242,11 +242,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   getChatroomNameById (state, getters, rootState) {
     return chatRoomID => {
+      const details = getters.chatRoomsInDetail[chatRoomID]
+      if (details) return details.name
+
       const chatroomState = rootState[chatRoomID]
-      const myIdentityId = rootState.loggedIn.identityContractID
-      return chatroomState?.attributes && getters.isJoinedChatRoom(chatRoomID, myIdentityId)
-        ? chatroomState.attributes.name
-        : null
+      return chatroomState?.attributes?.name || null
     }
   },
   chatRoomMembersInSort (state, getters) {
