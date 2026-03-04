@@ -66,7 +66,6 @@ import { OPEN_MODAL } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import ListItem from '@components/ListItem.vue'
 import { L } from '@common/common.js'
 
@@ -76,7 +75,6 @@ export default ({
     Avatar,
     AvatarUser,
     ProfileCard,
-    GroupMembersTooltipPending,
     ListItem
   },
   props: {

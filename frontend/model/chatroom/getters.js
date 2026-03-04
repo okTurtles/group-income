@@ -33,7 +33,8 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       const directMessageSettings = getters.ourDirectMessages[chatRoomID]
       const myIdentityId = getters.ourIdentityContractId
 
-      if (!directMessageSettings.visible ||
+      if (!chatRoomState ||
+        !directMessageSettings.visible ||
         // NOTE: skip DMs whose chatroom contracts are not synced yet
         !getters.isJoinedChatRoom(chatRoomID, myIdentityId)) {
         continue
@@ -90,6 +91,17 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     }
 
     return details
+  },
+  hasNewDirectMessages (state, getters) {
+    if (process.env.NODE_ENV !== 'development') {
+      return false
+    }
+
+    const allDMIds = Object.entries(getters.ourDirectMessages)
+      .filter(([, settings]: [string, any]) => settings.visible)
+      .map(([chatRoomID]) => chatRoomID)
+
+    return allDMIds.some(chatRoomID => getters.ourUnreadMessages[chatRoomID]?.unreadMessages?.length > 0)
   },
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {

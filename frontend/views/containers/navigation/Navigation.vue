@@ -180,7 +180,8 @@ export default ({
       'ourPreferences',
       'ourProfileActive',
       'ourDirectMessages',
-      'ourUnreadMessages'
+      'ourUnreadMessages',
+      'hasNewDirectMessages'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -220,17 +221,6 @@ export default ({
       const latest = new Date(this.ephemeral.latestNewsDate)
 
       return latest > lastSeen
-    },
-    hasNewDirectMessages () {
-      if (process.env.NODE_ENV !== 'development') {
-        return false
-      }
-
-      const allDMIds = Object.entries(this.ourDirectMessages)
-        .filter(([, settings]) => settings.visible)
-        .map(([chatRoomID]) => chatRoomID)
-
-      return allDMIds.some(chatRoomID => this.ourUnreadMessages[chatRoomID]?.unreadMessages?.length > 0)
     }
   },
   methods: {

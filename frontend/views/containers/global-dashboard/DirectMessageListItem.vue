@@ -56,7 +56,9 @@ export default {
       'ourIdentityContractId'
     ]),
     avatarContractID () {
-      return this.dmDetails.isDMToMyself ? this.ourIdentityContractId : this.dmDetails.partners[0].contractID
+      return this.dmDetails.isDMToMyself
+        ? this.ourIdentityContractId
+        : this.dmDetails.partners?.[0]?.contractID || this.ourIdentityContractId
     },
     timestamp () {
       const t = this.dmDetails.lastMsgTimeStamp || this.dmDetails.createdTimeStamp
