@@ -471,7 +471,7 @@ export default ({
         })
     },
     isActive () {
-      return this.hasAttachments || this.ephemeral.textWithLines.trim()
+      return this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0
     },
     textareaStyles () {
       return {
@@ -1406,7 +1406,6 @@ export default ({
 .c-send-button {
   color: $white;
   background: $general_0;
-  background: grey;
   margin-right: 0.5rem;
   margin-bottom: 0.5rem;
   height: 2rem;
