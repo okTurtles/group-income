@@ -231,7 +231,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   getChatroomNameById (state, getters, rootState) {
     return chatRoomID => {
       const chatroomState = rootState[chatRoomID]
-      return chatroomState?.attributes?.name || null
+      const myIdentityId = rootState.loggedIn.identityContractID
+      return chatroomState?.attributes && getters.isJoinedChatRoom(chatRoomID, myIdentityId)
+        ? chatroomState.attributes.name
+        : null
     }
   },
   chatRoomMembersInSort (state, getters) {
