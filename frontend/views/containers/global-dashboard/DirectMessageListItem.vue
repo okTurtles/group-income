@@ -173,7 +173,7 @@ export default {
   font-size: $size_5;
 
   @include tablet {
-    font-size: $size-4;
+    font-size: $size_4;
   }
 }
 

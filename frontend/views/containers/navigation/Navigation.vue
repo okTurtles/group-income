@@ -179,8 +179,6 @@ export default ({
       'groupUnreadMessages',
       'ourPreferences',
       'ourProfileActive',
-      'ourDirectMessages',
-      'ourUnreadMessages',
       'hasNewDirectMessages'
     ]),
     currentGroupUnreadMessagesCount () {
