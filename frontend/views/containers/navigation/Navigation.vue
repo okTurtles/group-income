@@ -9,6 +9,7 @@ nav.c-navigation(
     badge.c-toggle-badge(v-else-if='currentGroupUnreadMessagesCount' data-test='dashboardBadge') {{ currentGroupUnreadMessagesCount }}
   groups-list(
     v-if='groupsByName.length >= 1'
+    :hasNewNews='hasNewNews'
     :inert='isInert'
     @global-dashboard-click='navigateToGlobalDashboard'
   )
