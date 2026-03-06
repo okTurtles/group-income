@@ -403,6 +403,7 @@ export default (sbp('sbp/selectors/register', {
     }
 
     // TODO: Missing '/disconnect' logic for chatrooms
+    // See <https://github.com/okTurtles/group-income/issues/3043>
     sbp('chelonia/out/keyRequest', {
       originatingContractID: identityContractID,
       originatingContractName: 'gi.contracts/identity',
@@ -506,7 +507,7 @@ export default (sbp('sbp/selectors/register', {
       if (groupCEKid) {
         // Set encryption key to the CEK; this allows for managing joining and
         // leaving the chatroom transparently to group members
-        params.encryptionKeyId = groupCEKid || params.encryptionKeyId
+        params.encryptionKeyId = groupCEKid
       }
     }
 
@@ -586,7 +587,7 @@ export default (sbp('sbp/selectors/register', {
       if (groupCEKid) {
         // Set encryption key to the CEK; this allows for managing joining and
         // leaving the chatroom transparently to group members
-        params.encryptionKeyId = groupCEKid || params.encryptionKeyId
+        params.encryptionKeyId = groupCEKid
       }
     }
 

@@ -228,7 +228,7 @@ sbp('sbp/selectors/register', {
     options?: { direct?: boolean, lastAttempt?: boolean }
   ) => {
     if (options?.direct) {
-      return await sbp('gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector)
+      return await sbp('gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector, options)
     }
     return await sbp('chelonia.persistentActions/enqueue', {
       invocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector, { ...options, lastAttempt: false }],
