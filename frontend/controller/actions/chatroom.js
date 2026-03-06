@@ -375,6 +375,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   // Action to request missing keys after a rotation
+  // Called from the contract on OP_KEY_UPDATE
   'gi.actions/chatroom/findAndRequestMissingChatroomKeys': debounce((contractID) => {
     const state = sbp('chelonia/contract/state', contractID)
     if (!state || !state.members) return
@@ -421,6 +422,7 @@ export default (sbp('sbp/selectors/register', {
     })
   }, 200),
   // Migration action to update group CSK permissions to include OP_KEY_REQUEST
+  // Called from postUpgradeVerification
   'gi.actions/chatroom/upgradeGroupCskPermissions': (chatRoomIds) => {
     chatRoomIds.forEach((chatRoomID) => {
       const state = sbp('chelonia/contract/state', chatRoomID)
@@ -451,6 +453,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   // Migration action to update CEK permissions to include OP_KEY_SHARE and OP_KEY_REQUEST_SEEN
+  // Called from postUpgradeVerification
   'gi.actions/chatroom/upgradeCekPermissions': (chatRoomIds) => {
     chatRoomIds.forEach((chatRoomID) => {
       const state = sbp('chelonia/contract/state', chatRoomID)
