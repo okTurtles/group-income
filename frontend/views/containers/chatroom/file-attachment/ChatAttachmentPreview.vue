@@ -83,7 +83,7 @@
           @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
         )
 
-  a.c-invisible-link(ref='downloadHelper' @click.stop)
+  a.c-invisible-link(ref='downloadHelper' @click.stop='')
 </template>
 
 <script>
