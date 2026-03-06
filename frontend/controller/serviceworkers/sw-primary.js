@@ -373,7 +373,10 @@ self.addEventListener('message', function (event) {
           revokables = rr
           port.postMessage([true, data], transferables)
         }).catch((e) => {
-          const { data, transferables } = serializer(e, true)
+          const { data, transferables, revokables: rr } = serializer(e, true)
+          // For consistency. Because of `true` as the second parameter, rr
+          // should be empty
+          revokables = rr
           port.postMessage([false, data], transferables)
         }).finally(() => {
           revokables?.forEach(r => r.close())
