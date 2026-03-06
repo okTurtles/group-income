@@ -80,8 +80,8 @@ const waitUntilSwReady = () => {
         type: 'ready',
         port: messageChannel.port2,
         GI_VERSION: process.env.GI_VERSION
-      }, [messageChannel.port2]).catch(reject)
-    })
+      }, [messageChannel.port2])
+    }).catch(reject)
   })
     .catch((e) => {
       serviceWorkerMap.delete(registration)
