@@ -70,7 +70,8 @@ export default ({
       ephemeral: {
         periodOpts: [],
         downloadUrl: '',
-        downloadName: ''
+        downloadName: '',
+        staleDownloadObjectUrl: ''
       }
     }
   },
@@ -157,6 +158,10 @@ export default ({
 
       this.$nextTick(() => {
         this.$refs.downloadHelper.click()
+        if (this.ephemeral.staleDownloadObjectUrl) {
+          URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
+        }
+        this.ephemeral.staleDownloadObjectUrl = downloadUrl
       })
     }
   },
@@ -165,6 +170,11 @@ export default ({
       this.ephemeral.periodOpts = uniq(this.data.map(entry => entry.period))
     } else {
       this.close()
+    }
+  },
+  beforeDestroy () {
+    if (this.ephemeral.staleDownloadObjectUrl) {
+      URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
     }
   }
 })

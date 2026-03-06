@@ -134,7 +134,9 @@ export default {
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
       },
-      staleDownloadObjectUrl: null
+      ephemeral: {
+        staleDownloadObjectUrl: null
+      }
     }
   },
   computed: {
@@ -310,10 +312,10 @@ export default {
         aTag.click()
 
         if (!objectURL) {
-          if (this.staleDownloadObjectUrl) {
-            URL.revokeObjectURL(this.staleDownloadObjectUrl)
+          if (this.ephemeral.staleDownloadObjectUrl) {
+            URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
           }
-          this.staleDownloadObjectUrl = url
+          this.ephemeral.staleDownloadObjectUrl = url
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
@@ -411,8 +413,8 @@ export default {
         }
       }
 
-      if (this.staleDownloadObjectUrl) {
-        URL.revokeObjectURL(this.staleDownloadObjectUrl)
+      if (this.ephemeral.staleDownloadObjectUrl) {
+        URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
       }
     }
   },
