@@ -10,6 +10,7 @@
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
     "test": "grunt test",
+    "eslint": "eslint \"**/*.{js,vue}\"",
     "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",

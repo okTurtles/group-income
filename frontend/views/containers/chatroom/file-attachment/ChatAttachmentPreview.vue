@@ -83,7 +83,7 @@
           @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
         )
 
-  a.c-invisible-link(ref='downloadHelper')
+  a.c-invisible-link(ref='downloadHelper' @click.stop)
 </template>
 
 <script>
@@ -313,13 +313,14 @@ export default {
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
 
-        aTag.addEventListener('click', function (event) {
-          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
-          //       when user trys to download attachment inside the dialog
-          event.stopPropagation()
-        })
-
         aTag.click()
+
+        if (!objectURL) {
+          setTimeout(() => {
+            aTag.href = '#'
+            URL.revokeObjectURL(url)
+          }, 0)
+        }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
       }
