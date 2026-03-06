@@ -111,8 +111,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
         @redirect='toggle'
       )
 
-      chat-members(
-        action='addDirectMessage'
+      chat-members.c-dm-list(
         @new='toggle'
         @redirect='toggle'
       )
@@ -381,6 +380,11 @@ export default ({
   .c-menuItem ::v-deep .c-item-link {
     @extend %floating-panel-item;
   }
+}
+
+.c-dm-list {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
 }
 
 .has-text-danger ::v-deep .c-item-slot {

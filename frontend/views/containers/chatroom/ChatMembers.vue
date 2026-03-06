@@ -1,9 +1,10 @@
 <template lang="pug">
 .c-group-members(data-test='chatMembers')
   .c-group-members-header
-    h3.is-title-4 {{title}}
+    h3.is-title-4 {{ title }}
 
     button.button.is-small.is-outlined(
+      v-if='!hideNewButton'
       data-test='inviteButton'
       @click='onClickNewDirectMessage'
     )
@@ -11,47 +12,51 @@
       i18n New
 
   ul.c-group-list
-    list-item(
-      v-for='({ partners, title, picture, isDMToMyself }, chatRoomID) in ourGroupDirectMessages'
-      tag='router-link'
-      :to='buildUrl(chatRoomID)'
-      :data-test='chatRoomID'
-      :key='chatRoomID'
-      @click='$emit("redirect")'
-    )
-      .profile-wrapper(v-if='isDMToMyself')
-        profile-card(:contractID='ourIdentityContractId' deactivated)
-          avatar-user(:contractID='ourIdentityContractId' :picture='picture' size='sm' data-test='openMemberProfileCard')
-          span.is-unstyled.c-name.has-ellipsis(
-            :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
-            :data-test='title'
-          )
-            span {{ title }}
-            i18n.c-you (you)
+    li.c-no-items(v-if='hasNoListItems && noItemText')
+      | {{ noItemText }}
 
-      template(v-else)
-        .profile-wrapper(v-if='partners.length === 1')
-          profile-card(:contractID='partners[0].contractID' deactivated)
-            avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
+    template(v-else)
+      list-item(
+        v-for='({ partners, title, picture, isDMToMyself }, chatRoomID) in allActiveDMs'
+        tag='router-link'
+        :to='buildUrl(chatRoomID)'
+        :data-test='chatRoomID'
+        :key='chatRoomID'
+        @click='$emit("redirect")'
+      )
+        .profile-wrapper(v-if='isDMToMyself')
+          profile-card(:contractID='ourIdentityContractId' deactivated)
+            avatar-user(:contractID='ourIdentityContractId' :picture='picture' size='sm' data-test='openMemberProfileCard')
             span.is-unstyled.c-name.has-ellipsis(
               :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
-              :data-test='partners[0].username'
+              :data-test='title'
+            )
+              span {{ title }}
+              i18n.c-you (you)
+
+        template(v-else)
+          .profile-wrapper(v-if='partners.length === 1')
+            profile-card(:contractID='partners[0].contractID' deactivated)
+              avatar-user(:contractID='partners[0].contractID' :picture='picture' size='sm' data-test='openMemberProfileCard')
+              span.is-unstyled.c-name.has-ellipsis(
+                :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
+                :data-test='partners[0].username'
+              ) {{ title }}
+
+          .group-wrapper(v-else)
+            .picture-wrapper
+              avatar(:src='picture' :alt='title' size='xs')
+              .c-badge {{ partners.length }}
+            span.is-unstyled.c-name.has-ellipsis(
+              :data-test='title'
+              :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
             ) {{ title }}
 
-        .group-wrapper(v-else)
-          .picture-wrapper
-            avatar(:src='picture' :alt='title' size='xs')
-            .c-badge {{ partners.length }}
-          span.is-unstyled.c-name.has-ellipsis(
-            :data-test='title'
-            :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
-          ) {{ title }}
-
-      .c-badge-elements-wrapper
-        i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(chatRoomID)')
-        .pill.is-danger(
-          v-if='getUnreadMsgCount(chatRoomID)'
-        ) {{ limitedUnreadCount(getUnreadMsgCount(chatRoomID)) }}
+        .c-badge-elements-wrapper
+          i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(chatRoomID)')
+          .pill.is-danger(
+            v-if='getUnreadMsgCount(chatRoomID)'
+          ) {{ limitedUnreadCount(getUnreadMsgCount(chatRoomID)) }}
 </template>
 
 <script>
@@ -61,7 +66,6 @@ import { OPEN_MODAL } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import ListItem from '@components/ListItem.vue'
 import { L } from '@common/common.js'
 
@@ -71,7 +75,6 @@ export default ({
     Avatar,
     AvatarUser,
     ProfileCard,
-    GroupMembersTooltipPending,
     ListItem
   },
   props: {
@@ -79,10 +82,13 @@ export default ({
       type: String,
       default: L('Direct Messages')
     },
-    action: {
+    hideNewButton: {
+      type: Boolean,
+      default: false
+    },
+    noItemText: {
       type: String,
-      default: 'addDirectMessage',
-      validator: (value) => ['addDirectMessage'].includes(value)
+      required: false
     }
   },
   data () {
@@ -97,11 +103,21 @@ export default ({
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
+      'allDirectMessagesDetails',
       'chatRoomUnreadMessages',
       'isChatRoomManuallyMarkedUnread',
       'currentChatRoomId',
       'ourIdentityContractId'
-    ])
+    ]),
+    isInGlobalDashboard () {
+      return this.$route.path.startsWith('/global-dashboard/direct-messages')
+    },
+    allActiveDMs () {
+      return this.isInGlobalDashboard ? this.allDirectMessagesDetails : this.ourGroupDirectMessages
+    },
+    hasNoListItems () {
+      return Object.keys(this.allActiveDMs).length === 0
+    }
   },
   methods: {
     invite () {
@@ -112,17 +128,13 @@ export default ({
     },
     buildUrl (chatRoomID) {
       return {
-        name: 'GroupChatConversation',
+        name: this.isInGlobalDashboard ? 'GlobalDirectMessagesConversation' : 'GroupChatConversation',
         params: { chatRoomID }
       }
     },
     onClickNewDirectMessage () {
-      let modalAction = ''
-      if (this.action === 'addDirectMessage') modalAction = 'NewDirectMessageModal'
-      if (modalAction) {
-        this.openModal(modalAction)
-        this.$emit('new')
-      }
+      this.openModal('NewDirectMessageModal')
+      this.$emit('new')
     },
     getUnreadMsgCount (chatRoomID) {
       return this.chatRoomUnreadMessages(chatRoomID).length
@@ -148,7 +160,7 @@ export default ({
       if (this.ephemeral.clearedStaleDrafts) { return }
 
       this.ephemeral.clearedStaleDrafts = true
-      const allActiveDMIds = Object.keys(this.ourGroupDirectMessages)
+      const allActiveDMIds = Object.keys(this.allActiveDMs)
       const keysToClear = this.ephemeral.chatroomsWithDrafts.filter(id => !allActiveDMIds.includes(id))
         .map(chatroomId => `dm:${this.ourIdentityContractId}:${chatroomId}`)
 
@@ -177,8 +189,6 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-group-members {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
   position: relative;
 }
 
@@ -266,5 +276,10 @@ export default ({
   width: 1rem;
   height: 1rem;
   font-size: 0.75rem;
+}
+
+.c-no-items {
+  margin-top: 1.25rem;
+  color: $text_1;
 }
 </style>
