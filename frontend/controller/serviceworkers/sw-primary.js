@@ -386,12 +386,15 @@ self.addEventListener('message', function (event) {
             // Handle un-serializable/uncloneable exceptions to prevent the client's Promise from hanging
             revokables = null
             const { data, transferables } = serializer(
-              new Error(e instanceof Error ? e.message : 'SW execution error')
+              new Error(e instanceof Error ? e.message : 'SW execution error'),
+              true
             )
             port.postMessage([false, data], transferables)
           }
         }).finally(() => {
-          revokables?.forEach(r => r.close())
+          // Note: `revokables` _not_ closed because doing so would prevent the
+          // caller from using them.
+          // // revokables?.forEach(r => r.close())
           port.close()
         })
         break

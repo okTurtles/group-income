@@ -32,19 +32,19 @@ window.addEventListener('beforeinstallprompt', e => {
 
 const serviceWorkerMap = new WeakMap()
 const waitUntilSwReady = () => {
-  let cleanup, registration
+  let cleanup, worker
 
   const promise = new Promise((resolve, reject) => {
-    navigator.serviceWorker.ready.then((worker) => {
-      registration = worker.active
-      if (!registration) {
+    navigator.serviceWorker.ready.then((registration) => {
+      worker = registration.active
+      if (!worker) {
         reject(new Error('No active service worker'))
         return
       }
       // We have already called `waitUntilSwReady` on this SW -- return memoized
       // result.
-      if (serviceWorkerMap.has(registration)) {
-        resolve(serviceWorkerMap.get(registration))
+      if (serviceWorkerMap.has(worker)) {
+        resolve(serviceWorkerMap.get(worker))
         return
       }
 
@@ -79,8 +79,8 @@ const waitUntilSwReady = () => {
 
       navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
 
-      serviceWorkerMap.set(registration, promise)
-      worker.active.postMessage({
+      serviceWorkerMap.set(worker, promise)
+      registration.active.postMessage({
         type: 'ready',
         port: messageChannel.port2,
         GI_VERSION: process.env.GI_VERSION
@@ -88,7 +88,7 @@ const waitUntilSwReady = () => {
     }).catch(reject)
   })
     .catch((e) => {
-      if (registration) serviceWorkerMap.delete(registration)
+      if (worker) serviceWorkerMap.delete(worker)
       throw e
     })
     .finally(() => {
@@ -385,6 +385,9 @@ const swRpc = (() => {
           } finally {
             cleanup()
           }
+        } else {
+          reject(new Error('Unexpected message format from service worker'))
+          cleanup()
         }
       }
       const onmessageerror = (event: MessageEvent) => {
