@@ -412,15 +412,16 @@ export default ((() => {
         promise = undefined // Reset on error
         throw e // Re-throw the error
       })
+      promise.then(() => {
+        sbp('chelonia.persistentActions/configure', {
+          databaseKey: '_private_persistent_actions'
+        })
+        sbp('chelonia.persistentActions/load').catch(e => {
+          console.error('Error loading persistent actions', e)
+        })
+      })
     }
-    return promise.then(() => {
-      sbp('chelonia.persistentActions/configure', {
-        databaseKey: '_private_persistent_actions'
-      })
-      sbp('chelonia.persistentActions/load').catch(e => {
-        console.error('Error loading persistent actions', e)
-      })
-    })
+    return promise
   }
   let promise
 

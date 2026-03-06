@@ -277,7 +277,7 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       await sbp('chelonia/storeSecretKeys',
-        new Secret([CEK, CSK, inviteKey].map(key => ({ key })))
+        new Secret([CEK, CSK, inviteKey, creatorInviteKey].map(key => ({ key })))
       )
 
       // Using ephemeral retain-release to wait until the newly created group
