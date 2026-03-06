@@ -368,16 +368,25 @@ self.addEventListener('message', function (event) {
         // difficult to implement and easy to circumvent.
         const port = event.data.port
         let revokables
+
         ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           const { data, transferables, revokables: rr } = serializer(r)
           revokables = rr
           port.postMessage([true, data], transferables)
         }).catch((e) => {
-          const { data, transferables, revokables: rr } = serializer(e, true)
-          // For consistency. Because of `true` as the second parameter, rr
-          // should be empty
-          revokables = rr
-          port.postMessage([false, data], transferables)
+          // Close old revokables before overwriting them to avoid leaking ports
+          revokables?.forEach(r => r.close())
+          try {
+            const { data, transferables, revokables: rr } = serializer(e, true)
+            // For consistency. Because of `true` as the second parameter, rr
+            // should be empty
+            revokables = rr
+            port.postMessage([false, data], transferables)
+          } catch (serialErr) {
+            // Handle un-serializable/uncloneable exceptions to prevent the client's Promise from hanging
+            revokables = null
+            port.postMessage([false, serializer(new Error('SW execution error'), true)])
+          }
         }).finally(() => {
           revokables?.forEach(r => r.close())
           port.close()
