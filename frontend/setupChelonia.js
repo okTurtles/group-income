@@ -11,6 +11,7 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
+import './model/sw-database.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 import { KV_KEYS } from './utils/constants.js'
 
@@ -176,7 +177,9 @@ const setupChelonia = async (): Promise<*> => {
           'chelonia/contract/hasKeysToPerformOperation',
           'gi.actions/identity/kv/initChatRoomUnreadMessages', 'gi.actions/identity/kv/deleteChatRoomUnreadMessages',
           'gi.actions/identity/kv/setChatRoomReadUntil',
-          'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage'
+          'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage',
+          'gi.actions/group/findAndRequestMissingGroupKeys',
+          'gi.actions/chatroom/findAndRequestMissingChatroomKeys'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -404,7 +407,14 @@ const setupChelonia = async (): Promise<*> => {
 export default ((() => {
   const singletonFn = () => {
     if (!promise) {
-      promise = setupChelonia().catch((e) => {
+      promise = setupChelonia().then(() => {
+        sbp('chelonia.persistentActions/configure', {
+          databaseKey: '_private_persistent_actions'
+        })
+        sbp('chelonia.persistentActions/load').catch(e => {
+          console.error('Error loading persistent actions', e)
+        })
+      }).catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
         throw e // Re-throw the error
