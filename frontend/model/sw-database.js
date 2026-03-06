@@ -1,5 +1,13 @@
 'use strict'
 
+// Database selectors file
+// For lightweight clients, most keys except `_private_` keys and
+// contract state are discarded.
+// For non-lightweight clients, all keys are saved. But, `_private_` keys are
+// saved in Chelonia state (instead of regular storage in the `Contracts` DB),
+// since they are user-specific.
+// We currently use `_private_` for persistent actions.
+
 import sbp from '@sbp/sbp'
 import localforage from './localforage.js'
 
@@ -11,6 +19,8 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   // use localforage for storage
   sbp('sbp/selectors/overwrite', {
     'chelonia.db/get': key => {
+      // Do not discard `_private_` keys (internal Chlonia metadata)
+      // Save them in Chelonia state
       if (key.startsWith('_private')) {
         const rootState = sbp('chelonia/rootState')
         return Promise.resolve(rootState[key])
@@ -19,6 +29,7 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
     },
     // TODO: handle QuotaExceededError
     'chelonia.db/set': (key, value) => {
+      // Do not discard `_private_` keys (internal Chlonia metadata)
       if (key.startsWith('_private')) {
         const rootState = sbp('chelonia/rootState')
         rootState[key] = value
@@ -27,6 +38,7 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
       return log.setItem(key, value)
     },
     'chelonia.db/delete': (key: string) => {
+      // Do not discard `_private_` keys (internal Chlonia metadata)
       if (key.startsWith('_private')) {
         const rootState = sbp('chelonia/rootState')
         delete rootState[key]
