@@ -30,6 +30,8 @@ window.addEventListener('beforeinstallprompt', e => {
   sbp('okTurtles.events/emit', PWA_INSTALLABLE)
 })
 
+// Note: serviceWorkerMap uses WeakMap, so entries for old workers are
+// automatically cleaned up when those workers are garbage collected.
 const serviceWorkerMap = new WeakMap()
 const waitUntilSwReady = () => {
   let cleanup, worker
@@ -390,8 +392,8 @@ const swRpc = (() => {
           cleanup()
         }
       }
-      const onmessageerror = (event: MessageEvent) => {
-        reject(event.data)
+      const onmessageerror = () => {
+        reject(new Error('Message error'))
         cleanup()
       }
       const oncontrollerchange = (event: Event) => {
