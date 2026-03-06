@@ -370,8 +370,8 @@ self.addEventListener('message', function (event) {
         let revokables
         ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
           const { data, transferables, revokables: rr } = serializer(r)
-          port.postMessage([true, data], transferables)
           revokables = rr
+          port.postMessage([true, data], transferables)
         }).catch((e) => {
           const { data, transferables } = serializer(e, true)
           port.postMessage([false, data], transferables)

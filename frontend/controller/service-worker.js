@@ -80,7 +80,7 @@ const waitUntilSwReady = () => {
         type: 'ready',
         port: messageChannel.port2,
         GI_VERSION: process.env.GI_VERSION
-      }, [messageChannel.port2])
+      }, [messageChannel.port2]).catch(reject)
     })
   })
     .catch((e) => {
@@ -364,17 +364,23 @@ const swRpc = (() => {
     }
     await waitUntilSwReady()
     return new Promise((resolve, reject) => {
+      let _revokables
       const messageChannel = new MessageChannel()
       const onmessage = (event: MessageEvent) => {
         if (event.data && Array.isArray(event.data)) {
-          const r = deserializer(event.data[1])
-          // $FlowFixMe[incompatible-use]
-          if (event.data[0] === true) {
-            resolve(r)
-          } else {
-            reject(r)
+          try {
+            const r = deserializer(event.data[1])
+            // $FlowFixMe[incompatible-use]
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+          } catch (e) {
+            reject(e)
+          } finally {
+            cleanup()
           }
-          cleanup()
         }
       }
       const onmessageerror = (event: MessageEvent) => {
@@ -396,18 +402,24 @@ const swRpc = (() => {
         messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
         navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
         messageChannel.port1.close()
-        revokables?.forEach(r => r.close())
+        _revokables?.forEach(r => r.close())
       }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
       navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
       messageChannel.port1.start()
-      const { data, transferables, revokables } = serializer(args)
-      controller.postMessage({
-        type: 'sbp',
-        port: messageChannel.port2,
-        data
-      }, [messageChannel.port2, ...transferables])
+      try {
+        const payload = serializer(args)
+        _revokables = payload.revokables
+        controller.postMessage({
+          type: 'sbp',
+          port: messageChannel.port2,
+          data: payload.data
+        }, [messageChannel.port2, ...payload.transferables])
+      } catch (err) {
+        cleanup()
+        reject(err)
+      }
     })
   }
 
