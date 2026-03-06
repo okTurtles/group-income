@@ -152,6 +152,14 @@ const appendToIekList = (contractID: string, IEK: Object, oldIEK: Object, encryp
   return updatedKeysData // Return the updated encrypted data
 }
 
+const newSecretSeedString = () => {
+  const buffer = new Uint8Array(24)
+  crypto.getRandomValues(buffer)
+  const string = btoa(String.fromCharCode(...Array.from(buffer)))
+
+  return string
+}
+
 // Event handler to detect password updates
 sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
@@ -380,7 +388,8 @@ export default (sbp('sbp/selectors/register', {
             email,
             get picture () { return finalPicture },
             encryptedDeletionToken: encryptedDeletionToken.serialize('encryptedDeletionToken')
-          }
+          },
+          secretDeleteTokenSeeds: [[0, newSecretSeedString()]]
         }
       })
 
@@ -1124,8 +1133,22 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/logout')
     }
   },
+  'gi.actions/identity/rotateSecretDeleteTokenSeed': (contractID: string) => {
+    const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
+    if (contractID !== ourIdentityContractId) return
+
+    const params = {
+      contractID: ourIdentityContractId,
+      data: {
+        secretSeed: newSecretSeedString()
+      }
+    }
+
+    return sbp('gi.actions/identity/setSecretDeleteTokenSeed', params)
+  },
   ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
+  ...encryptedAction('gi.actions/identity/setSecretDeleteTokenSeed', L('Failed to set secret delete token seed')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
 }): string[])
