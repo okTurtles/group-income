@@ -1142,6 +1142,8 @@ export default (sbp('sbp/selectors/register', {
       ]
     })
   },
+  // Migration action to have the group creator use regular invites instead
+  // of the CSK
   'gi.actions/identity/upgradeCreatorGroupInvite': async (groupIDs) => {
     const cheloniaState = sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn.identityContractID

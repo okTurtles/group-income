@@ -1469,19 +1469,23 @@ sbp('chelonia/defineContract', {
   //
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
+    // Hook to run on every OP_KEY_UPDATE (inside or outside OP_ATOMIC)
     'gi.contracts/group/_postOpHook/ku': ({ contractID, state }) => {
       sbp('chelonia/queueInvocation', contractID, () => {
+        // Verify that we aren't missing a key after a rotation
         return sbp('gi.actions/group/findAndRequestMissingGroupKeys', contractID, state)
       }).catch((e) => {
         console.error('[gi.contracts/group/hook/ku] Error', e)
       })
     },
+    // Custom response options for OP_KEY_REQUEST
     'gi.contracts/group/_responseOptionsForKeyRequest': ({
       contractID,
       request,
       state,
       originatingContractID
     }) => {
+      // For key requests of type 'missing', sent when a member is missing keys
       if (request === 'missing' && state.profiles[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
@@ -1491,6 +1495,7 @@ sbp('chelonia/defineContract', {
           skipInviteAccounting: true
         }
       } else {
+        // Request deemed invalid or unrecognised
         return {
           keyIds: [],
           skipInviteAccounting: true

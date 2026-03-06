@@ -738,6 +738,7 @@ export default (sbp('sbp/selectors/register', {
           }
         })).then((keys) => [keys.filter(Boolean)])
   },
+  // Migration action to request missing keys after a migration
   'gi.actions/group/findAndRequestMissingGroupKeys': debounce((contractID) => {
     const state = sbp('chelonia/contract/state', contractID)
     if (!state || !state.profiles) return

@@ -301,6 +301,8 @@ sbp('chelonia/defineContract', {
         if (state.groups[groupContractID].hash !== reference) {
           throw new Error(`Cannot leave group ${groupContractID} because the reference hash does not match the latest`)
         }
+        // Now that we've left, we need to rotate our PEK. Actual revocation
+        // is done by revokeGroupKeyAndRotateOurPEK.
         sbp('chelonia/contract/setPendingKeyRevocation', state, ['pek'])
 
         // We only keep `hash` and `hasLeft` in the list of groups, as this

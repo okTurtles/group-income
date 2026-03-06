@@ -702,13 +702,16 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    // Hook to run on every OP_KEY_UPDATE (inside or outside OP_ATOMIC)
     'gi.contracts/chatroom/_postOpHook/ku': ({ contractID, state }) => {
       sbp('chelonia/queueInvocation', contractID, () => {
+        // Verify that we aren't missing a key after a rotation
         return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID, state)
       }).catch((e) => {
         console.error('[gi.contracts/chatroom/hook/ku] Error', e)
       })
     },
+    // Custom response options for OP_KEY_REQUEST
     'gi.contracts/chatroom/_responseOptionsForKeyRequest': ({
       contractID,
       request,
@@ -716,6 +719,7 @@ sbp('chelonia/defineContract', {
       originatingContractID
     }) => {
       if (!state?.members) return
+      // For key requests of type 'missing', sent when a member is missing keys
       if (request === 'missing' && state.members[originatingContractID] && !state.members[originatingContractID].hasLeft) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
@@ -725,6 +729,7 @@ sbp('chelonia/defineContract', {
           skipInviteAccounting: true
         }
       } else {
+        // Request deemed invalid or unrecognised
         return {
           keyIds: [],
           skipInviteAccounting: true
