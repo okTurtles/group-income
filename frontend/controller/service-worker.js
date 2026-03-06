@@ -37,6 +37,10 @@ const waitUntilSwReady = () => {
   const promise = new Promise((resolve, reject) => {
     navigator.serviceWorker.ready.then((worker) => {
       registration = worker.active
+      if (!registration) {
+        reject(new Error('No active service worker'))
+        return
+      }
       // We have already called `waitUntilSwReady` on this SW -- return memoized
       // result.
       if (serviceWorkerMap.has(registration)) {
@@ -84,7 +88,7 @@ const waitUntilSwReady = () => {
     }).catch(reject)
   })
     .catch((e) => {
-      serviceWorkerMap.delete(registration)
+      if (registration) serviceWorkerMap.delete(registration)
       throw e
     })
     .finally(() => {
