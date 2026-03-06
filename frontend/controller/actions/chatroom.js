@@ -258,7 +258,19 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userID, { ephemeral: true })
     }
   },
-  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys, options) => {
+  // Helper function to select new keys to share with members after a key rotation
+  // `newKeys` contains the new keys (after rotation)
+  // Called by 'gi.actions/out/rotateKeys'
+  // `options` indicates whether this is the last attempt at this operation or not
+  // (on our part). The goal is not to block key rotations (which would happen if
+  // this method throws), while at the same time ensuring that we don't exclude any
+  // member from the key share.
+  // If it's _not_ the last attempt, we throw if we are unable to share keys with
+  // an existing member. The operation will be re-attempted later.
+  // If it _is_ the last attempt, we proceed with key rotation, even though we
+  // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
+  // later (but will be temporarily unable to participate).
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean }) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
@@ -284,7 +296,11 @@ export default (sbp('sbp/selectors/register', {
         const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
         if (!CEKid) {
           console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
-          return
+          if (options.lastAttempt) {
+            return
+          } else {
+            throw new Error('Unable to share rotated keys')
+          }
         }
         return [
           'chelonia/out/keyShare',
@@ -558,6 +574,12 @@ export default (sbp('sbp/selectors/register', {
       // leaving the chatroom transparently to group members
       if (groupCSKid) {
         params.signingKeyId = groupCSKid
+      } else {
+        const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        if (!CSKid) {
+          throw new Error('No CSK id for chatroom: ' + params.contractID)
+        }
+        params.signingKeyId = CSKid
       }
 
       const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-cek', true)

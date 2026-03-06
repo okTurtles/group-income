@@ -302,14 +302,14 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
     return
   }
 
+  const signingKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
   // When a group is being left, we want to also leave chatrooms,
   // including private chatrooms. Since the user issuing the action
   // may not be a member of the chatroom, we use the group's CSK
   // unconditionally in this situation, which should be a key in the
   // chatroom (either the CSK or the groupKey)
   if (leavingGroup) {
-    const signingKeyId = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
-
     // If we don't have a CSK, it is because we've already been removed.
     // Proceeding would cause an error
     if (!signingKeyId) {
@@ -320,6 +320,7 @@ const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID
   sbp('gi.actions/chatroom/leave', {
     contractID: chatRoomID,
     data: sendingData,
+    signingKeyId,
     // Explicitly opt out of inner signatures. By default, actions will be signed
     // by the currently logged in user.
     innerSigningContractID: leavingGroup ? null : undefined
