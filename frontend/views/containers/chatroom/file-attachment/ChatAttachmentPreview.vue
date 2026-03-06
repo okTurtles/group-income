@@ -133,7 +133,8 @@ export default {
       settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
-      }
+      },
+      staleDownloadObjectUrl: null
     }
   },
   computed: {
@@ -181,14 +182,7 @@ export default {
     }
   },
   beforeDestroy () {
-    if (this.hasMediaAttachments) {
-      sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
-
-      if (this.isForDownload) {
-        // make sure to revoke all media object URLs when the component is destroyed
-        this.revokeAllMediaObjectURLs()
-      }
-    }
+    this.clearResources()
   },
   methods: {
     initMediaObjectURLLists () {
@@ -316,10 +310,10 @@ export default {
         aTag.click()
 
         if (!objectURL) {
-          setTimeout(() => {
-            aTag.href = '#'
-            URL.revokeObjectURL(url)
-          }, 0)
+          if (this.staleDownloadObjectUrl) {
+            URL.revokeObjectURL(this.staleDownloadObjectUrl)
+          }
+          this.staleDownloadObjectUrl = url
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
@@ -406,6 +400,20 @@ export default {
     },
     getAttachmentId (attachment) {
       return attachment.downloadData?.manifestCid || attachment.name.replace(/\s+/g, '_')
+    },
+    clearResources () {
+      if (this.hasMediaAttachments) {
+        sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+        if (this.isForDownload) {
+          // make sure to revoke all media object URLs when the component is destroyed
+          this.revokeAllMediaObjectURLs()
+        }
+      }
+
+      if (this.staleDownloadObjectUrl) {
+        URL.revokeObjectURL(this.staleDownloadObjectUrl)
+      }
     }
   },
   watch: {
