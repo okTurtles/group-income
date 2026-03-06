@@ -146,7 +146,7 @@ const broadcastMessage = (...args) => {
   RECONNECTING, RECONNECTION_FAILED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
 ].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
-    const { data, transferables } = serializer(args)
+    const { data, transferables } = serializer(args, true)
     const message = {
       type: 'event',
       subtype: et,
@@ -163,7 +163,7 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
     manifest: contract.manifest,
     name: contract.name
   }
-  const { data, transferables } = serializer([argsCopy])
+  const { data, transferables } = serializer([argsCopy], true)
   const message = {
     type: 'event',
     subtype: CONTRACT_REGISTERED,
@@ -178,7 +178,7 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
 sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (args) => {
   // Set a 'from' parameter to signal it comes from the SW
   const argsCopy = { ...args, from: 'sw' }
-  const { data, transferables } = serializer([argsCopy])
+  const { data, transferables } = serializer([argsCopy], true)
   const message = {
     type: 'event',
     subtype: NEW_CHATROOM_SCROLL_POSITION,
@@ -189,7 +189,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (args) => {
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (args) => {
   // Set a 'from' parameter to signal it comes from the SW
   const argsCopy = { ...args, from: 'sw' }
-  const { data, transferables } = serializer([argsCopy])
+  const { data, transferables } = serializer([argsCopy], true)
   const message = {
     type: 'event',
     subtype: NEW_CHATROOM_NOTIFICATION_SETTINGS,
@@ -201,7 +201,7 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (args) => {
 // Logs are treated especially to avoid spamming logs with event emitted
 // entries
 sbp('okTurtles.events/on', CAPTURED_LOGS, (...args) => {
-  const { data, transferables } = serializer(args)
+  const { data, transferables } = serializer(args, true)
   const message = {
     type: CAPTURED_LOGS,
     data
@@ -368,13 +368,34 @@ self.addEventListener('message', function (event) {
         // We don't filter the selectors because such a filter would be
         // difficult to implement and easy to circumvent.
         const port = event.data.port
+        let revokables
+
         ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
-          const { data, transferables } = serializer(r)
+          const { data, transferables, revokables: rr } = serializer(r)
+          revokables = rr
           port.postMessage([true, data], transferables)
         }).catch((e) => {
-          const { data, transferables } = serializer(e)
-          port.postMessage([false, data], transferables)
+          // Close old revokables before overwriting them to avoid leaking ports
+          revokables?.forEach(r => r.close())
+          try {
+            const { data, transferables, revokables: rr } = serializer(e, true)
+            // For consistency. Because of `true` as the second parameter, rr
+            // should be empty
+            revokables = rr
+            port.postMessage([false, data], transferables)
+          } catch (serialErr) {
+            // Handle un-serializable/uncloneable exceptions to prevent the client's Promise from hanging
+            revokables = null
+            const { data, transferables } = serializer(
+              new Error(e instanceof Error ? e.message : 'SW execution error'),
+              true
+            )
+            port.postMessage([false, data], transferables)
+          }
         }).finally(() => {
+          // Note: `revokables` _not_ closed because doing so would prevent the
+          // caller from using them.
+          // // revokables?.forEach(r => r.close())
           port.close()
         })
         break
@@ -475,7 +496,7 @@ self.addEventListener('notificationclick', event => {
       if (!clientList.length) {
         return self.clients.openWindow(`${sbp('controller/router').options.base}${event.notification.data.path ?? '/'}`).then((client) => {
           if (event.notification.data?.sbpInvocation) {
-            const { data } = serializer(event.notification.data.sbpInvocation)
+            const { data } = serializer(event.notification.data.sbpInvocation, true)
             client.postMessage({
               type: 'sbp',
               data
@@ -493,7 +514,7 @@ self.addEventListener('notificationclick', event => {
       // Otherwise, pick the first client
       const client = clientList[0]
       if (event.notification.data?.sbpInvocation) {
-        const { data } = serializer(event.notification.data.sbpInvocation)
+        const { data } = serializer(event.notification.data.sbpInvocation, true)
         client.postMessage({
           type: 'sbp',
           data
