@@ -184,7 +184,18 @@ export default {
     }
   },
   beforeDestroy () {
-    this.clearResources()
+    if (this.hasMediaAttachments) {
+      sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
+
+      if (this.isForDownload) {
+        // make sure to revoke all media object URLs when the component is destroyed
+        this.revokeAllMediaObjectURLs()
+      }
+    }
+
+    if (this.ephemeral.staleDownloadObjectUrl) {
+      URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
+    }
   },
   methods: {
     initMediaObjectURLLists () {
@@ -402,20 +413,6 @@ export default {
     },
     getAttachmentId (attachment) {
       return attachment.downloadData?.manifestCid || attachment.name.replace(/\s+/g, '_')
-    },
-    clearResources () {
-      if (this.hasMediaAttachments) {
-        sbp('okTurtles.events/off', DELETE_ATTACHMENT, this.deleteAttachment)
-
-        if (this.isForDownload) {
-          // make sure to revoke all media object URLs when the component is destroyed
-          this.revokeAllMediaObjectURLs()
-        }
-      }
-
-      if (this.ephemeral.staleDownloadObjectUrl) {
-        URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
-      }
     }
   },
   watch: {

@@ -69,9 +69,8 @@ export default ({
       },
       ephemeral: {
         periodOpts: [],
-        downloadUrl: '',
         downloadName: '',
-        staleDownloadObjectUrl: ''
+        staleDownloadObjectUrl: null
       }
     }
   },
