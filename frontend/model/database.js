@@ -465,6 +465,8 @@ sbp('sbp/selectors/register', {
       const keys = await filesCache.getItem('keys') ?? []
       const allTempKeys = keys.filter(k => k.startsWith('temporary/'))
       await filesCache.removeMany(allTempKeys)
+      const remainingKeys = keys.filter(k => !k.startsWith('temporary/'))
+      await filesCache.setItem('keys', remainingKeys)
     }).catch(e => {
       console.error('[gi.db/filesCache/temporary/clear] Error removing temporary keys', e)
     })

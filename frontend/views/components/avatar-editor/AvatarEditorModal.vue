@@ -153,6 +153,15 @@ export default ({
       this.form.slider = ZOOM_SLIDER_MIN // init the slider zoom value before re-rendering components
       this.ephemeral.canvasComponentKey = randomHexString(10)
     }
+  },
+  beforeDestroy () {
+    const initialUrl = this.$route.query.imageUrl
+    if (initialUrl) {
+      URL.revokeObjectURL(initialUrl)
+    }
+    if (this.ephemeral.replaceImageUrl) {
+      URL.revokeObjectURL(this.ephemeral.replaceImageUrl)
+    }
   }
 }: Object)
 </script>

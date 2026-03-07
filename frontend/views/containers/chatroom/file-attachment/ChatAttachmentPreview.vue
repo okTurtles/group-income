@@ -83,7 +83,7 @@
           @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
         )
 
-  a.c-invisible-link(ref='downloadHelper')
+  a.c-invisible-link(ref='downloadHelper' @click.stop='')
 </template>
 
 <script>
@@ -133,6 +133,9 @@ export default {
       settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+      },
+      ephemeral: {
+        staleDownloadObjectUrl: null
       }
     }
   },
@@ -188,6 +191,10 @@ export default {
         // make sure to revoke all media object URLs when the component is destroyed
         this.revokeAllMediaObjectURLs()
       }
+    }
+
+    if (this.ephemeral.staleDownloadObjectUrl) {
+      URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
     }
   },
   methods: {
@@ -313,13 +320,14 @@ export default {
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
 
-        aTag.addEventListener('click', function (event) {
-          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
-          //       when user trys to download attachment inside the dialog
-          event.stopPropagation()
-        })
-
         aTag.click()
+
+        if (!objectURL) {
+          if (this.ephemeral.staleDownloadObjectUrl) {
+            URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
+          }
+          this.ephemeral.staleDownloadObjectUrl = url
+        }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
       }
