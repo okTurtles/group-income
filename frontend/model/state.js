@@ -224,6 +224,8 @@ sbp('sbp/selectors/register', {
       await internal()
     })()
 
+    // Migration to have group creators re-join groups using a one-off invite,
+    // instead of using the CSK
     ;(() => {
       // TODO Add invite key to group
       const ourIdentityContractId = state.loggedIn?.identityContractID
@@ -239,6 +241,8 @@ sbp('sbp/selectors/register', {
       })
     })()
 
+    // Migration to update group CSK permissions for private chatrooms
+    // Add OP_KEY_REQUEST permission to the group CSK
     ;(() => {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
@@ -271,6 +275,8 @@ sbp('sbp/selectors/register', {
       })
     })()
 
+    // Migration to update CEK permissions for chatrooms
+    // Add OP_KEY_SHARE and OP_KEY_REQUEST_SEEN permission to the CEK
     ;(() => {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
