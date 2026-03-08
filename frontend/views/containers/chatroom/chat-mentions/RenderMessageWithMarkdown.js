@@ -20,6 +20,7 @@ const RenderMessageWithMarkdown: any = {
   },
   render: function (createElement: any): any {
     const { text, edited = false, isReplyingMessage = false } = this.$props
+    const isOnlyEmojis = text.replace(/(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu, '').trim().length === 0
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
 
     // Turns a dom tree object structure into the equivalent recursive createElement(...) call structure.
@@ -89,7 +90,8 @@ const RenderMessageWithMarkdown: any = {
       {
         class: {
           'c-replying': isReplyingMessage,
-          'custom-markdown-content': true
+          'custom-markdown-content': true,
+          'has-only-emojis': isOnlyEmojis
         },
         attrs: { ...(this.$attrs || {}) },
         on: { ...(this.$listeners || {}) }

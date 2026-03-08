@@ -27,6 +27,10 @@
     }
   }
 
+  &.has-only-emojis {
+    font-size: 2.25em;
+  }
+
   // inline code styles
   code {
     display: inline-block;
