@@ -5,6 +5,7 @@ import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
+import { EMOJI_REGEX } from '@utils/constants.js'
 
 // reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
 const RenderMessageWithMarkdown: any = {
@@ -20,7 +21,7 @@ const RenderMessageWithMarkdown: any = {
   },
   render: function (createElement: any): any {
     const { text, edited = false, isReplyingMessage = false } = this.$props
-    const isOnlyEmojis = text.replace(/(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu, '').trim().length === 0
+    const isOnlyEmojis = text.replace(EMOJI_REGEX, '').trim().length === 0
     const domTree = htmlStringToDomObjectTree(renderMarkdown(text))
 
     // Turns a dom tree object structure into the equivalent recursive createElement(...) call structure.
