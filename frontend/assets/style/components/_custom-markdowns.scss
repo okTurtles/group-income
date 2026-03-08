@@ -28,6 +28,7 @@
   }
 
   &.has-only-emojis {
+    // If the message only contains emojis, make the text-size larger.
     font-size: 2.25em;
   }
 
