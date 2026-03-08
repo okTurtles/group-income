@@ -434,7 +434,7 @@ export default (sbp('sbp/selectors/register', {
 
       const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
-      if (!groupCSKid || !CSKid) return
+      if (!CSKid) return
 
       sbp('chelonia/out/keyUpdate', {
         contractID: chatRoomID,
@@ -468,7 +468,7 @@ export default (sbp('sbp/selectors/register', {
 
       const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
 
-      if (!CEKid || !CSKid) return
+      if (!CSKid) return
 
       sbp('chelonia/out/keyUpdate', {
         contractID: chatRoomID,
