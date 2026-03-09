@@ -380,7 +380,7 @@ const filesCache = localforage.createInstance({
 const maxFileEntries = 100
 
 sbp('sbp/selectors/register', {
-  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<*> {
+  'gi.db/filesCache/save': function (cacheKey: string, blob: Blob): Promise<*> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     // We need to perform several operations in the DB, which includes
     // the operation requested (i.e., saving a file) and updating the `keys`
