@@ -84,7 +84,7 @@ const findAndRequestMissingGroupKeys = debounce(() => {
     })
   }
 
-  for (const contractID of findAndRequestMissingGroupKeys) {
+  for (const contractID of findAndRequestMissingGroupKeysSet) {
     // Queue to ensure it runs after a contract sync that's in progress
     sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
   }
