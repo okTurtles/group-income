@@ -31,7 +31,8 @@
         :class='{ "has-text-bold": shouldStyleBold(id) }'
       ) {{list.channels[id].displayName || list.channels[id].name}}
 
-      .c-unreadcount-wrapper
+      .c-badge-elements-wrapper
+        i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(id)')
         .pill.is-danger(
           v-if='list.channels[id].unreadMessagesCount > 0'
         ) {{ limitedUnreadCount(list.channels[id].unreadMessagesCount) }}
@@ -65,11 +66,21 @@ export default ({
     list: Object,
     routeName: String
   },
+  data () {
+    return {
+      ephemeral: {
+        chatroomsWithDrafts: [], // list of chatroom IDs that have a draft saved
+        clearedStaleDrafts: false
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'isChatRoomManuallyMarkedUnread',
       'groupChatRooms',
-      'ourUnreadMessages'
+      'ourUnreadMessages',
+      'currentChatRoomId',
+      'ourIdentityContractId'
     ]),
     hasNotReadTheLatestMessage () {
       // This computed props check if the chatrooms in the list have any messages that are not seen by the user yet.
@@ -136,6 +147,35 @@ export default ({
       return this.isChatRoomManuallyMarkedUnread(chatRoomID) ||
         this.list.channels[chatRoomID].unreadMessagesCount > 0 ||
         this.hasNotReadTheLatestMessage[chatRoomID] === true
+    },
+    showDraftIcon (chatID) {
+      return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
+    },
+    clearStaleDrafts () {
+      // check and clear stale drafts that are no longer used for this user from indexedDB.
+      // No need to perform this action eagerly.
+      if (this.ephemeral.clearedStaleDrafts) { return }
+
+      this.ephemeral.clearedStaleDrafts = true
+      const keysToClear = this.ephemeral.chatroomsWithDrafts.filter(id => !this.list.order.includes(id))
+        .map(chatroomId => `channel:${this.ourIdentityContractId}:${chatroomId}`)
+
+      sbp('gi.db/chatDrafts/deleteMany', keysToClear).catch((e) => {
+        console.error('ConversationsList.vue: Error clearing stale drafts - ', e)
+      })
+    }
+  },
+  watch: {
+    currentChatRoomId: {
+      handler (newVal) {
+        sbp('gi.db/chatDrafts/getAllChatroomIds', 'channel', this.ourIdentityContractId).then((chatroomIds) => {
+          this.ephemeral.chatroomsWithDrafts = chatroomIds.length ? chatroomIds : []
+          this.clearStaleDrafts()
+        }).catch((e) => {
+          console.error('ConversationsList.vue: Error getting all chatroom IDs - ', e)
+        })
+      },
+      immediate: true
     }
   }
 }: Object)
@@ -160,9 +200,20 @@ export default ({
   width: 100px; // HACK: to truncate
 }
 
-.c-unreadcount-wrapper {
-  width: 2rem;
+.c-badge-elements-wrapper {
+  position: relative;
+  width: max-content;
+  padding: 0 0.675rem;
   display: flex;
   justify-content: center;
+  align-items: center;
+  column-gap: 0.5rem;
+  flex-shrink: 0;
+
+  i.c-draft-icon {
+    color: $general_0;
+    font-size: $text_1;
+    margin-right: 0;
+  }
 }
 </style>

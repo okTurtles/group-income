@@ -12,7 +12,13 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
       span
         slot(name='title')
 
-    toggle(v-if='$scopedSlots.sidebar' @toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive' :show-badge='true')
+    toggle(
+      v-if='$scopedSlots.sidebar'
+      @toggle='toggleMenu'
+      v-bind='toggleProps'
+      :show-badge='true'
+    )
+
     slot(name='description')
 
   main.p-main(:class='mainClass')
@@ -23,7 +29,10 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
     :class='{ "is-active": ephemeral.isActive }'
   )
     i18n.sr-only(tag='h2') Page details
-    toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
+    toggle(
+      @toggle='toggleMenu'
+      v-bind='toggleProps'
+    )
     .p-sidebar-inner(:inert='isInert')
       slot(name='sidebar' :toggle='toggleMenuIfTouch')
 </template>
@@ -71,6 +80,15 @@ export default ({
   computed: {
     isInert () {
       return !this.ephemeral.isActive && this.ephemeral.isTouch
+    },
+    isGroupChatPage () {
+      return ['GroupChat', 'GroupChatConversation'].includes(this.$route.name)
+    },
+    toggleProps () {
+      return {
+        element: this.isGroupChatPage ? 'chat' : 'sidebar',
+        'aria-expanded': this.ephemeral.isActive
+      }
     }
   },
   methods: {
@@ -202,7 +220,8 @@ $pagePaddingDesktop: 5.5rem;
     }
   }
 
-  .c-toggle.sidebar {
+  .c-toggle.sidebar,
+  .c-toggle.chat {
     right: 0;
 
     @include desktop {

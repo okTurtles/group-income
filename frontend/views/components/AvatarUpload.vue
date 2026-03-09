@@ -132,26 +132,4 @@ export default ({
     }
   }
 }
-
-@include desktop {
-  .is-type-user {
-    .c-avatar-wrapper {
-      align-items: flex-end;
-    }
-
-    .c-avatar-label {
-      position: absolute;
-      top: -6.5rem;
-      right: 0;
-      align-items: flex-end;
-      margin-bottom: -0.5rem;
-      z-index: 3;
-    }
-
-    .c-avatar-img.is-xl.is-xl {
-      width: 4.5rem;
-      height: 4.5rem;
-    }
-  }
-}
 </style>

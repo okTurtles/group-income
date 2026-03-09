@@ -1,5 +1,5 @@
 <template lang='pug'>
-  .settings-container
+  .c-app-logs-container
     section.card
       .c-loader-container(v-if='ephemeral.versionInfos.loading')
         .loading-box
@@ -76,6 +76,7 @@ import { L, LError } from '@common/common.js'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'AppLogs',
@@ -183,12 +184,7 @@ export default ({
       }
     },
     openTroubleshooting () {
-      this.$router.push({
-        query: {
-          ...this.$route.query,
-          tab: 'troubleshooting'
-        }
-      })
+      this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
     downloadOrShareLogs () {
       const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
@@ -299,12 +295,8 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-.settings-container {
+.c-app-logs-container {
   width: 100%;
-
-  @include desktop {
-    padding-top: 1.5rem;
-  }
 }
 
 .c-header {

@@ -8,7 +8,7 @@ button.is-unstyled.menu-tile(
     .tile-text {{ menuName }}
     .tile-info-segment(v-if='$slots.info' @click.stop='')
       slot(name='info')
-    i(:class='[isExpandable ? "icon-chevron-down" : "icon-chevron-right", "tile-icon"]')
+    i(v-if='!noIcon' :class='iconClasses')
 
   transition-expand
     .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
@@ -27,7 +27,7 @@ export default {
     variant: {
       type: String,
       default: 'default',
-      validator: v => ['default', 'danger'].includes(v)
+      validator: v => ['default', 'outlined', 'danger'].includes(v)
     },
     isExpandable: {
       type: Boolean,
@@ -40,6 +40,14 @@ export default {
     menuName: {
       type: String,
       default: ''
+    },
+    icon: {
+      type: String,
+      default: ''
+    },
+    noIcon: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -49,6 +57,16 @@ export default {
       }
     }
   },
+  computed: {
+    iconClasses () {
+      return [
+        this.isExpandable
+          ? 'icon-chevron-down'
+          : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
+        'tile-icon'
+      ]
+    }
+  },
   methods: {
     onTileClick (e) {
       const isLowerSectionClicked = e.target.closest('.tile-lower-section')
@@ -56,6 +74,9 @@ export default {
       if (!isLowerSectionClicked) {
         if (this.isExpandable) {
           const valToSet = !this.ephemeral.expanded
+          const evtName = valToSet ? 'expand' : 'fold'
+
+          this.$emit(evtName)
           this.ephemeral.expanded = valToSet
 
           if (valToSet) {

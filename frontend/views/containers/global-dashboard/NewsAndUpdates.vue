@@ -143,20 +143,6 @@ export default ({
   }
 }
 
-@keyframes loading-heartbeat {
-  0% { background-color: $general_1; }
-  50% { background-color: $general_0; }
-  100% { background-color: $general_1; }
-}
-
-.is-dark-theme {
-  @keyframes loading-heartbeat {
-    0% { opacity: 0.325; }
-    50% { opacity: 1; }
-    100% { opacity: 0.325; }
-  }
-}
-
 .c-error {
   color: $danger_0;
 }

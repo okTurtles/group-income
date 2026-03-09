@@ -28,7 +28,8 @@ import {
   findMessageIdx,
   postLeaveChatRoomCleanup,
   makeMentionFromUserID,
-  referenceTally
+  referenceTally,
+  validateChatRoomName
 } from './shared/functions.js'
 import chatroomGetters from './shared/getters/chatroom.js'
 import { cloneDeep, merge } from 'turtledash'
@@ -186,6 +187,8 @@ sbp('chelonia/defineContract', {
         if (state.attributes.creatorID !== innerSigningContractID) {
           throw new TypeError(L('Only the channel creator can rename.'))
         }
+
+        validateChatRoomName(data.name)
       }),
       process ({ data, meta, hash, height, innerSigningContractID }, { state }) {
         state.attributes['name'] = data.name

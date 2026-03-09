@@ -47,7 +47,8 @@
             :class='{ "has-text-bold": shouldStyleBold(chatRoomID) }'
           ) {{ title }}
 
-      .c-unreadcount-wrapper
+      .c-badge-elements-wrapper
+        i.icon-pencil-alt.c-draft-icon(v-if='showDraftIcon(chatRoomID)')
         .pill.is-danger(
           v-if='getUnreadMsgCount(chatRoomID)'
         ) {{ limitedUnreadCount(getUnreadMsgCount(chatRoomID)) }}
@@ -84,13 +85,22 @@ export default ({
       validator: (value) => ['addDirectMessage'].includes(value)
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        chatroomsWithDrafts: [], // list of chatroom IDs that have a draft saved,
+        clearedStaleDrafts: false
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'groupShouldPropose',
       'ourGroupDirectMessages',
-      'ourIdentityContractId',
       'chatRoomUnreadMessages',
-      'isChatRoomManuallyMarkedUnread'
+      'isChatRoomManuallyMarkedUnread',
+      'currentChatRoomId',
+      'ourIdentityContractId'
     ])
   },
   methods: {
@@ -128,6 +138,36 @@ export default ({
       } else {
         return `${n}`
       }
+    },
+    showDraftIcon (chatID) {
+      return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
+    },
+    clearStaleDrafts () {
+      // check and clear stale drafts for the DMs that are no longer used for this user from indexedDB.
+      // No need to perform this action eagerly.
+      if (this.ephemeral.clearedStaleDrafts) { return }
+
+      this.ephemeral.clearedStaleDrafts = true
+      const allActiveDMIds = Object.keys(this.ourGroupDirectMessages)
+      const keysToClear = this.ephemeral.chatroomsWithDrafts.filter(id => !allActiveDMIds.includes(id))
+        .map(chatroomId => `dm:${this.ourIdentityContractId}:${chatroomId}`)
+
+      sbp('gi.db/chatDrafts/deleteMany', keysToClear).catch((e) => {
+        console.error('ChatMembers.vue: Error clearing stale drafts - ', e)
+      })
+    }
+  },
+  watch: {
+    currentChatRoomId: {
+      handler (newVal) {
+        sbp('gi.db/chatDrafts/getAllChatroomIds', 'dm', this.ourIdentityContractId).then((chatroomIds) => {
+          this.ephemeral.chatroomsWithDrafts = chatroomIds.length ? chatroomIds : []
+          this.clearStaleDrafts()
+        }).catch((e) => {
+          console.error('ChatMembers.vue: Error getting all chatroom IDs - ', e)
+        })
+      },
+      immediate: true
     }
   }
 }: Object)
@@ -182,10 +222,21 @@ export default ({
   min-width: 13rem;
 }
 
-.c-unreadcount-wrapper {
-  width: 2rem;
+.c-badge-elements-wrapper {
+  position: relative;
+  width: max-content;
+  padding: 0 0.675rem;
   display: flex;
   justify-content: center;
+  align-items: center;
+  column-gap: 0.5rem;
+  flex-shrink: 0;
+
+  i.c-draft-icon {
+    color: $general_0;
+    font-size: $text_1;
+    margin-right: 0;
+  }
 }
 
 .profile-wrapper {

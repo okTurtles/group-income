@@ -4,19 +4,16 @@ button.c-toggle.is-unstyled(
   @click='$emit("toggle")'
   :aria-label='L("Toggle navigation")'
 )
-  i.icon-bars(v-if='element === "navigation"')
+  i(:class='iconClasses')
     slot
-  i.icon-info(v-else-if='element === "sidebar"' :class='{"c-toggle-bg": hasChatNotification}')
-    slot
-    badge(v-if='hasChatNotification') {{ currentGroupUnreadMessagesCount }}
-
+    badge(v-if='showChatNotification') {{ currentGroupUnreadMessagesCount }}
 </template>
 
 <script>
 import Badge from './Badge.vue'
 import { mapState, mapGetters } from 'vuex'
 
-export default ({
+export default {
   name: 'Toggle',
   components: {
     Badge
@@ -24,7 +21,7 @@ export default ({
   props: {
     element: {
       type: String,
-      validator: (value) => ['navigation', 'sidebar'].includes(value),
+      validator: (value) => ['navigation', 'sidebar', 'chat'].includes(value),
       required: true
     },
     showBadge: {
@@ -40,13 +37,27 @@ export default ({
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
     },
-    hasChatNotification () {
-      return ['GroupChat', 'GroupChatConversation'].includes(this.$route.name) && this.showBadge && this.currentGroupUnreadMessagesCount
+    showChatNotification () {
+      return this.element === 'chat' &&
+        this.showBadge &&
+        this.currentGroupUnreadMessagesCount
+    },
+    iconClasses () {
+      const nameMap = {
+        navigation: 'bars',
+        sidebar: 'info',
+        chat: 'comment'
+      }
+
+      return [
+        `icon-${nameMap[this.element] || 'info'} c-toggle-icon`,
+        { 'c-toggle-bg': this.showChatNotification }
+      ]
     }
   }
-}: Object)
-
+}
 </script>
+
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 @import "@assets/style/_mixins.scss";
@@ -69,15 +80,13 @@ $iconSize: 2.75rem;
   // Similar to `.button.is-icon` but adapted to a "corner" button.
   &:hover,
   &:focus {
-    .icon-bars,
-    .icon-info {
+    .c-toggle-icon {
       background-color: $general_1;
     }
   }
 
   &:focus {
-    .icon-bars,
-    .icon-info {
+    .c-toggle-icon {
       box-shadow: 0 0 0 2px $primary_1;
     }
   }
@@ -90,8 +99,7 @@ $iconSize: 2.75rem;
     text-align: left;
   }
 
-  .icon-bars,
-  .icon-info {
+  .c-toggle-icon {
     position: relative; // Allow the badge to be anchored to the icon rather than to the button.
     border-radius: 50%;
     width: $iconSize;
@@ -112,8 +120,7 @@ $iconSize: 2.75rem;
     top: 0;
     transition: height 1ms 1ms, width 1ms 1ms, background $speed * 0.5;
 
-    .icon-info,
-    .icon-bars {
+    .c-toggle-icon {
       transition: opacity 1ms 1ms;
       opacity: 0;
     }

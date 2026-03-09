@@ -6,6 +6,7 @@
         ref='tooltip'
         @mousedown='moveStart'
         @touchstart='moveStart'
+        @transitionend='onTooltipTransitionEnd'
       )
         span.slide-bar-tooltip-top.slide-bar-tooltip-wrap
           span.slide-bar-tooltip
@@ -18,6 +19,8 @@
       span.slide-bar-separate-text(:class='{isActive: index===currentValue}') {{ r.label }}
 </template>
 <script>
+import { debounce } from 'turtledash'
+
 export default ({
   name: 'AppSlider',
 
@@ -288,7 +291,17 @@ export default ({
         this.getStaticData()
         this.setPosition()
       }
-    }
+    },
+    onTooltipTransitionEnd: debounce(function () {
+      // Sometimes, the slider UI dimension changes while the slider tooltip element is moving.
+      //
+      // e.g. Slider component is used to change app text-size settings.
+      // A new text-size option is selected -> All texts in the app are resized -> Widths/heights of all elements in the screen including the Slider change ->
+      // But the slider tooltip's target position is determined before these dimension changes happen -> It stops at a slightly off position after transition ends.
+      //
+      // Calling this.refresh() once on transition-end will correct the tooltip's position if it has stopped at an wrong position.
+      this.refresh()
+    }, 30)
   },
 
   mounted () {

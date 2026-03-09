@@ -106,7 +106,7 @@ import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
 import ListItem from '@components/ListItem.vue'
 import { mapState, mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { showNavMixin, fetchNews } from '@view-utils/misc.js'
 import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
@@ -144,9 +144,11 @@ export default ({
   mounted () {
     // TODO - Create a single resize listener to be reused on components
     window.addEventListener('resize', this.config.debounceResize)
+    sbp('okTurtles.events/on', CLOSE_NAVIGATION_SIDEBAR, this.foldMenu)
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.config.debounceResize)
+    sbp('okTurtles.events/off', CLOSE_NAVIGATION_SIDEBAR, this.foldMenu)
   },
   watch: {
     $route (to, from) {
@@ -163,7 +165,8 @@ export default ({
       'colors',
       'totalUnreadNotificationCount',
       'groupUnreadMessages',
-      'ourPreferences'
+      'ourPreferences',
+      'ourProfileActive'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -176,8 +179,10 @@ export default ({
       return !this.ephemeral.isActive && this.ephemeral.isTouch
     },
     notApprovedToGroupYet () {
+      // User is on pending approval page, or has a group but their profile isn't active yet
       // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
-      return this.$route.path === '/pending-approval'
+      return this.$route.path === '/pending-approval' ||
+        (this.currentGroupId && !this.ourProfileActive)
     },
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard')
@@ -206,6 +211,9 @@ export default ({
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
+    },
+    foldMenu () {
+      this.ephemeral.isActive = false
     },
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
