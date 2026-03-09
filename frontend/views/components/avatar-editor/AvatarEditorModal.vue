@@ -102,6 +102,7 @@ export default ({
         slider: ZOOM_SLIDER_MIN
       },
       ephemeral: {
+        initialImageUrl: '',
         replaceImageUrl: '',
         // 'canvasComponentKey' below is updated every time a new image is loaded and is used to destory/re-render the children components.
         canvasComponentKey: randomHexString(10)
@@ -154,10 +155,12 @@ export default ({
       this.ephemeral.canvasComponentKey = randomHexString(10)
     }
   },
+  created () {
+    this.ephemeral.initialImageUrl = this.$route.query.imageUrl
+  },
   beforeDestroy () {
-    const initialUrl = this.$route.query.imageUrl
-    if (initialUrl) {
-      URL.revokeObjectURL(initialUrl)
+    if (this.ephemeral.initialImageUrl) {
+      URL.revokeObjectURL(this.ephemeral.initialImageUrl)
     }
     if (this.ephemeral.replaceImageUrl) {
       URL.revokeObjectURL(this.ephemeral.replaceImageUrl)

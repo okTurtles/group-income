@@ -34,7 +34,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
-        @download='downloadAttachment(entry)'
+        @download='downloadAttachment(entry, mediaObjectURLList.audio[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
       )
 
@@ -135,9 +135,6 @@ export default {
       settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
-      },
-      ephemeral: {
-        staleDownloadObjectUrl: null
       }
     }
   },
@@ -193,10 +190,6 @@ export default {
         // make sure to revoke all media object URLs when the component is destroyed
         this.revokeAllMediaObjectURLs()
       }
-    }
-
-    if (this.ephemeral.staleDownloadObjectUrl) {
-      URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
     }
   },
   methods: {
@@ -312,6 +305,14 @@ export default {
       }
     },
     async downloadAttachment (attachment, objectURL = null) {
+      // NOTE: objectURL argument here -
+      // objectURLs of some media attachments are generated immediately during component initialization.
+      // eg.1: Image attachments are downloaded and displayed immediately.
+      // eg.2: If user has downloaded/played some audio/videos before, their blobs are stored as temp caches in indexedDB so that
+      //       users don't have to download them again for the session. ObjectURLs of these temp caches are also generated immediately
+      //       during component initialization so they look just playable without presenting download button.
+      //
+      // In these cases, we can just use these pre-generated objectURLs for downloading.
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
@@ -325,10 +326,9 @@ export default {
         aTag.click()
 
         if (!objectURL) {
-          if (this.ephemeral.staleDownloadObjectUrl) {
-            URL.revokeObjectURL(this.ephemeral.staleDownloadObjectUrl)
-          }
-          this.ephemeral.staleDownloadObjectUrl = url
+          setTimeout(() => {
+            URL.revokeObjectURL(url)
+          }, 500)
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
