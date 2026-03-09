@@ -30,52 +30,72 @@ window.addEventListener('beforeinstallprompt', e => {
   sbp('okTurtles.events/emit', PWA_INSTALLABLE)
 })
 
+// Note: serviceWorkerMap uses WeakMap, so entries for old workers are
+// automatically cleaned up when those workers are garbage collected.
 const serviceWorkerMap = new WeakMap()
 const waitUntilSwReady = () => {
-  const promise = new Promise((resolve, reject) => {
-    const messageChannel = new MessageChannel()
-    messageChannel.port1.onmessage = (event) => {
-      if (event.data.type === 'ready') {
-        // For backward- and forward-compatibility (`currentSyncs` may not be
-        // defined in a different SW version)
-        if (event.data.currentSyncs) {
-          sbp('okTurtles.events/emit', CONTRACT_SYNCS_RESET, event.data.currentSyncs)
-        }
-        resolve()
-      } else {
-        reject(event.data.error)
-      }
-      messageChannel.port1.close()
-    }
-    messageChannel.port1.onmessageerror = () => {
-      reject(new Error('Message error'))
-      messageChannel.port1.close()
-    }
-    const oncontrollerchange = () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
-      // If the SW controller has changed (e.g., because of an update), we call
-      // `waitUntilSwReady` again and return the result of that call. That will
-      // also populate `serviceWorkerMap`
-      resolve(waitUntilSwReady())
-    }
-    navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
+  let cleanup, worker
 
-    navigator.serviceWorker.ready.then((worker) => {
-      if (serviceWorkerMap.has(worker.active)) {
-        resolve(serviceWorkerMap.get(worker.active))
+  const promise = new Promise((resolve, reject) => {
+    navigator.serviceWorker.ready.then((registration) => {
+      worker = registration.active
+      if (!worker) {
+        reject(new Error('No active service worker'))
         return
       }
-      serviceWorkerMap.set(worker.active, promise)
-      worker.active.postMessage({
+      // We have already called `waitUntilSwReady` on this SW -- return memoized
+      // result.
+      if (serviceWorkerMap.has(worker)) {
+        resolve(serviceWorkerMap.get(worker))
+        return
+      }
+
+      const messageChannel = new MessageChannel()
+      messageChannel.port1.onmessage = (event) => {
+        if (event.data.type === 'ready') {
+        // For backward- and forward-compatibility (`currentSyncs` may not be
+        // defined in a different SW version)
+          if (event.data.currentSyncs) {
+            sbp('okTurtles.events/emit', CONTRACT_SYNCS_RESET, event.data.currentSyncs)
+          }
+          resolve()
+        } else {
+          reject(event.data.error)
+        }
+      }
+      messageChannel.port1.onmessageerror = () => {
+        reject(new Error('Message error'))
+      }
+      const oncontrollerchange = () => {
+        // If the SW controller has changed (e.g., because of an update), we call
+        // `waitUntilSwReady` again and return the result of that call. That will
+        // also populate `serviceWorkerMap`
+        cleanup()
+        cleanup = undefined
+        resolve(waitUntilSwReady())
+      }
+      cleanup = () => {
+        messageChannel.port1.close()
+        navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
+      }
+
+      navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
+
+      serviceWorkerMap.set(worker, promise)
+      registration.active.postMessage({
         type: 'ready',
         port: messageChannel.port2,
         GI_VERSION: process.env.GI_VERSION
       }, [messageChannel.port2])
-    }).catch((e) => {
-      reject(e)
-      messageChannel.port1.close()
-    })
+    }).catch(reject)
   })
+    .catch((e) => {
+      if (worker) serviceWorkerMap.delete(worker)
+      throw e
+    })
+    .finally(() => {
+      cleanup?.()
+    })
 
   return promise
 }
@@ -350,21 +370,30 @@ const swRpc = (() => {
     }
     await waitUntilSwReady()
     return new Promise((resolve, reject) => {
+      let _revokables
       const messageChannel = new MessageChannel()
       const onmessage = (event: MessageEvent) => {
         if (event.data && Array.isArray(event.data)) {
-          const r = deserializer(event.data[1])
-          // $FlowFixMe[incompatible-use]
-          if (event.data[0] === true) {
-            resolve(r)
-          } else {
-            reject(r)
+          try {
+            const r = deserializer(event.data[1])
+            // $FlowFixMe[incompatible-use]
+            if (event.data[0] === true) {
+              resolve(r)
+            } else {
+              reject(r)
+            }
+          } catch (e) {
+            reject(e)
+          } finally {
+            cleanup()
           }
+        } else {
+          reject(new Error('Unexpected message format from service worker'))
           cleanup()
         }
       }
-      const onmessageerror = (event: MessageEvent) => {
-        reject(event.data)
+      const onmessageerror = () => {
+        reject(new Error('Message error'))
         cleanup()
       }
       const oncontrollerchange = (event: Event) => {
@@ -382,17 +411,24 @@ const swRpc = (() => {
         messageChannel.port1.removeEventListener('messageerror', onmessageerror, false)
         navigator.serviceWorker.removeEventListener('controllerchange', oncontrollerchange, false)
         messageChannel.port1.close()
+        _revokables?.forEach(r => r.close())
       }
       messageChannel.port1.addEventListener('message', onmessage, false)
       messageChannel.port1.addEventListener('messageerror', onmessageerror, false)
       navigator.serviceWorker.addEventListener('controllerchange', oncontrollerchange, false)
       messageChannel.port1.start()
-      const { data, transferables } = serializer(args)
-      controller.postMessage({
-        type: 'sbp',
-        port: messageChannel.port2,
-        data
-      }, [messageChannel.port2, ...transferables])
+      try {
+        const payload = serializer(args)
+        _revokables = payload.revokables
+        controller.postMessage({
+          type: 'sbp',
+          port: messageChannel.port2,
+          data: payload.data
+        }, [messageChannel.port2, ...payload.transferables])
+      } catch (err) {
+        cleanup()
+        reject(err)
+      }
     })
   }
 

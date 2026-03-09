@@ -459,7 +459,7 @@ jobs:
 
       # This step can be removed if crush ever closes this issue: https://github.com/charmbracelet/crush/issues/2265
       - name: Extract review from agentic output
-        if: steps.size-check.outputs.too_large == 'false'
+        if: false && steps.size-check.outputs.too_large == 'false'
         run: |
           jq -n \
             --arg model "$REVIEW_MODEL" \
