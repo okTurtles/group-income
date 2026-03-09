@@ -770,6 +770,8 @@ export default (sbp('sbp/selectors/register', {
       skipInviteAccounting: true,
       innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
+    }).catch((e) => {
+      console.error(`[gi.actions/group/findAndRequestMissingGroupKeys] Failed for ${contractID}`, e)
     })
   }, 200),
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {

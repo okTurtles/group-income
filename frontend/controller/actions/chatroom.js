@@ -419,6 +419,8 @@ export default (sbp('sbp/selectors/register', {
       skipInviteAccounting: true,
       innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
+    }).catch((e) => {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
     })
   }, 200),
   // Migration action to update group CSK permissions to include OP_KEY_REQUEST
