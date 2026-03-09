@@ -56,3 +56,4 @@ strings.exe
 /strings.mac
 /strings.linux
 /.tldr*
+/.agents/
