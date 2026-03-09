@@ -83,6 +83,8 @@
           @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
         )
 
+  // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
+  //       when user tries to download attachment inside the dialog
   a.c-invisible-link(ref='downloadHelper' @click.stop='')
 </template>
 
