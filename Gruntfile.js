@@ -78,7 +78,9 @@ const development = NODE_ENV === 'development'
 const production = !development
 
 const isValidPort = (port) => {
-  return Number.isInteger(port) && port >= 1024 && port <= 65535
+  // Using `isNaN` because port could be string. `Number.isInteger` won't work
+  // without casting.
+  return !Number.isNaN(port) && port >= 1024 && port <= 65535
 }
 
 module.exports = (grunt) => {
