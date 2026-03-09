@@ -18,6 +18,65 @@ import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.j
 
 const messageReceivedRawQueue = []
 
+// Function debounced because it might get called too often (on every chatroom
+// key update)
+const findAndRequestMissingChatroomKeysSet = new Set()
+const findAndRequestMissingChatroomKeys = debounce(() => {
+  const inner = (contractID) => {
+    findAndRequestMissingChatroomKeysSet.delete(contractID)
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state || !state.members) return
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+    const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
+
+    // If we have all keys, we don't have anything to request
+    if (CEKid && CSKid) return
+    if (!groupCSKid) {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
+      return
+    }
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const contractState = cheloniaState[identityContractID]
+
+    // $FlowFixMe[incompatible-use]
+    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
+      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    })?.[0]
+
+    if (!groupID) {
+      return
+    }
+
+    // TODO: Missing '/disconnect' logic for chatrooms
+    // See <https://github.com/okTurtles/group-income/issues/3043>
+    sbp('chelonia/out/keyRequest', {
+      originatingContractID: identityContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID,
+      contractName: 'gi.contracts/chatroom',
+      reference: cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID,
+      signingKeyId: groupCSKid,
+      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      request: 'missing',
+      skipInviteAccounting: true,
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+      encryptKeyRequestMetadata: true
+    }).catch((e) => {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
+    })
+  }
+
+  for (const contractID of findAndRequestMissingChatroomKeysSet) {
+    // Queue to ensure it runs after a contract sync that's in progress
+    sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
+  }
+}, 200)
+
 function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, newMessage }) {
   const rootState = sbp('chelonia/rootState')
   const getters = sbp('state/vuex/getters')
@@ -376,53 +435,10 @@ export default (sbp('sbp/selectors/register', {
   },
   // Action to request missing keys after a rotation
   // Called from the contract on OP_KEY_UPDATE
-  'gi.actions/chatroom/findAndRequestMissingChatroomKeys': debounce((contractID) => {
-    const state = sbp('chelonia/contract/state', contractID)
-    if (!state || !state.members) return
-
-    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
-    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
-    const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
-
-    // If we have all keys, we don't have anything to request
-    if (CEKid && CSKid) return
-    if (!groupCSKid) {
-      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
-      return
-    }
-
-    const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn.identityContractID
-    const contractState = cheloniaState[identityContractID]
-
-    // $FlowFixMe[incompatible-use]
-    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
-      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    })?.[0]
-
-    if (!groupID) {
-      return
-    }
-
-    // TODO: Missing '/disconnect' logic for chatrooms
-    // See <https://github.com/okTurtles/group-income/issues/3043>
-    sbp('chelonia/out/keyRequest', {
-      originatingContractID: identityContractID,
-      originatingContractName: 'gi.contracts/identity',
-      contractID,
-      contractName: 'gi.contracts/chatroom',
-      reference: cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID,
-      signingKeyId: groupCSKid,
-      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-      request: 'missing',
-      skipInviteAccounting: true,
-      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
-      encryptKeyRequestMetadata: true
-    }).catch((e) => {
-      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
-    })
-  }, 200),
+  'gi.actions/chatroom/findAndRequestMissingChatroomKeys': (contractID) => {
+    findAndRequestMissingChatroomKeysSet.add(contractID)
+    findAndRequestMissingChatroomKeys()
+  },
   // Migration action to update group CSK permissions to include OP_KEY_REQUEST
   // Called from postUpgradeVerification
   'gi.actions/chatroom/upgradeGroupCskPermissions': (chatRoomIds) => {

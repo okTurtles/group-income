@@ -44,6 +44,52 @@ import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
 import { extractProposalData } from '@model/notifications/utils.js'
 
+// Function debounced because it might get called too often (on every group
+// key update)
+const findAndRequestMissingGroupKeysSet = new Set()
+const findAndRequestMissingGroupKeys = debounce(() => {
+  const inner = (contractID) => {
+    findAndRequestMissingGroupKeysSet.delete(contractID)
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state || !state.profiles) return
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+    // If we have all keys, we don't have anything to request
+    if (CEKid && CSKid) return
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const contractState = cheloniaState[identityContractID]
+    if (!contractState || !cheloniaState[identityContractID].groups?.[contractID] || cheloniaState[identityContractID].groups[contractID].hasLeft) {
+      return
+    }
+
+    sbp('chelonia/out/keyRequest', {
+      originatingContractID: identityContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID,
+      contractName: 'gi.contracts/group',
+      reference: cheloniaState[identityContractID].groups[contractID].hash,
+      signingKeyId: cheloniaState[identityContractID].groups[contractID].inviteSecretId,
+      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      request: 'missing',
+      skipInviteAccounting: true,
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+      encryptKeyRequestMetadata: true
+    }).catch((e) => {
+      console.error(`[gi.actions/group/findAndRequestMissingGroupKeys] Failed for ${contractID}`, e)
+    })
+  }
+
+  for (const contractID of findAndRequestMissingGroupKeys) {
+    // Queue to ensure it runs after a contract sync that's in progress
+    sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
+  }
+}, 200)
+
 sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID }) => {
   const rootState = sbp('chelonia/rootState')
   if (!rootState.notifications || rootState.loggedIn?.identityContractID !== identityContractID) return
@@ -740,40 +786,10 @@ export default (sbp('sbp/selectors/register', {
   },
   // Action to request missing keys after a rotation
   // Called from the contract on OP_KEY_UPDATE
-  'gi.actions/group/findAndRequestMissingGroupKeys': debounce((contractID) => {
-    const state = sbp('chelonia/contract/state', contractID)
-    if (!state || !state.profiles) return
-
-    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
-    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
-
-    // If we have all keys, we don't have anything to request
-    if (CEKid && CSKid) return
-
-    const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn.identityContractID
-    const contractState = cheloniaState[identityContractID]
-    if (!contractState || !cheloniaState[identityContractID].groups?.[contractID] || cheloniaState[identityContractID].groups[contractID].hasLeft) {
-      return
-    }
-
-    sbp('chelonia/out/keyRequest', {
-      originatingContractID: identityContractID,
-      originatingContractName: 'gi.contracts/identity',
-      contractID,
-      contractName: 'gi.contracts/group',
-      reference: cheloniaState[identityContractID].groups[contractID].hash,
-      signingKeyId: cheloniaState[identityContractID].groups[contractID].inviteSecretId,
-      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
-      request: 'missing',
-      skipInviteAccounting: true,
-      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
-      encryptKeyRequestMetadata: true
-    }).catch((e) => {
-      console.error(`[gi.actions/group/findAndRequestMissingGroupKeys] Failed for ${contractID}`, e)
-    })
-  }, 200),
+  'gi.actions/group/findAndRequestMissingGroupKeys': (contractID) => {
+    findAndRequestMissingGroupKeysSet.add(contractID)
+    findAndRequestMissingGroupKeys()
+  },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('chelonia/rootState')
     const contractState = rootState[params.contractID]
