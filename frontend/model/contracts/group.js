@@ -35,7 +35,10 @@ import {
   PROPOSAL_REASON_MAX_CHAR,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
-  STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
+  STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN,
+  GROUP_ROLES,
+  GROUP_PERMISSIONS,
+  GROUP_PERMISSION_CHANGE_ACTIONS
 } from './shared/constants.js'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
 import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.js'
@@ -56,7 +59,7 @@ function fetchInitKV (obj: Object, key: string, initialValue: any): any {
   return value
 }
 
-function initGroupProfile (joinedDate: string, joinedHeight: number, reference: string) {
+function initGroupProfile (joinedDate: string, joinedHeight: number, reference: string, isGroupCreator: boolean) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     joinedDate,
@@ -65,7 +68,10 @@ function initGroupProfile (joinedDate: string, joinedHeight: number, reference: 
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
-    incomeDetailsLastUpdatedDate: null
+    incomeDetailsLastUpdatedDate: null,
+    role: isGroupCreator
+      ? { name: GROUP_ROLES.ADMIN }
+      : null
   }
 }
 
@@ -809,6 +815,7 @@ sbp('chelonia/defineContract', {
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
         const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
 
         if (!state.profiles[memberToRemove]) {
           throw new GIGroupNotJoinedError(L('Not part of the group.'))
@@ -821,7 +828,11 @@ sbp('chelonia/defineContract', {
           return true
         }
 
-        if (isGroupCreator) {
+        if (isGroupCreator || actorPermissions.includes(GROUP_PERMISSIONS.REMOVE_MEMBER)) {
+          const targetRoleName = getters.getGroupMemberRoleNameById(memberToRemove)
+          if (targetRoleName === GROUP_ROLES.ADMIN && !isGroupCreator) {
+            throw new TypeError(L('Cannot remove an admin.'))
+          }
           return true
         } else if (membersCount < 3) {
           // In a small group only the creator can remove someone
@@ -883,7 +894,9 @@ sbp('chelonia/defineContract', {
         if (state.profiles[innerSigningContractID]?.status === PROFILE_STATUS.ACTIVE) {
           throw new Error(`[gi.contracts/group/inviteAccept] Existing members can't accept invites: ${innerSigningContractID}`)
         }
-        state.profiles[innerSigningContractID] = initGroupProfile(meta.createdDate, height, data.reference)
+
+        const isGroupCreator = state.groupOwnerID === innerSigningContractID
+        state.profiles[innerSigningContractID] = initGroupProfile(meta.createdDate, height, data.reference, isGroupCreator)
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -953,13 +966,23 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteRevoke': {
-      validate: actionRequireActiveMember((data, { state }) => {
+      validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID } }) => {
         objectOf({
           inviteKeyId: stringMax(MAX_HASH_LEN, 'inviteKeyId')
         })(data)
 
-        if (!state._vm.invites[data.inviteKeyId]) {
+        const invite = state._vm.invites[data.inviteKeyId]
+
+        if (!invite) {
           throw new TypeError(L('The link does not exist.'))
+        }
+
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
+        const inviteCreatorID = state.invites?.[data.inviteKeyId]?.creatorID
+
+        // Only the creator and members with the REVOKE_INVITE permission can revoke an invite
+        if (inviteCreatorID !== innerSigningContractID && !actorPermissions.includes(GROUP_PERMISSIONS.REVOKE_INVITE)) {
+          throw new TypeError(L('Insufficient permission to revoke invite'))
         }
       }),
       process () {
@@ -1106,6 +1129,91 @@ sbp('chelonia/defineContract', {
         }
       }
     },
+    'gi.contracts/group/updatePermissions': {
+      validate: actionRequireActiveMember((data, { state, getters, message: { innerSigningContractID } }) => {
+        arrayOf(objectOf({
+          memberID: stringMax(MAX_HASH_LEN, 'memberID'),
+          action: validatorFrom(x => Object.values(GROUP_PERMISSION_CHANGE_ACTIONS).includes(x)),
+          roleName: optional(validatorFrom(x => Object.values(GROUP_ROLES).includes(x))),
+          permissions: optional(arrayOf(validatorFrom(x => Object.values(GROUP_PERMISSIONS).includes(x))))
+        }))(data)
+
+        const actorRoleName = getters.getGroupMemberRoleNameById(innerSigningContractID)
+        const actorPermissions = getters.getGroupPermissionsByMemberId(innerSigningContractID)
+
+        if (!actorPermissions.includes(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)) {
+          throw new TypeError(L('Cannot add or modify permissions without permission to delegate permissions.'))
+        }
+
+        for (const item of data) {
+          if (!state.profiles[item.memberID]) {
+            throw new TypeError(L(`${item.memberID} is not a member of the group.`))
+          }
+
+          if (item.memberID === innerSigningContractID) {
+            throw new TypeError(L('Cannot modify own permissions.'))
+          }
+
+          const targetRoleName = getters.getGroupMemberRoleNameById(item.memberID)
+
+          if (targetRoleName === GROUP_ROLES.ADMIN) {
+            throw new TypeError(L('Cannot modify the permissions of an admin.'))
+          }
+
+          if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT) {
+            const isActorRoleAdmin = actorRoleName === GROUP_ROLES.ADMIN
+
+            if (!item.roleName) {
+              throw new TypeError(L('Role name is required for upsert action.'))
+            }
+
+            if (item.roleName === GROUP_ROLES.ADMIN) {
+              throw new TypeError(L('Cannot assign an admin role.'))
+            }
+
+            if (item.permissions?.includes(GROUP_PERMISSIONS.ASSIGN_DELEGATOR)) {
+              throw new TypeError(L('Only the group admin can have assign-delegator permission and it cannot be granted to other roles.'))
+            }
+
+            if (item.roleName === GROUP_ROLES.MODERATOR_DELEGATOR && !isActorRoleAdmin) {
+              throw new TypeError(L('Only admin can assign moderator-delegator role.'))
+            }
+
+            if (actorRoleName === GROUP_ROLES.MODERATOR_DELEGATOR &&
+              item.permissions?.some(permission => !actorPermissions.includes(permission))) {
+              throw new TypeError(L("Moderator(delegator) cannot assign permissions that they don't have to others."))
+            }
+          }
+
+          if (item.action === GROUP_PERMISSION_CHANGE_ACTIONS.REMOVE) {
+            if (item.roleName === GROUP_ROLES.ADMIN) {
+              throw new TypeError(L('Cannot remove admin role.'))
+            }
+          }
+        }
+      }),
+      process ({ data, contractID }, { state }) {
+        for (const item of data) {
+          const groupProfile = state.profiles[item.memberID]
+
+          switch (item.action) {
+            case GROUP_PERMISSION_CHANGE_ACTIONS.UPSERT: {
+              const role: any = {
+                name: item.roleName
+              }
+              if (item.permissions) {
+                role.permissions = item.permissions
+              }
+              groupProfile.role = role
+              break
+            }
+            case GROUP_PERMISSION_CHANGE_ACTIONS.REMOVE:
+              groupProfile.role = null
+              break
+          }
+        }
+      }
+    },
     'gi.contracts/group/updateAllVotingRules': {
       validate: actionRequireActiveMember(objectMaybeOf({
         ruleName: x => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
@@ -1187,7 +1295,8 @@ sbp('chelonia/defineContract', {
         objectOf({ chatRoomID: stringMax(MAX_HASH_LEN, 'chatRoomID') })(data)
 
         if (getters.groupChatRooms[data.chatRoomID].creatorID !== innerSigningContractID) {
-          throw new TypeError(L('Only the channel creator can delete channel.'))
+          // TODO: add DELETE_CHANNEL permission check when it's implemented
+          throw new TypeError(L('Only the channel creator can delete this channel.'))
         }
       }),
       process ({ contractID, data }, { state }) {
@@ -1199,7 +1308,7 @@ sbp('chelonia/defineContract', {
         }
         delete state.chatRooms[data.chatRoomID]
       },
-      sideEffect ({ data, contractID, innerSigningContractID }) {
+      sideEffect ({ data, contractID, innerSigningContractID }, { getters }) {
         // identityContractID intentionally left out because deleted chatrooms
         // affect all users. If it's set, it should be set to
         // sbp('state/vuex/state').loggedIn, _not_ innerSigningContractID, for
@@ -1208,8 +1317,10 @@ sbp('chelonia/defineContract', {
         sbp('okTurtles.events/emit', DELETED_CHATROOM, { groupContractID: contractID, chatRoomID: data.chatRoomID })
         const { identityContractID } = sbp('state/vuex/state').loggedIn
         if (identityContractID === innerSigningContractID) {
-          sbp('gi.actions/chatroom/delete', { contractID: data.chatRoomID, data: {} }).catch(e => {
-            console.log(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
+          sbp('gi.actions/chatroom/delete', {
+            contractID: data.chatRoomID
+          }).catch(e => {
+            console.error(`Error sending chatroom removal action for ${data.chatRoomID}`, e)
           })
         }
       }
