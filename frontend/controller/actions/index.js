@@ -97,7 +97,7 @@ sbp('sbp/selectors/register', {
     // passed to `'chelonia/out/atomic'`. The first element of the array are
     // operations to be done before `keyUpdate` and the second element are
     // to be added after `keyUpdate`.
-    addtionalOperationsSelector?: string,
+    additionalOperationsSelector?: string,
     options?: { direct?: boolean, lastAttempt?: boolean }
   ) => {
     const state = sbp('chelonia/contract/state', contractID)
@@ -174,7 +174,7 @@ sbp('sbp/selectors/register', {
 
     // Additional operations to be done along with key roation.
     // E.g., share new keys with other contracts
-    const additionalOperations = addtionalOperationsSelector ? await sbp(addtionalOperationsSelector, contractID, newKeys, { lastAttempt: options?.lastAttempt }) : undefined
+    const additionalOperations = additionalOperationsSelector ? await sbp(additionalOperationsSelector, contractID, newKeys, { lastAttempt: options?.lastAttempt }) : undefined
 
     const preSendCheck = (msg, state) => {
       const updatedKeysRemaining = updatedKeys.filter((key) => {
@@ -224,17 +224,17 @@ sbp('sbp/selectors/register', {
     // passed to `'chelonia/out/atomic'`. The first element of the array are
     // operations to be done before `keyUpdate` and the second element are
     // to be added after `keyUpdate`.
-    addtionalOperationsSelector?: string,
+    additionalOperationsSelector?: string,
     options?: { direct?: boolean, lastAttempt?: boolean }
   ) => {
     if (options?.direct) {
-      return await sbp('gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector, options)
+      return await sbp('gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, additionalOperationsSelector, options)
     }
     return await sbp('chelonia.persistentActions/enqueue', {
-      invocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector, { ...options, lastAttempt: false }],
+      invocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, additionalOperationsSelector, { ...options, lastAttempt: false }],
       maxAttempts: 3,
       retrySeconds: 60,
-      totalFailureInvocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, addtionalOperationsSelector, { ...options, lastAttempt: true }]
+      totalFailureInvocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, additionalOperationsSelector, { ...options, lastAttempt: true }]
     })
   }
 })

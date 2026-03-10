@@ -49,7 +49,6 @@ import { extractProposalData } from '@model/notifications/utils.js'
 const findAndRequestMissingGroupKeysSet = new Set()
 const findAndRequestMissingGroupKeys = debounce(() => {
   const inner = (contractID) => {
-    findAndRequestMissingGroupKeysSet.delete(contractID)
     const state = sbp('chelonia/contract/state', contractID)
     if (!state || !state.profiles) return
 
@@ -85,6 +84,7 @@ const findAndRequestMissingGroupKeys = debounce(() => {
   }
 
   for (const contractID of findAndRequestMissingGroupKeysSet) {
+    findAndRequestMissingGroupKeysSet.delete(contractID)
     // Queue to ensure it runs after a contract sync that's in progress
     sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
   }
@@ -905,6 +905,8 @@ export default (sbp('sbp/selectors/register', {
     }).catch(e => {
       if (memberID !== identityContractID || e.name !== 'GIGroupAlreadyJoinedError') throw e
 
+      // Attempt to complete incomplete join processes
+      // No share volatile keys here since we're the ones joining
       return sbp('gi.actions/chatroom/join', {
         contractID: chatRoomID,
         data: {}

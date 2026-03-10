@@ -23,9 +23,8 @@ const messageReceivedRawQueue = []
 const findAndRequestMissingChatroomKeysSet = new Set()
 const findAndRequestMissingChatroomKeys = debounce(() => {
   const inner = (contractID) => {
-    findAndRequestMissingChatroomKeysSet.delete(contractID)
     const state = sbp('chelonia/contract/state', contractID)
-    if (!state || !state.members) return
+    if (!state || !state.members || state.attributes?.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE) return
 
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
@@ -72,6 +71,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
   }
 
   for (const contractID of findAndRequestMissingChatroomKeysSet) {
+    findAndRequestMissingChatroomKeysSet.delete(contractID)
     // Queue to ensure it runs after a contract sync that's in progress
     sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
   }
