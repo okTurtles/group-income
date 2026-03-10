@@ -35,7 +35,8 @@ export const defaultSettings = {
   notificationVolume: 1,
   reducedMotion: false,
   theme: defaultTheme,
-  themeColor: defaultColor
+  themeColor: defaultColor,
+  isInGlobalDashboard: false // Flag to indicate if the user is in the global dashboard. Can be used in various vuex getters and components.
 }
 
 const getters = {
@@ -56,6 +57,9 @@ const getters = {
   },
   theme (state) {
     return state.theme
+  },
+  isInGlobalDashboard (state) {
+    return state.isInGlobalDashboard
   }
 }
 
@@ -112,6 +116,9 @@ const mutations = {
     const themeColor = theme === 'system' ? checkSystemColor() : theme
     state.themeColor = themeColor
     sbp('okTurtles.events/emit', THEME_CHANGE, themeColor)
+  },
+  setIsInGlobalDashboard (state, isInGlobalDashboard) {
+    state.isInGlobalDashboard = isInGlobalDashboard
   }
 }
 

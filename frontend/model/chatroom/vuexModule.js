@@ -6,7 +6,7 @@ import getters from './getters.js'
 import Vue from 'vue'
 
 const defaultState = {
-  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
+  currentChatRoomIDs: {}, // { [groupId | 'global-dm']: currentChatRoomId }
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight, isManuallyMarked?: boolean }, unreadMessages: [{ messageHash, createdHeight }]}

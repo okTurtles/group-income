@@ -5,7 +5,8 @@ import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contract
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
-    return state.currentChatRoomIDs[rootState.currentGroupId] || null
+    const key = rootState.settings.isInGlobalDashboard ? 'global-dm' : rootState.currentGroupId
+    return state.currentChatRoomIDs[key] || null
   },
   currentChatRoomState (state, getters, rootState) {
     return rootState[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times

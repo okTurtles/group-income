@@ -50,7 +50,8 @@ const ChatMixin: Object = {
       'isDirectMessage',
       'isGroupDirectMessage',
       'isGroupDirectMessageToMyself',
-      'chatRoomActiveMemberIds'
+      'chatRoomActiveMemberIds',
+      'isInGlobalDashboard'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -98,15 +99,27 @@ const ChatMixin: Object = {
       //       to skip passing `chatRoomID` parameter means an intention to redirect to another chatroom
       //       this happens when the wrong (or cannot accessable) chatRoomID is used while opening group-chat URL
       const shouldUseAlternative = !chatRoomID
-      if (shouldUseAlternative) {
-        chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId
-      }
 
-      this.$router.push({
-        name: 'GroupChatConversation',
-        params: { chatRoomID },
-        query: !shouldUseAlternative ? { ...this.$route.query } : {}
-      }).catch(logExceptNavigationDuplicated)
+      if (this.isInGlobalDashboard) {
+        if (shouldUseAlternative) {
+          // navigate to the global direct messages list page
+          this.$router.push({
+            name: 'GlobalDirectMessages'
+          })
+        } else {
+          console.log('!@# navigate to the chat interface page for global dm')
+        }
+      } else {
+        if (shouldUseAlternative) {
+          chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId
+        }
+
+        this.$router.push({
+          name: 'GroupChatConversation',
+          params: { chatRoomID },
+          query: !shouldUseAlternative ? { ...this.$route.query } : {}
+        }).catch(logExceptNavigationDuplicated)
+      }
     },
     refreshTitle (title?: string): void {
       document.title = title || this.summary.title
