@@ -99,21 +99,29 @@ const ChatMixin: Object = {
       //       to skip passing `chatRoomID` parameter means an intention to redirect to another chatroom
       //       this happens when the wrong (or cannot accessable) chatRoomID is used while opening group-chat URL
       const shouldUseAlternative = !chatRoomID
+      if (shouldUseAlternative) {
+        chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId)
+          ? this.currentChatRoomId
+          : this.isInGlobalDashboard
+            ? undefined
+            : this.groupGeneralChatRoomId
+      }
 
       if (this.isInGlobalDashboard) {
-        if (shouldUseAlternative) {
+        if (!chatRoomID) {
           // navigate to the global direct messages list page
           this.$router.push({
             name: 'GlobalDirectMessages'
           })
         } else {
-          console.log('!@# navigate to the chat interface page for global dm')
+          // TODO: DRY this method!
+          this.$router.push({
+            name: 'GlobalDirectMessagesConversation',
+            params: { chatRoomID },
+            query: !shouldUseAlternative ? { ...this.$route.query } : {}
+          }).catch(logExceptNavigationDuplicated)
         }
       } else {
-        if (shouldUseAlternative) {
-          chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.groupGeneralChatRoomId
-        }
-
         this.$router.push({
           name: 'GroupChatConversation',
           params: { chatRoomID },
@@ -152,7 +160,9 @@ const ChatMixin: Object = {
     },
     updateCurrentChatRoomID (chatRoomID: string) {
       if (chatRoomID !== this.currentChatRoomId) {
-        if (this.isGroupDirectMessage(chatRoomID)) {
+        if (this.isInGlobalDashboard) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID, isForGlobalDM: true })
+        } else if (this.isGroupDirectMessage(chatRoomID)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomID })
         } else {
           const groupID = this.groupIdFromChatRoomId(chatRoomID)

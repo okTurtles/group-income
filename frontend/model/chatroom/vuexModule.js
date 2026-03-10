@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { cloneDeep } from 'turtledash'
 import getters from './getters.js'
 import Vue from 'vue'
+import { GLOBAL_DM_CHATROOM_KEY } from '@utils/constants.js'
 
 const defaultState = {
   currentChatRoomIDs: {}, // { [groupId | 'global-dm']: currentChatRoomId }
@@ -15,10 +16,12 @@ const defaultState = {
 
 // mutations
 const mutations = {
-  setCurrentChatRoomId (state, { groupID, chatRoomID }) {
+  setCurrentChatRoomId (state, { groupID, chatRoomID, isForGlobalDM = false }) {
     const rootState = sbp('state/vuex/state')
 
-    if (groupID && rootState[groupID]) {
+    if (isForGlobalDM && chatRoomID) {
+      Vue.set(state.currentChatRoomIDs, GLOBAL_DM_CHATROOM_KEY, chatRoomID)
+    } else if (groupID && rootState[groupID]) {
       if (chatRoomID) {
         Vue.set(state.currentChatRoomIDs, groupID, chatRoomID)
       } else {
