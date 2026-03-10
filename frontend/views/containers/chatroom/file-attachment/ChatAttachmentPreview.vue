@@ -34,7 +34,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
-        @download='downloadAttachment(entry)'
+        @download='downloadAttachment(entry, mediaObjectURLList.audio[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
       )
 
@@ -83,7 +83,9 @@
           @click='onMediaPreviewCardClick(fileType(entry), entry.url)'
         )
 
-  a.c-invisible-link(ref='downloadHelper')
+  // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
+  //       when user tries to download attachment inside the dialog
+  a.c-invisible-link(ref='downloadHelper' @click.stop='')
 </template>
 
 <script>
@@ -303,6 +305,14 @@ export default {
       }
     },
     async downloadAttachment (attachment, objectURL = null) {
+      // NOTE: objectURL argument here -
+      // objectURLs of some media attachments are generated immediately during component initialization.
+      // eg.1: Image attachments are downloaded and displayed immediately.
+      // eg.2: If user has downloaded/played some audio/videos before, their blobs are stored as temp caches in indexedDB so that
+      //       users don't have to download them again for the session. ObjectURLs of these temp caches are also generated immediately
+      //       during component initialization so they look just playable without presenting download button.
+      //
+      // In these cases, we can just use these pre-generated objectURLs for downloading.
       if (!attachment.downloadData) { return }
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
@@ -313,13 +323,13 @@ export default {
         aTag.setAttribute('href', url)
         aTag.setAttribute('download', attachment.name)
 
-        aTag.addEventListener('click', function (event) {
-          // NOTE: should call stopPropagation here to keep showing the PinnedMessages dialog
-          //       when user trys to download attachment inside the dialog
-          event.stopPropagation()
-        })
-
         aTag.click()
+
+        if (!objectURL) {
+          setTimeout(() => {
+            URL.revokeObjectURL(url)
+          }, 500)
+        }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
       }

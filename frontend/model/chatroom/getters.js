@@ -15,7 +15,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   chatNotificationSettings (state) {
     return Object.assign({
       publicDefault: {
-        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       },
       privateDefault: {
