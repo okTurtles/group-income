@@ -5,7 +5,32 @@ page(
   :miniHeader='inChatInterfacePage'
   :class='{ "is-in-chat-interface": inChatInterfacePage }'
 )
-  template(#title='') {{ pageTitle }}
+  template(v-if='!inChatInterfacePage' #title='') {{ L('Direct Messages') }}
+  template(v-else #header='')
+    .avatar-wrapper(v-if='summary.picture')
+      avatar(
+        :src='summary.picture'
+        alt='Partner Picture'
+        size='sm'
+      )
+    i(v-else class='icon-hashtag group-icon')
+    h1.is-title-2.p-title {{ summary.title }}
+    menu-parent.c-menu-parent
+      menu-trigger.c-menu-trigger.is-icon-small
+        i.icon-angle-down.menu-arrow-icon
+
+      menu-content.c-responsive-menu
+        menu-header
+          i18n Channel Options
+
+        menu
+          menu-item.hide-desktop(v-if='pinnedMessages.length')
+            i18n(@click='showPinnedMessages($event)') Pinned Messages
+          menu-item(
+            @click='openModal("ChatNotificationSettingsModal")'
+            data-test='notificationsSettings'
+          )
+            i18n Notification settings
 
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
@@ -20,60 +45,63 @@ page(
 
   template(v-if='isDevelopmentMode')
     .c-page-content-wrapper(:class='{ "is-in-dm-list": !inChatInterfacePage }')
-      transition(:name='transitionName' mode='out-in')
-        direct-message-chat-interface(
-          v-if='inChatInterfacePage'
-          @chatroom-summary-change='onChatroomSummaryChange'
-        )
-        .c-dm-main-container(v-else)
-          .card.c-search-container
-            .inputgroup
-              .is-icon.prefix(aria-hidden='true')
-                i.icon-search
-              input.input(
-                type='text'
-                name='search'
-                :placeholder='L("Find a DM")'
-                v-model='ephemeral.searchText'
-              )
+      direct-message-chat-interface(
+        v-if='inChatInterfacePage'
+        @chatroom-summary-change='onChatroomSummaryChange'
+      )
+      .c-dm-main-container(v-else)
+        .card.c-search-container
+          .inputgroup
+            .is-icon.prefix(aria-hidden='true')
+              i.icon-search
+            input.input(
+              type='text'
+              name='search'
+              :placeholder='L("Find a DM")'
+              v-model='ephemeral.searchText'
+            )
 
-          .c-no-active-dms-container(v-if='hasNoActiveDms')
-            i.icon-comment-dots.c-check-icon
-            i18n.has-text-1 No active DMs yet.
+        .c-no-active-dms-container(v-if='hasNoActiveDms')
+          i.icon-comment-dots.c-check-icon
+          i18n.has-text-1 No active DMs yet.
 
+        template(v-else)
+          .c-no-search-results(v-if='filteredDMList.length === 0')
+            i18n.has-text-1(
+              :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
+            ) No DMs found for "{b_}{searchText}{_b}".
           template(v-else)
-            .c-no-search-results(v-if='filteredDMList.length === 0')
-              i18n.has-text-1(
-                :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
-              ) No DMs found for "{b_}{searchText}{_b}".
-            template(v-else)
-              .c-dm-group(
-                v-for='dmGroup in filteredDMList'
-                :key='dmGroup.dateDisplay'
-              )
-                .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
+            .c-dm-group(
+              v-for='dmGroup in filteredDMList'
+              :key='dmGroup.dateDisplay'
+            )
+              .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
 
-                .c-dm-list-items
-                  direct-message-list-item(
-                    v-for='dm in dmGroup.items'
-                    :key='dm.chatRoomID'
-                    :dmDetails='dm'
-                )
+              .c-dm-list-items
+                direct-message-list-item(
+                  v-for='dm in dmGroup.items'
+                  :key='dm.chatRoomID'
+                  :dmDetails='dm'
+              )
   template(v-else)
     i18n.has-text-1 Direct Messages: Coming soon!
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
+import Avatar from '@components/Avatar.vue'
 import { L } from '@common/common.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 import DirectMessageListItem from '@containers/global-dashboard/DirectMessageListItem.vue'
 import DirectMessageChatInterface from '@containers/global-dashboard/DirectMessageChatInterface.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 
 export default {
   name: 'DirectMessages',
@@ -82,7 +110,13 @@ export default {
     ChatNav,
     ChatMembers,
     DirectMessageListItem,
-    DirectMessageChatInterface
+    DirectMessageChatInterface,
+    Avatar,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem,
+    MenuHeader
   },
   data () {
     return {
@@ -95,24 +129,35 @@ export default {
   computed: {
     ...mapGetters([
       'allDirectMessagesDetails',
-      'ourUnreadMessages'
+      'ourUnreadMessages',
+      'currentChatRoomId',
+      'isJoinedChatRoom',
+      'chatRoomPinnedMessages'
     ]),
-    inChatInterfacePage () {
-      return this.$route.name === 'GlobalDirectMessagesConversation' &&
-        this.$route.params.chatRoomID
-    },
-    pageTitle () {
-      const defaultTitle = L('Direct Messages')
-      return this.inChatInterfacePage ? this.ephemeral.chatroomSummary?.title : defaultTitle
-    },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
     },
+    summary () {
+      return this.ephemeral.chatroomSummary || {}
+    },
+    inChatInterfacePage () {
+      return this.$route.name === 'GlobalDirectMessagesConversation' &&
+        Boolean(this.$route.params.chatRoomID)
+    },
+    pinnedMessages () {
+      if (this.inChatInterfacePage) {
+        const { chatRoomID } = this.summary
+        if (chatRoomID &&
+          this.isJoinedChatRoom(chatRoomID) &&
+          chatRoomID === this.currentChatRoomId) {
+          return this.chatRoomPinnedMessages
+        }
+      }
+
+      return []
+    },
     hasNoActiveDms () {
       return this.sortedDMList.length === 0
-    },
-    transitionName () {
-      return this.inChatInterfacePage ? 'in-right-out-left' : 'in-left-out-right'
     },
     sortedDMList () {
       const sortedList = []
@@ -222,6 +267,12 @@ export default {
       return unReadMessagesEntry
         ? unReadMessagesEntry.unreadMessages?.length > 0
         : false
+    },
+    showPinnedMessages () {
+      console.log('TODO: implement!')
+    },
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
 }
@@ -229,6 +280,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+@import "@assets/style/components/_chat_mixins.scss";
 
 .c-page-content-wrapper {
   height: 100%;
@@ -251,7 +303,6 @@ export default {
     }
   }
 }
-
 
 .c-dm-main-container {
   position: relative;
@@ -313,15 +364,83 @@ export default {
   }
 }
 
-.is-in-chat-interface ::v-deep {
-  .p-main {
-    height: auto !important;
-    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
-    max-width: unset !important;
+.c-dm-header {
+  display: flex;
+  align-items: center;
+  position: relative;
 
-    @include touch {
-      padding-top: 0 !important;
+  .avatar-wrapper {
+    margin-right: 0.5rem;
+    flex: 0 0 2.5rem;
+  }
+
+  .p-title {
+    display: block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .group-icon {
+    margin-right: 0.5rem;
+    color: $text_1;
+    font-size: 1rem;
+  }
+
+  .c-menu {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .menu-arrow-icon {
+    font-size: 1.2rem;
+    transform-origin: 50% 48%;
+  }
+
+  .menu-separator {
+    border-bottom: 2px solid $general_2;
+  }
+
+  .c-menuItem ::v-deep .c-item-link {
+    @extend %floating-panel-item;
+  }
+
+  @include touch {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.c-menu-trigger.is-active {
+  pointer-events: none;
+
+  .menu-arrow-icon {
+    transform: rotate(180deg);
+  }
+}
+
+.c-menu-parent.c-menu {
+  @include tablet {
+    position: unset;
+
+    .c-responsive-menu {
+      top: 2.5rem;
+      transform: translateX(-50%);
+      left: 50%;
     }
   }
+
+  @include desktop {
+    .c-responsive-menu {
+      left: 0;
+      right: auto;
+      transform: unset;
+    }
+  }
+}
+
+.is-in-chat-interface ::v-deep {
+  @include p-main-custom-styles;
 }
 </style>

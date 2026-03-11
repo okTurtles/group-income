@@ -9,7 +9,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
           size='sm'
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      h1.is-title-2.p-title {{summary.title}}
+      h1.is-title-2.p-title {{ summary.title }}
       menu-parent.c-menu-parent
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
@@ -286,6 +286,7 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+@import "@assets/style/components/_chat_mixins.scss";
 
 .c-card {
   padding: 0;
@@ -301,19 +302,11 @@ export default ({
 }
 
 ::v-deep {
+  @include p-main-custom-styles;
+
   .c-logo {
     @include touch {
       display: none;
-    }
-  }
-
-  .p-main {
-    height: auto !important;
-    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
-    max-width: unset !important;
-
-    @include touch {
-      padding-top: 0 !important;
     }
   }
 }
