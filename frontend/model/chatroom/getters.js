@@ -2,11 +2,11 @@
 
 import { merge, union } from 'turtledash'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { GLOBAL_DM_CHATROOM_KEY } from '@utils/constants.js'
+import { GLOBAL_DASHBOARD_KEY } from '@utils/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
-    const key = rootState.settings.isInGlobalDashboard ? GLOBAL_DM_CHATROOM_KEY : rootState.currentGroupId
+    const key = rootState.settings.isInGlobalDashboard ? GLOBAL_DASHBOARD_KEY : rootState.currentGroupId
     return state.currentChatRoomIDs[key] || null
   },
   currentChatRoomState (state, getters, rootState) {

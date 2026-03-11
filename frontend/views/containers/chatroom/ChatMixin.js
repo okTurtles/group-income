@@ -36,9 +36,7 @@ const ChatMixin: Object = {
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
-      'currentGroupState',
       'groupIdFromChatRoomId',
-      'ourDirectMessages',
       'ourGroupDirectMessages',
       'chatRoomMembers',
       'groupGeneralChatRoomId',
@@ -51,7 +49,8 @@ const ChatMixin: Object = {
       'isGroupDirectMessage',
       'isGroupDirectMessageToMyself',
       'chatRoomActiveMemberIds',
-      'isInGlobalDashboard'
+      'isInGlobalDashboard',
+      'allDirectMessagesDetails'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -61,10 +60,14 @@ const ChatMixin: Object = {
 
       let title = this.currentChatRoomState.attributes.name
       let picture
-      if (this.isGroupDirectMessage(this.currentChatRoomId)) {
+      if (this.isInGlobalDashboard && this.allDirectMessagesDetails[this.currentChatRoomId]) {
+        title = this.allDirectMessagesDetails[this.currentChatRoomId].title
+        picture = this.allDirectMessagesDetails[this.currentChatRoomId].picture
+      } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         title = this.ourGroupDirectMessages[this.currentChatRoomId].title
         picture = this.ourGroupDirectMessages[this.currentChatRoomId].picture
       }
+
       const chatroomMemberKeys = Object.keys(this.currentChatRoomState.members)
       const isPrivate = this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
       const isDMToMySelf = isPrivate &&
@@ -91,7 +94,7 @@ const ChatMixin: Object = {
     }
   },
   methods: {
-    redirectChat (chatRoomID: string) {
+    redirectChat (chatRoomID?: string) {
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
 
