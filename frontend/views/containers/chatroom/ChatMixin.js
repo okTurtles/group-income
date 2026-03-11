@@ -177,6 +177,7 @@ const ChatMixin: Object = {
     'ourGroupDirectMessages': {
       immediate: true,
       handler (to, from) {
+        if (this.isInGlobalDashboard) { return }
         // NOTE: whenever any group members leave the group, and the ourGroupDirectMessage is changed
         //       we need to consider if currentChatRoomId needs to be changed
         //       if the currentChatRoomId (if it's DM) is no longer group direct message
