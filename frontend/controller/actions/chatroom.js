@@ -38,12 +38,13 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
     }
 
     const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
 
     // $FlowFixMe[incompatible-use]
     const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
-      return !hasLeft && cheloniaState[groupID]?.chatRooms[contractID] && !cheloniaState[groupID]?.chatRooms[contractID].deletedDate && cheloniaState[groupID]?.chatRooms[contractID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      const chatroom = cheloniaState[groupID]?.chatRooms?.[contractID]
+      return !hasLeft && chatroom && !chatroom.deletedDate && chatroom.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     })?.[0]
 
     if (!groupID) {

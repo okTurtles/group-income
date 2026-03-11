@@ -1146,7 +1146,7 @@ export default (sbp('sbp/selectors/register', {
   // of the CSK
   'gi.actions/identity/upgradeCreatorGroupInvite': async (groupIDs) => {
     const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
     const identityCSKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk')
     const identityCEKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
 
