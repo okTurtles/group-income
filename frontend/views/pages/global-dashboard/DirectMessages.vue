@@ -7,30 +7,31 @@ page(
 )
   template(v-if='!inChatInterfacePage' #title='') {{ L('Direct Messages') }}
   template(v-else #header='')
-    .avatar-wrapper(v-if='summary.picture')
-      avatar(
-        :src='summary.picture'
-        alt='Partner Picture'
-        size='sm'
-      )
-    i(v-else class='icon-hashtag group-icon')
-    h1.is-title-2.p-title {{ summary.title }}
-    menu-parent.c-menu-parent
-      menu-trigger.c-menu-trigger.is-icon-small
-        i.icon-angle-down.menu-arrow-icon
+    .c-dm-header
+      .avatar-wrapper(v-if='summary.picture')
+        avatar(
+          :src='summary.picture'
+          alt='Partner Picture'
+          size='sm'
+        )
+      i(v-else class='icon-hashtag group-icon')
+      h1.is-title-2.p-title {{ summary.title }}
+      menu-parent.c-menu-parent
+        menu-trigger.c-menu-trigger.is-icon-small
+          i.icon-angle-down.menu-arrow-icon
 
-      menu-content.c-responsive-menu
-        menu-header
-          i18n Channel Options
+        menu-content.c-responsive-menu
+          menu-header
+            i18n Channel Options
 
-        menu
-          menu-item.hide-desktop(v-if='pinnedMessages.length')
-            i18n(@click='showPinnedMessages($event)') Pinned Messages
-          menu-item(
-            @click='openModal("ChatNotificationSettingsModal")'
-            data-test='notificationsSettings'
-          )
-            i18n Notification settings
+          menu
+            menu-item.hide-desktop(v-if='pinnedMessages.length')
+              i18n(@click='showPinnedMessages($event)') Pinned Messages
+            menu-item(
+              @click='openModal("ChatNotificationSettingsModal")'
+              data-test='notificationsSettings'
+            )
+              i18n Notification settings
 
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
@@ -393,6 +394,27 @@ export default {
     margin-right: 0.5rem;
   }
 
+  .c-header {
+    font-size: $size_5;
+    font-weight: 400;
+    color: $text_1;
+    padding-bottom: 0;
+
+    @include tablet {
+      padding-top: 0;
+    }
+  }
+
+  .c-content {
+    min-width: 17.5rem;
+    font-size: $size_4;
+    font-weight: 400;
+
+    @include desktop {
+      left: -6.8rem;
+    }
+  }
+
   .menu-arrow-icon {
     font-size: 1.2rem;
     transform-origin: 50% 48%;
@@ -409,6 +431,10 @@ export default {
   @include touch {
     width: 100%;
     justify-content: center;
+  }
+
+  @include desktop {
+    margin-bottom: 0.5rem;
   }
 }
 
