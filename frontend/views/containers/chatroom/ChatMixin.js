@@ -102,31 +102,19 @@ const ChatMixin: Object = {
       //       to skip passing `chatRoomID` parameter means an intention to redirect to another chatroom
       //       this happens when the wrong (or cannot accessable) chatRoomID is used while opening group-chat URL
       const shouldUseAlternative = !chatRoomID
-      if (shouldUseAlternative) {
-        chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId)
-          ? this.currentChatRoomId
-          : this.isInGlobalDashboard
-            ? undefined
-            : this.groupGeneralChatRoomId
-      }
 
-      if (this.isInGlobalDashboard) {
-        if (!chatRoomID) {
-          // navigate to the global direct messages list page
-          this.$router.push({
-            name: 'GlobalDirectMessages'
-          })
-        } else {
-          // TODO: DRY this method!
-          this.$router.push({
-            name: 'GlobalDirectMessagesConversation',
-            params: { chatRoomID },
-            query: !shouldUseAlternative ? { ...this.$route.query } : {}
-          }).catch(logExceptNavigationDuplicated)
-        }
+      if (this.isInGlobalDashboard && shouldUseAlternative) {
+        // navigate to the global direct messages list page
+        this.$router.push({ name: 'GlobalDirectMessages' }).catch(logExceptNavigationDuplicated)
       } else {
+        if (shouldUseAlternative) {
+          chatRoomID = this.isJoinedChatRoom(this.currentChatRoomId)
+            ? this.currentChatRoomId
+            : this.groupGeneralChatRoomId
+        }
+
         this.$router.push({
-          name: 'GroupChatConversation',
+          name: this.isInGlobalDashboard ? 'GlobalDirectMessagesConversation' : 'GroupChatConversation',
           params: { chatRoomID },
           query: !shouldUseAlternative ? { ...this.$route.query } : {}
         }).catch(logExceptNavigationDuplicated)
