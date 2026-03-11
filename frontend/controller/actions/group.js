@@ -59,7 +59,7 @@ const findAndRequestMissingGroupKeys = debounce(() => {
     if (CEKid && CSKid) return
 
     const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn.identityContractID
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
     if (!contractState || !cheloniaState[identityContractID].groups?.[contractID] || cheloniaState[identityContractID].groups[contractID].hasLeft) {
       return
@@ -898,11 +898,12 @@ export default (sbp('sbp/selectors/register', {
         }
       }
     }
-    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    const unregister = sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
 
     return sendMessage({
       ...omit(params, ['options', 'action'])
     }).catch(e => {
+      unregister()
       if (memberID !== identityContractID || e.name !== 'GIGroupAlreadyJoinedError') throw e
 
       // Attempt to complete incomplete join processes

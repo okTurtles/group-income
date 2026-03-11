@@ -254,14 +254,14 @@ sbp('chelonia/defineContract', {
         // The actual rotation, if it's still needed (i.e., keys still marked
         // as 'pending' due to not having been rotated), will be done later
         // as a side effect. This avoids unnecessary rotations.
-        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn?.identityContractID
         if (!itsMe) {
           sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
         }
       },
       async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
-        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn?.identityContractID
 
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
