@@ -135,6 +135,9 @@ export default {
       settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+      },
+      ephemeral: {
+        downloadInProgress: [] // array of entry ids that are currently being downloaded to user's device
       }
     }
   },
@@ -317,6 +320,7 @@ export default {
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
+        this.ephemeral.downloadInProgress.push(this.getAttachmentId(attachment))
         const url = objectURL || (await this.getAttachmentObjectURL(attachment))
 
         const aTag = this.$refs.downloadHelper
@@ -332,6 +336,8 @@ export default {
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+      } finally {
+        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getAttachmentId(attachment))
       }
     },
     getStretchedDimension ({ width, height }) {
