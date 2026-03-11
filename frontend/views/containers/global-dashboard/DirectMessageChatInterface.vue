@@ -81,8 +81,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-chat-interface {
+  height: 100%;
   padding: 0;
-  height: calc(100% - 1.5rem);
   margin-bottom: 1.5rem;
   border-radius: 0.625rem;
 

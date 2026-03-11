@@ -2,6 +2,8 @@
 page(
   pageTestName='GlobalDirectMessages'
   pageTestHeaderName='pageHeaderName'
+  :miniHeader='inChatInterfacePage'
+  :class='{ "is-in-chat-interface": inChatInterfacePage }'
 )
   template(#title='') {{ pageTitle }}
 
@@ -17,7 +19,7 @@ page(
         )
 
   template(v-if='isDevelopmentMode')
-    .c-page-content-wrapper
+    .c-page-content-wrapper(:class='{ "is-in-dm-list": !inChatInterfacePage }')
       transition(:name='transitionName' mode='out-in')
         direct-message-chat-interface(
           v-if='inChatInterfacePage'
@@ -229,13 +231,27 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-page-content-wrapper {
-  margin: 1.5rem auto 3rem;
-  max-width: 42rem;
+  height: 100%;
 
-  @include desktop {
-    margin: 1.5rem 0 3rem;
+  @include from ($tablet) {
+    height: calc(100% - 1.5rem);
+  }
+
+  &.is-in-dm-list {
+    margin: 1.5rem auto 3rem;
+    max-width: 42rem;
+    height: auto;
+
+    @include from ($tablet) {
+      height: auto;
+    }
+
+    @include desktop {
+      margin: 1.5rem 0 3rem;
+    }
   }
 }
+
 
 .c-dm-main-container {
   position: relative;
@@ -281,7 +297,7 @@ export default {
 
 .c-dm-list {
   @include desktop {
-    margin-top: 0.75rem;
+    margin-top: 1.5rem;
   }
 }
 
@@ -294,6 +310,18 @@ export default {
 
   &:first-of-type {
     margin-top: 3rem;
+  }
+}
+
+.is-in-chat-interface ::v-deep {
+  .p-main {
+    height: auto !important;
+    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+    max-width: unset !important;
+
+    @include touch {
+      padding-top: 0 !important;
+    }
   }
 }
 </style>
