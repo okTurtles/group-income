@@ -9,13 +9,26 @@
 </template>
 
 <script>
+import ChatMixin from '@containers/chatroom/ChatMixin.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'DirectMessageChatInterface',
+  mixins: [ChatMixin],
   methods: {
     backToDMList () {
       this.$router.push({ name: 'GlobalDirectMessages' }).catch(logExceptNavigationDuplicated)
+    }
+  },
+  watch: {
+    summary: {
+      immediate: true,
+      handler (to) {
+        if (to) {
+          console.log('!@# chatroom summary changed', to)
+          this.$emit('chatroom-summary-change', to)
+        }
+      }
     }
   }
 }

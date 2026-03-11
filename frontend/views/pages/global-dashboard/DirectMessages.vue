@@ -3,7 +3,7 @@ page(
   pageTestName='GlobalDirectMessages'
   pageTestHeaderName='pageHeaderName'
 )
-  template(#title='') {{ L('Direct Messages') }}
+  template(#title='') {{ pageTitle }}
 
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
@@ -19,7 +19,10 @@ page(
   template(v-if='isDevelopmentMode')
     .c-page-content-wrapper
       transition(:name='transitionName' mode='out-in')
-        direct-message-chat-interface(v-if='inChatInterfacePage')
+        direct-message-chat-interface(
+          v-if='inChatInterfacePage'
+          @chatroom-summary-change='onChatroomSummaryChange'
+        )
         .c-dm-main-container(v-else)
           .card.c-search-container
             .inputgroup
@@ -82,7 +85,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        searchText: ''
+        searchText: '',
+        chatroomSummary: null
       }
     }
   },
@@ -91,15 +95,19 @@ export default {
       'allDirectMessagesDetails',
       'ourUnreadMessages'
     ]),
+    inChatInterfacePage () {
+      return this.$route.name === 'GlobalDirectMessagesConversation' &&
+        this.$route.params.chatRoomID
+    },
+    pageTitle () {
+      const defaultTitle = L('Direct Messages')
+      return this.inChatInterfacePage ? this.ephemeral.chatroomSummary?.title : defaultTitle
+    },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
     },
     hasNoActiveDms () {
       return this.sortedDMList.length === 0
-    },
-    inChatInterfacePage () {
-      return this.$route.name === 'GlobalDirectMessagesConversation' &&
-        this.$route.params.chatRoomID
     },
     transitionName () {
       return this.inChatInterfacePage ? 'in-right-out-left' : 'in-left-out-right'
@@ -203,6 +211,9 @@ export default {
       }
 
       return null
+    },
+    onChatroomSummaryChange (chatroomSummary) {
+      this.ephemeral.chatroomSummary = chatroomSummary
     },
     chatroomHasNewMessages (chatRoomID) {
       const unReadMessagesEntry = this.ourUnreadMessages[chatRoomID]
