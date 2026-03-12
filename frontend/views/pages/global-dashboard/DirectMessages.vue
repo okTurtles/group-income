@@ -14,7 +14,7 @@ page(
           alt='Partner Picture'
           size='sm'
         )
-      i(v-else class='icon-hashtag group-icon')
+      i(v-else class='icon-hashtag header-group-icon')
       h1.is-title-2.p-title {{ summary.title }}
       menu-parent.c-menu-parent
         menu-trigger.c-menu-trigger.is-icon-small
@@ -397,7 +397,7 @@ export default {
     text-overflow: ellipsis;
   }
 
-  .group-icon {
+  .header-group-icon {
     margin-right: 0.5rem;
     color: $text_1;
     font-size: 1rem;
@@ -434,16 +434,12 @@ export default {
     transform-origin: 50% 48%;
   }
 
-  .c-separator {
-    border-bottom: 2px solid $general_2;
-  }
+  .c-menu-trigger.is-active {
+    pointer-events: none;
 
-  .menu-separator {
-    border-bottom: 2px solid $general_2;
-  }
-
-  .c-menuItem ::v-deep .c-item-link {
-    @extend %floating-panel-item;
+    .menu-arrow-icon {
+      transform: rotate(180deg);
+    }
   }
 
   @include touch {
@@ -454,6 +450,10 @@ export default {
   @include desktop {
     margin-bottom: 0.5rem;
   }
+}
+
+.c-menuItem ::v-deep .c-item-link {
+  @extend %floating-panel-item;
 }
 
 .c-menu-trigger.is-active {

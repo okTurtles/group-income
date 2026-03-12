@@ -8,11 +8,11 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
           alt='Partner Picture'
           size='sm'
         )
-      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
+      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } header-group-icon`')
       h1.is-title-2.p-title {{ summary.title }}
       menu-parent.c-menu-parent
         menu-trigger.c-menu-trigger.is-icon-small
-          i.icon-angle-down.c-menu-i
+          i.icon-angle-down.menu-arrow-icon
 
         menu-content.c-responsive-menu
           menu-header
@@ -45,7 +45,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
                 i18n(@click='showPinnedMessages($event)') Pinned Messages
 
               menu-item(
-                :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
+                :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "menu-separator" : ""}`'
                 @click='openModal("ChatNotificationSettingsModal")'
                 data-test='notificationsSettings'
               )
@@ -316,9 +316,9 @@ export default ({
   align-items: center;
   position: relative;
 
-  @include touch {
-    width: 100%;
-    justify-content: center;
+  .avatar-wrapper {
+    margin-right: 0.5rem;
+    flex: 0 0 2.5rem;
   }
 
   .p-title {
@@ -329,7 +329,7 @@ export default ({
     text-overflow: ellipsis;
   }
 
-  .c-group-i {
+  .header-group-icon  {
     margin-right: 0.5rem;
     color: $text_1;
     font-size: 1rem;
@@ -361,18 +361,31 @@ export default ({
     }
   }
 
-  .c-menu-i {
+  .menu-arrow-icon {
     font-size: 1.2rem;
     transform-origin: 50% 48%;
   }
 
-  .c-separator {
+  .c-menu-trigger.is-active {
+    pointer-events: none;
+
+    .menu-arrow-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  .menu-separator {
     border-bottom: 2px solid $general_2;
   }
 
-  .c-menuItem ::v-deep .c-item-link {
-    @extend %floating-panel-item;
+  @include touch {
+    width: 100%;
+    justify-content: center;
   }
+}
+
+.c-menuItem ::v-deep .c-item-link {
+  @extend %floating-panel-item;
 }
 
 .c-dm-list {
@@ -426,19 +439,6 @@ export default ({
       margin-right: 0.2rem;
     }
   }
-}
-
-.c-menu-trigger.is-active {
-  pointer-events: none;
-
-  .c-menu-i {
-    transform: rotate(180deg);
-  }
-}
-
-.avatar-wrapper {
-  margin-right: 0.5rem;
-  flex: 0 0 2.5rem;
 }
 
 .c-menu-parent.c-menu {
