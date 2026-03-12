@@ -5,7 +5,7 @@ page(
   :miniHeader='inChatInterfacePage'
   :class='{ "is-in-chat-interface": inChatInterfacePage }'
 )
-  template(v-if='!inChatInterfacePage' #title='') {{ L('Direct Messages') }}
+  template(v-if='!isDevelopmentMode || !inChatInterfacePage' #title='') {{ L('Direct Messages') }}
   template(v-else #header='')
     .c-dm-header
       .avatar-wrapper(v-if='summary.picture')
@@ -32,10 +32,20 @@ page(
               data-test='notificationsSettings'
             )
               i18n Notification settings
+            menu-item.has-text-primary(
+              v-if='inChatInterfacePage'
+              @click='backToDMlist'
+            )
+              i18n Conversations list
 
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
       chat-nav
+        .c-back-btn-container
+          button.link.c-back-btn(@click.stop='backToDMlist')
+            i.icon-angle-left.c-back-icon
+            i18n Conversations list
+
         chat-members.c-dm-list(
           @new='toggle'
           @redirect='toggle'
@@ -103,6 +113,7 @@ import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 import DirectMessageListItem from '@containers/global-dashboard/DirectMessageListItem.vue'
 import DirectMessageChatInterface from '@containers/global-dashboard/DirectMessageChatInterface.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default {
   name: 'DirectMessages',
@@ -274,6 +285,9 @@ export default {
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    backToDMlist () {
+      this.$router.push({ name: 'GlobalDirectMessages' }).catch(logExceptNavigationDuplicated)
     }
   }
 }
@@ -420,6 +434,10 @@ export default {
     transform-origin: 50% 48%;
   }
 
+  .c-separator {
+    border-bottom: 2px solid $general_2;
+  }
+
   .menu-separator {
     border-bottom: 2px solid $general_2;
   }
@@ -464,6 +482,30 @@ export default {
       transform: unset;
     }
   }
+}
+
+.c-back-btn-container {
+  margin-bottom: 1.25rem;
+
+  @include desktop {
+    margin-top: 2rem;
+  }
+}
+
+.c-back-btn {
+  border-bottom: none;
+  font-weight: 400;
+
+  .c-back-icon {
+    display: inline-block;
+    margin-right: 0.375rem;
+  }
+}
+
+// deep descendants styles
+
+.has-text-primary ::v-deep .c-item-slot {
+  color: $primary_0;
 }
 
 .is-in-chat-interface ::v-deep {
