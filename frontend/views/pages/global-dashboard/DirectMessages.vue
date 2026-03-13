@@ -380,72 +380,7 @@ export default {
 }
 
 .c-dm-header {
-  display: flex;
-  align-items: center;
-  position: relative;
-
-  .avatar-wrapper {
-    margin-right: 0.5rem;
-    flex: 0 0 2.5rem;
-  }
-
-  .p-title {
-    display: block;
-    width: fit-content;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .header-group-icon {
-    margin-right: 0.5rem;
-    color: $text_1;
-    font-size: 1rem;
-  }
-
-  .c-menu {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
-
-  .c-header {
-    font-size: $size_5;
-    font-weight: 400;
-    color: $text_1;
-    padding-bottom: 0;
-
-    @include tablet {
-      padding-top: 0;
-    }
-  }
-
-  .c-content {
-    min-width: 17.5rem;
-    font-size: $size_4;
-    font-weight: 400;
-
-    @include desktop {
-      left: -6.8rem;
-    }
-  }
-
-  .menu-arrow-icon {
-    font-size: 1.2rem;
-    transform-origin: 50% 48%;
-  }
-
-  .c-menu-trigger.is-active {
-    pointer-events: none;
-
-    .menu-arrow-icon {
-      transform: rotate(180deg);
-    }
-  }
-
-  @include touch {
-    width: 100%;
-    justify-content: center;
-  }
+  @include chat-header-styles;
 
   @include desktop {
     margin-bottom: 0.5rem;
@@ -508,7 +443,7 @@ export default {
   color: $primary_0;
 }
 
-.is-in-chat-interface ::v-deep {
+.is-in-chat-interface ::v-deep .p-main {
   @include p-main-custom-styles;
 }
 </style>

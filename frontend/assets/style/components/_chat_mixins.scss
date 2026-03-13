@@ -1,17 +1,5 @@
 @use "../variables" as v;
 
-@mixin p-main-custom-styles {
-  .p-main {
-    height: auto !important;
-    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
-    max-width: unset !important;
-
-    @include v.touch {
-      padding-top: 0 !important;
-    }
-  }
-}
-
 @mixin chat-header-styles {
   display: flex;
   align-items: center;
@@ -82,5 +70,15 @@
   @include touch {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@mixin p-main-custom-styles {
+  height: auto !important;
+  // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+  max-width: unset !important;
+
+  @include v.touch {
+    padding-top: 0 !important;
   }
 }
