@@ -4,6 +4,7 @@ import * as Common from '@common/common.js'
 import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '@chelonia/lib'
+import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
@@ -404,7 +405,14 @@ const setupChelonia = async (): Promise<*> => {
 export default ((() => {
   const singletonFn = () => {
     if (!promise) {
-      promise = setupChelonia().catch((e) => {
+      promise = setupChelonia().then(() => {
+        sbp('chelonia.persistentActions/configure', {
+          databaseKey: '_private_persistent_actions'
+        })
+        sbp('chelonia.persistentActions/load').catch(e => {
+          console.error('Error loading persistent actions', e)
+        })
+      }).catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
         throw e // Re-throw the error
