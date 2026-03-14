@@ -782,6 +782,7 @@ export default (sbp('sbp/selectors/register', {
       if (contractID === chatRoomID) {
         const getters = sbp('state/vuex/getters')
         if (getters.isJoinedChatRoom(contractID, identityContractID)) {
+          clearTimeout(timeoutId)
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID, chatRoomID })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }

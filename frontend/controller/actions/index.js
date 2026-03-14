@@ -92,7 +92,7 @@ sbp('sbp/selectors/register', {
     contractID: string,
     contractName: string,
     keysToRotate: string[] | '*' | 'pending',
-    // Additional operations to be done along with key roation.
+    // Additional operations to be done along with key rotation.
     // If any, it should return an array of arrays of invocations that can be
     // passed to `'chelonia/out/atomic'`. The first element of the array are
     // operations to be done before `keyUpdate` and the second element are
@@ -172,7 +172,7 @@ sbp('sbp/selectors/register', {
       throw new Error('No suitable signing key found')
     }
 
-    // Additional operations to be done along with key roation.
+    // Additional operations to be done along with key rotation.
     // E.g., share new keys with other contracts
     const additionalOperations = additionalOperationsSelector ? await sbp(additionalOperationsSelector, contractID, newKeys, { lastAttempt: options?.lastAttempt }) : undefined
 
@@ -219,7 +219,7 @@ sbp('sbp/selectors/register', {
     contractID: string,
     contractName: string,
     keysToRotate: string[] | '*' | 'pending',
-    // Additional operations to be done along with key roation.
+    // Additional operations to be done along with key rotation.
     // If any, it should return an array of arrays of invocations that can be
     // passed to `'chelonia/out/atomic'`. The first element of the array are
     // operations to be done before `keyUpdate` and the second element are

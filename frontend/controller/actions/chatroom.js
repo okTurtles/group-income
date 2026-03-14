@@ -364,6 +364,9 @@ export default (sbp('sbp/selectors/register', {
         params.encryptionKeyId = groupCEKid
       }
     }
+    if (!params.encryptionKeyId) {
+      throw new Error(`[gi.actions/chatroom/join] No encryption key available for chatroom ${params.contractID}`)
+    }
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
