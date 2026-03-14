@@ -405,13 +405,11 @@ const setupChelonia = async (): Promise<*> => {
 export default ((() => {
   const singletonFn = () => {
     if (!promise) {
-      promise = setupChelonia().then(() => {
+      promise = setupChelonia().then(async () => {
         sbp('chelonia.persistentActions/configure', {
           databaseKey: '_private_persistent_actions'
         })
-        sbp('chelonia.persistentActions/load').catch(e => {
-          console.error('Error loading persistent actions', e)
-        })
+        await sbp('chelonia.persistentActions/load')
       }).catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
