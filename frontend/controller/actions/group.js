@@ -478,7 +478,7 @@ export default (sbp('sbp/selectors/register', {
               const existingForeignKeys = await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
               await sbp('chelonia/out/atomic', {
-                ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId']),
+                ...omit(params, ['options', 'action', 'hooks', 'encryptionKeyId', 'signingKeyId', 'innerSigningKeyId']),
                 data: [
                   // Share our PEK with the group so that group members can see
                   // our name and profile information
@@ -782,15 +782,36 @@ export default (sbp('sbp/selectors/register', {
       if (contractID === chatRoomID) {
         const getters = sbp('state/vuex/getters')
         if (getters.isJoinedChatRoom(contractID, identityContractID)) {
+          clearTimeout(timeoutId)
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID, chatRoomID })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }
       }
     }
-    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    const unregister = sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    // Add timeout fallback
+    const timeoutId = setTimeout(() => {
+      unregister()
+      console.warn('[gi.actions/group/joinChatRoom] Timeout waiting for chatroom join')
+    }, 300_000) // Large 5 minute timeout to account for any delays
 
     return sendMessage({
       ...omit(params, ['options', 'action'])
+    }).catch(e => {
+      clearTimeout(timeoutId)
+      unregister()
+
+      const alreadyJoined = e?.name === 'GIGroupAlreadyJoinedError' ||
+        (e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIGroupAlreadyJoinedError')
+
+      if (memberID !== identityContractID || alreadyJoined) throw e
+
+      // Attempt to complete incomplete join processes
+      // No share volatile keys here since we're the ones joining
+      return sbp('gi.actions/chatroom/join', {
+        contractID: chatRoomID,
+        data: {}
+      })
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
@@ -827,7 +848,6 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
     await sbp('gi.actions/chatroom/rename', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: params.data.chatRoomID,
       data: {
         name: params.data.name
@@ -854,7 +874,7 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/removeMember',
     (params, e) => params.data.memberID ? L('Failed to remove {memberID}: {reportError}', { memberID: params.data.memberID, ...LError(e) }) : L('Failed to leave group. {codeError}', { codeError: e.message }),
-    async function (sendMessage, params, signingKeyId) {
+    async function (sendMessage, params) {
       await sendMessage({
         ...omit(params, ['options', 'action'])
       })
@@ -863,7 +883,6 @@ export default (sbp('sbp/selectors/register', {
     L('Failed to update description of chat channel.'),
     async function (sendMessage, params: GIActionParams) {
       await sbp('gi.actions/chatroom/changeDescription', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
         data: {
           description: params.data.description
@@ -1015,12 +1034,12 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', ACCEPTED_GROUP, { contractID: params.contractID })
     return response
   }),
-  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
+  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params) {
     await sbp('chelonia/out/keyDel', {
       contractID: params.contractID,
       contractName: 'gi.contracts/group',
       data: [params.data.inviteKeyId],
-      signingKeyId
+      signingKeyId: params.signingKeyId
     })
 
     return sendMessage(params)

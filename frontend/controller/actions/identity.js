@@ -696,7 +696,6 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('gi.actions/chatroom/join', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
       contractID: message.contractID(),
       data: { memberID: [identityContractID, ...partnerIDs] }
     })
@@ -705,12 +704,18 @@ export default (sbp('sbp/selectors/register', {
       if (contractID === message.contractID()) {
         const getters = sbp('state/vuex/getters')
         if (getters.isJoinedChatRoom(contractID, identityContractID)) {
+          clearTimeout(timeoutId)
           sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
           sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
         }
       }
     }
-    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    const unregister = sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    // Add timeout fallback
+    const timeoutId = setTimeout(() => {
+      unregister()
+      console.warn('[gi.actions/group/joinChatRoom] Timeout waiting for chatroom join')
+    }, 300_000) // Large 5 minute timeout to account for any delays
 
     await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
@@ -720,6 +725,11 @@ export default (sbp('sbp/selectors/register', {
       hooks: {
         onprocessed: params.hooks?.onprocessed
       }
+    }).catch(e => {
+      clearTimeout(timeoutId)
+      unregister()
+
+      throw e
     })
 
     await sbp('chelonia/contract/wait', partnerIDs)
@@ -738,7 +748,6 @@ export default (sbp('sbp/selectors/register', {
 
       const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
       await sbp('gi.actions/identity/joinDirectMessage', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: partnerIDs[index],
         data: {
           // TODO: We need to handle multiple groups and the possibility of not
