@@ -203,20 +203,21 @@ const filesCache = localforage.createInstance({
   storeName: 'Files Cache'
 })
 
+// TODO: we should probably do this based on the total size (e.g. 1 movie means
+// the cache should have fewer items).
 const maxFileEntries = 100
 
 sbp('sbp/selectors/register', {
   'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<*> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
-    const keys = await filesCache.getItem('keys') ?? []
-
     // We need to perform several operations in the DB, which includes
     // the operation requested (i.e., saving a file) and updating the `keys`
     // entry for caching, as well as possibly deleting cached entries.
     // Because the `keys` entry is a point of contention among calls and we
     // can only perform a single storage operation at the same time, we use
     // a queue to ensure that all operations are done atomically.
-    return sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', () => {
+    return await sbp('okTurtles.eventQueue/queueEvent', 'gi.db/files', async () => {
+      const keys = await filesCache.getItem('keys') ?? []
       return filesCache.setItem(cacheKey, blob).then(async v => {
         console.log('successfully saved:', cacheKey)
         const idx = keys.indexOf(cacheKey)
@@ -293,6 +294,8 @@ sbp('sbp/selectors/register', {
       const keys = await filesCache.getItem('keys') ?? []
       const allTempKeys = keys.filter(k => k.startsWith('temporary/'))
       await filesCache.removeMany(allTempKeys)
+      const remainingKeys = keys.filter(k => !k.startsWith('temporary/'))
+      await filesCache.setItem('keys', remainingKeys)
     }).catch(e => {
       console.error('[gi.db/filesCache/temporary/clear] Error removing temporary keys', e)
     })

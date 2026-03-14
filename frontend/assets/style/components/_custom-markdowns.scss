@@ -27,6 +27,15 @@
     }
   }
 
+  &.has-only-emojis {
+    // If the message only contains emojis, make the text-size larger.
+    font-size: 2.25em;
+
+    .chat-emoji {
+      font-size: inherit;
+    }
+  }
+
   // inline code styles
   code {
     display: inline-block;
@@ -212,10 +221,6 @@
 
   .chat-emoji {
     font-size: 1.2em;
-  }
-
-  .chat-emoji-only {
-    font-size: 2.25em;
   }
 }
 

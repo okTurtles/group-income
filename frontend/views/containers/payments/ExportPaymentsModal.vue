@@ -69,7 +69,6 @@ export default ({
       },
       ephemeral: {
         periodOpts: [],
-        downloadUrl: '',
         downloadName: ''
       }
     }
@@ -157,6 +156,9 @@ export default ({
 
       this.$nextTick(() => {
         this.$refs.downloadHelper.click()
+        setTimeout(() => {
+          URL.revokeObjectURL(downloadUrl)
+        }, 500)
       })
     }
   },
