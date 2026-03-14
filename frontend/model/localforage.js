@@ -157,4 +157,18 @@ const localforage = {
   }
 }
 
-export default (localforage: any)
+type LocalforageInstance = {
+  clear: () => Promise<void>,
+  getItem: (key: string) => Promise<any>,
+  getAllKeys: () => Promise<string[]>,
+  removeItem: (key: string) => Promise<void>,
+  removeMany: (keys: string[]) => Promise<void>,
+  setItem: (key: string, value: any) => Promise<void>
+}
+
+type Localforage = {
+  ready: () => Promise<void>,
+  createInstance: ({ name: string, storeName: string }) => LocalforageInstance
+}
+
+export default (localforage: Localforage)

@@ -33,6 +33,7 @@ if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
       if (key.startsWith('_private')) {
         const rootState = sbp('chelonia/rootState')
         rootState[key] = value
+        // Note: Lightweight clients intentionally don't persist contract HEADs
         return Promise.resolve()
       }
       return log.setItem(key, value)

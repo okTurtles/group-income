@@ -351,6 +351,9 @@ export default (sbp('sbp/selectors/register', {
     ).map(memberID => memberID == null ? identityContractID : memberID)
 
     const state = sbp('chelonia/contract/state', params.contractID)
+    if (!state?.attributes) {
+      throw new Error(`[gi.actions/chatroom/join] Cannot join chatroom ${params.contractID}: contract state not available`)
+    }
     const isGroupChatroom = state.attributes.type === CHATROOM_TYPES.GROUP
 
     if (isGroupChatroom) {
@@ -418,6 +421,9 @@ export default (sbp('sbp/selectors/register', {
     const keyIds = userID && await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
     const state = sbp('chelonia/contract/state', params.contractID)
+    if (!state?.attributes) {
+      throw new Error(`[gi.actions/chatroom/leave] Cannot leave chatroom ${params.contractID}: contract state not available`)
+    }
     const isGroupChatroom = state.attributes.type === CHATROOM_TYPES.GROUP
 
     if (isGroupChatroom) {

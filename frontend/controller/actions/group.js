@@ -788,10 +788,16 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     const unregister = sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    // Add timeout fallback
+    const timeoutId = setTimeout(() => {
+      unregister()
+      console.warn('[gi.actions/group/joinChatRoom] Timeout waiting for chatroom join')
+    }, 300_000) // Large 5 minute timeout to account for any delays
 
     return sendMessage({
       ...omit(params, ['options', 'action'])
     }).catch(e => {
+      clearTimeout(timeoutId)
       unregister()
       if (memberID !== identityContractID || e.name !== 'GIGroupAlreadyJoinedError') throw e
 
