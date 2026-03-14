@@ -872,7 +872,6 @@ export default (sbp('sbp/selectors/register', {
     L('Failed to update description of chat channel.'),
     async function (sendMessage, params: GIActionParams) {
       await sbp('gi.actions/chatroom/changeDescription', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
         data: {
           description: params.data.description
