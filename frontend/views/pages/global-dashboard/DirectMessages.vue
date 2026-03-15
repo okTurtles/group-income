@@ -38,6 +38,15 @@ page(
             )
               i18n Conversations list
 
+  template(#description='')
+    .c-pinned-messages-description(v-if='pinnedMessages.length')
+      span.header-pin-wrapper(
+        data-test='numberOfPinnedMessages'
+        @click='showPinnedMessages'
+      )
+        i.icon-thumbtack
+        i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
+
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
       chat-nav
@@ -94,6 +103,14 @@ page(
                   :key='dm.chatRoomID'
                   :dmDetails='dm'
               )
+
+    pinned-messages(
+      v-if='inChatInterfacePage'
+      ref='pinnedMessages'
+      @unpin-message='unpinMessage'
+      @scroll-to-pinned-message='scrollToPinnedMessage'
+    )
+
   template(v-else)
     i18n.has-text-1 Direct Messages: Coming soon!
 </template>
@@ -112,6 +129,7 @@ import { humanDate } from '@model/contracts/shared/time.js'
 import { stripMarkdownSyntax } from '@view-utils/markdown-utils.js'
 import DirectMessageListItem from '@containers/global-dashboard/DirectMessageListItem.vue'
 import DirectMessageChatInterface from '@containers/global-dashboard/DirectMessageChatInterface.vue'
+import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
@@ -128,7 +146,8 @@ export default {
     MenuTrigger,
     MenuContent,
     MenuItem,
-    MenuHeader
+    MenuHeader,
+    PinnedMessages
   },
   data () {
     return {
@@ -283,6 +302,12 @@ export default {
     showPinnedMessages () {
       console.log('TODO: implement!')
     },
+    unpinMessage (messageHash) {
+      console.log('TODO: implement!')
+    },
+    scrollToPinnedMessage (messageHash) {
+      console.log('TODO: implement!')
+    },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
@@ -387,6 +412,10 @@ export default {
   }
 }
 
+.c-pinned-messages-description {
+  @include header-description-styles;
+}
+
 .c-menuItem ::v-deep .c-item-link {
   @extend %floating-panel-item;
 }
@@ -430,7 +459,6 @@ export default {
 .c-back-btn {
   border-bottom: none;
   font-weight: 400;
-  color: $text_1;
 
   .c-back-icon {
     display: inline-block;

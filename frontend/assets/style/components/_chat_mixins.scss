@@ -73,6 +73,24 @@
   }
 }
 
+@mixin header-description-styles {
+  display: none;
+
+  .header-pin-wrapper {
+    cursor: pointer;
+
+    span {
+      margin-left: 0.25rem;
+      margin-right: 0.2rem;
+    }
+  }
+
+  @include v.desktop {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+}
+
 @mixin p-main-custom-styles {
   height: auto !important;
   // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)

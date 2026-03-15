@@ -67,7 +67,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
 
   template(#description='')
     .c-channel-header-description
-      span.c-pin-wrapper(
+      span.header-pin-wrapper(
         data-test='numberOfPinnedMessages'
         v-if='pinnedMessages.length'
         @click='showPinnedMessages($event)'
@@ -351,24 +351,10 @@ export default ({
 }
 
 .c-channel-header-description {
-  display: none;
-
-  @include desktop {
-    display: flex;
-    margin-bottom: 0.5rem;
-  }
+  @include header-description-styles;
 
   .is-unstyled {
     margin: 0 0.2rem;
-  }
-
-  .c-pin-wrapper {
-    cursor: pointer;
-
-    span {
-      margin-left: 0.25rem;
-      margin-right: 0.2rem;
-    }
   }
 }
 
