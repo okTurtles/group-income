@@ -26,7 +26,7 @@ page(
 
           menu
             menu-item.hide-desktop(v-if='pinnedMessages.length')
-              i18n(@click='showPinnedMessages($event)') Pinned Messages
+              i18n(@click='showPinnedMessages') Pinned Messages
             menu-item(
               @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
@@ -67,6 +67,7 @@ page(
     .c-page-content-wrapper(:class='{ "is-in-dm-list": !inChatInterfacePage }')
       direct-message-chat-interface(
         v-if='inChatInterfacePage'
+        ref='chatInterface'
         @chatroom-summary-change='onChatroomSummaryChange'
       )
       .c-dm-main-container(v-else)
@@ -299,14 +300,24 @@ export default {
         ? unReadMessagesEntry.unreadMessages?.length > 0
         : false
     },
-    showPinnedMessages () {
-      console.log('TODO: implement!')
+    showPinnedMessages (event) {
+      const rect = event.target.parentNode.getBoundingClientRect()
+      if (this.$refs.pinnedMessages) {
+        this.$refs.pinnedMessages.open({
+          left: `${rect.left - 3.2}px`,
+          top: `${rect.bottom + 8}px` // 8 -> 0.5rem gap
+        }, this.pinnedMessages)
+      }
     },
     unpinMessage (messageHash) {
-      console.log('TODO: implement!')
+      if (this.$refs.chatInterface) {
+        this.$refs.chatInterface.unpinMessage(messageHash)
+      }
     },
     scrollToPinnedMessage (messageHash) {
-      console.log('TODO: implement!')
+      if (this.$refs.chatInterface) {
+        this.$refs.chatInterface.scrollToPinnedMessage(messageHash)
+      }
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
