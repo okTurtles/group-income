@@ -430,6 +430,7 @@ export default {
 .c-back-btn {
   border-bottom: none;
   font-weight: 400;
+  color: $text_1;
 
   .c-back-icon {
     display: inline-block;
