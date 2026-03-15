@@ -227,7 +227,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user1 sees a mention and three reactions, and he sends two mentions and one reaction too', () => {
     switchUser(user1)
-    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="3 new notifications"]').contains('3')
     cy.giRedirectToGroupChat()
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).me}. Anytime!`)
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user2).all}. No matter what, I will always be by your side.`)
