@@ -722,7 +722,6 @@ export default (sbp('sbp/selectors/register', {
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
   'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean }) => {
-    const state = sbp('chelonia/contract/state', contractID)
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')

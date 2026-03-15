@@ -264,8 +264,7 @@ sbp('sbp/selectors/register', {
               // and the group CSK doesn't have OP_KEY_REQUEST permission
               Object.values(state[id]._vm.authorizedKeys)
                 // $FlowFixMe[incompatible-use]
-                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQU
-EST))
+                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
             )
             .map(([id]) => id)
         })
