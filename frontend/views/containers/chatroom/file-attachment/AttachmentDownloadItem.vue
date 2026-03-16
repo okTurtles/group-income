@@ -48,10 +48,12 @@
           .c-filesize {{ fileSizeDisplay }}
 
         button.is-small.is-outlined.c-load-video-button(
-          :class='{ "is-loading": isVideoStatus("loading"), "is-danger": isVideoStatus("error") }'
+          :class='{ "is-loading": isVideoStatus("loading") || isDownloading, "is-danger": isVideoStatus("error") }'
           type='button'
           @click.stop='loadVideo'
-        ) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
+        )
+          i18n(v-if='isDownloading') Downloading...
+          span(v-else) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
