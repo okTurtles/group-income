@@ -301,6 +301,11 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
+  sbp('chelonia.persistentActions/configure', {
+    databaseKey: '_private_persistent_actions'
+  })
+  await sbp('chelonia.persistentActions/load')
+
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
@@ -407,12 +412,7 @@ const setupChelonia = async (): Promise<*> => {
 export default ((() => {
   const singletonFn = () => {
     if (!promise) {
-      promise = setupChelonia().then(async () => {
-        sbp('chelonia.persistentActions/configure', {
-          databaseKey: '_private_persistent_actions'
-        })
-        await sbp('chelonia.persistentActions/load')
-      }).catch((e) => {
+      promise = setupChelonia().catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
         throw e // Re-throw the error
