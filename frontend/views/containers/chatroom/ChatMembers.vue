@@ -112,6 +112,9 @@ export default ({
     isInGlobalDashboard () {
       return this.$route.path.startsWith('/global-dashboard/direct-messages')
     },
+    isInGlobalDMList () {
+      return this.isInGlobalDashboard && this.$route.name === 'GlobalDirectMessages'
+    },
     allActiveDMs () {
       return this.isInGlobalDashboard ? this.allDirectMessagesDetails : this.ourGroupDirectMessages
     },
@@ -152,7 +155,8 @@ export default ({
       }
     },
     showDraftIcon (chatID) {
-      return this.currentChatRoomId !== chatID && this.ephemeral.chatroomsWithDrafts.includes(chatID)
+      return (this.isInGlobalDMList || this.currentChatRoomId !== chatID)
+        && this.ephemeral.chatroomsWithDrafts.includes(chatID)
     },
     clearStaleDrafts () {
       // check and clear stale drafts for the DMs that are no longer used for this user from indexedDB.

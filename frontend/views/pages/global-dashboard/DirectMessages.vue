@@ -50,7 +50,7 @@ page(
   template(#sidebar='{ toggle }')
     template(v-if='isDevelopmentMode')
       chat-nav
-        .c-back-btn-container
+        .c-back-btn-container(v-if='inChatInterfacePage')
           button.link.c-back-btn(@click.stop='backToDMlist')
             i.icon-angle-left.c-back-icon
             i18n Conversations list
@@ -397,12 +397,6 @@ export default {
   margin-top: 1.5rem;
 }
 
-.c-dm-list {
-  @include desktop {
-    margin-top: 1.5rem;
-  }
-}
-
 .c-group-date {
   margin-bottom: 1rem;
 }
@@ -464,6 +458,16 @@ export default {
 
   @include desktop {
     margin-top: 2rem;
+  }
+}
+
+.c-dm-list {
+  @include desktop {
+    margin-top: 0.75rem;
+
+    .c-back-btn-container + & {
+      margin-top: 1.5rem;
+    }
   }
 }
 
