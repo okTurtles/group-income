@@ -281,8 +281,9 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/delete': {
-      validate: actionRequireInnerSignature((_, { state, meta, message: { innerSigningContractID } }) => {
+      validate: actionRequireInnerSignature((data, { state, getters, meta, message: { innerSigningContractID } }) => {
         if (state.attributes.creatorID !== innerSigningContractID) {
+          // TODO: add DELETE_CHANNEL permission related check here when it's implemented
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       }),
