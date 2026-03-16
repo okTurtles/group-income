@@ -258,7 +258,7 @@ export default {
               // If the message only has attachments.
               return {
                 previewType: 'info',
-                text: L('Sent a message with attachments.'),
+                text: L('Sent attachments.'),
                 from
               }
             }

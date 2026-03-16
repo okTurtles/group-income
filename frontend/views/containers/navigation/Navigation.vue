@@ -180,7 +180,8 @@ export default ({
       'groupUnreadMessages',
       'ourPreferences',
       'ourProfileActive',
-      'hasNewDirectMessages'
+      'hasNewDirectMessages',
+      'isInGlobalDashboard'
     ]),
     currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
@@ -197,9 +198,6 @@ export default ({
       // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
       return this.$route.path === '/pending-approval' ||
         (this.currentGroupId && !this.ourProfileActive)
-    },
-    isInGlobalDashboard () {
-      return this.$route.path.startsWith('/global-dashboard')
     },
     hasNewNews () {
       // Don't show badge if we're currently on the news page

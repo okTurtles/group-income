@@ -107,11 +107,9 @@ export default ({
       'chatRoomUnreadMessages',
       'isChatRoomManuallyMarkedUnread',
       'currentChatRoomId',
-      'ourIdentityContractId'
+      'ourIdentityContractId',
+      'isInGlobalDashboard'
     ]),
-    isInGlobalDashboard () {
-      return this.$route.path.startsWith('/global-dashboard/direct-messages')
-    },
     isInGlobalDMList () {
       return this.isInGlobalDashboard && this.$route.name === 'GlobalDirectMessages'
     },
