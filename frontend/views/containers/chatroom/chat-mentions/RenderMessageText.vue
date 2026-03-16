@@ -40,7 +40,7 @@ import {
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
-import { TextObjectType } from '@utils/constants.js'
+import { TextObjectType, EMOJI_REGEX } from '@utils/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -95,15 +95,15 @@ export default ({
       return o.type === TextObjectType.ChannelMention
     },
     generateTextObjectsFromText (text) {
-      const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(text)
+      const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(str)
       const wrapEmojis = str => {
-        const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
         // We should be able to style the emojis in message-text (reference issue: https://github.com/okTurtles/group-income/issues/2464)
-        return str.replace(emojiRegex, '<span class="chat-emoji">$1</span>')
+        return str.replace(EMOJI_REGEX, '<span class="chat-emoji">$1</span>')
       }
 
-      if (!text) { return [] }
-      if (!containsMentionChar(text)) {
+      if (!text) {
+        return []
+      } else if (!containsMentionChar(text)) {
         return [{
           type: TextObjectType.Text,
           text: wrapEmojis(text)
