@@ -63,9 +63,7 @@
     :class='{ "is-for-media": isMediaType }'
   )
     .c-attachment-actions
-      .button.is-icon-small(
-        v-if='isDownloading'
-      )
+      .button.is-icon-small.c-spinner-btn(v-if='isDownloading')
         .simple-spinner.c-spinner
       template(v-else)
         tooltip(
@@ -551,9 +549,14 @@ $mobile-narrow: 441px;
 }
 
 // commons
-.c-spinner {
-  width: 0.75rem;
-  height: 0.75rem;
-  color: $text_0;
+.button.c-spinner-btn {
+  pointer-events: none;
+  cursor: initial;
+
+  .c-spinner {
+    width: 0.75rem;
+    height: 0.75rem;
+    color: $text_0;
+  }
 }
 </style>
