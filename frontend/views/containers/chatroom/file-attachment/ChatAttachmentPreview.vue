@@ -341,7 +341,7 @@ export default {
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
       } finally {
-        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getAttachmentId(attachment))
+        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getDownloadId(attachment))
       }
     },
     getStretchedDimension ({ width, height }) {
