@@ -218,7 +218,7 @@ export default {
     filteredDMList () {
       const searchText = this.ephemeral.searchText.toLowerCase()
       const containsSearchText = (str) => {
-        return str.toLowerCase().includes(searchText)
+        return typeof str === 'string' && str.toLowerCase().includes(searchText)
       }
 
       return this.sortedDMList.map(dmGroup => {
