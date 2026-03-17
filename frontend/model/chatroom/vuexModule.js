@@ -19,8 +19,8 @@ const mutations = {
   setCurrentChatRoomId (state, { groupID, chatRoomID, isForGlobalDM = false }) {
     const rootState = sbp('state/vuex/state')
 
-    if (isForGlobalDM && chatRoomID) {
-      Vue.set(state.currentChatRoomIDs, GLOBAL_DASHBOARD_KEY, chatRoomID)
+    if (isForGlobalDM) {
+      Vue.set(state.currentChatRoomIDs, GLOBAL_DASHBOARD_KEY, chatRoomID || null)
     } else if (groupID && rootState[groupID]) {
       if (chatRoomID) {
         Vue.set(state.currentChatRoomIDs, groupID, chatRoomID)
