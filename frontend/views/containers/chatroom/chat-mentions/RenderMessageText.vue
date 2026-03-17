@@ -40,7 +40,7 @@ import {
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
-import { TextObjectType } from '@utils/constants.js'
+import { TextObjectType, EMOJI_REGEX } from '@utils/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -64,7 +64,8 @@ export default ({
   computed: {
     ...mapGetters([
       'usernameFromID',
-      'chatRoomsInDetail'
+      'chatRoomsInDetail',
+      'isInGlobalDashboard'
     ]),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
@@ -95,22 +96,14 @@ export default ({
       return o.type === TextObjectType.ChannelMention
     },
     generateTextObjectsFromText (text) {
-      const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
-      const isOnlyEmojis = text.replace(emojiRegex, '').trim().length === 0
-
       const containsMentionChar = str => new RegExp(`[${CHATROOM_MEMBER_MENTION_SPECIAL_CHAR}${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}]`, 'g').test(str)
       const wrapEmojis = str => {
         // We should be able to style the emojis in message-text (reference issue: https://github.com/okTurtles/group-income/issues/2464)
-        return str.replace(emojiRegex, '<span class="chat-emoji">$1</span>')
+        return str.replace(EMOJI_REGEX, '<span class="chat-emoji">$1</span>')
       }
 
       if (!text) {
         return []
-      } else if (isOnlyEmojis) {
-        return [{
-          type: TextObjectType.Text,
-          text: `<span class="chat-emoji-only">${text}</span>`
-        }]
       } else if (!containsMentionChar(text)) {
         return [{
           type: TextObjectType.Text,
@@ -134,18 +127,30 @@ export default ({
           })
           const genChannelMentionObj = (text) => {
             const chatRoomID = getIdFromChannelMention(text)
-            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
+            const found = this.isInGlobalDashboard
+              ? this.$store.state[chatRoomID]?.attributes
+              : Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
             if (found) {
-              const isPrivate = found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-              const shouldDisable = isPrivate && !found.joined
+              if (this.isInGlobalDashboard) {
+                return {
+                  type: TextObjectType.ChannelMention,
+                  text: found.name,
+                  icon: 'hashtag',
+                  disabled: true,
+                  chatRoomID
+                }
+              } else {
+                const isPrivate = found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+                const shouldDisable = isPrivate && !found.joined
 
-              return {
-                type: TextObjectType.ChannelMention,
-                text: shouldDisable ? L('private channel') : found.name,
-                icon: isPrivate ? 'lock' : 'hashtag',
-                disabled: shouldDisable,
-                chatRoomID: found.id
+                return {
+                  type: TextObjectType.ChannelMention,
+                  text: shouldDisable ? L('private channel') : found.name,
+                  icon: isPrivate ? 'lock' : 'hashtag',
+                  disabled: shouldDisable,
+                  chatRoomID: found.id
+                }
               }
             } else {
               return {

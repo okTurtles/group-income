@@ -77,7 +77,8 @@ export default ({
       'groupUnreadMessages',
       'unreadGroupNotificationCountFor',
       'ourPreferences',
-      'hasNewDirectMessages'
+      'hasNewDirectMessages',
+      'isInGlobalDashboard'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
@@ -86,9 +87,6 @@ export default ({
           this.groupUnreadMessages(group.contractID) + this.unreadGroupNotificationCountFor(group.contractID) > 0
         ]))
       )
-    },
-    isInGlobalDashboard () {
-      return this.$route.path.startsWith('/global-dashboard')
     }
   },
   methods: {

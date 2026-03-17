@@ -2,10 +2,12 @@
 
 import { merge, union } from 'turtledash'
 import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { GLOBAL_DASHBOARD_KEY } from '@utils/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
-    return state.currentChatRoomIDs[rootState.currentGroupId] || null
+    const key = rootState.settings.isInGlobalDashboard ? GLOBAL_DASHBOARD_KEY : rootState.currentGroupId
+    return state.currentChatRoomIDs[key] || null
   },
   currentChatRoomState (state, getters, rootState) {
     return rootState[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
@@ -13,7 +15,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   chatNotificationSettings (state) {
     return Object.assign({
       publicDefault: {
-        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       },
       privateDefault: {

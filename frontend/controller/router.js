@@ -242,6 +242,15 @@ router.beforeEach((to, from, next) => {
     return next({ path: '/', query: { next: to.fullPath } })
   }
 
+  const isEnteringGlobalDashboard = to.path?.startsWith('/global-dashboard')
+  const globalDashboardFlagInStore = store.getters.isInGlobalDashboard
+  if (isEnteringGlobalDashboard && !globalDashboardFlagInStore) {
+    sbp('state/vuex/commit', 'setIsInGlobalDashboard', true)
+  }
+  if (!isEnteringGlobalDashboard && globalDashboardFlagInStore) {
+    sbp('state/vuex/commit', 'setIsInGlobalDashboard', false)
+  }
+
   document.title = to.meta.title
   next()
 })
