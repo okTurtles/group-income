@@ -63,7 +63,7 @@ export default {
         this.updateCurrentChatRoomID(chatRoomID)
       } else if (mhash) {
         // NOTE: this block handles the behavior to scroll to the message with mhash
-        //       when user clicks the message link of the one from current chatroom
+        //       when user clicks the message link of the one from current chatroom.
         this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
           // NOTE: delete mhash from queries after scroll to and highlight it
           const newQuery = { ...to.query }
