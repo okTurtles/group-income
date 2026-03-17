@@ -6,7 +6,7 @@ import { GLOBAL_DASHBOARD_KEY } from '@utils/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
-    const key = rootState.settings.isInGlobalDashboard ? GLOBAL_DASHBOARD_KEY : rootState.currentGroupId
+    const key = rootState.isInGlobalDashboard ? GLOBAL_DASHBOARD_KEY : rootState.currentGroupId
     return state.currentChatRoomIDs[key] || null
   },
   currentChatRoomState (state, getters, rootState) {
@@ -95,10 +95,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     return details
   },
   hasNewDirectMessages (state, getters) {
-    if (process.env.NODE_ENV !== 'development') {
-      return false
-    }
-
     const allDMIds = Object.entries(getters.ourDirectMessages)
       .filter(([, settings]: [string, any]) => settings.visible)
       .map(([chatRoomID]) => chatRoomID)

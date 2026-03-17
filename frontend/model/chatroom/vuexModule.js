@@ -7,7 +7,7 @@ import Vue from 'vue'
 import { GLOBAL_DASHBOARD_KEY } from '@utils/constants.js'
 
 const defaultState = {
-  currentChatRoomIDs: {}, // { [groupId | 'global-dm']: currentChatRoomId }
+  currentChatRoomIDs: {}, // { [groupId | 'global']: currentChatRoomId }
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight, isManuallyMarked?: boolean }, unreadMessages: [{ messageHash, createdHeight }]}

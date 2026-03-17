@@ -34,7 +34,6 @@
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import ProfileCard from '@components/ProfileCard.vue'
 import Badge from '@components/Badge.vue'
 import { humanTimeString } from '@model/contracts/shared/time.js'
 
@@ -42,7 +41,6 @@ export default {
   name: 'DirectMessageListItem',
   components: {
     AvatarUser,
-    ProfileCard,
     Badge
   },
   props: {
@@ -80,9 +78,11 @@ export default {
       })
     },
     getSenderDisplayName (contractID) {
-      return contractID === this.ourIdentityContractId
-        ? L('You')
-        : this.dmDetails.partners.find(partner => partner.contractID === contractID)?.displayName || L('Unknown')
+      if (contractID === this.ourIdentityContractId) {
+        return L('You')
+      }
+      const partner = this.dmDetails.partners?.find(partner => partner.contractID === contractID)
+      return partner?.displayName || L('Unknown')
     }
   }
 }

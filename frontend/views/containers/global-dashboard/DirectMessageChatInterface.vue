@@ -28,13 +28,6 @@ export default {
     }
   },
   methods: {
-    showPinnedMessages (event) {
-      const element = event.target.parentNode.getBoundingClientRect()
-      this.$refs.pinnedMessages.open({
-        left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
-        top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
-      }, this.pinnedMessages)
-    },
     unpinMessage (messageHash) {
       if (this.$refs.chatMain) {
         this.$refs.chatMain.unpinFromChannel(messageHash)
@@ -51,7 +44,6 @@ export default {
       immediate: true,
       handler (to) {
         if (to) {
-          console.log('!@# chatroom summary changed', to)
           this.$emit('chatroom-summary-change', to)
         }
       }
@@ -70,7 +62,14 @@ export default {
         this.isJoinedChatRoom(chatRoomID)) {
         this.updateCurrentChatRoomID(chatRoomID)
       } else if (mhash) {
-        console.log('TODO: once ChatMain component is added, add a logic to scroll to mhash')
+        // NOTE: this block handles the behavior to scroll to the message with mhash
+        //       when user clicks the message link of the one from current chatroom
+        this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+          // NOTE: delete mhash from queries after scroll to and highlight it
+          const newQuery = { ...to.query }
+          delete newQuery.mhash
+          this.$router.replace({ query: newQuery })
+        })
       }
     }
   }

@@ -5,7 +5,7 @@ page(
   :miniHeader='inChatInterfacePage'
   :class='{ "is-in-chat-interface": inChatInterfacePage }'
 )
-  template(v-if='!isDevelopmentMode || !inChatInterfacePage' #title='') {{ L('Direct Messages') }}
+  template(v-if='!inChatInterfacePage' #title='') {{ L('Direct Messages') }}
   template(v-else #header='')
     .c-dm-header
       .avatar-wrapper(v-if='summary.picture')
@@ -48,72 +48,67 @@ page(
         i18n(:args='{ messagesCount: pinnedMessages.length }') {messagesCount} Pinned
 
   template(#sidebar='{ toggle }')
-    template(v-if='isDevelopmentMode')
-      chat-nav
-        .c-back-btn-container(v-if='inChatInterfacePage')
-          button.link.c-back-btn(@click.stop='backToDMlist')
-            i.icon-angle-left.c-back-icon
-            i18n Conversations list
+    chat-nav
+      .c-back-btn-container(v-if='inChatInterfacePage')
+        button.link.c-back-btn(@click.stop='backToDMlist')
+          i.icon-angle-left.c-back-icon
+          i18n Conversations list
 
-        chat-members.c-dm-list(
-          @new='toggle'
-          @redirect='toggle'
-          :hideNewButton='true'
-          :title='L("Conversations")'
-          :noItemText='L("No active DMs yet.")'
-        )
-
-  template(v-if='isDevelopmentMode')
-    .c-page-content-wrapper(:class='{ "is-in-dm-list": !inChatInterfacePage }')
-      direct-message-chat-interface(
-        v-if='inChatInterfacePage'
-        ref='chatInterface'
-        @chatroom-summary-change='onChatroomSummaryChange'
+      chat-members.c-dm-list(
+        @new='toggle'
+        @redirect='toggle'
+        :hideNewButton='true'
+        :title='L("Conversations")'
+        :noItemText='L("No active DMs yet.")'
       )
-      .c-dm-main-container(v-else)
-        .card.c-search-container
-          .inputgroup
-            .is-icon.prefix(aria-hidden='true')
-              i.icon-search
-            input.input(
-              type='text'
-              name='search'
-              :placeholder='L("Find a DM")'
-              v-model='ephemeral.searchText'
-            )
 
-        .c-no-active-dms-container(v-if='hasNoActiveDms')
-          i.icon-comment-dots.c-check-icon
-          i18n.has-text-1 No active DMs yet.
-
-        template(v-else)
-          .c-no-search-results(v-if='filteredDMList.length === 0')
-            i18n.has-text-1(
-              :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
-            ) No DMs found for "{b_}{searchText}{_b}".
-          template(v-else)
-            .c-dm-group(
-              v-for='dmGroup in filteredDMList'
-              :key='dmGroup.dateDisplay'
-            )
-              .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
-
-              .c-dm-list-items
-                direct-message-list-item(
-                  v-for='dm in dmGroup.items'
-                  :key='dm.chatRoomID'
-                  :dmDetails='dm'
-              )
-
-    pinned-messages(
+  .c-page-content-wrapper(:class='{ "is-in-dm-list": !inChatInterfacePage }')
+    direct-message-chat-interface(
       v-if='inChatInterfacePage'
-      ref='pinnedMessages'
-      @unpin-message='unpinMessage'
-      @scroll-to-pinned-message='scrollToPinnedMessage'
+      ref='chatInterface'
+      @chatroom-summary-change='onChatroomSummaryChange'
     )
+    .c-dm-main-container(v-else)
+      .card.c-search-container
+        .inputgroup
+          .is-icon.prefix(aria-hidden='true')
+            i.icon-search
+          input.input(
+            type='text'
+            name='search'
+            :placeholder='L("Find a DM")'
+            v-model='ephemeral.searchText'
+          )
 
-  template(v-else)
-    i18n.has-text-1 Direct Messages: Coming soon!
+      .c-no-active-dms-container(v-if='hasNoActiveDms')
+        i.icon-comment-dots.c-check-icon
+        i18n.has-text-1 No active DMs yet.
+
+      template(v-else)
+        .c-no-search-results(v-if='filteredDMList.length === 0')
+          i18n.has-text-1(
+            :args='{ searchText: ephemeral.searchText, ...LTags("b") }'
+          ) No DMs found for "{b_}{searchText}{_b}".
+        template(v-else)
+          .c-dm-group(
+            v-for='dmGroup in filteredDMList'
+            :key='dmGroup.dateDisplay'
+          )
+            .c-group-date.is-title-4 {{ dmGroup.dateDisplay }}
+
+            .c-dm-list-items
+              direct-message-list-item(
+                v-for='dm in dmGroup.items'
+                :key='dm.chatRoomID'
+                :dmDetails='dm'
+            )
+
+  pinned-messages(
+    v-if='inChatInterfacePage'
+    ref='pinnedMessages'
+    @unpin-message='unpinMessage'
+    @scroll-to-pinned-message='scrollToPinnedMessage'
+  )
 </template>
 
 <script>
@@ -166,9 +161,6 @@ export default {
       'isJoinedChatRoom',
       'chatRoomPinnedMessages'
     ]),
-    isDevelopmentMode () {
-      return process.env.NODE_ENV === 'development'
-    },
     summary () {
       return this.ephemeral.chatroomSummary || {}
     },
