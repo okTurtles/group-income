@@ -99,7 +99,8 @@ const initialState = {
     // { [name]: 'non-init' | 'loading' | 'loaded' }
     identity: KV_LOAD_STATUS.NON_INIT,
     group: KV_LOAD_STATUS.NON_INIT
-  }
+  },
+  isInGlobalDashboard: false
 }
 
 if (window.matchMedia) {
@@ -278,6 +279,9 @@ const mutations = {
       state.kvStoreStatus[name] = status
     }
   },
+  setIsInGlobalDashboard (state, isInGlobalDashboard) {
+    Vue.set(state, 'isInGlobalDashboard', isInGlobalDashboard)
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
@@ -294,6 +298,9 @@ const store: any = new Vuex.Store({
     },
     currentPaymentPeriod (state, getters) {
       return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
+    },
+    isInGlobalDashboard (state) {
+      return state.isInGlobalDashboard
     }
   },
   modules: {

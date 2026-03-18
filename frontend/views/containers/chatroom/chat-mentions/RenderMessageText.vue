@@ -64,7 +64,8 @@ export default ({
   computed: {
     ...mapGetters([
       'usernameFromID',
-      'chatRoomsInDetail'
+      'chatRoomsInDetail',
+      'isInGlobalDashboard'
     ]),
     textObjects () {
       return this.generateTextObjectsFromText(this.text)
@@ -126,18 +127,30 @@ export default ({
           })
           const genChannelMentionObj = (text) => {
             const chatRoomID = getIdFromChannelMention(text)
-            const found = Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
+            const found = this.isInGlobalDashboard
+              ? this.$store.state[chatRoomID]?.attributes
+              : Object.values(this.chatRoomsInDetail).find(details => details.id === chatRoomID)
 
             if (found) {
-              const isPrivate = found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-              const shouldDisable = isPrivate && !found.joined
+              if (this.isInGlobalDashboard) {
+                return {
+                  type: TextObjectType.ChannelMention,
+                  text: found.name,
+                  icon: 'hashtag',
+                  disabled: true,
+                  chatRoomID
+                }
+              } else {
+                const isPrivate = found.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+                const shouldDisable = isPrivate && !found.joined
 
-              return {
-                type: TextObjectType.ChannelMention,
-                text: shouldDisable ? L('private channel') : found.name,
-                icon: isPrivate ? 'lock' : 'hashtag',
-                disabled: shouldDisable,
-                chatRoomID: found.id
+                return {
+                  type: TextObjectType.ChannelMention,
+                  text: shouldDisable ? L('private channel') : found.name,
+                  icon: isPrivate ? 'lock' : 'hashtag',
+                  disabled: shouldDisable,
+                  chatRoomID: found.id
+                }
               }
             } else {
               return {
