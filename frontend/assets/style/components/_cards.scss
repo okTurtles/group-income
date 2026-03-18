@@ -241,4 +241,13 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     border-bottom: 1px solid $general_0;
     padding-bottom: 2.5rem;
   }
+
+  .tile-lower-section .lower-section-container {
+    position: relative;
+    width: 100%;
+
+    > * {
+      white-space: normal;
+    }
+  }
 }
