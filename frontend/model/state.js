@@ -260,7 +260,7 @@ sbp('sbp/selectors/register', {
               // We should be a member with an active profile
               members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
               // have synced the chatroom
-              state[id]._vm?.authorizedKeys &&
+              state[id]?._vm?.authorizedKeys &&
               // and the group CSK doesn't have OP_KEY_REQUEST permission
               Object.values(state[id]._vm.authorizedKeys)
                 // $FlowFixMe[incompatible-use]
@@ -292,7 +292,7 @@ sbp('sbp/selectors/register', {
               // We should be a member with an active profile
               members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
               // have synced the chatroom
-              state[id]._vm?.authorizedKeys &&
+              state[id]?._vm?.authorizedKeys &&
               // and the CEK doesn't have OP_KEY_SHARE permission
               // and the CEK doesn't have OP_KEY_REQUEST_SEEN permission
               Object.values(state[id]._vm.authorizedKeys)
