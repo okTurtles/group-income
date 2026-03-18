@@ -243,7 +243,7 @@ export default {
 
         switch (latestMsg.type) {
           case MESSAGE_TYPES.TEXT: {
-            const text = stripMarkdownSyntax(latestMsg.text)
+            const text = latestMsg.text ? stripMarkdownSyntax(latestMsg.text) : ''
             const hasAttachments = latestMsg.attachments?.length > 0
 
             if (!text && hasAttachments) {
