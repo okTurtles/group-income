@@ -20,6 +20,7 @@ import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
+import '@chelonia/lib/persistent-actions'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
   CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, NEW_KV_LOAD_STATUS,
