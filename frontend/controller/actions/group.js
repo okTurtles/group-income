@@ -916,7 +916,7 @@ export default (sbp('sbp/selectors/register', {
       const alreadyJoined = e?.name === 'GIGroupAlreadyJoinedError' ||
         (e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIGroupAlreadyJoinedError')
 
-      if (memberID !== identityContractID || alreadyJoined) throw e
+      if (memberID !== identityContractID || !alreadyJoined) throw e
 
       // Attempt to complete incomplete join processes
       // No share volatile keys here since we're the ones joining

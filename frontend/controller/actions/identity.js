@@ -746,7 +746,7 @@ export default (sbp('sbp/selectors/register', {
     // Add timeout fallback
     const timeoutId = setTimeout(() => {
       unregister()
-      console.warn('[gi.actions/group/joinChatRoom] Timeout waiting for chatroom join')
+      console.warn('[gi.actions/identity/createDirectMessage] Timeout waiting for chatroom join')
     }, 300_000) // Large 5 minute timeout to account for any delays
 
     await sendMessage({
