@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
-import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
@@ -43,13 +43,22 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
 
     // $FlowFixMe[incompatible-use]
     const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
-      const chatroom = cheloniaState[groupID]?.chatRooms?.[contractID]
-      return !hasLeft && chatroom && !chatroom.deletedDate && chatroom.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      const groupState = cheloniaState[groupID]
+      const chatroom = groupState?.chatRooms?.[contractID]
+      return (
+        !hasLeft &&
+        groupState?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
+        chatroom &&
+        !chatroom.deletedDate &&
+        chatroom.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      )
     })?.[0]
 
     if (!groupID) {
       return
     }
+
+    const reference = cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID
 
     // TODO: Missing '/disconnect' logic for chatrooms
     // See <https://github.com/okTurtles/group-income/issues/3043>
@@ -58,7 +67,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       originatingContractName: 'gi.contracts/identity',
       contractID,
       contractName: 'gi.contracts/chatroom',
-      reference: cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID,
+      reference,
       signingKeyId: groupCSKid,
       innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),

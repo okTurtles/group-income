@@ -61,16 +61,29 @@ const findAndRequestMissingGroupKeys = debounce(() => {
     const cheloniaState = sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
-    if (!contractState || !cheloniaState[identityContractID].groups?.[contractID] || cheloniaState[identityContractID].groups[contractID].hasLeft) {
+    if (
+      // First, check whether we're a member according to our records
+      !contractState ||
+      !contractState.groups?.[contractID] ||
+      contractState.groups[contractID].hasLeft ||
+      // Secondly, check whether we're a member according to the group's records
+      !cheloniaState[contractID]?.profiles?.[identityContractID] ||
+      cheloniaState[contractID].profiles[identityContractID].status !== PROFILE_STATUS.ACTIVE
+    ) {
       return
     }
+
+    // Have we sent an OP_KEY_REQUEST already?
+    const reference = cheloniaState[identityContractID].groups[contractID].hash
+    const joinCompleted = sbp('chelonia/contract/hasKeyShareBeenRespondedBy', identityContractID, contractID, reference)
+    if (!joinCompleted) return
 
     sbp('chelonia/out/keyRequest', {
       originatingContractID: identityContractID,
       originatingContractName: 'gi.contracts/identity',
       contractID,
       contractName: 'gi.contracts/group',
-      reference: cheloniaState[identityContractID].groups[contractID].hash,
+      reference,
       signingKeyId: cheloniaState[identityContractID].groups[contractID].inviteSecretId,
       innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
