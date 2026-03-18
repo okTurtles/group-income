@@ -1191,6 +1191,12 @@ export default (sbp('sbp/selectors/register', {
         const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
         const creatorInviteKeyS = encryptedOutgoingData(groupID, groupCEKid, serializeKey(creatorInviteKey, true))
 
+        // Persistent storage will happen automatically once the OP_KEY_ADD is
+        // received back
+        await sbp('chelonia/storeSecretKeys',
+          new Secret([creatorInviteKey].map(key => ({ key, transient: true })))
+        )
+
         // Create invite for creator
         await sbp('chelonia/out/keyAdd', {
           contractID: groupID,
