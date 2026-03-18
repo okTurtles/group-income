@@ -103,6 +103,7 @@ import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
+import { L, LError } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -340,6 +341,11 @@ export default {
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+        sbp('gi.ui/prompt', {
+          heading: L('Download error'),
+          question: L('Failed to download the file. Error details: {reportError}', LError(err)),
+          primaryButton: L('Close')
+        })
       } finally {
         this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getDownloadId(attachment))
       }

@@ -63,7 +63,12 @@
     :class='{ "is-for-media": isMediaType }'
   )
     .c-attachment-actions
-      .button.is-icon-small.c-spinner-btn(v-if='isDownloading')
+      .button.is-icon-small.c-spinner-btn(
+        v-if='isDownloading'
+        :aria-label='L("Downloading file")'
+        aria-busy='true'
+        aria-live='polite'
+      )
         .simple-spinner.c-spinner
       template(v-else)
         tooltip(
