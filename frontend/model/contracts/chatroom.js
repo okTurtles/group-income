@@ -255,7 +255,7 @@ sbp('chelonia/defineContract', {
         // as 'pending' due to not having been rotated), will be done later
         // as a side effect. This avoids unnecessary rotations.
         const itsMe = memberID === sbp('state/vuex/state').loggedIn?.identityContractID
-        if (!itsMe) {
+        if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
           sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
         }
       },
