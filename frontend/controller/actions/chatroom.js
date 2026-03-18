@@ -340,7 +340,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
   ...encryptedAction('gi.actions/chatroom/pinMessage', L('Failed to pin message.')),
   ...encryptedAction('gi.actions/chatroom/unpinMessage', L('Failed to unpin message.')),
-  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params, signingKeyId) => {
+  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params) => {
     const rootState = sbp('state/vuex/state')
     const identityContractID = rootState.loggedIn.identityContractID
     // We accept an array for memberID to aggregate all joins
@@ -349,6 +349,24 @@ export default (sbp('sbp/selectors/register', {
     // If the memberID isn't specified, it's ourselves joining. This is
     // consistent with how the contract works and produces shorter messages
     ).map(memberID => memberID == null ? identityContractID : memberID)
+
+    const state = sbp('chelonia/contract/state', params.contractID)
+    if (!state?.attributes) {
+      throw new Error(`[gi.actions/chatroom/join] Cannot join chatroom ${params.contractID}: contract state not available`)
+    }
+    const isGroupChatroom = state.attributes.type === CHATROOM_TYPES.GROUP
+
+    if (isGroupChatroom) {
+      const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-cek', true)
+      if (groupCEKid) {
+        // Set encryption key to the CEK; this allows for managing joining and
+        // leaving the chatroom transparently to group members
+        params.encryptionKeyId = groupCEKid
+      }
+    }
+    if (!params.encryptionKeyId) {
+      throw new Error(`[gi.actions/chatroom/join] No encryption key available for chatroom ${params.contractID}`)
+    }
 
     // We need to read values from both the chatroom and the identity contracts'
     // state, so we call wait to run the rest of this function after all
@@ -363,8 +381,6 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      const CEKid = params.encryptionKeyId || await sbp('chelonia/contract/currentKeyIdByName', params.contractID, 'cek')
-
       const userCSKids = await Promise.all(userIDs.map(async (cID) =>
         [cID, await sbp('chelonia/contract/currentKeyIdByName', cID, 'csk')]
       ))
@@ -376,7 +392,7 @@ export default (sbp('sbp/selectors/register', {
           [
             'chelonia/out/keyAdd', {
             // TODO: Find a way to have this wrapping be done by Chelonia directly
-              data: userCSKids.map(([cID, cskID]: [string, string]) => encryptedOutgoingData(params.contractID, CEKid, {
+              data: userCSKids.map(([cID, cskID]: [string, string]) => encryptedOutgoingData(params.contractID, params.encryptionKeyId, {
                 foreignKey: `shelter:${encodeURIComponent(cID)}?keyName=${encodeURIComponent('csk')}`,
                 id: cskID,
                 data: rootState[cID]._vm.authorizedKeys[cskID].data,
@@ -395,8 +411,7 @@ export default (sbp('sbp/selectors/register', {
               : { memberID: cID },
             returnInvocation: true
           }))
-        ],
-        signingKeyId
+        ]
       })
     } finally {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
@@ -404,9 +419,37 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
-  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params, signingKeyId) => {
+  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const userID = params.data.memberID
     const keyIds = userID && await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
+
+    const state = sbp('chelonia/contract/state', params.contractID)
+    if (!state?.attributes) {
+      throw new Error(`[gi.actions/chatroom/leave] Cannot leave chatroom ${params.contractID}: contract state not available`)
+    }
+    const isGroupChatroom = state.attributes.type === CHATROOM_TYPES.GROUP
+
+    if (isGroupChatroom) {
+      const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
+      // Set signing key to the CSK; this allows for managing joining and
+      // leaving the chatroom transparently to group members
+      if (groupCSKid) {
+        params.signingKeyId = groupCSKid
+      } else {
+        const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        if (!CSKid) {
+          throw new Error('No CSK id for chatroom: ' + params.contractID)
+        }
+        params.signingKeyId = CSKid
+      }
+
+      const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-cek', true)
+      if (groupCEKid) {
+        // Set encryption key to the CEK; this allows for managing joining and
+        // leaving the chatroom transparently to group members
+        params.encryptionKeyId = groupCEKid
+      }
+    }
 
     if (keyIds?.length) {
       return await sbp('chelonia/out/atomic', {
@@ -420,8 +463,7 @@ export default (sbp('sbp/selectors/register', {
               data: keyIds
             }
           ]
-        ],
-        signingKeyId
+        ]
       })
     }
 
