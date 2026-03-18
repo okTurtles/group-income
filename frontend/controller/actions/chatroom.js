@@ -47,7 +47,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       const chatroom = groupState?.chatRooms?.[contractID]
       return (
         !hasLeft &&
-        groupState?.profiles?.[identityContractID]?.status !== PROFILE_STATUS.ACTIVE &&
+        groupState?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
         chatroom &&
         !chatroom.deletedDate &&
         chatroom.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
