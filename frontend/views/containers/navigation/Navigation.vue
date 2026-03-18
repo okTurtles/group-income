@@ -123,9 +123,8 @@ import ListItem from '@components/ListItem.vue'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL, CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { showNavMixin, fetchNews } from '@view-utils/misc.js'
+import { showNavMixin, fetchNews, logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { debounce } from 'turtledash'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'Navigation',
