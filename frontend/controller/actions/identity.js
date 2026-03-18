@@ -1191,11 +1191,15 @@ export default (sbp('sbp/selectors/register', {
         const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
         const creatorInviteKeyS = encryptedOutgoingData(groupID, groupCEKid, serializeKey(creatorInviteKey, true))
 
-        // Persistent storage will happen automatically once the OP_KEY_ADD is
-        // received back
-        await sbp('chelonia/storeSecretKeys',
-          new Secret([creatorInviteKey].map(key => ({ key, transient: true })))
-        )
+        // The OP_KEY_ADD below also ensures that the key is added to
+        // the _persistent_ secret key store, once it's received back and
+        // processed. Calling storeSecretKey here could result in a situation
+        // where OP_KEY_ADD is somehow unreadable or unprocessable but we proceed
+        // with the migration anyhow as we 'have' the secret key. Then, we wouldn't
+        // be able to recover the `creatorInviteKey` on a different device.
+        // Hence, it's safer to let Chelonia manage storage automatically and let
+        // 'chelonia/out/keyRequest' fail due to missing signing key in this
+        // situation.
 
         // Create invite for creator
         await sbp('chelonia/out/keyAdd', {
