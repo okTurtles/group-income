@@ -510,7 +510,7 @@ export default (sbp('sbp/selectors/register', {
         ],
         signingKeyId: CSKid
       }).catch(e => {
-        console.error(`[gi.actions/chatroom/upgradeCekPermissions] Error updating group CSK for ${chatRoomID}`, e)
+        console.error(`[gi.actions/chatroom/upgradeCekPermissions] Error updating group CEK for ${chatRoomID}`, e)
       })
     })
   },

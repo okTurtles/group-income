@@ -1180,8 +1180,12 @@ export default (sbp('sbp/selectors/register', {
       }
 
       try {
+        const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk', true)
+        if (!groupCSKid) {
+          console.error(`[gi.actions/identity/upgradeCreatorGroupInvite] Missing CSK for group ${groupID}`)
+          return
+        }
         const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
-        const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
         const creatorInviteKey = keygen(EDWARDS25519SHA512BATCH)
         const creatorInviteKeyId = keyId(creatorInviteKey)
         const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
