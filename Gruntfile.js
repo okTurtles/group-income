@@ -133,10 +133,11 @@ module.exports = (grunt) => {
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
       console.log(stdout)
     }
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
-    grunt.log.writeln(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`)
+    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'" + version))
+    const cmd = `ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest --name gi.contracts/{} --contract-version ${version} --slim ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`
+    grunt.log.writeln(cmd)
     // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+    const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
     console.log(stdout)
   }
 
@@ -195,89 +196,6 @@ module.exports = (grunt) => {
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
-  }
-
-  // https://esbuild.github.io/api/
-  const esbuildOptionBags = {
-    // Native options that are shared between our esbuild tasks.
-    default: {
-      bundle: true,
-      chunkNames: '[name]-[hash]-cached',
-      define: {
-        'process.env.BUILD': "'web'", // Required by Vuelidate.
-        'process.env.CI': `'${CI}'`,
-        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-        'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
-        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
-        'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
-        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
-      },
-      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-      format: 'esm',
-      loader: {
-        '.eot': 'file',
-        '.ttf': 'file',
-        '.woff': 'file',
-        '.woff2': 'file'
-      },
-      minifyIdentifiers: production,
-      minifySyntax: production,
-      minifyWhitespace: production,
-      outdir: distJS,
-      sourcemap: true,
-      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks')
-    },
-    // Native options used when building the main entry point.
-    main: {
-      assetNames: '../css/[name]',
-      entryPoints: [mainSrc]
-    },
-    // Native options used when building our service worker(s).
-    serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
-    }
-  }
-  esbuildOptionBags.contracts = {
-    ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle'
-    ]),
-    // Format must be 'iife' because we don't want 'import' in the output
-    format: 'iife',
-    // banner: {
-    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
-    splitting: false,
-    outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
-    external: ['@sbp/sbp']
-  }
-  // prevent contract hash from changing each time we build them
-  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
-  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
-  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
-
-  // Additional options which are not part of the esbuild API.
-  const esbuildOtherOptionBags = {
-    main: {
-      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-      // making a post-build copying operation necessary.
-      postoperation: async ({ fileEventName, filePath } = {}) => {
-        // Only after a fresh build or a rebuild caused by a CSS file event.
-        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-          if (development) {
-            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-          }
-        }
-      }
-    }
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -514,22 +432,18 @@ module.exports = (grunt) => {
   grunt.registerTask('_pin', async function (version) {
     // a task internally executed in 'pin' task below
     const done = this.async()
-    const dirPath = `contracts/${version}`
 
-    if (fs.existsSync(dirPath)) {
-      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
-        fs.rmSync(dirPath, { recursive: true })
-      } else {
-        throw new Error(`already exists: ${dirPath}`)
+    try {
+      const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile && entry.name.endsWith('.manifest.json')) {
+          await execWithErrMsg(`chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
+          console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
+        }
       }
+    } finally {
+      done()
     }
-    if (!fs.existsSync('contracts')) {
-      console.error(chalk`{red folder needed but doesn't exist:} {bold contracts/}`)
-      throw new Error("doesn't exist: contracts/")
-    }
-    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
-    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    done()
   })
 
   grunt.registerTask('pin', function (version) {
@@ -566,11 +480,94 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:launch', 'keepalive'])
 
-  // --------------------
+  // n------------------
   // - Our esbuild task
   // --------------------
 
   grunt.registerTask('esbuild', async function () {
+  // https://esbuild.github.io/api/
+    const esbuildOptionBags = {
+    // Native options that are shared between our esbuild tasks.
+      default: {
+        bundle: true,
+        chunkNames: '[name]-[hash]-cached',
+        define: {
+          'process.env.BUILD': "'web'", // Required by Vuelidate.
+          'process.env.CI': `'${CI}'`,
+          'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
+          'process.env.GI_VERSION': `'${GI_VERSION}'`,
+          'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
+          'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+          'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
+          'process.env.NODE_ENV': `'${NODE_ENV}'`,
+          'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+          'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+          'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
+        },
+        external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+        format: 'esm',
+        loader: {
+          '.eot': 'file',
+          '.ttf': 'file',
+          '.woff': 'file',
+          '.woff2': 'file'
+        },
+        minifyIdentifiers: production,
+        minifySyntax: production,
+        minifyWhitespace: production,
+        outdir: distJS,
+        sourcemap: true,
+        // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+        splitting: !grunt.option('no-chunks')
+      },
+      // Native options used when building the main entry point.
+      main: {
+        assetNames: '../css/[name]',
+        entryPoints: [mainSrc]
+      },
+      // Native options used when building our service worker(s).
+      serviceWorkers: {
+        entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+      }
+    }
+    esbuildOptionBags.contracts = {
+      ...pick(clone(esbuildOptionBags.default), [
+        'define', 'bundle'
+      ]),
+      // Format must be 'iife' because we don't want 'import' in the output
+      format: 'iife',
+      // banner: {
+      //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
+      // },
+      splitting: false,
+      outdir: distContracts,
+      entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
+      external: ['@sbp/sbp']
+    }
+    // prevent contract hash from changing each time we build them
+    esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
+    esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
+    esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
+    esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
+
+    // Additional options which are not part of the esbuild API.
+    const esbuildOtherOptionBags = {
+      main: {
+      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
+      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
+      // making a post-build copying operation necessary.
+        postoperation: async ({ fileEventName, filePath } = {}) => {
+        // Only after a fresh build or a rebuild caused by a CSS file event.
+          if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
+            await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+            if (development) {
+              await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+            }
+          }
+        }
+      }
+    }
+
     const done = this.async()
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
     const aliasPlugin = createAliasPlugin(aliasPluginOptions)
