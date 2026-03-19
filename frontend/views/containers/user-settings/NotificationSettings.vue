@@ -1,22 +1,31 @@
 <template lang='pug'>
   .settings-container
+    .menu-tile-block
+      legend.tab-legend
+        i.icon-bell.legend-icon
+        i18n.legend-text Browser notifications
+
+      menu
+        MenuItem(tabId='browser-notifications' :isExpandable='true')
+          template(#info='')
+            label
+              i18n.sr-only Allow browser notifications
+              input.switch.is-small.c-switch(
+                type='checkbox'
+                name='switch'
+                v-model='checkboxValue'
+                @click='handleNotificationSettings'
+              )
+
+          template(#lower='')
+            .lower-section-container
+              i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
+              p.c-mt-1(v-if='pushNotificationInfoMsg')
+                strong(:class='{ "has-text-danger": pushNotificationGranted === false || true }') {{ pushNotificationInfoMsg }}
+            //- TODO: disable the checkbox and display an info field when we're offline
+
     section.card
       i18n.is-title-3.c-title(tag='h2') Browser notifications
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Allow browser notifications
-          i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
-          p
-            i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
-            i18n.has-text-danger(v-else-if='pushNotificationGranted === false' tag='strong') Push notifications are disabled because your browser settings have disabled them.
-        .switch-wrapper
-          input.switch(
-            type='checkbox'
-            name='switch'
-            v-model='checkboxValue'
-            @click='handleNotificationSettings'
-          )
-        //- TODO: disable the checkbox and display an info field when we're offline
 
       notification-volume
 </template>
@@ -29,11 +38,13 @@ import {
   makeNotification
 } from '@model/notifications/nativeNotification.js'
 import NotificationVolume from './NotificationVolume.vue'
+import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 
 export default ({
   name: 'NotificationSettings',
   components: {
-    NotificationVolume
+    NotificationVolume,
+    MenuItem: UserSettingsTabMenuItem
   },
   data () {
     return {
@@ -41,6 +52,21 @@ export default ({
       pushNotificationGranted: null,
       cancelListener: () => {},
       checkboxValue: false
+    }
+  },
+  computed: {
+    notificationEnabled () {
+      return this.$store.state.settings.notificationEnabled
+    },
+    notificationsToggleDisabled () {
+      return !this.pushNotificationSupported || (!this.pushNotificationGranted && this.notificationEnabled)
+    },
+    pushNotificationInfoMsg () {
+      return !this.pushNotificationSupported
+        ? L("Your browser doesn't support push notifications.")
+        : this.pushNotificationGranted === false || true
+          ? L('Push notifications are disabled because your browser settings have disabled them.')
+          : null
     }
   },
   beforeMount () {
@@ -95,14 +121,6 @@ export default ({
   },
   destroyed () {
     this.cancelListener()
-  },
-  computed: {
-    notificationEnabled () {
-      return this.$store.state.settings.notificationEnabled
-    },
-    notificationsToggleDisabled () {
-      return !this.pushNotificationSupported || (!this.pushNotificationGranted && this.notificationEnabled)
-    }
   },
   methods: {
     ...mapMutations(['setNotificationEnabled']),
@@ -183,5 +201,9 @@ export default ({
   font-size: 0.75rem;
   margin-top: -1rem;
   margin-bottom: 1.5rem;
+}
+
+.c-mt-1 {
+  margin-top: 1rem;
 }
 </style>
