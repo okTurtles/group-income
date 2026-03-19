@@ -6,7 +6,10 @@
         i18n.legend-text Browser notifications
 
       menu
-        MenuItem(tabId='browser-notifications' :isExpandable='true')
+        MenuItem(
+          tabId='browser-notifications'
+          :isExpandable='true'
+        )
           template(#info='')
             label
               i18n.sr-only Allow browser notifications
@@ -24,10 +27,16 @@
                 strong(:class='{ "has-text-danger": pushNotificationGranted === false || true }') {{ pushNotificationInfoMsg }}
             //- TODO: disable the checkbox and display an info field when we're offline
 
-    section.card
-      i18n.is-title-3.c-title(tag='h2') Browser notifications
+        MenuItem(
+          tabId='browser-notification-volume'
+          :isExpandable='true'
+        )
+          template(#info='')
+            p.c-current-volume {{ currVolumeDisplay }}
 
-      notification-volume
+          template(#lower='')
+            .lower-section-container
+              notification-volume(@volume-change='handleVolumeChange')
 </template>
 
 <script>
@@ -51,7 +60,10 @@ export default ({
       pushNotificationSupported: false,
       pushNotificationGranted: null,
       cancelListener: () => {},
-      checkboxValue: false
+      checkboxValue: false,
+      ephemeral: {
+        currentVolume: 1
+      }
     }
   },
   computed: {
@@ -64,12 +76,16 @@ export default ({
     pushNotificationInfoMsg () {
       return !this.pushNotificationSupported
         ? L("Your browser doesn't support push notifications.")
-        : this.pushNotificationGranted === false || true
+        : this.pushNotificationGranted === false
           ? L('Push notifications are disabled because your browser settings have disabled them.')
           : null
+    },
+    currVolumeDisplay () {
+      return `${Math.round(this.ephemeral.currentVolume)}%`
     }
   },
   beforeMount () {
+    this.ephemeral.currentVolume = this.$store.getters.notificationVolume ?? 1
     if (typeof Notification !== 'function' || typeof PushManager !== 'function' || !navigator.serviceWorker) {
       this.pushNotificationGranted = false
       return
@@ -156,6 +172,9 @@ export default ({
       if (granted) {
         makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
       }
+    },
+    handleVolumeChange (volume) {
+      this.ephemeral.currentVolume = volume
     }
   }
 }: Object)
