@@ -22,12 +22,31 @@ export default ({
     isAppIdle () {
       // NOTE: idle-vue plugin will provide this.isAppIdle
       //       but sometimes it returns undefined, so redefine here
-      return this.$store.state.idleVue?.isIdle
+      return this.$store.state.idleVue?.isIdle || false
     }
   },
   methods: {
-    shouldPlay (contractID: string) {
-      return !isPwa() && !((this.$route.name === 'GroupChatConversation' && this.$route.params.chatRoomID === contractID) && !this.isAppIdle)
+    shouldPlay (contractID) {
+      if (isPwa()) { return false }
+
+      // document.hidden - when current tab is not active
+      // document.hasFocus() - There is a case where current tab is open but the browser window itself is not in focus(In the background).
+      //                       document.hasFocus() is used to catch this kind of case.
+      const isTabInactive = document.hidden || !document.hasFocus()
+      // Check if the app is showing the target chatroom now.
+      const isViewingThisChatroom = contractID &&
+        this.$route.name === 'GroupChatConversation' &&
+        this.$route.params.chatRoomID === contractID
+
+      // There are 3 cases where we want to play the sound:
+      // 1) The current tab is inactive.
+      // 2) The current tab is active but not showing the chatroom.
+      // 3) The current tab is active and showing the chatroom but the app has been idle for a while.
+      return (
+        isTabInactive ||
+        !isViewingThisChatroom ||
+        this.isAppIdle
+      )
     },
     playMessageReceive ({ contractID }: {
       contractID: string,
@@ -38,8 +57,8 @@ export default ({
         this.$refs.msgReceive.play()
       }
     },
-    playMessageSend () {
-      if (this.shouldPlay()) {
+    playMessageSend ({ contractID } = {}) {
+      if (this.shouldPlay(contractID)) {
         this.$refs.msgSend.play()
       }
     },
