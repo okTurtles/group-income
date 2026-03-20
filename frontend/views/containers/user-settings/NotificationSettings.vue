@@ -85,7 +85,7 @@ export default ({
     }
   },
   beforeMount () {
-    this.ephemeral.currentVolume = this.$store.getters.notificationVolume ?? 1
+    this.ephemeral.currentVolume = (this.$store.getters.notificationVolume ?? 1) * 100
     if (typeof Notification !== 'function' || typeof PushManager !== 'function' || !navigator.serviceWorker) {
       this.pushNotificationGranted = false
       return
@@ -171,7 +171,7 @@ export default ({
       this.setNotificationEnabled(granted)
       if (granted) {
         makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
-      }
+      }패
     },
     handleVolumeChange (volume) {
       this.ephemeral.currentVolume = volume
