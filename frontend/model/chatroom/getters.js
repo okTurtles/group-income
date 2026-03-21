@@ -60,7 +60,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         // replaced with a check for all members (past and present), so that
         // a conversation doesn't suddenly become inaccessible.
         // // const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
-        const hasActiveMember = partners.some(memberID => !!rootState[groupID]?.profiles[memberID])
+        const hasActiveMember = partners.some(memberID => !!rootState[groupID]?.profiles?.[memberID])
         if (directMessageSettings.visible && (isDMToMyself || hasActiveMember)) {
           // NOTE: lastJoinedParter is chatroom member who has joined the chatroom for the last time.
           //       His profile picture can be used as the picture of the direct message
