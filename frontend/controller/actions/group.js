@@ -739,6 +739,29 @@ export default (sbp('sbp/selectors/register', {
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
+    // NOTE: The following code _prevents_ key rotations when no-one has left
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // Check that it's the CEK that we're rotating
+      if (state._volatile?.pendingKeyRevocations?.[mainCEKid]) {
+        // Check that it's also the CSK that we're rotating
+        const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
+          const height = Math.max(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
+          const formerMemberIds = Object.keys(state.profiles).filter((id) => {
+            return Number.isFinite(state.profiles[id].departedHeight) && state.profiles[id].departedHeight >= height
+          })
+          const hasAnyoneLeftAfterLastRotation = formerMemberIds.length > 0
+          if (!hasAnyoneLeftAfterLastRotation) {
+            delete state._volatile.pendingKeyRevocations[mainCEKid]
+            delete state._volatile.pendingKeyRevocations[mainCSKid]
+            console.warn('NOTE: Refusing unnecessary group key rotation because no-one has left', contractID, height)
+            throw new Error('[group] Refusing key rotation because no-one has left')
+          }
+        }
+      }
+    }
+
     // $FlowFixMe
     return Promise.all(
       Object.entries(state.profiles)

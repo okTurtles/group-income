@@ -343,6 +343,34 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
+    // NOTE: The following code _prevents_ key rotations when no-one has left
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // Check that it's the CEK that we're rotating
+      if (state._volatile?.pendingKeyRevocations?.[mainCEKid]) {
+        // Check that it's also the CSK that we're rotating
+        const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
+          const height = Math.max(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
+          const formerMemberIds = Object.keys(state.members).filter((id) => {
+            return state.members[id].hasLeft === true
+          })
+          const hasAnyoneLeftAfterLastRotation = Object.keys(state._vm.authorizedKeys).some((id) => {
+            const key = state._vm.authorizedKeys[id]
+            return key._notAfterHeight >= height && formerMemberIds.some((memberId) => {
+              return key.name.startsWith(memberId)
+            })
+          })
+          if (!hasAnyoneLeftAfterLastRotation) {
+            delete state._volatile.pendingKeyRevocations[mainCEKid]
+            delete state._volatile.pendingKeyRevocations[mainCSKid]
+            console.warn('NOTE: Refusing unnecessary chatroom key rotation because no-one has left', contractID, height)
+            throw new Error('[chatroom] Refusing key rotation because no-one has left')
+          }
+        }
+      }
+    }
+
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
     const activeMemberIds = sbp('state/vuex/getters').chatRoomActiveMemberIdsForChatRoom(state)
