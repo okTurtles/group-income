@@ -598,49 +598,81 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Object, options: Object) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
     await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
-      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
-      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
-
-      if (!CEKid || !CSKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
-        // We intentionally don't throw here to be able to share keys with the
-        // remaining groups
-        return
+      const retained = await sbp('chelonia/contract/retain', groupID, { ephemeral: true }).then(() => [true], (e) => [false, e])
+      if (!retained[0]) {
+        const e = retained[1]
+        if (e?.name === 'ChelErrorResourceGone') {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: ${groupID} does not exist`, e)
+        } else {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Error retaining ${groupID}`, e)
+        }
+        if (options.lastAttempt) {
+          return
+        } else {
+          throw new Error('Unable to share rotated keys')
+        }
       }
-      return sbp('chelonia/out/keyShare', {
-        contractID: groupID,
-        contractName: rootState.contracts[groupID].type,
-        data: encryptedOutgoingData(groupID, CEKid, {
-          contractID,
-          // $FlowFixMe
-          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-            id: newId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
-              }
-            }
-          }))
-        }),
-        signingKeyId: CSKid,
-        hooks: {
-          preSendCheck: (_, state) => {
-            // Don't send this message if we're no longer a group member
-            return state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+      try {
+        const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+        const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
+
+        if (!CEKid || !CSKid) {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
+          // We intentionally don't throw here to be able to share keys with the
+          // remaining groups
+          if (options.lastAttempt) {
+            return
+          } else {
+            throw new Error('Unable to share rotated keys')
           }
         }
-      }).catch(e => {
+        return sbp('chelonia/out/keyShare', {
+          contractID: groupID,
+          contractName: rootState.contracts[groupID].type,
+          data: encryptedOutgoingData(groupID, CEKid, {
+            contractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
+          }),
+          signingKeyId: CSKid,
+          hooks: {
+            preSendCheck: (_, state) => {
+              return (
+                // Don't send this message if we're no longer a group member
+                state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+              )
+            }
+          }
+        }).catch(e => {
         // We may no longer be a member of the group, so we ignore errors
         // related to missing keys
-        if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+          if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+            throw e
+          }
+        })
+      } catch (e) {
+        // This must be done to prevent a single failure on a single contract
+        // from blocking a key rotation.
+        if (options.lastAttempt) {
+          return
+        } else {
           throw e
         }
-      })
+      } finally {
+        await sbp('chelonia/contract/release', groupID, { ephemeral: true })
+      }
     }))
 
     // This selector is called by rotateKeys, which will include the keys to
@@ -1120,6 +1152,119 @@ export default (sbp('sbp/selectors/register', {
           : [])
       ]
     })
+  },
+  // Migration action to have the group creator use regular invites instead
+  // of the CSK
+  'gi.actions/identity/upgradeCreatorGroupInvite': async (groupIDs) => {
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
+    const identityCSKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk')
+    const identityCEKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+
+    await Promise.all(groupIDs.map(async (groupID) => {
+      const cheloniaState = sbp('chelonia/rootState')
+
+      // Before proceeding, double check that this migration is needed
+      if (
+        // If we're not a group member
+        !cheloniaState[identityContractID].groups[groupID] ||
+        cheloniaState[identityContractID].groups[groupID].hasLeft ||
+        // Or the key used for requesting keys wasn't the CSK
+        cheloniaState[groupID]?._vm.authorizedKeys[
+          cheloniaState[identityContractID].groups[groupID].inviteSecretId
+        ]?.name !== 'csk'
+      ) {
+        // Then, return
+        console.info(`[gi.actions/identity/upgradeCreatorGroupInvite] ${groupID} does not need an update`)
+        return
+      }
+
+      try {
+        const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk', true)
+        if (!groupCSKid) {
+          console.error(`[gi.actions/identity/upgradeCreatorGroupInvite] Missing CSK for group ${groupID}`)
+          return
+        }
+        const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+        const creatorInviteKey = keygen(EDWARDS25519SHA512BATCH)
+        const creatorInviteKeyId = keyId(creatorInviteKey)
+        const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
+        const creatorInviteKeyS = encryptedOutgoingData(groupID, groupCEKid, serializeKey(creatorInviteKey, true))
+
+        // The OP_KEY_ADD below also ensures that the key is added to
+        // the _persistent_ secret key store, once it's received back and
+        // processed. Calling storeSecretKey here could result in a situation
+        // where OP_KEY_ADD is somehow unreadable or unprocessable but we proceed
+        // with the migration anyhow as we 'have' the secret key. Then, we wouldn't
+        // be able to recover the `creatorInviteKey` on a different device.
+        // Hence, it's safer to let Chelonia manage storage automatically and let
+        // 'chelonia/out/keyRequest' fail due to missing signing key in this
+        // situation.
+
+        // Create invite for creator
+        await sbp('chelonia/out/keyAdd', {
+          contractID: groupID,
+          contractName: 'gi.contracts/group',
+          data: [{
+            id: creatorInviteKeyId,
+            name: '#inviteKey-' + creatorInviteKeyId,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            permissions: [SPMessage.OP_KEY_REQUEST],
+            meta: {
+              quantity: 1,
+              private: {
+                content: creatorInviteKeyS
+              }
+            },
+            data: creatorInviteKeyP
+          }],
+          signingKeyId: groupCSKid
+        })
+        // And then, immediately make a key request
+        await sbp('chelonia/out/keyRequest', {
+          innerEncryptionKeyId: groupCEKid,
+          reference: cheloniaState[identityContractID].groups[groupID].hash,
+          encryptKeyRequestMetadata: true,
+          originatingContractName: 'gi.contracts/identity',
+          contractID: groupID,
+          originatingContractID: identityContractID,
+          contractName: 'gi.contracts/group',
+          innerSigningKeyId: identityCSKid,
+          encryptionKeyId: identityCEKid,
+          signingKeyId: creatorInviteKeyId
+        })
+
+        // Atomically join and leave group. This ensures that
+        // cheloniaState[identityContractID].groups[groupID] gets properly set
+        await sbp('chelonia/out/atomic', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          data: [
+            await sbp('gi.actions/identity/leaveGroup', {
+              contractID: identityContractID,
+              data: {
+                groupContractID: groupID,
+                reference: cheloniaState[identityContractID].groups[groupID].hash
+              },
+              returnInvocation: true
+            }),
+            await sbp('gi.actions/identity/joinGroup', {
+              contractID: identityContractID,
+              data: {
+                groupContractID: groupID,
+                inviteSecret: serializeKey(creatorInviteKey, true),
+                creatorID: true
+              },
+              returnInvocation: true
+            })
+          ],
+          signingKeyId: identityCSKid
+        })
+      } catch (e) {
+        console.error(`[gi.actions/identity/upgradeCreatorGroupInvite] Error at group ${groupID}`, e)
+      }
+    }))
   },
   'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
