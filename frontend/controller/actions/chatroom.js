@@ -344,6 +344,19 @@ export default (sbp('sbp/selectors/register', {
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // NOTE: The following code _prevents_ key rotations when no-one has left
+    // NOTE: The following code _prevents_ key rotations when no-one has left
+    // The purpose of this is twofold:
+    //   - Testing PR 3058 (issue 2988) resulted in an infinite loop during test
+    //     conditions. It is unlikely that such an infinite loop would happen
+    //     under real conditions, but unnecessary and unexpected re-syncs could
+    //     occur.
+    //   - PR 3057 introduced improvements for more deterministic and efficient
+    //     key rotations. The changes aim at preventing unnecessary key
+    //     rotations, which could previously occur when re-syncing a contract,
+    //     even if no-one had left a group or chatroom. However, those
+    //     improvements were done in the contracts themselves, meaning that old
+    //     contracts will continue to show the old behaviour. This check refuses
+    //     those key rotations even if an old contract version is used.
     // eslint-disable-next-line no-lone-blocks
     {
       // Check that it's the CEK that we're rotating
