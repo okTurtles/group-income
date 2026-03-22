@@ -201,6 +201,18 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     }
   }
 
+  &.is-style-disabled {
+    pointer-events: none;
+    opacity: 0.65;
+    cursor: not-allowed;
+
+    .tile-text,
+    .tile-info-segment,
+    .tile-icon {
+      color: $text_1;
+    }
+  }
+
   &.is-expanded {
     .tile-icon {
       transform: rotate(180deg);

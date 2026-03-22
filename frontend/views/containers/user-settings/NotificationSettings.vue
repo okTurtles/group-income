@@ -16,7 +16,7 @@
               input.switch.is-small.c-switch(
                 type='checkbox'
                 name='switch'
-                v-model='checkboxValue'
+                v-model='ephemeral.browserNotificationsEnabled'
                 @click='handleNotificationSettings'
               )
 
@@ -30,6 +30,7 @@
         MenuItem(
           tabId='browser-notification-volume'
           :isExpandable='true'
+          :variant='ephemeral.browserNotificationsEnabled ? "default" : "disabled"'
         )
           template(#info='')
             p.c-current-volume {{ currVolumeDisplay }}
@@ -60,8 +61,8 @@ export default ({
       pushNotificationSupported: false,
       pushNotificationGranted: null,
       cancelListener: () => {},
-      checkboxValue: false,
       ephemeral: {
+        browserNotificationsEnabled: false,
         currentVolume: 1
       }
     }
@@ -101,7 +102,7 @@ export default ({
       // since the fallback calls this handler repeatedly and often, have this check here
       if (newPermission !== this.pushNotificationGranted) {
         this.pushNotificationGranted = newPermission
-        this.checkboxValue = this.notificationEnabled === true && newPermission
+        this.ephemeral.browserNotificationsEnabled = this.notificationEnabled === true && newPermission
         console.info('[NotifSettings] handler called with:', permissionState, 'and this.notificationsEnabled=', this.notificationEnabled)
       }
     }
@@ -144,7 +145,7 @@ export default ({
       if (typeof Notification !== 'function') return
       let permission = Notification.permission
       const disableCheckbox = () => {
-        this.$nextTick(() => { this.checkboxValue = false })
+        this.$nextTick(() => { this.ephemeral.browserNotificationsEnabled = false })
       }
       if (permission === 'default') {
         permission = await requestNotificationPermission()
@@ -171,7 +172,7 @@ export default ({
       this.setNotificationEnabled(granted)
       if (granted) {
         makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
-      }패
+      }
     },
     handleVolumeChange (volume) {
       this.ephemeral.currentVolume = volume
