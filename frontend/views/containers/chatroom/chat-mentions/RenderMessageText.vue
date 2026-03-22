@@ -133,6 +133,11 @@ export default ({
 
             if (found) {
               if (this.isInGlobalDashboard) {
+                // Channel mention tag UI is only relevant when the chatroom is viewed in a group context,
+                // not in global dashboard DM, which is not tied to any specific group.
+                // e.g. user-1 and user-2 are both members of group-1 and group-2, and `#general` is mentioned in their DM.
+                //      The app wouldn't know which #general it is referring to.
+                // So in global-dm context, the mention tag UI is displayed in disabled style variant.
                 return {
                   type: TextObjectType.ChannelMention,
                   text: found.name,

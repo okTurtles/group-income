@@ -100,6 +100,8 @@ const initialState = {
     identity: KV_LOAD_STATUS.NON_INIT,
     group: KV_LOAD_STATUS.NON_INIT
   },
+  // 'isInGlobalDashboard': a Vuex flag to indicate whether the user is currently in the global dashboard.
+  // Various parts of the app(Various chatroom related getters and Vue components) need to know this to adjust their behavior accordingly.
   isInGlobalDashboard: false
 }
 
