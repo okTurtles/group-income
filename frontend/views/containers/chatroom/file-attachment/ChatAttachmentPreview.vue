@@ -10,7 +10,7 @@
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
-        :isDownloading='ephemeral.downloadInProgress.includes(getDownloadId(entry))'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
@@ -23,7 +23,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
-        :isDownloading='ephemeral.downloadInProgress.includes(getDownloadId(entry))'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.image[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
       )
@@ -36,7 +36,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
-        :isDownloading='ephemeral.downloadInProgress.includes(getDownloadId(entry))'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.audio[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
       )
@@ -49,7 +49,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
-        :isDownloading='ephemeral.downloadInProgress.includes(getDownloadId(entry))'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.video[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.VIDEO })'
       )
@@ -325,7 +325,7 @@ export default {
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
-        this.ephemeral.downloadInProgress.push(this.getDownloadId(attachment))
+        this.ephemeral.downloadInProgress.push(this.getAttachmentId(attachment))
         const url = objectURL || (await this.getAttachmentObjectURL(attachment))
 
         const aTag = this.$refs.downloadHelper
@@ -347,7 +347,7 @@ export default {
           primaryButton: L('Close')
         })
       } finally {
-        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getDownloadId(attachment))
+        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getAttachmentId(attachment))
       }
     },
     getStretchedDimension ({ width, height }) {
@@ -431,9 +431,6 @@ export default {
     },
     getAttachmentId (attachment) {
       return attachment.downloadData?.manifestCid || attachment.name.replace(/\s+/g, '_')
-    },
-    getDownloadId (attachment) {
-      return attachment.downloadData?.manifestCid
     }
   },
   watch: {
