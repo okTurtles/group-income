@@ -264,7 +264,7 @@ sbp('sbp/selectors/register', {
               // and the group CSK doesn't have OP_KEY_REQUEST permission
               Object.values(state[id]._vm.authorizedKeys)
                 // $FlowFixMe[incompatible-use]
-                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
+                .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
             )
             .map(([id]) => id)
         })
@@ -297,7 +297,7 @@ sbp('sbp/selectors/register', {
               // and the CEK doesn't have OP_KEY_REQUEST_SEEN permission
               Object.values(state[id]._vm.authorizedKeys)
                 // $FlowFixMe[incompatible-use]
-                .some(({ name, permissions, _notAfterHeight }) => !_notAfterHeight && name === 'cek' && (
+                .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'cek' && (
                   !permissions.includes(SPMessage.OP_KEY_SHARE) ||
                   !permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
                 ))

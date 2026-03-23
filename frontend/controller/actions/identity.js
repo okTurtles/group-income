@@ -656,8 +656,8 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }).catch(e => {
-        // We may no longer be a member of the group, so we ignore errors
-        // related to missing keys
+          // We may no longer be a member of the group, so we ignore errors
+          // related to missing keys
           if (e.name !== 'ChelErrorSignatureKeyNotFound') {
             throw e
           }

@@ -73,7 +73,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+      innerEncryptionKeyId: CEKid,
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
@@ -401,8 +401,6 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
-
     const activeMemberIds = sbp('state/vuex/getters').chatRoomActiveMemberIdsForChatRoom(state)
     return Promise.all(activeMemberIds.map(async (pContractID) => {
       const retained = await sbp('chelonia/contract/retain', pContractID, { ephemeral: true }).then(() => [true], (e) => [false, e])
@@ -422,7 +420,7 @@ export default (sbp('sbp/selectors/register', {
       try {
         const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
         if (!CEKid) {
-          console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
+          console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
           if (options.lastAttempt) {
             return
           } else {
