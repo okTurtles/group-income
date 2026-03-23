@@ -10,6 +10,7 @@
         :attachment='entry'
         :variant='variant'
         :canDelete='canDelete'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry)'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA })'
       )
@@ -22,6 +23,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.image[entryIndex]'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.image[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.IMAGE })'
       )
@@ -34,6 +36,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.audio[entryIndex]'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.audio[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.AUDIO })'
       )
@@ -46,6 +49,7 @@
         :variant='variant'
         :canDelete='canDelete'
         :mediaObjectURL='mediaObjectURLList.video[entryIndex]'
+        :isDownloading='ephemeral.downloadInProgress.includes(getAttachmentId(entry))'
         @download='downloadAttachment(entry, mediaObjectURLList.video[entryIndex])'
         @delete='deleteAttachment({ index: entryIndex, type: config.CHATROOM_ATTACHMENT_TYPES.VIDEO })'
       )
@@ -99,6 +103,7 @@ import { getFileExtension, getFileType } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
+import { L, LError } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
@@ -135,6 +140,9 @@ export default {
       settledImgURLList: [],
       config: {
         CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+      },
+      ephemeral: {
+        downloadInProgress: [] // array of entry ids that are currently being downloaded to user's device
       }
     }
   },
@@ -317,6 +325,7 @@ export default {
 
       // reference: https://blog.logrocket.com/programmatically-downloading-files-browser/
       try {
+        this.ephemeral.downloadInProgress.push(this.getAttachmentId(attachment))
         const url = objectURL || (await this.getAttachmentObjectURL(attachment))
 
         const aTag = this.$refs.downloadHelper
@@ -332,6 +341,13 @@ export default {
         }
       } catch (err) {
         console.error('error caught while downloading a file: ', err)
+        sbp('gi.ui/prompt', {
+          heading: L('Download error'),
+          question: L('Failed to download the file. Error details: {reportError}', LError(err)),
+          primaryButton: L('Close')
+        })
+      } finally {
+        this.ephemeral.downloadInProgress = this.ephemeral.downloadInProgress.filter(id => id !== this.getAttachmentId(attachment))
       }
     },
     getStretchedDimension ({ width, height }) {
