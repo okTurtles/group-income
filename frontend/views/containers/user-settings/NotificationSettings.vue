@@ -39,27 +39,7 @@
             .lower-section-container
               notification-volume(@volume-change='handleVolumeChange')
 
-    .menu-tile-block
-      legend.tab-legend
-        i.icon-comments.legend-icon
-        i18n.legend-text Chat default settings
-
-      menu
-        MenuItem(
-          tabId='chat-notifications'
-          :isExpandable='true'
-        )
-          template(#lower='')
-            .lower-section-container
-              | TODO!
-
-        MenuItem(
-          tabId='chat-sounds'
-          :isExpandable='true'
-        )
-          template(#lower='')
-            .lower-section-container
-              | TODO!
+    chat-default-notification-settings
 </template>
 
 <script>
@@ -70,13 +50,15 @@ import {
   makeNotification
 } from '@model/notifications/nativeNotification.js'
 import NotificationVolume from './NotificationVolume.vue'
+import ChatDefaultNotificationSettings from './ChatDefaultNotificationSettings.vue'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 
 export default ({
   name: 'NotificationSettings',
   components: {
     NotificationVolume,
-    MenuItem: UserSettingsTabMenuItem
+    MenuItem: UserSettingsTabMenuItem,
+    ChatDefaultNotificationSettings
   },
   data () {
     return {
