@@ -706,7 +706,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/_postOpHook/ku': ({ contractID, state }) => {
       sbp('chelonia/queueInvocation', contractID, () => {
         // Verify that we aren't missing a key after a rotation
-        return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID, state)
+        return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID)
       }).catch((e) => {
         console.error('[gi.contracts/chatroom/hook/ku] Error', e)
       })
