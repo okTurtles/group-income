@@ -344,7 +344,6 @@ export default (sbp('sbp/selectors/register', {
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // NOTE: The following code _prevents_ key rotations when no-one has left
-    // NOTE: The following code _prevents_ key rotations when no-one has left
     // The purpose of this is twofold:
     //   - Testing PR 3058 (issue 2988) resulted in an infinite loop during test
     //     conditions. It is unlikely that such an infinite loop would happen

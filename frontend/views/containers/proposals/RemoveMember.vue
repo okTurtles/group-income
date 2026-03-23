@@ -15,7 +15,7 @@ proposal-template(
       i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-if='groupShouldPropose') Remove {name} from the group
       i18n(:args='{ name: userDisplayNameFromID(memberID) }' v-else) Are you sure you want to remove {name} from the group?
 
-    label.checkbox.c-use-admin-permissions
+    label.checkbox.c-use-admin-permissions(v-if='groupShouldPropose && isGroupCreator')
       input.input(type='checkbox' v-model='form.useAdminPermission')
       i18n Use admin permissions to remove immediately
 

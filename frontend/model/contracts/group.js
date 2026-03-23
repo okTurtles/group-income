@@ -798,7 +798,7 @@ sbp('chelonia/defineContract', {
 
         const memberToRemove = data.memberID || innerSigningContractID
         const membersCount = getters.groupMembersCount
-        const isGroupCreator = true
+        const isGroupCreator = innerSigningContractID === getters.currentGroupOwnerID
 
         if (!state.profiles[memberToRemove]) {
           throw new GIGroupNotJoinedError(L('Not part of the group.'))
