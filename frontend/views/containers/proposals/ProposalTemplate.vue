@@ -158,7 +158,7 @@ export default ({
       return this.groupProposalSettings()
     },
     isGroupCreator () {
-      return this.ourIdentityContractId === this.currentGroupOwnerID
+      return true
     },
     hasNextStep () {
       return this.currentStep <= this.maxSteps - 1

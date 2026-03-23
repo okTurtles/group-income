@@ -759,7 +759,14 @@ export default (sbp('sbp/selectors/register', {
         // Check that it's also the CSK that we're rotating
         const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
         if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
-          const height = Math.max(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
+          // Pick the height for the earliest rotation of the CEK or the CSK
+          // For example, if the CEK was rotated last at height = 12 and
+          // the CSK was rotated last at height = 15, we allow a rotations to
+          // proceed if someone left at at time >= 12. This is for robustness,
+          // as the CEK and the CSK are rotated together.
+          // The last `|| 0` is also for robustness, in case `Math.min` should
+          // return NaN.
+          const height = Math.min(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
           const formerMemberIds = Object.keys(state.profiles).filter((id) => {
             return Number.isFinite(state.profiles[id].departedHeight) && state.profiles[id].departedHeight >= height
           })

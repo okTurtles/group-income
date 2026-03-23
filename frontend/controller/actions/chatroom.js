@@ -364,13 +364,31 @@ export default (sbp('sbp/selectors/register', {
         // Check that it's also the CSK that we're rotating
         const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
         if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
-          const height = Math.max(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
+          // Pick the height for the earliest rotation of the CEK or the CSK
+          // For example, if the CEK was rotated last at height = 12 and
+          // the CSK was rotated last at height = 15, we allow a rotations to
+          // proceed if someone left at at time >= 12. This is for robustness,
+          // as the CEK and the CSK are rotated together.
+          // The last `|| 0` is also for robustness, in case `Math.min` should
+          // return NaN.
+          const height = Math.min(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
           const formerMemberIds = Object.keys(state.members).filter((id) => {
             return state.members[id].hasLeft === true
           })
+          // Chatroom contracts don't have `departedHeight` nor a similar attribute,
+          // meaning that we have to rely on key operations.
           const hasAnyoneLeftAfterLastRotation = Object.keys(state._vm.authorizedKeys).some((id) => {
             const key = state._vm.authorizedKeys[id]
-            return key._notAfterHeight >= height && formerMemberIds.some((memberId) => {
+            // We let any foreign key that starts with `memberId` and that has
+            // expired _after_ the last rotation triggered a rotation.
+            // This is open-ended and could match keys that aren't the user's CSK,
+            // or it could match keys that were removed for reasons other than
+            // because the member has left.
+            // This is fine, because this logic is here to prevent unnecessary
+            // key rotations in old contracts. Usually, a key rotation, even an
+            // unnecessary one, shouldn't cause any issues, except if the new,
+            // rotated keys aren't properly shared with all members.
+            return key._notAfterHeight >= height && key.foreignKey && formerMemberIds.some((memberId) => {
               return key.name.startsWith(memberId)
             })
           })
