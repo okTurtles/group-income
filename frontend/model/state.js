@@ -227,7 +227,6 @@ sbp('sbp/selectors/register', {
     // Migration to have group creators re-join groups using a one-off invite,
     // instead of using the CSK
     ;(() => {
-      // TODO Add invite key to group
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
       const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
