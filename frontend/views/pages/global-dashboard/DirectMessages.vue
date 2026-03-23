@@ -50,7 +50,7 @@ page(
   template(#sidebar='{ toggle }')
     chat-nav
       .c-back-btn-container(v-if='inChatInterfacePage')
-        button.link.c-back-btn(@click.stop='backToDMlist')
+        button.link.c-back-btn(@click.stop='backToDMlist(toggle)')
           i.icon-angle-left.c-back-icon
           i18n Conversations list
 
@@ -314,8 +314,10 @@ export default {
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
-    backToDMlist () {
+    backToDMlist (postAction = null) {
       this.$router.push({ name: 'GlobalDirectMessages' }).catch(logExceptNavigationDuplicated)
+
+      postAction && postAction()
     }
   }
 }
