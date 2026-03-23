@@ -734,7 +734,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean }) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean } = {}) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')

@@ -1486,7 +1486,7 @@ sbp('chelonia/defineContract', {
       originatingContractID
     }) => {
       // For key requests of type 'missing', sent when a member is missing keys
-      if (request === 'missing' && state.profiles[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
+      if (request === 'missing' && state.profiles?.[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
             // $FlowFixMe[incompatible-use]

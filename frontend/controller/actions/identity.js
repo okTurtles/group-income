@@ -1170,7 +1170,7 @@ export default (sbp('sbp/selectors/register', {
         !cheloniaState[identityContractID].groups[groupID] ||
         cheloniaState[identityContractID].groups[groupID].hasLeft ||
         // Or the key used for requesting keys wasn't the CSK
-        cheloniaState[groupID]?._vm.authorizedKeys[
+        cheloniaState[groupID]?._vm?.authorizedKeys[
           cheloniaState[identityContractID].groups[groupID].inviteSecretId
         ]?.name !== 'csk'
       ) {
