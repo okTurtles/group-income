@@ -118,7 +118,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         // replaced with a check for all members (past and present), so that
         // a conversation doesn't suddenly become inaccessible.
         // // const hasActiveMember = partners.some(memberID => Object.keys(getters.profilesByGroup(groupID)).includes(memberID))
-        const hasActiveMember = partners.some(partner => !!rootState[groupID]?.profiles[partner.contractID])
+        const hasActiveMember = partners.some(partner => !!rootState[groupID]?.profiles?.[partner.contractID])
         if (isDMToMyself || hasActiveMember) {
           currentGroupDirectMessagesDetails[chatRoomID] = directMessageDetails
         }

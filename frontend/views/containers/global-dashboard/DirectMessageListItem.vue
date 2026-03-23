@@ -1,6 +1,6 @@
 <template lang='pug'>
 .card.c-dm-list-item(
-  :class='{ "has-new": dmDetails.hasNew }'
+  :class='{ "has-new": dmDetails.hasNew, "is-manually-marked-unread": dmDetails.isManuallyMarkedUnread }'
   @click.stop='onTileClick'
   @keyup.enter='onTileClick'
   role='button'
@@ -118,6 +118,22 @@ export default {
     }
   }
 
+  // has-new styles
+  &.is-manually-marked-unread,
+  &.has-new {
+    border-color: $text_1;
+
+    &:focus,
+    &:focus-within,
+    &:hover {
+      border-color: $primary_0;
+    }
+
+    .c-dm-message-preview {
+      color: $text_0;
+    }
+  }
+
   @include tablet {
     column-gap: 0.75rem;
     padding: 1.25rem 1.75rem;
@@ -184,20 +200,5 @@ export default {
 
 .c-dm-preview-text {
   word-break: break-all;
-}
-
-// has-new styles
-.card.c-dm-list-item.has-new {
-  border-color: $text_1;
-
-  &:focus,
-  &:focus-within,
-  &:hover {
-    border-color: $primary_0;
-  }
-
-  .c-dm-message-preview {
-    color: $text_0;
-  }
 }
 </style>

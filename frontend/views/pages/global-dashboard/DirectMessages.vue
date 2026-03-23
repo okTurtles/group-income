@@ -159,7 +159,8 @@ export default {
       'ourUnreadMessages',
       'currentChatRoomId',
       'isJoinedChatRoom',
-      'chatRoomPinnedMessages'
+      'chatRoomPinnedMessages',
+      'isChatRoomManuallyMarkedUnread'
     ]),
     summary () {
       return this.ephemeral.chatroomSummary || {}
@@ -209,7 +210,8 @@ export default {
           chatRoomID,
           ...directMessageDetails,
           previewMessage: this.getChatroomMessagePreview(chatRoomID),
-          hasNew: this.chatroomHasNewMessages(chatRoomID)
+          hasNew: this.chatroomHasNewMessages(chatRoomID),
+          isManuallyMarkedUnread: this.isChatRoomManuallyMarkedUnread(chatRoomID)
         })
       }
 
@@ -317,7 +319,9 @@ export default {
     backToDMlist (postAction = null) {
       this.$router.push({ name: 'GlobalDirectMessages' }).catch(logExceptNavigationDuplicated)
 
-      postAction && postAction()
+      if (typeof postAction === 'function') {
+        postAction()
+      }
     }
   }
 }
