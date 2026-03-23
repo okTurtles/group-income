@@ -38,7 +38,8 @@ export default {
           'acknowledgements': { name: L('Acknowledgements') },
           'browser-notifications': { name: L('Allow browser notifications'), dataTest: 'tabBrowserNotifications' },
           'browser-notification-volume': { name: L('Sound notification volume'), dataTest: 'tabBrowserNotificationVolume' },
-          'chat-default-notifications': { name: L('Chat default notifications'), dataTest: 'tabChatDefaultNotifications' }
+          'chat-notifications': { name: L('Send notifications for:'), dataTest: 'tabChatNotifications' },
+          'chat-sounds': { name: L('Play sounds for:'), dataTest: 'tabChatSounds' }
         }
       }
     }

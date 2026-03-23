@@ -2,6 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { cloneDeep } from 'turtledash'
+import { CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 import getters from './getters.js'
 import Vue from 'vue'
 
@@ -10,7 +11,7 @@ const defaultState = {
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight, isManuallyMarked?: boolean }, unreadMessages: [{ messageHash, createdHeight }]}
-  chatNotificationSettings: {} // { [chatRoomID | 'global']: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
+  chatNotificationSettings: {} // { [chatRoomID | CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
 }
 
 // mutations
@@ -60,7 +61,11 @@ const mutations = {
   deleteChatRoomScrollPosition (state, { chatRoomID }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomID)
   },
-  setChatroomNotificationSettings (state, { chatRoomID, settings }) {
+  setChatroomNotificationSettings (state, { chatRoomID, settings, isGlobal = false }) {
+    if (isGlobal) {
+      chatRoomID = CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY
+    }
+
     if (chatRoomID) {
       if (!state.chatNotificationSettings[chatRoomID]) {
         Vue.set(state.chatNotificationSettings, chatRoomID, {})

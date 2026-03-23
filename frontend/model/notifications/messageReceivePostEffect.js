@@ -6,7 +6,8 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
-  MESSAGE_TYPES
+  MESSAGE_TYPES,
+  CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY
 } from '@model/contracts/shared/constants.js'
 import {
   swapMentionIDForDisplayname
@@ -36,7 +37,7 @@ async function messageReceivePostEffect ({
   // noticiation-settings related
   const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
     ? rootGetters.chatNotificationSettings.privateDefault
-    : rootGetters.chatNotificationSettings.publicDefault
+    : rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY] || rootGetters.chatNotificationSettings.publicDefault
   )
   const { messageNotification, messageSound } = chatNotificationSettings
   const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||

@@ -38,6 +38,28 @@
           template(#lower='')
             .lower-section-container
               notification-volume(@volume-change='handleVolumeChange')
+
+    .menu-tile-block
+      legend.tab-legend
+        i.icon-comments.legend-icon
+        i18n.legend-text Chat default settings
+
+      menu
+        MenuItem(
+          tabId='chat-notifications'
+          :isExpandable='true'
+        )
+          template(#lower='')
+            .lower-section-container
+              | TODO!
+
+        MenuItem(
+          tabId='chat-sounds'
+          :isExpandable='true'
+        )
+          template(#lower='')
+            .lower-section-container
+              | TODO!
 </template>
 
 <script>
