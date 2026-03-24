@@ -95,10 +95,13 @@ Build the app for distribution:
 ```bash
 # Update the version in package.json
 $ npm install # update package-lock.json
+$ git add . && git commit -m "<commit message>"
 $ git tag -u <email> v1.1.0  # create the tag before calling grunt deploy
 $ NODE_ENV=production grunt deploy
-$ tar cfz gi-v1.1.0.tgz dist
+$ tar cfz gi-v2.7.0.tgz dist
 # Debug build is the same except without NODE_ENV var
+$ grunt deploy
+$ tar cfz gi-v2.7.0.debug.tgz dist
 ```
 
 Clean up files in `dist/`:
