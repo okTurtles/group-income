@@ -15,14 +15,14 @@
             v-model='$v.form.messageNotification.$model'
           )
           i18n All new messages
-        label.radio
+        label.radio(v-if='!isDM')
           input.input(
             type='radio'
             name='messageNotification'
-            :value='options.DIRECT_MESSAGES'
+            :value='options.MENTIONS'
             v-model='$v.form.messageNotification.$model'
           )
-          i18n Direct messages and mentions
+          i18n Mentions
         label.radio
           input.input(
             type='radio'
@@ -43,14 +43,14 @@
             v-model='$v.form.messageSound.$model'
           )
           i18n Play sounds for all new messages
-        label.radio
+        label.radio(v-if='!isDM')
           input.input(
             type='radio'
             name='messageSound'
-            :value='options.DIRECT_MESSAGES'
+            :value='options.MENTIONS'
             v-model='$v.form.messageSound.$model'
           )
-          i18n Play sounds for direct messages and mentions
+          i18n Play sounds for mentions
         label.radio
           input.input(
             type='radio'
@@ -76,7 +76,7 @@ import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default ({
@@ -86,7 +86,14 @@ export default ({
     ModalTemplate
   },
   computed: {
-    ...mapGetters(['chatNotificationSettings', 'currentChatRoomId'])
+    ...mapGetters([
+      'chatNotificationSettings',
+      'currentChatRoomId',
+      'isGroupDirectMessage'
+    ]),
+    isDM () {
+      return this.isGroupDirectMessage(this.currentChatRoomId)
+    }
   },
   data () {
     return {
@@ -104,7 +111,9 @@ export default ({
     } else {
       const rootState = sbp('state/vuex/state')
       const privacyLevelPrivate = rootState[this.currentChatRoomId]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-      settingsFromState = privacyLevelPrivate ? this.chatNotificationSettings.privateDefault : this.chatNotificationSettings.publicDefault
+      settingsFromState = privacyLevelPrivate
+        ? this.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]
+        : this.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]
     }
     this.form.messageNotification = settingsFromState.messageNotification
     this.form.messageSound = settingsFromState.messageSound

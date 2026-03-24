@@ -26,7 +26,7 @@
               input.input(
                 type='radio'
                 name='messageNotification'
-                :value='config.options.DIRECT_MESSAGES'
+                :value='config.options.DM_AND_MENTIONS'
                 v-model='form.messageNotification'
               )
               i18n Direct messages and mentions
@@ -60,7 +60,7 @@
               input.input(
                 type='radio'
                 name='messageSound'
-                :value='config.options.DIRECT_MESSAGES'
+                :value='config.options.DM_AND_MENTIONS'
                 v-model='form.messageSound'
               )
               i18n Direct messages and mentions
@@ -78,7 +78,7 @@
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
-import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'DefaultChatNotificationSettings',
@@ -87,18 +87,18 @@ export default {
   },
   computed: {
     ...mapGetters(['chatNotificationSettings']),
-    ChannelDefaultSettings() {
+    ChannelDefaultSettings () {
       return this.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]
     }
   },
   data () {
     return {
       config: {
-        options: MESSAGE_NOTIFY_SETTINGS,
+        options: GLOBAL_MESSAGE_NOTIFY_SETTINGS,
         optionsDisplayShort: {
-          [MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES]: L('All'),
-          [MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES]: L('DM/Mentions'),
-          [MESSAGE_NOTIFY_SETTINGS.NOTHING]: L('None')
+          [GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES]: L('All'),
+          [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS]: L('DM/Mentions'),
+          [GLOBAL_MESSAGE_NOTIFY_SETTINGS.NOTHING]: L('None')
         }
       },
       form: {

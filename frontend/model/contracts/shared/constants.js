@@ -173,7 +173,13 @@ export const MESSAGE_VARIANTS = {
 
 export const MESSAGE_NOTIFY_SETTINGS = {
   ALL_MESSAGES: 'all-messages',
-  DIRECT_MESSAGES: 'direct-messages',
+  MENTIONS: 'mentions',
+  NOTHING: 'nothing'
+}
+
+export const GLOBAL_MESSAGE_NOTIFY_SETTINGS = {
+  ALL_MESSAGES: 'all-messages',
+  DM_AND_MENTIONS: 'dm-and-mentions',
   NOTHING: 'nothing'
 }
 

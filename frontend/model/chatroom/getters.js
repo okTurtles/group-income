@@ -14,7 +14,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     return Object.assign({
       [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
-        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+        messageSound: MESSAGE_NOTIFY_SETTINGS.MENTIONS
       },
       [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,

@@ -42,9 +42,9 @@ async function messageReceivePostEffect ({
   )
   const { messageNotification, messageSound } = chatNotificationSettings
   const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-  (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+  (messageNotification === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention) // TODO: Update this logic!
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+    (messageSound === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention)
   const shouldAddToUnreadMessages = isDMOrMention ||
     (shouldNotifyMessage || shouldSoundMessage) ||
     [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
