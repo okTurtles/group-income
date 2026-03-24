@@ -875,7 +875,7 @@ export default ({
             billableContractID: contractID
           })
         } catch (e) {
-          console.log('[ChatMain.vue]: something went wrong while uploading attachments ', e)
+          console.error('[ChatMain.vue]: something went wrong while uploading attachments ', e)
           throw e
         } finally {
           attachments.forEach(attachment => {

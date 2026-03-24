@@ -48,10 +48,12 @@
           .c-filesize {{ fileSizeDisplay }}
 
         button.is-small.is-outlined.c-load-video-button(
-          :class='{ "is-loading": isVideoStatus("loading"), "is-danger": isVideoStatus("error") }'
+          :class='{ "is-loading": isVideoStatus("loading") || isDownloading, "is-danger": isVideoStatus("error") }'
           type='button'
           @click.stop='loadVideo'
-        ) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
+        )
+          i18n(v-if='isDownloading') Downloading...
+          span(v-else) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -61,37 +63,45 @@
     :class='{ "is-for-media": isMediaType }'
   )
     .c-attachment-actions
-      tooltip(
-        direction='top'
-        :text='getDownloadTooltipText(attachment)'
+      .button.is-icon-small.c-spinner-btn(
+        v-if='isDownloading'
+        :aria-label='L("Downloading file")'
+        aria-busy='true'
+        aria-live='polite'
       )
-        button.is-icon-small(
-          :aria-label='L("Download")'
-          @click.stop='$emit("download")'
+        .simple-spinner.c-spinner
+      template(v-else)
+        tooltip(
+          direction='top'
+          :text='getDownloadTooltipText(attachment)'
         )
-          i.icon-download
+          button.is-icon-small(
+            :aria-label='L("Download")'
+            @click.stop='$emit("download")'
+          )
+            i.icon-download
 
-      tooltip(
-        v-if='canDelete'
-        direction='top'
-        :text='L("Delete")'
-      )
-        button.is-icon-small(
-          :aria-label='L("Delete")'
-          @click='$emit("delete")'
+        tooltip(
+          v-if='canDelete'
+          direction='top'
+          :text='L("Delete")'
         )
-          i.icon-trash-alt
+          button.is-icon-small(
+            :aria-label='L("Delete")'
+            @click='$emit("delete")'
+          )
+            i.icon-trash-alt
 
-      tooltip(
-        v-if='isVideoPlayable'
-        direction='top'
-        :text='L("Expand")'
-      )
-        button.is-icon-small(
-          :aria-label='L("Expand")'
-          @click.stop='openVideoModal'
+        tooltip(
+          v-if='isVideoPlayable'
+          direction='top'
+          :text='L("Expand")'
         )
-          i.icon-expand
+          button.is-icon-small(
+            :aria-label='L("Expand")'
+            @click.stop='openVideoModal'
+          )
+            i.icon-expand
 </template>
 
 <script>
@@ -126,6 +136,11 @@ export default {
     canDelete: {
       type: Boolean,
       required: false
+    },
+    isDownloading: {
+      // A flag to indicate if the attachment is currently being downloaded to the user's device.
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -536,5 +551,17 @@ $mobile-narrow: 441px;
   background-color: $general_2;
   display: block;
   padding: 0.5rem;
+}
+
+// commons
+.button.c-spinner-btn {
+  pointer-events: none;
+  cursor: initial;
+
+  .c-spinner {
+    width: 0.75rem;
+    height: 0.75rem;
+    color: $text_0;
+  }
 }
 </style>
