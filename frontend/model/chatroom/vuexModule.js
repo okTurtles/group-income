@@ -61,9 +61,13 @@ const mutations = {
   deleteChatRoomScrollPosition (state, { chatRoomID }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomID)
   },
-  setChatroomNotificationSettings (state, { chatRoomID, settings, isGlobal = false }) {
-    if (isGlobal) {
-      chatRoomID = CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY
+  setChatroomNotificationSettings (state, { chatRoomID, settings, globalKey }) {
+    if (globalKey) {
+      if (!Object.values(CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY).includes(globalKey)) {
+        console.error(`Invalid global key for chatroom notification settings: ${globalKey}`)
+        return
+      }
+      chatRoomID = globalKey
     }
 
     if (chatRoomID) {

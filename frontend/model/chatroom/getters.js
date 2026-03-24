@@ -1,7 +1,7 @@
 'use strict'
 
 import { merge, union } from 'turtledash'
-import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
@@ -12,11 +12,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   chatNotificationSettings (state) {
     return Object.assign({
-      publicDefault: {
+      [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       },
-      privateDefault: {
+      [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
       }

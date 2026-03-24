@@ -11,7 +11,31 @@
     )
       template(#lower='')
         .lower-section-container
-          | TODO!
+          fieldset.is-column
+            label.radio
+              input.input(
+                type='radio'
+                name='messageNotification'
+                :value='options.ALL_MESSAGES'
+                v-model='form.messageNotification'
+              )
+              i18n All new messages
+            label.radio
+              input.input(
+                type='radio'
+                name='messageNotification'
+                :value='options.DIRECT_MESSAGES'
+                v-model='form.messageNotification'
+              )
+              i18n Direct messages and mentions
+            label.radio
+              input.input(
+                type='radio'
+                name='messageNotification'
+                :value='options.NOTHING'
+                v-model='form.messageNotification'
+              )
+              i18n Nothing
 
     MenuItem(
       tabId='chat-sounds'
@@ -19,11 +43,36 @@
     )
       template(#lower='')
         .lower-section-container
-          | TODO!
+          fieldset.is-column
+            label.radio
+              input.input(
+                type='radio'
+                name='messageSound'
+                :value='options.ALL_MESSAGES'
+                v-model='form.messageSound'
+              )
+              i18n All new messages
+            label.radio
+              input.input(
+                type='radio'
+                name='messageSound'
+                :value='options.DIRECT_MESSAGES'
+                v-model='form.messageSound'
+              )
+              i18n Direct messages and mentions
+            label.radio
+              input.input(
+                type='radio'
+                name='messageSound'
+                :value='options.NOTHING'
+                v-model='form.messageSound'
+              )
+              i18n Nothing
 </template>
 
 <script>
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
+import { MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'DefaultChatNotificationSettings',
@@ -32,7 +81,11 @@ export default {
   },
   data () {
     return {
-      ephemeral: {}
+      options: MESSAGE_NOTIFY_SETTINGS,
+      form: {
+        messageNotification: null,
+        messageSound: null
+      }
     }
   }
 }

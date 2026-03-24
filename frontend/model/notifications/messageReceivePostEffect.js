@@ -35,9 +35,10 @@ async function messageReceivePostEffect ({
   const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
 
   // noticiation-settings related
-  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
-    ? rootGetters.chatNotificationSettings.privateDefault
-    : rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY] || rootGetters.chatNotificationSettings.publicDefault
+  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (
+    privacyLevelPrivate
+      ? rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]
+      : rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]
   )
   const { messageNotification, messageSound } = chatNotificationSettings
   const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||

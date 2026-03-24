@@ -49,9 +49,9 @@ sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, ({ chatRoomID, messageH
     sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomID })
   }
 })
-sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, globalKey }) => {
   sbp('state/vuex/commit', 'setChatroomNotificationSettings', {
-    isGlobal,
+    globalKey,
     chatRoomID,
     settings
   })
