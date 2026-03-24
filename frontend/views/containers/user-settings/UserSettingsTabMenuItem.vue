@@ -28,7 +28,7 @@ export default {
     variant: {
       type: String,
       default: 'default',
-      validator: v => ['default', 'outlined', 'danger'].includes(v)
+      validator: v => ['default', 'outlined', 'danger', 'disabled'].includes(v)
     },
     isExpandable: {
       type: Boolean,
