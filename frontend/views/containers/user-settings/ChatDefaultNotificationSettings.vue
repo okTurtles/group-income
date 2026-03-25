@@ -10,7 +10,7 @@
       :isExpandable='true'
     )
       template(#info='')
-        span.has-text-1 {{ getDisplayShort(form.messageNotification) }}
+        span.has-text-1 {{ getDisplayShort(globalDefaultSettings.messageNotification) }}
       template(#lower='')
         .lower-section-container
           fieldset.is-column
@@ -39,12 +39,17 @@
               )
               i18n Nothing
 
+          .c-save-btn-container(v-if='showSaveBtn.messageNotification')
+            button.is-small.is-success(
+              type='button'
+              @click.stop='saveGlobalDefaultSettings("messageNotification")'
+            ) Save
     MenuItem(
       tabId='chat-sounds'
       :isExpandable='true'
     )
       template(#info='')
-        span.has-text-1 {{ getDisplayShort(form.messageSound) }}
+        span.has-text-1 {{ getDisplayShort(globalDefaultSettings.messageSound) }}
       template(#lower='')
         .lower-section-container
           fieldset.is-column
@@ -72,13 +77,21 @@
                 v-model='form.messageSound'
               )
               i18n Nothing
+
+          .c-save-btn-container(v-if='showSaveBtn.messageSound')
+            button.is-small.is-success(
+              type='button'
+              @click.stop='saveGlobalDefaultSettings("messageSound")'
+            ) Save
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 import { GLOBAL_MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
+import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default {
   name: 'DefaultChatNotificationSettings',
@@ -87,8 +100,14 @@ export default {
   },
   computed: {
     ...mapGetters(['chatNotificationSettings']),
-    ChannelDefaultSettings () {
+    globalDefaultSettings () {
       return this.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
+    },
+    showSaveBtn () {
+      return {
+        messageNotification: this.form.messageNotification !== this.globalDefaultSettings.messageNotification,
+        messageSound: this.form.messageSound !== this.globalDefaultSettings.messageSound
+      }
     }
   },
   data () {
@@ -110,11 +129,28 @@ export default {
   methods: {
     getDisplayShort (value) {
       return this.config.optionsDisplayShort[value]
+    },
+    saveGlobalDefaultSettings (settingsKey) {
+      sbp('okTurtles.events/emit', NEW_CHATROOM_NOTIFICATION_SETTINGS, {
+        isGlobal: true,
+        settings: {
+          ...this.globalDefaultSettings,
+          [settingsKey]: this.form[settingsKey]
+        }
+      })
     }
   },
   created () {
-    this.form.messageNotification = this.ChannelDefaultSettings.messageNotification
-    this.form.messageSound = this.ChannelDefaultSettings.messageSound
+    this.form.messageNotification = this.globalDefaultSettings.messageNotification
+    this.form.messageSound = this.globalDefaultSettings.messageSound
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.c-save-btn-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+</style>
