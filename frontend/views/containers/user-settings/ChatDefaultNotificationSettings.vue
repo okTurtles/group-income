@@ -78,7 +78,7 @@
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
-import { MESSAGE_NOTIFY_SETTINGS, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { GLOBAL_MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'DefaultChatNotificationSettings',
@@ -88,7 +88,7 @@ export default {
   computed: {
     ...mapGetters(['chatNotificationSettings']),
     ChannelDefaultSettings () {
-      return this.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]
+      return this.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
     }
   },
   data () {

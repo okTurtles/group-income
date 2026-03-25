@@ -5,9 +5,10 @@ import sbp from '@sbp/sbp'
 import {
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_NOTIFY_SETTINGS,
+  GLOBAL_MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
   MESSAGE_TYPES,
-  CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY
+  GLOBAL_NOTIFICATION_SETTINGS_KEY
 } from '@model/contracts/shared/constants.js'
 import {
   swapMentionIDForDisplayname
@@ -35,16 +36,20 @@ async function messageReceivePostEffect ({
   const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
 
   // noticiation-settings related
-  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (
-    privacyLevelPrivate
-      ? rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]
-      : rootGetters.chatNotificationSettings[CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]
-  )
+  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] ||
+    rootGetters.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
+
   const { messageNotification, messageSound } = chatNotificationSettings
+  const checkSettingValidForDMOrMention = (setting) => {
+    // TODO: check if 1) this logic can be simplified 2) doesn't break when running with the extracted DB of the current PROD.
+    return isDM || privacyLevelPrivate
+      ? setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS
+      : [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS, MESSAGE_NOTIFY_SETTINGS.MENTIONS].includes(setting)
+  }
   const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-  (messageNotification === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention) // TODO: Update this logic!
+    (isDMOrMention ? checkSettingValidForDMOrMention(messageNotification) : false)
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (messageSound === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention)
+    (isDMOrMention ? checkSettingValidForDMOrMention(messageSound) : false)
   const shouldAddToUnreadMessages = isDMOrMention ||
     (shouldNotifyMessage || shouldSoundMessage) ||
     [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
