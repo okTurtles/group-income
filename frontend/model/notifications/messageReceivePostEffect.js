@@ -38,18 +38,16 @@ async function messageReceivePostEffect ({
   // noticiation-settings related
   const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] ||
     rootGetters.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
-
+  const hasPerChatroomNotificationSettings = Boolean(rootGetters.chatNotificationSettings[contractID])
   const { messageNotification, messageSound } = chatNotificationSettings
-  const checkSettingValidForDMOrMention = (setting) => {
-    // TODO: check if 1) this logic can be simplified 2) doesn't break when running with the extracted DB of the current PROD.
-    return isDM || privacyLevelPrivate
-      ? setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS
-      : [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS, MESSAGE_NOTIFY_SETTINGS.MENTIONS].includes(setting)
+  const checkSettingValid = (setting) => {
+    return hasPerChatroomNotificationSettings
+      ? setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || (setting === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention)
+      : setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+        ((isDMOrMention || privacyLevelPrivate) && setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS)
   }
-  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (isDMOrMention ? checkSettingValidForDMOrMention(messageNotification) : false)
-  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (isDMOrMention ? checkSettingValidForDMOrMention(messageSound) : false)
+  const shouldNotifyMessage = checkSettingValid(messageNotification)
+  const shouldSoundMessage = checkSettingValid(messageSound)
   const shouldAddToUnreadMessages = isDMOrMention ||
     (shouldNotifyMessage || shouldSoundMessage) ||
     [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)

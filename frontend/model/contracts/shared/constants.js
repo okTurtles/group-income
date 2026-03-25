@@ -179,9 +179,9 @@ export const MESSAGE_NOTIFY_SETTINGS = {
 }
 
 export const GLOBAL_MESSAGE_NOTIFY_SETTINGS = {
-  ALL_MESSAGES: 'all-messages',
-  DM_AND_MENTIONS: 'dm-and-mentions',
-  NOTHING: 'nothing'
+  ALL_MESSAGES: 'global-all-messages',
+  DM_AND_MENTIONS: 'globaldm-and-mentions',
+  NOTHING: 'global-nothing'
 }
 
 export const POLL_TYPES = {

@@ -1,7 +1,7 @@
 'use strict'
 
 import { deserializer, serializer } from '@chelonia/serdes'
-import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
 import '@model/notifications/periodicNotifications.js'
@@ -611,8 +611,12 @@ sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) 
   const rootState = sbp('state/vuex/state')
   rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
 })
-sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings }) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
   const rootState = sbp('chelonia/rootState')
+  if (isGlobal) {
+    chatRoomID = GLOBAL_NOTIFICATION_SETTINGS_KEY
+  }
+
   if (chatRoomID) {
     if (!rootState.chatroom.chatNotificationSettings[chatRoomID]) {
       rootState.chatroom.chatNotificationSettings[chatRoomID] = {}

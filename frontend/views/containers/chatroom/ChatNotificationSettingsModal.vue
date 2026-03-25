@@ -117,6 +117,7 @@ export default ({
       const privacyLevelPrivate = rootState[this.currentChatRoomId]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
       const globalSettings = this.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
       const mappings = {
+        // mapping global settings to per-chatroom settings
         [GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES]: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS]: this.isDM || privacyLevelPrivate
           ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
