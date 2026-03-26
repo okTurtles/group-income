@@ -175,7 +175,13 @@ export const MESSAGE_VARIANTS = {
 export const MESSAGE_NOTIFY_SETTINGS = {
   ALL_MESSAGES: 'all-messages',
   MENTIONS: 'mentions',
-  NOTHING: 'nothing'
+  NOTHING: 'nothing',
+  // legacy settings (keeping it for backward compatibility handling in various places)-
+  // below DIRECT_MESSAGES has been replaced with MENTIONS above because:
+  // 1) it used to represent mentions only for group-channel context (no DM exists in group-channel context)
+  // 2) using the word 'direct-messages' separately doesn't make much sense in DM context because it pretty much means 'all messages' in this case.
+  //    So in DM context, DIRECT_MESSAGES and ALL_MESSAGES have now been merged to ALL_MESSAGES.
+  DIRECT_MESSAGES: 'direct-messages'
 }
 
 export const GLOBAL_MESSAGE_NOTIFY_SETTINGS = {

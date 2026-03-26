@@ -110,8 +110,13 @@ export default ({
   created () {
     if (this.chatNotificationSettings[this.currentChatRoomId]) {
       const settings = this.chatNotificationSettings[this.currentChatRoomId]
-      this.form.messageNotification = settings.messageNotification
-      this.form.messageSound = settings.messageSound
+      const handleLegacySetting = (setting) => {
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.js)
+        // So need to handle it here for backward compatibility.
+        return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES ? MESSAGE_NOTIFY_SETTINGS.MENTIONS : setting
+      }
+      this.form.messageNotification = handleLegacySetting(settings.messageNotification)
+      this.form.messageSound = handleLegacySetting(settings.messageSound)
     } else {
       const rootState = sbp('state/vuex/state')
       const privacyLevelPrivate = rootState[this.currentChatRoomId]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE

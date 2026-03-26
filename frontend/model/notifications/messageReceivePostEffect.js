@@ -41,10 +41,17 @@ async function messageReceivePostEffect ({
   const hasPerChatroomNotificationSettings = Boolean(rootGetters.chatNotificationSettings[contractID])
   const { messageNotification, messageSound } = chatNotificationSettings
   const checkSettingValid = (setting) => {
-    return hasPerChatroomNotificationSettings
-      ? setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || (setting === MESSAGE_NOTIFY_SETTINGS.MENTIONS && isDMOrMention)
-      : setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    if (hasPerChatroomNotificationSettings) {
+      // Checking against per-chatroom settings
+      return setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES below is a legacy setting which is being used here for backward compatibility.
+        // (refer to model/contracts/shared/constants.js for more details)
+        (isDMOrMention && [MESSAGE_NOTIFY_SETTINGS.MENTIONS, MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES].includes(setting))
+    } else {
+      // Checking against global settings
+      return setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
         ((isDMOrMention || privacyLevelPrivate) && setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS)
+    }
   }
   const shouldNotifyMessage = checkSettingValid(messageNotification)
   const shouldSoundMessage = checkSettingValid(messageSound)
