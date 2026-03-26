@@ -869,7 +869,10 @@ export default ({
       }
       const uploadAttachments = async () => {
         try {
-          attachments = await this.checkAndCompressImages(attachments)
+          if (attachments.some(attachment => attachment.needsImageCompression)) {
+            attachments = await this.checkAndCompressImages(attachments)
+          }
+
           data.attachments = await sbp('gi.actions/identity/uploadFiles', {
             attachments,
             billableContractID: contractID
@@ -878,11 +881,12 @@ export default ({
           console.error('[ChatMain.vue]: something went wrong while uploading attachments ', e)
           throw e
         } finally {
-          attachments.forEach(attachment => {
-            if (attachment.url) {
-              URL.revokeObjectURL(attachment.url)
-            }
-          })
+          // TODO: verify if it is okay to remove and do so.
+          // attachments.forEach(attachment => {
+          //   if (attachment.url) {
+          //     URL.revokeObjectURL(attachment.url)
+          //   }
+          // })
         }
       }
 
@@ -910,6 +914,7 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
+                console.log('!@# temporaryMessage', temporaryMessage)
                 if (temporaryMessage) {
                   Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
                 }
@@ -932,6 +937,14 @@ export default ({
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
             }
+
+            if (attachments?.length > 0) {
+              attachments.forEach(attachment => {
+                if (attachment.url) {
+                  URL.revokeObjectURL(attachment.url)
+                }
+              })
+            }
           }
           sendMessage(removeTemporaryMessage)
         }).catch((e) => {
@@ -940,6 +953,14 @@ export default ({
           } else {
             if (temporaryMessage) {
               Vue.set(temporaryMessage, 'hasFailed', true)
+
+              if (attachments?.length > 0) {
+                temporaryMessage.attachments = attachments
+              }
+
+              if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
+                Vue.delete(this.ephemeral.uploadingAttachments, temporaryMessage.hash)
+              }
             }
             console.error('[ChatMain.vue] Error sending message', e)
           }
@@ -963,7 +984,8 @@ export default ({
               name: `${fileNameWithoutExtension}.${extension}`,
               size: compressedImageBlob.size,
               url: URL.createObjectURL(compressedImageBlob),
-              compressedBlob: compressedImageBlob
+              compressedBlob: compressedImageBlob,
+              needsImageCompression: false
             }
           } else { return attachment }
         })

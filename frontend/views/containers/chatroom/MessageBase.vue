@@ -60,7 +60,11 @@
         size='1.5em'
       )
 
-      .c-attachments-wrapper(v-if='hasAttachments')
+      .c-failure-message-wrapper(v-if='isFailed')
+        i18n(tag='span') Message failed to send.
+        i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
+
+      .c-attachments-wrapper(v-else-if='hasAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
           :variant='variant'
@@ -72,10 +76,6 @@
           @delete-attachment='deleteAttachment'
           @image-attachments-render-complete='determineToEnableTruncationToggle'
         )
-
-      .c-failure-message-wrapper
-        i18n(tag='span') Message failed to send.
-        i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
   .c-full-width-body(
     ref='msgFullWidthBody'
@@ -245,6 +245,9 @@ export default ({
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
+    },
+    isFailed () {
+      return this.variant === MESSAGE_VARIANTS.FAILED
     },
     pinnedUserName () {
       if (this.isAlreadyPinned) {
@@ -439,12 +442,6 @@ export default ({
     margin-top: 0.25rem;
   }
 
-  &.failed {
-    .c-failure-message-wrapper {
-      display: block;
-    }
-  }
-
   &:hover,
   &:has(.c-menu .is-active) {
     background-color: $general_2;
@@ -469,7 +466,7 @@ export default ({
   }
 
   .c-failure-message-wrapper {
-    display: none;
+    display: block;
     margin-top: 0.25rem;
     font-weight: bold;
     font-size: 0.725rem;
