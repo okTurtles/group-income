@@ -272,7 +272,9 @@ export default ({
         } else if (mhash) {
           // NOTE: this block handles the behavior to scroll to the message with mhash
           //       when user clicks the message link of the one from current chatroom
-          this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+          this.$refs.chatMain?.scrollToMessage(mhash).catch((e) => {
+            console.error('[GroupChat.vue] Error scrolling to message', mhash, e)
+          }).finally(() => {
             // NOTE: delete mhash from queries after scroll to and highlight it
             const newQuery = { ...to.query }
             delete newQuery.mhash

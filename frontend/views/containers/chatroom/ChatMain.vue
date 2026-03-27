@@ -1042,17 +1042,21 @@ export default ({
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           // force conversation viewport to be at the bottom (most recent messages)
           setTimeout(async () => {
-            if (scrollTargetMessage) {
-              if (hasChatroomSwitchedSince()) return
-              await this.scrollToMessage(scrollTargetMessage, effect)
-            } else {
-              this.jumpToLatest()
-            }
+            try {
+              if (scrollTargetMessage) {
+                if (hasChatroomSwitchedSince()) return
+                await this.scrollToMessage(scrollTargetMessage, effect)
+              } else {
+                this.jumpToLatest()
+              }
 
-            resolve()
+              resolve()
+            } catch (e) {
+              reject(e)
+            }
           }, delay)
         })
       }
@@ -1328,7 +1332,33 @@ export default ({
       // At this point, we've not fetched any messages dynamically, so `fetched`
       // is set to false.
       Vue.set(this.messageState, 'fetched', false)
-      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+      if (!this.ephemeral.messagesInitiated) {
+        try {
+          await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+        } catch (e) {
+          // In case the initial scroll position is set to an invalid message,
+          // implement a recovery mechanism.
+          // This situation can happen when navigating to a hash that's invalid
+          // (using a link with an `mhash` parameter) or if the 'read until'
+          // state gets corrupted.
+          if (e?.name === 'ChelErrorResourceGone' && this.ephemeral.initialScroll.hash) {
+            console.error('[ChatMain.vue] Error with initial scroll: message not found. Falling back', chatRoomID, e)
+            // If we have any messages in the state, scroll to the latest
+            // Otherwise, unset initialScroll, which will take us to the top
+            this.ephemeral.initialScroll.hash =
+              messageState.messages.length
+                ? messageState.messages[messageState.messages.length - 1].hash
+                : null
+            // The init error will leave loadingUp set
+            this.ephemeral.loadingDown = this.ephemeral.loadingUp = false
+            // We're ready to proceed with loading again
+            await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+          } else {
+            // If it was some other error, re-throw it
+            throw e
+          }
+        }
+      }
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
