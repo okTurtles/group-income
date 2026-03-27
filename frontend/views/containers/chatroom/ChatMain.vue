@@ -1047,8 +1047,9 @@ export default ({
           setTimeout(async () => {
             try {
               if (scrollTargetMessage) {
-                if (hasChatroomSwitchedSince()) return
-                await this.scrollToMessage(scrollTargetMessage, effect)
+                if (!hasChatroomSwitchedSince()) {
+                  await this.scrollToMessage(scrollTargetMessage, effect)
+                }
               } else {
                 this.jumpToLatest()
               }
@@ -1206,6 +1207,7 @@ export default ({
                 forceUpdate: true
               })
             } else {
+              // Edge case: no messages left
               this.updateReadUntilMessageHash({
                 messageHash: '',
                 createdHeight: 0,
