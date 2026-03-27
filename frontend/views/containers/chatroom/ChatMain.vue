@@ -1160,7 +1160,6 @@ export default ({
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
 
       const lastMsg = this.ephemeral.messages[this.ephemeral.messages.length - 1]
-      const secondLastMsg = this.ephemeral.messages[this.ephemeral.messages.length - 2]
       const isDeletingLastMsg = msgHash === lastMsg?.hash
 
       const question = message.attachments?.length
@@ -1185,13 +1184,22 @@ export default ({
           // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
           // it needs to be updated to the second most recent one.
           if (isDeletingLastMsg &&
-            this.currentChatRoomReadUntil?.messageHash === msgHash &&
-            secondLastMsg) {
-            this.updateReadUntilMessageHash({
-              messageHash: secondLastMsg.hash,
-              createdHeight: secondLastMsg.height,
-              forceUpdate: true
-            })
+            this.currentChatRoomReadUntil?.messageHash === msgHash) {
+            const secondLastMsg = this.ephemeral.messages.findLast((msg, i) => i < lastMsg.height && !msg.pending)
+
+            if (secondLastMsg) {
+              this.updateReadUntilMessageHash({
+                messageHash: secondLastMsg.hash,
+                createdHeight: secondLastMsg.height,
+                forceUpdate: true
+              })
+            } else {
+              this.updateReadUntilMessageHash({
+                messageHash: contractID,
+                createdHeight: 0,
+                forceUpdate: true
+              })
+            }
           }
         }
       } catch (e) {
@@ -1440,7 +1448,9 @@ export default ({
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         // NOTE: skip adding useless invocations in KV_QUEUE queue.
-        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          return
+        }
 
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
