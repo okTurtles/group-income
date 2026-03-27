@@ -1193,9 +1193,9 @@ export default ({
             this.currentChatRoomReadUntil?.messageHash === msgHash) {
             let secondLastMsg = null
             // Find the next-to-last message that's not pending
-            for (let i = this.ephemeral.messages.length - 2; i >= 0; i--) {
+            for (let i = this.ephemeral.messages.length - 1; i >= 0; i--) {
               const msg = this.ephemeral.messages[i]
-              if (!msg.pending) {
+              if (msg.hash !== msgHash && !msg.pending) {
                 secondLastMsg = msg
                 break
               }
