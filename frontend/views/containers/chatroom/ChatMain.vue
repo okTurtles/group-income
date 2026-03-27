@@ -1185,7 +1185,15 @@ export default ({
           // it needs to be updated to the second most recent one.
           if (isDeletingLastMsg &&
             this.currentChatRoomReadUntil?.messageHash === msgHash) {
-            const secondLastMsg = this.ephemeral.messages.findLast((msg, i) => i < lastMsg.height && !msg.pending)
+            let secondLastMsg = null
+            // Find the next-to-last message that's not pending
+            for (let i = this.ephemeral.messages.length - 2; i >= 0; i--) {
+              const msg = this.ephemeral.messages[i]
+              if (!msg.pending) {
+                secondLastMsg = msg
+                break
+              }
+            }
 
             if (secondLastMsg) {
               this.updateReadUntilMessageHash({
@@ -1195,7 +1203,7 @@ export default ({
               })
             } else {
               this.updateReadUntilMessageHash({
-                messageHash: contractID,
+                messageHash: '',
                 createdHeight: 0,
                 forceUpdate: true
               })
