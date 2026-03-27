@@ -1,0 +1,16 @@
+{
+  "contracts": {
+    "gi.contracts_chatroom": {
+      "version": "2.5.0",
+      "path": "contracts/gi.contracts_chatroom/2.5.0/chatroom.2.5.0.manifest.json"
+    },
+    "gi.contracts_group": {
+      "version": "2.5.0",
+      "path": "contracts/gi.contracts_group/2.5.0/group.2.5.0.manifest.json"
+    },
+    "gi.contracts_identity": {
+      "version": "2.5.0",
+      "path": "contracts/gi.contracts_identity/2.5.0/identity.2.5.0.manifest.json"
+    }
+  }
+}

@@ -17,9 +17,9 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, execSync, fork } = require('child_process')
+const { exec, execSync, spawn } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
+const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -39,6 +39,7 @@ const packageJSON = require('./package.json')
 // require('@babel/register')
 
 const {
+  DENO_DIR = path.join(process.cwd(), '.deno'),
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
   MAX_EVENTS_AFTER = '',
@@ -59,8 +60,9 @@ const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
+// Make some important runtime variables available to subprocesses
+Object.assign(process.env, { DENO_DIR, NODE_ENV })
 
-const backendIndex = './backend/index.js'
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
@@ -75,13 +77,9 @@ const manifestJSON = path.join(contractsDir, 'manifests.json')
 const development = NODE_ENV === 'development'
 const production = !development
 
-// Make database path available to subprocess
-const dbPath = process.env.DB_PATH || './data'
-if (!process.env.DB_PATH) {
-  Object.assign(process.env, { DB_PATH: dbPath })
-}
-
 const isValidPort = (port) => {
+  // Using `isNaN` because port could be string. `Number.isInteger` won't work
+  // without casting.
   return !Number.isNaN(port) && port >= 1024 && port <= 65535
 }
 
@@ -113,15 +111,16 @@ module.exports = (grunt) => {
   const clone = o => JSON.parse(JSON.stringify(o))
 
   async function execWithErrMsg (cmd, errMsg) {
-    const { stdout, stderr } = await execP(cmd, {
+    try {
+      const { stdout } = await execP(cmd, {
       // this is needed to get it to work in certain Windows environments
-      shell: process.env.SHELL || '/bin/sh'
-    })
-    if (stderr) {
-      console.error(chalk`{red ${errMsg}:}`, stderr)
+        shell: process.env.SHELL || '/bin/sh'
+      })
+      return { stdout }
+    } catch (e) {
+      console.error(chalk`{red ${errMsg}:}`, e.stderr)
       throw new Error(errMsg)
     }
-    return { stdout }
   }
 
   async function generateManifests (dir, version) {
@@ -134,33 +133,25 @@ module.exports = (grunt) => {
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
       console.log(stdout)
     }
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'" + version))
+    const cmd = `ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest --name gi.contracts/{} --contract-version ${version} --slim ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`
+    grunt.log.writeln(cmd)
     // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+    const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
     console.log(stdout)
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
-    grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-    // If we're writing to a URL, don't try to create a directory
-    try {
-      const url = new URL(dest)
-      // Likely a drive letter
-      if (url.protocol.length < 3) {
-        throw new Error('Not a URL')
-      }
-    } catch {
-      await access(dest).catch(async () => await mkdir(dest))
-    }
-    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest ? `--url ${dest}` : ''} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
-    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
+    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest\.json:.*(zL7mM9d4Xb4.+)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
     fs.writeFileSync(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n', 'utf8')
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest = dbPath) {
+  async function genManifestsAndDeploy (dir, version, dest) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir, dest)
   }
@@ -205,98 +196,6 @@ module.exports = (grunt) => {
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
-  }
-
-  const databaseOptionBags = {
-    fs: {
-      dest: dbPath
-    },
-    sqlite: {
-      dest: `${dbPath}/groupincome.db`
-    }
-  }
-
-  // https://esbuild.github.io/api/
-  const esbuildOptionBags = {
-    // Native options that are shared between our esbuild tasks.
-    default: {
-      bundle: true,
-      chunkNames: '[name]-[hash]-cached',
-      define: {
-        'process.env.BUILD': "'web'", // Required by Vuelidate.
-        'process.env.CI': `'${CI}'`,
-        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-        'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
-        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
-        'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
-        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
-      },
-      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-      format: 'esm',
-      loader: {
-        '.eot': 'file',
-        '.ttf': 'file',
-        '.woff': 'file',
-        '.woff2': 'file'
-      },
-      minifyIdentifiers: production,
-      minifySyntax: production,
-      minifyWhitespace: production,
-      outdir: distJS,
-      sourcemap: true,
-      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks')
-    },
-    // Native options used when building the main entry point.
-    main: {
-      assetNames: '../css/[name]',
-      entryPoints: [mainSrc]
-    },
-    // Native options used when building our service worker(s).
-    serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
-    }
-  }
-  esbuildOptionBags.contracts = {
-    ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle'
-    ]),
-    // Format must be 'iife' because we don't want 'import' in the output
-    format: 'iife',
-    // banner: {
-    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
-    splitting: false,
-    outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
-    external: ['@sbp/sbp']
-  }
-  // prevent contract hash from changing each time we build them
-  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
-  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
-  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
-
-  // Additional options which are not part of the esbuild API.
-  const esbuildOtherOptionBags = {
-    main: {
-      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-      // making a post-build copying operation necessary.
-      postoperation: async ({ fileEventName, filePath } = {}) => {
-        // Only after a fresh build or a rebuild caused by a CSS file event.
-        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-          if (development) {
-            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-          }
-        }
-      }
-    }
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -404,16 +303,14 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: { SKIP_DB_FS_CASE_SENSITIVITY_CHECK: 'true', ...process.env } }
       },
-      chelDevDeploy: `find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`,
-      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`
+      chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy',
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy`
     }
   })
 
   // -------------------------------------------------------------------------
   //  Grunt Tasks
   // -------------------------------------------------------------------------
-
-  let child = null
 
   grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
@@ -446,40 +343,52 @@ module.exports = (grunt) => {
 
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
+  let child
+  grunt.registerTask('backend:launch', '[internal]', async function () {
     const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: { NODE_ENV, ...process.env },
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      done()
-    }
     if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
+      grunt.log.writeln('backend: terminating dangling child...')
+      await new Promise((resolve, reject) => {
+        child.on('close', resolve)
+        setTimeout(resolve, 500)
+        child.kill()
       })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
+      if (child) {
+        grunt.log.writeln('backend: force terminating dangling child...')
+        child.kill('SIGKILL')
+      }
     }
+    grunt.log.writeln('backend: forking...')
+    grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
+    const redirectOutput = (data) => {
+      grunt.log.write(data)
+    }
+    const pinoPrettyChild = production ? null : spawn('./node_modules/.bin/pino-pretty', ['--colorize'])
+    pinoPrettyChild?.stdout.on('data', redirectOutput)
+    pinoPrettyChild?.stderr.on('data', redirectOutput)
+    const output = production
+      ? redirectOutput
+      : (data) => {
+          pinoPrettyChild.stdin.write(data)
+        }
+    const proc = spawn('./node_modules/.bin/chel',
+      production
+        ? ['serve', 'dist']
+        : ['serve', '--dev', '-m', 'dist/contracts', 'dist']
+    )
+    proc.stdout.on('data', output)
+    proc.stderr.on('data', output)
+    proc.on('close', (rc) => {
+      pinoPrettyChild?.kill('SIGKILL')
+      if (child === proc) child = undefined
+      if (rc !== 0) {
+        grunt.log.error(`child exited with error code: ${rc}`.bold)
+        // ^C can cause c to be null, which is an OK error.
+        process.exit(rc || 0)
+      }
+    })
+    child = proc
+    done()
   })
 
   grunt.registerTask('build', function () {
@@ -523,22 +432,18 @@ module.exports = (grunt) => {
   grunt.registerTask('_pin', async function (version) {
     // a task internally executed in 'pin' task below
     const done = this.async()
-    const dirPath = `contracts/${version}`
 
-    if (fs.existsSync(dirPath)) {
-      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
-        fs.rmSync(dirPath, { recursive: true })
-      } else {
-        throw new Error(`already exists: ${dirPath}`)
+    try {
+      const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile && entry.name.endsWith('.manifest.json')) {
+          await execWithErrMsg(`chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
+          console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
+        }
       }
+    } finally {
+      done()
     }
-    if (!fs.existsSync('contracts')) {
-      console.error(chalk`{red folder needed but doesn't exist:} {bold contracts/}`)
-      throw new Error("doesn't exist: contracts/")
-    }
-    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
-    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    done()
   })
 
   grunt.registerTask('pin', function (version) {
@@ -569,17 +474,100 @@ module.exports = (grunt) => {
     // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
     // contract manifests match the ones that are the dist archive. We do this in both production
     // and development environments to make sure they match when serving the site using grunt serve.
-    grunt.task.run(['exec:chelProdDeploy', 'backend:relaunch', 'keepalive'])
+    grunt.task.run(['exec:chelProdDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:launch', 'keepalive'])
 
-  // --------------------
+  // n------------------
   // - Our esbuild task
   // --------------------
 
   grunt.registerTask('esbuild', async function () {
+  // https://esbuild.github.io/api/
+    const esbuildOptionBags = {
+    // Native options that are shared between our esbuild tasks.
+      default: {
+        bundle: true,
+        chunkNames: '[name]-[hash]-cached',
+        define: {
+          'process.env.BUILD': "'web'", // Required by Vuelidate.
+          'process.env.CI': `'${CI}'`,
+          'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
+          'process.env.GI_VERSION': `'${GI_VERSION}'`,
+          'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
+          'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+          'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
+          'process.env.NODE_ENV': `'${NODE_ENV}'`,
+          'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+          'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+          'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
+        },
+        external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+        format: 'esm',
+        loader: {
+          '.eot': 'file',
+          '.ttf': 'file',
+          '.woff': 'file',
+          '.woff2': 'file'
+        },
+        minifyIdentifiers: production,
+        minifySyntax: production,
+        minifyWhitespace: production,
+        outdir: distJS,
+        sourcemap: true,
+        // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+        splitting: !grunt.option('no-chunks')
+      },
+      // Native options used when building the main entry point.
+      main: {
+        assetNames: '../css/[name]',
+        entryPoints: [mainSrc]
+      },
+      // Native options used when building our service worker(s).
+      serviceWorkers: {
+        entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+      }
+    }
+    esbuildOptionBags.contracts = {
+      ...pick(clone(esbuildOptionBags.default), [
+        'define', 'bundle'
+      ]),
+      // Format must be 'iife' because we don't want 'import' in the output
+      format: 'iife',
+      // banner: {
+      //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
+      // },
+      splitting: false,
+      outdir: distContracts,
+      entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
+      external: ['@sbp/sbp']
+    }
+    // prevent contract hash from changing each time we build them
+    esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
+    esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
+    esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
+    esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
+
+    // Additional options which are not part of the esbuild API.
+    const esbuildOtherOptionBags = {
+      main: {
+      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
+      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
+      // making a post-build copying operation necessary.
+        postoperation: async ({ fileEventName, filePath } = {}) => {
+        // Only after a fresh build or a rebuild caused by a CSS file event.
+          if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
+            await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+            if (development) {
+              await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+            }
+          }
+        }
+      }
+    }
+
     const done = this.async()
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
     const aliasPlugin = createAliasPlugin(aliasPluginOptions)
@@ -639,7 +627,6 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -688,7 +675,7 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
+              const dest = process.env.API_URL
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
@@ -721,9 +708,9 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
@@ -739,7 +726,7 @@ module.exports = (grunt) => {
     // will exit leaving a dangling child server process.
     if (child) {
       grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
+      child.kill('SIGKILL')
     }
     // Stops the Flowtype server.
     exec('./node_modules/.bin/flow stop')
