@@ -64,7 +64,7 @@
         i18n(tag='span') Message failed to send.
         i18n.c-failure-link(tag='span' @click='$emit("retry")') Resend message
 
-      .c-attachments-wrapper(v-else-if='hasAttachments')
+      .c-attachments-wrapper(v-else-if='showAttachments')
         chat-attachment-preview(
           :attachmentList='attachments'
           :variant='variant'
@@ -239,15 +239,15 @@ export default ({
     hasAttachments () {
       return Boolean(this.attachments?.length)
     },
+    showAttachments () {
+      return this.hasAttachments && !this.isFailed && !this.isPending
+    },
     hasMediaAttachment () {
       return Array.isArray(this.attachments) &&
         this.attachments.some(attachment => ['image', 'video'].includes(getFileType(attachment.mimeType)))
     },
     isAlreadyPinned () {
       return !!this.pinnedBy
-    },
-    isFailed () {
-      return this.variant === MESSAGE_VARIANTS.FAILED
     },
     pinnedUserName () {
       if (this.isAlreadyPinned) {
@@ -279,6 +279,9 @@ export default ({
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
+    },
+    isFailed () {
+      return this.variant === MESSAGE_VARIANTS.FAILED
     },
     showAttachmentsLoader () {
       return this.isPending && this.uploadingAttachments

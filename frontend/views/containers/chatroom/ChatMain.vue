@@ -334,7 +334,9 @@ export default ({
         currentHighestHeight: undefined,
         switchController: new AbortController(),
         // Used for non-joined chatrooms
-        latestHeight: undefined
+        latestHeight: undefined,
+        // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
+        failedMessagesAttachments: {}
       },
       messageState: {
         // `fetched` indicates whether we've loaded messages dynamically
@@ -378,6 +380,10 @@ export default ({
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
+
+    Object.keys(this.ephemeral.failedMessagesAttachments).forEach(messageHash => {
+      this.clearFailedMessagesAttachmentsEntry(messageHash)
+    })
   },
   computed: {
     ...mapGetters([
@@ -800,7 +806,7 @@ export default ({
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments, replyingMessage) {
+    handleSendMessage (text, attachments, replyingMessage, isRetrying = false) {
       const hasAttachments = attachments?.length > 0
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
@@ -914,7 +920,6 @@ export default ({
 
                 Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
-                console.log('!@# temporaryMessage', temporaryMessage)
                 if (temporaryMessage) {
                   Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
                 }
@@ -925,7 +930,7 @@ export default ({
           }
         }).then(async () => {
           await uploadAttachments()
-          const removeTemporaryMessage = () => {
+          const postSendActions = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
@@ -938,15 +943,20 @@ export default ({
               messages.splice(msgIndex, 1)
             }
 
+            // revoke object URLs of attachments if any
             if (attachments?.length > 0) {
-              attachments.forEach(attachment => {
-                if (attachment.url) {
-                  URL.revokeObjectURL(attachment.url)
-                }
-              })
+              if (isRetrying) {
+                this.clearFailedMessagesAttachmentsEntry(temporaryMessage.hash)
+              } else {
+                attachments.forEach(attachment => {
+                  if (attachment.url) {
+                    URL.revokeObjectURL(attachment.url)
+                  }
+                })
+              }
             }
           }
-          sendMessage(removeTemporaryMessage)
+          sendMessage(postSendActions)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -954,8 +964,9 @@ export default ({
             if (temporaryMessage) {
               Vue.set(temporaryMessage, 'hasFailed', true)
 
-              if (attachments?.length > 0) {
-                temporaryMessage.attachments = attachments
+              if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[temporaryMessage.hash]) {
+                // Attachments are kept so that they can be used again for the next re-attempt.
+                this.ephemeral.failedMessagesAttachments[temporaryMessage.hash] = attachments
               }
 
               if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
@@ -1103,7 +1114,8 @@ export default ({
       const message = cloneDeep(msg)
       const index = this.ephemeral.messages.indexOf(msg)
       if (index >= 0) this.ephemeral.messages.splice(index, 1)
-      this.handleSendMessage(message.text, message.attachments, message.replyingMessage)
+      const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
+      this.handleSendMessage(message.text, attachments, message.replyingMessage, true)
     },
     replyToMessage (message) {
       const { text, hash, type, attachments } = message
@@ -1790,7 +1802,18 @@ export default ({
           throw e
         }
       }
-    }, process.env.CI ? 25 : 250)
+    }, process.env.CI ? 25 : 250),
+    clearFailedMessagesAttachmentsEntry (messageHash) {
+      if (Array.isArray(this.ephemeral.failedMessagesAttachments[messageHash])) {
+        this.ephemeral.failedMessagesAttachments[messageHash].forEach(attachment => {
+          if (attachment.url) {
+            // Ensure object URLs are revoked to avoid memory leaks before the entry is deleted.
+            URL.revokeObjectURL(attachment.url)
+          }
+        })
+        delete this.ephemeral.failedMessagesAttachments[messageHash]
+      }
+    }
   },
   provide () {
     return {
