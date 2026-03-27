@@ -1178,6 +1178,7 @@ export default ({
         secondaryButton: L('Cancel')
       }
 
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       try {
         const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
         if (primaryButtonSelected) {
@@ -1188,7 +1189,7 @@ export default ({
 
           // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
           // it needs to be updated to the second most recent one.
-          if (isDeletingLastMsg &&
+          if (!hasChatroomSwitchedSince() && isDeletingLastMsg &&
             this.currentChatRoomReadUntil?.messageHash === msgHash) {
             let secondLastMsg = null
             // Find the next-to-last message that's not pending

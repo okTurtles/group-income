@@ -232,7 +232,9 @@ export default ({
     },
     scrollToPinnedMessage (messageHash) {
       if (this.$refs.chatMain) {
-        this.$refs.chatMain.scrollToMessage(messageHash)
+        this.$refs.chatMain.scrollToMessage(messageHash).catch((e) => {
+          console.error('[GroupChat.vue] Error scrolling to pinned message', messageHash, e)
+        })
       }
     },
     hasPermissionToReadChatRoom (chatRoomID) {
