@@ -886,13 +886,6 @@ export default ({
         } catch (e) {
           console.error('[ChatMain.vue]: something went wrong while uploading attachments ', e)
           throw e
-        } finally {
-          // TODO: verify if it is okay to remove and do so.
-          // attachments.forEach(attachment => {
-          //   if (attachment.url) {
-          //     URL.revokeObjectURL(attachment.url)
-          //   }
-          // })
         }
       }
 
