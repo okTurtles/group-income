@@ -1344,8 +1344,14 @@ export default ({
           // This situation can happen when navigating to a hash that's invalid
           // (using a link with an `mhash` parameter) or if the 'read until'
           // state gets corrupted.
-          if (e?.name === 'ChelErrorResourceGone' && this.ephemeral.initialScroll.hash) {
-            console.error('[ChatMain.vue] Error with initial scroll: message not found. Falling back', chatRoomID, e)
+          if (this.ephemeral.initialScroll.hash) {
+            // TODO: A toast notification should be shown to the user
+            // Note: At this point, we don't know exactly what the error was
+            // If it was ChelErrorResourceGone, it likely indicates a non-existent
+            // initial scroll message. Other initial-message related errors could
+            // be, e.g., an invalid CID. It could also be a message that exists
+            // but doesn't belong to this chatroom.
+            console.error('[ChatMain.vue] Error with initial scroll. Falling back', chatRoomID, e)
             // If we have any messages in the state, scroll to the latest
             // Otherwise, unset initialScroll, which will take us to the top
             this.ephemeral.initialScroll.hash =
