@@ -631,7 +631,7 @@ export default (sbp('sbp/selectors/register', {
             throw new Error('Unable to share rotated keys')
           }
         }
-        return sbp('chelonia/out/keyShare', {
+        await sbp('chelonia/out/keyShare', {
           contractID: groupID,
           contractName: rootState.contracts[groupID].type,
           data: encryptedOutgoingData(groupID, CEKid, {
@@ -680,15 +680,42 @@ export default (sbp('sbp/selectors/register', {
     // to their respective contracts and there are no keys to include in
     // the same event as OP_KEY_UPDATE. Therefore, we return undefined
     if (!newKeys.pek) return undefined
+
+    const newPEKid = newKeys.pek[2]
+    const newPEK = newKeys.pek[1]
+    const DMKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk', true)
+    const DMK = DMKid && rootState.secretKeys[DMKid]
+
     return [
       undefined, // Nothing before OP_KEY_UPDATE
       [
+        // Re-encrypt DMK with the new PEK
+        // This allows people in a new group we've joined to be able to send
+        // us a DM, even if the PEK has been rotated.
+        ...(DMKid
+          ? [['chelonia/out/keyShare', {
+              contractID: contractID,
+              contractName: rootState.contracts[contractID].type,
+              data: encryptedOutgoingDataWithRawKey(newPEK, {
+                contractID,
+                // $FlowFixMe
+                keys: [{
+                  id: DMKid,
+                  meta: {
+                    private: {
+                      content: encryptedOutgoingDataWithRawKey(newPEK, serializeKey(DMK, true))
+                    }
+                  }
+                }]
+              })
+            }]]
+          : []),
         // Re-encrypt attributes with the new PEK
         await sbp('gi.actions/identity/setAttributes', {
           contractID,
           data: state.attributes,
-          encryptionKey: newKeys.pek[1],
-          encryptionKeyId: newKeys.pek[2],
+          encryptionKey: newPEK,
+          encryptionKeyId: newPEKid,
           returnInvocation: true
         })
       ]
@@ -711,7 +738,7 @@ export default (sbp('sbp/selectors/register', {
 
       if (!signingKeyId) {
         console.error(`[createDirectMessage] No suitable signing key for partner ${partnerIDs[index]}`)
-        throw new Error(L('Unable to establish secure messaging with one or more participants.'))
+        throw new Error(L('Unable to establish messaging with one or more participants.'))
       }
 
       signingKeyIdsMap[partnerIDs[index]] = signingKeyId
