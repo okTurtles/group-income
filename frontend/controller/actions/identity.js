@@ -710,7 +710,8 @@ export default (sbp('sbp/selectors/register', {
       const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
 
       if (!signingKeyId) {
-        throw new Error(`Unable to find a suitable signing key for ${partnerIDs[index]}`)
+        console.error(`[createDirectMessage] No suitable signing key for partner ${partnerIDs[index]}`)
+        throw new Error(L('Unable to establish secure messaging with one or more participants.'))
       }
 
       signingKeyIdsMap[partnerIDs[index]] = signingKeyId
