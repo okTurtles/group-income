@@ -704,6 +704,18 @@ export default (sbp('sbp/selectors/register', {
     const currentGroupId = params.data.currentGroupId
     const identityContractID = rootGetters.ourIdentityContractId
 
+    await sbp('chelonia/contract/wait', partnerIDs)
+    const signingKeyIdsMap = Object.create(null)
+    for (let index = 0; index < partnerIDs.length; index++) {
+      const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
+
+      if (!signingKeyId) {
+        throw new Error(`Unable to find a suitable signing key for ${partnerIDs[index]}`)
+      }
+
+      signingKeyIdsMap[partnerIDs[index]] = signingKeyId
+    }
+
     const message = await sbp('gi.actions/chatroom/create', {
       data: {
         attributes: {
@@ -764,7 +776,6 @@ export default (sbp('sbp/selectors/register', {
       throw e
     })
 
-    await sbp('chelonia/contract/wait', partnerIDs)
     for (let index = 0; index < partnerIDs.length; index++) {
       const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
 
@@ -778,7 +789,6 @@ export default (sbp('sbp/selectors/register', {
         keyIds: '*'
       })
 
-      const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
       await sbp('gi.actions/identity/joinDirectMessage', {
         contractID: partnerIDs[index],
         data: {
@@ -788,7 +798,7 @@ export default (sbp('sbp/selectors/register', {
         },
         // For now, we assume that we're messaging someone which whom we
         // share a group
-        signingKeyId,
+        signingKeyId: signingKeyIdsMap[partnerIDs[index]],
         innerSigningContractID: null,
         innerSigningKeyId: null,
         hooks
