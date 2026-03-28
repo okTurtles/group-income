@@ -692,7 +692,7 @@ export default (sbp('sbp/selectors/register', {
         // Re-encrypt DMK with the new PEK
         // This allows people in a new group we've joined to be able to send
         // us a DM, even if the PEK has been rotated.
-        ...(DMKid
+        ...(DMK
           ? [['chelonia/out/keyShare', {
               contractID: contractID,
               contractName: rootState.contracts[contractID].type,
@@ -703,7 +703,7 @@ export default (sbp('sbp/selectors/register', {
                   id: DMKid,
                   meta: {
                     private: {
-                      content: encryptedOutgoingDataWithRawKey(newPEK, serializeKey(DMK, true))
+                      content: encryptedOutgoingDataWithRawKey(newPEK, DMK)
                     }
                   }
                 }]
