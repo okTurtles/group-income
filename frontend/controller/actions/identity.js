@@ -761,48 +761,55 @@ export default (sbp('sbp/selectors/register', {
       console.warn('[gi.actions/identity/createDirectMessage] Timeout waiting for chatroom join')
     }, 300_000) // Large 5 minute timeout to account for any delays
 
-    await sendMessage({
-      ...omit(params, ['options', 'data', 'action', 'hooks']),
-      data: {
-        contractID: message.contractID()
-      },
-      hooks: {
-        onprocessed: params.hooks?.onprocessed
-      }
-    }).catch(e => {
-      clearTimeout(timeoutId)
-      unregister()
-
-      throw e
-    })
-
-    for (let index = 0; index < partnerIDs.length; index++) {
-      const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
-
-      // Share the keys to the newly created chatroom with partners
-      // TODO: We need to handle multiple groups and the possibility of not
-      // having any groups in common
-      await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: partnerIDs[index],
-        contractName: 'gi.contracts/identity',
-        subjectContractID: message.contractID(),
-        keyIds: '*'
-      })
-
-      await sbp('gi.actions/identity/joinDirectMessage', {
-        contractID: partnerIDs[index],
+    try {
+      await sendMessage({
+        ...omit(params, ['options', 'data', 'action', 'hooks']),
         data: {
-          // TODO: We need to handle multiple groups and the possibility of not
-          // having any groups in common
           contractID: message.contractID()
         },
-        // For now, we assume that we're messaging someone which whom we
-        // share a group
-        signingKeyId: signingKeyIdsMap[partnerIDs[index]],
-        innerSigningContractID: null,
-        innerSigningKeyId: null,
-        hooks
+        hooks: {
+          onprocessed: params.hooks?.onprocessed
+        }
       })
+
+      for (let index = 0; index < partnerIDs.length; index++) {
+        const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+
+        // Share the keys to the newly created chatroom with partners
+        // TODO: We need to handle multiple groups and the possibility of not
+        // having any groups in common
+        await sbp('gi.actions/out/shareVolatileKeys', {
+          contractID: partnerIDs[index],
+          contractName: 'gi.contracts/identity',
+          subjectContractID: message.contractID(),
+          keyIds: '*'
+        })
+
+        await sbp('gi.actions/identity/joinDirectMessage', {
+          contractID: partnerIDs[index],
+          data: {
+          // TODO: We need to handle multiple groups and the possibility of not
+          // having any groups in common
+            contractID: message.contractID()
+          },
+          // For now, we assume that we're messaging someone which whom we
+          // share a group
+          signingKeyId: signingKeyIdsMap[partnerIDs[index]],
+          innerSigningContractID: null,
+          innerSigningKeyId: null,
+          hooks
+        })
+      }
+    } catch (e) {
+      clearTimeout(timeoutId)
+      unregister()
+      sbp('chelonia/out/deleteContract', message.contractID(), {
+        [message.contractID()]: { billableContractID: identityContractID }
+      }).catch((e2) => {
+        console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', message.contractID(), e, e2)
+      })
+
+      throw e
     }
 
     return message.contractID()

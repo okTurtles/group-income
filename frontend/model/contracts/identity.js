@@ -416,6 +416,13 @@ sbp('chelonia/defineContract', {
         contractID: string
       }),
       process ({ contractID, data }, { state }) {
+        if (!state.chatRooms?.[contractID]) {
+          // When creating a DM, we may not have the `.chatRooms` property
+          // This is because the contructor may not be readable if the PEK
+          // has been rotated
+          throw new TypeError(L('Never joined or already left direct message.'))
+        }
+
         if (state.chatRooms[data.contractID].visible) {
           sbp('gi.contracts/identity/pushSideEffect', contractID,
             ['gi.contracts/identity/referenceTally', contractID, data.contractID, 'release']
