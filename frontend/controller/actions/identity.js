@@ -764,10 +764,10 @@ export default (sbp('sbp/selectors/register', {
       const getters = sbp('state/vuex/getters')
       if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
         // Small delay to account for state propagation delays between the browser
-        // and the SW
+        // and the SW (see app/chatroom.js)
         timeoutId = setTimeout(
           () => sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID }),
-          500
+          1000
         )
       }
     }

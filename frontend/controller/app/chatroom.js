@@ -28,11 +28,11 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
       // Re-grab the state as it could be a stale reference
       const rootGetters = sbp('state/vuex/getters')
       if (!rootGetters.isJoinedChatRoom(chatRoomID, identityContractID)) {
-        if (++attemptCount > 5) {
-          console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 attempts', { identityContractID, groupContractID, chatRoomID })
+        if (++attemptCount > 10) {
+          console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 10 attempts', { identityContractID, groupContractID, chatRoomID })
           return
         }
-        setTimeout(setCurrentChatRoomId, 5 * Math.pow(1.75, attemptCount))
+        setTimeout(setCurrentChatRoomId, 5 * Math.pow(1.65, attemptCount))
       } else {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
       }
