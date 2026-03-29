@@ -381,8 +381,13 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
 
-    Object.keys(this.ephemeral.failedMessagesAttachments).forEach(messageHash => {
-      this.clearFailedMessagesAttachmentsEntry(messageHash)
+    Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
+      // Ensure object URLs are revoked to avoid memory leaks.
+      attachments.forEach(attachment => {
+        if (attachment.url) {
+          URL.revokeObjectURL(attachment.url)
+        }
+      })
     })
   },
   computed: {
@@ -934,13 +939,9 @@ export default ({
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
-            }
 
-            // revoke object URLs of attachments if any
-            if (attachments?.length > 0) {
-              if (isRetrying) {
-                this.clearFailedMessagesAttachmentsEntry(temporaryMessage.hash)
-              } else {
+              // revoke object URLs of attachments if any, to avoid memory leaks.
+              if (attachments?.length > 0) {
                 attachments.forEach(attachment => {
                   if (attachment.url) {
                     URL.revokeObjectURL(attachment.url)
@@ -1112,7 +1113,14 @@ export default ({
       const message = cloneDeep(msg)
       const index = this.ephemeral.messages.indexOf(msg)
       if (index >= 0) this.ephemeral.messages.splice(index, 1)
+
+      // check if there was attachments in the faild previous attempt and include them if any.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
+      if (attachments) {
+        // Since a new message hash will be created for the retry, Remove the entry with the current hash.
+        delete this.ephemeral.failedMessagesAttachments[message.hash]
+      }
+
       this.handleSendMessage(message.text, attachments, message.replyingMessage, true)
     },
     replyToMessage (message) {
@@ -1852,18 +1860,7 @@ export default ({
           throw e
         }
       }
-    }, process.env.CI ? 25 : 250),
-    clearFailedMessagesAttachmentsEntry (messageHash) {
-      if (Array.isArray(this.ephemeral.failedMessagesAttachments[messageHash])) {
-        this.ephemeral.failedMessagesAttachments[messageHash].forEach(attachment => {
-          if (attachment.url) {
-            // Ensure object URLs are revoked to avoid memory leaks before the entry is deleted.
-            URL.revokeObjectURL(attachment.url)
-          }
-        })
-        delete this.ephemeral.failedMessagesAttachments[messageHash]
-      }
-    }
+    }, process.env.CI ? 25 : 250)
   },
   provide () {
     return {
