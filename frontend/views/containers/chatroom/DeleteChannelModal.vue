@@ -63,6 +63,9 @@ export default ({
   },
   computed: {
     ...mapGetters(['currentChatRoomId', 'chatRoomAttributes', 'groupGeneralChatRoomId']),
+    // TODO: BEGIN Temporary code (see issue #3066) for removing DMs
+    ...mapGetters(['ourIdentityContractId', 'isGroupDirectMessage']),
+    // TODO: END   Temporary code (see issue #3066) for removing DMs
     ...mapState(['currentGroupId'])
   },
   methods: {
@@ -71,6 +74,23 @@ export default ({
     },
     async submit () {
       if (this.$v.form.$invalid) { return }
+
+      // TODO: BEGIN Temporary code (see issue #3066) for removing DMs
+      if (this.isGroupDirectMessage(this.currentChatRoomId)) {
+        try {
+          const chatRoomID = this.currentChatRoomId
+          await sbp('chelonia/out/deleteContract', chatRoomID, {
+            [chatRoomID]: { billableContractID: this.ourIdentityContractId }
+          })
+
+          this.close()
+        } catch (e) {
+          console.error('RemoveChannelModal submit() error:', e)
+          this.$refs.formMsg.danger(e.message)
+        }
+        return
+      }
+      // TODO: END   Temporary code (see issue #3066) for removing DMs
 
       try {
         const chatRoomID = this.currentChatRoomId
