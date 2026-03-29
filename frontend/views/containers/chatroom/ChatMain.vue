@@ -811,7 +811,7 @@ export default ({
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments, replyingMessage, isRetrying = false) {
+    handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
@@ -870,10 +870,16 @@ export default ({
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
-          } else {
-            const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-            if (msgIndex > 0) {
-              Vue.set(this.messageState.contract.messages[msgIndex], 'hasFailed', true)
+          }
+
+          const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
+          if (msgIndex > 0) {
+            const failedMsg = this.messageState.contract.messages[msgIndex]
+            Vue.set(failedMsg, 'hasFailed', true)
+
+            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
+              // Attachments are kept so that they can be used again for the next re-attempt.
+              this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
             }
           }
         })
@@ -954,21 +960,21 @@ export default ({
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
-          } else {
-            if (temporaryMessage) {
-              Vue.set(temporaryMessage, 'hasFailed', true)
-
-              if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[temporaryMessage.hash]) {
-                // Attachments are kept so that they can be used again for the next re-attempt.
-                this.ephemeral.failedMessagesAttachments[temporaryMessage.hash] = attachments
-              }
-
-              if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
-                Vue.delete(this.ephemeral.uploadingAttachments, temporaryMessage.hash)
-              }
-            }
-            console.error('[ChatMain.vue] Error sending message', e)
           }
+
+          if (temporaryMessage) {
+            Vue.set(temporaryMessage, 'hasFailed', true)
+
+            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[temporaryMessage.hash]) {
+              // Attachments are kept so that they can be used again for the next re-attempt.
+              this.ephemeral.failedMessagesAttachments[temporaryMessage.hash] = attachments
+            }
+
+            if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
+              Vue.delete(this.ephemeral.uploadingAttachments, temporaryMessage.hash)
+            }
+          }
+          console.error('[ChatMain.vue] Error sending message', e)
         })
       }
     },
@@ -979,22 +985,30 @@ export default ({
             const compressedImageBlob = await compressImage(attachment.url)
             const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
             const extension = compressedImageBlob.type.split('/')[1]
-
-            // Since a new object URL is created for the compressed image, revoke the old object URL.
-            URL.revokeObjectURL(attachment.url)
-
+            const newUrl = URL.createObjectURL(compressedImageBlob)
             return {
               ...attachment,
               mimeType: compressedImageBlob.type,
               name: `${fileNameWithoutExtension}.${extension}`,
               size: compressedImageBlob.size,
-              url: URL.createObjectURL(compressedImageBlob),
+              url: newUrl,
+              _oldUrl: attachment.url,
               compressedBlob: compressedImageBlob,
               needsImageCompression: false
             }
           } else { return attachment }
         })
-      )
+      ).then(attachments => {
+        // Since a new object URL is created for the compressed image, revoke the old object URL.
+        attachments.forEach(attachment => {
+          if (attachment._oldUrl) {
+            URL.revokeObjectURL(attachment._oldUrl)
+            delete attachment._oldUrl
+          }
+        })
+
+        return attachments
+      })
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.ephemeral.messages.length) {
@@ -1121,7 +1135,7 @@ export default ({
         delete this.ephemeral.failedMessagesAttachments[message.hash]
       }
 
-      this.handleSendMessage(message.text, attachments, message.replyingMessage, true)
+      this.handleSendMessage(message.text, attachments, message.replyingMessage)
     },
     replyToMessage (message) {
       const { text, hash, type, attachments } = message
