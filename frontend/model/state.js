@@ -365,7 +365,7 @@ sbp('sbp/selectors/register', {
 
       // Issue the action to initiate OP_KEY_SHARE
       sbp('gi.actions/identity/shareDMKwithPEK', ourIdentityContractId).catch((e) => {
-        console.error('Error at shareDMKwithPEK', e)
+        console.error('[postUpgradeVerification] Error at shareDMKwithPEK', e)
       })
     })()
   },
