@@ -1068,17 +1068,22 @@ export default ({
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
       if (contractID) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           // force conversation viewport to be at the bottom (most recent messages)
           setTimeout(async () => {
-            if (scrollTargetMessage) {
-              if (hasChatroomSwitchedSince()) return
-              await this.scrollToMessage(scrollTargetMessage, effect)
-            } else {
-              this.jumpToLatest()
-            }
+            try {
+              if (scrollTargetMessage) {
+                if (!hasChatroomSwitchedSince()) {
+                  await this.scrollToMessage(scrollTargetMessage, effect)
+                }
+              } else {
+                this.jumpToLatest()
+              }
 
-            resolve()
+              resolve()
+            } catch (e) {
+              reject(e)
+            }
           }, delay)
         })
       }
@@ -1187,7 +1192,6 @@ export default ({
       const manifestCids = (message.attachments || []).map(attachment => attachment.downloadData.manifestCid)
 
       const lastMsg = this.ephemeral.messages[this.ephemeral.messages.length - 1]
-      const secondLastMsg = this.ephemeral.messages[this.ephemeral.messages.length - 2]
       const isDeletingLastMsg = msgHash === lastMsg?.hash
 
       const question = message.attachments?.length
@@ -1201,6 +1205,7 @@ export default ({
         secondaryButton: L('Cancel')
       }
 
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       try {
         const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
         if (primaryButtonSelected) {
@@ -1211,14 +1216,32 @@ export default ({
 
           // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
           // it needs to be updated to the second most recent one.
-          if (isDeletingLastMsg &&
-            this.currentChatRoomReadUntil?.messageHash === msgHash &&
-            secondLastMsg) {
-            this.updateReadUntilMessageHash({
-              messageHash: secondLastMsg.hash,
-              createdHeight: secondLastMsg.height,
-              forceUpdate: true
-            })
+          if (!hasChatroomSwitchedSince() && isDeletingLastMsg &&
+            this.currentChatRoomReadUntil?.messageHash === msgHash) {
+            let secondLastMsg = null
+            // Find the next-to-last message that's not pending
+            for (let i = this.ephemeral.messages.length - 1; i >= 0; i--) {
+              const msg = this.ephemeral.messages[i]
+              if (msg.hash !== msgHash && !msg.pending) {
+                secondLastMsg = msg
+                break
+              }
+            }
+
+            if (secondLastMsg) {
+              this.updateReadUntilMessageHash({
+                messageHash: secondLastMsg.hash,
+                createdHeight: secondLastMsg.height,
+                forceUpdate: true
+              })
+            } else {
+              // Edge case: no messages left
+              this.updateReadUntilMessageHash({
+                messageHash: '',
+                createdHeight: 0,
+                forceUpdate: true
+              })
+            }
           }
         }
       } catch (e) {
@@ -1339,7 +1362,39 @@ export default ({
       // At this point, we've not fetched any messages dynamically, so `fetched`
       // is set to false.
       Vue.set(this.messageState, 'fetched', false)
-      if (!this.ephemeral.messagesInitiated) await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+      if (!this.ephemeral.messagesInitiated) {
+        try {
+          await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+        } catch (e) {
+          // In case the initial scroll position is set to an invalid message,
+          // implement a recovery mechanism.
+          // This situation can happen when navigating to a hash that's invalid
+          // (using a link with an `mhash` parameter) or if the 'read until'
+          // state gets corrupted.
+          if (this.ephemeral.initialScroll.hash) {
+            // TODO: A toast notification should be shown to the user
+            // Note: At this point, we don't know exactly what the error was
+            // If it was ChelErrorResourceGone, it likely indicates a non-existent
+            // initial scroll message. Other initial-message related errors could
+            // be, e.g., an invalid CID. It could also be a message that exists
+            // but doesn't belong to this chatroom.
+            console.error('[ChatMain.vue] Error with initial scroll. Falling back', chatRoomID, e)
+            // If we have any messages in the state, scroll to the latest
+            // Otherwise, unset initialScroll, which will take us to the top
+            this.ephemeral.initialScroll.hash =
+              messageState.messages.length
+                ? messageState.messages[messageState.messages.length - 1].hash
+                : null
+            // The init error will leave loadingUp set
+            this.ephemeral.loadingDown = this.ephemeral.loadingUp = false
+            // We're ready to proceed with loading again
+            await this.loadMoreMessages(chatRoomID, hasChatroomSwitchedSince)
+          } else {
+            // If it was some other error, re-throw it
+            throw e
+          }
+        }
+      }
     },
     // Similar to calling initializeState(true), except that it's synchronous
     // and doesn't rely on `renderingChatRoomId`, which isn't set yet.
@@ -1467,7 +1522,9 @@ export default ({
       const chatRoomID = this.ephemeral.renderingChatRoomId
       if (chatRoomID && this.isJoinedChatRoom(chatRoomID)) {
         // NOTE: skip adding useless invocations in KV_QUEUE queue.
-        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) { return }
+        if (!forceUpdate && this.currentChatRoomReadUntil?.createdHeight >= createdHeight) {
+          return
+        }
 
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
