@@ -855,7 +855,12 @@ export default (sbp('sbp/selectors/register', {
 
       throw e
     } finally {
-      await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
+      try {
+        await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
+      } catch (e) {
+        // May have been deleted
+        console.error('[gi.actions/identity/createDirectMessage] Error releasing chatroom', e)
+      }
     }
 
     return chatroomID
