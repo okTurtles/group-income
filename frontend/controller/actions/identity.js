@@ -758,45 +758,62 @@ export default (sbp('sbp/selectors/register', {
         postpublish: null
       }
     }, identityContractID)
+    const chatroomID = message.contractID()
 
-    const switchChannelAfterJoined = (contractID: string) => {
-      if (contractID === message.contractID()) {
-        const getters = sbp('state/vuex/getters')
-        if (getters.isJoinedChatRoom(contractID, identityContractID)) {
-          clearTimeout(timeoutId)
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
-          sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
-        }
+    const switchAfterJoined = () => {
+      const getters = sbp('state/vuex/getters')
+      if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
+        // Small delay to account for state propagation delays between the browser
+        // and the SW
+        timeoutId = setTimeout(
+          () => sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID }),
+          500
+        )
       }
     }
-    const unregister = sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
-    // Add timeout fallback
-    const timeoutId = setTimeout(() => {
-      unregister()
-      console.warn('[gi.actions/identity/createDirectMessage] Timeout waiting for chatroom join')
-    }, 300_000) // Large 5 minute timeout to account for any delays
+    let timeoutId
 
+    await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
     try {
       // Share the keys to the newly created chatroom with ourselves
       await sbp('gi.actions/out/shareVolatileKeys', {
         contractID: identityContractID,
         contractName: 'gi.contracts/identity',
-        subjectContractID: message.contractID(),
+        subjectContractID: chatroomID,
         keyIds: '*'
       })
 
+      let receivedChatroomJoin = false
+      let receivedCreateDirectMessage = false
       await sbp('gi.actions/chatroom/join', {
-        contractID: message.contractID(),
-        data: { memberID: [identityContractID, ...partnerIDs] }
+        contractID: chatroomID,
+        data: { memberID: [identityContractID, ...partnerIDs] },
+        hooks: {
+          onprocessed: () => {
+            if (!receivedCreateDirectMessage) {
+              receivedChatroomJoin = true
+            } else {
+              switchAfterJoined()
+            }
+          }
+        }
       })
 
       await sendMessage({
         ...omit(params, ['options', 'data', 'action', 'hooks']),
         data: {
-          contractID: message.contractID()
+          contractID: chatroomID
         },
         hooks: {
-          onprocessed: params.hooks?.onprocessed
+          onprocessed: () => {
+            if (!receivedChatroomJoin) {
+              receivedCreateDirectMessage = true
+            } else {
+              switchAfterJoined()
+            }
+
+            return params.hooks?.onprocessed?.()
+          }
         }
       })
 
@@ -809,7 +826,7 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/out/shareVolatileKeys', {
           contractID: partnerIDs[index],
           contractName: 'gi.contracts/identity',
-          subjectContractID: message.contractID(),
+          subjectContractID: chatroomID,
           keyIds: '*'
         })
 
@@ -818,7 +835,7 @@ export default (sbp('sbp/selectors/register', {
           data: {
           // TODO: We need to handle multiple groups and the possibility of not
           // having any groups in common
-            contractID: message.contractID()
+            contractID: chatroomID
           },
           // For now, we assume that we're messaging someone which whom we
           // share a group
@@ -829,18 +846,19 @@ export default (sbp('sbp/selectors/register', {
         })
       }
     } catch (e) {
-      clearTimeout(timeoutId)
-      unregister()
-      sbp('chelonia/out/deleteContract', message.contractID(), {
-        [message.contractID()]: { billableContractID: identityContractID }
+      if (timeoutId != null) clearTimeout(timeoutId)
+      sbp('chelonia/out/deleteContract', chatroomID, {
+        [chatroomID]: { billableContractID: identityContractID }
       }).catch((e2) => {
-        console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', message.contractID(), e, e2)
+        console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
       })
 
       throw e
+    } finally {
+      await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
     }
 
-    return message.contractID()
+    return chatroomID
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
