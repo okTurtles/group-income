@@ -333,6 +333,41 @@ sbp('sbp/selectors/register', {
         })
       }
     })()
+
+    // Send OP_KEY_SHARE if our PEK has been rotated and this hasn't been done before
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?._vm?.authorizedKeys) return
+
+      const dmk = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'dmk' && k._notAfterHeight == null
+      })
+      // Did we find a DMK?
+      if (!dmk) return
+
+      const pek = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'pek' && k._notAfterHeight == null
+      })
+      // Did we find a PEK?
+      if (!pek) return
+
+      // $FlowFixMe[incompatible-use]
+      if (dmk.meta?.private?.content?.[0] === pek.id) return
+
+      // $FlowFixMe[incompatible-use]
+      const hasItBeenSharedBefore = state[ourIdentityContractId]._vm.sharedKeyIds?.some((k) => k.id === dmk.id)
+
+      if (hasItBeenSharedBefore) return
+
+      // Issue the action to initiate OP_KEY_SHARE
+      sbp('gi.actions/identity/shareDMKwithPEK', ourIdentityContractId).catch((e) => {
+        console.error('Error at shareDMKwithPEK', e)
+      })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

@@ -1323,6 +1323,50 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/identity/logout')
     }
   },
+  // Called from migrations to share the DMK with the PEK if it hasn't been
+  // already done (see corresponding code for the PEK rotation handler).
+  // This helps others be able to initiate DMs with us in case we've rotated our
+  // PEK.
+  'gi.actions/identity/shareDMKwithPEK': async (contractID) => {
+    const rootState = sbp('chelonia/rootState')
+    if (rootState.loggedIn?.identityContractID !== contractID) {
+      // If the user doesn't match the current user, return
+      return
+    }
+
+    // Find all the necessary keys: CSK for signing, DMK for sharing and PEK for encryption
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk', true)
+    if (!CSKid) {
+      throw new Error('[shareDMKwithPEK] No CSK found')
+    }
+    const DMKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk', true)
+    if (!DMKid) {
+      throw new Error('[shareDMKwithPEK] No DMK found')
+    }
+    const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
+    if (!PEKid) {
+      throw new Error('[shareDMKwithPEK] No PEK found')
+    }
+    const DMK = rootState.secretKeys[DMKid]
+
+    return await sbp('chelonia/out/keyShare', {
+      contractID: contractID,
+      contractName: 'gi.contracts/identity',
+      data: encryptedOutgoingData(contractID, PEKid, {
+        contractID,
+        // $FlowFixMe
+        keys: [{
+          id: DMKid,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(contractID, PEKid, DMK)
+            }
+          }
+        }]
+      }),
+      signingKeyId: CSKid
+    })
+  },
   ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
