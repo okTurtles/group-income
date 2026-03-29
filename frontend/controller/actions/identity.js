@@ -759,19 +759,6 @@ export default (sbp('sbp/selectors/register', {
       }
     }, identityContractID)
 
-    // Share the keys to the newly created chatroom with ourselves
-    await sbp('gi.actions/out/shareVolatileKeys', {
-      contractID: identityContractID,
-      contractName: 'gi.contracts/identity',
-      subjectContractID: message.contractID(),
-      keyIds: '*'
-    })
-
-    await sbp('gi.actions/chatroom/join', {
-      contractID: message.contractID(),
-      data: { memberID: [identityContractID, ...partnerIDs] }
-    })
-
     const switchChannelAfterJoined = (contractID: string) => {
       if (contractID === message.contractID()) {
         const getters = sbp('state/vuex/getters')
@@ -790,6 +777,19 @@ export default (sbp('sbp/selectors/register', {
     }, 300_000) // Large 5 minute timeout to account for any delays
 
     try {
+      // Share the keys to the newly created chatroom with ourselves
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        contractID: identityContractID,
+        contractName: 'gi.contracts/identity',
+        subjectContractID: message.contractID(),
+        keyIds: '*'
+      })
+
+      await sbp('gi.actions/chatroom/join', {
+        contractID: message.contractID(),
+        data: { memberID: [identityContractID, ...partnerIDs] }
+      })
+
       await sendMessage({
         ...omit(params, ['options', 'data', 'action', 'hooks']),
         data: {
