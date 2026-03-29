@@ -1327,7 +1327,7 @@ export default (sbp('sbp/selectors/register', {
   // already done (see corresponding code for the PEK rotation handler).
   // This helps others be able to initiate DMs with us in case we've rotated our
   // PEK.
-  'gi.actions/identity/shareDMKwithPEK': async (contractID) => {
+  'gi.actions/identity/shareDMKwithPEK': async (contractID: string) => {
     const rootState = sbp('chelonia/rootState')
     if (rootState.loggedIn?.identityContractID !== contractID) {
       // If the user doesn't match the current user, return
@@ -1348,6 +1348,9 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('[shareDMKwithPEK] No PEK found')
     }
     const DMK = rootState.secretKeys[DMKid]
+    if (!DMK) {
+      throw new Error('[shareDMKwithPEK] DMK secret key not available')
+    }
 
     return await sbp('chelonia/out/keyShare', {
       contractID: contractID,
