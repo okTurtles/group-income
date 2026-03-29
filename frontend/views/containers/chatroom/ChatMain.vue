@@ -873,7 +873,7 @@ export default ({
           }
 
           const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
+          if (msgIndex >= 0) {
             const failedMsg = this.messageState.contract.messages[msgIndex]
             Vue.set(failedMsg, 'hasFailed', true)
 
@@ -934,7 +934,7 @@ export default ({
           }
         }).then(async () => {
           await uploadAttachments()
-          const postSendActions = () => {
+          const removeTemporaryMessage = () => {
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
@@ -945,18 +945,19 @@ export default ({
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
-
-              // revoke object URLs of attachments if any, to avoid memory leaks.
-              if (attachments?.length > 0) {
-                attachments.forEach(attachment => {
-                  if (attachment.url) {
-                    URL.revokeObjectURL(attachment.url)
-                  }
-                })
-              }
             }
           }
-          sendMessage(postSendActions)
+          sendMessage(removeTemporaryMessage)
+
+          // revoke object URLs of attachments if any, to avoid memory leaks.
+          if (attachments?.length > 0) {
+            attachments.forEach(attachment => {
+              if (attachment.url) {
+                console.log('!@# revoking object URL', attachment.url)
+                URL.revokeObjectURL(attachment.url)
+              }
+            })
+          }
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
