@@ -5,7 +5,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -121,6 +121,7 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
+        const isSelf = memberID === innerSigningContractID
 
         if (!memberID) {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
@@ -134,8 +135,7 @@ sbp('chelonia/defineContract', {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
-
-        state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height }
+        state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height, acceptedHeight: isSelf ? height : undefined }
 
         // NOTE: this patch solves the issue of the action failing to process.
         //       when the contract was not fully synced because some encryption keys are missing.
@@ -174,10 +174,32 @@ sbp('chelonia/defineContract', {
             await sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
+            if (innerSigningContractID !== identityContractID) {
+              sbp('gi.actions/chatroom/accept', { contractID, data: null }).catch((e) => {
+                console.error('[gi.contracts/chatroom/join/sideEffect] Error sending accept action', e)
+              })
+            }
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)
         })
+      }
+    },
+    // This action adds an 'accept' action, which is useful for members that have
+    // been added by someone else to confirm their addition to the group.
+    // This is useful for signalling explicit consent and for troubleshooting
+    // issues with joining the chatroom
+    'gi.contracts/chatroom/accept': {
+      validate: actionRequireInnerSignature(nil),
+      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
+        const memberID = innerSigningContractID
+        if (!getters.isJoinedChatRoomForChatRoom(state, memberID)) {
+          throw new GIChatroomNotMemberError(`Can not accept the chatroom ${contractID} which ${memberID} is not part of`)
+        }
+        if (state.members[memberID].acceptedHeight != null) {
+          throw new Error(`Can not accept the chatroom ${contractID} which ${memberID} has already accepted`)
+        }
+        state.members[memberID].acceptedHeight = height
       }
     },
     'gi.contracts/chatroom/rename': {
