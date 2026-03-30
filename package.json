@@ -63,7 +63,7 @@
     "test/cypress/cache/*",
     "contracts/*"
   ],
-  "browserslist": "> 1% and since 2018 and not dead",
+  "browserslist": "> 1% and last 6 years and not dead",
   "stylelint": {
     "extends": "stylelint-config-standard",
     "rules": {

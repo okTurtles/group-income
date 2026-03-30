@@ -65,6 +65,15 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
             )
               i18n Delete channel
 
+            //- TODO: BEGIN Temporary code (see issue #3066) for removing DMs
+            menu-item.has-text-danger(
+              v-if='isChatRoomCreator && isGroupDirectMessage()'
+              @click='openModal("DeleteChannelModal")'
+              data-test='deleteDM'
+            )
+              i18n Delete direct message
+            //- TODO: END   Temporary code (see issue #3066) for removing DMs
+
   template(#description='')
     .c-channel-header-description
       span.c-pin-wrapper(
