@@ -767,7 +767,7 @@ export default (sbp('sbp/selectors/register', {
         // and the SW (see app/chatroom.js)
         timeoutId = setTimeout(
           () => sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID }),
-          1000
+          10
         )
       }
     }

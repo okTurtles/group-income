@@ -20,15 +20,19 @@ const mutations = {
 
     if (groupID && rootState[groupID]) {
       if (chatRoomID) {
+        console.error('@@@@setCurrentChatRoomId', 1, groupID, chatRoomID)
         Vue.set(state.currentChatRoomIDs, groupID, chatRoomID)
       } else {
+        console.error('@@@@setCurrentChatRoomId', 2, groupID, chatRoomID)
         Vue.set(state.currentChatRoomIDs, groupID, rootState[groupID].generalChatRoomId || null)
       }
       Vue.delete(state.pendingChatRoomIDs, groupID)
     } else {
       if (chatRoomID) {
+        console.error('@@@@setCurrentChatRoomId', 3, groupID, chatRoomID)
         Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, chatRoomID)
       } else {
+        console.error('@@@@setCurrentChatRoomId', 4, groupID, chatRoomID)
         Vue.set(state.currentChatRoomIDs, rootState.currentGroupId, null)
       }
       Vue.delete(state.pendingChatRoomIDs, rootState.currentGroupId)

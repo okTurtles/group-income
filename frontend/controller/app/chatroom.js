@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { DELETED_CHATROOM, JOINED_CHATROOM, LEFT_CHATROOM, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
+import { EVENT_HANDLED_READY } from '@chelonia/lib/events'
 
 const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, chatRoomID }) => {
   const rootState = sbp('state/vuex/state')
@@ -15,7 +16,6 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
   const rootState = sbp('state/vuex/state')
   if (rootState.loggedIn?.identityContractID !== identityContractID) return
   if (!rootState.chatroom.currentChatRoomIDs[groupContractID] || rootState.chatroom.pendingChatRoomIDs[groupContractID] === chatRoomID) {
-    let attemptCount = 0
     // Sometimes, the state may not be ready (it needs to be copied from the SW
     // to Vuex). In this case, we try again after a short delay.
     // The specific issue is that the browsing-side state is updated in response
@@ -23,17 +23,42 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
     // prior to JOINED_CHATROOM, processing might take slightly longer, causing
     // rootState[chatRoomID]?.members?.[identityContractID] to be briefly
     // undefined.
-    // TODO: Figure out a better way of doing this that doesn't require a timeout
     const setCurrentChatRoomId = () => {
       // Re-grab the state as it could be a stale reference
       const rootGetters = sbp('state/vuex/getters')
-      if (!rootGetters.isJoinedChatRoom(chatRoomID, identityContractID)) {
-        if (++attemptCount > 10) {
-          console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 10 attempts', { identityContractID, groupContractID, chatRoomID })
-          return
-        }
-        setTimeout(setCurrentChatRoomId, 5 * Math.pow(1.65, attemptCount))
+      if (
+        !rootGetters.isJoinedChatRoom(chatRoomID, identityContractID) ||
+        (
+          !rootGetters.groupChatRooms[chatRoomID] &&
+          !rootGetters.ourGroupDirectMessages[chatRoomID]
+        )
+      ) {
+        console.error('@@@@@@1', groupContractID, chatRoomID)
+        const unregister = sbp('okTurtles.events/on', EVENT_HANDLED_READY, (contractID) => {
+          if (![chatRoomID, groupContractID, identityContractID].includes(contractID)) return
+          // TODO: Handle currentGroup != groupContractID
+          if (
+            rootGetters.isJoinedChatRoom(chatRoomID, identityContractID) &&
+            (
+              rootGetters.groupChatRooms[chatRoomID] ||
+              rootGetters.ourGroupDirectMessages[chatRoomID]
+            )
+          ) {
+            unregister()
+            clearTimeout(timeoutId)
+
+            console.error('@@@@@@@@@3', chatRoomID, rootGetters.groupChatRooms[chatRoomID], rootGetters.ourGroupDirectMessages[chatRoomID])
+            // TODO: Timeout needed for now because otherwise Vue getters give strange values
+            setTimeout(() => sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID }), 2000)
+          }
+        })
+
+        const timeoutId = setTimeout(() => {
+          console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 seconds', { identityContractID, groupContractID, chatRoomID })
+          unregister()
+        }, 5000)
       } else {
+        console.error('@@@@@@2', groupContractID, chatRoomID)
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
       }
     }

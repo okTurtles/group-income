@@ -170,6 +170,7 @@ const ChatMixin: Object = {
           if (this.currentGroupId) {
             const isNotGroupDirectMessage = !Object.keys(to).includes(this.currentChatRoomId)
             if (isNotGroupDirectMessage) {
+              console.error('@@@isNotGroupDirectMessage', to[this.currentChatRoomId])
               sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: this.currentGroupId })
             }
           }
