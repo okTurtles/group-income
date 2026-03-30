@@ -6,6 +6,7 @@
 
   menu
     MenuItem(
+      ref='msgNotificationsTile'
       tabId='chat-notifications'
       :isExpandable='true'
     )
@@ -45,6 +46,7 @@
               @click.stop='saveGlobalDefaultSettings("messageNotification")'
             ) Save
     MenuItem(
+      ref='msgSoundTile'
       tabId='chat-sounds'
       :isExpandable='true'
     )
@@ -138,6 +140,11 @@ export default {
           [settingsKey]: this.form[settingsKey]
         }
       })
+
+      const tileRef = settingsKey === 'messageNotification' ? this.$refs.msgNotificationsTile : this.$refs.msgSoundTile
+      if (tileRef) {
+        tileRef.toggleExpanded()
+      }
     }
   },
   created () {

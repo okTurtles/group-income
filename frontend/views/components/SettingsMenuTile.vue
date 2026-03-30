@@ -72,22 +72,24 @@ export default {
       const isLowerSectionClicked = e.target.closest('.tile-lower-section')
 
       if (!isLowerSectionClicked) {
-        if (this.isExpandable) {
-          const valToSet = !this.ephemeral.expanded
-          const evtName = valToSet ? 'expand' : 'fold'
-
-          this.$emit(evtName)
-          this.ephemeral.expanded = valToSet
-
-          if (valToSet) {
-            // If expanded, scroll to the tile to make the content visible
-            setTimeout(() => {
-              this.$refs.tile.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            }, 300)
-          }
-        }
-
+        this.toggleExpanded()
         this.$emit('click')
+      }
+    },
+    toggleExpanded () {
+      if (this.isExpandable) {
+        const valToSet = !this.ephemeral.expanded
+        const evtName = valToSet ? 'expand' : 'fold'
+
+        this.$emit(evtName)
+        this.ephemeral.expanded = valToSet
+
+        if (valToSet) {
+          // If expanded, scroll to the tile to make the content visible
+          setTimeout(() => {
+            this.$refs.tile.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 300)
+        }
       }
     }
   }
