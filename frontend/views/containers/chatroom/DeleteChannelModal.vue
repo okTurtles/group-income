@@ -85,7 +85,7 @@ export default ({
 
           this.close()
         } catch (e) {
-          console.error('RemoveChannelModal submit() error:', e)
+          console.error('DeleteChannelModal submit() error:', e)
           this.$refs.formMsg.danger(e.message)
         }
         return
@@ -101,7 +101,7 @@ export default ({
 
         this.close()
       } catch (e) {
-        console.error('RemoveChannelModal submit() error:', e)
+        console.error('DeleteChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
     }

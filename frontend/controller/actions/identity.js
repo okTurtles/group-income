@@ -9,6 +9,7 @@ import {
 import { cloneDeep, has, omit } from 'turtledash'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
+import promiseWithResolvers from '@utils/promiseWithResolvers.js'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
@@ -760,22 +761,10 @@ export default (sbp('sbp/selectors/register', {
     }, identityContractID)
     const chatroomID = message.contractID()
 
-    const receivedChatroomJoin: [Promise<any>, Function, Function] = (() => {
-      let outerResolve, outerReject
-      const promise = new Promise((resolve, reject) => {
-        outerResolve = resolve
-        outerReject = reject
-      })
-      return [promise, outerResolve, outerReject]
-    })()
-    const receivedCreateDirectMessage: [Promise<any>, Function, Function] = (() => {
-      let outerResolve, outerReject
-      const promise = new Promise((resolve, reject) => {
-        outerResolve = resolve
-        outerReject = reject
-      })
-      return [promise, outerResolve, outerReject]
-    })()
+    const receivedChatroomJoin = promiseWithResolvers()
+    const receivedCreateDirectMessage = promiseWithResolvers()
+    receivedChatroomJoin.promise.catch(() => { /* no unhandled promise rejection */ })
+    receivedCreateDirectMessage.promise.catch(() => { /* no unhandled promise rejection */ })
 
     await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
     try {
@@ -792,12 +781,12 @@ export default (sbp('sbp/selectors/register', {
         data: { memberID: [identityContractID, ...partnerIDs] },
         hooks: {
           onprocessed: () => {
-            receivedChatroomJoin[1]()
+            receivedChatroomJoin.resolve()
           }
         }
       }).catch(e => {
-        receivedChatroomJoin[2](e)
-        receivedCreateDirectMessage[2](e)
+        receivedChatroomJoin.reject(e)
+        receivedCreateDirectMessage.reject(e)
         throw e
       })
 
@@ -808,23 +797,26 @@ export default (sbp('sbp/selectors/register', {
         },
         hooks: {
           onprocessed: () => {
-            receivedCreateDirectMessage[1]()
+            receivedCreateDirectMessage.resolve()
 
             return params.hooks?.onprocessed?.()
           }
         }
       }).catch(e => {
-        receivedChatroomJoin[2](e)
-        receivedCreateDirectMessage[2](e)
+        receivedChatroomJoin.reject(e)
+        receivedCreateDirectMessage.reject(e)
         throw e
       })
 
       // Prevent the promises from hanging forever
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         const e = new Error('Timeout exceeded')
-        receivedChatroomJoin[2](e)
-        receivedCreateDirectMessage[2](e)
+        receivedChatroomJoin.reject(e)
+        receivedCreateDirectMessage.reject(e)
       }, 5000)
+      Promise.allSettled([receivedChatroomJoin, receivedCreateDirectMessage]).then(() => {
+        clearTimeout(timeoutId)
+      })
 
       for (let index = 0; index < partnerIDs.length; index++) {
         const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
@@ -861,8 +853,8 @@ export default (sbp('sbp/selectors/register', {
         sbp('chelonia/contract/wait', [chatroomID, identityContractID]),
         // We want to have both the /join to the chatroom
         // and the /createDirectMessae to the identity contract
-        receivedChatroomJoin[0],
-        receivedCreateDirectMessage[0]
+        receivedChatroomJoin.promise,
+        receivedCreateDirectMessage.promise
       ]).then(() => {
         const getters = sbp('state/vuex/getters')
         if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
@@ -879,9 +871,6 @@ export default (sbp('sbp/selectors/register', {
       }).catch((e2) => {
         console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
       })
-
-      receivedChatroomJoin[0].catch(() => { /* no unhandled promise rejection */ })
-      receivedCreateDirectMessage[0].catch(() => { /* no unhandled promise rejection */ })
 
       throw e
     } finally {

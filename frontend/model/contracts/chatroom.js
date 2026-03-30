@@ -183,7 +183,7 @@ sbp('chelonia/defineContract', {
     // This action adds an 'accept' action, which is useful for members that have
     // been added by someone else to confirm their addition to the group.
     // This is useful for signalling explicit consent and for troubleshooting
-    // issues with joining the chatrooom
+    // issues with joining the chatroom
     'gi.contracts/chatroom/accept': {
       validate: actionRequireInnerSignature(nil),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
