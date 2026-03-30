@@ -760,7 +760,7 @@ export default (sbp('sbp/selectors/register', {
     }, identityContractID)
     const chatroomID = message.contractID()
 
-    const receivedChatroomJoin = (() => {
+    const receivedChatroomJoin: [Promise<any>, Function, Function] = (() => {
       let outerResolve, outerReject
       const promise = new Promise((resolve, reject) => {
         outerResolve = resolve
@@ -768,7 +768,7 @@ export default (sbp('sbp/selectors/register', {
       })
       return [promise, outerResolve, outerReject]
     })()
-    const receivedCreateDirectMessage = (() => {
+    const receivedCreateDirectMessage: [Promise<any>, Function, Function] = (() => {
       let outerResolve, outerReject
       const promise = new Promise((resolve, reject) => {
         outerResolve = resolve
