@@ -875,7 +875,7 @@ export default ({
           }
 
           const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex >= 0) {
+          if (msgIndex > 0) {
             const failedMsg = this.messageState.contract.messages[msgIndex]
             Vue.set(failedMsg, 'hasFailed', true)
 
@@ -971,47 +971,53 @@ export default ({
         })
       }
     },
-    checkAndCompressImages (attachments) {
-      const newUrls = []
-
-      return Promise.all(
+    async checkAndCompressImages (attachments) {
+      const results = await Promise.allSettled(
         attachments.map(async attachment => {
-          if (attachment.needsImageCompression) {
-            const compressedImageBlob = await compressImage(attachment.url)
-            const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
-            const extension = compressedImageBlob.type.split('/')[1]
-            const newUrl = URL.createObjectURL(compressedImageBlob)
-            newUrls.push(newUrl)
+          if (!attachment.needsImageCompression) {
+            return attachment
+          }
 
-            return {
-              ...attachment,
-              mimeType: compressedImageBlob.type,
-              name: `${fileNameWithoutExtension}.${extension}`,
-              size: compressedImageBlob.size,
-              url: newUrl,
-              _oldUrl: attachment.url,
-              compressedBlob: compressedImageBlob,
-              needsImageCompression: false
-            }
-          } else { return attachment }
-        })
-      ).catch(e => {
-        // In case of Promise rejection, clear the newly created object URLs to avoid memory leaks.
-        newUrls.forEach(url => {
-          URL.revokeObjectURL(url)
-        })
-        throw e
-      }).then(attachments => {
-        // Since a new object URL is created for the compressed image, revoke the old object URL.
-        attachments.forEach(attachment => {
-          if (attachment._oldUrl) {
-            URL.revokeObjectURL(attachment._oldUrl)
-            delete attachment._oldUrl
+          const compressedImageBlob = await compressImage(attachment.url)
+          const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
+          const extension = compressedImageBlob.type.split('/')[1]
+          const newUrl = URL.createObjectURL(compressedImageBlob)
+
+          return {
+            ...attachment,
+            mimeType: compressedImageBlob.type,
+            name: `${fileNameWithoutExtension}.${extension}`,
+            size: compressedImageBlob.size,
+            url: newUrl,
+            _oldUrl: attachment.url,
+            compressedBlob: compressedImageBlob,
+            needsImageCompression: false
           }
         })
+      )
 
-        return attachments
+      const hasError = results.find(r => r.status === 'rejected')
+      if (hasError) {
+        // Clear whatever was successfully processed before throwing, to avoid memory leaks
+        results.forEach(r => {
+          if (r.status === 'fulfilled' && r.value._oldUrl) {
+            URL.revokeObjectURL(r.value.url)
+          }
+        })
+        throw hasError.reason
+      }
+
+      // If all successful, clean up the old URLs, to avoid memory leaks
+      const compressedAttachments = results.map(r => r.value)
+      compressedAttachments.forEach(attachment => {
+        if (attachment._oldUrl) {
+          console.log('!@# revoking old URL', attachment._oldUrl)
+          URL.revokeObjectURL(attachment._oldUrl)
+          delete attachment._oldUrl
+        }
       })
+
+      return compressedAttachments
     },
     async scrollToMessage (messageHash, effect = true) {
       if (!messageHash || !this.ephemeral.messages.length) {
