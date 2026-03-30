@@ -872,7 +872,6 @@ export default ({
           if (attachments?.length > 0) {
             attachments.forEach(attachment => {
               if (attachment.url) {
-                console.log('!@# revoking object URL', attachment.url)
                 URL.revokeObjectURL(attachment.url)
               }
             })
