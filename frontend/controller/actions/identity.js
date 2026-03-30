@@ -890,7 +890,7 @@ export default (sbp('sbp/selectors/register', {
           console.error('[createDirectMessage] Error waiting for actions', e)
         })
       } catch (e) {
-        sbp('chelonia/out/deleteContract', chatroomID, {
+        await sbp('chelonia/out/deleteContract', chatroomID, {
           [chatroomID]: { billableContractID: identityContractID }
         }).catch((e2) => {
           console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)

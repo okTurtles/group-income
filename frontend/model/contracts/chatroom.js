@@ -176,7 +176,7 @@ sbp('chelonia/defineContract', {
             })
             if (innerSigningContractID !== identityContractID) {
               sbp('gi.actions/chatroom/accept', { contractID, data: null }).catch((e) => {
-                console.error('[gi.contracts/chatroom/join/sideEffect] Error sending accept action')
+                console.error('[gi.contracts/chatroom/join/sideEffect] Error sending accept action', e)
               })
             }
           }
