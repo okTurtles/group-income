@@ -814,7 +814,10 @@ export default (sbp('sbp/selectors/register', {
         receivedChatroomJoin.reject(e)
         receivedCreateDirectMessage.reject(e)
       }, 5000)
-      Promise.allSettled([receivedChatroomJoin, receivedCreateDirectMessage]).then(() => {
+      Promise.allSettled([
+        receivedChatroomJoin.promise,
+        receivedCreateDirectMessage.promise
+      ]).then(() => {
         clearTimeout(timeoutId)
       })
 
@@ -822,8 +825,13 @@ export default (sbp('sbp/selectors/register', {
         const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
 
         // Share the keys to the newly created chatroom with partners
-        // TODO: We need to handle multiple groups and the possibility of not
-        // having any groups in common
+        // Note: If we have multiple groups in common, the key used to send
+        // `OP_KEY_SHARE` may not correspond with the current group where the
+        // DM was initiated in the UI, but that's OK.
+        // TODO: If we don't have any groups in common, this operation will
+        // fail. We don't currently support this in the UI, but we need to
+        // handle this when we start supporting messaging people with whom we
+        // don't share a group.
         await sbp('gi.actions/out/shareVolatileKeys', {
           contractID: partnerIDs[index],
           contractName: 'gi.contracts/identity',
