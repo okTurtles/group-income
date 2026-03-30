@@ -41,7 +41,8 @@
               i18n Nothing
 
           .c-save-btn-container(v-if='showSaveBtn.messageNotification')
-            button.is-small.is-success(
+            i18n.is-small.is-success(
+              tag='button'
               type='button'
               @click.stop='saveGlobalDefaultSettings("messageNotification")'
             ) Save
@@ -81,7 +82,8 @@
               i18n Nothing
 
           .c-save-btn-container(v-if='showSaveBtn.messageSound')
-            button.is-small.is-success(
+            i18n.is-small.is-success(
+              tag='button'
               type='button'
               @click.stop='saveGlobalDefaultSettings("messageSound")'
             ) Save
