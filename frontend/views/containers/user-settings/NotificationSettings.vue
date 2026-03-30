@@ -16,15 +16,16 @@
               input.switch.is-small.c-switch(
                 type='checkbox'
                 name='switch'
+                :disabled='notificationsToggleDisabled'
                 v-model='ephemeral.browserNotificationsEnabled'
-                @click='handleNotificationSettings'
+                @click.stop='handleNotificationSettings'
               )
 
           template(#lower='')
             .lower-section-container
               i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
               p.c-mt-1(v-if='pushNotificationInfoMsg')
-                strong(:class='{ "has-text-danger": pushNotificationGranted === false || true }') {{ pushNotificationInfoMsg }}
+                strong(:class='{ "has-text-danger": pushNotificationGranted === false }') {{ pushNotificationInfoMsg }}
             //- TODO: disable the checkbox and display an info field when we're offline
 
         MenuItem(

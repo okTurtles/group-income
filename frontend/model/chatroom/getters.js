@@ -2,8 +2,7 @@
 
 import { merge, union } from 'turtledash'
 import {
-  MESSAGE_NOTIFY_SETTINGS, CHATROOM_PRIVACY_LEVEL, CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY,
-  GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS
+  CHATROOM_PRIVACY_LEVEL, GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS
 } from '@model/contracts/shared/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
@@ -18,14 +17,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       [GLOBAL_NOTIFICATION_SETTINGS_KEY]: {
         messageNotification: GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS
-      },
-      [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.CHANNEL]: {
-        messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
-        messageSound: MESSAGE_NOTIFY_SETTINGS.MENTIONS
-      },
-      [CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY.DIRECT_MESSAGE]: {
-        messageNotification: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
-        messageSound: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
       }
     }, state.chatNotificationSettings || {})
   },

@@ -116,10 +116,6 @@ export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MEMBER_MENTION_SPECIAL_CHAR = '@'
 export const CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR = '#'
 export const GLOBAL_NOTIFICATION_SETTINGS_KEY = 'global-notification-settings'
-export const CHATROOM_GLOBAL_NOTIFICATION_SETTINGS_KEY = {
-  CHANNEL: 'channel-global',
-  DIRECT_MESSAGE: 'direct-message-global'
-}
 
 export const CHATROOM_ATTACHMENT_TYPES = {
   IMAGE: 'image',
@@ -186,7 +182,7 @@ export const MESSAGE_NOTIFY_SETTINGS = {
 
 export const GLOBAL_MESSAGE_NOTIFY_SETTINGS = {
   ALL_MESSAGES: 'global-all-messages',
-  DM_AND_MENTIONS: 'globaldm-and-mentions',
+  DM_AND_MENTIONS: 'global-dm-and-mentions',
   NOTHING: 'global-nothing'
 }
 

@@ -3,6 +3,7 @@ button.is-unstyled.menu-tile(
   ref='tile'
   @click.stop='onTileClick'
   :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
+  :aria-disabled='isDisabled'
 )
   .tile-upper-section(:data-test='testId')
     .tile-text {{ menuName }}
@@ -65,10 +66,15 @@ export default {
           : this.icon ? `icon-${this.icon}` : 'icon-chevron-right',
         'tile-icon'
       ]
+    },
+    isDisabled () {
+      return this.variant === 'disabled'
     }
   },
   methods: {
     onTileClick (e) {
+      if (this.isDisabled) { return }
+
       const isLowerSectionClicked = e.target.closest('.tile-lower-section')
 
       if (!isLowerSectionClicked) {
@@ -77,7 +83,7 @@ export default {
       }
     },
     toggleExpanded () {
-      if (this.isExpandable) {
+      if (this.isExpandable && !this.isDisabled) {
         const valToSet = !this.ephemeral.expanded
         const evtName = valToSet ? 'expand' : 'fold'
 

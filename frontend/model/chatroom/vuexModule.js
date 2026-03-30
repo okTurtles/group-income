@@ -11,7 +11,7 @@ const defaultState = {
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
   unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight, isManuallyMarked?: boolean }, unreadMessages: [{ messageHash, createdHeight }]}
-  chatNotificationSettings: {} // { [chatRoomID | GLOBAL_NOTIFICATION_SETTINGS_KEY]: { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS } }
+  chatNotificationSettings: {} // { [chatRoomID | GLOBAL_NOTIFICATION_SETTINGS_KEY]: { messageNotification: MESSAGE_NOTIFY_SETTINGS | GLOBAL_MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS | GLOBAL_MESSAGE_NOTIFY_SETTINGS } }
 }
 
 // mutations

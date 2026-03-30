@@ -499,6 +499,7 @@ $radio-checkbox-inner-element-top-positions: (
   transition: background-color 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
   -webkit-appearance: none;
   -moz-appearance: none;
+  appearance: none;
 
   @media (hover: hover) {
     &:checked:hover,
@@ -541,12 +542,11 @@ $radio-checkbox-inner-element-top-positions: (
     }
   }
 
-  &:disabled:not(:checked)::after {
-    opacity: 0.6;
-  }
-
   &:disabled {
+    opacity: 0.6;
     background: $general_0;
+    pointer-events: none;
+    cursor: not-allowed;
   }
 
   &.is-small {

@@ -113,7 +113,9 @@ export default ({
       const handleLegacySetting = (setting) => {
         // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.js)
         // So need to handle it here for backward compatibility.
-        return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES ? MESSAGE_NOTIFY_SETTINGS.MENTIONS : setting
+        return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+          ? this.isDM ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES : MESSAGE_NOTIFY_SETTINGS.MENTIONS
+          : setting
       }
       this.form.messageNotification = handleLegacySetting(settings.messageNotification)
       this.form.messageSound = handleLegacySetting(settings.messageSound)
