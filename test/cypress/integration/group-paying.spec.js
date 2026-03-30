@@ -1,3 +1,4 @@
+import { randomUserSuffix } from '../support/lib.mjs'
 
 // Similar to time.js but without the import.
 function addTimeToDate (dateOrIsoString, milliseconds) {
@@ -10,7 +11,7 @@ function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
 }
 
 const API_URL = Cypress.config('baseUrl')
-const userId = performance.now().toFixed(20).replace('.', '')
+const userId = randomUserSuffix()
 const groupName = 'Dreamers'
 const mincome = 1000
 const timeStart = Date.now()

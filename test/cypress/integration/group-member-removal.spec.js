@@ -1,9 +1,11 @@
+import { randomUserSuffix } from '../support/lib.mjs'
+
 // [*note_1*] Don't use bypassUI here because this user is syncing the contract
 // and the last action (removeMember sideEffect) redirects them to / (home)
 // causing the bypassUI to fail in the middle (because it changed pages)
 
 describe('Group - Removing a member', () => {
-  const userId = performance.now().toFixed(20).replace('.', '')
+  const userId = randomUserSuffix()
   const groupNameA = 'Dreamers'
   const groupNameB = 'Donuts'
 

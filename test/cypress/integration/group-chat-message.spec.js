@@ -1,4 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { randomUserSuffix } from '../support/lib.mjs'
 
 /**
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
@@ -15,7 +16,7 @@ function makeMentionFromUsername (username) {
 
 const groupName = 'Dreamers'
 const additionalChannelName = 'bulgaria-hackathon'
-const userId = performance.now().toFixed(20).replace('.', '')
+const userId = randomUserSuffix()
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
 const pollData = {

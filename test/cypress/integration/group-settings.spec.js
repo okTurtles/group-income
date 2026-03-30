@@ -1,4 +1,6 @@
-const userId = performance.now().toFixed(20).replace('.', '')
+import { randomUserSuffix } from '../support/lib.mjs'
+
+const userId = randomUserSuffix()
 const groupName = 'Dreamers'
 const groupNamePerc40 = 'groupPerc_40'
 const groupMincome = 750
