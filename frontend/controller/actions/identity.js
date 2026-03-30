@@ -731,166 +731,179 @@ export default (sbp('sbp/selectors/register', {
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     const currentGroupId = params.data.currentGroupId
     const identityContractID = rootGetters.ourIdentityContractId
-
-    await sbp('chelonia/contract/wait', partnerIDs)
-    const signingKeyIdsMap = Object.create(null)
-    for (let index = 0; index < partnerIDs.length; index++) {
-      const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
-
-      if (!signingKeyId) {
-        console.error(`[createDirectMessage] No suitable signing key for partner ${partnerIDs[index]}`)
-        throw new Error(L('Unable to establish messaging with one or more participants.'))
-      }
-
-      signingKeyIdsMap[partnerIDs[index]] = signingKeyId
+    const concurrencyKey = `createDirectMessage-${identityContractID}-${partnerIDs.sort().join('/')}`
+    if (sbp('okTurtles.data/get', concurrencyKey)) {
+      throw new GIErrorUIRuntimeError(L('Operation already in progress'))
     }
-
-    const message = await sbp('gi.actions/chatroom/create', {
-      data: {
-        attributes: {
-          name: '',
-          description: '',
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-          type: CHATROOM_TYPES.DIRECT_MESSAGE
-        }
-      },
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    }, identityContractID)
-    const chatroomID = message.contractID()
-
-    const receivedChatroomJoin = promiseWithResolvers()
-    const receivedCreateDirectMessage = promiseWithResolvers()
-    receivedChatroomJoin.promise.catch(() => { /* no unhandled promise rejection */ })
-    receivedCreateDirectMessage.promise.catch(() => { /* no unhandled promise rejection */ })
-
-    await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
     try {
-      // Share the keys to the newly created chatroom with ourselves
-      await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: identityContractID,
-        contractName: 'gi.contracts/identity',
-        subjectContractID: chatroomID,
-        keyIds: '*'
-      })
+      sbp('okTurtles.data/set', concurrencyKey, true)
+      await sbp('chelonia/contract/wait', partnerIDs)
+      const signingKeyIdsMap = Object.create(null)
+      for (let index = 0; index < partnerIDs.length; index++) {
+        const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
 
-      await sbp('gi.actions/chatroom/join', {
-        contractID: chatroomID,
-        data: { memberID: [identityContractID, ...partnerIDs] },
-        hooks: {
-          onprocessed: () => {
-            receivedChatroomJoin.resolve()
-          }
+        if (!signingKeyId) {
+          console.error(`[createDirectMessage] No suitable signing key for partner ${partnerIDs[index]}`)
+          throw new Error(L('Unable to establish messaging with one or more participants.'))
         }
-      }).catch(e => {
-        receivedChatroomJoin.reject(e)
-        receivedCreateDirectMessage.reject(e)
-        throw e
-      })
 
-      await sendMessage({
-        ...omit(params, ['options', 'data', 'action', 'hooks']),
+        signingKeyIdsMap[partnerIDs[index]] = signingKeyId
+      }
+
+      const message = await sbp('gi.actions/chatroom/create', {
         data: {
-          contractID: chatroomID
+          attributes: {
+            name: '',
+            description: '',
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            type: CHATROOM_TYPES.DIRECT_MESSAGE
+          }
         },
         hooks: {
-          onprocessed: () => {
-            receivedCreateDirectMessage.resolve()
-
-            return params.hooks?.onprocessed?.()
-          }
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
         }
-      }).catch(e => {
-        receivedChatroomJoin.reject(e)
-        receivedCreateDirectMessage.reject(e)
-        throw e
-      })
+      }, identityContractID)
+      const chatroomID = message.contractID()
 
-      // Prevent the promises from hanging forever
-      const timeoutId = setTimeout(() => {
-        const e = new Error('Timeout exceeded')
-        receivedChatroomJoin.reject(e)
-        receivedCreateDirectMessage.reject(e)
-      }, 5000)
-      Promise.allSettled([
-        receivedChatroomJoin.promise,
-        receivedCreateDirectMessage.promise
-      ]).then(() => {
-        clearTimeout(timeoutId)
-      })
+      const receivedChatroomJoin = promiseWithResolvers()
+      const receivedCreateDirectMessage = promiseWithResolvers()
+      receivedChatroomJoin.promise.catch(() => { /* no unhandled promise rejection */ })
+      receivedCreateDirectMessage.promise.catch(() => { /* no unhandled promise rejection */ })
 
-      for (let index = 0; index < partnerIDs.length; index++) {
-        const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
-
-        // Share the keys to the newly created chatroom with partners
-        // Note: If we have multiple groups in common, the key used to send
-        // `OP_KEY_SHARE` may not correspond with the current group where the
-        // DM was initiated in the UI, but that's OK.
-        // TODO: If we don't have any groups in common, this operation will
-        // fail. We don't currently support this in the UI, but we need to
-        // handle this when we start supporting messaging people with whom we
-        // don't share a group.
+      await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
+      try {
+        // Share the keys to the newly created chatroom with ourselves
         await sbp('gi.actions/out/shareVolatileKeys', {
-          contractID: partnerIDs[index],
+          contractID: identityContractID,
           contractName: 'gi.contracts/identity',
           subjectContractID: chatroomID,
           keyIds: '*'
         })
 
-        await sbp('gi.actions/identity/joinDirectMessage', {
-          contractID: partnerIDs[index],
+        await sbp('gi.actions/chatroom/join', {
+          contractID: chatroomID,
+          data: { memberID: [identityContractID, ...partnerIDs] },
+          hooks: {
+            onprocessed: () => {
+              receivedChatroomJoin.resolve()
+            }
+          }
+        }).catch(e => {
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+          throw e
+        })
+
+        await sendMessage({
+          ...omit(params, ['options', 'data', 'action', 'hooks']),
           data: {
-          // TODO: We need to handle multiple groups and the possibility of not
-          // having any groups in common
             contractID: chatroomID
           },
-          // For now, we assume that we're messaging someone which whom we
-          // share a group
-          signingKeyId: signingKeyIdsMap[partnerIDs[index]],
-          innerSigningContractID: null,
-          innerSigningKeyId: null,
-          hooks
-        })
-      }
+          hooks: {
+            onprocessed: () => {
+              receivedCreateDirectMessage.resolve()
 
-      await Promise.all([
+              return params.hooks?.onprocessed?.()
+            }
+          }
+        }).catch(e => {
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+          throw e
+        })
+
+        // Prevent the promises from hanging forever
+        // Note: This promise is only used for the purpose of sending the
+        // JOINED_CHATROOM event, which switches the user to the newly created DM
+        // The timeout is deliberately low (5s) because if the operation takes
+        // longer than this, it could be confusing to the user to find themselves
+        // in a different chatroom than they were in originally.
+        const timeoutId = setTimeout(() => {
+          const e = new Error('Timeout exceeded')
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+        }, 5000)
+        Promise.allSettled([
+          receivedChatroomJoin.promise,
+          receivedCreateDirectMessage.promise
+        ]).then(() => {
+          clearTimeout(timeoutId)
+        })
+
+        for (let index = 0; index < partnerIDs.length; index++) {
+          const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+
+          // Share the keys to the newly created chatroom with partners
+          // Note: If we have multiple groups in common, the key used to send
+          // `OP_KEY_SHARE` may not correspond with the current group where the
+          // DM was initiated in the UI, but that's OK.
+          // TODO: If we don't have any groups in common, this operation will
+          // fail. We don't currently support this in the UI, but we need to
+          // handle this when we start supporting messaging people with whom we
+          // don't share a group.
+          await sbp('gi.actions/out/shareVolatileKeys', {
+            contractID: partnerIDs[index],
+            contractName: 'gi.contracts/identity',
+            subjectContractID: chatroomID,
+            keyIds: '*'
+          })
+
+          await sbp('gi.actions/identity/joinDirectMessage', {
+            contractID: partnerIDs[index],
+            data: {
+              // TODO: We need to handle multiple groups and the possibility of not
+              // having any groups in common
+              contractID: chatroomID
+            },
+            // For now, we assume that we're messaging someone which whom we
+            // share a group
+            signingKeyId: signingKeyIdsMap[partnerIDs[index]],
+            innerSigningContractID: null,
+            innerSigningKeyId: null,
+            hooks
+          })
+        }
+
+        await Promise.all([
         // Prevent the newly created chatroom from being removed by waiting for
         // the reference count in identityContractID to be updated.
-        sbp('chelonia/contract/wait', [chatroomID, identityContractID]),
-        // We want to have both the /join to the chatroom
-        // and the /createDirectMessae to the identity contract
-        receivedChatroomJoin.promise,
-        receivedCreateDirectMessage.promise
-      ]).then(() => {
-        const getters = sbp('state/vuex/getters')
-        if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
+          sbp('chelonia/contract/wait', [chatroomID, identityContractID]),
+          // We want to have both the /join to the chatroom
+          // and the /createDirectMessae to the identity contract
+          receivedChatroomJoin.promise,
+          receivedCreateDirectMessage.promise
+        ]).then(() => {
+          const getters = sbp('state/vuex/getters')
+          if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
           // Small delay to account for state propagation delays between the browser
           // and the SW (see app/chatroom.js)
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID })
-        }
-      }).catch((e) => {
-        console.error('[createDirectMessage] Error waiting for actions', e)
-      })
-    } catch (e) {
-      sbp('chelonia/out/deleteContract', chatroomID, {
-        [chatroomID]: { billableContractID: identityContractID }
-      }).catch((e2) => {
-        console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
-      })
-
-      throw e
-    } finally {
-      try {
-        await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
+            sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID })
+          }
+        }).catch((e) => {
+          console.error('[createDirectMessage] Error waiting for actions', e)
+        })
       } catch (e) {
-        // May have been deleted
-        console.error('[gi.actions/identity/createDirectMessage] Error releasing chatroom', e)
-      }
-    }
+        sbp('chelonia/out/deleteContract', chatroomID, {
+          [chatroomID]: { billableContractID: identityContractID }
+        }).catch((e2) => {
+          console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
+        })
 
-    return chatroomID
+        throw e
+      } finally {
+        try {
+          await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
+        } catch (e) {
+        // May have been deleted
+          console.error('[gi.actions/identity/createDirectMessage] Error releasing chatroom', e)
+        }
+      }
+
+      return chatroomID
+    } finally {
+      sbp('okTurtles.data/delete', concurrencyKey)
+    }
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
