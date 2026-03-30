@@ -1,4 +1,4 @@
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
 

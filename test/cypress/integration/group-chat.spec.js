@@ -1,5 +1,5 @@
 import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL } from '../../../frontend/model/contracts/shared/constants.js'
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 const groupName1 = 'Dreamers'
 const groupName2 = 'Footballers'

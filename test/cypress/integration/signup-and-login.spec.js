@@ -1,4 +1,4 @@
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 describe('Signup, Profile and Login', () => {
   // NOTE: Create a uniqueId to avoid duplicated users during crypress tests

@@ -1,4 +1,4 @@
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 // [*note_1*] Don't use bypassUI here because this user is syncing the contract
 // and the last action (removeMember sideEffect) redirects them to / (home)

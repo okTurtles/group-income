@@ -1,4 +1,4 @@
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 // Similar to time.js but without the import.
 function addTimeToDate (dateOrIsoString, milliseconds) {

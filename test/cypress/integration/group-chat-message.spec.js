@@ -1,5 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 /**
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'

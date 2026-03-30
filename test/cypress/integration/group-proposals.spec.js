@@ -1,5 +1,5 @@
 import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared/constants.js'
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
 const userId = randomUserSuffix()

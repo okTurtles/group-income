@@ -1,4 +1,4 @@
-import { randomUserSuffix } from '../support/lib.mjs'
+import { randomUserSuffix } from '../support/lib.js'
 
 const userId = randomUserSuffix()
 const groupName = 'Dreamers'
