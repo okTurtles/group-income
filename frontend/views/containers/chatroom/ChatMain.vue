@@ -867,6 +867,16 @@ export default ({
             // messages as pending in the UI
             beforeRequest
           }
+        }).then(() => {
+          // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
+          if (attachments?.length > 0) {
+            attachments.forEach(attachment => {
+              if (attachment.url) {
+                console.log('!@# revoking object URL', attachment.url)
+                URL.revokeObjectURL(attachment.url)
+              }
+            })
+          }
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -948,15 +958,6 @@ export default ({
             }
           }
           sendMessage(removeTemporaryMessage)
-
-          // revoke object URLs of attachments if any, to avoid memory leaks.
-          if (attachments?.length > 0) {
-            attachments.forEach(attachment => {
-              if (attachment.url) {
-                URL.revokeObjectURL(attachment.url)
-              }
-            })
-          }
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -1128,7 +1129,7 @@ export default ({
       const index = this.ephemeral.messages.indexOf(msg)
       if (index >= 0) this.ephemeral.messages.splice(index, 1)
 
-      // check if there was attachments in the faild previous attempt and include them if any.
+      // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
       if (attachments) {
         // Since a new message hash will be created for the retry, Remove the entry with the current hash.
