@@ -381,14 +381,7 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
 
-    Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
-      // Ensure object URLs are revoked to avoid memory leaks.
-      attachments.forEach(attachment => {
-        if (attachment.url) {
-          URL.revokeObjectURL(attachment.url)
-        }
-      })
-    })
+    this.cleanupFailedMessagesAttachments()
   },
   computed: {
     ...mapGetters([
@@ -979,6 +972,8 @@ export default ({
       }
     },
     checkAndCompressImages (attachments) {
+      const newUrls = []
+
       return Promise.all(
         attachments.map(async attachment => {
           if (attachment.needsImageCompression) {
@@ -986,6 +981,8 @@ export default ({
             const fileNameWithoutExtension = attachment.name.split('.').slice(0, -1).join('.')
             const extension = compressedImageBlob.type.split('/')[1]
             const newUrl = URL.createObjectURL(compressedImageBlob)
+            newUrls.push(newUrl)
+
             return {
               ...attachment,
               mimeType: compressedImageBlob.type,
@@ -998,7 +995,13 @@ export default ({
             }
           } else { return attachment }
         })
-      ).then(attachments => {
+      ).catch(e => {
+        // In case of Promise rejection, clear the newly created object URLs to avoid memory leaks.
+        newUrls.forEach(url => {
+          URL.revokeObjectURL(url)
+        })
+        throw e
+      }).then(attachments => {
         // Since a new object URL is created for the compressed image, revoke the old object URL.
         attachments.forEach(attachment => {
           if (attachment._oldUrl) {
@@ -1874,7 +1877,17 @@ export default ({
           throw e
         }
       }
-    }, process.env.CI ? 25 : 250)
+    }, process.env.CI ? 25 : 250),
+    cleanupFailedMessagesAttachments () {
+      Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
+        attachments.forEach(attachment => {
+          if (attachment.url) {
+            URL.revokeObjectURL(attachment.url)
+          }
+        })
+      })
+      this.ephemeral.failedMessagesAttachments = {}
+    }
   },
   provide () {
     return {
@@ -1913,6 +1926,7 @@ export default ({
         this.ephemeral.loadingDown = undefined
         this.ephemeral.loadingUp = undefined
 
+        this.cleanupFailedMessagesAttachments()
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
     },
