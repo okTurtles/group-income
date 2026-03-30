@@ -174,6 +174,11 @@ sbp('chelonia/defineContract', {
             await sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
+            if (innerSigningContractID !== identityContractID) {
+              sbp('gi.actions/chatroom/accept', { contractID, data: null }).catch((e) => {
+                console.error('[gi.contracts/chatroom/join/sideEffect] Error sending accept action')
+              })
+            }
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)

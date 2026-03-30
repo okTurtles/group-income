@@ -731,7 +731,8 @@ export default (sbp('sbp/selectors/register', {
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     const currentGroupId = params.data.currentGroupId
     const identityContractID = rootGetters.ourIdentityContractId
-    const concurrencyKey = `createDirectMessage-${identityContractID}-${partnerIDs.sort().join('/')}`
+    // Cloning the original partnerIDs to prevent mutation
+    const concurrencyKey = `createDirectMessage-${identityContractID}-${[...partnerIDs].sort().join('/')}`
     if (sbp('okTurtles.data/get', concurrencyKey)) {
       throw new GIErrorUIRuntimeError(L('Operation already in progress'))
     }
@@ -831,38 +832,43 @@ export default (sbp('sbp/selectors/register', {
           clearTimeout(timeoutId)
         })
 
-        for (let index = 0; index < partnerIDs.length; index++) {
-          const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+        try {
+          for (let index = 0; index < partnerIDs.length; index++) {
+            const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
 
-          // Share the keys to the newly created chatroom with partners
-          // Note: If we have multiple groups in common, the key used to send
-          // `OP_KEY_SHARE` may not correspond with the current group where the
-          // DM was initiated in the UI, but that's OK.
-          // TODO: If we don't have any groups in common, this operation will
-          // fail. We don't currently support this in the UI, but we need to
-          // handle this when we start supporting messaging people with whom we
-          // don't share a group.
-          await sbp('gi.actions/out/shareVolatileKeys', {
-            contractID: partnerIDs[index],
-            contractName: 'gi.contracts/identity',
-            subjectContractID: chatroomID,
-            keyIds: '*'
-          })
+            // Share the keys to the newly created chatroom with partners
+            // Note: If we have multiple groups in common, the key used to send
+            // `OP_KEY_SHARE` may not correspond with the current group where the
+            // DM was initiated in the UI, but that's OK.
+            // TODO: If we don't have any groups in common, this operation will
+            // fail. We don't currently support this in the UI, but we need to
+            // handle this when we start supporting messaging people with whom we
+            // don't share a group.
+            await sbp('gi.actions/out/shareVolatileKeys', {
+              contractID: partnerIDs[index],
+              contractName: 'gi.contracts/identity',
+              subjectContractID: chatroomID,
+              keyIds: '*'
+            })
 
-          await sbp('gi.actions/identity/joinDirectMessage', {
-            contractID: partnerIDs[index],
-            data: {
+            await sbp('gi.actions/identity/joinDirectMessage', {
+              contractID: partnerIDs[index],
+              data: {
               // TODO: We need to handle multiple groups and the possibility of not
               // having any groups in common
-              contractID: chatroomID
-            },
-            // For now, we assume that we're messaging someone which whom we
-            // share a group
-            signingKeyId: signingKeyIdsMap[partnerIDs[index]],
-            innerSigningContractID: null,
-            innerSigningKeyId: null,
-            hooks
-          })
+                contractID: chatroomID
+              },
+              // For now, we assume that we're messaging someone which whom we
+              // share a group
+              signingKeyId: signingKeyIdsMap[partnerIDs[index]],
+              innerSigningContractID: null,
+              innerSigningKeyId: null,
+              hooks
+            })
+          }
+        } catch (e) {
+          clearTimeout(timeoutId)
+          throw e
         }
 
         await Promise.all([
