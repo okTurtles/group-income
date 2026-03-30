@@ -25,21 +25,30 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
     // undefined.
     const setCurrentChatRoomId = () => {
       // Re-grab the state as it could be a stale reference
+      const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
+      // See if the state is right to do a chatroom switch right now
+      // We need: to have joined AND, if the group is the current groupID,
+      // we also need it to be either on groupChatRooms or ourGroupDirectMessages
       if (
         !rootGetters.isJoinedChatRoom(chatRoomID, identityContractID) ||
         (
+          rootState.currentGroupId === groupContractID &&
           !rootGetters.groupChatRooms[chatRoomID] &&
           !rootGetters.ourGroupDirectMessages[chatRoomID]
         )
       ) {
-        console.error('@@@@@@1', groupContractID, chatRoomID)
+        // We may not have processed everything. We add a handler on
+        // EVENT_HANDLED_READY to wait for events on the relevant contracts
         const unregister = sbp('okTurtles.events/on', EVENT_HANDLED_READY, (contractID) => {
           if (![chatRoomID, groupContractID, identityContractID].includes(contractID)) return
-          // TODO: Handle currentGroup != groupContractID
+          // Re-grab the state as it could be a stale reference
+          const rootState = sbp('state/vuex/state')
+
           if (
             rootGetters.isJoinedChatRoom(chatRoomID, identityContractID) &&
             (
+              rootState.currentGroupId !== groupContractID ||
               rootGetters.groupChatRooms[chatRoomID] ||
               rootGetters.ourGroupDirectMessages[chatRoomID]
             )
@@ -47,18 +56,17 @@ sbp('okTurtles.events/on', JOINED_CHATROOM, ({ identityContractID, groupContract
             unregister()
             clearTimeout(timeoutId)
 
-            console.error('@@@@@@@@@3', chatRoomID, rootGetters.groupChatRooms[chatRoomID], rootGetters.ourGroupDirectMessages[chatRoomID])
-            // TODO: Timeout needed for now because otherwise Vue getters give strange values
-            setTimeout(() => sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID }), 2000)
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
           }
         })
 
+        // Switching to a chatroom should be quick. If we need to wait too long,
+        // give up.
         const timeoutId = setTimeout(() => {
           console.warn('[JOINED_CHATROOM] Given up on setCurrentChatRoomId after 5 seconds', { identityContractID, groupContractID, chatRoomID })
           unregister()
         }, 5000)
       } else {
-        console.error('@@@@@@2', groupContractID, chatRoomID)
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupID: groupContractID, chatRoomID })
       }
     }

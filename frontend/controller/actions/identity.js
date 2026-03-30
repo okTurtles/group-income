@@ -760,18 +760,22 @@ export default (sbp('sbp/selectors/register', {
     }, identityContractID)
     const chatroomID = message.contractID()
 
-    const switchAfterJoined = () => {
-      const getters = sbp('state/vuex/getters')
-      if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
-        // Small delay to account for state propagation delays between the browser
-        // and the SW (see app/chatroom.js)
-        timeoutId = setTimeout(
-          () => sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID }),
-          10
-        )
-      }
-    }
-    let timeoutId
+    const receivedChatroomJoin = (() => {
+      let outerResolve, outerReject
+      const promise = new Promise((resolve, reject) => {
+        outerResolve = resolve
+        outerReject = reject
+      })
+      return [promise, outerResolve, outerReject]
+    })()
+    const receivedCreateDirectMessage = (() => {
+      let outerResolve, outerReject
+      const promise = new Promise((resolve, reject) => {
+        outerResolve = resolve
+        outerReject = reject
+      })
+      return [promise, outerResolve, outerReject]
+    })()
 
     await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
     try {
@@ -783,20 +787,18 @@ export default (sbp('sbp/selectors/register', {
         keyIds: '*'
       })
 
-      let receivedChatroomJoin = false
-      let receivedCreateDirectMessage = false
       await sbp('gi.actions/chatroom/join', {
         contractID: chatroomID,
         data: { memberID: [identityContractID, ...partnerIDs] },
         hooks: {
           onprocessed: () => {
-            if (!receivedCreateDirectMessage) {
-              receivedChatroomJoin = true
-            } else {
-              switchAfterJoined()
-            }
+            receivedChatroomJoin[1]()
           }
         }
+      }).catch(e => {
+        receivedChatroomJoin[2](e)
+        receivedCreateDirectMessage[2](e)
+        throw e
       })
 
       await sendMessage({
@@ -806,16 +808,23 @@ export default (sbp('sbp/selectors/register', {
         },
         hooks: {
           onprocessed: () => {
-            if (!receivedChatroomJoin) {
-              receivedCreateDirectMessage = true
-            } else {
-              switchAfterJoined()
-            }
+            receivedCreateDirectMessage[1]()
 
             return params.hooks?.onprocessed?.()
           }
         }
+      }).catch(e => {
+        receivedChatroomJoin[2](e)
+        receivedCreateDirectMessage[2](e)
+        throw e
       })
+
+      // Prevent the promises from hanging forever
+      setTimeout(() => {
+        const e = new Error('Timeout exceeded')
+        receivedChatroomJoin[2](e)
+        receivedCreateDirectMessage[2](e)
+      }, 5000)
 
       for (let index = 0; index < partnerIDs.length; index++) {
         const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
@@ -845,13 +854,34 @@ export default (sbp('sbp/selectors/register', {
           hooks
         })
       }
+
+      await Promise.all([
+        // Prevent the newly created chatroom from being removed by waiting for
+        // the reference count in identityContractID to be updated.
+        sbp('chelonia/contract/wait', [chatroomID, identityContractID]),
+        // We want to have both the /join to the chatroom
+        // and the /createDirectMessae to the identity contract
+        receivedChatroomJoin[0],
+        receivedCreateDirectMessage[0]
+      ]).then(() => {
+        const getters = sbp('state/vuex/getters')
+        if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
+          // Small delay to account for state propagation delays between the browser
+          // and the SW (see app/chatroom.js)
+          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID })
+        }
+      }).catch((e) => {
+        console.error('[createDirectMessage] Error waiting for actions', e)
+      })
     } catch (e) {
-      if (timeoutId != null) clearTimeout(timeoutId)
       sbp('chelonia/out/deleteContract', chatroomID, {
         [chatroomID]: { billableContractID: identityContractID }
       }).catch((e2) => {
         console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
       })
+
+      receivedChatroomJoin[0].catch(() => { /* no unhandled promise rejection */ })
+      receivedCreateDirectMessage[0].catch(() => { /* no unhandled promise rejection */ })
 
       throw e
     } finally {
