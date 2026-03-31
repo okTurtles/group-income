@@ -625,6 +625,8 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
       rootState.chatroom.chatNotificationSettings[chatRoomID][key] = settings[key]
     }
   }
+
+  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
 })
 
 sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
