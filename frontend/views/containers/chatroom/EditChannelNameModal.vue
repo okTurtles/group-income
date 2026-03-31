@@ -124,7 +124,7 @@ export default ({
         },
         [L('Duplicate channel name')]: (name, siblings) => {
           for (const existingName of siblings.existingNames) {
-            if (name.toUpperCase() === existingName.toUpperCase()) {
+            if (name.toUpperCase().normalize() === existingName.toUpperCase().normalize()) {
               return false
             }
           }

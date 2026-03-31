@@ -197,9 +197,12 @@ export const validateChatRoomName = (name: string) => {
   // https://github.com/okTurtles/group-income/issues/1987
   // https://github.com/okTurtles/group-income/issues/2999
   // https://github.com/okTurtles/group-income/issues/3064
+  //
+  // Reference: RegExp match based on unicode character class escape(\p{}) -
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
   const nameValidationMap: {[string]: Function} = {
     [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/.test(v),
-    [L('Chatroom name cannot contain capital letters')]: (v: string): boolean => /[A-Z]/.test(v),
+    [L('Chatroom name cannot contain capital letters')]: (v: string): boolean => /\p{Lu}/u.test(v),
     [L('Chatroom name cannot contain punctuations or special characters except hyphen')]: (v: string): boolean => /[^\p{L}\p{N}-]/gu.test(v)
   }
 
