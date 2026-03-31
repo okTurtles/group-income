@@ -15,6 +15,11 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   chatNotificationSettings (state) {
     return Object.assign({
       [GLOBAL_NOTIFICATION_SETTINGS_KEY]: {
+        // This is the initial value of the global notification settings and it is placed here
+        // for when user hasn't set their own global notification settings yet, in which case
+        // `state.chatNotificationSettings` doesn't have the `GLOBAL_NOTIFICATION_SETTINGS_KEY` key yet.
+        // Once user sets their own global settings in the user-settings page, they will be stored in 'state.chatNotificationSettings'
+        // with the key 'GLOBAL_NOTIFICATION_SETTINGS_KEY', and this initial value will be overridden.
         messageNotification: GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
         messageSound: GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS
       }
