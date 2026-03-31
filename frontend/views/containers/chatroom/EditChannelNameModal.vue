@@ -24,7 +24,7 @@
           data-test='updateChannelName'
         )
 
-        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name cannot contain white-spaces, special characters or punctuations (#$%:;?!@ etc.), or Capital letters.
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can't contain white spaces, special characters, capital letters or punctuations.
 
       banner-scoped(ref='formMsg')
 
