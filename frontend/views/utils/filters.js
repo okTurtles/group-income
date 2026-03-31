@@ -77,3 +77,18 @@ export const filterByKeyword = (
     return false
   })
 }
+
+export const sanitizeChannelName = (name: string): string => {
+  return name.replace(/\s/g, '-') // Replace all whitespaces with '-'
+    .toLowerCase() // Convert to lowercase
+    /*
+      The regex below removes everything except:
+      \p{L} - Any letter from any language
+      \p{N} - Any kind of numeric character
+      '-'    - The hyphen (separator)
+
+      Reference: Unicode character class escape -
+      https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
+    */
+    .replace(/[^\p{L}\p{N}-]/gu, '')
+}

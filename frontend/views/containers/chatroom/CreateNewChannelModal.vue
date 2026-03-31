@@ -24,7 +24,7 @@
           @blur='updateField("name")'
           v-error:name=''
         )
-        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can only contain lowercase letters, numbers, and hyphens(-).
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name cannot contain white-spaces, special characters or punctuations (#$%:;?!@ etc.), or Capital letters.
 
       label.field
         .c-desc-label-container
@@ -114,6 +114,7 @@ import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
+import { sanitizeChannelName } from '@view-utils/filters.js'
 
 const privacyLevelToDisplay = {
   [CHATROOM_PRIVACY_LEVEL.GROUP]: {
@@ -252,9 +253,7 @@ export default ({
   watch: {
     'form.name' (newVal) {
       if (newVal.length) {
-        this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
+        this.form.name = sanitizeChannelName(newVal)
       }
     }
   }
