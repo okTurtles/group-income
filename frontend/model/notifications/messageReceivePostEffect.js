@@ -45,7 +45,7 @@ async function messageReceivePostEffect ({
       // Checking against per-chatroom settings
       return setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
         // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES below is a legacy setting which is being used here for backward compatibility.
-        // (refer to model/contracts/shared/constants.js for more details)
+        // (refer to 'model/contracts/shared/constants.js' file for more details)
         (isDMOrMention && [MESSAGE_NOTIFY_SETTINGS.MENTIONS, MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES].includes(setting))
     } else {
       // Checking against global settings
