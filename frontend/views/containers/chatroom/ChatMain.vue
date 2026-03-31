@@ -1011,7 +1011,6 @@ export default ({
       const compressedAttachments = results.map(r => r.value)
       compressedAttachments.forEach(attachment => {
         if (attachment._oldUrl) {
-          console.log('!@# revoking old URL', attachment._oldUrl)
           URL.revokeObjectURL(attachment._oldUrl)
           delete attachment._oldUrl
         }
