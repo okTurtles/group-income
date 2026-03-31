@@ -191,41 +191,12 @@ export default ({
 
 .settings-container {
   width: 100%;
-
-  .c-title {
-    margin-bottom: 2rem;
-  }
-}
-
-.c-subcontent {
-  border: none;
-  display: flex;
-  justify-content: space-between;
-  column-gap: 1rem;
-  margin-bottom: 2.5rem;
-
-  &:last-child {
-    margin-bottom: 1.5rem;
-  }
-}
-
-.c-smaller-title {
-  font-size: $size_4;
-  font-weight: bold;
 }
 
 .c-description {
   margin-top: 0.125rem;
   font-size: $size_4;
   color: $text_1;
-}
-
-.c-name {
-  color: $text_1;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  margin-top: -1rem;
-  margin-bottom: 1.5rem;
 }
 
 .c-mt-1 {
