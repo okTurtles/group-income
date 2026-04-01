@@ -24,7 +24,7 @@
           data-test='updateChannelName'
         )
 
-        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can only contain lowercase letters, numbers, and hyphens(-).
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can't contain whitespace, special characters, capital letters or punctuation.
 
       banner-scoped(ref='formMsg')
 
@@ -47,6 +47,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { sanitizeChannelName } from '@view-utils/filters.js'
 
 export default ({
   name: 'EditChannelNameModal',
@@ -123,7 +124,7 @@ export default ({
         },
         [L('Duplicate channel name')]: (name, siblings) => {
           for (const existingName of siblings.existingNames) {
-            if (name.toUpperCase() === existingName.toUpperCase()) {
+            if (name.toUpperCase().normalize() === existingName.toUpperCase().normalize()) {
               return false
             }
           }
@@ -135,9 +136,7 @@ export default ({
   watch: {
     'form.name' (newVal) {
       if (newVal.length) {
-        this.form.name = newVal.replace(/\s/g, '-') // replace all whitespaces with '-'
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '') // remove all non-alphanumeric characters except '-'
+        this.form.name = sanitizeChannelName(newVal)
       }
     }
   }
