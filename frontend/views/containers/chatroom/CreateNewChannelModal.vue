@@ -24,7 +24,7 @@
           @blur='updateField("name")'
           v-error:name=''
         )
-        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can't contain white spaces, special characters, capital letters or punctuations.
+        i18n.helper.with-icon(v-if='!$v.form.name.$error' tag='p') Channel name can't contain whitespace, special characters, capital letters or punctuation.
 
       label.field
         .c-desc-label-container
