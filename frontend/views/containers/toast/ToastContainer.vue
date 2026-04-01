@@ -45,7 +45,7 @@ export default {
     }
   },
   methods: {
-    onShowToast ({ targetContainerId = '', data = null } = {}) {
+    onShowToast (targetContainerId = '', data = null) {
       if (targetContainerId !== this.containerId || !data) { return }
 
       const toastPosition = data.position || 'bottom-right'
