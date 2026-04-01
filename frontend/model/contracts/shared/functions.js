@@ -203,7 +203,7 @@ export const validateChatRoomName = (name: string) => {
   const nameValidationMap: {[string]: Function} = {
     [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/.test(v),
     [L('Chatroom name cannot contain capital letters')]: (v: string): boolean => /\p{Lu}/u.test(v),
-    [L('Chatroom name cannot contain punctuation or special characters except hyphen')]: (v: string): boolean => /[^\p{L}\p{Nd}-]/u.test(v)
+    [L('Chatroom name cannot contain punctuation or special characters except hyphens')]: (v: string): boolean => /[^\p{L}\p{M}\p{Nd}-]/u.test(v)
   }
 
   for (const key in nameValidationMap) {

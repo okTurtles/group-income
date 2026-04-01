@@ -84,11 +84,12 @@ export const sanitizeChannelName = (name: string): string => {
     /*
       The regex below removes everything except:
       \p{L} - Any letter from any language
+      \p{M} - Any combining mark
       \p{Nd} - Any digit numbers
       '-'    - The hyphen (separator)
 
       Reference: Unicode character class escape -
       https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
     */
-    .replace(/[^\p{L}\p{Nd}-]/gu, '')
+    .replace(/[^\p{L}\p{M}\p{Nd}-]/gu, '')
 }
