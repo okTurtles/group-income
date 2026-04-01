@@ -1,0 +1,44 @@
+@use "../variables" as *;
+
+.toast-container {
+  --pocket-edge-spacing: 1rem;
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+
+  &.is-global {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: $zindex-toast-global;
+  }
+
+  @include from($tablet) {
+    --pocket-edge-spacing: 1.5rem;
+  }
+}
+
+.toast-inner-pocket {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 0.5rem;
+  width: 100%;
+  max-width: calc(100% - var(--pocket-edge-spacing) * 2);
+
+  &.is-bottom-right {
+    bottom: var(--pocket-edge-spacing);
+    right: var(--pocket-edge-spacing);
+  }
+
+  @include from($tablet) {
+    max-width: 20rem;
+  }
+}
