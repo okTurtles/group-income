@@ -91,6 +91,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Sie können den Fehler {a_}melden{_a}.";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "Chat-Kanal konnte nicht akzeptiert werden.";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "Fehler beim Hinzufügen der Nachricht.";
 
 /* controller/actions/chatroom.js */
@@ -263,6 +266,12 @@
 
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "Fehler beim Beitreten der Gruppe während des Logins: {msg}";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "Operation wird bereits ausgeführt";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "Nachrichtenversand mit einem oder mehreren Teilnehmern konnte nicht hergestellt werden.";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "Fehler beim Erstellen der Benutzeridentität: {reportError}";
@@ -478,13 +487,19 @@
 "Already joined direct message." = "Direktnachricht bereits beigetreten.";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "Direktnachricht nie beigetreten oder bereits verlassen.";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "Nicht existierende Direktnachricht.";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Kann nicht bestätigen, dass der Benutzername {username} zu diesem Identitätsvertrag gehört";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "Der Name des Chatrooms darf nur Kleinbuchstaben, Zahlen und Bindestriche(-) enthalten";
+"Chatroom name cannot contain capital letters" = "Chatroom-Name darf keine Großbuchstaben enthalten";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "Chatroom-Name darf keine Satzzeichen oder Sonderzeichen außer Bindestrichen enthalten";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "Chatroom-Name darf keine Leerzeichen enthalten";
@@ -1243,7 +1258,7 @@
 "Reached character limit." = "Zeichenlimit erreicht.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "Der Kanalname darf nur Kleinbuchstaben, Zahlen und Bindestriche(-) enthalten.";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "Kanalname darf keine Leerzeichen, Sonderzeichen, Großbuchstaben oder Satzzeichen enthalten.";
 
 /* views/containers/chatroom/CreatePoll.vue */
 "A question is required." = "Eine Frage ist erforderlich.";
@@ -3352,6 +3367,9 @@
 "Channel Options" = "Kanaloptionen";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "Direktnachricht löschen";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "{channelName} verlassen";
 
 /* views/pages/GroupChat.vue */
@@ -3572,6 +3590,12 @@
 
 /* Not currently used */
 "Are you sure you want to revoke this link? This action cannot be undone." = "Sind Sie sicher, dass Sie diesen Link widerrufen möchten? Diese Aktion kann nicht rückgängig gemacht werden.";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "Der Kanalname darf nur Kleinbuchstaben, Zahlen und Bindestriche(-) enthalten.";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "Der Name des Chatrooms darf nur Kleinbuchstaben, Zahlen und Bindestriche(-) enthalten";
 
 /* Not currently used */
 "Chatroom name must be lower-case only" = "Chatroom-Name muss nur Kleinbuchstaben enthalten";

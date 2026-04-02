@@ -22,6 +22,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". {a_}오류를 신고{_a}할 수 있습니다.";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "채팅 채널을 수락하는 데 실패했습니다.";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "메시지 추가에 실패했습니다.";
 
 /* controller/actions/chatroom.js */
@@ -194,6 +197,12 @@
 
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "로그인 중 그룹 가입 오류: {msg}";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "작업이 이미 진행 중입니다";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "한 명 이상의 참가자와 메시징을 설정할 수 없습니다.";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "사용자 ID 생성에 실패했습니다: {reportError}";
@@ -412,13 +421,19 @@
 "Already joined direct message." = "이미 직접 메시지에 참여했습니다.";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "다이렉트 메시지에 참여한 적이 없거나 이미 나갔습니다.";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "존재하지 않는 직접 메시지입니다.";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "사용자 이름 {username}이 이 ID 계약에 속하는지 확인할 수 없습니다.";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "채팅방 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다";
+"Chatroom name cannot contain capital letters" = "채팅방 이름에 대문자를 포함할 수 없습니다";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "채팅방 이름에 하이픈을 제외한 구두점이나 특수 문자를 포함할 수 없습니다";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "채팅방 이름에 공백을 포함할 수 없습니다.";
@@ -1180,7 +1195,7 @@
 "Reached character limit." = "문자 수 제한에 도달했습니다.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "채널 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다.";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "채널 이름에는 공백, 특수 문자, 대문자 또는 구두점을 포함할 수 없습니다.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "이름";
@@ -3349,6 +3364,9 @@
 "Channel Options" = "채널 옵션";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "다이렉트 메시지 삭제";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "{channelName} 채널 나가기";
 
 /* views/pages/GroupChat.vue */
@@ -3572,6 +3590,12 @@
 
 /* Not currently used */
 "Are you sure you want to revoke this link? This action cannot be undone." = "이 링크를 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "채널 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다.";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "채팅방 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다";
 
 /* Not currently used */
 "Chatroom name must be lower-case only" = "채팅방 이름은 소문자만 사용해야 합니다.";
