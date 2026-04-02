@@ -1,13 +1,19 @@
 <template lang='pug'>
 .toast-container.c-toast-container(:class='{ "is-global": isGlobalToast }')
   .toast-inner-pocket.is-bottom-right
-    toast-card(v-for='item in ephemeral.items' :key='item.id' :data='item')
+    toast-card(
+      v-for='item in ephemeral.items'
+      :key='item.id'
+      :data='item'
+      @close='onToastCardClose'
+    )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { SHOW_TOAST } from '@utils/events'
 import ToastCard from '@containers/toast/ToastCard.vue'
+import { randomHexString } from 'turtledash'
 
 export default {
   name: 'ToastContainer',
@@ -26,7 +32,8 @@ export default {
         items: [
           {
             id: 'random-id-1',
-            message: 'This is a test message'
+            message: 'This is a test message',
+            closeable: true
           }
         ]
       }
@@ -41,7 +48,15 @@ export default {
     onShowToast (targetContainerId = '', data = null) {
       if (targetContainerId !== this.containerId || !data) { return }
 
-      this.ephemeral.items.push(data)
+      this.ephemeral.items.push({
+        id: randomHexString(10),
+        ...data
+      })
+    },
+    onToastCardClose (cardId) {
+      if (cardId) {
+        this.ephemeral.items = this.ephemeral.items.filter(item => item.id !== cardId)
+      }
     }
   },
   mounted () {
