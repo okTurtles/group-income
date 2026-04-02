@@ -12,6 +12,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { SHOW_TOAST } from '@utils/events'
+import { MAX_TOAST_COUNT } from '@utils/constants'
 import ToastCard from '@containers/toast/ToastCard.vue'
 import { randomHexString } from 'turtledash'
 
@@ -52,6 +53,10 @@ export default {
         id: randomHexString(10),
         ...data
       })
+
+      while (this.ephemeral.items.length > MAX_TOAST_COUNT) {
+        this.ephemeral.items.shift()
+      }
     },
     onToastCardClose (cardId) {
       if (cardId) {

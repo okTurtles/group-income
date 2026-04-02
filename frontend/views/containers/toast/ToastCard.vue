@@ -1,5 +1,8 @@
 <template lang='pug'>
-.c-toast-card
+.c-toast-card(
+  @animationend='onAnimationEnd'
+  :class='{ "no-animation": ephemeral.enterAnimationEnded }'
+)
   .c-toast-content
     i.icon-check-circle.c-toast-icon
     .c-toast-message(v-safe-html:a='data.message')
@@ -20,6 +23,13 @@ export default {
   props: {
     data: Object
   },
+  data () {
+    return {
+      ephemeral: {
+        enterAnimationEnded: false
+      }
+    }
+  },
   computed: {
     showCloseButton () {
       return !!this.data.closeable
@@ -28,6 +38,10 @@ export default {
   methods: {
     onClose () {
       this.$emit('close', this.data.id)
+    },
+    onAnimationEnd () {
+      // This is to prevent enter-animation from being repeatedly triggered when the toast card list is rearranged.
+      this.ephemeral.enterAnimationEnded = true
     }
   }
 }
@@ -45,6 +59,12 @@ export default {
   overflow: hidden;
   opacity: 0;
   animation: toast-card-enter 0.3s ease-out forwards;
+  pointer-events: auto;
+
+  &.no-animation {
+    opacity: 1;
+    animation: none;
+  }
 }
 
 .c-toast-content {
@@ -76,6 +96,7 @@ export default {
     opacity: 0;
     transform: translate3d(0, 50%, 0);
   }
+
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
