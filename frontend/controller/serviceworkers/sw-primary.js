@@ -646,8 +646,8 @@ sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
     group: KV_LOAD_STATUS.NON_INIT
   }
 
-  rootState.kvStoreStatus = {
+  cheloniaReactiveSet(rootState, 'kvStoreStatus', {
     ...(rootState?.kvStoreStatus || defaultObj),
     [name]: status
-  }
+  })
 })
