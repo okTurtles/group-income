@@ -49,10 +49,12 @@ export default {
     onShowToast (targetContainerId = '', data = null) {
       if (targetContainerId !== this.containerId || !data) { return }
 
-      this.ephemeral.items.push({
+      const item = {
         id: randomHexString(10),
+        createdTimestamp: Date.now(),
         ...data
-      })
+      }
+      this.ephemeral.items.push(item)
 
       while (this.ephemeral.items.length > MAX_TOAST_COUNT) {
         this.ephemeral.items.shift()

@@ -9,7 +9,7 @@
     button.is-unstyled.c-toast-close(
       v-if='showCloseButton'
       type='button'
-      @click.stop='onClose'
+      @click.stop='closeToast'
     )
       i.icon-times-circle
 
@@ -26,7 +26,12 @@ export default {
   data () {
     return {
       ephemeral: {
-        enterAnimationEnded: false
+        enterAnimationEnded: false,
+        timeoutId: null,
+        progressBar: {
+          initialPercent: 0,
+          animationDuration: 0
+        }
       }
     }
   },
@@ -36,12 +41,32 @@ export default {
     }
   },
   methods: {
-    onClose () {
+    closeToast () {
       this.$emit('close', this.data.id)
     },
-    onAnimationEnd () {
-      // This is to prevent enter-animation from being repeatedly triggered when the toast card list is rearranged.
-      this.ephemeral.enterAnimationEnded = true
+    onAnimationEnd (e) {
+      const name = e.animationName || ''
+      if (name.includes('toast-card-enter')) {
+        // This is to ensure enter-animation doesn't get triggered repeatedly on re-rendering.
+        this.ephemeral.enterAnimationEnded = true
+      }
+    },
+    setupTimeout () {
+      const timeoutDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
+      if (timeoutDuration > 0) {
+        this.ephemeral.timeoutId = setTimeout(() => {
+          this.closeToast()
+        }, timeoutDuration)
+
+        // config for progressbar animation
+        this.ephemeral.progressBar.initialPercent = 100 * timeoutDuration / this.data.duration
+        this.ephemeral.progressBar.animationDuration = timeoutDuration
+      }
+    }
+  },
+  mounted () {
+    if (Number.isFinite(this.data.duration)) {
+      this.setupTimeout()
     }
   }
 }
