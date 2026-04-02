@@ -597,19 +597,24 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   })
 })
 
+const cheloniaReactiveSet = (state, key, value) => {
+  const { reactiveSet } = sbp('chelonia/config')
+  reactiveSet(state, key, value)
+}
+
 // These `NEW_*` events are emitted in KV files. To keep things consistent with
 // the browser state, we update the state when these events are generated.
 sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
   const rootState = sbp('state/vuex/state')
-  rootState.lastLoggedIn[contractID] = data
+  cheloniaReactiveSet(rootState.lastLoggedIn, contractID, data)
 })
 sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   const rootState = sbp('state/vuex/state')
-  rootState.preferences = preferences
+  cheloniaReactiveSet(rootState, 'preferences', preferences)
 })
 sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
   const rootState = sbp('state/vuex/state')
-  rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
+  cheloniaReactiveSet(rootState.chatroom, 'unreadMessages', currentChatRoomUnreadMessages)
 })
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
   const rootState = sbp('chelonia/rootState')
@@ -618,15 +623,19 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
   }
 
   if (chatRoomID) {
-    if (!rootState.chatroom.chatNotificationSettings[chatRoomID]) {
-      rootState.chatroom.chatNotificationSettings[chatRoomID] = {}
+    // Why not using const currentSettings = rootState.chatroom.chatNotificationSettings[chatRoomID] || {} below?:
+    // Chelonia 'reactiveSet' has a check for `o[k] !== v`, so if the chatroom has existing settings
+    // then the updates here won't get persisted due to the same obj reference. So assigning currentSettings variable like below.
+    const currentSettings = {
+      ...(rootState.chatroom.chatNotificationSettings[chatRoomID] || {})
     }
-    for (const key in settings) {
-      rootState.chatroom.chatNotificationSettings[chatRoomID][key] = settings[key]
-    }
-  }
 
-  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+    for (const key in settings) {
+      currentSettings[key] = settings[key]
+    }
+
+    cheloniaReactiveSet(rootState.chatroom.chatNotificationSettings, chatRoomID, currentSettings)
+  }
 })
 
 sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
