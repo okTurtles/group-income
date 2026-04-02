@@ -623,9 +623,9 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
   }
 
   if (chatRoomID) {
-    // Why not using const currentSettings = rootState.chatroom.chatNotificationSettings[chatRoomID] || {} below?:
-    // Chelonia 'reactiveSet' has a check for `o[k] !== v`, so if the chatroom has existing settings
-    // then the updates here won't get persisted due to the same obj reference. So assigning currentSettings variable like below.
+    // Why not `const currentSettings = rootState.chatroom.chatNotificationSettings[chatRoomID] || {}` below?:
+    // 'reactiveSet' has a check for `o[k] !== v`, so if the chatroom has existing settings
+    // then the updates won't get persisted due to the same obj reference. So assigning currentSettings variable like below.
     const currentSettings = {
       ...(rootState.chatroom.chatNotificationSettings[chatRoomID] || {})
     }
