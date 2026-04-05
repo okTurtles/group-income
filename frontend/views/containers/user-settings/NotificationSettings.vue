@@ -146,9 +146,10 @@ export default ({
   },
   methods: {
     ...mapMutations(['setNotificationEnabled']),
-    async handleNotificationSettings (e) {
+    async handleNotificationSettings () {
       if (typeof Notification !== 'function') return
       let permission = Notification.permission
+
       const disableCheckbox = () => {
         this.$nextTick(() => { this.ephemeral.browserNotificationsEnabled = false })
       }

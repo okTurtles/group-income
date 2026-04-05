@@ -152,6 +152,21 @@ export default {
   created () {
     this.form.messageNotification = this.globalDefaultSettings.messageNotification
     this.form.messageSound = this.globalDefaultSettings.messageSound
+  },
+  watch: {
+    'globalDefaultSettings': {
+      deep: true,
+      handler (newVal, oldVal) {
+        // global default settings update could happen from another tab in the browser.
+        // In this case, update the form state so they are in sync.
+        if (newVal.messageNotification && newVal.messageNotification !== this.form.messageNotification) {
+          this.form.messageNotification = newVal.messageNotification
+        }
+        if (newVal.messageSound && newVal.messageSound !== this.form.messageSound) {
+          this.form.messageSound = newVal.messageSound
+        }
+      }
+    }
   }
 }
 </script>
