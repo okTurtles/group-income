@@ -15,6 +15,7 @@
   )
     .c-mentions(
       v-if='ephemeral.mention.options.length'
+      :class='{ "is-above-replying-message": !!replyingMessage }'
       ref='mentionWrapper'
     )
       template(v-if='ephemeral.mention.type === "member"')
@@ -1369,6 +1370,11 @@ export default ({
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 12.25rem;
+
+  &.is-above-replying-message {
+    top: -2.25rem;
+    border-radius: 0.3rem;
+  }
 
   .c-mention-user,
   .c-mention-channel {
