@@ -126,7 +126,7 @@ export default ({
       const mappings = {
         // mapping global settings to per-chatroom settings
         [GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES]: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
-        [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS]: this.isDM || privacyLevelPrivate
+        [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS]: (this.isDM || privacyLevelPrivate)
           ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
           : MESSAGE_NOTIFY_SETTINGS.MENTIONS,
         [GLOBAL_MESSAGE_NOTIFY_SETTINGS.NOTHING]: MESSAGE_NOTIFY_SETTINGS.NOTHING
