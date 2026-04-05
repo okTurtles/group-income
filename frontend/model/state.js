@@ -11,7 +11,10 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import getters from './getters.js'
+import { SPMessage } from '@chelonia/lib/SPMessage'
+import { PROFILE_STATUS } from './contracts/shared/constants.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
@@ -219,6 +222,151 @@ sbp('sbp/selectors/register', {
         })
       }
       await internal()
+    })()
+
+    // Migration to have group creators re-join groups using a one-off invite,
+    // instead of using the CSK
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft, inviteSecretId }]) => !hasLeft && state[id]?._vm?.authorizedKeys[inviteSecretId]?.name === 'csk')
+        .map(([id]) => id)
+
+      if (!groupIds.length) return
+      sbp('gi.actions/identity/upgradeCreatorGroupInvite', groupIds).catch(e => {
+        console.error('[identity/upgradeCreatorGroupInvite] Error', e)
+      })
+    })()
+
+    // Migration to update group CSK permissions for private chatrooms
+    // Add OP_KEY_REQUEST permission to the group CSK
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .flatMap(([id]) => {
+          return Object.entries(state[id].chatRooms || {})
+            // $FlowFixMe[incompatible-use]
+            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+              // Not deleted
+              !deletedDate &&
+              // This upgrade only makes sense for private chatrooms
+              privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE &&
+              // We should be a member with an active profile
+              members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
+              // have synced the chatroom
+              state[id]?._vm?.authorizedKeys &&
+              // and the group CSK doesn't have OP_KEY_REQUEST permission
+              Object.values(state[id]._vm.authorizedKeys)
+                // $FlowFixMe[incompatible-use]
+                .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
+            )
+            .map(([id]) => id)
+        })
+
+      if (!chatRoomIds.length) return
+      sbp('gi.actions/chatroom/upgradeGroupCskPermissions', chatRoomIds).catch(e => {
+        console.error('[chatroom/upgradeGroupCskPermissions] Error', e)
+      })
+    })()
+
+    // Migration to update CEK permissions for chatrooms
+    // Add OP_KEY_SHARE and OP_KEY_REQUEST_SEEN permission to the CEK
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+      const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
+        // $FlowFixMe[incompatible-use]
+        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .flatMap(([id]) => {
+          return Object.entries(state[id].chatRooms || {})
+            // $FlowFixMe[incompatible-use]
+            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+              // Not deleted
+              !deletedDate &&
+              // We should be a member with an active profile
+              members[ourIdentityContractId]?.status === PROFILE_STATUS.ACTIVE &&
+              // have synced the chatroom
+              state[id]?._vm?.authorizedKeys &&
+              // and the CEK doesn't have OP_KEY_SHARE permission
+              // and the CEK doesn't have OP_KEY_REQUEST_SEEN permission
+              Object.values(state[id]._vm.authorizedKeys)
+                // $FlowFixMe[incompatible-use]
+                .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'cek' && (
+                  !permissions.includes(SPMessage.OP_KEY_SHARE) ||
+                  !permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
+                ))
+            )
+            .map(([id]) => id)
+        })
+
+      if (!chatRoomIds.length) return
+      sbp('gi.actions/chatroom/upgradeCekPermissions', chatRoomIds).catch(e => {
+        console.error('[chatroom/upgradeCekPermissions] Error', e)
+      })
+    })()
+
+    // Send an 'accept' action to any DMs that we have not yet accepted
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+
+      const chatRoomIds = Object.keys(state[ourIdentityContractId]?.chatRooms || {})
+      for (const chatRoomId of chatRoomIds) {
+        if (
+          // We need a chatroom state
+          !state[chatRoomId]?.members?.[ourIdentityContractId] ||
+          // For a chatroom that we haven't left
+          state[chatRoomId]?.members?.[ourIdentityContractId].hasLeft ||
+          // And that we haven't yet accepted
+          state[chatRoomId]?.members?.[ourIdentityContractId].acceptedHeight != null
+        ) {
+          continue
+        }
+
+        sbp('gi.actions/chatroom/accept', { contractID: chatRoomId, data: null }).catch((e) => {
+          console.error('[postUpgradeVerification] Failed to confirm DM membership', chatRoomId, e)
+        })
+      }
+    })()
+
+    // Send OP_KEY_SHARE if our PEK has been rotated and this hasn't been done before
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?._vm?.authorizedKeys) return
+
+      const dmk = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'dmk' && k._notAfterHeight == null
+      })
+      // Did we find a DMK?
+      if (!dmk) return
+
+      const pek = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'pek' && k._notAfterHeight == null
+      })
+      // Did we find a PEK?
+      if (!pek) return
+
+      // $FlowFixMe[incompatible-use]
+      if (dmk.meta?.private?.content?.[0] === pek.id) return
+
+      // $FlowFixMe[incompatible-use]
+      const hasItBeenSharedBefore = state[ourIdentityContractId]._vm.sharedKeyIds?.some((k) => k.id === dmk.id)
+
+      if (hasItBeenSharedBefore) return
+
+      // Issue the action to initiate OP_KEY_SHARE
+      sbp('gi.actions/identity/shareDMKwithPEK', ourIdentityContractId).catch((e) => {
+        console.error('[postUpgradeVerification] Error at shareDMKwithPEK', e)
+      })
     })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {

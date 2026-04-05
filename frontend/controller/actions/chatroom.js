@@ -4,9 +4,9 @@ import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
-import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
-import { has, omit } from 'turtledash'
+import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
@@ -14,8 +14,78 @@ import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
+import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
 
 const messageReceivedRawQueue = []
+
+// Function debounced because it might get called too often (on every chatroom
+// key update)
+const findAndRequestMissingChatroomKeysSet = new Set()
+const findAndRequestMissingChatroomKeys = debounce(() => {
+  const inner = (contractID) => {
+    const state = sbp('chelonia/contract/state', contractID)
+    if (!state || !state.members || state.attributes?.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE) return
+
+    const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+    const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
+
+    // If we have all keys, we don't have anything to request
+    if (CEKid && CSKid) return
+    if (!groupCSKid) {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
+      return
+    }
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
+    const contractState = cheloniaState[identityContractID]
+
+    // $FlowFixMe[incompatible-use]
+    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
+      const groupState = cheloniaState[groupID]
+      const chatroom = groupState?.chatRooms?.[contractID]
+      return (
+        !hasLeft &&
+        groupState?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE &&
+        chatroom &&
+        !chatroom.deletedDate &&
+        chatroom.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      )
+    })?.[0]
+
+    if (!groupID) {
+      return
+    }
+
+    const reference = cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID
+
+    // TODO: Missing '/disconnect' logic for chatrooms
+    // See <https://github.com/okTurtles/group-income/issues/3043>
+    sbp('chelonia/out/keyRequest', {
+      originatingContractID: identityContractID,
+      originatingContractName: 'gi.contracts/identity',
+      contractID,
+      contractName: 'gi.contracts/chatroom',
+      reference,
+      signingKeyId: groupCSKid,
+      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
+      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      request: 'missing',
+      skipInviteAccounting: true,
+      innerEncryptionKeyId: CEKid,
+      encryptKeyRequestMetadata: true
+    }).catch((e) => {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
+    })
+  }
+
+  for (const contractID of findAndRequestMissingChatroomKeysSet) {
+    findAndRequestMissingChatroomKeysSet.delete(contractID)
+    // Queue to ensure it runs after a contract sync that's in progress
+    sbp('chelonia/queueInvocation', contractID, () => inner(contractID))
+  }
+}, 200)
 
 function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, newMessage }) {
   const rootState = sbp('chelonia/rootState')
@@ -186,7 +256,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 0,
-            permissions: [SPMessage.OP_ACTION_ENCRYPTED],
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE],
             allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
@@ -199,7 +269,7 @@ export default (sbp('sbp/selectors/register', {
                   name: 'group-csk',
                   purpose: ['sig'],
                   ringLevel: 2,
-                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED],
+                  permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST],
                   allowedActions: ['gi.contracts/chatroom/leave'],
                   foreignKey: params.options.groupKeys[0].foreignKey,
                   meta: params.options.groupKeys[0].meta,
@@ -257,37 +327,135 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userID, { ephemeral: true })
     }
   },
-  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys) => {
+  // Helper function to select new keys to share with members after a key rotation
+  // `newKeys` contains the new keys (after rotation)
+  // Called by 'gi.actions/out/rotateKeys'
+  // `options` indicates whether this is the last attempt at this operation or not
+  // (on our part). The goal is not to block key rotations (which would happen if
+  // this method throws), while at the same time ensuring that we don't exclude any
+  // member from the key share.
+  // If it's _not_ the last attempt, we throw if we are unable to share keys with
+  // an existing member. The operation will be re-attempted later.
+  // If it _is_ the last attempt, we proceed with key rotation, even though we
+  // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
+  // later (but will be temporarily unable to participate).
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean } = {}) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
-    const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
+    // NOTE: The following code _prevents_ key rotations when no-one has left
+    // The purpose of this is twofold:
+    //   - Testing PR 3058 (issue 2988) resulted in an infinite loop during test
+    //     conditions. It is unlikely that such an infinite loop would happen
+    //     under real conditions, but unnecessary and unexpected re-syncs could
+    //     occur.
+    //   - PR 3057 introduced improvements for more deterministic and efficient
+    //     key rotations. The changes aim at preventing unnecessary key
+    //     rotations, which could previously occur when re-syncing a contract,
+    //     even if no-one had left a group or chatroom. However, those
+    //     improvements were done in the contracts themselves, meaning that old
+    //     contracts will continue to show the old behaviour. This check refuses
+    //     those key rotations even if an old contract version is used.
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // Check that it's the CEK that we're rotating
+      if (state._volatile?.pendingKeyRevocations?.[mainCEKid]) {
+        // Check that it's also the CSK that we're rotating
+        const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
+          // Pick the height for the earliest rotation of the CEK or the CSK
+          // For example, if the CEK was rotated last at height = 12 and
+          // the CSK was rotated last at height = 15, we allow a rotations to
+          // proceed if someone left at at time >= 12. This is for robustness,
+          // as the CEK and the CSK are rotated together.
+          // The last `|| 0` is also for robustness, in case `Math.min` should
+          // return NaN.
+          const height = Math.min(state._vm.authorizedKeys[mainCEKid]._notBeforeHeight, state._vm.authorizedKeys[mainCSKid]._notBeforeHeight) || 0
+          const formerMemberIds = Object.keys(state.members).filter((id) => {
+            return state.members[id].hasLeft === true
+          })
+          // Chatroom contracts don't have `departedHeight` nor a similar attribute,
+          // meaning that we have to rely on key operations.
+          const hasAnyoneLeftAfterLastRotation = Object.keys(state._vm.authorizedKeys).some((id) => {
+            const key = state._vm.authorizedKeys[id]
+            // We let any foreign key that starts with `memberId` and that has
+            // expired _after_ the last rotation triggered a rotation.
+            // This is open-ended and could match keys that aren't the user's CSK,
+            // or it could match keys that were removed for reasons other than
+            // because the member has left.
+            // This is fine, because this logic is here to prevent unnecessary
+            // key rotations in old contracts. Usually, a key rotation, even an
+            // unnecessary one, shouldn't cause any issues, except if the new,
+            // rotated keys aren't properly shared with all members.
+            return key._notAfterHeight >= height && key.foreignKey && formerMemberIds.some((memberId) => {
+              return key.name.startsWith(memberId)
+            })
+          })
+          if (!hasAnyoneLeftAfterLastRotation) {
+            delete state._volatile.pendingKeyRevocations[mainCEKid]
+            delete state._volatile.pendingKeyRevocations[mainCSKid]
+            console.warn('NOTE: Refusing unnecessary chatroom key rotation because no-one has left', contractID, height)
+            throw new Error('[chatroom] Refusing key rotation because no-one has left')
+          }
+        }
+      }
+    }
 
     const activeMemberIds = sbp('state/vuex/getters').chatRoomActiveMemberIdsForChatRoom(state)
     return Promise.all(activeMemberIds.map(async (pContractID) => {
-      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
-      if (!CEKid) {
-        console.warn(`Unable to share rotated keys for ${originatingContractID} with ${pContractID}: Missing CEK`)
-        return
-      }
-      return [
-        'chelonia/out/keyShare',
-        {
-          data: encryptedOutgoingData(contractID, mainCEKid, {
-            contractID,
-            foreignContractID: pContractID,
-            // $FlowFixMe
-            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-              id: newId,
-              meta: {
-                private: {
-                  content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
-                }
-              }
-            }))
-          })
+      const retained = await sbp('chelonia/contract/retain', pContractID, { ephemeral: true }).then(() => [true], (e) => [false, e])
+      if (!retained[0]) {
+        const e = retained[1]
+        if (e?.name === 'ChelErrorResourceGone') {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: ${pContractID} does not exist`, e)
+        } else {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Error retaining ${pContractID}`, e)
         }
-      ]
+        if (options.lastAttempt) {
+          return
+        } else {
+          throw new Error('Unable to share rotated keys')
+        }
+      }
+      try {
+        const CEKid = await sbp('chelonia/contract/currentKeyIdByName', pContractID, 'cek')
+        if (!CEKid) {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${pContractID}: Missing CEK`)
+          if (options.lastAttempt) {
+            return
+          } else {
+            throw new Error('Unable to share rotated keys')
+          }
+        }
+        return [
+          'chelonia/out/keyShare',
+          {
+            data: encryptedOutgoingData(contractID, mainCEKid, {
+              contractID,
+              foreignContractID: pContractID,
+              // $FlowFixMe
+              keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+                id: newId,
+                meta: {
+                  private: {
+                    content: encryptedOutgoingData(pContractID, CEKid, serializeKey(newKey, true))
+                  }
+                }
+              }))
+            })
+          }
+        ]
+      } catch (e) {
+        // This must be done to prevent a single failure on a single contract
+        // from blocking a key rotation.
+        if (options.lastAttempt) {
+          return
+        } else {
+          throw e
+        }
+      } finally {
+        await sbp('chelonia/contract/release', pContractID, { ephemeral: true })
+      }
     })).then((keys) => [keys.filter(Boolean)])
   },
   'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Object) => {
@@ -330,6 +498,77 @@ export default (sbp('sbp/selectors/register', {
         break
       }
     }
+  },
+  // Action to request missing keys after a rotation
+  // Called from the contract on OP_KEY_UPDATE
+  'gi.actions/chatroom/findAndRequestMissingChatroomKeys': (contractID) => {
+    findAndRequestMissingChatroomKeysSet.add(contractID)
+    findAndRequestMissingChatroomKeys()
+  },
+  // Migration action to update group CSK permissions to include OP_KEY_REQUEST
+  // Called from postUpgradeVerification
+  'gi.actions/chatroom/upgradeGroupCskPermissions': (chatRoomIds) => {
+    chatRoomIds.forEach((chatRoomID) => {
+      const state = sbp('chelonia/contract/state', chatRoomID)
+      if (!state) return
+
+      const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk')
+      // Return if we've already upgraded this chatroom
+      if (!groupCSKid || state._vm.authorizedKeys[groupCSKid].permissions.includes(SPMessage.OP_KEY_REQUEST)) return
+
+      const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+      if (!CSKid) return
+
+      sbp('chelonia/out/keyUpdate', {
+        contractID: chatRoomID,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          {
+            name: 'group-csk',
+            oldKeyId: groupCSKid,
+            permissions: [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_DEL, SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST]
+          }
+        ],
+        signingKeyId: CSKid
+      }).catch(e => {
+        console.error(`[gi.actions/chatroom/upgradeGroupCskPermissions] Error updating group CSK for ${chatRoomID}`, e)
+      })
+    })
+  },
+  // Migration action to update CEK permissions to include OP_KEY_SHARE and OP_KEY_REQUEST_SEEN
+  // Called from postUpgradeVerification
+  'gi.actions/chatroom/upgradeCekPermissions': (chatRoomIds) => {
+    chatRoomIds.forEach((chatRoomID) => {
+      const state = sbp('chelonia/contract/state', chatRoomID)
+      if (!state) return
+
+      const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+      // Return if we've already upgraded this chatroom
+      if (!CEKid || (
+        state._vm.authorizedKeys[CEKid].permissions.includes(SPMessage.OP_KEY_SHARE) &&
+        state._vm.authorizedKeys[CEKid].permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
+      )) return
+
+      const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+
+      if (!CSKid) return
+
+      sbp('chelonia/out/keyUpdate', {
+        contractID: chatRoomID,
+        contractName: 'gi.contracts/chatroom',
+        data: [
+          {
+            name: 'cek',
+            oldKeyId: CEKid,
+            permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST_SEEN, SPMessage.OP_KEY_SHARE]
+          }
+        ],
+        signingKeyId: CSKid
+      }).catch(e => {
+        console.error(`[gi.actions/chatroom/upgradeCekPermissions] Error updating group CEK for ${chatRoomID}`, e)
+      })
+    })
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
   ...encryptedNotification('gi.actions/chatroom/user-stop-typing-event', L('Failed to send stopped typing notification')),
@@ -417,6 +656,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
     }
   }),
+  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.')),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {
