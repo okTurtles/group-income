@@ -23,7 +23,7 @@ const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
-const packageJSON = require('./package.json')
+const cheloniaJSON = require('./chelonia.json')
 
 // =======================
 // Global environment variables setup
@@ -52,14 +52,16 @@ const {
 if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
-// 'grunt pin' can override this
-let CONTRACTS_VERSION = packageJSON.contractsVersion
+// Build the per-contract CONTRACTS_VERSION object from chelonia.json
+const CONTRACTS_VERSION = Object.fromEntries(
+  Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
+)
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
+const APP_VERSION = cheloniaJSON.appVersion + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
-Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
+Object.assign(process.env, { APP_VERSION })
 // Make some important runtime variables available to subprocesses
 Object.assign(process.env, { DENO_DIR, NODE_ENV })
 
@@ -86,7 +88,7 @@ const isValidPort = (port) => {
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
-  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('utf8').trim()
+  const GI_GIT_VERSION = process.env.CI ? process.env.APP_VERSION : execSync('git describe --dirty').toString('utf8').trim()
   Object.assign(process.env, { GI_GIT_VERSION })
 
   // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
@@ -314,21 +316,21 @@ module.exports = (grunt) => {
 
   grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
-    const { contractsVersion } = packageJSON
+    const appVersion = cheloniaJSON.appVersion
 
     // NOTE: the latest version
-    await mkdir(`${distContracts}/${contractsVersion}`)
+    await mkdir(`${distContracts}/${appVersion}`)
     for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
       if (dirent.isFile()) {
         const fileName = dirent.name
-        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${contractsVersion}/${fileName}`)
+        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${appVersion}/${fileName}`)
         await rm(`${distContracts}/${fileName}`)
       }
     }
 
     // NOTE: all previously pinned versions
     const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
-      return dirent.isDirectory() && dirent.name !== contractsVersion
+      return dirent.isDirectory() && dirent.name !== appVersion
     }).map(dirent => dirent.name)
     for (const version of versions) {
       await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
@@ -453,9 +455,12 @@ module.exports = (grunt) => {
     // we do this here first so that any code that uses `process.env.CONTRACTS_VERSION` inside the contracts
     // themselves will be built using this latest version number, and so that the contract manifests
     // are generated using this version number
-    packageJSON.contractsVersion = CONTRACTS_VERSION = process.env.CONTRACTS_VERSION = version
-    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated package.json "contractsVersion" to:'), packageJSON.contractsVersion)
+    for (const name of Object.keys(cheloniaJSON.contracts)) {
+      cheloniaJSON.contracts[name].version = version
+      CONTRACTS_VERSION[name] = version
+    }
+    fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
+    console.log(chalk.green('updated chelonia.json contract versions to:'), version)
     // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
     // registering handlers for 'unhandledRejection' or 'uncaughtException'
     grunt.task.run(['build', `_pin:${version}`])
@@ -494,8 +499,8 @@ module.exports = (grunt) => {
         define: {
           'process.env.BUILD': "'web'", // Required by Vuelidate.
           'process.env.CI': `'${CI}'`,
-          'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-          'process.env.GI_VERSION': `'${GI_VERSION}'`,
+          'process.env.CONTRACTS_VERSION': JSON.stringify(CONTRACTS_VERSION),
+          'process.env.APP_VERSION': `'${APP_VERSION}'`,
           'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
           'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
           'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
@@ -545,7 +550,7 @@ module.exports = (grunt) => {
       external: ['@sbp/sbp']
     }
     // prevent contract hash from changing each time we build them
-    esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
+    esbuildOptionBags.contracts.define['process.env.APP_VERSION'] = "'x.x.x'"
     esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
     esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
     esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
@@ -599,7 +604,7 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
+      .then(() => genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
@@ -676,7 +681,7 @@ module.exports = (grunt) => {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
               const dest = process.env.API_URL
-              await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
+              await genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
               await buildMain.run({ fileEventName, filePath })

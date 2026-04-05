@@ -308,15 +308,16 @@ const setupChelonia = async (): Promise<*> => {
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
       [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-        const ourVersion = process.env.GI_VERSION
-        const theirVersion = msg.data.GI_VERSION
+        const ourVersion = process.env.APP_VERSION
+        const theirVersion = msg.data.appVersion
 
         const ourContractsVersion = process.env.CONTRACTS_VERSION
-        const theirContractsVersion = msg.data.CONTRACTS_VERSION
+        const theirContractsVersion = msg.data.contractsVersion
 
-        const isContractVersionDiff = ourContractsVersion !== theirContractsVersion
-        const isGIVersionDiff = ourVersion !== theirVersion
-        // We only compare GI_VERSION in development mode so that the page auto-refreshes if `grunt dev` is re-run
+        // TODO
+        const isContractVersionDiff = JSON.stringify(ourContractsVersion) !== JSON.stringify(theirContractsVersion)
+        const isAppVersionDiff = ourVersion !== theirVersion
+        // We only compare appVersion in development mode so that the page auto-refreshes if `grunt dev` is re-run
         // This check cannot be done in production mode as it would lead to an infinite page refresh bug
         // when using `grunt deploy` with `grunt serve`
         console.info('VERSION_INFO received:', {
@@ -325,7 +326,7 @@ const setupChelonia = async (): Promise<*> => {
           ourContractsVersion,
           theirContractsVersion
         })
-        if (isContractVersionDiff || isGIVersionDiff) {
+        if (isContractVersionDiff || isAppVersionDiff) {
           sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, msg.data)
         }
       },
