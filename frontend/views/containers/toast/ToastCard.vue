@@ -37,7 +37,7 @@ export default {
         durationTimeoutId: null,
         animationState: {
           paused: false,
-          pausedPercentage: null
+          progressOnPause: null
         },
         progressBarStyles: {
           width: '',
@@ -66,45 +66,45 @@ export default {
       if (name.includes('toast-card-enter')) {
         // This is to ensure enter-animation doesn't get triggered repeatedly on re-rendering.
         this.$emit('enter-animation-ended', this.data.id)
-      }
-      if (name.includes('toast-timeout-ani')) {
+      } else if (name.includes('toast-timeout-ani')) {
         this.closeToast()
       }
     },
-    setupTimeout (percentage = 0) {
+    setupTimeout () {
       if (this.hasDuration) {
-        const aniDuration = percentage
-          ? percentage * this.data.duration
-          : this.data.duration - (Date.now() - this.data.createdTimestamp)
+        const aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
 
         // progressbar animation setup
         this.ephemeral.progressBarStyles = {
-          width: `${percentage || Math.round(100 * aniDuration / this.data.duration)}%`,
+          width: `${Math.round(100 * aniDuration / this.data.duration)}%`,
           animationDuration: `${aniDuration}ms`
         }
       }
     },
     pauseAnimation () {
-      if (this.hasDuration) {
-        const animationObj = this.$refs.progressBarInner?.getAnimations()?.[0]
-        if (animationObj) {
-          const currProgress = animationObj.overallProgress
+      if (this.hasDuration && this.$refs.progressBarInner) {
+        const getComputedWidth = el => parseFloat(window.getComputedStyle(el).width)
+        const progressBarWidth = getComputedWidth(this.$refs.progressBarInner)
+        const containerWidth = getComputedWidth(this.$refs.progressBarInner.parentElement)
+        const wRatioOnPause = progressBarWidth / containerWidth
+
+        if (!Number.isNaN(wRatioOnPause) && wRatioOnPause > 0 && wRatioOnPause < 1) {
           this.ephemeral.animationState = {
-            paused: true,
-            pausedPercentage: Math.round(100 * currProgress)
+            paused: true, progressOnPause: 1 - wRatioOnPause
           }
         }
       }
     },
     unpauseAnimation () {
       if (this.hasDuration && this.ephemeral.animationState.paused) {
-        const percentageLeft = 100 - this.ephemeral.animationState.pausedPercentage
-        const durationLeft = (percentageLeft / 100) * this.data.duration
-        const adjustedCreatedTimestamp = Date.now() + this.data.duration - durationLeft
+        // On resuming the progress animation of the toast card, update the createdTimestamp of the toast item to:
+        // Now - (The time spent up until the point of pause)
+        // This is important to prevent a bug where the progress bar animation starts from 100% again when toast card is re-rendered.
+        const adjustedCreatedTimestamp = Date.now() - this.data.duration * this.ephemeral.animationState.progressOnPause
 
         this.ephemeral.animationState = {
           paused: false,
-          pausedPercentage: null
+          progressOnPause: null
         }
 
         this.$emit('unpause-animation', this.data.id, adjustedCreatedTimestamp)
