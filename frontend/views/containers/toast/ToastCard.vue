@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-toast-card(
   @animationend='onAnimationEnd'
-  :class='{ "no-animation": ephemeral.enterAnimationEnded }'
+  :class='{ "no-enter-animation": ephemeral.enterAnimationEnded, "is-leaving": ephemeral.isClosing }'
 )
   .c-toast-content
     i.icon-check-circle.c-toast-icon
@@ -27,6 +27,7 @@ export default {
     return {
       ephemeral: {
         enterAnimationEnded: false,
+        isClosing: false,
         timeoutId: null,
         progressBarInitStyles: {
           width: '',
@@ -45,7 +46,10 @@ export default {
   },
   methods: {
     closeToast () {
-      this.$emit('close', this.data.id)
+      this.ephemeral.isClosing = true
+      setTimeout(() => {
+        this.$emit('close', this.data.id)
+      }, 300)
     },
     onAnimationEnd (e) {
       const name = e.animationName || ''
@@ -88,10 +92,17 @@ export default {
   opacity: 0;
   animation: toast-card-enter 0.3s ease-out forwards;
   pointer-events: auto;
+  background-color: $background_0;
 
-  &.no-animation {
+  &.no-enter-animation {
     opacity: 1;
     animation: none;
+  }
+
+  &.is-leaving {
+    opacity: 1;
+    animation: toast-card-leave 0.3s ease-in forwards;
+    z-index: -1;
   }
 }
 
@@ -148,6 +159,18 @@ export default {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toast-card-leave {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 40%, 0);
   }
 }
 
