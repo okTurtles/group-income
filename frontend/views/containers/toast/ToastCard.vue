@@ -13,8 +13,8 @@
     )
       i.icon-times-circle
 
-  .c-toast-progress-bar
-    .c-progress-bar-inner
+  .c-toast-progress-bar(v-if='hasTimeout && ephemeral.progressBarInitStyles.width')
+    .c-progress-bar-inner(:style='ephemeral.progressBarInitStyles')
 </template>
 
 <script>
@@ -28,9 +28,9 @@ export default {
       ephemeral: {
         enterAnimationEnded: false,
         timeoutId: null,
-        progressBar: {
-          initialPercent: 0,
-          animationDuration: 0
+        progressBarInitStyles: {
+          width: '',
+          animationDuration: ''
         }
       }
     }
@@ -38,6 +38,9 @@ export default {
   computed: {
     showCloseButton () {
       return !!this.data.closeable
+    },
+    hasTimeout () {
+      return Number.isFinite(this.data.duration)
     }
   },
   methods: {
@@ -59,13 +62,13 @@ export default {
         }, timeoutDuration)
 
         // config for progressbar animation
-        this.ephemeral.progressBar.initialPercent = 100 * timeoutDuration / this.data.duration
-        this.ephemeral.progressBar.animationDuration = timeoutDuration
+        this.ephemeral.progressBarInitStyles.width = `${Math.round(100 * timeoutDuration / this.data.duration)}%`
+        this.ephemeral.progressBarInitStyles.animationDuration = `${timeoutDuration}ms`
       }
     }
   },
-  mounted () {
-    if (Number.isFinite(this.data.duration)) {
+  created () {
+    if (this.hasTimeout) {
       this.setupTimeout()
     }
   }
@@ -116,6 +119,26 @@ export default {
   }
 }
 
+.c-toast-progress-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 2px;
+
+  .c-progress-bar-inner {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: $text_1;
+    animation-name: toast-timeout-ani;
+    animation-fill-mode: forwards;
+    animation-timing-function: linear;
+  }
+}
+
 @keyframes toast-card-enter {
   from {
     opacity: 0;
@@ -125,6 +148,12 @@ export default {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes toast-timeout-ani {
+  to {
+    width: 0;
   }
 }
 </style>
