@@ -26,17 +26,55 @@
 }
 
 .toast-inner-pocket {
+  $spacing: var(--pocket-edge-spacing);
   position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   row-gap: 1rem;
   width: 100%;
-  max-width: calc(100% - var(--pocket-edge-spacing) * 2);
+  max-width: calc(100% - #{$spacing} * 2);
 
+  &.is-top-left,
+  &.is-top-center,
+  &.is-top-right {
+    top: $spacing;
+    flex-direction: column-reverse; // So that the latest toast item is at the top
+  }
+
+  &.is-bottom-left,
+  &.is-bottom-center,
   &.is-bottom-right {
-    bottom: var(--pocket-edge-spacing);
-    right: var(--pocket-edge-spacing);
+    bottom: $spacing;
+  }
+
+  &.is-bottom-left,
+  &.is-top-left {
+    left: $spacing;
+  }
+
+  &.is-bottom-right,
+  &.is-top-right {
+    right: $spacing;
+  }
+
+  &.is-bottom-center,
+  &.is-top-center {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  &.for-small-screen {
+    &.is-top {
+      top: $spacing;
+      left: $spacing;
+      flex-direction: column-reverse; // So that the latest toast item is at the top
+    }
+
+    &.is-bottom {
+      bottom: $spacing;
+      left: $spacing;
+    }
   }
 
   @include from($tablet) {

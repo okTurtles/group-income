@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-toast-card(
   @animationend='onAnimationEnd'
-  :class='{ "no-enter-animation": ephemeral.enterAnimationEnded, "is-leaving": ephemeral.isClosing }'
+  :class='{ "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }'
 )
   .c-toast-content
     i.icon-check-circle.c-toast-icon
@@ -26,9 +26,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        enterAnimationEnded: false,
         isClosing: false,
-        timeoutId: null,
+        durationTimeoutId: null,
         progressBarInitStyles: {
           width: '',
           animationDuration: ''
@@ -47,6 +46,11 @@ export default {
   methods: {
     closeToast () {
       this.ephemeral.isClosing = true
+      if (this.ephemeral.durationTimeoutId) {
+        // clear the timeout for toast duration if any, so closeToast() doesn't get called twice.
+        clearTimeout(this.ephemeral.durationTimeoutId)
+      }
+
       setTimeout(() => {
         this.$emit('close', this.data.id)
       }, 300)
@@ -55,13 +59,13 @@ export default {
       const name = e.animationName || ''
       if (name.includes('toast-card-enter')) {
         // This is to ensure enter-animation doesn't get triggered repeatedly on re-rendering.
-        this.ephemeral.enterAnimationEnded = true
+        this.$emit('enter-animation-ended', this.data.id)
       }
     },
     setupTimeout () {
       const timeoutDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
       if (timeoutDuration > 0) {
-        this.ephemeral.timeoutId = setTimeout(() => {
+        this.ephemeral.durationTimeoutId = setTimeout(() => {
           this.closeToast()
         }, timeoutDuration)
 

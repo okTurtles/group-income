@@ -35,6 +35,15 @@ export const KV_LOAD_STATUS = {
   LOADED: 'loaded'
 }
 
+export const TOAST_POSITIONS = {
+  TOP_RIGHT: 'top-right',
+  TOP_LEFT: 'top-left',
+  TOP_CENTER: 'top-center',
+  BOTTOM_RIGHT: 'bottom-right',
+  BOTTOM_LEFT: 'bottom-left',
+  BOTTOM_CENTER: 'bottom-center'
+}
+
 export const MAX_TOAST_COUNT = 3
 
 export const MAX_LOG_ENTRIES = 2000
