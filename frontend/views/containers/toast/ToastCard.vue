@@ -1,6 +1,8 @@
 <template lang='pug'>
 .c-toast-card(
   @animationend='onAnimationEnd'
+  @mouseenter='pauseAnimation'
+  @mouseleave='unpauseAnimation'
   :class='{ "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }'
 )
   .c-toast-content
@@ -13,8 +15,13 @@
     )
       i.icon-times-circle
 
-  .c-toast-progress-bar(v-if='hasTimeout && ephemeral.progressBarInitStyles.width')
-    .c-progress-bar-inner(:style='ephemeral.progressBarInitStyles')
+  .c-toast-progress-bar(v-if='hasDuration && ephemeral.progressBarStyles.width')
+    .c-progress-bar-inner(
+      ref='progressBarInner'
+      :style='ephemeral.progressBarStyles'
+      :class='{ "is-paused": ephemeral.animationState.paused }'
+      @animationend='onAnimationEnd'
+    )
 </template>
 
 <script>
@@ -28,7 +35,11 @@ export default {
       ephemeral: {
         isClosing: false,
         durationTimeoutId: null,
-        progressBarInitStyles: {
+        animationState: {
+          paused: false,
+          pausedPercentage: null
+        },
+        progressBarStyles: {
           width: '',
           animationDuration: ''
         }
@@ -39,18 +50,13 @@ export default {
     showCloseButton () {
       return !!this.data.closeable
     },
-    hasTimeout () {
+    hasDuration () {
       return Number.isFinite(this.data.duration)
     }
   },
   methods: {
     closeToast () {
       this.ephemeral.isClosing = true
-      if (this.ephemeral.durationTimeoutId) {
-        // clear the timeout for toast duration if any, so closeToast() doesn't get called twice.
-        clearTimeout(this.ephemeral.durationTimeoutId)
-      }
-
       setTimeout(() => {
         this.$emit('close', this.data.id)
       }, 300)
@@ -61,22 +67,52 @@ export default {
         // This is to ensure enter-animation doesn't get triggered repeatedly on re-rendering.
         this.$emit('enter-animation-ended', this.data.id)
       }
+      if (name.includes('toast-timeout-ani')) {
+        this.closeToast()
+      }
     },
-    setupTimeout () {
-      const timeoutDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
-      if (timeoutDuration > 0) {
-        this.ephemeral.durationTimeoutId = setTimeout(() => {
-          this.closeToast()
-        }, timeoutDuration)
+    setupTimeout (percentage = 0) {
+      if (this.hasDuration) {
+        const aniDuration = percentage
+          ? percentage * this.data.duration
+          : this.data.duration - (Date.now() - this.data.createdTimestamp)
 
-        // config for progressbar animation
-        this.ephemeral.progressBarInitStyles.width = `${Math.round(100 * timeoutDuration / this.data.duration)}%`
-        this.ephemeral.progressBarInitStyles.animationDuration = `${timeoutDuration}ms`
+        // progressbar animation setup
+        this.ephemeral.progressBarStyles = {
+          width: `${percentage || Math.round(100 * aniDuration / this.data.duration)}%`,
+          animationDuration: `${aniDuration}ms`
+        }
+      }
+    },
+    pauseAnimation () {
+      if (this.hasDuration) {
+        const animationObj = this.$refs.progressBarInner?.getAnimations()?.[0]
+        if (animationObj) {
+          const currProgress = animationObj.overallProgress
+          this.ephemeral.animationState = {
+            paused: true,
+            pausedPercentage: Math.round(100 * currProgress)
+          }
+        }
+      }
+    },
+    unpauseAnimation () {
+      if (this.hasDuration && this.ephemeral.animationState.paused) {
+        const percentageLeft = 100 - this.ephemeral.animationState.pausedPercentage
+        const durationLeft = (percentageLeft / 100) * this.data.duration
+        const adjustedCreatedTimestamp = Date.now() + this.data.duration - durationLeft
+
+        this.ephemeral.animationState = {
+          paused: false,
+          pausedPercentage: null
+        }
+
+        this.$emit('unpause-animation', this.data.id, adjustedCreatedTimestamp)
       }
     }
   },
   created () {
-    if (this.hasTimeout) {
+    if (this.hasDuration) {
       this.setupTimeout()
     }
   }
@@ -151,6 +187,11 @@ export default {
     animation-name: toast-timeout-ani;
     animation-fill-mode: forwards;
     animation-timing-function: linear;
+    animation-play-state: running;
+
+    &.is-paused {
+      animation-play-state: paused;
+    }
   }
 }
 

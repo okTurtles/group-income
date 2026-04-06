@@ -13,6 +13,7 @@
           :data='item'
           @close='onToastCardClose'
           @enter-animation-ended='onEnterAnimationEnded'
+          @unpause-animation='onToastAnimationResume'
         )
 
   template(v-else)
@@ -28,6 +29,7 @@
           :data='item'
           @close='onToastCardClose'
           @enter-animation-ended='onEnterAnimationEnded'
+          @unpause-animation='onToastAnimationResume'
         )
 </template>
 
@@ -126,6 +128,14 @@ export default {
           // 'entered' is a flag to track if the enter animation is done  so that it doesn't get triggered
           // repeatedly on re-rendering or layout changes (eg. toast container swtiches between large and small screen mode)
           found.entered = true
+        }
+      }
+    },
+    onToastAnimationResume (cardId, adjustedCreatedTimestamp) {
+      if (cardId && adjustedCreatedTimestamp) {
+        const found = this.ephemeral.items.find(item => item.id === cardId)
+        if (found) {
+          found.createdTimestamp = adjustedCreatedTimestamp
         }
       }
     }

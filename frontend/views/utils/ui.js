@@ -4,15 +4,6 @@ import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
 import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
 
-type ToastData = {
-  message: string,
-  variant?: 'info' | 'success' | 'warning' | 'error',
-  position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center',
-  duration?: number, // in milliseconds
-  icon?: string,
-  closeable?: boolean
-}
-
 // Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
 // sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
@@ -28,7 +19,7 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.ui/toast' (targetContainerId: string, data: ToastData): void {
+  'gi.ui/toast' (targetContainerId: string, data: Object): void {
     if (!targetContainerId || !data) {
       throw Error('sbp("gi.ui/toast") failed - Missing parameters')
     }
