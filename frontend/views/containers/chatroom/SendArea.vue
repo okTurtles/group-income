@@ -1372,7 +1372,7 @@ export default ({
   max-height: 12.25rem;
 
   &.is-above-replying-message {
-    top: -2.25rem;
+    top: -2.3rem;
     border-radius: 0.3rem;
   }
 
