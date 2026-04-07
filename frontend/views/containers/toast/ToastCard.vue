@@ -6,16 +6,19 @@
   :class='{ "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }'
 )
   .c-toast-wrapper
-    i.icon-check-circle.c-toast-icon
+    .c-toast-icon-container
+      i.icon-check.c-toast-icon
+
     .c-toast-content
       .c-toast-title(v-if='data.title') {{ data.title }}
       .c-toast-message(v-safe-html:a='data.message')
+
     button.is-unstyled.c-toast-close(
       v-if='showCloseButton'
       type='button'
       @click.stop='closeToast'
     )
-      i.icon-times-circle
+      i.icon-times
 
   .c-toast-progress-bar(v-if='hasDuration && ephemeral.progressBarStyles.width')
     .c-progress-bar-inner(
@@ -128,8 +131,8 @@ export default {
   position: relative;
   display: block;
   width: 100%;
-  border-radius: $radius;
-  border: 1px solid $text_1;
+  border-radius: 0.5rem;
+  border: 1px solid $general_0;
   overflow: hidden;
   opacity: 0;
   animation: toast-card-enter 0.3s ease-out forwards;
@@ -161,12 +164,23 @@ export default {
   padding: 0.75rem;
   word-break: break-word;
 
+  .c-toast-icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: $radius-large;
+    background-color: $general_2;
+    color: $text_0;
+    flex-shrink: 0;
+  }
+
   .c-toast-icon {
     display: inline-block;
-    flex-shrink: 0;
-    font-size: 1.25rem;
+    font-size: 1rem;
     line-height: 1;
-    transform: translateY(2px);
+    color: $text_1;
   }
 
   .c-toast-content {
@@ -176,13 +190,25 @@ export default {
   .c-toast-title {
     font-weight: 700;
     margin-bottom: 0.25rem;
+    color: $text_0;
+  }
+
+  .c-toast-message {
+    color: $text_1;
   }
 
   .c-toast-close {
-    color: $text_1;
+    color: $general_0;
     flex-shrink: 0;
-    font-size: 1.25em;
+    font-size: 1.125em;
     line-height: 1;
+    transition: color 0.15s ease-in-out;
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+      color: $text_1;
+    }
   }
 }
 
