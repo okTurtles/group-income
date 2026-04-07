@@ -5,9 +5,11 @@
   @mouseleave='unpauseAnimation'
   :class='{ "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }'
 )
-  .c-toast-content
+  .c-toast-wrapper
     i.icon-check-circle.c-toast-icon
-    .c-toast-message(v-safe-html:a='data.message')
+    .c-toast-content
+      .c-toast-title(v-if='data.title') {{ data.title }}
+      .c-toast-message(v-safe-html:a='data.message')
     button.is-unstyled.c-toast-close(
       v-if='showCloseButton'
       type='button'
@@ -133,6 +135,11 @@ export default {
   animation: toast-card-enter 0.3s ease-out forwards;
   pointer-events: auto;
   background-color: $background_0;
+  box-shadow: 0 0.75rem 1.25rem rgba(54, 54, 54, 0.3);
+
+  .is-dark-theme & {
+    box-shadow: 0 0.75rem 1.25rem rgba(38, 38, 38, 0.895);
+  }
 
   &.no-enter-animation {
     opacity: 1;
@@ -146,7 +153,7 @@ export default {
   }
 }
 
-.c-toast-content {
+.c-toast-wrapper {
   position: relative;
   display: flex;
   align-items: flex-start;
@@ -157,16 +164,25 @@ export default {
   .c-toast-icon {
     display: inline-block;
     flex-shrink: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+    transform: translateY(2px);
   }
 
-  .c-toast-message {
+  .c-toast-content {
     flex-grow: 1;
+  }
+
+  .c-toast-title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
   }
 
   .c-toast-close {
     color: $text_1;
     flex-shrink: 0;
-    font-size: 1.15em;
+    font-size: 1.25em;
+    line-height: 1;
   }
 }
 
