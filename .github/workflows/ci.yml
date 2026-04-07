@@ -15,7 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
-        containers: [1, 2, 3]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
