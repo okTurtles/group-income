@@ -7,7 +7,7 @@
 )
   .c-toast-wrapper
     .c-toast-icon-container
-      i.icon-check.c-toast-icon
+      i(:class='["icon-" + iconName, "c-toast-icon"]')
 
     .c-toast-content
       .c-toast-title(v-if='data.title') {{ data.title }}
@@ -33,7 +33,11 @@
 export default {
   name: 'ToastCard',
   props: {
-    data: Object
+    data: {
+      // type ToastData from '@utils/ui.js'
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
@@ -52,6 +56,14 @@ export default {
     }
   },
   computed: {
+    iconName () {
+      return this.data.icon || ({
+        default: 'info',
+        success: 'check',
+        warning: 'exclamation-triangle',
+        error: 'times'
+      })[this.data.variant || 'default']
+    },
     showCloseButton () {
       return !!this.data.closeable
     },
@@ -127,22 +139,33 @@ export default {
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
+@mixin toast-style-definitions {
+  // default
+  --toast-border-color: #{$general_0};
+  --toast-background-color: #{$general_2};
+  --toast-close-button-color: #{$general_0};
+  --toast-close-button-color_focus: #{$text_1};
+  --toast-icon-color: #{$text_1};
+  --toast-icon-bg-color: #{$background_0};
+  --toast-progress-bar-color: #{$general_2};
+}
+
+$shadow-color: rgba(54, 54, 54, 0.3);
+$shadow-color-dark: rgba(38, 38, 38, 0.895);
+
 .c-toast-card {
+  @include toast-style-definitions;
   position: relative;
   display: block;
   width: 100%;
   border-radius: 0.5rem;
-  border: 1px solid $general_0;
+  border: 1px solid var(--toast-border-color);
   overflow: hidden;
   opacity: 0;
   animation: toast-card-enter 0.3s ease-out forwards;
   pointer-events: auto;
-  background-color: $background_0;
-  box-shadow: 0 0.75rem 1.25rem rgba(54, 54, 54, 0.3);
-
-  .is-dark-theme & {
-    box-shadow: 0 0.75rem 1.25rem rgba(38, 38, 38, 0.895);
-  }
+  background-color: var(--toast-background-color);
+  box-shadow: 0 0.75rem 1.25rem $shadow-color;
 
   &.no-enter-animation {
     opacity: 1;
@@ -168,19 +191,18 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
     border-radius: $radius-large;
-    background-color: $general_2;
-    color: $text_0;
+    background-color: var(--toast-icon-bg-color);
     flex-shrink: 0;
   }
 
   .c-toast-icon {
     display: inline-block;
-    font-size: 1rem;
+    font-size: 0.725rem;
     line-height: 1;
-    color: $text_1;
+    color: var(--toast-icon-color);
   }
 
   .c-toast-content {
@@ -198,7 +220,7 @@ export default {
   }
 
   .c-toast-close {
-    color: $general_0;
+    color: var(--toast-close-button-color);
     flex-shrink: 0;
     font-size: 1.125em;
     line-height: 1;
@@ -207,7 +229,7 @@ export default {
     &:hover,
     &:focus,
     &:focus-within {
-      color: $text_1;
+      color: var(--toast-close-button-color_focus);
     }
   }
 }
@@ -225,7 +247,7 @@ export default {
     height: 100%;
     top: 0;
     left: 0;
-    background-color: $text_1;
+    background-color: var(--toast-progress-bar-color);
     animation-name: toast-timeout-ani;
     animation-fill-mode: forwards;
     animation-timing-function: linear;
@@ -246,6 +268,13 @@ export default {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+// dark-theme specific adjustments
+.is-dark-theme {
+  .c-toast-card {
+    box-shadow: 0 0.5rem 1rem $shadow-color-dark;
   }
 }
 

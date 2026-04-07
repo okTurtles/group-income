@@ -9,6 +9,18 @@ import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
 // sbp('gi.ui/clearBanner')
 
+type ToastData = {
+  // These are the data definitions for 'gi.ui/toast' sbp call.
+  // In .vue component, there can be additional properties added on top of these depending on the need.
+  // e.g.) Properties like 'entered' don't need to be specified earlier at the call time.
+  message: string,
+  variant?: 'default' | 'success' | 'warning' | 'error',
+  position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center',
+  duration?: number, // in milliseconds
+  icon?: string,
+  closeable?: boolean
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.ui/prompt' (params: Object): Promise<*> {
     sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', null, params)
@@ -19,17 +31,20 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.ui/toast' (targetContainerId: string, data: Object): void {
+  'gi.ui/toast' (targetContainerId: string, data: ToastData): void {
     if (!targetContainerId || !data) {
       throw Error('sbp("gi.ui/toast") failed - Missing parameters')
     }
 
-    sbp('okTurtles.events/emit', SHOW_TOAST, targetContainerId, {
-      // Some default settings for the toast
-      variant: 'info',
+    const defaultData = {
+      // Some default settings for the toast. Can be overridden by the data passed in.
+      variant: 'default',
       position: 'bottom-right',
-      closeable: true,
-      ...data
+      closeable: true
+    }
+
+    sbp('okTurtles.events/emit', SHOW_TOAST, targetContainerId, {
+      ...defaultData, ...data
     })
   },
   'gi.ui/clearBanner' (): void {
