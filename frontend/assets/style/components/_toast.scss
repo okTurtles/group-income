@@ -1,7 +1,7 @@
 @use "../variables" as *;
 
 .toast-container {
-  --pocket-edge-spacing: 1rem;
+  --pocket-edge-spacing: 1.25rem;
   position: absolute;
   display: block;
   top: 0;
@@ -21,7 +21,7 @@
   }
 
   @include from($tablet) {
-    --pocket-edge-spacing: 1.5rem;
+    --pocket-edge-spacing: 1.75rem;
   }
 }
 

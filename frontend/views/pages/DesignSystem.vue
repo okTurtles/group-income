@@ -240,6 +240,7 @@ page(
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
               i.icon-paper-clip icon-paper-clip
+              i.icon-exclamation icon-exclamation
               i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-file icon-file
         tr

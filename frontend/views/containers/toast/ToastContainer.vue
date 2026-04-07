@@ -63,7 +63,7 @@ export default {
         items: [
           {
             id: 'random-id-1',
-            variant: 'success',
+            variant: 'error',
             title: 'Title',
             message: 'This is a test message.',
             position: TOAST_POSITIONS.BOTTOM_RIGHT,

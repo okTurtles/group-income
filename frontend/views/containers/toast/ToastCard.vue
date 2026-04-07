@@ -143,22 +143,47 @@ export default {
   // default
   --toast-border-color: #{$general_0};
   --toast-background-color: #{$general_2};
-  --toast-close-button-color: #{$general_0};
-  --toast-close-button-color_focus: #{$text_1};
-  --toast-icon-color: #{$text_1};
-  --toast-icon-bg-color: #{$background_0};
+  --toast-close-button-color: #{$text_1};
+  --toast-close-button-color_focus: #{$text_0};
+  --toast-icon-color: #{$general_2};
+  --toast-icon-bg-color: #{$text_1};
   --toast-progress-bar-color: #{$general_2};
   --toast-title-color: #{$text_0};
   --toast-message-color: #{$text_1};
 
   &.is-type-success {
-    --toast-border-color: #{$success_1};
-    --toast-icon-color: #{$success_0};
-    --toast-icon-bg-color: #{$success_2};
+    --toast-border-color: rgba(0, 0, 0, 0);
+    --toast-background-color: #{$success_2};
+    --toast-icon-color: #{$general_2};
+    --toast-icon-bg-color: #{$success_0_1};
     --toast-progress-bar-color: #{$success_1};
     --toast-message-color: #{$success_0_1};
-    --toast-close-button-color: #{$success_1};
+    --toast-close-button-color: #{$success_0_1};
     --toast-close-button-color_focus: #{$success_0};
+    --toast-progress-bar-color: #{$success_0_1};
+  }
+
+  &.is-type-warning {
+    --toast-border-color: rgba(0, 0, 0, 0);
+    --toast-background-color: #{$warning_2};
+    --toast-icon-color: #{$warning_2};
+    --toast-icon-bg-color: #{$warning_0_1};
+    --toast-title-color: #{$text_0};
+    --toast-message-color: #{$warning_0_1};
+    --toast-close-button-color: #{$warning_0_1};
+    --toast-close-button-color_focus: #{$warning_0};
+    --toast-progress-bar-color: #{$warning_0_1};
+  }
+
+  &.is-type-error {
+    --toast-border-color: rgba(0, 0, 0, 0);
+    --toast-background-color: #{$danger_2};
+    --toast-icon-color: #{$danger_2};
+    --toast-icon-bg-color: #{$danger_0_1};
+    --toast-message-color: #{$danger_0_1};
+    --toast-close-button-color: #{$danger_0_1};
+    --toast-close-button-color_focus: #{$danger_0};
+    --toast-progress-bar-color: #{$danger_0_1};
   }
 }
 
@@ -170,7 +195,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   position: relative;
   display: block;
   width: 100%;
-  border-radius: 0.5rem;
+  border-radius: $radius-large;
   border: 1px solid var(--toast-border-color);
   overflow: hidden;
   opacity: 0;
@@ -203,16 +228,18 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
     border-radius: $radius-large;
     background-color: var(--toast-icon-bg-color);
+    margin-top: 1px;
     flex-shrink: 0;
+    opacity: 0.75;
   }
 
   .c-toast-icon {
     display: inline-block;
-    font-size: 0.725rem;
+    font-size: 0.675rem;
     line-height: 1;
     color: var(--toast-icon-color);
   }
@@ -223,7 +250,6 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 
   .c-toast-title {
     font-weight: 700;
-    margin-bottom: 0.25rem;
     color: var(--toast-title-color);
 
     + .c-toast-message {
@@ -256,7 +282,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   position: relative;
   display: block;
   width: 100%;
-  height: 2px;
+  height: 1px;
 
   .c-progress-bar-inner {
     position: absolute;
