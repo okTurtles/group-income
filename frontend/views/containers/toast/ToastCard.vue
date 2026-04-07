@@ -3,7 +3,7 @@
   @animationend='onAnimationEnd'
   @mouseenter='pauseAnimation'
   @mouseleave='unpauseAnimation'
-  :class='{ "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }'
+  :class='["is-type-" + data.variant, { "no-enter-animation": data.entered, "is-leaving": ephemeral.isClosing }]'
 )
   .c-toast-wrapper
     .c-toast-icon-container
@@ -148,6 +148,18 @@ export default {
   --toast-icon-color: #{$text_1};
   --toast-icon-bg-color: #{$background_0};
   --toast-progress-bar-color: #{$general_2};
+  --toast-title-color: #{$text_0};
+  --toast-message-color: #{$text_1};
+
+  &.is-type-success {
+    --toast-border-color: #{$success_1};
+    --toast-icon-color: #{$success_0};
+    --toast-icon-bg-color: #{$success_2};
+    --toast-progress-bar-color: #{$success_1};
+    --toast-message-color: #{$success_0_1};
+    --toast-close-button-color: #{$success_1};
+    --toast-close-button-color_focus: #{$success_0};
+  }
 }
 
 $shadow-color: rgba(54, 54, 54, 0.3);
@@ -212,17 +224,23 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   .c-toast-title {
     font-weight: 700;
     margin-bottom: 0.25rem;
-    color: $text_0;
+    color: var(--toast-title-color);
+
+    + .c-toast-message {
+      padding-top: 0;
+    }
   }
 
   .c-toast-message {
-    color: $text_1;
+    color: var(--toast-message-color);
+    padding-top: 1px;
   }
 
   .c-toast-close {
     color: var(--toast-close-button-color);
     flex-shrink: 0;
     font-size: 1.125em;
+    font-weight: 500;
     line-height: 1;
     transition: color 0.15s ease-in-out;
 

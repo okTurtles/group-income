@@ -63,8 +63,9 @@ export default {
         items: [
           {
             id: 'random-id-1',
-            title: 'Test Title',
-            message: 'This is a test message. It can be a long message that can wrap around to the next line.',
+            variant: 'success',
+            title: 'Title',
+            message: 'This is a test message.',
             position: TOAST_POSITIONS.BOTTOM_RIGHT,
             closeable: true,
             entered: false
