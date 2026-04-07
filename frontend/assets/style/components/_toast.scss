@@ -33,7 +33,7 @@
   align-items: center;
   row-gap: 1rem;
   width: 100%;
-  max-width: calc(100% - #{$spacing} * 2);
+  max-width: 20rem;
 
   &.is-top-left,
   &.is-top-center,
@@ -65,6 +65,8 @@
   }
 
   &.for-small-screen {
+    max-width: calc(100% - #{$spacing} * 2);
+
     &.is-top {
       top: $spacing;
       left: $spacing;
@@ -75,9 +77,5 @@
       bottom: $spacing;
       left: $spacing;
     }
-  }
-
-  @include from($tablet) {
-    max-width: 20rem;
   }
 }
