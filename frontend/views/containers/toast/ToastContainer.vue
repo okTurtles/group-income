@@ -1,5 +1,7 @@
 <template lang='pug'>
-.toast-container.c-toast-container(:class='{ "is-global": isGlobalToast }')
+.toast-container.c-toast-container(
+  :data-container-id='containerId'
+)
   template(v-if='ephemeral.isLargeScreen')
     template(v-for='(items, position) in toastPockets.large')
       .toast-inner-pocket(
@@ -65,9 +67,6 @@ export default {
     }
   },
   computed: {
-    isGlobalToast () {
-      return this.containerId === 'app-global'
-    },
     toastPockets () {
       const allPositions = Object.values(TOAST_POSITIONS)
 

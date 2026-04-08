@@ -11,7 +11,7 @@
   z-index: 10;
   pointer-events: none;
 
-  &.is-global {
+  &[data-container-id="app-global"] {
     position: fixed;
     top: 0;
     left: 0;
@@ -77,5 +77,13 @@
       bottom: $spacing;
       left: $spacing;
     }
+  }
+}
+
+// area-specific style adjustments
+
+[data-container-id="chat-main"] {
+  .toast-inner-pocket.for-small-screen.is-bottom {
+    bottom: 0;
   }
 }
