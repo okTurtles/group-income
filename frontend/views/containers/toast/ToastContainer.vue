@@ -143,7 +143,7 @@ export default {
           id: randomHexString(10),
           createdTimestamp: Date.now(),
           title: 'Test title',
-          message: 'This is a test toast',
+          message: "This is a test message. It can have a link like <a class='link' href='https://www.google.com'>groupincome.org</a>.",
           variant: 'default',
           position: 'bottom-right',
           closeable: true
@@ -151,7 +151,7 @@ export default {
         {
           id: randomHexString(10),
           createdTimestamp: Date.now(),
-          message: 'This is a test toast',
+          message: 'This is <strong>success</strong> style',
           variant: 'success',
           position: 'bottom-right',
           closeable: true
@@ -159,7 +159,7 @@ export default {
         {
           id: randomHexString(10),
           createdTimestamp: Date.now(),
-          message: 'This is a test toast',
+          message: 'This is <strong>warning</strong> style',
           variant: 'warning',
           position: 'bottom-right',
           closeable: true
@@ -167,7 +167,7 @@ export default {
         {
           id: randomHexString(10),
           createdTimestamp: Date.now(),
-          message: 'This is a test toast',
+          message: 'This is <strong>error</strong> style',
           variant: 'error',
           position: 'bottom-right',
           closeable: true

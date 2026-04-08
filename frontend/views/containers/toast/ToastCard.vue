@@ -30,6 +30,8 @@
 </template>
 
 <script>
+import { TOAST_VARIANTS } from '@utils/constants.js'
+
 export default {
   name: 'ToastCard',
   props: {
@@ -57,11 +59,11 @@ export default {
   computed: {
     iconName () {
       return this.data.icon || ({
-        default: 'info',
-        success: 'check',
-        warning: 'exclamation-triangle',
-        error: 'times'
-      })[this.data.variant || 'default']
+        [TOAST_VARIANTS.DEFAULT]: 'info',
+        [TOAST_VARIANTS.SUCCESS]: 'check',
+        [TOAST_VARIANTS.WARNING]: 'exclamation-triangle',
+        [TOAST_VARIANTS.ERROR]: 'times'
+      })[this.data.variant || TOAST_VARIANTS.DEFAULT]
     },
     showCloseButton () {
       return !!this.data.closeable
@@ -220,6 +222,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   word-break: break-word;
 
   .c-toast-icon-container {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -230,6 +233,21 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     margin-top: 1px;
     flex-shrink: 0;
     opacity: 0.75;
+
+    &::after {
+      content: "";
+      position: absolute;
+      display: block;
+      top: 40%;
+      left: 40%;
+      width: 80%;
+      height: 80%;
+      transform: translate(-50%, -50%);
+      background-color: var(--toast-icon-bg-color);
+      filter: blur(12px);
+      border-radius: inherit;
+      z-index: -1;
+    }
   }
 
   .c-toast-icon {
@@ -255,6 +273,10 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   .c-toast-message {
     color: var(--toast-message-color);
     padding-top: 1px;
+
+    ::v-deep .link {
+      color: var(--toast-message-color);
+    }
   }
 
   .c-toast-close {
@@ -318,6 +340,10 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 .is-dark-theme {
   .c-toast-card {
     box-shadow: 0 0.5rem 1rem $shadow-color-dark;
+  }
+
+  .c-toast-icon-container::after {
+    display: none;
   }
 }
 
