@@ -60,17 +60,7 @@ export default {
       ephemeral: {
         matchMediaLarge: null,
         isLargeScreen: false,
-        items: [
-          {
-            id: 'random-id-1',
-            variant: 'error',
-            title: 'Title',
-            message: 'This is a test message.',
-            position: TOAST_POSITIONS.BOTTOM_RIGHT,
-            closeable: true,
-            entered: false
-          }
-        ]
+        items: []
       }
     }
   },

@@ -43,7 +43,6 @@ export default {
     return {
       ephemeral: {
         isClosing: false,
-        durationTimeoutId: null,
         animationState: {
           paused: false,
           progressOnPause: null
@@ -144,10 +143,9 @@ export default {
   --toast-border-color: #{$general_0};
   --toast-background-color: #{$general_2};
   --toast-close-button-color: #{$text_1};
-  --toast-close-button-color_focus: #{$text_0};
   --toast-icon-color: #{$general_2};
   --toast-icon-bg-color: #{$text_1};
-  --toast-progress-bar-color: #{$general_2};
+  --toast-progress-bar-color: #{$text_1};
   --toast-title-color: #{$text_0};
   --toast-message-color: #{$text_1};
 
@@ -159,7 +157,6 @@ export default {
     --toast-progress-bar-color: #{$success_1};
     --toast-message-color: #{$success_0_1};
     --toast-close-button-color: #{$success_0_1};
-    --toast-close-button-color_focus: #{$success_0};
     --toast-progress-bar-color: #{$success_0_1};
   }
 
@@ -171,7 +168,6 @@ export default {
     --toast-title-color: #{$text_0};
     --toast-message-color: #{$warning_0_1};
     --toast-close-button-color: #{$warning_0_1};
-    --toast-close-button-color_focus: #{$warning_0};
     --toast-progress-bar-color: #{$warning_0_1};
   }
 
@@ -182,7 +178,6 @@ export default {
     --toast-icon-bg-color: #{$danger_0_1};
     --toast-message-color: #{$danger_0_1};
     --toast-close-button-color: #{$danger_0_1};
-    --toast-close-button-color_focus: #{$danger_0};
     --toast-progress-bar-color: #{$danger_0_1};
   }
 }
@@ -220,7 +215,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   position: relative;
   display: flex;
   align-items: flex-start;
-  column-gap: 0.5rem;
+  column-gap: 0.625rem;
   padding: 0.75rem;
   word-break: break-word;
 
@@ -268,12 +263,16 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     font-size: 1.125em;
     font-weight: 500;
     line-height: 1;
-    transition: color 0.15s ease-in-out;
+    opacity: 0.625;
+    transform: translateY(3px);
+    transition:
+      opacity 0.15s ease-out,
+      color 0.15s ease-out;
 
     &:hover,
     &:focus,
     &:focus-within {
-      color: var(--toast-close-button-color_focus);
+      opacity: 1;
     }
   }
 }

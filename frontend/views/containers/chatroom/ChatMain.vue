@@ -110,6 +110,8 @@
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
 
+    toast-container(container-id='chat-main')
+
   .c-footer
     send-area(
       ref='sendArea'
@@ -167,6 +169,7 @@ import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
+import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
 
@@ -285,7 +288,8 @@ export default ({
     MessagePoll,
     SendArea,
     ViewArea,
-    DragActiveOverlay
+    DragActiveOverlay,
+    ToastContainer
   },
   props: {
     summary: {
@@ -1988,7 +1992,7 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  width: calc(100% + 1rem);
+  width: 100%;
   position: relative;
   min-height: 0;
 
@@ -2004,7 +2008,6 @@ export default ({
 }
 
 .c-body-conversation {
-  margin-right: 1rem;
   // top-padding '10rem' below is necessary for the message menu list to be displayed properly without being cropped off.
   // (reference: https://github.com/okTurtles/group-income/issues/1818)
   // padding: 10rem 0 1rem 0;
