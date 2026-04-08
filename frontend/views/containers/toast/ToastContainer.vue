@@ -1,6 +1,6 @@
 <template lang='pug'>
 .toast-container.c-toast-container(
-  :data-container-id='containerId'
+  :data-area='area'
 )
   template(v-if='ephemeral.isLargeScreen')
     template(v-for='(items, position) in toastPockets.large')
@@ -48,7 +48,7 @@ export default {
     ToastCard
   },
   props: {
-    containerId: {
+    area: {
       type: String,
       required: true
     },
@@ -86,8 +86,8 @@ export default {
     }
   },
   methods: {
-    onShowToast (targetContainerId = '', data = null) {
-      if (targetContainerId !== this.containerId || !data) { return }
+    onShowToast (area = '', data = null) {
+      if (area !== this.area || !data) { return }
 
       const item = {
         id: randomHexString(10),
@@ -136,6 +136,47 @@ export default {
   },
   mounted () {
     sbp('okTurtles.events/on', SHOW_TOAST, this.onShowToast)
+
+    if (this.area === 'app-global') {
+      const dummyItems = [
+        {
+          id: randomHexString(10),
+          createdTimestamp: Date.now(),
+          title: 'Test title',
+          message: 'This is a test toast',
+          variant: 'default',
+          position: 'bottom-right',
+          closeable: true
+        },
+        {
+          id: randomHexString(10),
+          createdTimestamp: Date.now(),
+          message: 'This is a test toast',
+          variant: 'success',
+          position: 'bottom-right',
+          closeable: true
+        },
+        {
+          id: randomHexString(10),
+          createdTimestamp: Date.now(),
+          message: 'This is a test toast',
+          variant: 'warning',
+          position: 'bottom-right',
+          closeable: true
+        },
+        {
+          id: randomHexString(10),
+          createdTimestamp: Date.now(),
+          message: 'This is a test toast',
+          variant: 'error',
+          position: 'bottom-right',
+          closeable: true
+        }
+      ]
+      dummyItems.forEach(item => {
+        this.onShowToast('app-global', item)
+      })
+    }
   },
   beforeDestroy () {
     // unregister event listeners to avoid memory leaks.

@@ -110,7 +110,7 @@
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
 
-    toast-container(container-id='chat-main')
+    toast-container(area='chat-main')
 
   .c-footer
     send-area(

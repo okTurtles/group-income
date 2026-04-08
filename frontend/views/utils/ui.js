@@ -31,8 +31,8 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.ui/toast' (targetContainerId: string, data: ToastData): void {
-    if (!targetContainerId || !data) {
+  'gi.ui/toast' (area: string, data: ToastData): void {
+    if (!area || !data) {
       throw Error('sbp("gi.ui/toast") failed - Missing parameters')
     }
 
@@ -43,7 +43,7 @@ export default (sbp('sbp/selectors/register', {
       closeable: true
     }
 
-    sbp('okTurtles.events/emit', SHOW_TOAST, targetContainerId, {
+    sbp('okTurtles.events/emit', SHOW_TOAST, area, {
       ...defaultData, ...data
     })
   },
