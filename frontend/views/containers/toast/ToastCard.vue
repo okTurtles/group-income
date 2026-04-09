@@ -45,6 +45,7 @@ export default {
     return {
       ephemeral: {
         isClosing: false,
+        closeTimer: null,
         animationState: {
           paused: false,
           progressOnPause: null
@@ -69,7 +70,7 @@ export default {
       return !!this.data.closeable
     },
     hasDuration () {
-      return Number.isFinite(this.data.duration)
+      return typeof this.data.duration === 'number' && this.data.duration > 0
     }
   },
   methods: {
@@ -77,7 +78,7 @@ export default {
       if (this.ephemeral.isClosing) { return }
 
       this.ephemeral.isClosing = true
-      setTimeout(() => {
+      this.ephemeral.closeTimer = setTimeout(() => {
         this.$emit('close', this.data.id)
       }, 300)
     },
@@ -93,6 +94,7 @@ export default {
     setupTimeout () {
       if (this.hasDuration) {
         let aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
+
         if (aniDuration < 0) {
           // For any rare case where (createdTimestamp + duration) surpasses the Data.now(),
           // set the animation to the full duration value to prevent toast card from persisting indefinitely.
@@ -139,6 +141,11 @@ export default {
   created () {
     if (this.hasDuration) {
       this.setupTimeout()
+    }
+  },
+  beforeDestroy () {
+    if (this.ephemeral.closeTimer) {
+      clearTimeout(this.ephemeral.closeTimer)
     }
   }
 }
