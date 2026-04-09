@@ -11,8 +11,8 @@
       )
         toast-card(
           v-for='(item, index) in items'
-          :ref='"toast-card-" + item.id'
           :key='item.id'
+          :ref='"toast-card-" + item.id'
           :data='item'
           @close='onToastCardClose'
           @enter-animation-ended='onEnterAnimationEnded'
@@ -29,6 +29,7 @@
         toast-card(
           v-for='item in items'
           :key='item.id'
+          :ref='"toast-card-" + item.id'
           :data='item'
           @close='onToastCardClose'
           @enter-animation-ended='onEnterAnimationEnded'
