@@ -136,31 +136,6 @@ export default {
   },
   mounted () {
     sbp('okTurtles.events/on', SHOW_TOAST, this.onShowToast)
-
-    const dummyToastData = [
-      {
-        message: 'This is a success toast',
-        variant: 'success',
-        position: 'bottom-right',
-        closeable: true
-      },
-      {
-        message: 'This is a warning toast',
-        variant: 'warning',
-        position: 'bottom-right',
-        closeable: true
-      },
-      {
-        message: 'This is an error toast',
-        variant: 'error',
-        position: 'top-right',
-        closeable: true
-      }
-    ]
-
-    dummyToastData.forEach(data => {
-      this.onShowToast(this.area, data)
-    })
   },
   beforeDestroy () {
     // unregister event listeners to avoid memory leaks.
