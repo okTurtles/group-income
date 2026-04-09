@@ -61,8 +61,8 @@ export default {
       return this.data.icon || ({
         [TOAST_VARIANTS.DEFAULT]: 'info',
         [TOAST_VARIANTS.SUCCESS]: 'check',
-        [TOAST_VARIANTS.WARNING]: 'exclamation-triangle',
-        [TOAST_VARIANTS.ERROR]: 'times'
+        [TOAST_VARIANTS.WARNING]: 'exclamation',
+        [TOAST_VARIANTS.ERROR]: 'exclamation-triangle'
       })[this.data.variant || TOAST_VARIANTS.DEFAULT]
     },
     showCloseButton () {
@@ -92,7 +92,12 @@ export default {
     },
     setupTimeout () {
       if (this.hasDuration) {
-        const aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
+        let aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
+        if (aniDuration < 0) {
+          // For any rare case where (createdTimestamp + duration) surpasses the Data.now(),
+          // set the animation to the full duration value to prevent toast card from persisting indefinitely.
+          aniDuration = this.data.duration
+        }
 
         // progressbar animation setup
         this.ephemeral.progressBarStyles = {
@@ -209,8 +214,21 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 
   &.is-leaving {
     opacity: 1;
-    animation: toast-card-leave 0.3s ease-in forwards;
+    animation-duration: 0.3s;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+    animation-name: toast-card-leave-down;
     z-index: -1;
+  }
+}
+
+.toast-inner-pocket {
+  &.is-bottom-left,
+  &.is-bottom-center,
+  &.is-bottom-right {
+    .c-toast-card.is-leaving {
+      animation-name: toast-card-leave-up;
+    }
   }
 }
 
@@ -348,7 +366,19 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   }
 }
 
-@keyframes toast-card-leave {
+@keyframes toast-card-leave-up {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -40%, 0);
+  }
+}
+
+@keyframes toast-card-leave-down {
   0% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
