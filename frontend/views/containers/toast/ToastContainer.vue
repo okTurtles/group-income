@@ -10,7 +10,8 @@
         :key='position'
       )
         toast-card(
-          v-for='item in items'
+          v-for='(item, index) in items'
+          :ref='"toast-card-" + item.id'
           :key='item.id'
           :data='item'
           @close='onToastCardClose'
@@ -96,8 +97,12 @@ export default {
       }
       this.ephemeral.items.push(item)
 
-      while (this.ephemeral.items.length > MAX_TOAST_COUNT) {
-        this.ephemeral.items.shift()
+      if (this.ephemeral.items.length > MAX_TOAST_COUNT) {
+        const idxsToRemove = this.ephemeral.items.length - MAX_TOAST_COUNT
+        for (let i = 0; i < idxsToRemove; i++) {
+          const cardEl = this.$refs[`toast-card-${this.ephemeral.items[i].id}`]
+          cardEl && cardEl[0]?.closeToast()
+        }
       }
     },
     onToastCardClose (cardId) {
