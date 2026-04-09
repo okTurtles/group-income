@@ -25,7 +25,7 @@
       ref='progressBarInner'
       :style='ephemeral.progressBarStyles'
       :class='{ "is-paused": ephemeral.animationState.paused }'
-      @animationend='onAnimationEnd'
+      @animationend.stop='onAnimationEnd'
     )
 </template>
 
@@ -74,6 +74,8 @@ export default {
   },
   methods: {
     closeToast () {
+      if (this.ephemeral.isClosing) { return }
+
       this.ephemeral.isClosing = true
       setTimeout(() => {
         this.$emit('close', this.data.id)
@@ -156,7 +158,6 @@ export default {
     --toast-background-color: #{$success_2};
     --toast-icon-color: #{$general_2};
     --toast-icon-bg-color: #{$success_0_1};
-    --toast-progress-bar-color: #{$success_1};
     --toast-message-color: #{$success_0_1};
     --toast-close-button-color: #{$success_0_1};
     --toast-progress-bar-color: #{$success_0_1};

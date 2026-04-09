@@ -1,8 +1,8 @@
 // z-index constants
 // Why: https://css-tricks.com/handling-z-index/
 $zindex-banner: 70;
+$zindex-toast-global: 60; // Global toast need to be on top of sidebar.
 $zindex-tooltip: 50;
-$zindex-toast-global: 50; // Global toast need to be on top of sidebar.
 $zindex-modal: 40;
 $zindex-sidebar: 40;
 $zindex-prompt: 45; // some page content presented as 'position: fixed' has z-index larger than $zindex-modal (e.g. GroupWelcome.vue)
