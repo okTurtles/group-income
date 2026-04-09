@@ -92,9 +92,9 @@ export default {
       if (area !== this.area || !data) { return }
 
       const item = {
+        ...data,
         id: randomHexString(10),
-        createdTimestamp: Date.now(),
-        ...data
+        createdTimestamp: Date.now()
       }
       this.ephemeral.items.push(item)
 
