@@ -14,6 +14,7 @@ type ToastData = {
   // In .vue component, there can be additional properties added on top of these depending on the need.
   // e.g.) Properties like 'entered' don't need to be specified earlier at the call time.
   message: string,
+  title?: string,
   variant?: 'default' | 'success' | 'warning' | 'error',
   position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center',
   duration?: number, // in milliseconds

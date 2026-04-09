@@ -344,7 +344,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   }
 
   .c-toast-icon-container::after {
-    display: none;
+    background-color: rgb(38, 38, 38);
   }
 }
 
