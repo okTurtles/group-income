@@ -1315,6 +1315,36 @@ page(
 
       p *primaryButton and secondaryButton parameters are optional
 
+  article#toasts
+    section.card
+      h2.is-title-2.card-header Toasts
+      p
+        | Toasts are small notifications UI elements that appear at various positions on the screen.
+        | They can be called via
+        code.c-has-side-margin.has-bg sbp('gi.ui/toast', areaName, data)
+        | from anywhere in the app.
+      br
+
+      h3.is-title-3 Basic usage
+      p You can include various information in the toast data payload of the sbp call, such as message, variant, position, and duration and so on.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | sbp('gi.ui/toast', 'app-global', {
+              |   message: 'This is a test message',
+              |   variant: 'default',
+              |   position: 'bottom-right',
+              |   closeable: true
+              | })
+          td
+            button.is-outlined.is-small(@click.stop='showToast("basic")')
+              i18n Show toast
+
   article#clipboard-uis
     section.card
       h2.is-title-2.card-header Clipboard tools
@@ -1659,6 +1689,24 @@ export default ({
     },
     onButtonDropdownItemSelect (itemId) {
       console.log('selected item id: ', itemId)
+    },
+    showToast (demoType = 'default', additionalInfo = null) {
+      const toastData = {
+        message: 'This is a test message.',
+        variant: 'default',
+        position: 'bottom-right',
+        closeable: true
+      }
+
+      switch (demoType) {
+        case 'position':
+          toastData.position = additionalInfo
+          break
+        case 'duration':
+          toastData.duration = additionalInfo
+      }
+
+      sbp('gi.ui/toast', 'app-global', toastData)
     }
   },
   computed: {
@@ -1700,6 +1748,12 @@ pre {
 
 code {
   color: $success_0;
+
+  &.has-bg {
+    background-color: $success_2;
+    padding: 0.15em;
+    border-radius: 0.15em;
+  }
 }
 
 section.card {
@@ -1865,6 +1919,11 @@ table {
     text-decoration: underline;
     color: $primary_0;
   }
+}
+
+.c-has-side-margin {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
 }
 
 .svg-attachment {

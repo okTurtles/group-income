@@ -113,13 +113,18 @@ export default {
       this.ephemeral.isLargeScreen = this.ephemeral.matchMediaLarge.matches
     },
     onEnterAnimationEnded (cardId) {
-      if (cardId) {
-        const found = this.ephemeral.items.find(item => item.id === cardId)
-        if (found) {
-          // 'entered' is a flag to track if the enter animation is done  so that it doesn't get triggered
-          // repeatedly on re-rendering or layout changes (eg. toast container swtiches between large and small screen mode)
-          found.entered = true
-        }
+      if (this.ephemeral.items.some(item => item.id === cardId)) {
+        this.ephemeral.items = this.ephemeral.items.map(item => {
+          if (item.id === cardId) {
+            // 'entered' is a flag to track if the enter animation is done  so that it doesn't get triggered
+            // repeatedly on re-rendering or layout changes (eg. toast container swtiches between large and small screen mode)
+            return {
+              ...item,
+              entered: true
+            }
+          }
+          return item
+        })
       }
     },
     onToastAnimationResume (cardId, adjustedCreatedTimestamp) {
