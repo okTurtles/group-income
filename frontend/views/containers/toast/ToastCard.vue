@@ -93,12 +93,12 @@ export default {
     },
     setupTimeout () {
       if (this.hasDuration) {
-        let aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
+        const aniDuration = this.data.duration - (Date.now() - this.data.createdTimestamp)
 
-        if (aniDuration < 0) {
-          // For any rare case where (createdTimestamp + duration) surpasses the Data.now(),
-          // set the animation to the full duration value to prevent toast card from persisting indefinitely.
-          aniDuration = this.data.duration
+        if (aniDuration <= 0) {
+          // In any case where the duration + createdTimestamp surpasses the Date.now(), Close immediately.
+          this.$nextTick(() => this.closeToast())
+          return
         }
 
         // progressbar animation setup
