@@ -83,6 +83,10 @@
 // area-specific style adjustments
 
 [data-area="chat-main"] {
+  &.toast-container {
+    width: calc(100% - 1rem);
+  }
+
   .toast-inner-pocket.for-small-screen.is-bottom {
     bottom: 0;
   }

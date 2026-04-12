@@ -232,7 +232,8 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 .toast-inner-pocket {
   &.is-bottom-left,
   &.is-bottom-center,
-  &.is-bottom-right {
+  &.is-bottom-right,
+  &.is-bottom {
     .c-toast-card.is-leaving {
       animation-name: toast-card-leave-up;
     }
