@@ -37,6 +37,10 @@ export default (sbp('sbp/selectors/register', {
       throw Error('sbp("gi.ui/toast") failed - Missing parameters')
     }
 
+    if (!data.message || typeof data.message !== 'string') {
+      throw Error('sbp("gi.ui/toast") failed - "message" is required and must be a string')
+    }
+
     const defaultData = {
       // Some default settings for the toast. Can be overridden by the data passed in.
       variant: 'default',
