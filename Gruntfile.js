@@ -438,8 +438,8 @@ module.exports = (grunt) => {
     try {
       const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
       for (const entry of entries) {
-        if (entry.isFile && entry.name.endsWith('.manifest.json')) {
-          await execWithErrMsg(`chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
+        if (entry.isFile() && entry.name.endsWith('.manifest.json')) {
+          await execWithErrMsg(`./node_modules/.bin/chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
           console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
         }
       }
