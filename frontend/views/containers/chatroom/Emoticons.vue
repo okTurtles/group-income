@@ -41,8 +41,8 @@ export default ({
   },
   methods: {
     handleKeyUp (e) {
-      const isComponentFocused = e.target.closest('.c-picker-wrapper') !== null
-      if (this.isActive && isComponentFocused && e.key === 'Escape') {
+      const isFocused = e.target.closest('.c-picker-wrapper') !== null
+      if (this.isActive && isFocused && e.key === 'Escape') {
         e.preventDefault()
         this.closeEmoticonDlg()
       }
