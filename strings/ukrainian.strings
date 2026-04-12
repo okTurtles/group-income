@@ -37,6 +37,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Ви можете {a_}повідомити про помилку{_a}.";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "Не вдалося прийняти канал чату.";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "Не вдалося додати повідомлення.";
 
 /* controller/actions/chatroom.js */
@@ -209,6 +212,12 @@
 
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "Помилка приєднання до групи під час входу: {msg}";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "Операція вже виконується";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "Не вдалося встановити обмін повідомленнями з одним або кількома учасниками.";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "Не вдалося створити ідентичність користувача: {reportError}";
@@ -427,13 +436,19 @@
 "Already joined direct message." = "Вже приєднано до прямого повідомлення.";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "Ніколи не приєднувався або вже залишив особисті повідомлення.";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "Неіснуюче пряме повідомлення.";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Не вдалося підтвердити, що ім'я користувача {username} належить цьому контракту ідентичності";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "Назва чату може містити лише малі літери, цифри та дефіси(-)";
+"Chatroom name cannot contain capital letters" = "Назва чату не може містити великі літери";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "Назва чату не може містити розділові знаки або спеціальні символи, крім дефісів";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "Назва чатруму не може містити пробіли";
@@ -1195,7 +1210,7 @@
 "Reached character limit." = "Досягнуто ліміт символів.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "Назва каналу може містити лише малі літери, цифри та дефіси(-).";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "Назва каналу не може містити пробіли, спеціальні символи, великі літери або розділові знаки.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "Назва";
@@ -3349,6 +3364,9 @@
 "Channel Options" = "Параметри каналу";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "Видалити особисте повідомлення";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "Вийти з {channelName}";
 
 /* views/pages/GroupChat.vue */
@@ -3572,6 +3590,12 @@
 
 /* Not currently used */
 "Are you sure you want to revoke this link? This action cannot be undone." = "Ви впевнені, що хочете відкликати це посилання? Цю дію не можна скасувати.";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "Назва каналу може містити лише малі літери, цифри та дефіси(-).";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "Назва чату може містити лише малі літери, цифри та дефіси(-)";
 
 /* Not currently used */
 "Chatroom name must be lower-case only" = "Назва чатруму повинна бути лише з малих літер";

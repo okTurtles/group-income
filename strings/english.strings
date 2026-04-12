@@ -550,7 +550,7 @@
 "Channel members ({nbMembers})" = "Channel members ({nbMembers})";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "Channel name can only contain lowercase letters, numbers, and hyphens(-).";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "Channel name can't contain whitespace, special characters, capital letters or punctuation.";
 
 /* views/containers/chatroom/ConversationsList.vue */
 "Channels" = "Channels";
@@ -565,7 +565,10 @@
 "Chatroom activity" = "Chatroom activity";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "Chatroom name can only contain lowercase letters, numbers, and hyphens(-)";
+"Chatroom name cannot contain capital letters" = "Chatroom name cannot contain capital letters";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "Chatroom name cannot contain punctuation or special characters except hyphens";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "Chatroom name cannot contain white-space";
@@ -746,6 +749,9 @@
 
 /* views/containers/group-settings/roles-and-permissions/permissions-utils.js */
 "Delete channels" = "Delete channels";
+
+/* views/pages/GroupChat.vue */
+"Delete direct message" = "Delete direct message";
 
 /* views/containers/chatroom/ChatMain.vue */
 "Delete file" = "Delete file";
@@ -950,6 +956,9 @@
 
 /* views/utils/textSizes.js */
 "Extra large" = "Extra large";
+
+/* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "Failed to accept chat channel.";
 
 /* controller/actions/group.js */
 "Failed to accept invite." = "Failed to accept invite.";
@@ -1683,6 +1692,9 @@
 /* views/containers/contributions/SupportHistory.vue */
 "Needed: {todo}" = "Needed: {todo}";
 
+/* model/contracts/identity.js */
+"Never joined or already left direct message." = "Never joined or already left direct message.";
+
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue */
 "New" = "New";
 
@@ -1880,6 +1892,9 @@
 
 /* views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Open permission action menu" = "Open permission action menu";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "Operation already in progress";
 
 /* views/containers/chatroom/CreatePoll.vue */
 "Option value" = "Option value";
@@ -2834,6 +2849,9 @@
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Unable to confirm that the username {username} belongs to this identity contract";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "Unable to establish messaging with one or more participants.";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Undo";

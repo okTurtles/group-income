@@ -58,3 +58,4 @@ strings.exe
 /strings.linux
 /.tldr*
 /.agents/
+/.crush/

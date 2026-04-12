@@ -25,6 +25,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\"。您可以 {a_}报告错误{_a}。";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "接受聊天频道失败。";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "添加消息失败。";
 
 /* controller/actions/chatroom.js */
@@ -197,6 +200,12 @@
 
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "登入期間加入群組錯誤：{msg}";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "操作正在进行中";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "无法与一个或多个参与者建立消息通信。";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "創建使用者身份失敗：{reportError}";
@@ -415,13 +424,19 @@
 "Already joined direct message." = "已加入直接訊息。";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "从未加入或已退出私信。";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "不存在的直接訊息。";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "無法確認使用者名稱 {username} 屬於此身份合約";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "聊天室名称只能包含小写字母、数字和连字符(-)";
+"Chatroom name cannot contain capital letters" = "聊天室名称不能包含大写字母";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "聊天室名称不能包含标点或特殊字符（连字符除外）";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "聊天室名稱不得包含空白";
@@ -1183,7 +1198,7 @@
 "Reached character limit." = "已達到字元限制。";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "频道名称只能包含小写字母、数字和连字符(-)。";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "频道名称不能包含空格、特殊字符、大写字母或标点符号。";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "名稱";
@@ -3349,6 +3364,9 @@
 "Channel Options" = "频道选项";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "删除私信";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "离开 {channelName}";
 
 /* views/pages/GroupChat.vue */
@@ -3572,6 +3590,12 @@
 
 /* Not currently used */
 "Are you sure you want to revoke this link? This action cannot be undone." = "你确定要撤销此链接吗？此操作无法撤销。";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "频道名称只能包含小写字母、数字和连字符(-)。";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "聊天室名称只能包含小写字母、数字和连字符(-)";
 
 /* Not currently used */
 "Chatroom name must be lower-case only" = "聊天室名稱必須全小寫";

@@ -210,6 +210,7 @@ export default ({
     font-style: italic;
     padding-left: 0.25rem;
     white-space: pre-line;
+    word-break: break-word;
     margin-bottom: 0.5rem;
 
     &:hover {

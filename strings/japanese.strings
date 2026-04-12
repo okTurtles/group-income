@@ -34,6 +34,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "「{errorMsg}」。{a_}エラーを報告{_a} できます。";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "チャットチャンネルの承認に失敗しました。";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "メッセージの追加に失敗。";
 
 /* controller/actions/chatroom.js */
@@ -206,6 +209,12 @@
 
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "ログイン中のグループ参加エラー: {msg}";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "操作はすでに実行中です";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "1人以上の参加者とのメッセージングを確立できません。";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "ユーザー ID の作成に失敗: {reportError}";
@@ -418,13 +427,19 @@
 "Already joined direct message." = "すでにダイレクトメッセージに参加済み。";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "ダイレクトメッセージに参加したことがないか、すでに退出しています。";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "存在しないダイレクトメッセージです。";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "ユーザー名 {username} がこのID契約に属することを確認できません";
 
 /* model/contracts/shared/functions.js */
-"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "チャットルーム名には、小文字、数字、ハイフン(-)のみを使用できます";
+"Chatroom name cannot contain capital letters" = "チャットルーム名に大文字を含めることはできません";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "チャットルーム名にハイフン以外の句読点や特殊文字を含めることはできません";
 
 /* model/contracts/shared/functions.js */
 "Chatroom name cannot contain white-space" = "チャットルーム名に空白を含めることはできません";
@@ -1186,7 +1201,7 @@
 "Reached character limit." = "文字数制限に達しました。";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "チャンネル名には、小文字、数字、ハイフン(-)のみを使用できます。";
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "チャンネル名に空白、特殊文字、大文字、句読点を含めることはできません。";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "名前";
@@ -3349,6 +3364,9 @@
 "Channel Options" = "チャンネル オプション";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "ダイレクトメッセージを削除";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "{channelName} を退出";
 
 /* views/pages/GroupChat.vue */
@@ -3572,6 +3590,12 @@
 
 /* Not currently used */
 "Are you sure you want to revoke this link? This action cannot be undone." = "このリンクを無効にしてもよろしいですか？この操作は元に戻せません。";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "チャンネル名には、小文字、数字、ハイフン(-)のみを使用できます。";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "チャットルーム名には、小文字、数字、ハイフン(-)のみを使用できます";
 
 /* Not currently used */
 "Chatroom name must be lower-case only" = "チャットルーム名は小文字のみでなければなりません";
