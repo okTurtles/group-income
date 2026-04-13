@@ -17,6 +17,68 @@ jobs:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     steps:
+    - run: sudo apt-get install -y nginx
+    - run: |
+        export NGX_HOME="$RUNNER_TEMP/nginx"
+        mkdir -p "$NGX_HOME/conf"
+        cat > "$NGX_HOME/conf/nginx.conf" <<-EOF
+        worker_processes  1;
+        daemon off;
+        error_log stderr;
+        pid nginx.pid;
+
+        events {
+          worker_connections 1024;
+        }
+
+        http {
+          default_type  application/octet-stream;
+          # Set log file paths to user-writable locations.
+          access_log  $NGX_HOME/access.log;
+
+          # Set directories for client bodies or proxy temp files if needed.
+          client_body_temp_path $NGX_HOME/client_body;
+          proxy_temp_path       $NGX_HOME/proxy;
+
+          # Example upstream backend (adjust host and port as needed)
+          upstream backend {
+            server 127.0.0.1:8000;
+            # server debug.groupincome.org:443;
+            # You can add more backend servers here if needed
+          }
+
+            map \$http_upgrade \$connection_upgrade {
+                default upgrade;
+                ''      close;
+            }
+
+          server {
+            listen 8080;  # Use a non-privileged port (above 1024)
+            server_name localhost;
+
+            # Reverse proxy configuration
+            location = / {
+                proxy_pass http://backend;
+                proxy_set_header Host localhost;
+                #proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection \$connection_upgrade;
+            }
+            location / {
+                proxy_pass http://backend;
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_http_version 1.1;
+            }
+          }
+        }
+        EOF
+        /usr/sbin/nginx -c "$NGX_HOME/conf/nginx.conf" -p "$NGX_HOME" &
+        echo $! > "$NGX_HOME/nginx.pid"
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
@@ -24,3 +86,11 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npm test
+      env:
+        API_URL: http://localhost:8080
+    - name: Stop manual nginx
+      run: |
+        NGX_HOME="$RUNNER_TEMP/nginx"
+        if [ -f "$NGX_HOME/nginx.pid" ]; then
+          kill "$(cat "$NGX_HOME/nginx.pid")" || true
+        fi

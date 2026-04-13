@@ -161,8 +161,8 @@ export default ({
       } finally {
         this.ephemeral.versionInfos = {
           loading: false,
-          app_version: process.env.GI_VERSION.split('@')[0],
-          contracts_version: process.env.CONTRACTS_VERSION,
+          app_version: process.env.APP_VERSION.split('@')[0],
+          contracts_version: JSON.stringify(process.env.CONTRACTS_VERSION),
           service_worker_version: swVersion
         }
       }

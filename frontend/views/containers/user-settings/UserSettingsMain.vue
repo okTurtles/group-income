@@ -106,8 +106,8 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     },
     async loadVersionInfo () {
-      this.ephemeral.versions.app = process.env.GI_VERSION.split('@')[0]
-      this.ephemeral.versions.contracts = process.env.CONTRACTS_VERSION
+      this.ephemeral.versions.app = process.env.APP_VERSION.split('@')[0]
+      this.ephemeral.versions.contracts = JSON.stringify(process.env.CONTRACTS_VERSION)
 
       try {
         this.ephemeral.versions.loadingSWVersion = true
