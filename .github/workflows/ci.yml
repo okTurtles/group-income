@@ -86,7 +86,7 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npm test
-    - env:
+      env:
         API_URL: http://localhost:8080
     - name: Stop manual nginx
       run: |
