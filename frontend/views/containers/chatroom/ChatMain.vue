@@ -1931,6 +1931,7 @@ export default ({
         this.ephemeral.loadingDown = undefined
         this.ephemeral.loadingUp = undefined
 
+        this.stopReplying()
         this.cleanupFailedMessagesAttachments()
         sbp('chelonia/queueInvocation', toChatRoomId, () => initAfterSynced(toChatRoomId))
       }
