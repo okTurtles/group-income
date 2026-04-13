@@ -312,6 +312,65 @@ sbp('sbp/selectors/register', {
         console.error('[chatroom/upgradeCekPermissions] Error', e)
       })
     })()
+
+    // Send an 'accept' action to any DMs that we have not yet accepted
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId) return
+
+      const chatRoomIds = Object.keys(state[ourIdentityContractId]?.chatRooms || {})
+      for (const chatRoomId of chatRoomIds) {
+        if (
+          // We need a chatroom state
+          !state[chatRoomId]?.members?.[ourIdentityContractId] ||
+          // For a chatroom that we haven't left
+          state[chatRoomId]?.members?.[ourIdentityContractId].hasLeft ||
+          // And that we haven't yet accepted
+          state[chatRoomId]?.members?.[ourIdentityContractId].acceptedHeight != null
+        ) {
+          continue
+        }
+
+        sbp('gi.actions/chatroom/accept', { contractID: chatRoomId, data: null }).catch((e) => {
+          console.error('[postUpgradeVerification] Failed to confirm DM membership', chatRoomId, e)
+        })
+      }
+    })()
+
+    // Send OP_KEY_SHARE if our PEK has been rotated and this hasn't been done before
+    ;(() => {
+      const ourIdentityContractId = state.loggedIn?.identityContractID
+      if (!ourIdentityContractId || !state[ourIdentityContractId]?._vm?.authorizedKeys) return
+
+      const dmk = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'dmk' && k._notAfterHeight == null
+      })
+      // Did we find a DMK?
+      if (!dmk) return
+
+      const pek = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
+        // $FlowFixMe[incompatible-type]
+        // $FlowFixMe[incompatible-use]
+        return k.name === 'pek' && k._notAfterHeight == null
+      })
+      // Did we find a PEK?
+      if (!pek) return
+
+      // $FlowFixMe[incompatible-use]
+      if (dmk.meta?.private?.content?.[0] === pek.id) return
+
+      // $FlowFixMe[incompatible-use]
+      const hasItBeenSharedBefore = state[ourIdentityContractId]._vm.sharedKeyIds?.some((k) => k.id === dmk.id)
+
+      if (hasItBeenSharedBefore) return
+
+      // Issue the action to initiate OP_KEY_SHARE
+      sbp('gi.actions/identity/shareDMKwithPEK', ourIdentityContractId).catch((e) => {
+        console.error('[postUpgradeVerification] Error at shareDMKwithPEK', e)
+      })
+    })()
   },
   'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {

@@ -1,7 +1,9 @@
+import { randomUserSuffix } from '../support/lib.js'
+
 const API_URL = Cypress.config('baseUrl')
 
 describe('Group Income - Removing contracts', () => {
-  const userId = performance.now().toFixed(20).replace('.', '')
+  const userId = randomUserSuffix()
   const groupName = 'Dreamers'
 
   it('user1 creates a group and removes it', () => {

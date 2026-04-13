@@ -65,6 +65,15 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
             )
               i18n Delete channel
 
+            //- TODO: BEGIN Temporary code (see issue #3066) for removing DMs
+            menu-item.has-text-danger(
+              v-if='isChatRoomCreator && isGroupDirectMessage()'
+              @click='openModal("DeleteChannelModal")'
+              data-test='deleteDM'
+            )
+              i18n Delete direct message
+            //- TODO: END   Temporary code (see issue #3066) for removing DMs
+
   template(#description='')
     .c-channel-header-description
       span.header-pin-wrapper(
@@ -231,7 +240,9 @@ export default ({
     },
     scrollToPinnedMessage (messageHash) {
       if (this.$refs.chatMain) {
-        this.$refs.chatMain.scrollToMessage(messageHash)
+        this.$refs.chatMain.scrollToMessage(messageHash).catch((e) => {
+          console.error('[GroupChat.vue] Error scrolling to pinned message', messageHash, e)
+        })
       }
     },
     hasPermissionToReadChatRoom (chatRoomID) {
@@ -271,7 +282,9 @@ export default ({
         } else if (mhash) {
           // NOTE: this block handles the behavior to scroll to the message with mhash
           //       when user clicks the message link of the one from current chatroom
-          this.$refs.chatMain?.scrollToMessage(mhash).then(() => {
+          this.$refs.chatMain?.scrollToMessage(mhash).catch((e) => {
+            console.error('[GroupChat.vue] Error scrolling to message', mhash, e)
+          }).finally(() => {
             // NOTE: delete mhash from queries after scroll to and highlight it
             const newQuery = { ...to.query }
             delete newQuery.mhash

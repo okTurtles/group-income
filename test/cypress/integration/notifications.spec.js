@@ -1,10 +1,12 @@
+import { randomUserSuffix } from '../support/lib.js'
+
 import { TABLET } from '../../../frontend/views/utils/breakpoints.js'
 
 const WIDTH_MOBILE = TABLET - 10
 
 const dreamersGroupName = 'Dreamers'
 const turtlesGroupName = 'Turtles'
-const username = `user-${performance.now().toFixed(20).replace('.', '')}`
+const username = `user-${randomUserSuffix()}`
 
 /* === Fake notifications === */
 

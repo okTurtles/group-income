@@ -35,7 +35,11 @@ export default {
           'troubleshooting': { name: L('Troubleshooting'), dataTest: 'tabTroubleshooting', pathTo: 'troubleshooting' },
           'logout': { name: L('Logout'), dataTest: 'tabLogout' },
           'delete-account': { name: L('Delete account'), dataTest: 'tabDeleteAccount' },
-          'acknowledgements': { name: L('Acknowledgements') }
+          'acknowledgements': { name: L('Acknowledgements') },
+          'browser-notifications': { name: L('Allow browser notifications'), dataTest: 'tabBrowserNotifications' },
+          'browser-notification-volume': { name: L('Sound notification volume'), dataTest: 'tabBrowserNotificationVolume' },
+          'chat-notifications': { name: L('Send notifications for:'), dataTest: 'tabChatNotifications' },
+          'chat-sounds': { name: L('Play sounds for:'), dataTest: 'tabChatSounds' }
         }
       }
     }

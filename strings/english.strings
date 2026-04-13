@@ -135,13 +135,19 @@
 /* views/pages/Payments.vue */
 "ALL" = "ALL";
 
-/* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
+/* views/containers/dashboard/GroupPurpose.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "About the group" = "About the group";
 
 /* views/pages/Payments.vue */
 "Accepted methods" = "Accepted methods";
 
-/* views/components/tabs/TabWrapper.vue */
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Access & Rules" = "Access & Rules";
+
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Account" = "Account";
+
+/* views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
 "Acknowledgements" = "Acknowledgements";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
@@ -243,7 +249,7 @@
 /* model/contracts/group.js */
 "Admin credentials needed and not implemented yet." = "Admin credentials needed and not implemented yet.";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
 "Advanced" = "Advanced";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
@@ -273,7 +279,7 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow browser notifications" = "Allow browser notifications";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/GroupSettingsMain.vue */
 "Allow members to create public channels" = "Allow members to create public channels";
 
 /* views/containers/chatroom/CreatePoll.vue */
@@ -300,11 +306,11 @@
 /* views/containers/user-settings/AccountRemovalModal.vue */
 "An error occurred that prevents us from showing a list of these groups. The error was: {message}" = "An error occurred that prevents us from showing a list of these groups. The error was: {message}";
 
-/* controller/app/identity.js */
-"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "An error occurred while logging in. Please try logging in again. {br_}Error details: {err}.";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again." = "An error occurred while logging in. Please try logging in again.";
 
-/* views/containers/user-settings/Appearence.vue */
-"Animations" = "Animations";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "An error occurred while logging in. Please try logging in again. {br_}Error details: {err}.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Anyone" = "Anyone";
@@ -312,17 +318,20 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Anyone with this link can join the group." = "Anyone with this link can join the group.";
 
-/* views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"App Version:" = "App Version:";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
 "App settings" = "App settings";
 
-/* views/containers/user-settings/settings.js */
+/* views/pages/UserSettings.vue */
 "Appearance" = "Appearance";
 
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
+/* views/containers/user-settings/AppLogs.vue */
 "Application Logs" = "Application Logs";
+
+/* views/pages/UserSettings.vue */
+"Application logs" = "Application logs";
 
 /* views/containers/proposals/MemberRequest.vue */
 "Approve" = "Approve";
@@ -361,7 +370,7 @@
 "Are you sure you want to remove {name} from the group?" = "Are you sure you want to remove {name} from the group?";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Are you sure you want to revoke this link? This action cannot be undone." = "Are you sure you want to revoke this link? This action cannot be undone.";
+"Are you sure you want to revoke this link?{br_}This action cannot be undone." = "Are you sure you want to revoke this link?{br_}This action cannot be undone.";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote no?" = "Are you sure you want to vote no?";
@@ -408,6 +417,9 @@
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Back" = "Back";
 
+/* views/containers/group-settings/GroupSettingsTabContainer.vue, views/containers/user-settings/UserSettingsTabContainer.vue */
+"Back to menu" = "Back to menu";
+
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Based on other members pledges, the group is not able to provide a full mincome yet." = "Based on other members pledges, the group is not able to provide a full mincome yet.";
 
@@ -444,7 +456,7 @@
 /* views/containers/chatroom/ChatMain.vue */
 "Can't send message when offline, please connect to the Internet" = "Can't send message when offline, please connect to the Internet";
 
-/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
+/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/InvitationsTable.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Cancel" = "Cancel";
 
 /* views/containers/payments/PaymentDetail.vue */
@@ -537,6 +549,9 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Channel members ({nbMembers})";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "Channel name can't contain whitespace, special characters, capital letters or punctuation.";
+
 /* views/containers/chatroom/ConversationsList.vue */
 "Channels" = "Channels";
 
@@ -549,11 +564,14 @@
 /* controller/serviceworkers/push.js */
 "Chatroom activity" = "Chatroom activity";
 
-/* model/contracts/group.js */
-"Chatroom name cannot contain white-space" = "Chatroom name cannot contain white-space";
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain capital letters" = "Chatroom name cannot contain capital letters";
 
-/* model/contracts/group.js */
-"Chatroom name must be lower-case only" = "Chatroom name must be lower-case only";
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "Chatroom name cannot contain punctuation or special characters except hyphens";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain white-space" = "Chatroom name cannot contain white-space";
 
 /* views/components/group-creation-steps/GroupMincome.vue, views/containers/proposals/DistributionDate.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
@@ -570,7 +588,7 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Click on the individual link you received from an existing group. Don't have an invite?" = "Click on the individual link you received from an existing group. Don't have an invite?";
 
-/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "Close";
 
 /* views/components/ProfileCardContent.vue, views/containers/notifications/NotificationCard.vue */
@@ -602,6 +620,9 @@
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Congratulations" = "Congratulations";
+
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Contracts Version:" = "Contracts Version:";
 
 /* model/notifications/templates.js */
 "Contribution reminder" = "Contribution reminder";
@@ -690,6 +711,12 @@
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/group-settings/GroupDeletionModal.vue */
 "DELETE {GROUP_NAME}" = "DELETE {GROUP_NAME}";
 
+/* views/containers/group-settings/GroupSettingsMain.vue, views/containers/user-settings/UserSettingsMain.vue */
+"Danger Zone" = "Danger Zone";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Dark" = "Dark";
+
 /* views/containers/navigation/Navigation.vue */
 "Dashboard" = "Dashboard";
 
@@ -699,7 +726,7 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Debug" = "Debug";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
 "Default currency" = "Default currency";
 
 /* views/containers/contributions/IncomeDetails.vue */
@@ -714,7 +741,7 @@
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Delete Group" = "Delete Group";
 
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
 "Delete account" = "Delete account";
 
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
@@ -723,16 +750,19 @@
 /* views/containers/group-settings/roles-and-permissions/permissions-utils.js */
 "Delete channels" = "Delete channels";
 
+/* views/pages/GroupChat.vue */
+"Delete direct message" = "Delete direct message";
+
 /* views/containers/chatroom/ChatMain.vue */
 "Delete file" = "Delete file";
 
-/* views/containers/group-settings/GroupDeletionModal.vue */
+/* views/containers/group-settings/DeleteGroup.vue, views/containers/group-settings/GroupDeletionModal.vue */
 "Delete group" = "Delete group";
 
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
 
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "Deleting your account will erase all your data, and remove you from the groups you belong to.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
@@ -804,6 +834,15 @@
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Download ({size})" = "Download ({size})";
 
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Download error" = "Download error";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading file" = "Downloading file";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading..." = "Downloading...";
+
 /* views/containers/payments/RecordPaymentsList.vue */
 "Due" = "Due";
 
@@ -812,6 +851,9 @@
 
 /* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Duplicate channel name" = "Duplicate channel name";
+
+/* views/utils/misc.js */
+"ERROR: missing currency" = "ERROR: missing currency";
 
 /* views/components/modal/ModalClose.vue */
 "ESC" = "ESC";
@@ -846,7 +888,7 @@
 /* controller/router.js */
 "Error Testing" = "Error Testing";
 
-/* main.js, views/containers/chatroom/ChatMain.vue */
+/* views/containers/chatroom/ChatMain.vue */
 "Error details: {reportError}" = "Error details: {reportError}";
 
 /* views/pages/Join.vue */
@@ -912,6 +954,12 @@
 /* views/containers/payments/ExportPaymentsModal.vue */
 "Export your sent payment history to .csv" = "Export your sent payment history to .csv";
 
+/* views/utils/textSizes.js */
+"Extra large" = "Extra large";
+
+/* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "Failed to accept chat channel.";
+
 /* controller/actions/group.js */
 "Failed to accept invite." = "Failed to accept invite.";
 
@@ -932,6 +980,9 @@
 
 /* views/containers/chatroom/DMMixin.js */
 "Failed to change the chatroom settings" = "Failed to change the chatroom settings";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Failed to change the setting: {reportError}" = "Failed to change the setting: {reportError}";
 
 /* controller/actions/chatroom.js */
 "Failed to change vote on a poll." = "Failed to change vote on a poll.";
@@ -981,6 +1032,9 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Failed to download the app logs. {reportError}" = "Failed to download the app logs. {reportError}";
 
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Failed to download the file. Error details: {reportError}" = "Failed to download the file. Error details: {reportError}";
+
 /* controller/actions/chatroom.js */
 "Failed to edit message." = "Failed to edit message.";
 
@@ -1014,14 +1068,14 @@
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
 
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Failed to load audio. Please retry." = "Failed to load audio. Please retry.";
+
 /* views/containers/global-dashboard/NewsAndUpdates.vue */
 "Failed to load news: {reportError}" = "Failed to load news: {reportError}";
 
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to log in: {reportError}" = "Failed to log in: {reportError}";
-
-/* main.js */
-"Failed to login" = "Failed to login";
 
 /* controller/actions/chatroom.js */
 "Failed to make emotion." = "Failed to make emotion.";
@@ -1125,7 +1179,7 @@
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "Fatal error: {reportError}";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
 "Feature coming soon" = "Feature coming soon";
 
 /* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
@@ -1154,6 +1208,9 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "Future proposals would be accepted if {nr} or fewer members disagree." = "Future proposals would be accepted if {nr} or fewer members disagree.";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"General" = "General";
 
 /* views/containers/proposals/GenericProposal.vue */
 "Generic Proposal" = "Generic Proposal";
@@ -1185,6 +1242,9 @@
 /* controller/router.js */
 "Group Chat" = "Group Chat";
 
+/* views/pages/GroupSettings.vue */
+"Group Currency" = "Group Currency";
+
 /* controller/router.js */
 "Group Dashboard" = "Group Dashboard";
 
@@ -1203,6 +1263,9 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Group Pledging Status" = "Group Pledging Status";
 
+/* views/pages/GroupSettings.vue */
+"Group Profile" = "Group Profile";
+
 /* views/components/group-creation-steps/GroupPurpose.vue */
 "Group Purpose" = "Group Purpose";
 
@@ -1218,7 +1281,7 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Group channel" = "Group channel";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupProfile.vue */
 "Group description cannot exceed {maxchar} characters" = "Group description cannot exceed {maxchar} characters";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
@@ -1233,10 +1296,10 @@
 /* views/containers/proposals/GenericProposal.vue */
 "Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise." = "Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupProfile.vue */
 "Group name" = "Group name";
 
-/* views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
+/* views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "Group name cannot exceed {maxchar} characters" = "Group name cannot exceed {maxchar} characters";
 
 /* views/containers/group-settings/GroupCreationModal.vue */
@@ -1299,6 +1362,9 @@
 /* controller/app/identity.js */
 "Identity contract ID mismatch during login" = "Identity contract ID mismatch during login";
 
+/* views/containers/access/LoginErrorModal.vue */
+"If refreshing doesn't work, try {btn_}logging out{_btn}." = "If refreshing doesn't work, try {btn_}logging out{_btn}.";
+
 /* views/containers/user-settings/AppLogs.vue */
 "If you encounter problems, please download the logs and {a_}send them to us{_a}." = "If you encounter problems, please download the logs and {a_}send them to us{_a}.";
 
@@ -1329,6 +1395,15 @@
 /* controller/app/identity.js */
 "Incorrect username or password" = "Incorrect username or password";
 
+/* views/pages/UserSettings.vue */
+"Increased contrast" = "Increased contrast";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast" = "Increases contrast";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast and improves readability." = "Increases contrast and improves readability.";
+
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
 
@@ -1352,6 +1427,9 @@
 
 /* views/utils/filters.js */
 "Invalid size" = "Invalid size";
+
+/* views/pages/GroupSettings.vue */
+"Invite Links" = "Invite Links";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Invite links" = "Invite links";
@@ -1401,6 +1479,12 @@
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "LEAVE {GROUP_NAME}";
 
+/* views/utils/textSizes.js */
+"Large" = "Large";
+
+/* controller/app/group.js */
+"Large group size" = "Large group size";
+
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Leave Channel";
 
@@ -1413,7 +1497,7 @@
 /* views/containers/payments/RecordPayment.vue, views/containers/payments/SendPaymentsViaLightning.vue */
 "Leave a message to the group members selected above." = "Leave a message to the group members selected above.";
 
-/* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
+/* views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/GroupSettingsMain.vue */
 "Leave group" = "Leave group";
 
 /* views/pages/GroupChat.vue */
@@ -1431,7 +1515,7 @@
 /* model/notifications/templates.js */
 "Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/GroupSettingsMain.vue */
 "Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.";
 
 /* views/pages/Home.vue */
@@ -1439,6 +1523,9 @@
 
 /* views/containers/user-settings/Acknowledgements.vue */
 "Libraries" = "Libraries";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Light" = "Light";
 
 /* views/containers/contributions/PaymentMethods.vue, views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
@@ -1464,9 +1551,6 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Log" = "Log";
 
-/* views/containers/user-settings/settings.js */
-"Log Out" = "Log Out";
-
 /* views/containers/access/LoginModal.vue, views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Log in" = "Log in";
 
@@ -1479,8 +1563,11 @@
 /* views/containers/access/LoginForm.vue, views/pages/Home.vue */
 "Login" = "Login";
 
-/* controller/app/identity.js */
+/* controller/app/identity.js, views/containers/access/LoginErrorModal.vue */
 "Login error" = "Login error";
+
+/* views/pages/UserSettings.vue */
+"Logout" = "Logout";
 
 /* views/components/Loading.vue */
 "Magic is happening..." = "Magic is happening...";
@@ -1511,6 +1598,9 @@
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Maximum number of \"no\" votes:" = "Maximum number of \"no\" votes:";
+
+/* views/utils/textSizes.js */
+"Medium" = "Medium";
 
 /* views/containers/proposals/MemberRequest.vue */
 "Member Requests" = "Member Requests";
@@ -1584,8 +1674,8 @@
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "Mute all sounds from chat notifications";
 
-/* views/containers/user-settings/settings.js */
-"My account" = "My account";
+/* views/pages/UserSettings.vue */
+"My profile" = "My profile";
 
 /* views/containers/notifications/NotificationList.vue */
 "NEW" = "NEW";
@@ -1601,6 +1691,9 @@
 
 /* views/containers/contributions/SupportHistory.vue */
 "Needed: {todo}" = "Needed: {todo}";
+
+/* model/contracts/identity.js */
+"Never joined or already left direct message." = "Never joined or already left direct message.";
 
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue */
 "New" = "New";
@@ -1725,7 +1818,7 @@
 /* views/pages/GroupChat.vue */
 "Notification settings" = "Notification settings";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "Notifications";
 
 /* controller/app/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
@@ -1799,6 +1892,9 @@
 
 /* views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Open permission action menu" = "Open permission action menu";
+
+/* controller/actions/identity.js */
+"Operation already in progress" = "Operation already in progress";
 
 /* views/containers/chatroom/CreatePoll.vue */
 "Option value" = "Option value";
@@ -1943,6 +2039,9 @@
 
 /* views/containers/chatroom/MessageBase.vue */
 "Pinned by {strong_}{user}{_strong}" = "Pinned by {strong_}{user}{_strong}";
+
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Play" = "Play";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "Play sounds for all new messages";
@@ -2154,11 +2253,11 @@
 /* views/containers/payments/RecordPayment.vue */
 "Record {number} payments" = "Record {number} payments";
 
-/* views/containers/user-settings/Appearence.vue */
-"Reduced Motion" = "Reduced Motion";
-
-/* views/containers/user-settings/Appearence.vue */
+/* views/containers/user-settings/appearance/AppearanceSettings.vue, views/pages/UserSettings.vue */
 "Reduced motion" = "Reduced motion";
+
+/* views/containers/access/LoginErrorModal.vue */
+"Refresh" = "Refresh";
 
 /* views/containers/proposals/MemberRequest.vue */
 "Reject" = "Reject";
@@ -2241,6 +2340,9 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoke Link" = "Revoke Link";
 
+/* views/containers/group-settings/InvitationsTable.vue */
+"Revoke invite link" = "Revoke invite link";
+
 /* views/containers/group-settings/roles-and-permissions/permissions-utils.js */
 "Revoke invites" = "Revoke invites";
 
@@ -2250,8 +2352,14 @@
 /* views/containers/group-settings/roles-and-permissions/RolesAndPermissions.vue */
 "Role" = "Role";
 
+/* views/pages/GroupSettings.vue */
+"Roles & Permissions" = "Roles & Permissions";
+
 /* views/containers/group-settings/roles-and-permissions/RolesAndPermissions.vue */
 "Roles and Permissions" = "Roles and Permissions";
+
+/* views/containers/user-settings/UserSettingsMain.vue */
+"SW Version:" = "SW Version:";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
@@ -2259,8 +2367,11 @@
 /* views/containers/user-settings/UserProfile.vue */
 "Save account changes" = "Save account changes";
 
-/* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/SendArea.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "Save changes" = "Save changes";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Save currency" = "Save currency";
 
 /* views/containers/chatroom/file-attachment/SendAreaAttachmentsGallery.vue */
 "Scroll left" = "Scroll left";
@@ -2367,7 +2478,7 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Service worker" = "Service worker";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/containers/notifications/NotificationModal.vue */
 "Settings" = "Settings";
 
 /* views/containers/chatroom/TouchLinkHelper.vue, views/containers/user-settings/AppLogs.vue */
@@ -2418,6 +2529,9 @@
 /* views/pages/Home.vue */
 "Signup" = "Signup";
 
+/* views/utils/textSizes.js */
+"Small" = "Small";
+
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Some information is invalid, please review it and try again." = "Some information is invalid, please review it and try again.";
 
@@ -2466,13 +2580,16 @@
 /* views/components/graphs/Overview.vue, views/containers/contributions/GroupPledgesGraph.vue */
 "Surplus" = "Surplus";
 
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"System" = "System";
+
 /* views/containers/contributions/TodoHistory.vue */
 "TODO history" = "TODO history";
 
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue, views/pages/Join.vue */
 "Take me home" = "Take me home";
 
-/* views/containers/user-settings/Appearence.vue */
+/* views/pages/UserSettings.vue */
 "Text size" = "Text size";
 
 /* model/notifications/templates.js */
@@ -2502,7 +2619,7 @@
 /* views/containers/proposals/DistributionDate.vue */
 "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/pages/GroupSettings.vue */
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "The form is invalid." = "The form is invalid.";
 
 /* model/notifications/templates.js */
@@ -2541,7 +2658,7 @@
 /* controller/app/identity.js */
 "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}." = "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}.";
 
-/* views/containers/user-settings/Appearence.vue */
+/* views/pages/UserSettings.vue */
 "Theme" = "Theme";
 
 /* views/containers/contributions/ContributionsWidget.vue */
@@ -2574,7 +2691,7 @@
 /* controller/app/group.js */
 "There was an error joining the {chatRoomName} chatroom" = "There was an error joining the {chatRoomName} chatroom";
 
-/* views/containers/user-settings/UserProfile.vue */
+/* views/containers/user-settings/UserSettingsMain.vue */
 "This action cannot be undone." = "This action cannot be undone.";
 
 /* views/containers/user-settings/AccountRemovalModal.vue */
@@ -2601,7 +2718,7 @@
 /* views/containers/contributions/Contribution.vue */
 "This contribution already exists." = "This contribution already exists.";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "This field is required" = "This field is required";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
@@ -2622,13 +2739,13 @@
 /* views/containers/chatroom/ConversationGreetings.vue */
 "This is the beginning of {name}." = "This is the beginning of {name}.";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
 "This is the currency that will be displayed for every member of the group, across the platform." = "This is the currency that will be displayed for every member of the group, across the platform.";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "This is the minimum income in your group" = "This is the minimum income in your group";
 
-/* views/pages/GroupSettings.vue */
+/* views/containers/group-settings/GroupSettingsMain.vue */
 "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.";
 
 /* views/containers/dashboard/GroupMembersTooltipPending.vue */
@@ -2651,6 +2768,9 @@
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "This will allow you to start receiving or giving mincome." = "This will allow you to start receiving or giving mincome.";
+
+/* views/containers/group-settings/DeleteGroup.vue */
+"This will delete all the data associated with this group permanently." = "This will delete all the data associated with this group permanently.";
 
 /* views/containers/payments/SendPaymentsViaLightning.vue */
 "To complete your payment, please use your payment app to scan the QR code with your phone or copy the payment link." = "To complete your payment, please use your payment app to scan the QR code with your phone or copy the payment link.";
@@ -2712,7 +2832,7 @@
 /* views/containers/payments/PaymentDetail.vue */
 "Transaction ID" = "Transaction ID";
 
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
+/* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "Troubleshooting";
 
 /* views/containers/user-settings/NotificationSettings.vue */
@@ -2729,6 +2849,9 @@
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "Unable to confirm that the username {username} belongs to this identity contract";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "Unable to establish messaging with one or more participants.";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Undo";
@@ -2766,10 +2889,16 @@
 /* views/containers/chatroom/file-attachment/DragActiveOverlay.vue */
 "Upload attachment" = "Upload attachment";
 
+/* views/containers/chatroom/UploadAnimationFeedback.vue */
+"Uploading attachments..." = "Uploading attachments...";
+
 /* views/containers/proposals/RemoveMember.vue */
 "Use admin permissions to remove immediately" = "Use admin permissions to remove immediately";
 
-/* views/containers/user-settings/Theme.vue */
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Use high-contrast colors" = "Use high-contrast colors";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
 "Use system settings" = "Use system settings";
 
 /* views/containers/group-settings/InvitationsTable.vue */
@@ -2781,7 +2910,10 @@
 /* views/containers/group-settings/roles-and-permissions/RolesAndPermissions.vue */
 "User / Role" = "User / Role";
 
-/* views/containers/user-settings/settings.js */
+/* controller/router.js, views/pages/UserSettings.vue */
+"User Settings" = "User Settings";
+
+/* views/containers/navigation/Profile.vue */
 "User settings" = "User settings";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/AccountRemovalModal.vue */
@@ -2809,7 +2941,7 @@
 "Voted for “{option}”" = "Voted for “{option}”";
 
 /* views/pages/GroupSettings.vue */
-"Voting System" = "Voting System";
+"Voting Rules" = "Voting Rules";
 
 /* views/containers/proposals/ProposalsWidget.vue */
 "Voting Systems" = "Voting Systems";
@@ -2862,7 +2994,7 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "What's your monthly income?" = "What's your monthly income?";
 
-/* views/containers/user-settings/Appearence.vue */
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
 "When enabled the amount of animations you see around are reduced." = "When enabled the amount of animations you see around are reduced.";
 
 /* views/pages/Contributions.vue */
@@ -2877,7 +3009,7 @@
 /* views/containers/chatroom/SendArea.vue */
 "Write your message..." = "Write your message...";
 
-/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue */
+/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue, views/containers/group-settings/InvitationsTable.vue */
 "Yes" = "Yes";
 
 /* views/containers/contributions/IncomeDetails.vue */
@@ -2939,6 +3071,9 @@
 
 /* views/pages/Contributions.vue */
 "You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!" = "You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!";
+
+/* views/containers/group-settings/DeleteGroup.vue */
+"You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}." = "You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "You can post private notes to yourself here." = "You can post private notes to yourself here.";
@@ -3024,7 +3159,7 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Your browser doesn't support push notifications" = "Your browser doesn't support push notifications";
 
-/* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
+/* views/containers/group-settings/UpdateGroupCurrency.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/user-settings/UserProfile.vue */
 "Your changes were saved!" = "Your changes were saved!";
 
 /* views/containers/contributions/Contribution.vue */
@@ -3407,6 +3542,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "{strong_}{user}{_strong} is typing" = "{strong_}{user}{_strong} is typing";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"{threshold} disagreements" = "{threshold} disagreements";
 
 /* views/containers/chatroom/MessageReactions.vue */
 "{userList} reacted with {emotiName}" = "{userList} reacted with {emotiName}";

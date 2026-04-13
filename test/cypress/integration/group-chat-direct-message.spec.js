@@ -1,7 +1,8 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { randomUserSuffix } from '../support/lib.js'
 
 const groupName = 'Dreamers'
-const userId = performance.now().toFixed(20).replace('.', '')
+const userId = randomUserSuffix()
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
 const user3 = `user3${userId}`
