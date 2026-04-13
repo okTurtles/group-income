@@ -201,6 +201,17 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
     }
   }
 
+  &.is-style-disabled {
+    pointer-events: none;
+    opacity: 0.65;
+
+    .tile-text,
+    .tile-info-segment,
+    .tile-icon {
+      color: $text_1;
+    }
+  }
+
   &.is-expanded {
     .tile-icon {
       transform: rotate(180deg);
@@ -240,5 +251,14 @@ $card-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
   &.has-bottom-separator {
     border-bottom: 1px solid $general_0;
     padding-bottom: 2.5rem;
+  }
+
+  .tile-lower-section .lower-section-container {
+    position: relative;
+    width: 100%;
+
+    > * {
+      white-space: normal;
+    }
   }
 }

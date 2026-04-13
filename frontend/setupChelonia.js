@@ -4,6 +4,7 @@ import * as Common from '@common/common.js'
 import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '@chelonia/lib'
+import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
@@ -177,7 +178,10 @@ const setupChelonia = async (): Promise<*> => {
           'chelonia/contract/hasKeysToPerformOperation',
           'gi.actions/identity/kv/initChatRoomUnreadMessages', 'gi.actions/identity/kv/deleteChatRoomUnreadMessages',
           'gi.actions/identity/kv/setChatRoomReadUntil',
-          'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage'
+          'gi.actions/identity/kv/addChatRoomUnreadMessage', 'gi.actions/identity/kv/removeChatRoomUnreadMessage',
+          'gi.actions/group/findAndRequestMissingGroupKeys',
+          'gi.actions/chatroom/findAndRequestMissingChatroomKeys',
+          'gi.actions/chatroom/accept'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
@@ -298,6 +302,11 @@ const setupChelonia = async (): Promise<*> => {
       sbp('chelonia/kv/setFilter', cID, [])
     })
   })
+
+  sbp('chelonia.persistentActions/configure', {
+    databaseKey: '_private_persistent_actions'
+  })
+  await sbp('chelonia.persistentActions/load')
 
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {

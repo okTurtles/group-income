@@ -22,6 +22,9 @@
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". {a_}오류를 신고{_a}할 수 있습니다.";
 
 /* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "채팅 채널을 수락하는 데 실패했습니다.";
+
+/* controller/actions/chatroom.js */
 "Failed to add message." = "메시지 추가에 실패했습니다.";
 
 /* controller/actions/chatroom.js */
@@ -195,6 +198,12 @@
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "로그인 중 그룹 가입 오류: {msg}";
 
+/* controller/actions/identity.js */
+"Operation already in progress" = "작업이 이미 진행 중입니다";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "한 명 이상의 참가자와 메시징을 설정할 수 없습니다.";
+
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "사용자 ID 생성에 실패했습니다: {reportError}";
 
@@ -220,6 +229,9 @@
 "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?" = "150명 이상의 그룹은 사기 위험이 크며, {a_}모든 사람의 신원을 확인하기 어렵기 때문입니다.{_a} 더 많은 멤버를 추가하시겠습니까?";
 
 /* controller/app/group.js */
+"Large group size" = "대규모 그룹 크기";
+
+/* controller/app/group.js */
 "Mincome changed" = "최소 소득이 변경되었습니다.";
 
 /* controller/app/group.js */
@@ -231,23 +243,20 @@
 /* controller/app/group.js */
 "You now make more than the mincome. Would you like to increase your pledge?" = "이제 최소 소득보다 더 벌고 있습니다. 서약을 늘리시겠습니까?";
 
-/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "닫기";
 
 /* controller/app/group.js, views/components/modal/Prompt.vue */
 "No" = "아니오";
 
-/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue */
+/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue, views/containers/group-settings/InvitationsTable.vue */
 "Yes" = "예";
 
-/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
+/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/InvitationsTable.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Cancel" = "취소";
 
 /* controller/app/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
 "OK" = "확인";
-
-/* controller/app/identity.js */
-"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "로그인 중 오류가 발생했습니다. 다시 로그인해 보세요. {br_}오류 세부 정보: {err}.";
 
 /* controller/app/identity.js */
 "Failed to signup: {reportError}" = "회원가입 실패: {reportError}";
@@ -262,13 +271,13 @@
 "Log out" = "로그아웃";
 
 /* controller/app/identity.js */
-"Login error" = "로그인 오류";
-
-/* controller/app/identity.js */
 "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}." = "서버의 ID 계약 기록이 우리 것과 분기되었습니다. 이는 악의적인 활동이나 버그로 인해 극히 드문 경우에 발생할 수 있습니다. {br_}이 문제를 해결하려면 계약을 다시 동기화해야 하며, 최근 일부 이벤트가 누락될 수 있습니다. {br_}로그아웃하고 다음 로그인 시 데이터를 다시 동기화하시겠습니까? {br_}오류 세부 정보: {err}.";
 
 /* controller/app/identity.js */
 "Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}." = "계정이 서버에서 삭제된 것 같습니다. {br_}이 문제를 해결하려면 로그아웃하고 새 계정을 생성해야 합니다. {br_}오류 세부 정보: {err}.";
+
+/* controller/app/identity.js, views/containers/access/LoginErrorModal.vue */
+"Login error" = "로그인 오류";
 
 /* controller/router.js */
 "Design System" = "디자인 시스템";
@@ -306,6 +315,9 @@
 /* controller/router.js, views/pages/Home.vue */
 "Join a Group" = "그룹 가입";
 
+/* controller/router.js, views/pages/UserSettings.vue */
+"User Settings" = "사용자 설정";
+
 /* controller/service-worker.js */
 "Error setting up push notifications" = "푸시 알림 설정 오류";
 
@@ -326,9 +338,6 @@
 
 /* main.js */
 "Error while setting up service worker: {err}" = "서비스 워커 설정 중 오류: {err}";
-
-/* main.js */
-"Failed to login" = "로그인 실패";
 
 /* main.js */
 "Loading events from server..." = "서버에서 이벤트 로딩 중...";
@@ -356,9 +365,6 @@
 
 /* main.js */
 "Your device appears to be offline." = "장치가 오프라인입니다.";
-
-/* main.js, views/containers/chatroom/ChatMain.vue */
-"Error details: {reportError}" = "오류 세부 정보: {reportError}";
 
 /* model/contracts/chatroom.js */
 "Only the channel creator can change description." = "채널 생성자만 설명을 변경할 수 있습니다.";
@@ -394,12 +400,6 @@
 "Cannot remove the last member." = "마지막 멤버를 제거할 수 없습니다.";
 
 /* model/contracts/group.js */
-"Chatroom name cannot contain white-space" = "채팅방 이름에 공백을 포함할 수 없습니다.";
-
-/* model/contracts/group.js */
-"Chatroom name must be lower-case only" = "채팅방 이름은 소문자만 사용해야 합니다.";
-
-/* model/contracts/group.js */
 "Not part of the group." = "그룹의 일부가 아닙니다.";
 
 /* model/contracts/group.js */
@@ -421,10 +421,22 @@
 "Already joined direct message." = "이미 직접 메시지에 참여했습니다.";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "다이렉트 메시지에 참여한 적이 없거나 이미 나갔습니다.";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "존재하지 않는 직접 메시지입니다.";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "사용자 이름 {username}이 이 ID 계약에 속하는지 확인할 수 없습니다.";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain capital letters" = "채팅방 이름에 대문자를 포함할 수 없습니다";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "채팅방 이름에 하이픈을 제외한 구두점이나 특수 문자를 포함할 수 없습니다";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain white-space" = "채팅방 이름에 공백을 포함할 수 없습니다.";
 
 /* model/contracts/shared/functions.js */
 "voting rules" = "투표 규칙";
@@ -879,14 +891,17 @@
 /* views/components/modal/ModalMixins.js */
 "Modal Title Missing" = "모달 제목 누락";
 
-/* views/components/tabs/TabWrapper.vue */
-"Acknowledgements" = "감사의 말씀";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "로그인 중 오류가 발생했습니다. 다시 로그인해 보세요. {br_}오류 세부 정보: {err}.";
 
-/* views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "앱 버전: {appVersion}{br_}계약 버전: {contractsVersion}{br_}SW 버전: {swVer}";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again." = "로그인 중 오류가 발생했습니다. 다시 로그인해 주세요.";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
-"Settings" = "설정";
+/* views/containers/access/LoginErrorModal.vue */
+"If refreshing doesn't work, try {btn_}logging out{_btn}." = "새로 고침이 작동하지 않으면 {btn_}로그아웃{_btn}을 시도해 보세요.";
+
+/* views/containers/access/LoginErrorModal.vue */
+"Refresh" = "새로 고침";
 
 /* views/containers/access/LoginForm.vue */
 "Forgot your password?" = "비밀번호를 잊으셨나요?";
@@ -897,11 +912,11 @@
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Username" = "사용자 이름";
 
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"The form is invalid." = "폼이 유효하지 않습니다.";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
 "Password" = "비밀번호";
-
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/pages/GroupSettings.vue */
-"The form is invalid." = "폼이 유효하지 않습니다.";
 
 /* views/containers/access/LoginForm.vue, views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Coming soon" = "곧 출시됩니다";
@@ -1015,6 +1030,9 @@
 "Delete file" = "파일 삭제";
 
 /* views/containers/chatroom/ChatMain.vue */
+"Error details: {reportError}" = "오류 세부 정보: {reportError}";
+
+/* views/containers/chatroom/ChatMain.vue */
 "Error while deleting a message" = "메시지 삭제 중 오류";
 
 /* views/containers/chatroom/ChatMain.vue */
@@ -1110,10 +1128,10 @@
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "소리:";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "This field is required" = "이 필드는 필수입니다";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "알림";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
@@ -1175,6 +1193,9 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/user-settings/UserProfile.vue */
 "Reached character limit." = "문자 수 제한에 도달했습니다.";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "채널 이름에는 공백, 특수 문자, 대문자 또는 구두점을 포함할 수 없습니다.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "이름";
@@ -1509,7 +1530,7 @@
 /* views/containers/chatroom/SendArea.vue */
 "{strong_}{user}{_strong} is typing" = "{strong_}{user}{_strong}이(가) 입력 중입니다";
 
-/* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/SendArea.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "Save changes" = "변경 사항 저장";
 
 /* views/containers/chatroom/TouchLinkHelper.vue */
@@ -1524,6 +1545,9 @@
 /* views/containers/chatroom/TouchLinkHelper.vue, views/containers/user-settings/AppLogs.vue */
 "Share" = "공유";
 
+/* views/containers/chatroom/UploadAnimationFeedback.vue */
+"Uploading attachments..." = "첨부 파일 업로드 중...";
+
 /* views/containers/chatroom/ViewArea.vue */
 "Couldn't join the chatroom An error occurred: {error}" = "채팅방에 참여할 수 없습니다 오류 발생: {error}";
 
@@ -1536,6 +1560,12 @@
 /* views/containers/chatroom/ViewArea.vue */
 "You are viewing {b_} # {title}{_b}" = "{b_} # {title}{_b}을(를) 보고 있습니다";
 
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Failed to load audio. Please retry." = "오디오를 불러오지 못했습니다. 다시 시도해 주세요.";
+
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Play" = "재생";
+
 /* views/containers/chatroom/chat-mentions/RenderMessageText.vue */
 "private channel" = "비공개 채널";
 
@@ -1547,6 +1577,12 @@
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Download ({size})" = "다운로드 ({size})";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading file" = "파일 다운로드 중";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading..." = "다운로드 중...";
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Expand" = "확장";
@@ -1562,6 +1598,12 @@
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
 "Loading..." = "로딩 중...";
+
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Download error" = "다운로드 오류";
+
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Failed to download the file. Error details: {reportError}" = "파일을 다운로드하지 못했습니다. 오류 세부 정보: {reportError}";
 
 /* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue */
 "Remove attachment" = "첨부 파일 제거";
@@ -2052,11 +2094,11 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "최소 수입";
 
+/* views/containers/dashboard/GroupPurpose.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"About the group" = "그룹에 대해";
+
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupChat.vue */
 "Add description" = "설명 추가";
-
-/* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
-"About the group" = "그룹에 대해";
 
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Invite members to your group" = "그룹에 멤버 초대";
@@ -2100,6 +2142,15 @@
 /* views/containers/global-dashboard/NewsAndUpdates.vue */
 "Failed to load news: {reportError}" = "뉴스 로드 실패: {reportError}";
 
+/* views/containers/group-settings/DeleteGroup.vue */
+"This will delete all the data associated with this group permanently." = "이 작업은 이 그룹과 관련된 모든 데이터를 영구적으로 삭제합니다.";
+
+/* views/containers/group-settings/DeleteGroup.vue */
+"You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}." = "다른 모든 멤버가 떠난 경우에만 그룹을 삭제할 수 있습니다. {groupName}에 아직 {b_}{count}명의 다른 멤버가 있습니다.";
+
+/* views/containers/group-settings/DeleteGroup.vue, views/containers/group-settings/GroupDeletionModal.vue */
+"Delete group" = "그룹 삭제";
+
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Group name is required" = "그룹 이름이 필요합니다";
 
@@ -2115,6 +2166,9 @@
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Step {current} of {max}" = "{max} 단계 중 {current} 단계";
 
+/* views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"Group name cannot exceed {maxchar} characters" = "그룹 이름은 {maxchar}자를 초과할 수 없습니다";
+
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Back" = "뒤로";
 
@@ -2127,9 +2181,6 @@
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Next" = "다음";
 
-/* views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
-"Group name cannot exceed {maxchar} characters" = "그룹 이름은 {maxchar}자를 초과할 수 없습니다";
-
 /* views/containers/group-settings/GroupCreationModal.vue, views/pages/Home.vue */
 "Create Group" = "그룹 생성";
 
@@ -2141,9 +2192,6 @@
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Delete Group" = "그룹 삭제";
-
-/* views/containers/group-settings/GroupDeletionModal.vue */
-"Delete group" = "그룹 삭제";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Leaving the group when you're the the admin will delete it and all its associated data." = "관리자일 때 그룹을 떠나면 그룹과 관련된 모든 데이터가 삭제됩니다.";
@@ -2184,14 +2232,14 @@
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "{GROUP_NAME} 그룹 떠나기";
 
+/* views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/GroupSettingsMain.vue */
+"Leave group" = "그룹 떠나기";
+
 /* views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Your username is different" = "사용자 이름이 다릅니다";
 
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "Leave Group" = "그룹 떠나기";
-
-/* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
-"Leave group" = "그룹 떠나기";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "*This value was automatically adjusted because there should always be at least 2 \"yes\" votes." = "*이 값은 항상 최소 2개의 \"yes\" 투표가 있어야 하므로 자동으로 조정되었습니다.";
@@ -2238,6 +2286,33 @@
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}" = "{b_}{percent}{_b} {sm_}({total}명 중 {count}*명){_sm}";
 
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Access & Rules" = "접근 및 규칙";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Allow members to create public channels" = "회원들이 공개 채널 생성 허용";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Failed to change the setting: {reportError}" = "설정을 변경하지 못했습니다: {reportError}";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"General" = "일반";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "사용자들이 공개 채널을 생성하도록 합니다. 공개 채널의 데이터는 완전히 공개되며, 일반 소셜 미디어와 동일한 주의와 프라이버시 기대를 가져야 합니다. 즉, 공개 채널에 게시하는 콘텐츠에 대한 프라이버시 기대는 없습니다.";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "이로 인해 {b_}그룹 채팅{_b} (다른 그룹 회원과의 직접 메시지 포함) 및 {b_}기여{_b}에 대한 액세스가 중단됩니다. 그룹에 재가입은 가능하지만, 다른 회원들의 투표와 합의가 필요합니다.";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"{threshold} disagreements" = "{threshold}개의 이의 제기";
+
+/* views/containers/group-settings/GroupSettingsMain.vue, views/containers/user-settings/UserSettingsMain.vue */
+"Danger Zone" = "위험 구역";
+
+/* views/containers/group-settings/GroupSettingsTabContainer.vue, views/containers/user-settings/UserSettingsTabContainer.vue */
+"Back to menu" = "메뉴로 돌아가기";
+
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "온보딩 기간이 끝나면, 모든 사람이 새 멤버 추가 여부에 투표하도록 요청됩니다. 하지만 지금은 {count}개의 무료 패스를 즐기세요!";
 
@@ -2272,7 +2347,7 @@
 "Anyone" = "누구나";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Are you sure you want to revoke this link? This action cannot be undone." = "이 링크를 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.";
+"Are you sure you want to revoke this link?{br_}This action cannot be undone." = "이 링크를 취소하시겠습니까?{br_}이 작업은 되돌릴 수 없습니다.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Doesn't expire" = "만료되지 않음";
@@ -2294,6 +2369,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoke Link" = "링크 취소";
+
+/* views/containers/group-settings/InvitationsTable.vue */
+"Revoke invite link" = "초대 링크 취소";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "취소됨";
@@ -2342,6 +2420,27 @@
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "만료됨";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Default currency" = "기본 통화";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Feature coming soon" = "곧 제공될 기능";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Save currency" = "통화 저장";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"This is the currency that will be displayed for every member of the group, across the platform." = "이것이 플랫폼 전반에서 그룹의 모든 회원에게 표시될 통화입니다.";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/user-settings/UserProfile.vue */
+"Your changes were saved!" = "변경 사항이 저장되었습니다!";
+
+/* views/containers/group-settings/UpdateGroupProfile.vue */
+"Group description cannot exceed {maxchar} characters" = "그룹 설명은 {maxchar}자를 초과할 수 없습니다";
+
+/* views/containers/group-settings/UpdateGroupProfile.vue */
+"Group name" = "그룹 이름";
 
 /* views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Edit permissions" = "권한 편집";
@@ -2457,6 +2556,9 @@
 /* views/containers/navigation/Navigation.vue */
 "Main" = "메인";
 
+/* views/containers/navigation/Profile.vue */
+"User settings" = "사용자 설정";
+
 /* views/containers/notifications/NotificationCard.vue */
 "Show notifications" = "알림 표시";
 
@@ -2471,6 +2573,9 @@
 
 /* views/containers/notifications/NotificationList.vue */
 "OLDER" = "이전";
+
+/* views/containers/notifications/NotificationModal.vue */
+"Settings" = "설정";
 
 /* views/containers/payments/ExportPaymentsModal.vue */
 "Export all periods" = "모든 기간 내보내기";
@@ -3012,11 +3117,11 @@
 /* views/containers/user-settings/AccountRemovalModal.vue */
 "This action will also delete the following groups:" = "이 작업은 다음 그룹도 삭제합니다:";
 
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
-"Delete account" = "계정 삭제";
-
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "계정 삭제 시 모든 데이터가 지워지고 소속된 그룹에서 제거됩니다.";
+
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
+"Delete account" = "계정 삭제";
 
 /* views/containers/user-settings/Acknowledgements.vue */
 "Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income은 {a_}okTurtles Foundation{_a}에서 개발되었으며, 개인 기부로 완전히 자금을 지원받습니다.";
@@ -3029,6 +3134,9 @@
 
 /* views/containers/user-settings/Acknowledgements.vue */
 "Support this project" = "이 프로젝트 지원";
+
+/* views/containers/user-settings/AppLogs.vue */
+"Application Logs" = "앱 로그";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Browser" = "브라우저";
@@ -3069,29 +3177,8 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Source:" = "소스:";
 
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
-"Application Logs" = "앱 로그";
-
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
+/* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "문제 해결";
-
-/* views/containers/user-settings/Appearence.vue */
-"Animations" = "애니메이션";
-
-/* views/containers/user-settings/Appearence.vue */
-"Reduced Motion" = "감소된 모션";
-
-/* views/containers/user-settings/Appearence.vue */
-"Reduced motion" = "감소된 모션";
-
-/* views/containers/user-settings/Appearence.vue */
-"Text size" = "텍스트 크기";
-
-/* views/containers/user-settings/Appearence.vue */
-"Theme" = "테마";
-
-/* views/containers/user-settings/Appearence.vue */
-"When enabled the amount of animations you see around are reduced." = "활성화 시 주변 애니메이션 양이 줄어듭니다.";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow browser notifications" = "브라우저 알림 허용";
@@ -3123,9 +3210,6 @@
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "볼륨";
 
-/* views/containers/user-settings/Theme.vue */
-"Use system settings" = "시스템 설정 사용";
-
 /* views/containers/user-settings/Troubleshooting.vue */
 "For diagnostic info, see application logs." = "진단 정보는 앱 로그를 참조하세요.";
 
@@ -3154,34 +3238,61 @@
 "Save account changes" = "계정 변경 저장";
 
 /* views/containers/user-settings/UserProfile.vue */
-"This action cannot be undone." = "이 작업은 되돌릴 수 없습니다.";
-
-/* views/containers/user-settings/UserProfile.vue */
 "This is how others will see your name accross the platform." = "이것이 다른 사람들이 플랫폼 전반에서 당신의 이름을 보는 방식입니다.";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Update Password" = "비밀번호 업데이트";
 
-/* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
-"Your changes were saved!" = "변경 사항이 저장되었습니다!";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Account" = "계정";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
 "Advanced" = "고급";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
+"App Version:" = "앱 버전:";
+
+/* views/containers/user-settings/UserSettingsMain.vue */
 "App settings" = "앱 설정";
 
-/* views/containers/user-settings/settings.js */
-"Appearance" = "모습";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Contracts Version:" = "계약 버전:";
 
-/* views/containers/user-settings/settings.js */
-"Log Out" = "로그아웃";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"SW Version:" = "SW 버전:";
 
-/* views/containers/user-settings/settings.js */
-"My account" = "내 계정";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"This action cannot be undone." = "이 작업은 되돌릴 수 없습니다.";
 
-/* views/containers/user-settings/settings.js */
-"User settings" = "사용자 설정";
+/* views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
+"Acknowledgements" = "감사의 말씀";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast and improves readability." = "대비를 높이고 가독성을 향상시킵니다.";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast" = "대비 증가";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Use high-contrast colors" = "고대비 색상 사용";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"When enabled the amount of animations you see around are reduced." = "활성화 시 주변 애니메이션 양이 줄어듭니다.";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue, views/pages/UserSettings.vue */
+"Reduced motion" = "감소된 모션";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Dark" = "다크";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Light" = "라이트";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"System" = "시스템";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Use system settings" = "시스템 설정 사용";
 
 /* views/pages/Contributions.vue */
 "Add a non-monetary pledge" = "비금전적 서약 추가";
@@ -3253,6 +3364,9 @@
 "Channel Options" = "채널 옵션";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "다이렉트 메시지 삭제";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "{channelName} 채널 나가기";
 
 /* views/pages/GroupChat.vue */
@@ -3277,37 +3391,25 @@
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "다음 배포 날짜는 {date}입니다. 그때까지 {r1}소득 세부 정보{r2}를 업데이트하세요.";
 
 /* views/pages/GroupSettings.vue */
-"Allow members to create public channels" = "회원들이 공개 채널 생성 허용";
-
-/* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "이 설정 변경은 모든 그룹 회원에게 표시됩니다";
 
 /* views/pages/GroupSettings.vue */
-"Default currency" = "기본 통화";
+"Group Currency" = "그룹 통화";
 
 /* views/pages/GroupSettings.vue */
-"Feature coming soon" = "곧 제공될 기능";
+"Group Profile" = "그룹 프로필";
 
 /* views/pages/GroupSettings.vue */
-"Group description cannot exceed {maxchar} characters" = "그룹 설명은 {maxchar}자를 초과할 수 없습니다";
-
-/* views/pages/GroupSettings.vue */
-"Group name" = "그룹 이름";
-
-/* views/pages/GroupSettings.vue */
-"Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "사용자들이 공개 채널을 생성하도록 합니다. 공개 채널의 데이터는 완전히 공개되며, 일반 소셜 미디어와 동일한 주의와 프라이버시 기대를 가져야 합니다. 즉, 공개 채널에 게시하는 콘텐츠에 대한 프라이버시 기대는 없습니다.";
+"Invite Links" = "초대 링크";
 
 /* views/pages/GroupSettings.vue */
 "Public Channels" = "공개 채널";
 
 /* views/pages/GroupSettings.vue */
-"This is the currency that will be displayed for every member of the group, across the platform." = "이것이 플랫폼 전반에서 그룹의 모든 회원에게 표시될 통화입니다.";
+"Roles & Permissions" = "역할 및 권한";
 
 /* views/pages/GroupSettings.vue */
-"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "이로 인해 {b_}그룹 채팅{_b} (다른 그룹 회원과의 직접 메시지 포함) 및 {b_}기여{_b}에 대한 액세스가 중단됩니다. 그룹에 재가입은 가능하지만, 다른 회원들의 투표와 합의가 필요합니다.";
-
-/* views/pages/GroupSettings.vue */
-"Voting System" = "투표 시스템";
+"Voting Rules" = "투표 규칙";
 
 /* views/pages/Home.vue */
 "Create a new group and invite your friends." = "새 그룹을 생성하고 친구들을 초대하세요.";
@@ -3435,12 +3537,81 @@
 /* views/pages/PendingApproval.vue */
 "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "공개 링크를 사용하여 그룹에 참여했습니다. 그룹 회원이 회원 요청을 승인하면 그룹에 액세스할 수 있습니다.";
 
+/* views/pages/UserSettings.vue */
+"Appearance" = "모습";
+
+/* views/pages/UserSettings.vue */
+"Application logs" = "애플리케이션 로그";
+
+/* views/pages/UserSettings.vue */
+"Increased contrast" = "대비 증가";
+
+/* views/pages/UserSettings.vue */
+"Logout" = "로그아웃";
+
+/* views/pages/UserSettings.vue */
+"My profile" = "내 프로필";
+
+/* views/pages/UserSettings.vue */
+"Text size" = "텍스트 크기";
+
+/* views/pages/UserSettings.vue */
+"Theme" = "테마";
+
 /* views/utils/filters.js */
 "0 Bytes" = "0 바이트";
 
 /* views/utils/filters.js */
 "Invalid size" = "잘못된 크기";
 
+/* views/utils/misc.js */
+"ERROR: missing currency" = "오류: 통화 누락";
+
+/* views/utils/textSizes.js */
+"Extra large" = "매우 큼";
+
+/* views/utils/textSizes.js */
+"Large" = "크게";
+
+/* views/utils/textSizes.js */
+"Medium" = "보통";
+
+/* views/utils/textSizes.js */
+"Small" = "작게";
+
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "치명적 오류: {reportError}";
+
+/* Not currently used */
+"Animations" = "애니메이션";
+
+/* Not currently used */
+"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "앱 버전: {appVersion}{br_}계약 버전: {contractsVersion}{br_}SW 버전: {swVer}";
+
+/* Not currently used */
+"Are you sure you want to revoke this link? This action cannot be undone." = "이 링크를 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "채널 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다.";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "채팅방 이름은 소문자, 숫자 및 하이픈(-)만 포함할 수 있습니다";
+
+/* Not currently used */
+"Chatroom name must be lower-case only" = "채팅방 이름은 소문자만 사용해야 합니다.";
+
+/* Not currently used */
+"Failed to login" = "로그인 실패";
+
+/* Not currently used */
+"Log Out" = "로그아웃";
+
+/* Not currently used */
+"My account" = "내 계정";
+
+/* Not currently used */
+"Reduced Motion" = "감소된 모션";
+
+/* Not currently used */
+"Voting System" = "투표 시스템";
 

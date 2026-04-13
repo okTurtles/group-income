@@ -9,6 +9,7 @@ import {
 import { cloneDeep, has, omit } from 'turtledash'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
 import sbp from '@sbp/sbp'
+import promiseWithResolvers from '@utils/promiseWithResolvers.js'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
@@ -598,49 +599,81 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Object, options: Object) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
     await Promise.all(Object.keys(state.groups || {}).filter(groupID => !state.groups[groupID].hasLeft && !!rootState.contracts[groupID]).map(async groupID => {
-      const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
-      const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
-
-      if (!CEKid || !CSKid) {
-        console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
-        // We intentionally don't throw here to be able to share keys with the
-        // remaining groups
-        return
+      const retained = await sbp('chelonia/contract/retain', groupID, { ephemeral: true }).then(() => [true], (e) => [false, e])
+      if (!retained[0]) {
+        const e = retained[1]
+        if (e?.name === 'ChelErrorResourceGone') {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: ${groupID} does not exist`, e)
+        } else {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Error retaining ${groupID}`, e)
+        }
+        if (options.lastAttempt) {
+          return
+        } else {
+          throw new Error('Unable to share rotated keys')
+        }
       }
-      return sbp('chelonia/out/keyShare', {
-        contractID: groupID,
-        contractName: rootState.contracts[groupID].type,
-        data: encryptedOutgoingData(groupID, CEKid, {
-          contractID,
-          // $FlowFixMe
-          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-            id: newId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
-              }
-            }
-          }))
-        }),
-        signingKeyId: CSKid,
-        hooks: {
-          preSendCheck: (_, state) => {
-            // Don't send this message if we're no longer a group member
-            return state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+      try {
+        const CEKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+        const CSKid = await sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk')
+
+        if (!CEKid || !CSKid) {
+          console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK or CSK`)
+          // We intentionally don't throw here to be able to share keys with the
+          // remaining groups
+          if (options.lastAttempt) {
+            return
+          } else {
+            throw new Error('Unable to share rotated keys')
           }
         }
-      }).catch(e => {
-        // We may no longer be a member of the group, so we ignore errors
-        // related to missing keys
-        if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+        await sbp('chelonia/out/keyShare', {
+          contractID: groupID,
+          contractName: rootState.contracts[groupID].type,
+          data: encryptedOutgoingData(groupID, CEKid, {
+            contractID,
+            // $FlowFixMe
+            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  content: encryptedOutgoingData(groupID, CEKid, serializeKey(newKey, true))
+                }
+              }
+            }))
+          }),
+          signingKeyId: CSKid,
+          hooks: {
+            preSendCheck: (_, state) => {
+              return (
+                // Don't send this message if we're no longer a group member
+                state?.profiles?.[contractID]?.status === PROFILE_STATUS.ACTIVE
+              )
+            }
+          }
+        }).catch(e => {
+          // We may no longer be a member of the group, so we ignore errors
+          // related to missing keys
+          if (e.name !== 'ChelErrorSignatureKeyNotFound') {
+            throw e
+          }
+        })
+      } catch (e) {
+        // This must be done to prevent a single failure on a single contract
+        // from blocking a key rotation.
+        if (options.lastAttempt) {
+          return
+        } else {
           throw e
         }
-      })
+      } finally {
+        await sbp('chelonia/contract/release', groupID, { ephemeral: true })
+      }
     }))
 
     // This selector is called by rotateKeys, which will include the keys to
@@ -648,15 +681,42 @@ export default (sbp('sbp/selectors/register', {
     // to their respective contracts and there are no keys to include in
     // the same event as OP_KEY_UPDATE. Therefore, we return undefined
     if (!newKeys.pek) return undefined
+
+    const newPEKid = newKeys.pek[2]
+    const newPEK = newKeys.pek[1]
+    const DMKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk', true)
+    const DMK = DMKid && rootState.secretKeys[DMKid]
+
     return [
       undefined, // Nothing before OP_KEY_UPDATE
       [
+        // Re-encrypt DMK with the new PEK
+        // This allows people in a new group we've joined to be able to send
+        // us a DM, even if the PEK has been rotated.
+        ...(DMK
+          ? [['chelonia/out/keyShare', {
+              contractID: contractID,
+              contractName: rootState.contracts[contractID].type,
+              data: encryptedOutgoingDataWithRawKey(newPEK, {
+                contractID,
+                // $FlowFixMe
+                keys: [{
+                  id: DMKid,
+                  meta: {
+                    private: {
+                      content: encryptedOutgoingDataWithRawKey(newPEK, DMK)
+                    }
+                  }
+                }]
+              })
+            }]]
+          : []),
         // Re-encrypt attributes with the new PEK
         await sbp('gi.actions/identity/setAttributes', {
           contractID,
           data: state.attributes,
-          encryptionKey: newKeys.pek[1],
-          encryptionKeyId: newKeys.pek[2],
+          encryptionKey: newPEK,
+          encryptionKeyId: newPEKid,
           returnInvocation: true
         })
       ]
@@ -671,90 +731,185 @@ export default (sbp('sbp/selectors/register', {
       .map(memberID => rootGetters.ourContactProfilesById[memberID].contractID)
     const currentGroupId = params.data.currentGroupId
     const identityContractID = rootGetters.ourIdentityContractId
-
-    const message = await sbp('gi.actions/chatroom/create', {
-      data: {
-        attributes: {
-          name: '',
-          description: '',
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-          type: CHATROOM_TYPES.DIRECT_MESSAGE
-        }
-      },
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    }, identityContractID)
-
-    // Share the keys to the newly created chatroom with ourselves
-    await sbp('gi.actions/out/shareVolatileKeys', {
-      contractID: identityContractID,
-      contractName: 'gi.contracts/identity',
-      subjectContractID: message.contractID(),
-      keyIds: '*'
-    })
-
-    await sbp('gi.actions/chatroom/join', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-      contractID: message.contractID(),
-      data: { memberID: [identityContractID, ...partnerIDs] }
-    })
-
-    const switchChannelAfterJoined = (contractID: string) => {
-      if (contractID === message.contractID()) {
-        const getters = sbp('state/vuex/getters')
-        if (getters.isJoinedChatRoom(contractID, identityContractID)) {
-          sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: message.contractID() })
-          sbp('okTurtles.events/off', EVENT_HANDLED, switchChannelAfterJoined)
-        }
-      }
+    // Cloning the original partnerIDs to prevent mutation
+    const concurrencyKey = `createDirectMessage-${identityContractID}-${[...partnerIDs].sort().join('/')}`
+    if (sbp('okTurtles.data/get', concurrencyKey)) {
+      throw new GIErrorUIRuntimeError(L('Operation already in progress'))
     }
-    sbp('okTurtles.events/on', EVENT_HANDLED, switchChannelAfterJoined)
+    try {
+      sbp('okTurtles.data/set', concurrencyKey, true)
+      await sbp('chelonia/contract/wait', partnerIDs)
+      const signingKeyIdsMap = Object.create(null)
+      for (let index = 0; index < partnerIDs.length; index++) {
+        const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
 
-    await sendMessage({
-      ...omit(params, ['options', 'data', 'action', 'hooks']),
-      data: {
-        contractID: message.contractID()
-      },
-      hooks: {
-        onprocessed: params.hooks?.onprocessed
+        if (!signingKeyId) {
+          console.error(`[createDirectMessage] No suitable signing key for partner ${partnerIDs[index]}`)
+          throw new Error(L('Unable to establish messaging with one or more participants.'))
+        }
+
+        signingKeyIdsMap[partnerIDs[index]] = signingKeyId
       }
-    })
 
-    await sbp('chelonia/contract/wait', partnerIDs)
-    for (let index = 0; index < partnerIDs.length; index++) {
-      const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
-
-      // Share the keys to the newly created chatroom with partners
-      // TODO: We need to handle multiple groups and the possibility of not
-      // having any groups in common
-      await sbp('gi.actions/out/shareVolatileKeys', {
-        contractID: partnerIDs[index],
-        contractName: 'gi.contracts/identity',
-        subjectContractID: message.contractID(),
-        keyIds: '*'
-      })
-
-      const signingKeyId = await sbp('chelonia/contract/suitableSigningKey', partnerIDs[index], [SPMessage.OP_ACTION_ENCRYPTED], ['sig'], undefined, ['gi.contracts/identity/joinDirectMessage'])
-      await sbp('gi.actions/identity/joinDirectMessage', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: partnerIDs[index],
+      const message = await sbp('gi.actions/chatroom/create', {
         data: {
-          // TODO: We need to handle multiple groups and the possibility of not
-          // having any groups in common
-          contractID: message.contractID()
+          attributes: {
+            name: '',
+            description: '',
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            type: CHATROOM_TYPES.DIRECT_MESSAGE
+          }
         },
-        // For now, we assume that we're messaging someone which whom we
-        // share a group
-        signingKeyId,
-        innerSigningContractID: null,
-        innerSigningKeyId: null,
-        hooks
-      })
-    }
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      }, identityContractID)
+      const chatroomID = message.contractID()
 
-    return message.contractID()
+      const receivedChatroomJoin = promiseWithResolvers()
+      const receivedCreateDirectMessage = promiseWithResolvers()
+      receivedChatroomJoin.promise.catch(() => { /* no unhandled promise rejection */ })
+      receivedCreateDirectMessage.promise.catch(() => { /* no unhandled promise rejection */ })
+
+      await sbp('chelonia/contract/retain', chatroomID, { ephemeral: true })
+      try {
+        // Share the keys to the newly created chatroom with ourselves
+        await sbp('gi.actions/out/shareVolatileKeys', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          subjectContractID: chatroomID,
+          keyIds: '*'
+        })
+
+        await sbp('gi.actions/chatroom/join', {
+          contractID: chatroomID,
+          data: { memberID: [identityContractID, ...partnerIDs] },
+          hooks: {
+            onprocessed: () => {
+              receivedChatroomJoin.resolve()
+            }
+          }
+        }).catch(e => {
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+          throw e
+        })
+
+        await sendMessage({
+          ...omit(params, ['options', 'data', 'action', 'hooks']),
+          data: {
+            contractID: chatroomID
+          },
+          hooks: {
+            onprocessed: () => {
+              receivedCreateDirectMessage.resolve()
+
+              return params.hooks?.onprocessed?.()
+            }
+          }
+        }).catch(e => {
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+          throw e
+        })
+
+        // Prevent the promises from hanging forever
+        // Note: This promise is only used for the purpose of sending the
+        // JOINED_CHATROOM event, which switches the user to the newly created DM
+        // The timeout is deliberately low (5s) because if the operation takes
+        // longer than this, it could be confusing to the user to find themselves
+        // in a different chatroom than they were in originally.
+        const timeoutId = setTimeout(() => {
+          const e = new Error('Timeout exceeded')
+          receivedChatroomJoin.reject(e)
+          receivedCreateDirectMessage.reject(e)
+        }, 5000)
+        Promise.allSettled([
+          receivedChatroomJoin.promise,
+          receivedCreateDirectMessage.promise
+        ]).then(() => {
+          clearTimeout(timeoutId)
+        })
+
+        try {
+          for (let index = 0; index < partnerIDs.length; index++) {
+            const hooks = index < partnerIDs.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
+
+            // Share the keys to the newly created chatroom with partners
+            // Note: If we have multiple groups in common, the key used to send
+            // `OP_KEY_SHARE` may not correspond with the current group where the
+            // DM was initiated in the UI, but that's OK.
+            // TODO: If we don't have any groups in common, this operation will
+            // fail. We don't currently support this in the UI, but we need to
+            // handle this when we start supporting messaging people with whom we
+            // don't share a group.
+            await sbp('gi.actions/out/shareVolatileKeys', {
+              contractID: partnerIDs[index],
+              contractName: 'gi.contracts/identity',
+              subjectContractID: chatroomID,
+              keyIds: '*'
+            })
+
+            await sbp('gi.actions/identity/joinDirectMessage', {
+              contractID: partnerIDs[index],
+              data: {
+              // TODO: We need to handle multiple groups and the possibility of not
+              // having any groups in common
+                contractID: chatroomID
+              },
+              // For now, we assume that we're messaging someone which whom we
+              // share a group
+              signingKeyId: signingKeyIdsMap[partnerIDs[index]],
+              innerSigningContractID: null,
+              innerSigningKeyId: null,
+              hooks
+            })
+          }
+        } catch (e) {
+          clearTimeout(timeoutId)
+          throw e
+        }
+
+        await Promise.all([
+        // Prevent the newly created chatroom from being removed by waiting for
+        // the reference count in identityContractID to be updated.
+          sbp('chelonia/contract/wait', [chatroomID, identityContractID]),
+          // We want to have both the /join to the chatroom
+          // and the /createDirectMessae to the identity contract
+          receivedChatroomJoin.promise,
+          receivedCreateDirectMessage.promise
+        ]).then(() => {
+          const getters = sbp('state/vuex/getters')
+          if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
+          // Small delay to account for state propagation delays between the browser
+          // and the SW (see app/chatroom.js)
+            sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID })
+          }
+        }).catch((e) => {
+          console.error('[createDirectMessage] Error waiting for actions', e)
+        })
+      } catch (e) {
+        await sbp('chelonia/out/deleteContract', chatroomID, {
+          [chatroomID]: { billableContractID: identityContractID }
+        }).catch((e2) => {
+          console.error('[gi.actions/identity/createDirectMessage] Error attempting to delete chatroom after error', chatroomID, e, e2)
+        })
+
+        throw e
+      } finally {
+        try {
+          await sbp('chelonia/contract/release', chatroomID, { ephemeral: true })
+        } catch (e) {
+        // May have been deleted
+          console.error('[gi.actions/identity/createDirectMessage] Error releasing chatroom', e)
+        }
+      }
+
+      return chatroomID
+    } finally {
+      sbp('okTurtles.data/delete', concurrencyKey)
+    }
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
   ...encryptedAction('gi.actions/identity/joinGroup', L('Failed to join a group.')),
@@ -1112,6 +1267,119 @@ export default (sbp('sbp/selectors/register', {
       ]
     })
   },
+  // Migration action to have the group creator use regular invites instead
+  // of the CSK
+  'gi.actions/identity/upgradeCreatorGroupInvite': async (groupIDs) => {
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
+    const identityCSKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk')
+    const identityCEKid = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+
+    await Promise.all(groupIDs.map(async (groupID) => {
+      const cheloniaState = sbp('chelonia/rootState')
+
+      // Before proceeding, double check that this migration is needed
+      if (
+        // If we're not a group member
+        !cheloniaState[identityContractID].groups[groupID] ||
+        cheloniaState[identityContractID].groups[groupID].hasLeft ||
+        // Or the key used for requesting keys wasn't the CSK
+        cheloniaState[groupID]?._vm?.authorizedKeys[
+          cheloniaState[identityContractID].groups[groupID].inviteSecretId
+        ]?.name !== 'csk'
+      ) {
+        // Then, return
+        console.info(`[gi.actions/identity/upgradeCreatorGroupInvite] ${groupID} does not need an update`)
+        return
+      }
+
+      try {
+        const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'csk', true)
+        if (!groupCSKid) {
+          console.error(`[gi.actions/identity/upgradeCreatorGroupInvite] Missing CSK for group ${groupID}`)
+          return
+        }
+        const groupCEKid = sbp('chelonia/contract/currentKeyIdByName', groupID, 'cek')
+        const creatorInviteKey = keygen(EDWARDS25519SHA512BATCH)
+        const creatorInviteKeyId = keyId(creatorInviteKey)
+        const creatorInviteKeyP = serializeKey(creatorInviteKey, false)
+        const creatorInviteKeyS = encryptedOutgoingData(groupID, groupCEKid, serializeKey(creatorInviteKey, true))
+
+        // The OP_KEY_ADD below also ensures that the key is added to
+        // the _persistent_ secret key store, once it's received back and
+        // processed. Calling storeSecretKey here could result in a situation
+        // where OP_KEY_ADD is somehow unreadable or unprocessable but we proceed
+        // with the migration anyhow as we 'have' the secret key. Then, we wouldn't
+        // be able to recover the `creatorInviteKey` on a different device.
+        // Hence, it's safer to let Chelonia manage storage automatically and let
+        // 'chelonia/out/keyRequest' fail due to missing signing key in this
+        // situation.
+
+        // Create invite for creator
+        await sbp('chelonia/out/keyAdd', {
+          contractID: groupID,
+          contractName: 'gi.contracts/group',
+          data: [{
+            id: creatorInviteKeyId,
+            name: '#inviteKey-' + creatorInviteKeyId,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
+            permissions: [SPMessage.OP_KEY_REQUEST],
+            meta: {
+              quantity: 1,
+              private: {
+                content: creatorInviteKeyS
+              }
+            },
+            data: creatorInviteKeyP
+          }],
+          signingKeyId: groupCSKid
+        })
+        // And then, immediately make a key request
+        await sbp('chelonia/out/keyRequest', {
+          innerEncryptionKeyId: groupCEKid,
+          reference: cheloniaState[identityContractID].groups[groupID].hash,
+          encryptKeyRequestMetadata: true,
+          originatingContractName: 'gi.contracts/identity',
+          contractID: groupID,
+          originatingContractID: identityContractID,
+          contractName: 'gi.contracts/group',
+          innerSigningKeyId: identityCSKid,
+          encryptionKeyId: identityCEKid,
+          signingKeyId: creatorInviteKeyId
+        })
+
+        // Atomically join and leave group. This ensures that
+        // cheloniaState[identityContractID].groups[groupID] gets properly set
+        await sbp('chelonia/out/atomic', {
+          contractID: identityContractID,
+          contractName: 'gi.contracts/identity',
+          data: [
+            await sbp('gi.actions/identity/leaveGroup', {
+              contractID: identityContractID,
+              data: {
+                groupContractID: groupID,
+                reference: cheloniaState[identityContractID].groups[groupID].hash
+              },
+              returnInvocation: true
+            }),
+            await sbp('gi.actions/identity/joinGroup', {
+              contractID: identityContractID,
+              data: {
+                groupContractID: groupID,
+                inviteSecret: serializeKey(creatorInviteKey, true),
+                creatorID: true
+              },
+              returnInvocation: true
+            })
+          ],
+          signingKeyId: identityCSKid
+        })
+      } catch (e) {
+        console.error(`[gi.actions/identity/upgradeCreatorGroupInvite] Error at group ${groupID}`, e)
+      }
+    }))
+  },
   'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
@@ -1123,6 +1391,53 @@ export default (sbp('sbp/selectors/register', {
       // with things happening on the server.
       await sbp('gi.actions/identity/logout')
     }
+  },
+  // Called from migrations to share the DMK with the PEK if it hasn't been
+  // already done (see corresponding code for the PEK rotation handler).
+  // This helps others be able to initiate DMs with us in case we've rotated our
+  // PEK.
+  'gi.actions/identity/shareDMKwithPEK': async (contractID: string) => {
+    const rootState = sbp('chelonia/rootState')
+    if (rootState.loggedIn?.identityContractID !== contractID) {
+      // If the user doesn't match the current user, return
+      return
+    }
+
+    // Find all the necessary keys: CSK for signing, DMK for sharing and PEK for encryption
+    const CSKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk', true)
+    if (!CSKid) {
+      throw new Error('[shareDMKwithPEK] No CSK found')
+    }
+    const DMKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'dmk', true)
+    if (!DMKid) {
+      throw new Error('[shareDMKwithPEK] No DMK found')
+    }
+    const PEKid = sbp('chelonia/contract/currentKeyIdByName', contractID, 'pek')
+    if (!PEKid) {
+      throw new Error('[shareDMKwithPEK] No PEK found')
+    }
+    const DMK = rootState.secretKeys[DMKid]
+    if (!DMK) {
+      throw new Error('[shareDMKwithPEK] DMK secret key not available')
+    }
+
+    return await sbp('chelonia/out/keyShare', {
+      contractID: contractID,
+      contractName: 'gi.contracts/identity',
+      data: encryptedOutgoingData(contractID, PEKid, {
+        contractID,
+        // $FlowFixMe
+        keys: [{
+          id: DMKid,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(contractID, PEKid, DMK)
+            }
+          }
+        }]
+      }),
+      signingKeyId: CSKid
+    })
   },
   ...encryptedAction('gi.actions/identity/deleteDirectMessage', L('Failed to delete direct message.')),
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),

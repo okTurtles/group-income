@@ -1,24 +1,46 @@
 <template lang='pug'>
   .settings-container
-    section.card
-      i18n.is-title-3.c-title(tag='h2') Browser notifications
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Allow browser notifications
-          i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
-          p
-            i18n.c-description(v-if='!pushNotificationSupported' tag='strong') Your browser doesn't support push notifications
-            i18n.has-text-danger(v-else-if='pushNotificationGranted === false' tag='strong') Push notifications are disabled because your browser settings have disabled them.
-        .switch-wrapper
-          input.switch(
-            type='checkbox'
-            name='switch'
-            v-model='checkboxValue'
-            @click='handleNotificationSettings'
-          )
-        //- TODO: disable the checkbox and display an info field when we're offline
+    .menu-tile-block
+      legend.tab-legend
+        i.icon-bell.legend-icon
+        i18n.legend-text Browser notifications
 
-      notification-volume
+      menu
+        MenuItem(
+          tabId='browser-notifications'
+          :isExpandable='true'
+        )
+          template(#info='')
+            label
+              i18n.sr-only Allow browser notifications
+              input.switch.is-small.c-switch(
+                type='checkbox'
+                name='switch'
+                :disabled='notificationsToggleDisabled'
+                v-model='ephemeral.browserNotificationsEnabled'
+                @click.stop='handleNotificationSettings'
+              )
+
+          template(#lower='')
+            .lower-section-container
+              i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
+              p.c-mt-1(v-if='pushNotificationInfoMsg')
+                strong(:class='{ "has-text-danger": pushNotificationGranted === false }') {{ pushNotificationInfoMsg }}
+            //- TODO: disable the checkbox and display an info field when we're offline
+
+        MenuItem(
+          tabId='browser-notification-volume'
+          :isExpandable='true'
+          :variant='ephemeral.browserNotificationsEnabled ? "default" : "disabled"'
+        )
+          template(#info='')
+            p.c-current-volume {{ currVolumeDisplay }}
+
+          template(#lower='')
+            .lower-section-container
+              notification-volume(@volume-change='handleVolumeChange')
+
+    chat-default-notification-settings
 </template>
 
 <script>
@@ -29,21 +51,47 @@ import {
   makeNotification
 } from '@model/notifications/nativeNotification.js'
 import NotificationVolume from './NotificationVolume.vue'
+import ChatDefaultNotificationSettings from './ChatDefaultNotificationSettings.vue'
+import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 
 export default ({
   name: 'NotificationSettings',
   components: {
-    NotificationVolume
+    NotificationVolume,
+    MenuItem: UserSettingsTabMenuItem,
+    ChatDefaultNotificationSettings
   },
   data () {
     return {
       pushNotificationSupported: false,
       pushNotificationGranted: null,
       cancelListener: () => {},
-      checkboxValue: false
+      ephemeral: {
+        browserNotificationsEnabled: false,
+        currentVolume: 1
+      }
+    }
+  },
+  computed: {
+    notificationEnabled () {
+      return this.$store.state.settings.notificationEnabled
+    },
+    notificationsToggleDisabled () {
+      return !this.pushNotificationSupported || (!this.pushNotificationGranted && this.notificationEnabled)
+    },
+    pushNotificationInfoMsg () {
+      return !this.pushNotificationSupported
+        ? L("Your browser doesn't support push notifications.")
+        : this.pushNotificationGranted === false
+          ? L('Push notifications are disabled because your browser settings have disabled them.')
+          : null
+    },
+    currVolumeDisplay () {
+      return `${Math.round(this.ephemeral.currentVolume)}%`
     }
   },
   beforeMount () {
+    this.ephemeral.currentVolume = (this.$store.getters.notificationVolume ?? 1) * 100
     if (typeof Notification !== 'function' || typeof PushManager !== 'function' || !navigator.serviceWorker) {
       this.pushNotificationGranted = false
       return
@@ -59,7 +107,7 @@ export default ({
       // since the fallback calls this handler repeatedly and often, have this check here
       if (newPermission !== this.pushNotificationGranted) {
         this.pushNotificationGranted = newPermission
-        this.checkboxValue = this.notificationEnabled === true && newPermission
+        this.ephemeral.browserNotificationsEnabled = this.notificationEnabled === true && newPermission
         console.info('[NotifSettings] handler called with:', permissionState, 'and this.notificationsEnabled=', this.notificationEnabled)
       }
     }
@@ -96,21 +144,14 @@ export default ({
   destroyed () {
     this.cancelListener()
   },
-  computed: {
-    notificationEnabled () {
-      return this.$store.state.settings.notificationEnabled
-    },
-    notificationsToggleDisabled () {
-      return !this.pushNotificationSupported || (!this.pushNotificationGranted && this.notificationEnabled)
-    }
-  },
   methods: {
     ...mapMutations(['setNotificationEnabled']),
-    async handleNotificationSettings (e) {
+    async handleNotificationSettings () {
       if (typeof Notification !== 'function') return
       let permission = Notification.permission
+
       const disableCheckbox = () => {
-        this.$nextTick(() => { this.checkboxValue = false })
+        this.$nextTick(() => { this.ephemeral.browserNotificationsEnabled = false })
       }
       if (permission === 'default') {
         permission = await requestNotificationPermission()
@@ -138,6 +179,9 @@ export default ({
       if (granted) {
         makeNotification({ title: L('Congratulations'), body: L('You have granted browser notification!') })
       }
+    },
+    handleVolumeChange (volume) {
+      this.ephemeral.currentVolume = volume
     }
   }
 }: Object)
@@ -148,27 +192,6 @@ export default ({
 
 .settings-container {
   width: 100%;
-
-  .c-title {
-    margin-bottom: 2rem;
-  }
-}
-
-.c-subcontent {
-  border: none;
-  display: flex;
-  justify-content: space-between;
-  column-gap: 1rem;
-  margin-bottom: 2.5rem;
-
-  &:last-child {
-    margin-bottom: 1.5rem;
-  }
-}
-
-.c-smaller-title {
-  font-size: $size_4;
-  font-weight: bold;
 }
 
 .c-description {
@@ -177,11 +200,7 @@ export default ({
   color: $text_1;
 }
 
-.c-name {
-  color: $text_1;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  margin-top: -1rem;
-  margin-bottom: 1.5rem;
+.c-mt-1 {
+  margin-top: 1rem;
 }
 </style>

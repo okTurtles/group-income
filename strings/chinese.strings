@@ -7,13 +7,7 @@
 "{button_}{who}{_button}" = "{button_}{who}{_button}";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
-"Paypal" = "Paypal";
-
-/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Venmo" = "Venmo";
-
-/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue, views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
-"Lightning" = "Lightning";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
@@ -29,6 +23,9 @@
 
 /* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\"。您可以 {a_}报告错误{_a}。";
+
+/* controller/actions/chatroom.js */
+"Failed to accept chat channel." = "接受聊天频道失败。";
 
 /* controller/actions/chatroom.js */
 "Failed to add message." = "添加消息失败。";
@@ -204,6 +201,12 @@
 /* controller/actions/identity.js */
 "Join group error during login: {msg}" = "登入期間加入群組錯誤：{msg}";
 
+/* controller/actions/identity.js */
+"Operation already in progress" = "操作正在进行中";
+
+/* controller/actions/identity.js */
+"Unable to establish messaging with one or more participants." = "无法与一个或多个参与者建立消息通信。";
+
 /* controller/actions/identity.js, controller/app/identity.js */
 "Failed to create user identity: {reportError}" = "創建使用者身份失敗：{reportError}";
 
@@ -229,6 +232,9 @@
 "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?" = "超過 150 名成員的群組有重大詐欺風險，{a_}因為難以驗證每個人的身份。{_a} 您確定要添加更多成員嗎？";
 
 /* controller/app/group.js */
+"Large group size" = "大群组规模";
+
+/* controller/app/group.js */
 "Mincome changed" = "最低收入已變更";
 
 /* controller/app/group.js */
@@ -240,23 +246,20 @@
 /* controller/app/group.js */
 "You now make more than the mincome. Would you like to increase your pledge?" = "您現在的收入超過最低收入。您想增加您的承諾嗎？";
 
-/* controller/app/group.js, controller/service-worker.js, main.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
+/* controller/app/group.js, controller/service-worker.js, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/DMMixin.js, views/containers/chatroom/ViewArea.vue, views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/payments/RecordPayment.vue, views/pages/Contributions.vue, views/pages/Join.vue */
 "Close" = "關閉";
 
 /* controller/app/group.js, views/components/modal/Prompt.vue */
 "No" = "否";
 
-/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue */
+/* controller/app/group.js, views/components/modal/Prompt.vue, views/containers/chatroom/ChatMain.vue, views/containers/group-settings/InvitationsTable.vue */
 "Yes" = "是";
 
-/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
+/* controller/app/group.js, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/InvitationsTable.vue, views/containers/payments/ExportPaymentsModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Cancel" = "取消";
 
 /* controller/app/group.js, views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue, views/containers/group-settings/InvitationLinkModal.vue */
 "OK" = "確定";
-
-/* controller/app/identity.js */
-"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "登入時發生錯誤。請再試一次登入。{br_}錯誤詳細資訊：{err}。";
 
 /* controller/app/identity.js */
 "Failed to signup: {reportError}" = "註冊失敗：{reportError}";
@@ -271,13 +274,13 @@
 "Log out" = "登出";
 
 /* controller/app/identity.js */
-"Login error" = "登入錯誤";
-
-/* controller/app/identity.js */
 "The server's history for your identity contract has diverged from ours. This can happen in extremely rare circumstances due to either malicious activity or a bug. {br_}To fix this, the contract needs to be resynced, and some recent events may be missing. {br_}Would you like to log out and resync data on your next login? {br_}Error details: {err}." = "伺服器上您的身份合約歷史與我們的歷史不同步。這可能由於惡意活動或錯誤在極罕見情況下發生。{br_}要修復此問題，需要重新同步合約，某些最近事件可能遺失。{br_}您想登出並在下次登入時重新同步資料嗎？{br_}錯誤詳細資訊：{err}。";
 
 /* controller/app/identity.js */
 "Your account seems to have been deleted from the server. {br_}To fix this, you need to log out and create a new account. {br_}Error details: {err}." = "您的帳戶似乎已從伺服器刪除。{br_}要修復此問題，您需要登出並創建新帳戶。{br_}錯誤詳細資訊：{err}。";
+
+/* controller/app/identity.js, views/containers/access/LoginErrorModal.vue */
+"Login error" = "登入錯誤";
 
 /* controller/router.js */
 "Design System" = "設計系統";
@@ -315,6 +318,9 @@
 /* controller/router.js, views/pages/Home.vue */
 "Join a Group" = "加入群組";
 
+/* controller/router.js, views/pages/UserSettings.vue */
+"User Settings" = "用户设置";
+
 /* controller/service-worker.js */
 "Error setting up push notifications" = "設定推送通知錯誤";
 
@@ -335,9 +341,6 @@
 
 /* main.js */
 "Error while setting up service worker: {err}" = "設定服務工作者時錯誤：{err}";
-
-/* main.js */
-"Failed to login" = "登入失敗";
 
 /* main.js */
 "Loading events from server..." = "從伺服器載入事件...";
@@ -365,9 +368,6 @@
 
 /* main.js */
 "Your device appears to be offline." = "您的裝置似乎離線。";
-
-/* main.js, views/containers/chatroom/ChatMain.vue */
-"Error details: {reportError}" = "錯誤詳細資訊：{reportError}";
 
 /* model/contracts/chatroom.js */
 "Only the channel creator can change description." = "只有频道創建者可以更改描述。";
@@ -403,12 +403,6 @@
 "Cannot remove the last member." = "無法移除最後一名成員。";
 
 /* model/contracts/group.js */
-"Chatroom name cannot contain white-space" = "聊天室名稱不得包含空白";
-
-/* model/contracts/group.js */
-"Chatroom name must be lower-case only" = "聊天室名稱必須全小寫";
-
-/* model/contracts/group.js */
 "Not part of the group." = "不是群組成員。";
 
 /* model/contracts/group.js */
@@ -430,10 +424,22 @@
 "Already joined direct message." = "已加入直接訊息。";
 
 /* model/contracts/identity.js */
+"Never joined or already left direct message." = "从未加入或已退出私信。";
+
+/* model/contracts/identity.js */
 "Not existing direct message." = "不存在的直接訊息。";
 
 /* model/contracts/identity.js */
 "Unable to confirm that the username {username} belongs to this identity contract" = "無法確認使用者名稱 {username} 屬於此身份合約";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain capital letters" = "聊天室名称不能包含大写字母";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain punctuation or special characters except hyphens" = "聊天室名称不能包含标点或特殊字符（连字符除外）";
+
+/* model/contracts/shared/functions.js */
+"Chatroom name cannot contain white-space" = "聊天室名稱不得包含空白";
 
 /* model/contracts/shared/functions.js */
 "voting rules" = "投票規則";
@@ -888,14 +894,17 @@
 /* views/components/modal/ModalMixins.js */
 "Modal Title Missing" = "模態框標題遺失";
 
-/* views/components/tabs/TabWrapper.vue */
-"Acknowledgements" = "致謝";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again. {br_}Error details: {err}." = "登入時發生錯誤。請再試一次登入。{br_}錯誤詳細資訊：{err}。";
 
-/* views/components/tabs/TabWrapper.vue */
-"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "應用程式版本：{appVersion}{br_}合約版本：{contractsVersion}{br_}SW 版本：{swVer}";
+/* views/containers/access/LoginErrorModal.vue */
+"An error occurred while logging in. Please try logging in again." = "登录时发生错误。请尝试重新登录。";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
-"Settings" = "設定";
+/* views/containers/access/LoginErrorModal.vue */
+"If refreshing doesn't work, try {btn_}logging out{_btn}." = "如果刷新不起作用，请尝试{btn_}登出{_btn}。";
+
+/* views/containers/access/LoginErrorModal.vue */
+"Refresh" = "刷新";
 
 /* views/containers/access/LoginForm.vue */
 "Forgot your password?" = "忘記密碼？";
@@ -906,11 +915,11 @@
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/contributions/PaymentMethods.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Username" = "使用者名稱";
 
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"The form is invalid." = "表單無效。";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
 "Password" = "密碼";
-
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/pages/GroupSettings.vue */
-"The form is invalid." = "表單無效。";
 
 /* views/containers/access/LoginForm.vue, views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Coming soon" = "即將推出";
@@ -1024,6 +1033,9 @@
 "Delete file" = "刪除檔案";
 
 /* views/containers/chatroom/ChatMain.vue */
+"Error details: {reportError}" = "錯誤詳細資訊：{reportError}";
+
+/* views/containers/chatroom/ChatMain.vue */
 "Error while deleting a message" = "刪除訊息時錯誤";
 
 /* views/containers/chatroom/ChatMain.vue */
@@ -1119,10 +1131,10 @@
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "聲音：";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/proposals/Mincome.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "This field is required" = "此欄位為必填";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "通知";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
@@ -1184,6 +1196,9 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/user-settings/UserProfile.vue */
 "Reached character limit." = "已達到字元限制。";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+"Channel name can't contain whitespace, special characters, capital letters or punctuation." = "频道名称不能包含空格、特殊字符、大写字母或标点符号。";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "名稱";
@@ -1518,7 +1533,7 @@
 /* views/containers/chatroom/SendArea.vue */
 "{strong_}{user}{_strong} is typing" = "{strong_}{user}{_strong} 正在输入";
 
-/* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/SendArea.vue, views/containers/group-settings/UpdateGroupProfile.vue */
 "Save changes" = "保存更改";
 
 /* views/containers/chatroom/TouchLinkHelper.vue */
@@ -1533,6 +1548,9 @@
 /* views/containers/chatroom/TouchLinkHelper.vue, views/containers/user-settings/AppLogs.vue */
 "Share" = "分享";
 
+/* views/containers/chatroom/UploadAnimationFeedback.vue */
+"Uploading attachments..." = "正在上传附件...";
+
 /* views/containers/chatroom/ViewArea.vue */
 "Couldn't join the chatroom An error occurred: {error}" = "无法加入聊天室 发生错误：{error}";
 
@@ -1545,6 +1563,12 @@
 /* views/containers/chatroom/ViewArea.vue */
 "You are viewing {b_} # {title}{_b}" = "你正在查看 {b_} # {title}{_b}";
 
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Failed to load audio. Please retry." = "加载音频失败。请重试。";
+
+/* views/containers/chatroom/audio-player/AudioPlayerCard.vue */
+"Play" = "播放";
+
 /* views/containers/chatroom/chat-mentions/RenderMessageText.vue */
 "private channel" = "私人频道";
 
@@ -1556,6 +1580,12 @@
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Download ({size})" = "下载 ({size})";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading file" = "正在下载文件";
+
+/* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
+"Downloading..." = "下载中...";
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue */
 "Expand" = "展开";
@@ -1571,6 +1601,12 @@
 
 /* views/containers/chatroom/file-attachment/AttachmentDownloadItem.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue, views/containers/notifications/NotificationList.vue */
 "Loading..." = "加载中...";
+
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Download error" = "下载错误";
+
+/* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue */
+"Failed to download the file. Error details: {reportError}" = "下载文件失败。错误详情：{reportError}";
 
 /* views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue, views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue */
 "Remove attachment" = "移除附件";
@@ -1906,10 +1942,16 @@
 "Payment value" = "支付价值";
 
 /* views/containers/contributions/PaymentMethods.vue */
+"Paypal" = "PayPal";
+
+/* views/containers/contributions/PaymentMethods.vue */
 "Remove method" = "移除方法";
 
 /* views/containers/contributions/PaymentMethods.vue, views/containers/payments/ExportPaymentsModal.vue, views/pages/Payments.vue */
 "Payment method" = "支付方法";
+
+/* views/containers/contributions/PaymentMethods.vue, views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
+"Lightning" = "闪电网络";
 
 /* views/containers/contributions/SupportHistory.vue */
 "Distributed: {done}" = "已分发：{done}";
@@ -2052,11 +2094,11 @@
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "最低收入";
 
+/* views/containers/dashboard/GroupPurpose.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"About the group" = "关于组";
+
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupChat.vue */
 "Add description" = "添加描述";
-
-/* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
-"About the group" = "关于组";
 
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Invite members to your group" = "邀请成员加入你的组";
@@ -2100,6 +2142,15 @@
 /* views/containers/global-dashboard/NewsAndUpdates.vue */
 "Failed to load news: {reportError}" = "加载新闻失败：{reportError}";
 
+/* views/containers/group-settings/DeleteGroup.vue */
+"This will delete all the data associated with this group permanently." = "这将永久删除与该群组关联的所有数据。";
+
+/* views/containers/group-settings/DeleteGroup.vue */
+"You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}." = "只有当所有其他成员离开后，你才能删除群组。{groupName} 仍有 {b_}{count} 名其他成员{_b}。";
+
+/* views/containers/group-settings/DeleteGroup.vue, views/containers/group-settings/GroupDeletionModal.vue */
+"Delete group" = "删除组";
+
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Group name is required" = "需要组名称";
 
@@ -2115,6 +2166,9 @@
 /* views/containers/group-settings/GroupCreationModal.vue */
 "Step {current} of {max}" = "第 {current} 步，共 {max} 步";
 
+/* views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/UpdateGroupProfile.vue */
+"Group name cannot exceed {maxchar} characters" = "组名称不能超过 {maxchar} 个字符";
+
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Back" = "返回";
 
@@ -2127,9 +2181,6 @@
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Next" = "下一步";
 
-/* views/containers/group-settings/GroupCreationModal.vue, views/pages/GroupSettings.vue */
-"Group name cannot exceed {maxchar} characters" = "组名称不能超过 {maxchar} 个字符";
-
 /* views/containers/group-settings/GroupCreationModal.vue, views/pages/Home.vue */
 "Create Group" = "创建组";
 
@@ -2141,9 +2192,6 @@
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Delete Group" = "删除组";
-
-/* views/containers/group-settings/GroupDeletionModal.vue */
-"Delete group" = "删除组";
 
 /* views/containers/group-settings/GroupDeletionModal.vue */
 "Leaving the group when you're the the admin will delete it and all its associated data." = "当你是管理员时离开组将删除它及其所有相关数据。";
@@ -2184,14 +2232,14 @@
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "离开 {GROUP_NAME}";
 
+/* views/containers/group-settings/GroupLeaveModal.vue, views/containers/group-settings/GroupSettingsMain.vue */
+"Leave group" = "离开组";
+
 /* views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/AccountRemovalModal.vue */
 "Your username is different" = "你的用户名不同";
 
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "Leave Group" = "离开组";
-
-/* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
-"Leave group" = "离开组";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "*This value was automatically adjusted because there should always be at least 2 \"yes\" votes." = "*此值已自动调整，因为应该至少有 2 票“是”。";
@@ -2238,6 +2286,33 @@
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}" = "{b_}{percent}{_b} {sm_}({count}* / {total} 名成员){_sm}";
 
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Access & Rules" = "访问与规则";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Allow members to create public channels" = "允许成员创建公共频道";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Failed to change the setting: {reportError}" = "更改设置失败：{reportError}";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"General" = "常规";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "允许用户创建公共频道。公共频道中的数据旨在完全公开，应以与正常社交媒体相同的谨慎和隐私期望对待：也就是说，您应对发布到公共频道的内容的隐私抱零期望。";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "这意味着您将停止访问 {b_}小组聊天{_b}（包括与其他小组成员的直接消息）和 {b_}贡献{_b}。重新加入小组是可能的，但需要其他成员投票并达成一致。";
+
+/* views/containers/group-settings/GroupSettingsMain.vue */
+"{threshold} disagreements" = "{threshold} 次异议";
+
+/* views/containers/group-settings/GroupSettingsMain.vue, views/containers/user-settings/UserSettingsMain.vue */
+"Danger Zone" = "危险区域";
+
+/* views/containers/group-settings/GroupSettingsTabContainer.vue, views/containers/user-settings/UserSettingsTabContainer.vue */
+"Back to menu" = "返回菜单";
+
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "入职期结束后，每个人将被要求投票决定是否添加新成员。但现在，享受 {count} 次免费通行！";
 
@@ -2272,7 +2347,7 @@
 "Anyone" = "任何人";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Are you sure you want to revoke this link? This action cannot be undone." = "你确定要撤销此链接吗？此操作无法撤销。";
+"Are you sure you want to revoke this link?{br_}This action cannot be undone." = "你确定要撤销此链接吗？{br_}此操作无法撤销。";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Doesn't expire" = "不过期";
@@ -2294,6 +2369,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoke Link" = "撤销链接";
+
+/* views/containers/group-settings/InvitationsTable.vue */
+"Revoke invite link" = "撤销邀请链接";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "已撤销";
@@ -2342,6 +2420,27 @@
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "已过期";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Default currency" = "默认货币";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Feature coming soon" = "功能即将推出";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"Save currency" = "保存货币";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue */
+"This is the currency that will be displayed for every member of the group, across the platform." = "这是平台上为小组每个成员显示的货币。";
+
+/* views/containers/group-settings/UpdateGroupCurrency.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/user-settings/UserProfile.vue */
+"Your changes were saved!" = "您的更改已保存！";
+
+/* views/containers/group-settings/UpdateGroupProfile.vue */
+"Group description cannot exceed {maxchar} characters" = "小组描述不能超过 {maxchar} 个字符";
+
+/* views/containers/group-settings/UpdateGroupProfile.vue */
+"Group name" = "小组名称";
 
 /* views/containers/group-settings/roles-and-permissions/PermissionActionMenu.vue */
 "Edit permissions" = "编辑权限";
@@ -2457,6 +2556,9 @@
 /* views/containers/navigation/Navigation.vue */
 "Main" = "主要";
 
+/* views/containers/navigation/Profile.vue */
+"User settings" = "用户设置";
+
 /* views/containers/notifications/NotificationCard.vue */
 "Show notifications" = "显示通知";
 
@@ -2471,6 +2573,9 @@
 
 /* views/containers/notifications/NotificationList.vue */
 "OLDER" = "旧";
+
+/* views/containers/notifications/NotificationModal.vue */
+"Settings" = "設定";
 
 /* views/containers/payments/ExportPaymentsModal.vue */
 "Export all periods" = "导出所有周期";
@@ -3012,11 +3117,11 @@
 /* views/containers/user-settings/AccountRemovalModal.vue */
 "This action will also delete the following groups:" = "此操作还将删除以下小组：";
 
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
-"Delete account" = "删除账户";
-
-/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserProfile.vue */
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "删除您的账户将擦除所有数据，并将您从所属小组中移除。";
+
+/* views/containers/user-settings/AccountRemovalModal.vue, views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
+"Delete account" = "删除账户";
 
 /* views/containers/user-settings/Acknowledgements.vue */
 "Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income 由 {a_}okTurtles 基金会{_a} 开发，完全由个人捐款资助。";
@@ -3029,6 +3134,9 @@
 
 /* views/containers/user-settings/Acknowledgements.vue */
 "Support this project" = "支持此项目";
+
+/* views/containers/user-settings/AppLogs.vue */
+"Application Logs" = "应用日志";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Browser" = "浏览器";
@@ -3069,29 +3177,8 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Source:" = "来源：";
 
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
-"Application Logs" = "应用日志";
-
-/* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
+/* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "故障排除";
-
-/* views/containers/user-settings/Appearence.vue */
-"Animations" = "动画";
-
-/* views/containers/user-settings/Appearence.vue */
-"Reduced Motion" = "减少运动";
-
-/* views/containers/user-settings/Appearence.vue */
-"Reduced motion" = "减少运动";
-
-/* views/containers/user-settings/Appearence.vue */
-"Text size" = "文本大小";
-
-/* views/containers/user-settings/Appearence.vue */
-"Theme" = "主题";
-
-/* views/containers/user-settings/Appearence.vue */
-"When enabled the amount of animations you see around are reduced." = "启用时，您周围看到的动画数量将减少。";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow browser notifications" = "允许浏览器通知";
@@ -3123,9 +3210,6 @@
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "音量";
 
-/* views/containers/user-settings/Theme.vue */
-"Use system settings" = "使用系统设置";
-
 /* views/containers/user-settings/Troubleshooting.vue */
 "For diagnostic info, see application logs." = "有关诊断信息，请查看应用日志。";
 
@@ -3154,34 +3238,61 @@
 "Save account changes" = "保存账户更改";
 
 /* views/containers/user-settings/UserProfile.vue */
-"This action cannot be undone." = "此操作无法撤销。";
-
-/* views/containers/user-settings/UserProfile.vue */
 "This is how others will see your name accross the platform." = "这是其他人在平台上看到您的名称的方式。";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Update Password" = "更新密码";
 
-/* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
-"Your changes were saved!" = "您的更改已保存！";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Account" = "账户";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
 "Advanced" = "高级";
 
-/* views/containers/user-settings/settings.js */
+/* views/containers/user-settings/UserSettingsMain.vue */
+"App Version:" = "应用版本：";
+
+/* views/containers/user-settings/UserSettingsMain.vue */
 "App settings" = "应用设置";
 
-/* views/containers/user-settings/settings.js */
-"Appearance" = "外观";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"Contracts Version:" = "合约版本：";
 
-/* views/containers/user-settings/settings.js */
-"Log Out" = "注销";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"SW Version:" = "SW 版本：";
 
-/* views/containers/user-settings/settings.js */
-"My account" = "我的账户";
+/* views/containers/user-settings/UserSettingsMain.vue */
+"This action cannot be undone." = "此操作无法撤销。";
 
-/* views/containers/user-settings/settings.js */
-"User settings" = "用户设置";
+/* views/containers/user-settings/UserSettingsMain.vue, views/pages/UserSettings.vue */
+"Acknowledgements" = "致謝";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast and improves readability." = "增加对比度并提高可读性。";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Increases contrast" = "增加对比度";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"Use high-contrast colors" = "使用高对比度颜色";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue */
+"When enabled the amount of animations you see around are reduced." = "启用时，您周围看到的动画数量将减少。";
+
+/* views/containers/user-settings/appearance/AppearanceSettings.vue, views/pages/UserSettings.vue */
+"Reduced motion" = "减少运动";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Dark" = "深色";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Light" = "浅色";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"System" = "系统";
+
+/* views/containers/user-settings/appearance/ThemeTile.vue */
+"Use system settings" = "使用系统设置";
 
 /* views/pages/Contributions.vue */
 "Add a non-monetary pledge" = "添加非货币承诺";
@@ -3253,6 +3364,9 @@
 "Channel Options" = "频道选项";
 
 /* views/pages/GroupChat.vue */
+"Delete direct message" = "删除私信";
+
+/* views/pages/GroupChat.vue */
 "Leave {channelName}" = "离开 {channelName}";
 
 /* views/pages/GroupChat.vue */
@@ -3277,37 +3391,25 @@
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "下一个分发日期为 {date}。请确保在那之前更新您的 {r1}收入详情{r2}。";
 
 /* views/pages/GroupSettings.vue */
-"Allow members to create public channels" = "允许成员创建公共频道";
-
-/* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "这些设置的更改将对所有小组成员可见";
 
 /* views/pages/GroupSettings.vue */
-"Default currency" = "默认货币";
+"Group Currency" = "群组货币";
 
 /* views/pages/GroupSettings.vue */
-"Feature coming soon" = "功能即将推出";
+"Group Profile" = "群组资料";
 
 /* views/pages/GroupSettings.vue */
-"Group description cannot exceed {maxchar} characters" = "小组描述不能超过 {maxchar} 个字符";
-
-/* views/pages/GroupSettings.vue */
-"Group name" = "小组名称";
-
-/* views/pages/GroupSettings.vue */
-"Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "允许用户创建公共频道。公共频道中的数据旨在完全公开，应以与正常社交媒体相同的谨慎和隐私期望对待：也就是说，您应对发布到公共频道的内容的隐私抱零期望。";
+"Invite Links" = "邀请链接";
 
 /* views/pages/GroupSettings.vue */
 "Public Channels" = "公共频道";
 
 /* views/pages/GroupSettings.vue */
-"This is the currency that will be displayed for every member of the group, across the platform." = "这是平台上为小组每个成员显示的货币。";
+"Roles & Permissions" = "角色与权限";
 
 /* views/pages/GroupSettings.vue */
-"This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "这意味着您将停止访问 {b_}小组聊天{_b}（包括与其他小组成员的直接消息）和 {b_}贡献{_b}。重新加入小组是可能的，但需要其他成员投票并达成一致。";
-
-/* views/pages/GroupSettings.vue */
-"Voting System" = "投票系统";
+"Voting Rules" = "投票规则";
 
 /* views/pages/Home.vue */
 "Create a new group and invite your friends." = "创建一个新小组并邀请您的朋友。";
@@ -3435,12 +3537,81 @@
 /* views/pages/PendingApproval.vue */
 "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "您已使用公共链接加入小组。一旦小组成员批准您的成员请求，您将能够访问小组。";
 
+/* views/pages/UserSettings.vue */
+"Appearance" = "外观";
+
+/* views/pages/UserSettings.vue */
+"Application logs" = "应用日志";
+
+/* views/pages/UserSettings.vue */
+"Increased contrast" = "已增加对比度";
+
+/* views/pages/UserSettings.vue */
+"Logout" = "登出";
+
+/* views/pages/UserSettings.vue */
+"My profile" = "我的资料";
+
+/* views/pages/UserSettings.vue */
+"Text size" = "文本大小";
+
+/* views/pages/UserSettings.vue */
+"Theme" = "主题";
+
 /* views/utils/filters.js */
 "0 Bytes" = "0 字节";
 
 /* views/utils/filters.js */
 "Invalid size" = "无效大小";
 
+/* views/utils/misc.js */
+"ERROR: missing currency" = "错误：缺少货币";
+
+/* views/utils/textSizes.js */
+"Extra large" = "特大";
+
+/* views/utils/textSizes.js */
+"Large" = "大";
+
+/* views/utils/textSizes.js */
+"Medium" = "中";
+
+/* views/utils/textSizes.js */
+"Small" = "小";
+
 /* views/utils/ui.js */
 "Fatal error: {reportError}" = "致命错误：{reportError}";
+
+/* Not currently used */
+"Animations" = "动画";
+
+/* Not currently used */
+"App Version: {appVersion}{br_}Contracts Version: {contractsVersion}{br_}SW Version: {swVer}" = "應用程式版本：{appVersion}{br_}合約版本：{contractsVersion}{br_}SW 版本：{swVer}";
+
+/* Not currently used */
+"Are you sure you want to revoke this link? This action cannot be undone." = "你确定要撤销此链接吗？此操作无法撤销。";
+
+/* Not currently used */
+"Channel name can only contain lowercase letters, numbers, and hyphens(-)." = "频道名称只能包含小写字母、数字和连字符(-)。";
+
+/* Not currently used */
+"Chatroom name can only contain lowercase letters, numbers, and hyphens(-)" = "聊天室名称只能包含小写字母、数字和连字符(-)";
+
+/* Not currently used */
+"Chatroom name must be lower-case only" = "聊天室名稱必須全小寫";
+
+/* Not currently used */
+"Failed to login" = "登入失敗";
+
+/* Not currently used */
+"Log Out" = "注销";
+
+/* Not currently used */
+"My account" = "我的账户";
+
+/* Not currently used */
+"Reduced Motion" = "减少运动";
+
+/* Not currently used */
+"Voting System" = "投票系统";
 

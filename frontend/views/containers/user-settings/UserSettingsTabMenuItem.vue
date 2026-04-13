@@ -1,5 +1,6 @@
 <template lang='pug'>
 settings-menu-tile(
+  ref='tile'
   v-bind='propFallThrough'
   @click='onTileClick'
   @expand='$emit("expand")'
@@ -28,7 +29,7 @@ export default {
     variant: {
       type: String,
       default: 'default',
-      validator: v => ['default', 'outlined', 'danger'].includes(v)
+      validator: v => ['default', 'outlined', 'danger', 'disabled'].includes(v)
     },
     isExpandable: {
       type: Boolean,
@@ -71,6 +72,9 @@ export default {
           path: `/user-settings/${this.menuItem.pathTo}`
         }).catch(logExceptNavigationDuplicated)
       }
+    },
+    toggleExpanded () {
+      this.$refs.tile.toggleExpanded()
     }
   }
 }

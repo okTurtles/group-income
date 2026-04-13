@@ -5,7 +5,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -121,6 +121,7 @@ sbp('chelonia/defineContract', {
       })),
       process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
+        const isSelf = memberID === innerSigningContractID
 
         if (!memberID) {
           throw new Error('The new member must be given either explicitly or implcitly with an inner signature')
@@ -134,8 +135,7 @@ sbp('chelonia/defineContract', {
             throw new GIChatroomAlreadyMemberError(`Can not join the chatroom which ${memberID} is already part of`)
           }
         }
-
-        state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height }
+        state.members[memberID] = { joinedDate: meta.createdDate, joinedHeight: height, acceptedHeight: isSelf ? height : undefined }
 
         // NOTE: this patch solves the issue of the action failing to process.
         //       when the contract was not fully synced because some encryption keys are missing.
@@ -174,10 +174,32 @@ sbp('chelonia/defineContract', {
             await sbp('gi.actions/identity/kv/initChatRoomUnreadMessages', {
               contractID, messageHash: hash, createdHeight: height
             })
+            if (innerSigningContractID !== identityContractID) {
+              sbp('gi.actions/chatroom/accept', { contractID, data: null }).catch((e) => {
+                console.error('[gi.contracts/chatroom/join/sideEffect] Error sending accept action', e)
+              })
+            }
           }
         }).catch((e) => {
           console.error('[gi.contracts/chatroom/join/sideEffect] Error at sideEffect', e?.message || e)
         })
+      }
+    },
+    // This action adds an 'accept' action, which is useful for members that have
+    // been added by someone else to confirm their addition to the group.
+    // This is useful for signalling explicit consent and for troubleshooting
+    // issues with joining the chatroom
+    'gi.contracts/chatroom/accept': {
+      validate: actionRequireInnerSignature(nil),
+      process ({ data, meta, hash, height, contractID, innerSigningContractID }, { state, getters }) {
+        const memberID = innerSigningContractID
+        if (!getters.isJoinedChatRoomForChatRoom(state, memberID)) {
+          throw new GIChatroomNotMemberError(`Can not accept the chatroom ${contractID} which ${memberID} is not part of`)
+        }
+        if (state.members[memberID].acceptedHeight != null) {
+          throw new Error(`Can not accept the chatroom ${contractID} which ${memberID} has already accepted`)
+        }
+        state.members[memberID].acceptedHeight = height
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -250,10 +272,18 @@ sbp('chelonia/defineContract', {
           // 'kicked' notification
           innerSigningContractID: !isKicked ? memberID : innerSigningContractID
         }))
+        // If someone else has left, mark the CEK and CSK as needing rotation
+        // The actual rotation, if it's still needed (i.e., keys still marked
+        // as 'pending' due to not having been rotated), will be done later
+        // as a side effect. This avoids unnecessary rotations.
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn?.identityContractID
+        if (!itsMe && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+          sbp('chelonia/contract/setPendingKeyRevocation', state, ['cek', 'csk'])
+        }
       },
       async sideEffect ({ data, hash, contractID, meta, innerSigningContractID }, { state, getters }) {
         const memberID = data.memberID || innerSigningContractID
-        const itsMe = memberID === sbp('state/vuex/state').loggedIn.identityContractID
+        const itsMe = memberID === sbp('state/vuex/state').loggedIn?.identityContractID
 
         // NOTE: we don't add this 'if' statement in the queuedInvocation
         //       because these should not be running while rejoining
@@ -695,6 +725,40 @@ sbp('chelonia/defineContract', {
     }
   },
   methods: {
+    // Hook to run on every OP_KEY_UPDATE (inside or outside OP_ATOMIC)
+    'gi.contracts/chatroom/_postOpHook/ku': ({ contractID, state }) => {
+      sbp('chelonia/queueInvocation', contractID, () => {
+        // Verify that we aren't missing a key after a rotation
+        return sbp('gi.actions/chatroom/findAndRequestMissingChatroomKeys', contractID)
+      }).catch((e) => {
+        console.error('[gi.contracts/chatroom/hook/ku] Error', e)
+      })
+    },
+    // Custom response options for OP_KEY_REQUEST
+    'gi.contracts/chatroom/_responseOptionsForKeyRequest': ({
+      contractID,
+      request,
+      state,
+      originatingContractID
+    }) => {
+      if (!state?.members) return
+      // For key requests of type 'missing', sent when a member is missing keys
+      if (request === 'missing' && state.members[originatingContractID] && !state.members[originatingContractID].hasLeft) {
+        return {
+          keyIds: Object.entries(state._vm.authorizedKeys)
+            // $FlowFixMe[incompatible-use]
+            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .map(([kId]) => kId),
+          skipInviteAccounting: true
+        }
+      } else {
+        // Request deemed invalid or unrecognised
+        return {
+          keyIds: [],
+          skipInviteAccounting: true
+        }
+      }
+    },
     'gi.contracts/chatroom/_cleanup': ({ contractID, state }) => {
       if (state?.members) {
         // Not using a getter because _cleanup doesn't currently take a getter
@@ -706,7 +770,6 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/rotateKeys': (contractID) => {
       sbp('chelonia/queueInvocation', contractID, async () => {
-        await sbp('chelonia/contract/setPendingKeyRevocation', contractID, ['cek', 'csk'])
         await sbp('gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
       }).catch(e => {
         console.warn(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
