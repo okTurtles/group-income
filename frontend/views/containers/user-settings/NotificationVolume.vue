@@ -51,6 +51,7 @@ export default ({
     ...mapMutations(['setNotificationVolume']),
     handleVolumeUpdate (e) {
       this.ephemeral.volume = e.target.value
+      this.$emit('volume-change', this.ephemeral.volume)
       this.debouncedPostVolumeChange()
     },
     debouncedPostVolumeChange: debounce(function () {

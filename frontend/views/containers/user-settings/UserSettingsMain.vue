@@ -47,7 +47,7 @@
         :isExpandable='true'
       )
         template(#lower='')
-          .c-menu-item-lower-section-container
+          .lower-section-container
             p.c-delete-account-text
               i18n.has-text-1 Deleting your account will erase all your data, and remove you from the groups you belong to.
               | {{ ' ' }}
@@ -141,15 +141,6 @@ export default {
 
 .c-user-settings-main {
   margin-top: 1rem;
-}
-
-.c-menu-item-lower-section-container {
-  position: relative;
-  width: 100%;
-
-  > * {
-    white-space: normal;
-  }
 }
 
 .c-delete-account-text {
