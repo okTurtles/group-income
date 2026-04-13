@@ -44,7 +44,7 @@ export const MODAL_RESPONSE = 'modal-response'
 export const OPEN_EMOTICON = 'open-emoticon'
 export const CLOSE_EMOTICON = 'close-emoticon'
 export const SELECT_EMOTICON = 'select-emoticon'
-export const OPEN_EMOJI_SELECTION_SIMPLE = 'open-emoji-selection-simple'
+export const QUERY_EMOJI_SELECTION_SIMPLE = 'query-emoji-selection-simple'
 export const CLOSE_EMOJI_SELECTION_SIMPLE = 'close-emoji-selection-simple'
 
 export const CLOSE_NAVIGATION_SIDEBAR = 'close-navigation-sidebar'
