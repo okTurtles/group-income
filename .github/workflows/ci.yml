@@ -77,7 +77,7 @@ jobs:
           }
         }
         EOF
-        /usr/sbin/nginx -c "$NGX_HOME/conf/nginx.conf" -p "$NGX_HOME" -g 'daemon off;' &
+        /usr/sbin/nginx -c "$NGX_HOME/conf/nginx.conf" -p "$NGX_HOME" &
         echo $! > "$NGX_HOME/nginx.pid"
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
