@@ -99,7 +99,9 @@ module.exports = (grunt) => {
       throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
     }
     process.env.API_PORT = String(API_PORT)
-    process.env.API_URL = 'http://127.0.0.1:' + API_PORT
+    if (!process.env.API_URL) {
+      process.env.API_URL = 'http://127.0.0.1:' + API_PORT
+    }
   })()
 
   // Helper functions
