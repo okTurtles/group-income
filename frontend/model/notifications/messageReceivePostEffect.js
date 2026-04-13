@@ -5,8 +5,10 @@ import sbp from '@sbp/sbp'
 import {
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_NOTIFY_SETTINGS,
+  GLOBAL_MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
-  MESSAGE_TYPES
+  MESSAGE_TYPES,
+  GLOBAL_NOTIFICATION_SETTINGS_KEY
 } from '@model/contracts/shared/constants.js'
 import {
   swapMentionIDForDisplayname
@@ -34,15 +36,25 @@ async function messageReceivePostEffect ({
   const privacyLevelPrivate = rootState[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
 
   // noticiation-settings related
-  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || (privacyLevelPrivate
-    ? rootGetters.chatNotificationSettings.privateDefault
-    : rootGetters.chatNotificationSettings.publicDefault
-  )
+  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] ||
+    rootGetters.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
+  const hasPerChatroomNotificationSettings = Boolean(rootGetters.chatNotificationSettings[contractID])
   const { messageNotification, messageSound } = chatNotificationSettings
-  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-  (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
-  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
-    (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+  const checkSettingValid = (setting) => {
+    if (hasPerChatroomNotificationSettings) {
+      // Checking against per-chatroom settings
+      return setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES below is a legacy setting which is being used here for backward compatibility.
+        // (refer to 'model/contracts/shared/constants.js' file for more details)
+        (isDMOrMention && [MESSAGE_NOTIFY_SETTINGS.MENTIONS, MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES].includes(setting))
+    } else {
+      // Checking against global settings
+      return setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+        ((isDMOrMention || privacyLevelPrivate) && setting === GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS)
+    }
+  }
+  const shouldNotifyMessage = checkSettingValid(messageNotification)
+  const shouldSoundMessage = checkSettingValid(messageSound)
   const shouldAddToUnreadMessages = isDMOrMention ||
     (shouldNotifyMessage || shouldSoundMessage) ||
     [MESSAGE_TYPES.INTERACTIVE, MESSAGE_TYPES.POLL].includes(messageType)
