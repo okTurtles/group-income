@@ -453,14 +453,15 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'ourIdentityContractId',
-      'mentionableChatroomsInDetails'
+      'mentionableChatroomsInDetails',
+      'isInGlobalDashboard'
     ]),
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
       const isInDM = this.isDirectMessage(this.currentChatRoomId)
 
       return Object.keys(this.chatRoomMembers)
-        .filter(memberID => isInDM || activeGroupMemberIds.includes(memberID))
+        .filter(memberID => this.isInGlobalDashboard || isInDM || activeGroupMemberIds.includes(memberID))
         .map(memberID => {
           const { username, displayName, picture } = this.ourContactProfilesById[memberID] || {}
           return {
@@ -1030,6 +1031,8 @@ export default ({
           break
         }
         case 'channel': {
+          // Mentioning a group channel does not make sense in the global dm context. So don't respond to it.
+          if (this.isInGlobalDashboard) { return }
           this.ephemeral.mention.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
         }
       }
