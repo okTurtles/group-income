@@ -1351,22 +1351,19 @@ page(
               |   closeable: true
               | })
           td
-            button.is-outlined.is-small(@click.stop='showToast("basic")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("basic")') Show toast
 
         tr
           td
             pre duration: number (in ms)
           td
-            button.is-outlined.is-small(@click.stop='showToast("duration", 5000)')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("duration", 5000)') Show toast
 
         tr
           td
             pre title: string
           td
-            button.is-outlined.is-small(@click.stop='showToast("title")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("title")') Show toast
 
       br
       h3.is-title-3 Style variants
@@ -1386,20 +1383,17 @@ page(
           td
             pre variant: 'success'
           td
-            button.is-outlined.is-small(@click.stop='showToast("variant", "success")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("variant", "success")') Show toast
         tr
           td
             pre variant: 'warning'
           td
-            button.is-outlined.is-small(@click.stop='showToast("variant", "warning")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("variant", "warning")') Show toast
         tr
           td
             pre variant: 'error'
           td
-            button.is-outlined.is-small(@click.stop='showToast("variant", "error")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("variant", "error")') Show toast
 
       br
       h3.is-title-3 Positioning
@@ -1419,38 +1413,32 @@ page(
           td
             pre position: 'top-right'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "top-right")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-right")') Show toast
         tr
           td
             pre position: 'top-left'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "top-left")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-left")') Show toast
         tr
           td
             pre position: 'top-center'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "top-center")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-center")') Show toast
         tr
           td
             pre position: 'bottom-right'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-right")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-right")') Show toast
         tr
           td
             pre position: 'bottom-left'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-left")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-left")') Show toast
         tr
           td
             pre position: 'bottom-center'
           td
-            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-center")')
-              i18n Show toast
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-center")') Show toast
 
   article#clipboard-uis
     section.card
