@@ -23,7 +23,7 @@
           v-for='(user, index) in ephemeral.segmentInsertion.options'
           :key='user.memberID'
           ref='segmentInsertionItem'
-          :class='{"is-selected": index === ephemeral.segmentInsertion.index}'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
           avatar(:src='user.picture' size='xs')
@@ -37,11 +37,22 @@
           v-for='(channel, index) in ephemeral.segmentInsertion.options'
           :key='channel.id'
           ref='segmentInsertionItem'
-          :class='{"is-selected": index === ephemeral.segmentInsertion.index}'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
           i(:class='[channel.privacyLevel === "private" ? "icon-lock" : "icon-hashtag", "c-channel-icon"]')
           .c-channel-name {{ channel.name }}
+
+      template(v-else-if='ephemeral.segmentInsertion.type ==="emoji"')
+        .c-emoji-insertion(
+          v-for='(emoji, index) in ephemeral.segmentInsertion.options'
+          :key='emoji.id'
+          ref='segmentInsertionItem'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
+          @click.stop='onClickSegmentItem(index)'
+        )
+          span.c-emoji-native {{ emoji.native }}
+          span.c-emoji-name {{ emoji.colons }}
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -296,6 +307,7 @@ import {
   combineMarkdownSegmentListIntoString
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
+import { searchEmoji } from './emoji-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -553,9 +565,20 @@ export default ({
       const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].length : -1
 
       if (emojiCharIndex !== -1) {
-        console.log('TODO!')
+        const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
+        const searchResult = searchEmoji(searchQuery)
+
+        if (searchResult.length > 0) {
+          this.ephemeral.segmentInsertion.options = searchResult.map(emoji => ({
+            colons: emoji.colons,
+            name: emoji.name,
+            native: emoji.native,
+            id: emoji.id || emoji.colons
+          }))
+          this.ephemeral.segmentInsertion.index = 0
+          this.ephemeral.segmentInsertion.type = 'emoji'
+        }
       } else {
-        console.log('!@# here - aaa : ', textBeforeCursor)
         const channelCharIndex = textBeforeCursor.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
         const memberCharIndex = textBeforeCursor.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
 
@@ -606,13 +629,13 @@ export default ({
     },
     onClickSegmentItem (index) {
       this.$refs.textarea.focus()
-      this.addSelectedMention(index)
+      this.addSelectedSegment(index)
     },
     handleKeyDownEnter (e) {
       const isNotPhone = !this.ephemeral.isPhone
 
       if (this.segmentInsertionEnabled) {
-        this.addSelectedMention(this.ephemeral.segmentInsertion.index)
+        this.addSelectedSegment(this.ephemeral.segmentInsertion.index)
       } else if (isNotPhone) {
         this.sendMessage()
       }
@@ -621,7 +644,7 @@ export default ({
     },
     handleKeyDownTab (e) {
       if (this.segmentInsertionEnabled) {
-        this.addSelectedMention(this.ephemeral.segmentInsertion.index)
+        this.addSelectedSegment(this.ephemeral.segmentInsertion.index)
         e.preventDefault()
       }
     },
@@ -645,33 +668,35 @@ export default ({
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
-    addSelectedMention (index) {
+    addSelectedSegment (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
       const {
         options,
-        position: mentionStartPosition,
-        type: mentionType
+        position: segmentStartPosition,
+        type: segmentType
       } = this.ephemeral.segmentInsertion
       const selection = options[index]
-      let mentionString = ''
+      let segmentString = ''
 
-      if (mentionType === 'member') {
+      if (segmentType === 'member') {
         const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
-        mentionString = selection.memberID === mentionObj.all
+        segmentString = selection.memberID === mentionObj.all
           ? mentionObj.all
           : mentionObj.me
-      } else if (mentionType === 'channel') {
-        mentionString = makeChannelMention(selection.name)
+      } else if (segmentType === 'channel') {
+        segmentString = makeChannelMention(selection.name)
+      } else if (segmentType === 'emoji') {
+        segmentString = selection.native
       }
 
       // Insert the selected mention into the input text.
-      const value = curValue.slice(0, mentionStartPosition) +
-        mentionString + ' ' + curValue.slice(curPosition)
+      const value = curValue.slice(0, segmentStartPosition) +
+      segmentString + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
 
       // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
-      const selectionStart = mentionStartPosition + mentionString.length + 1
+      const selectionStart = segmentStartPosition + segmentString.length + 1
       this.moveCursorTo(selectionStart)
       this.endSegmentSelection()
     },
@@ -1394,7 +1419,8 @@ export default ({
   }
 
   .c-mention-user,
-  .c-mention-channel {
+  .c-mention-channel,
+  .c-emoji-insertion {
     display: flex;
     align-items: center;
     padding: 0.2rem 0.4rem;
@@ -1407,7 +1433,8 @@ export default ({
 
   .c-username,
   .c-display-name,
-  .c-channel-name {
+  .c-channel-name,
+  .c-emoji-name {
     margin-left: 0.3rem;
   }
 
