@@ -110,6 +110,8 @@
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
 
+    toast-container(area='chat-main')
+
   .c-footer
     send-area(
       ref='sendArea'
@@ -167,6 +169,7 @@ import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
+import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
 
@@ -285,7 +288,8 @@ export default ({
     MessagePoll,
     SendArea,
     ViewArea,
-    DragActiveOverlay
+    DragActiveOverlay,
+    ToastContainer
   },
   props: {
     summary: {

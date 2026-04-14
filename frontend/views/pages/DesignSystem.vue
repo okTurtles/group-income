@@ -240,6 +240,7 @@ page(
               i.icon-magnifying-plus icon-magnifying-plus
               i.icon-magnifying-minus icon-magnifying-minus
               i.icon-paper-clip icon-paper-clip
+              i.icon-exclamation icon-exclamation
               i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-file icon-file
         tr
@@ -1314,6 +1315,131 @@ page(
 
       p *primaryButton and secondaryButton parameters are optional
 
+  article#toasts
+    section.card
+      h2.is-title-2.card-header Toasts
+      p
+        | Toasts are small notifications UI elements that appear at various positions on the screen.
+        | They can be called via
+        code.c-has-side-margin.has-bg sbp('gi.ui/toast', areaName, data)
+        | from anywhere in the app.
+
+      br
+      h3.is-title-3 Basic usage
+      br
+
+      p
+        | You can include various information in the toast data payload of the sbp call, such as
+        strong.c-has-side-margin message, variant, position,
+        | and
+        strong.c-has-side-margin duration
+        | and so on.
+      br
+
+      table
+        thead
+          th code
+          th demo
+
+        tr
+          td
+            pre
+              | sbp('gi.ui/toast', 'app-global', {
+              |   message: 'This is a test message',
+              |   variant: 'default',
+              |   position: 'bottom-right',
+              |   closeable: true
+              | })
+          td
+            button.is-outlined.is-small(@click.stop='showToast("basic")') Show toast
+
+        tr
+          td
+            pre duration: number (in ms)
+          td
+            button.is-outlined.is-small(@click.stop='showToast("duration", 5000)') Show toast
+
+        tr
+          td
+            pre title: string
+          td
+            button.is-outlined.is-small(@click.stop='showToast("title")') Show toast
+
+      br
+      h3.is-title-3 Style variants
+      br
+
+      p
+        | Specify
+        code.c-has-side-margin.has-bg variant: string
+        | to change the style of the toast.
+      br
+
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre variant: 'success'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("variant", "success")') Show toast
+        tr
+          td
+            pre variant: 'warning'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("variant", "warning")') Show toast
+        tr
+          td
+            pre variant: 'error'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("variant", "error")') Show toast
+
+      br
+      h3.is-title-3 Positioning
+      br
+
+      p
+        | Specify
+        code.c-has-side-margin.has-bg position: string
+        | to change the position of the toast.
+      br
+
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre position: 'top-right'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-right")') Show toast
+        tr
+          td
+            pre position: 'top-left'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-left")') Show toast
+        tr
+          td
+            pre position: 'top-center'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "top-center")') Show toast
+        tr
+          td
+            pre position: 'bottom-right'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-right")') Show toast
+        tr
+          td
+            pre position: 'bottom-left'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-left")') Show toast
+        tr
+          td
+            pre position: 'bottom-center'
+          td
+            button.is-outlined.is-small(@click.stop='showToast("position", "bottom-center")') Show toast
+
   article#clipboard-uis
     section.card
       h2.is-title-2.card-header Clipboard tools
@@ -1658,6 +1784,31 @@ export default ({
     },
     onButtonDropdownItemSelect (itemId) {
       console.log('selected item id: ', itemId)
+    },
+    showToast (demoType = 'default', additionalInfo = null) {
+      const toastData = {
+        message: 'This is a test message.',
+        variant: 'default',
+        position: 'bottom-right',
+        closeable: true
+      }
+
+      switch (demoType) {
+        case 'title':
+          toastData.title = 'Test title'
+          break
+        case 'duration':
+        case 'position':
+        case 'variant':
+          toastData[demoType] = additionalInfo
+          break
+      }
+
+      if (demoType === 'position') {
+        toastData.variant = 'success'
+      }
+
+      sbp('gi.ui/toast', 'app-global', toastData)
     }
   },
   computed: {
@@ -1699,6 +1850,12 @@ pre {
 
 code {
   color: $success_0;
+
+  &.has-bg {
+    background-color: $success_2;
+    padding: 0.15em;
+    border-radius: 0.15em;
+  }
 }
 
 section.card {
@@ -1864,6 +2021,11 @@ table {
     text-decoration: underline;
     color: $primary_0;
   }
+}
+
+.c-has-side-margin {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
 }
 
 .svg-attachment {
