@@ -15,7 +15,7 @@
   )
     .c-segment-selection(
       v-if='ephemeral.segmentInsertion.options.length'
-      :class='{ "is-above-replying-message": !!replyingMessage }'
+      :class='{ "is-above-replying-message": !!replyingMessage || true }'
       ref='segmentInsertionWrapper'
     )
       template(v-if='ephemeral.segmentInsertion.type === "member"')
@@ -610,13 +610,25 @@ export default ({
           const newIndex = (this.ephemeral.segmentInsertion.index + offset + nChoices) % nChoices
           this.ephemeral.segmentInsertion.index = newIndex
 
-          const { clientHeight, scrollHeight } = this.$refs.segmentInsertionWrapper
+          const { clientHeight, scrollHeight, scrollTop } = this.$refs.segmentInsertionWrapper
           if (scrollHeight !== clientHeight) {
-            const offsetTop = this.$refs.segmentInsertionItem[newIndex].offsetTop + this.$refs.segmentInsertionItem[newIndex].clientHeight
+            const newItemOffsetTop = this.$refs.segmentInsertionItem[newIndex].offsetTop
+            const newItemElHeight = this.$refs.segmentInsertionItem[newIndex].clientHeight
+            // If the new item is out of view, scroll to it.
+            const shouldScrollDown = newItemOffsetTop + newItemElHeight > scrollTop + clientHeight
+            const shouldScrollUp = newItemOffsetTop < scrollTop
 
-            this.$refs.segmentInsertionWrapper.scrollTo({
-              left: 0, top: Math.max(0, offsetTop - clientHeight)
-            })
+            if (shouldScrollDown) {
+              const newItemBottomPosition = newItemOffsetTop + newItemElHeight
+              this.$refs.segmentInsertionWrapper.scrollTo({
+                left: 0, top: Math.max(0, newItemBottomPosition - clientHeight)
+              })
+            }
+            if (shouldScrollUp) {
+              this.$refs.segmentInsertionWrapper.scrollTo({
+                left: 0, top: Math.max(0, newItemOffsetTop)
+              })
+            }
           }
 
           e.preventDefault()
