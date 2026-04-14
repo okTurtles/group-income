@@ -13,18 +13,18 @@
     :disabled='loading'
     data-test='messageInputWrapper'
   )
-    .c-mentions(
-      v-if='ephemeral.mention.options.length'
+    .c-segment-selection(
+      v-if='ephemeral.segmentSelection.options.length'
       :class='{ "is-above-replying-message": !!replyingMessage }'
-      ref='mentionWrapper'
+      ref='segmentSelectionWrapper'
     )
-      template(v-if='ephemeral.mention.type === "member"')
+      template(v-if='ephemeral.segmentSelection.type === "member"')
         .c-mention-user(
-          v-for='(user, index) in ephemeral.mention.options'
+          v-for='(user, index) in ephemeral.segmentSelection.options'
           :key='user.memberID'
-          ref='mention'
-          :class='{"is-selected": index === ephemeral.mention.index}'
-          @click.stop='onClickMention(index)'
+          ref='segmentSelectionItem'
+          :class='{"is-selected": index === ephemeral.segmentSelection.index}'
+          @click.stop='onClickSegmentItem(index)'
         )
           avatar(:src='user.picture' size='xs')
           .c-username {{user.username}}
@@ -32,13 +32,13 @@
             v-if='user.displayName !== user.username'
           ) ({{user.displayName}})
 
-      template(v-else-if='ephemeral.mention.type ==="channel"')
+      template(v-else-if='ephemeral.segmentSelection.type ==="channel"')
         .c-mention-channel(
-          v-for='(channel, index) in ephemeral.mention.options'
+          v-for='(channel, index) in ephemeral.segmentSelection.options'
           :key='channel.id'
-          ref='mention'
-          :class='{"is-selected": index === ephemeral.mention.index}'
-          @click.stop='onClickMention(index)'
+          ref='segmentSelectionItem'
+          :class='{"is-selected": index === ephemeral.segmentSelection.index}'
+          @click.stop='onClickSegmentItem(index)'
         )
           i(:class='[channel.privacyLevel === "private" ? "icon-lock" : "icon-hashtag", "c-channel-icon"]')
           .c-channel-name {{ channel.name }}
@@ -352,7 +352,8 @@ export default ({
         maskHeight: '',
         showButtons: true,
         isPhone: false,
-        mention: {
+        segmentSelection: {
+          // pop-up helper to select a special text segment (e.g, channel/user mention, emojis etc.)
           position: -1,
           options: [],
           index: -1,
@@ -537,13 +538,13 @@ export default ({
         return this.createNewLine()
       }
     },
-    updateMentionKeyword () {
+    updateSegmentSelectionKeyword () {
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
       const channelCharIndex = value.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
       const memberCharIndex = value.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
 
       if (channelCharIndex === -1 && memberCharIndex === -1) {
-        return this.endMention()
+        return this.endSegmentSelection()
       }
 
       const lastIndex = Math.max(channelCharIndex, memberCharIndex)
@@ -551,30 +552,30 @@ export default ({
       const regExWordStart = /(\s)/g // RegEx Metacharacter \s
 
       if (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1])) {
-        return this.endMention()
+        return this.endSegmentSelection()
       }
 
       value = value.slice(lastIndex + 1)
       if (regExWordStart.test(value)) {
-        return this.endMention()
+        return this.endSegmentSelection()
       }
 
       this.startMention(value, lastIndex, mentionType)
     },
     handleKeydown (e) {
       if (caretKeyCodeValues[e.keyCode]) {
-        const nChoices = this.ephemeral.mention.options.length
+        const nChoices = this.ephemeral.segmentSelection.options.length
         if (nChoices &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
           const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
-          const newIndex = (this.ephemeral.mention.index + offset + nChoices) % nChoices
-          this.ephemeral.mention.index = newIndex
+          const newIndex = (this.ephemeral.segmentSelection.index + offset + nChoices) % nChoices
+          this.ephemeral.segmentSelection.index = newIndex
 
-          const { clientHeight, scrollHeight } = this.$refs.mentionWrapper
+          const { clientHeight, scrollHeight } = this.$refs.segmentSelectionWrapper
           if (scrollHeight !== clientHeight) {
-            const offsetTop = this.$refs.mention[newIndex].offsetTop + this.$refs.mention[newIndex].clientHeight
+            const offsetTop = this.$refs.segmentSelectionItem[newIndex].offsetTop + this.$refs.segmentSelectionItem[newIndex].clientHeight
 
-            this.$refs.mentionWrapper.scrollTo({
+            this.$refs.segmentSelectionWrapper.scrollTo({
               left: 0, top: Math.max(0, offsetTop - clientHeight)
             })
           }
@@ -583,19 +584,19 @@ export default ({
         } else if (!nChoices && e.keyCode === caretKeyCodes.Esc) {
           this.cancelEditing()
         } else {
-          this.endMention()
+          this.endSegmentSelection()
         }
       }
     },
-    onClickMention (index) {
+    onClickSegmentItem (index) {
       this.$refs.textarea.focus()
       this.addSelectedMention(index)
     },
     handleKeyDownEnter (e) {
       const isNotPhone = !this.ephemeral.isPhone
 
-      if (this.ephemeral.mention.options.length) {
-        this.addSelectedMention(this.ephemeral.mention.index)
+      if (this.ephemeral.segmentSelection.options.length) {
+        this.addSelectedMention(this.ephemeral.segmentSelection.index)
       } else if (isNotPhone) {
         this.sendMessage()
       }
@@ -603,8 +604,8 @@ export default ({
       isNotPhone && e.preventDefault()
     },
     handleKeyDownTab (e) {
-      if (this.ephemeral.mention.options.length) {
-        this.addSelectedMention(this.ephemeral.mention.index)
+      if (this.ephemeral.segmentSelection.options.length) {
+        this.addSelectedMention(this.ephemeral.segmentSelection.index)
         e.preventDefault()
       }
     },
@@ -616,7 +617,7 @@ export default ({
       }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
-        this.updateMentionKeyword()
+        this.updateSegmentSelectionKeyword()
       }
 
       if (!this.isEditing) {
@@ -635,7 +636,7 @@ export default ({
         options,
         position: mentionStartPosition,
         type: mentionType
-      } = this.ephemeral.mention
+      } = this.ephemeral.segmentSelection
       const selection = options[index]
       let mentionString = ''
 
@@ -656,7 +657,7 @@ export default ({
       // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
       const selectionStart = mentionStartPosition + mentionString.length + 1
       this.moveCursorTo(selectionStart)
-      this.endMention()
+      this.endSegmentSelection()
     },
     moveCursorTo (index) {
       this.$refs.textarea.setSelectionRange(index, index)
@@ -761,7 +762,7 @@ export default ({
     clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
-      this.endMention()
+      this.endSegmentSelection()
       if (this.hasAttachments) { this.clearAllAttachments() }
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
@@ -1023,33 +1024,33 @@ export default ({
             })
           }
 
-          this.ephemeral.mention.options = availableMentions.filter(
+          this.ephemeral.segmentSelection.options = availableMentions.filter(
             user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
           )
 
           break
         }
         case 'channel': {
-          this.ephemeral.mention.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
+          this.ephemeral.segmentSelection.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
         }
       }
 
-      this.ephemeral.mention.type = mentionType
-      this.ephemeral.mention.position = position
-      this.ephemeral.mention.index = 0
+      this.ephemeral.segmentSelection.type = mentionType
+      this.ephemeral.segmentSelection.position = position
+      this.ephemeral.segmentSelection.index = 0
     },
-    endMention () {
-      this.ephemeral.mention.position = -1
-      this.ephemeral.mention.index = -1
-      this.ephemeral.mention.options = []
+    endSegmentSelection () {
+      this.ephemeral.segmentSelection.position = -1
+      this.ephemeral.segmentSelection.index = -1
+      this.ephemeral.segmentSelection.options = []
     },
     onWindowMouseClicked (e) {
-      if (!this.$refs.mentionWrapper) {
+      if (!this.$refs.segmentSelectionWrapper) {
         return
       }
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-segment-selection')
       if (!element) {
-        this.endMention()
+        this.endSegmentSelection()
       }
     },
     transformTextSelectionToMarkdown (type) {
@@ -1358,7 +1359,7 @@ export default ({
   top: -2.125rem;
 }
 
-.c-mentions {
+.c-segment-selection {
   background-color: $general_2;
   border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;

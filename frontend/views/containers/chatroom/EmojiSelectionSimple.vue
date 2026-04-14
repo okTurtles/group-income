@@ -65,7 +65,7 @@ export default {
     sbp('okTurtles.events/off', CLOSE_EMOJI_SELECTION_SIMPLE)
   },
   mounted () {
-    this.performEmojiSearch('check')
+    this.performEmojiSearch('Ch')
   }
 }
 </script>
@@ -87,7 +87,8 @@ export default {
   position: absolute;
   display: block;
   bottom: 1.5rem;
-  right: 1.5rem;
+  left: 0;
+  width: 100%;
   pointer-events: initial;
 }
 </style>

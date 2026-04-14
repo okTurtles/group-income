@@ -29,7 +29,6 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
-import EmojiSelectionSimple from './views/containers/chatroom/EmojiSelectionSimple.vue'
 import './views/utils/avatar.js'
 import './views/utils/i18n.js'
 import './views/utils/ui.js'
@@ -228,8 +227,7 @@ async function startApp () {
       BackgroundSounds,
       BannerGeneral,
       Navigation,
-      Modal,
-      EmojiSelectionSimple
+      Modal
     },
     data () {
       return {
