@@ -255,6 +255,9 @@
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy {count} free passes!";
 
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "All";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "All group members will be able to see or join this channel." = "All group members will be able to see or join this channel.";
 
@@ -270,13 +273,13 @@
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "All messages will be deleted;" = "All messages will be deleted;";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "All new messages" = "All new messages";
 
 /* views/containers/proposals/PropositionsAllModal.vue */
 "All proposals" = "All proposals";
 
-/* views/containers/user-settings/NotificationSettings.vue */
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
 "Allow browser notifications" = "Allow browser notifications";
 
 /* views/containers/group-settings/GroupSettingsMain.vue */
@@ -561,6 +564,9 @@
 /* views/containers/chatroom/file-attachment/ChatFileAttachmentWarningModal.vue */
 "Chat attachment too large modal" = "Chat attachment too large modal";
 
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "Chat default notifications";
+
 /* controller/serviceworkers/push.js */
 "Chatroom activity" = "Chatroom activity";
 
@@ -711,6 +717,9 @@
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/group-settings/GroupDeletionModal.vue */
 "DELETE {GROUP_NAME}" = "DELETE {GROUP_NAME}";
 
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "DM/Mentions";
+
 /* views/containers/group-settings/GroupSettingsMain.vue, views/containers/user-settings/UserSettingsMain.vue */
 "Danger Zone" = "Danger Zone";
 
@@ -780,7 +789,7 @@
 /* views/containers/global-dashboard/DirectMessages.vue */
 "Direct Messages: Coming soon!" = "Direct Messages: Coming soon!";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Direct messages and mentions" = "Direct messages and mentions";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
@@ -1623,6 +1632,9 @@
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Members will be removed from the channel;" = "Members will be removed from the channel;";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Mentions" = "Mentions";
+
 /* views/containers/chatroom/MessageBase.vue */
 "Message failed to send." = "Message failed to send.";
 
@@ -1785,6 +1797,9 @@
 /* views/containers/contributions/NonMonetaryPledges.vue */
 "Non-monetary pledge cannot exceed {maxChars} characters" = "Non-monetary pledge cannot exceed {maxChars} characters";
 
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "None";
+
 /* model/contracts/identity.js */
 "Not existing direct message." = "Not existing direct message.";
 
@@ -1809,7 +1824,7 @@
 /* views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Nothing" = "Nothing";
 
 /* views/containers/notifications/NotificationList.vue */
@@ -2047,7 +2062,10 @@
 "Play sounds for all new messages" = "Play sounds for all new messages";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "Play sounds for direct messages and mentions";
+"Play sounds for mentions" = "Play sounds for mentions";
+
+/* views/pages/UserSettings.vue */
+"Play sounds for:" = "Play sounds for:";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Please confirm that you want to delete this channel" = "Please confirm that you want to delete this channel";
@@ -2361,7 +2379,7 @@
 /* views/containers/user-settings/UserSettingsMain.vue */
 "SW Version:" = "SW Version:";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "Save";
 
 /* views/containers/user-settings/UserProfile.vue */
@@ -2439,7 +2457,7 @@
 /* views/components/ProfileCardContent.vue */
 "Send message" = "Send message";
 
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
 "Send notifications for:" = "Send notifications for:";
 
 /* views/containers/payments/SendPaymentsViaLightning.vue */
@@ -2543,6 +2561,9 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Sorry, we couldn't find anyone called \"{searchTerm}\"";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "Sound notification volume";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "Sounds:";
@@ -3157,7 +3178,7 @@
 "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}" = "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "Your browser doesn't support push notifications";
+"Your browser doesn't support push notifications." = "Your browser doesn't support push notifications.";
 
 /* views/containers/group-settings/UpdateGroupCurrency.vue, views/containers/group-settings/UpdateGroupProfile.vue, views/containers/user-settings/UserProfile.vue */
 "Your changes were saved!" = "Your changes were saved!";
