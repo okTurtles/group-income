@@ -15,7 +15,7 @@
   )
     .c-segment-selection(
       v-if='ephemeral.segmentInsertion.options.length'
-      :class='{ "is-above-replying-message": !!replyingMessage || true }'
+      :class='{ "is-above-replying-message": !!replyingMessage }'
       ref='segmentInsertionWrapper'
     )
       template(v-if='ephemeral.segmentInsertion.type === "member"')
@@ -561,22 +561,43 @@ export default ({
       const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
-      const emojiShortcodeMatch = new RegExp(`${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}$`).exec(textBeforeCursor)
+      const emojiShortcodeMatch = new RegExp(`${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`).exec(textBeforeCursor)
       const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].length : -1
 
       if (emojiCharIndex !== -1) {
-        const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
-        const searchResult = searchEmoji(searchQuery)
+        const shouldInsertImmediately = textBeforeCursor[textBeforeCursor.length - 1] === CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR
+        const mapEmojiItem = (emoji) => ({
+          colons: emoji.colons,
+          name: emoji.name,
+          native: emoji.native,
+          id: emoji.id || emoji.colons
+        })
 
-        if (searchResult.length > 0) {
-          this.ephemeral.segmentInsertion.options = searchResult.map(emoji => ({
-            colons: emoji.colons,
-            name: emoji.name,
-            native: emoji.native,
-            id: emoji.id || emoji.colons
-          }))
-          this.ephemeral.segmentInsertion.index = 0
-          this.ephemeral.segmentInsertion.type = 'emoji'
+        if (shouldInsertImmediately) {
+          const queryEmojiColonKeyword = textBeforeCursor.slice(emojiCharIndex)
+          const searchQuery = queryEmojiColonKeyword.slice(1, queryEmojiColonKeyword.length - 1)
+          const searchResult = searchEmoji(searchQuery)
+
+          if (searchResult?.length > 0) {
+            const foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
+
+            if (foundEmoji) {
+              this.ephemeral.segmentInsertion.options = [mapEmojiItem(foundEmoji)]
+              this.ephemeral.segmentInsertion.position = emojiCharIndex
+              this.ephemeral.segmentInsertion.type = 'emoji'
+              this.addSelectedSegment(0)
+            }
+          }
+        } else {
+          const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
+          const searchResult = searchEmoji(searchQuery)
+
+          if (searchResult.length > 0) {
+            this.ephemeral.segmentInsertion.options = searchResult.map(mapEmojiItem)
+            this.ephemeral.segmentInsertion.position = emojiCharIndex
+            this.ephemeral.segmentInsertion.index = 0
+            this.ephemeral.segmentInsertion.type = 'emoji'
+          }
         }
       } else {
         const channelCharIndex = textBeforeCursor.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
