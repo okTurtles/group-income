@@ -579,6 +579,9 @@ export default ({
         })
 
         if (shouldInsertImmediately) {
+          // Shortcut emoji insertion pop-up is triggered by user typing ':' (with no directly preceding characters) and search is performed as they type the query.
+          // If this query string is directly followed by another ':' and there is a matching emoji for the current query string, immediately perform the emoji insertion.
+          // e.g.) If user types all the way to ':smiley:', replace this piece with 😃 instantly.
           const queryEmojiColonKeyword = textBeforeCursor.slice(emojiCharIndex)
           const searchQuery = queryEmojiColonKeyword.slice(1, queryEmojiColonKeyword.length - 1)
           const searchResult = searchEmoji(searchQuery)
