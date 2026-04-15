@@ -1461,8 +1461,7 @@ export default ({
   }
 
   .c-mention-user,
-  .c-mention-channel,
-  .c-emoji-insertion {
+  .c-mention-channel {
     display: flex;
     align-items: center;
     padding: 0.2rem 0.4rem;
@@ -1475,8 +1474,7 @@ export default ({
 
   .c-username,
   .c-display-name,
-  .c-channel-name,
-  .c-emoji-name {
+  .c-channel-name {
     margin-left: 0.3rem;
   }
 
