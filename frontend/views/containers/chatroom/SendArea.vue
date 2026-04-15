@@ -23,7 +23,6 @@
           v-for='(user, index) in ephemeral.segmentInsertion.options'
           :key='user.memberID'
           :data-segment-index='index'
-          ref='segmentInsertionItem'
           :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
@@ -38,7 +37,6 @@
           v-for='(channel, index) in ephemeral.segmentInsertion.options'
           :key='channel.id'
           :data-segment-index='index'
-          ref='segmentInsertionItem'
           :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
@@ -49,9 +47,7 @@
         .c-emoji-insertion(
           v-for='(emoji, index) in ephemeral.segmentInsertion.options'
           :data-segment-index='index'
-          ref='segmentInsertionItem'
           :key='emoji.id'
-          :data='emoji'
           :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
@@ -566,7 +562,8 @@ export default ({
       const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
-      const emojiShortcodeMatch = new RegExp(`${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`).exec(textBeforeCursor)
+      // positive lookbehind (?<=^|\\s) here: ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
+      const emojiShortcodeMatch = new RegExp(`(?<=^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`).exec(textBeforeCursor)
       const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].length : -1
 
       if (emojiCharIndex !== -1) {
@@ -652,16 +649,16 @@ export default ({
     handleKeydown (e) {
       if (caretKeyCodeValues[e.keyCode]) {
         const nChoices = this.ephemeral.segmentInsertion.options.length
-        if (nChoices &&
+        const segmentInsertionWrapperEl = this.$refs.segmentInsertionWrapper
+        if (nChoices && segmentInsertionWrapperEl &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
           const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
           const newIndex = (this.ephemeral.segmentInsertion.index + offset + nChoices) % nChoices
           this.ephemeral.segmentInsertion.index = newIndex
 
-          const { clientHeight, scrollHeight, scrollTop } = this.$refs.segmentInsertionWrapper
-          const newIndexItemEl = document.querySelector(`[data-segment-index="${newIndex}"]`)
+          const { clientHeight, scrollHeight, scrollTop } = segmentInsertionWrapperEl
+          const newIndexItemEl = segmentInsertionWrapperEl.querySelector(`[data-segment-index="${newIndex}"]`)
           if (scrollHeight !== clientHeight && newIndexItemEl) {
-            // ._isVue is a flag to check if the item is a Vue component.
             const newItemOffsetTop = newIndexItemEl.offsetTop
             const newItemElHeight = newIndexItemEl.clientHeight
             // If the new item is out of view, scroll to it.
