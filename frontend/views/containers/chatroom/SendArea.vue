@@ -585,9 +585,10 @@ export default ({
           const queryEmojiColonKeyword = textBeforeCursor.slice(emojiCharIndex)
           const searchQuery = queryEmojiColonKeyword.slice(1, queryEmojiColonKeyword.length - 1)
           const searchResult = searchEmoji(searchQuery)
+          let foundEmoji = null
 
           if (searchResult?.length > 0) {
-            const foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
+            foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
 
             if (foundEmoji) {
               this.ephemeral.segmentInsertion.options = [mapEmojiItem(foundEmoji)]
@@ -596,11 +597,16 @@ export default ({
               this.addSelectedSegment(0)
             }
           }
+
+          if (!foundEmoji) {
+            // If there is no matching emoji, close the pop-up if it is open.
+            this.endSegmentSelection()
+          }
         } else {
           const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
           const searchResult = searchEmoji(searchQuery, true)
 
-          if (searchResult.length > 0) {
+          if (searchResult?.length > 0) {
             this.ephemeral.segmentInsertion.options = searchResult.map(item => {
               return {
                 ...mapEmojiItem(item),
@@ -615,6 +621,9 @@ export default ({
               // Since the index is reset to 0, scroll position should be reset to the top as well.
               this.$refs.segmentInsertionWrapper.scrollTo({ left: 0, top: 0 })
             }
+          } else {
+            // If no matching search results, close the pop-up if it is open.
+            this.endSegmentSelection()
           }
         }
       } else {
