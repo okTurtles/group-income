@@ -44,15 +44,14 @@
           .c-channel-name {{ channel.name }}
 
       template(v-else-if='ephemeral.segmentInsertion.type ==="emoji"')
-        .c-emoji-insertion(
+        emoji-shortcut-list-item(
           v-for='(emoji, index) in ephemeral.segmentInsertion.options'
-          :key='emoji.id'
           ref='segmentInsertionItem'
-          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
+          :key='emoji.id'
+          :data='emoji'
+          :is-selected='index === ephemeral.segmentInsertion.index'
           @click.stop='onClickSegmentItem(index)'
         )
-          span.c-emoji-native {{ emoji.native }}
-          span.c-emoji-name {{ emoji.colons }}
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -288,6 +287,7 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
+import EmojiShortcutListItem from './EmojiShortcutListItem.vue'
 import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
@@ -336,7 +336,8 @@ export default ({
     Avatar,
     Tooltip,
     CreatePoll,
-    ChatAttachmentPreview
+    ChatAttachmentPreview,
+    EmojiShortcutListItem
   },
   props: {
     defaultText: String,
@@ -593,7 +594,12 @@ export default ({
           const searchResult = searchEmoji(searchQuery)
 
           if (searchResult.length > 0) {
-            this.ephemeral.segmentInsertion.options = searchResult.map(mapEmojiItem)
+            this.ephemeral.segmentInsertion.options = searchResult.map(item => {
+              return {
+                ...mapEmojiItem(item),
+                matchStr: searchQuery
+              }
+            })
             this.ephemeral.segmentInsertion.position = emojiCharIndex
             this.ephemeral.segmentInsertion.index = 0
             this.ephemeral.segmentInsertion.type = 'emoji'
@@ -632,9 +638,12 @@ export default ({
           this.ephemeral.segmentInsertion.index = newIndex
 
           const { clientHeight, scrollHeight, scrollTop } = this.$refs.segmentInsertionWrapper
-          if (scrollHeight !== clientHeight) {
-            const newItemOffsetTop = this.$refs.segmentInsertionItem[newIndex].offsetTop
-            const newItemElHeight = this.$refs.segmentInsertionItem[newIndex].clientHeight
+          const newIndexItemRef = this.$refs.segmentInsertionItem[newIndex]
+          if (scrollHeight !== clientHeight && newIndexItemRef) {
+            // ._isVue is a flag to check if the item is a Vue component.
+            const itemEl = newIndexItemRef._isVue ? newIndexItemRef.$el : newIndexItemRef
+            const newItemOffsetTop = itemEl.offsetTop
+            const newItemElHeight = itemEl.clientHeight
             // If the new item is out of view, scroll to it.
             const shouldScrollDown = newItemOffsetTop + newItemElHeight > scrollTop + clientHeight
             const shouldScrollUp = newItemOffsetTop < scrollTop
