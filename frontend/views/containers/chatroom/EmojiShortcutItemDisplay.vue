@@ -1,9 +1,5 @@
 <template lang='pug'>
-.c-emoji-shortcut-list-item(
-  v-bind='$attrs'
-  v-on='$listeners'
-  :class='{ "is-selected": isSelected }'
-)
+.c-emoji-shortcut-list-item
   span.c-emoji-native {{ data.native }}
   span.c-emoji-name {{ data.colons }}
 </template>
@@ -15,10 +11,6 @@ export default {
     data: {
       type: Object,
       required: true
-    },
-    isSelected: {
-      type: Boolean,
-      default: false
     }
   }
 }
@@ -30,11 +22,6 @@ export default {
 .c-emoji-shortcut-list-item {
   display: flex;
   align-items: center;
-  padding: 0.2rem 0.4rem;
-
-  &.is-selected {
-    background-color: $primary_2;
-  }
 
   .c-emoji-native {
     font-size: 1.1em;

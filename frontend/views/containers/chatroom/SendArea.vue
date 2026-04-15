@@ -22,6 +22,7 @@
         .c-mention-user(
           v-for='(user, index) in ephemeral.segmentInsertion.options'
           :key='user.memberID'
+          :data-segment-index='index'
           ref='segmentInsertionItem'
           :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
@@ -36,6 +37,7 @@
         .c-mention-channel(
           v-for='(channel, index) in ephemeral.segmentInsertion.options'
           :key='channel.id'
+          :data-segment-index='index'
           ref='segmentInsertionItem'
           :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
@@ -44,14 +46,16 @@
           .c-channel-name {{ channel.name }}
 
       template(v-else-if='ephemeral.segmentInsertion.type ==="emoji"')
-        emoji-shortcut-list-item(
+        .c-emoji-insertion(
           v-for='(emoji, index) in ephemeral.segmentInsertion.options'
+          :data-segment-index='index'
           ref='segmentInsertionItem'
           :key='emoji.id'
           :data='emoji'
-          :is-selected='index === ephemeral.segmentInsertion.index'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
           @click.stop='onClickSegmentItem(index)'
         )
+          emoji-shortcut-item-display(:data='emoji')
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -287,7 +291,7 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
-import EmojiShortcutListItem from './EmojiShortcutListItem.vue'
+import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
 import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
@@ -337,7 +341,7 @@ export default ({
     Tooltip,
     CreatePoll,
     ChatAttachmentPreview,
-    EmojiShortcutListItem
+    EmojiShortcutItemDisplay
   },
   props: {
     defaultText: String,
@@ -603,6 +607,11 @@ export default ({
             this.ephemeral.segmentInsertion.position = emojiCharIndex
             this.ephemeral.segmentInsertion.index = 0
             this.ephemeral.segmentInsertion.type = 'emoji'
+
+            if (this.$refs.segmentInsertionWrapper) {
+              // Since the index is reset to 0, scroll position should be reset to the top as well.
+              this.$refs.segmentInsertionWrapper.scrollTo({ left: 0, top: 0 })
+            }
           }
         }
       } else {
@@ -638,12 +647,11 @@ export default ({
           this.ephemeral.segmentInsertion.index = newIndex
 
           const { clientHeight, scrollHeight, scrollTop } = this.$refs.segmentInsertionWrapper
-          const newIndexItemRef = this.$refs.segmentInsertionItem[newIndex]
-          if (scrollHeight !== clientHeight && newIndexItemRef) {
+          const newIndexItemEl = document.querySelector(`[data-segment-index="${newIndex}"]`)
+          if (scrollHeight !== clientHeight && newIndexItemEl) {
             // ._isVue is a flag to check if the item is a Vue component.
-            const itemEl = newIndexItemRef._isVue ? newIndexItemRef.$el : newIndexItemRef
-            const newItemOffsetTop = itemEl.offsetTop
-            const newItemElHeight = itemEl.clientHeight
+            const newItemOffsetTop = newIndexItemEl.offsetTop
+            const newItemElHeight = newIndexItemEl.clientHeight
             // If the new item is out of view, scroll to it.
             const shouldScrollDown = newItemOffsetTop + newItemElHeight > scrollTop + clientHeight
             const shouldScrollUp = newItemOffsetTop < scrollTop
@@ -1464,6 +1472,15 @@ export default ({
   .c-mention-channel {
     display: flex;
     align-items: center;
+  }
+
+  .c-emoji-insertion {
+    display: block;
+  }
+
+  .c-mention-user,
+  .c-mention-channel,
+  .c-emoji-insertion {
     padding: 0.2rem 0.4rem;
     cursor: pointer;
 
@@ -1474,8 +1491,13 @@ export default ({
 
   .c-username,
   .c-display-name,
-  .c-channel-name {
+  .c-channel-name,
+  .c-emoji-name {
     margin-left: 0.3rem;
+  }
+
+  .c-emoji-native {
+    font-size: 1.1em;
   }
 
   .c-display-name {
