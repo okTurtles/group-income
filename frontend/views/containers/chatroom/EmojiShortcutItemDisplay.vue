@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-emoji-shortcut-list-item
   span.c-emoji-native {{ data.native }}
-  span.c-emoji-name {{ data.colons }}
+  span.c-emoji-colons(v-safe-html='emojiColonsDisplay')
 </template>
 
 <script>
@@ -11,6 +11,13 @@ export default {
     data: {
       type: Object,
       required: true
+    }
+  },
+  computed: {
+    emojiColonsDisplay () {
+      return this.data.matchStr
+        ? this.data.colons.replace(this.data.matchStr, `<span class="c-match-str">${this.data.matchStr}</span>`)
+        : this.data.colons
     }
   }
 }
@@ -27,9 +34,14 @@ export default {
     font-size: 1.1em;
   }
 
-  .c-emoji-name {
+  .c-emoji-colons {
     display: inline-block;
     margin-left: 0.25rem;
+
+    ::v-deep .c-match-str {
+      color: $success_0;
+      font-weight: 700;
+    }
   }
 }
 </style>
