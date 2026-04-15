@@ -595,7 +595,7 @@ export default ({
           }
         } else {
           const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
-          const searchResult = searchEmoji(searchQuery)
+          const searchResult = searchEmoji(searchQuery, true)
 
           if (searchResult.length > 0) {
             this.ephemeral.segmentInsertion.options = searchResult.map(item => {
