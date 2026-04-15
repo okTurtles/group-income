@@ -4,6 +4,7 @@ import data from 'emoji-mart-vue-fast/data/apple.json'
 export const emojiIndex: any = new EmojiIndex(data)
 
 export const searchEmoji = (query: string = '', sortByRelevance: boolean = false): any => {
+  // sortByRelevance: places the items that have the query string piece in their colons at the top of the list.
   const results = emojiIndex.search(query)
 
   if (results?.length > 0 && sortByRelevance) {
