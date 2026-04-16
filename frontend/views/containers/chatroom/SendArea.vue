@@ -328,6 +328,9 @@ const functionalKeyCodes = {
   Enter: 13
 }
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
+// positive lookbehind (?<=^|\\s) here:
+// ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
+const emojiShortCodeRegex = new RegExp(`(?<=^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
 export default ({
   name: 'SendArea',
@@ -558,12 +561,11 @@ export default ({
     updateSegmentSelectionKeyword () {
       const textAreaValue = this.$refs.textarea.value
       const cursorPosition = this.$refs.textarea.selectionStart
-      const whitespaceRegex = /(\s)/g // RegEx Metacharacter \s
+      const whitespaceRegex = /\s/ // RegEx Metacharacter \s
       const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
-      // positive lookbehind (?<=^|\\s) here: ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
-      const emojiShortcodeMatch = new RegExp(`(?<=^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`).exec(textBeforeCursor)
+      const emojiShortcodeMatch = emojiShortCodeRegex.exec(textBeforeCursor)
       const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].length : -1
 
       if (emojiCharIndex !== -1) {
@@ -607,7 +609,7 @@ export default ({
             this.ephemeral.segmentInsertion.options = searchResult.map(item => {
               return {
                 ...mapEmojiItem(item),
-                matchStr: searchQuery
+                matchStr: searchQuery.toLowerCase()
               }
             })
             this.ephemeral.segmentInsertion.position = emojiCharIndex
@@ -1500,13 +1502,8 @@ export default ({
 
   .c-username,
   .c-display-name,
-  .c-channel-name,
-  .c-emoji-name {
+  .c-channel-name {
     margin-left: 0.3rem;
-  }
-
-  .c-emoji-native {
-    font-size: 1.1em;
   }
 
   .c-display-name {
