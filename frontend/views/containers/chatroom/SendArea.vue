@@ -669,12 +669,12 @@ export default ({
 
             if (shouldScrollDown) {
               const newItemBottomPosition = newItemOffsetTop + newItemElHeight
-              this.$refs.segmentInsertionWrapper.scrollTo({
+              segmentInsertionWrapperEl.scrollTo({
                 left: 0, top: Math.max(0, newItemBottomPosition - clientHeight)
               })
             }
             if (shouldScrollUp) {
-              this.$refs.segmentInsertionWrapper.scrollTo({
+              segmentInsertionWrapperEl.scrollTo({
                 left: 0, top: Math.max(0, newItemOffsetTop)
               })
             }
@@ -751,9 +751,11 @@ export default ({
         segmentString = selection.native
       }
 
-      // Insert the selected mention into the input text.
+      // Insert the selected segment into the input text.
       const value = curValue.slice(0, segmentStartPosition) +
-      segmentString + ' ' + curValue.slice(curPosition)
+        segmentString +
+        (curValue[curPosition] === ' ' ? '' : ' ') + // If there isn't already a space before the cursor, add one.
+        curValue.slice(curPosition)
       this.$refs.textarea.value = value
 
       // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
