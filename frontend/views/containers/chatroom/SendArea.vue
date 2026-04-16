@@ -760,6 +760,7 @@ export default ({
       const selectionStart = segmentStartPosition + segmentString.length + 1
       this.moveCursorTo(selectionStart)
       this.endSegmentSelection()
+      this.updateTextArea()
     },
     moveCursorTo (index) {
       this.$refs.textarea.setSelectionRange(index, index)

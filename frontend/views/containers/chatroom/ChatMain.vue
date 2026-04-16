@@ -1332,6 +1332,7 @@ export default ({
       return this.ephemeral.startedUnreadMessageHash === msgHash
     },
     addEmoticon (message, emoticon) {
+      console.log('!@# emoticon', emoticon)
       const contractID = this.ephemeral.renderingChatRoomId
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID,

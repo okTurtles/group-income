@@ -8,8 +8,6 @@ export const searchEmoji = (query: string = '', sortByRelevance: boolean = false
   let results = emojiIndex.search(query)
 
   if (results?.length > 0) {
-    results = results.slice(0, maxResults)
-
     if (sortByRelevance) {
       results = results.sort((a, b) => {
         const getColonsMatchIndex = (colons) => {
@@ -23,6 +21,8 @@ export const searchEmoji = (query: string = '', sortByRelevance: boolean = false
         return aColonsMatchIndex - bColonsMatchIndex
       })
     }
+
+    results = results.slice(0, maxResults)
   }
 
   return results
