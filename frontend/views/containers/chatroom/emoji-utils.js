@@ -9,7 +9,7 @@ export const searchEmoji = (query: string = '', sortByRelevance: boolean = false
 
   if (results?.length > 0) {
     if (sortByRelevance) {
-      results = results.sort((a, b) => {
+      results = results.slice().sort((a, b) => {
         const getColonsMatchIndex = (colons) => {
           const matchIndex = colons.toLowerCase().indexOf(query.toLowerCase())
           // If there is no matching string piece in the colons of the item, set the index to a large number so that it has low priority.

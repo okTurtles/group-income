@@ -330,7 +330,7 @@ const functionalKeyCodes = {
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
 // positive lookbehind (?<=^|\\s) here:
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
-const emojiShortCodeRegex = new RegExp(`(?<=^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z_]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
+const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
 export default ({
   name: 'SendArea',
@@ -566,7 +566,7 @@ export default ({
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
       const emojiShortcodeMatch = emojiShortCodeRegex.exec(textBeforeCursor)
-      const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].length : -1
+      const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].trim().length : -1
 
       if (emojiCharIndex !== -1) {
         const shouldInsertImmediately = textBeforeCursor[textBeforeCursor.length - 1] === CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR
