@@ -13,18 +13,18 @@
     :disabled='loading'
     data-test='messageInputWrapper'
   )
-    .c-mentions(
-      v-if='ephemeral.mention.options.length'
+    .c-segment-selection(
+      v-if='ephemeral.segmentInsertion.options.length'
       :class='{ "is-above-replying-message": !!replyingMessage }'
-      ref='mentionWrapper'
+      ref='segmentInsertionWrapper'
     )
-      template(v-if='ephemeral.mention.type === "member"')
+      template(v-if='ephemeral.segmentInsertion.type === "member"')
         .c-mention-user(
-          v-for='(user, index) in ephemeral.mention.options'
+          v-for='(user, index) in ephemeral.segmentInsertion.options'
           :key='user.memberID'
-          ref='mention'
-          :class='{"is-selected": index === ephemeral.mention.index}'
-          @click.stop='onClickMention(index)'
+          :data-segment-index='index'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
+          @click.stop='onClickSegmentItem(index)'
         )
           avatar(:src='user.picture' size='xs')
           .c-username {{user.username}}
@@ -32,16 +32,26 @@
             v-if='user.displayName !== user.username'
           ) ({{user.displayName}})
 
-      template(v-else-if='ephemeral.mention.type ==="channel"')
+      template(v-else-if='ephemeral.segmentInsertion.type ==="channel"')
         .c-mention-channel(
-          v-for='(channel, index) in ephemeral.mention.options'
+          v-for='(channel, index) in ephemeral.segmentInsertion.options'
           :key='channel.id'
-          ref='mention'
-          :class='{"is-selected": index === ephemeral.mention.index}'
-          @click.stop='onClickMention(index)'
+          :data-segment-index='index'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
+          @click.stop='onClickSegmentItem(index)'
         )
           i(:class='[channel.privacyLevel === "private" ? "icon-lock" : "icon-hashtag", "c-channel-icon"]')
           .c-channel-name {{ channel.name }}
+
+      template(v-else-if='ephemeral.segmentInsertion.type ==="emoji"')
+        .c-emoji-insertion(
+          v-for='(emoji, index) in ephemeral.segmentInsertion.options'
+          :data-segment-index='index'
+          :key='emoji.id'
+          :class='{ "is-selected": index === ephemeral.segmentInsertion.index }'
+          @click.stop='onClickSegmentItem(index)'
+        )
+          emoji-shortcut-item-display(:data='emoji')
 
     .c-jump-to-latest(
       v-if='scrolledUp && !replyingMessage'
@@ -277,11 +287,13 @@ import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
+import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
 import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
+  CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR,
   CHATROOM_MAX_MESSAGE_LEN,
   CHATROOM_ATTACHMENT_TYPES
 } from '@model/contracts/shared/constants.js'
@@ -295,6 +307,7 @@ import {
   combineMarkdownSegmentListIntoString
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
+import { searchEmoji } from './emoji-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -315,6 +328,9 @@ const functionalKeyCodes = {
   Enter: 13
 }
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
+// positive lookbehind (?<=^|\\s) here:
+// ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
+const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
 export default ({
   name: 'SendArea',
@@ -323,7 +339,8 @@ export default ({
     Avatar,
     Tooltip,
     CreatePoll,
-    ChatAttachmentPreview
+    ChatAttachmentPreview,
+    EmojiShortcutItemDisplay
   },
   props: {
     defaultText: String,
@@ -352,11 +369,12 @@ export default ({
         maskHeight: '',
         showButtons: true,
         isPhone: false,
-        mention: {
+        segmentInsertion: {
+          // pop-up helper to select and insert a special text segment (e.g, channel/user mention, emojis etc.)
           position: -1,
           options: [],
           index: -1,
-          type: 'member' // enum of ['member', 'channel']
+          type: 'member' // enum of ['member', 'channel', emoji]
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
@@ -502,6 +520,9 @@ export default ({
     },
     hasAttachments () {
       return this.ephemeral.attachments.length > 0
+    },
+    segmentInsertionEnabled () {
+      return this.ephemeral.segmentInsertion.options.length > 0
     }
   },
   methods: {
@@ -537,65 +558,145 @@ export default ({
         return this.createNewLine()
       }
     },
-    updateMentionKeyword () {
-      let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
-      const channelCharIndex = value.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
-      const memberCharIndex = value.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
+    updateSegmentSelectionKeyword () {
+      const textAreaValue = this.$refs.textarea.value
+      const cursorPosition = this.$refs.textarea.selectionStart
+      const whitespaceRegex = /\s/ // RegEx Metacharacter \s
+      const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
-      if (channelCharIndex === -1 && memberCharIndex === -1) {
-        return this.endMention()
+      // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
+      const emojiShortcodeMatch = emojiShortCodeRegex.exec(textBeforeCursor)
+      const emojiCharIndex = emojiShortcodeMatch ? textBeforeCursor.length - emojiShortcodeMatch[0].trim().length : -1
+
+      if (emojiCharIndex !== -1) {
+        const shouldInsertImmediately = textBeforeCursor[textBeforeCursor.length - 1] === CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR
+        const mapEmojiItem = (emoji) => ({
+          colons: emoji.colons,
+          name: emoji.name,
+          native: emoji.native,
+          id: emoji.id || emoji.colons
+        })
+
+        if (shouldInsertImmediately) {
+          // Shortcut emoji insertion pop-up is triggered by user typing ':' (with no directly preceding characters) and search is performed as they type the query.
+          // If this query string is directly followed by another ':' and there is a matching emoji for the current query string, immediately perform the emoji insertion.
+          // e.g.) If user types all the way to ':smiley:', replace this piece with 😃 instantly.
+          const queryEmojiColonKeyword = textBeforeCursor.slice(emojiCharIndex)
+          const searchQuery = queryEmojiColonKeyword.slice(1, queryEmojiColonKeyword.length - 1)
+          const searchResult = searchEmoji(searchQuery)
+          let foundEmoji = null
+
+          if (searchResult?.length > 0) {
+            foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
+
+            if (foundEmoji) {
+              this.ephemeral.segmentInsertion.options = [mapEmojiItem(foundEmoji)]
+              this.ephemeral.segmentInsertion.position = emojiCharIndex
+              this.ephemeral.segmentInsertion.type = 'emoji'
+              this.addSelectedSegment(0)
+            }
+          }
+
+          if (!foundEmoji) {
+            // If there is no matching emoji, close the pop-up if it is open.
+            this.endSegmentSelection()
+          }
+        } else {
+          const searchQuery = textBeforeCursor.slice(emojiCharIndex + 1)
+          const searchResult = searchEmoji(searchQuery, true)
+
+          if (searchResult?.length > 0) {
+            this.ephemeral.segmentInsertion.options = searchResult.map(item => {
+              return {
+                ...mapEmojiItem(item),
+                matchStr: searchQuery.toLowerCase()
+              }
+            })
+            this.ephemeral.segmentInsertion.position = emojiCharIndex
+            this.ephemeral.segmentInsertion.index = 0
+            this.ephemeral.segmentInsertion.type = 'emoji'
+
+            if (this.$refs.segmentInsertionWrapper) {
+              // Since the index is reset to 0, scroll position should be reset to the top as well.
+              this.$refs.segmentInsertionWrapper.scrollTo({ left: 0, top: 0 })
+            }
+          } else {
+            // If no matching search results, close the pop-up if it is open.
+            this.endSegmentSelection()
+          }
+        }
+      } else {
+        const channelCharIndex = textBeforeCursor.lastIndexOf(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)
+        const memberCharIndex = textBeforeCursor.lastIndexOf(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)
+
+        if (channelCharIndex === -1 && memberCharIndex === -1) {
+          return this.endSegmentSelection()
+        }
+
+        const lastIndex = Math.max(channelCharIndex, memberCharIndex)
+        const mentionType = channelCharIndex > memberCharIndex ? 'channel' : 'member'
+
+        if (lastIndex > 0 && !whitespaceRegex.test(textBeforeCursor[lastIndex - 1])) {
+          return this.endSegmentSelection()
+        }
+
+        const textAfterMentionChar = textBeforeCursor.slice(lastIndex + 1)
+        if (whitespaceRegex.test(textAfterMentionChar)) {
+          return this.endSegmentSelection()
+        }
+
+        this.startMention(textAfterMentionChar, lastIndex, mentionType)
       }
-
-      const lastIndex = Math.max(channelCharIndex, memberCharIndex)
-      const mentionType = channelCharIndex > memberCharIndex ? 'channel' : 'member'
-      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
-
-      if (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1])) {
-        return this.endMention()
-      }
-
-      value = value.slice(lastIndex + 1)
-      if (regExWordStart.test(value)) {
-        return this.endMention()
-      }
-
-      this.startMention(value, lastIndex, mentionType)
     },
     handleKeydown (e) {
       if (caretKeyCodeValues[e.keyCode]) {
-        const nChoices = this.ephemeral.mention.options.length
-        if (nChoices &&
+        const nChoices = this.ephemeral.segmentInsertion.options.length
+        const segmentInsertionWrapperEl = this.$refs.segmentInsertionWrapper
+        if (nChoices && segmentInsertionWrapperEl &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
           const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
-          const newIndex = (this.ephemeral.mention.index + offset + nChoices) % nChoices
-          this.ephemeral.mention.index = newIndex
+          const newIndex = (this.ephemeral.segmentInsertion.index + offset + nChoices) % nChoices
+          this.ephemeral.segmentInsertion.index = newIndex
 
-          const { clientHeight, scrollHeight } = this.$refs.mentionWrapper
-          if (scrollHeight !== clientHeight) {
-            const offsetTop = this.$refs.mention[newIndex].offsetTop + this.$refs.mention[newIndex].clientHeight
+          const { clientHeight, scrollHeight, scrollTop } = segmentInsertionWrapperEl
+          const newIndexItemEl = segmentInsertionWrapperEl.querySelector(`[data-segment-index="${newIndex}"]`)
+          if (scrollHeight !== clientHeight && newIndexItemEl) {
+            const newItemOffsetTop = newIndexItemEl.offsetTop
+            const newItemElHeight = newIndexItemEl.clientHeight
+            // If the new item is out of view, scroll to it.
+            const shouldScrollDown = newItemOffsetTop + newItemElHeight > scrollTop + clientHeight
+            const shouldScrollUp = newItemOffsetTop < scrollTop
 
-            this.$refs.mentionWrapper.scrollTo({
-              left: 0, top: Math.max(0, offsetTop - clientHeight)
-            })
+            if (shouldScrollDown) {
+              const newItemBottomPosition = newItemOffsetTop + newItemElHeight
+              segmentInsertionWrapperEl.scrollTo({
+                left: 0, top: Math.max(0, newItemBottomPosition - clientHeight)
+              })
+            }
+            if (shouldScrollUp) {
+              segmentInsertionWrapperEl.scrollTo({
+                left: 0, top: Math.max(0, newItemOffsetTop)
+              })
+            }
           }
 
           e.preventDefault()
         } else if (!nChoices && e.keyCode === caretKeyCodes.Esc) {
           this.cancelEditing()
         } else {
-          this.endMention()
+          this.endSegmentSelection()
         }
       }
     },
-    onClickMention (index) {
+    onClickSegmentItem (index) {
       this.$refs.textarea.focus()
-      this.addSelectedMention(index)
+      this.addSelectedSegment(index)
     },
     handleKeyDownEnter (e) {
       const isNotPhone = !this.ephemeral.isPhone
 
-      if (this.ephemeral.mention.options.length) {
-        this.addSelectedMention(this.ephemeral.mention.index)
+      if (this.segmentInsertionEnabled) {
+        this.addSelectedSegment(this.ephemeral.segmentInsertion.index)
       } else if (isNotPhone) {
         this.sendMessage()
       }
@@ -603,8 +704,8 @@ export default ({
       isNotPhone && e.preventDefault()
     },
     handleKeyDownTab (e) {
-      if (this.ephemeral.mention.options.length) {
-        this.addSelectedMention(this.ephemeral.mention.index)
+      if (this.segmentInsertionEnabled) {
+        this.addSelectedSegment(this.ephemeral.segmentInsertion.index)
         e.preventDefault()
       }
     },
@@ -616,7 +717,7 @@ export default ({
       }
 
       if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
-        this.updateMentionKeyword()
+        this.updateSegmentSelectionKeyword()
       }
 
       if (!this.isEditing) {
@@ -628,35 +729,40 @@ export default ({
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
-    addSelectedMention (index) {
+    addSelectedSegment (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
       const {
         options,
-        position: mentionStartPosition,
-        type: mentionType
-      } = this.ephemeral.mention
+        position: segmentStartPosition,
+        type: segmentType
+      } = this.ephemeral.segmentInsertion
       const selection = options[index]
-      let mentionString = ''
+      let segmentString = ''
 
-      if (mentionType === 'member') {
+      if (segmentType === 'member') {
         const mentionObj = makeMentionFromUsername(selection.username || selection.memberID, true)
-        mentionString = selection.memberID === mentionObj.all
+        segmentString = selection.memberID === mentionObj.all
           ? mentionObj.all
           : mentionObj.me
-      } else if (mentionType === 'channel') {
-        mentionString = makeChannelMention(selection.name)
+      } else if (segmentType === 'channel') {
+        segmentString = makeChannelMention(selection.name)
+      } else if (segmentType === 'emoji') {
+        segmentString = selection.native
       }
 
-      // Insert the selected mention into the input text.
-      const value = curValue.slice(0, mentionStartPosition) +
-        mentionString + ' ' + curValue.slice(curPosition)
+      // Insert the selected segment into the input text.
+      const value = curValue.slice(0, segmentStartPosition) +
+        segmentString +
+        (curValue[curPosition] === ' ' ? '' : ' ') + // If there isn't already a space before the cursor, add one.
+        curValue.slice(curPosition)
       this.$refs.textarea.value = value
 
       // Move the cursor in the text-input to the end of the inserted mention string, and hide the selection menu.
-      const selectionStart = mentionStartPosition + mentionString.length + 1
+      const selectionStart = segmentStartPosition + segmentString.length + 1
       this.moveCursorTo(selectionStart)
-      this.endMention()
+      this.endSegmentSelection()
+      this.updateTextArea()
     },
     moveCursorTo (index) {
       this.$refs.textarea.setSelectionRange(index, index)
@@ -761,7 +867,7 @@ export default ({
     clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
-      this.endMention()
+      this.endSegmentSelection()
       if (this.hasAttachments) { this.clearAllAttachments() }
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
@@ -1023,33 +1129,33 @@ export default ({
             })
           }
 
-          this.ephemeral.mention.options = availableMentions.filter(
+          this.ephemeral.segmentInsertion.options = availableMentions.filter(
             user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
           )
 
           break
         }
         case 'channel': {
-          this.ephemeral.mention.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
+          this.ephemeral.segmentInsertion.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
         }
       }
 
-      this.ephemeral.mention.type = mentionType
-      this.ephemeral.mention.position = position
-      this.ephemeral.mention.index = 0
+      this.ephemeral.segmentInsertion.type = mentionType
+      this.ephemeral.segmentInsertion.position = position
+      this.ephemeral.segmentInsertion.index = 0
     },
-    endMention () {
-      this.ephemeral.mention.position = -1
-      this.ephemeral.mention.index = -1
-      this.ephemeral.mention.options = []
+    endSegmentSelection () {
+      this.ephemeral.segmentInsertion.position = -1
+      this.ephemeral.segmentInsertion.index = -1
+      this.ephemeral.segmentInsertion.options = []
     },
     onWindowMouseClicked (e) {
-      if (!this.$refs.mentionWrapper) {
+      if (!this.$refs.segmentInsertionWrapper) {
         return
       }
-      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-segment-selection')
       if (!element) {
-        this.endMention()
+        this.endSegmentSelection()
       }
     },
     transformTextSelectionToMarkdown (type) {
@@ -1358,7 +1464,7 @@ export default ({
   top: -2.125rem;
 }
 
-.c-mentions {
+.c-segment-selection {
   background-color: $general_2;
   border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;
@@ -1380,6 +1486,15 @@ export default ({
   .c-mention-channel {
     display: flex;
     align-items: center;
+  }
+
+  .c-emoji-insertion {
+    display: block;
+  }
+
+  .c-mention-user,
+  .c-mention-channel,
+  .c-emoji-insertion {
     padding: 0.2rem 0.4rem;
     cursor: pointer;
 
