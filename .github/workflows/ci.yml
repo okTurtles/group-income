@@ -19,6 +19,7 @@ jobs:
     steps:
     - run: sudo apt-get install -y nginx
     - run: |
+        set -e
         export NGX_HOME="$RUNNER_TEMP/nginx"
         mkdir -p "$NGX_HOME/conf"
         cat > "$NGX_HOME/conf/nginx.conf" <<-EOF

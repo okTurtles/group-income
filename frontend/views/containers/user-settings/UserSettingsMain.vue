@@ -65,9 +65,9 @@
     .version-item
       i18n App Version:
       span.c-version-value {{ ephemeral.versions.app }}
-    .version-item
-      i18n Contracts Version:
-      span.c-version-value {{ ephemeral.versions.contracts }}
+    .version-item(v-for='(version, name) in contractsVersion')
+      i18n(:args='{ contract: contractDisplayName(name) }') {contract} Version:
+      span.c-version-value {{ version }}
     .version-item
       i18n SW Version:
       span.c-version-value(
@@ -95,19 +95,27 @@ export default {
         versions: {
           loadingSWVersion: false,
           app: '-',
-          contracts: '-',
           sw: '-'
         }
       }
+    }
+  },
+  computed: {
+    contractsVersion () {
+      return process.env.CONTRACTS_VERSION
     }
   },
   methods: {
     handleDeleteAccount () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     },
+    contractDisplayName (name: string) {
+      // Extract contract name from full path (e.g., 'gi.contracts/chatroom' -> 'Chatroom')
+      const parts = name.split('/')
+      return parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1)
+    },
     async loadVersionInfo () {
       this.ephemeral.versions.app = process.env.APP_VERSION.split('@')[0]
-      this.ephemeral.versions.contracts = JSON.stringify(process.env.CONTRACTS_VERSION)
 
       try {
         this.ephemeral.versions.loadingSWVersion = true
