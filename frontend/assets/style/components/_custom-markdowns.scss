@@ -168,7 +168,7 @@
     padding-top: 0;
   }
 
-  table {
+  table:not(.code-fence-table) {
     position: relative;
     width: 100%;
     overflow: hidden;
@@ -206,6 +206,16 @@
     th {
       color: $text_0;
       font-weight: 600;
+    }
+  }
+
+  .code-fence-table {
+    td {
+      padding: 0;
+    }
+
+    code {
+      white-space: pre-wrap;
     }
   }
 

@@ -6,8 +6,16 @@
       i.icon-copy
       i18n Copy
 
-  pre
-    code {{ content }}
+  .c-code-table
+    table.code-fence-table
+      colgroup
+        col(width='2rem')
+        col(width='100%')
+      tbody
+        tr(v-for='codeLine in codeLines')
+          td.c-line-number {{ codeLine.lineNumber }}
+          td
+            code {{ codeLine.text }}
 </template>
 
 <script>
@@ -21,7 +29,10 @@ export default {
   },
   computed: {
     codeLines () {
-      return this.content.split('\n')
+      return this.content.split('\n').map((line, index) => ({
+        text: line,
+        lineNumber: index + 1
+      }))
     },
     lineCount () {
       return this.codeLines.length
@@ -65,5 +76,10 @@ export default {
   font-size: $size_5;
   color: $text_1;
   padding-bottom: 0.125rem;
+}
+
+.c-line-number {
+  user-select: none;
+  text-align: right;
 }
 </style>
