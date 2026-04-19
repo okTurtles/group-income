@@ -62,7 +62,8 @@
   }
 
   * + pre,
-  * + blockquote {
+  * + blockquote,
+  * + .code-fence-block {
     margin-top: 0.25rem;
   }
 

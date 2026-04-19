@@ -1,22 +1,69 @@
 <template lang="pug">
-  pre.c-code-fence
+.code-fence-block.c-code-fence-wrapper
+  .c-cta-container
+    i18n.c-line-count(:args='{ lineCount }') {lineCount} lines
+    button.is-extra-small.is-outlined.c-copy-button
+      i.icon-copy
+      i18n Copy
+
+  pre
     code {{ content }}
 </template>
 
 <script>
 export default {
+  name: 'CodeFence',
   props: {
     content: {
       type: String,
       required: true
+    }
+  },
+  computed: {
+    codeLines () {
+      return this.content.split('\n')
+    },
+    lineCount () {
+      return this.codeLines.length
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.c-code-fence {
+@import "@assets/style/_variables.scss";
+
+.c-code-fence-wrapper {
   position: relative;
   display: block;
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: $radius-large;
+  border: 1px solid $general_0;
+}
+
+.c-cta-container {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid $general_0;
+  margin-bottom: 0.5rem;
+}
+
+.c-copy-button {
+  i {
+    margin-right: 0.25rem;
+    transform: translateY(1px);
+  }
+}
+
+.c-line-count {
+  display: inline-block;
+  font-size: $size_5;
+  color: $text_1;
+  padding-bottom: 0.125rem;
 }
 </style>
