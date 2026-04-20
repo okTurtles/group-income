@@ -216,24 +216,18 @@
   }
 
   .code-fence-table {
-    tr {
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-    }
-
     td {
       line-height: 1.5;
       padding: 0;
 
       &.line-number {
-        padding-right: 0.5rem;
-        text-align: right;
-        color: $success_0;
-        min-width: 2rem;
+        text-align: left;
+        color: $text_1;
+        min-width: 1.5rem;
         user-select: none;
-        opacity: 0.75;
-        font-size: 0.75rem;
-        padding-top: 0.175rem;
+        opacity: 0.625;
+        font-size: 0.675rem;
+        padding-top: 0.25rem;
       }
 
       &.code-line {
@@ -241,7 +235,6 @@
         white-space: pre-wrap;
         word-break: break-all;
         padding-left: 0.5rem;
-        border-left: 1px solid $general_0;
       }
     }
 
@@ -249,6 +242,24 @@
       white-space: pre-wrap;
       padding: 0;
       word-break: break-all;
+    }
+
+    tr:first-child {
+      padding-top: 0.25rem;
+
+      td.line-number {
+        padding-top: 0.675rem;
+      }
+      td.code-line {
+        padding-top: 0.5rem;
+      }
+    }
+
+    tr:last-child {
+      td.line-number,
+      td.code-line {
+        padding-bottom: 0.5rem;
+      }
     }
   }
 

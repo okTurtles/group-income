@@ -1,12 +1,18 @@
 <template lang="pug">
 .code-fence-block.c-code-fence-wrapper
-  button.is-extra-small.is-outlined.c-copy-button(
-    type='button'
-    :aria-label='L("Copy code to clipboard")'
-    @click.stop='copyToClipboard'
-  )
-    i.icon-check-circle(v-if='ephemeral.isCopied')
-    i.icon-copy(v-else)
+  .c-cta-container
+    span.c-line-count {{ nLinesText }}
+    button.is-extra-small.is-outlined.c-copy-button(
+      type='button'
+      :aria-label='L("Copy code to clipboard")'
+      @click.stop='copyToClipboard'
+    )
+      template(v-if='ephemeral.isCopied')
+        i.icon-check-circle
+        i18n.c-copied-text Copied!
+      template(v-else)
+        i.icon-copy
+        i18n.c-copied-text Copy
 
   .c-code-table
     table.code-fence-table
@@ -20,6 +26,8 @@
 </template>
 
 <script>
+import { L } from '@common/common.js'
+
 export default {
   name: 'CodeFence',
   props: {
@@ -41,6 +49,11 @@ export default {
         text: line,
         lineNumber: index + 1
       }))
+    },
+    nLinesText () {
+      return this.lineCount === 1
+        ? L('{n} line', { n: this.lineCount })
+        : L('{n} lines', { n: this.lineCount })
     },
     lineCount () {
       return this.codeLines.length
@@ -66,23 +79,39 @@ export default {
   position: relative;
   display: block;
   width: 100%;
-  padding: 0.5rem;
+  padding: 0;
   border-radius: $radius-large;
   border: 1px solid $general_0;
 }
 
 .c-code-table {
   width: 100%;
+  padding: 0 0.5rem;
 }
 
-.c-copy-button {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  min-height: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-  font-size: $size_4;
+.c-cta-container {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  column-gap: 0.5rem;
+  width: 100%;
+  border-bottom: 1px solid $general_0;
+  padding: 0.5rem;
+
+  .c-line-count {
+    font-size: $size_5;
+    color: $text_1;
+    padding-bottom: 1px;
+  }
+
+  .c-copy-button {
+    min-height: 0;
+
+    i {
+      margin-right: 0.25rem;
+    }
+  }
 }
 
 .c-line-count {
@@ -90,11 +119,5 @@ export default {
   font-size: $size_5;
   color: $text_1;
   padding-bottom: 0.125rem;
-}
-
-.c-code-fence-wrapper:hover {
-  .c-copy-button {
-    opacity: 1;
-  }
 }
 </style>
