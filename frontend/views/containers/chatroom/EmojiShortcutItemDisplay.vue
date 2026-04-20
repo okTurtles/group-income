@@ -17,7 +17,10 @@ export default {
     emojiColonsDisplay () {
       // Display name of shortcut emoji insertion has a highlighted part if there is a matching text in their display names('colons').
       return this.data.matchStr
-        ? this.data.colons.replace(this.data.matchStr, `<span class="c-match-str">${this.data.matchStr}</span>`)
+        ? this.data.colons.replace(
+          new RegExp(this.data.matchStr, 'g'),
+          `<span class="c-match-str">${this.data.matchStr}</span>`
+        )
         : this.data.colons
     }
   }

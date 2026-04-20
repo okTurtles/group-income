@@ -328,7 +328,6 @@ const functionalKeyCodes = {
   Enter: 13
 }
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
-// positive lookbehind (?<=^|\\s) here:
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
@@ -374,7 +373,7 @@ export default ({
           position: -1,
           options: [],
           index: -1,
-          type: 'member' // enum of ['member', 'channel', emoji]
+          type: 'member' // enum of ['member', 'channel', 'emoji']
         },
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
