@@ -9,13 +9,12 @@
   .c-code-table
     table.code-fence-table
       colgroup
-        col(width='2rem')
+        col(width='3rem')
         col(width='100%')
       tbody
         tr(v-for='codeLine in codeLines')
-          td.c-line-number {{ codeLine.lineNumber }}
-          td
-            code {{ codeLine.text }}
+          td.line-number {{ codeLine.lineNumber }}
+          td.code-line {{ codeLine.text }}
 </template>
 
 <script>
@@ -55,7 +54,7 @@ export default {
 
 .c-cta-container {
   position: relative;
-  display: flex;
+  display: none;
   align-items: flex-end;
   justify-content: flex-end;
   gap: 0.5rem;
@@ -76,10 +75,5 @@ export default {
   font-size: $size_5;
   color: $text_1;
   padding-bottom: 0.125rem;
-}
-
-.c-line-number {
-  user-select: none;
-  text-align: right;
 }
 </style>
