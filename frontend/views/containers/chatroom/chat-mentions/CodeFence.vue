@@ -1,10 +1,12 @@
 <template lang="pug">
 .code-fence-block.c-code-fence-wrapper
-  .c-cta-container
-    i18n.c-line-count(:args='{ lineCount }') {lineCount} lines
-    button.is-extra-small.is-outlined.c-copy-button
-      i.icon-copy
-      i18n Copy
+  button.is-extra-small.is-outlined.c-copy-button(
+    type='button'
+    :aria-label='L("Copy code to clipboard")'
+    @click.stop='copyToClipboard'
+  )
+    I18n.sr-only Copy
+    i.icon-copy
 
   .c-code-table
     table.code-fence-table
@@ -36,6 +38,11 @@ export default {
     lineCount () {
       return this.codeLines.length
     }
+  },
+  methods: {
+    copyToClipboard () {
+      navigator.clipboard.writeText(this.content)
+    }
   }
 }
 </script>
@@ -52,22 +59,11 @@ export default {
   border: 1px solid $general_0;
 }
 
-.c-cta-container {
-  position: relative;
-  display: none;
-  align-items: flex-end;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid $general_0;
-  margin-bottom: 0.5rem;
-}
-
 .c-copy-button {
-  i {
-    margin-right: 0.25rem;
-    transform: translateY(1px);
-  }
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  min-height: 0;
 }
 
 .c-line-count {
