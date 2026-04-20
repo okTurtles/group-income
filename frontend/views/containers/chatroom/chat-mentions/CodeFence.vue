@@ -5,13 +5,13 @@
     :aria-label='L("Copy code to clipboard")'
     @click.stop='copyToClipboard'
   )
-    I18n.sr-only Copy
-    i.icon-copy
+    i.icon-check-circle(v-if='ephemeral.isCopied')
+    i.icon-copy(v-else)
 
   .c-code-table
     table.code-fence-table
       colgroup
-        col(width='3rem')
+        col(width='2rem')
         col(width='100%')
       tbody
         tr(v-for='codeLine in codeLines')
@@ -28,6 +28,13 @@ export default {
       required: true
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        isCopied: false
+      }
+    }
+  },
   computed: {
     codeLines () {
       return this.content.split('\n').map((line, index) => ({
@@ -41,7 +48,12 @@ export default {
   },
   methods: {
     copyToClipboard () {
-      navigator.clipboard.writeText(this.content)
+      navigator.clipboard.writeText(this.content).then(() => {
+        this.ephemeral.isCopied = true
+        setTimeout(() => {
+          this.ephemeral.isCopied = false
+        }, 1500)
+      })
     }
   }
 }
@@ -59,11 +71,18 @@ export default {
   border: 1px solid $general_0;
 }
 
+.c-code-table {
+  width: 100%;
+}
+
 .c-copy-button {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
   min-height: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  font-size: $size_4;
 }
 
 .c-line-count {
@@ -71,5 +90,11 @@ export default {
   font-size: $size_5;
   color: $text_1;
   padding-bottom: 0.125rem;
+}
+
+.c-code-fence-wrapper:hover {
+  .c-copy-button {
+    opacity: 1;
+  }
 }
 </style>

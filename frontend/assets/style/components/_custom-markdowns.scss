@@ -229,9 +229,9 @@
         padding-right: 0.5rem;
         text-align: right;
         color: $success_0;
-        min-width: 2.5rem;
+        min-width: 2rem;
         user-select: none;
-        opacity: 0.675;
+        opacity: 0.75;
         font-size: 0.75rem;
         padding-top: 0.175rem;
       }
@@ -240,6 +240,8 @@
         color: $warning_0;
         white-space: pre-wrap;
         word-break: break-all;
+        padding-left: 0.5rem;
+        border-left: 1px solid $general_0;
       }
     }
 
