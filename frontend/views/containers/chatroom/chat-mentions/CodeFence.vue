@@ -82,6 +82,11 @@ export default {
         })
       }
     }
+  },
+  beforeDestroy () {
+    if (this.ephemeral.timeoutId) {
+      clearTimeout(this.ephemeral.timeoutId)
+    }
   }
 }
 </script>
@@ -114,9 +119,10 @@ export default {
   padding: 0.5rem;
 
   .c-line-count {
+    display: inline-block;
     font-size: $size_5;
     color: $text_1;
-    padding-bottom: 1px;
+    padding-bottom: 0.125rem;
   }
 }
 
@@ -143,12 +149,5 @@ button.c-copy-button {
   i {
     margin-right: 0.25rem;
   }
-}
-
-.c-line-count {
-  display: inline-block;
-  font-size: $size_5;
-  color: $text_1;
-  padding-bottom: 0.125rem;
 }
 </style>
