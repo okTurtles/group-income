@@ -15,13 +15,16 @@ export default {
   },
   computed: {
     emojiColonsDisplay () {
-      // Display name of shortcut emoji insertion has a highlighted part if there is a matching text in their display names('colons').
-      return this.data.matchStr
-        ? this.data.colons.replace(
-          new RegExp(this.data.matchStr, 'g'),
+      if (this.data.matchStr) {
+        // Escape regex special characters first, so that they don't fail in new RegExp() constructor.
+        // e.g. when ':+1' is entered, new RegExp('+1', 'g') throws 'SyntaxError: Nothing to repeat'. '+1' needs to be escaped as '\+1'.
+        const escaped = this.data.matchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        return this.data.colons.replace(
+          new RegExp(escaped, 'g'),
           `<span class="c-match-str">${this.data.matchStr}</span>`
         )
-        : this.data.colons
+      }
+      return this.data.colons
     }
   }
 }
