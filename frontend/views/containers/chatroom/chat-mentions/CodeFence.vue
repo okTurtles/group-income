@@ -69,6 +69,9 @@ export default {
         }, 1500)
       })
     }
+  },
+  mounted () {
+    console.log('!@# mounted', this.content)
   }
 }
 </script>
