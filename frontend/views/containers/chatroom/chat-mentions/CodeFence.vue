@@ -4,7 +4,7 @@
     span.c-line-count {{ nLinesText }}
     button.is-extra-small.is-outlined.c-copy-button(
       type='button'
-      :aria-label='L("Copy code to clipboard")'
+      :aria-label='ephemeral.isCopied ? L("Code copied") : L("Copy code to clipboard")'
       :class='{ "is-copied": ephemeral.isCopied }'
       @click.stop='copyToClipboard'
     )
@@ -21,7 +21,10 @@
         col(width='2rem')
         col(width='100%')
       tbody
-        tr(v-for='codeLine in codeLines')
+        tr(
+          v-for='codeLine in codeLines'
+          :key='codeLine.lineNumber'
+        )
           td.line-number {{ codeLine.lineNumber }}
           td.code-line {{ codeLine.text }}
 </template>
@@ -47,7 +50,9 @@ export default {
   },
   computed: {
     codeLines () {
-      return this.content.split('\n').map((line, index) => ({
+      const lines = this.content.split('\n')
+      if (lines[lines.length - 1] === '') lines.pop()
+      return lines.map((line, index) => ({
         text: line,
         lineNumber: index + 1
       }))
