@@ -43,7 +43,6 @@ export function renderMarkdown (str: string): any {
   // So manually converting them to '&lt;' and '&gt;' here first.
   // ( context: https://github.com/okTurtles/group-income/issues/2130 )
   const strSplitByCodeMarkdown = splitStringByMarkdownCode(str)
-  console.log('!@# strSplitByCodeMarkdown', strSplitByCodeMarkdown)
   strSplitByCodeMarkdown.forEach((entry, index) => {
     if (entry.type === 'plain' && strSplitByCodeMarkdown[index - 1]?.text !== '```') {
       let entryText = entry.text
@@ -194,7 +193,7 @@ export function splitStringByMarkdownCode (
   // Capture the case where the last entry is a plain text that contains a multi-line code symbols in the middle but doesn't have the closing pair.
   // In this case, everything after the starting code-fence symbols should be treated as a code block.
   const lastEntry = finalArr[finalArr.length - 1]
-  if (lastEntry.type === 'plain' && lastEntry.text.includes('```')) {
+  if (lastEntry.type === 'plain' && /```[a-z]*\n/.test(lastEntry.text)) {
     const originalText = lastEntry.text
     const multiLineCodeIndex = originalText.indexOf('```')
     lastEntry.text = originalText.slice(0, multiLineCodeIndex)

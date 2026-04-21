@@ -40,7 +40,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        isCopied: false
+        isCopied: false,
+        timeoutId: null
       }
     }
   },
@@ -62,16 +63,25 @@ export default {
   },
   methods: {
     copyToClipboard () {
-      navigator.clipboard.writeText(this.content).then(() => {
-        this.ephemeral.isCopied = true
-        setTimeout(() => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(this.content).then(() => {
+          this.ephemeral.isCopied = true
+          clearTimeout(this.ephemeral.timeoutId)
+
+          this.ephemeral.timeoutId = setTimeout(() => {
+            this.ephemeral.isCopied = false
+          }, 1500)
+        }).catch((error) => {
           this.ephemeral.isCopied = false
-        }, 1500)
-      })
+          if (this.ephemeral.timeoutId) {
+            clearTimeout(this.ephemeral.timeoutId)
+            this.ephemeral.timeoutId = null
+          }
+
+          console.error('Failed to copy to clipboard:', error)
+        })
+      }
     }
-  },
-  mounted () {
-    console.log('!@# mounted', this.content)
   }
 }
 </script>
