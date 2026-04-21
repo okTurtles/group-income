@@ -211,7 +211,7 @@
   // code-fence block styles
   .code-fence-block {
     display: block;
-    background-color: $general_1;
+    background-color: $general_2;
     margin: 0.25rem 0;
   }
 
@@ -244,21 +244,24 @@
       word-break: break-all;
     }
 
-    tr:first-child {
-      padding-top: 0.25rem;
+    tr {
+      &:first-child {
+        padding-top: 0.25rem;
 
-      td.line-number {
-        padding-top: 0.675rem;
-      }
-      td.code-line {
-        padding-top: 0.5rem;
-      }
-    }
+        td.line-number {
+          padding-top: 0.675rem;
+        }
 
-    tr:last-child {
-      td.line-number,
-      td.code-line {
-        padding-bottom: 0.5rem;
+        td.code-line {
+          padding-top: 0.5rem;
+        }
+      }
+
+      &:last-child {
+        td.line-number,
+        td.code-line {
+          padding-bottom: 0.5rem;
+        }
       }
     }
   }
@@ -292,5 +295,16 @@
         border-bottom: 1px solid $general_1;
       }
     }
+
+    .code-fence-block {
+      background-color: $general_1;
+    }
+  }
+}
+
+// dark-theme specific styles
+.is-dark-theme .custom-markdown-content {
+  .code-fence-block {
+    background-color: $general_1;
   }
 }

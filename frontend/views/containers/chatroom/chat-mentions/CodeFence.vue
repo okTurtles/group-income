@@ -5,6 +5,7 @@
     button.is-extra-small.is-outlined.c-copy-button(
       type='button'
       :aria-label='L("Copy code to clipboard")'
+      :class='{ "is-copied": ephemeral.isCopied }'
       @click.stop='copyToClipboard'
     )
       template(v-if='ephemeral.isCopied')
@@ -104,13 +105,30 @@ export default {
     color: $text_1;
     padding-bottom: 1px;
   }
+}
 
-  .c-copy-button {
-    min-height: 0;
+button.c-copy-button {
+  min-height: 0;
 
-    i {
-      margin-right: 0.25rem;
-    }
+  &:focus,
+  &:active,
+  &:hover {
+    background-color: $background;
+    border-color: $text_1;
+    color: $text_0;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 1px $general_0;
+  }
+
+  &.is-copied {
+    color: $success_0;
+    border-color: $success_0;
+  }
+
+  i {
+    margin-right: 0.25rem;
   }
 }
 
