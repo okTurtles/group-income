@@ -197,7 +197,7 @@ export function splitStringByMarkdownCode (
     const originalText = lastEntry.text
     const multiLineCodeIndex = originalText.search(/(?:^|\n)```[a-z]*\n/)
     lastEntry.text = originalText.slice(0, multiLineCodeIndex)
-    finalArr.push({ type: 'code', text: originalText.slice(multiLineCodeIndex).trim() })
+    finalArr.push({ type: 'code', text: originalText.slice(multiLineCodeIndex).trimEnd() })
   }
 
   return finalArr
