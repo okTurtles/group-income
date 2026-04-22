@@ -521,6 +521,14 @@ export default ({
     visibility: hidden;
     height: 0;
   }
+
+  &.is-md {
+    @include until($chat-narrow-screen) {
+      margin-top: 0.325rem;
+      width: 2.15rem;
+      height: 2.15rem;
+    }
+  }
 }
 
 .c-body,
