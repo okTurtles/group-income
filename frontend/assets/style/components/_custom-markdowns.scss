@@ -209,13 +209,18 @@
       padding: 0;
 
       &.line-number {
-        text-align: left;
+        text-align: right;
         color: $text_1;
-        min-width: 1.5rem;
+        min-width: max-content;
+        white-space: nowrap;
         user-select: none;
         opacity: 0.625;
         font-size: 0.675rem;
         padding-top: 0.25rem;
+
+        @include from($chat-narrow-screen) {
+          padding-right: 0.5rem;
+        }
       }
 
       &.code-line {
