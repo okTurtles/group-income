@@ -128,11 +128,13 @@ export default {
     font-size: $size_5;
     color: $text_1;
     padding-bottom: 0.125rem;
+    user-select: none;
   }
 }
 
 button.c-copy-button {
   min-height: 0;
+  user-select: none;
 
   &:focus,
   &:active,
