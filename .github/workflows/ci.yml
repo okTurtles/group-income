@@ -1,8 +1,5 @@
 name: NodeJS with Grunt
 
-env:
-  CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-
 on:
   push:
     branches: [ "master" ]
@@ -15,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
+        containers: [1, 2] # Uses 2 parallel instances
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -23,4 +21,9 @@ jobs:
         node-version: 22
         cache: 'npm'
     - run: npm ci
-    - run: npm test
+    - name: Run Cypress
+      run: npm test
+      env:
+        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+        RUN_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }} # unique ID for every single workflow execution
+        AGENT_OS: ${{ matrix.os }}

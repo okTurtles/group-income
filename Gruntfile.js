@@ -501,7 +501,13 @@ module.exports = (grunt) => {
         headed: grunt.option('browser') === true,
         ...(process.env.CYPRESS_RECORD_KEY && {
           record: true,
-          key: process.env.CYPRESS_RECORD_KEY
+          key: process.env.CYPRESS_RECORD_KEY,
+          parallel: true,
+          // Cypress Cloud uses the ciBuildId to group machines together for a single attempt, so this should be a unique value for every single workflow execution.
+          ciBuildId: process.env.RUN_ID,
+          // ci.yml currently runs on two different OSes: ubuntu-24.04, ubuntu-24.04-arm
+          // if 'group' attribute here is not specified, Cypress Cloud will load-balance test suites across these two environments, which isn't something intended.
+          group: process.env.AGENT_OS
         })
       },
       open: {
