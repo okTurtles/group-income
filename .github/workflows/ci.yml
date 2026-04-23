@@ -1,5 +1,9 @@
 name: NodeJS with Grunt
 
+env:
+  CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+  RUN_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }} # unique ID for every single workflow execution
+
 on:
   push:
     branches: [ "master" ]
@@ -11,9 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-        containers: [1, 2] # Uses 2 parallel instances
-    runs-on: ${{ matrix.os }}
+        # When secrets.CYPRESS_RECORD_KEY is not accessible(e.g. in forked PRs),
+        # which is a condition where parallelization isn't enabled, fall back to a single container to avoid running tests twice.
+        containers: ${{ secrets.CYPRESS_RECORD_KEY != '' && fromJSON('[1, 2]') || fromJSON('[1]') }}
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -21,9 +26,4 @@ jobs:
         node-version: 22
         cache: 'npm'
     - run: npm ci
-    - name: Run Cypress
-      run: npm test
-      env:
-        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        RUN_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }} # unique ID for every single workflow execution
-        AGENT_OS: ${{ matrix.os }}
+    - run: npm test
