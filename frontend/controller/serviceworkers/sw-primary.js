@@ -1,7 +1,7 @@
 'use strict'
 
 import { deserializer, serializer } from '@chelonia/serdes'
-import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
 import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.js'
 import { makeNotification } from '@model/notifications/nativeNotification.js'
 import '@model/notifications/periodicNotifications.js'
@@ -597,29 +597,44 @@ sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   })
 })
 
+const cheloniaReactiveSet = (state, key, value) => {
+  const { reactiveSet } = sbp('chelonia/config')
+  reactiveSet(state, key, value)
+}
+
 // These `NEW_*` events are emitted in KV files. To keep things consistent with
 // the browser state, we update the state when these events are generated.
 sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
   const rootState = sbp('state/vuex/state')
-  rootState.lastLoggedIn[contractID] = data
+  cheloniaReactiveSet(rootState.lastLoggedIn, contractID, data)
 })
 sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   const rootState = sbp('state/vuex/state')
-  rootState.preferences = preferences
+  cheloniaReactiveSet(rootState, 'preferences', preferences)
 })
 sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
   const rootState = sbp('state/vuex/state')
-  rootState.chatroom.unreadMessages = currentChatRoomUnreadMessages
+  cheloniaReactiveSet(rootState.chatroom, 'unreadMessages', currentChatRoomUnreadMessages)
 })
-sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings }) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
   const rootState = sbp('chelonia/rootState')
+  if (isGlobal) {
+    chatRoomID = GLOBAL_NOTIFICATION_SETTINGS_KEY
+  }
+
   if (chatRoomID) {
-    if (!rootState.chatroom.chatNotificationSettings[chatRoomID]) {
-      rootState.chatroom.chatNotificationSettings[chatRoomID] = {}
+    // Why not `const currentSettings = rootState.chatroom.chatNotificationSettings[chatRoomID] || {}` below?:
+    // 'reactiveSet' has a check for `o[k] !== v`, so if the chatroom has existing settings
+    // then the updates won't get persisted due to the same obj reference. So assigning currentSettings variable like below.
+    const currentSettings = {
+      ...(rootState.chatroom.chatNotificationSettings[chatRoomID] || {})
     }
+
     for (const key in settings) {
-      rootState.chatroom.chatNotificationSettings[chatRoomID][key] = settings[key]
+      currentSettings[key] = settings[key]
     }
+
+    cheloniaReactiveSet(rootState.chatroom.chatNotificationSettings, chatRoomID, currentSettings)
   }
 })
 
@@ -631,8 +646,8 @@ sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
     group: KV_LOAD_STATUS.NON_INIT
   }
 
-  rootState.kvStoreStatus = {
+  cheloniaReactiveSet(rootState, 'kvStoreStatus', {
     ...(rootState?.kvStoreStatus || defaultObj),
     [name]: status
-  }
+  })
 })

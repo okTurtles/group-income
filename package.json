@@ -1,6 +1,6 @@
 {
   "name": "group-income",
-  "version": "2.7.1",
+  "version": "2.8.0",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
@@ -112,7 +112,7 @@
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.2.1",
     "@chelonia/crypto": "1.0.1",
-    "@chelonia/lib": "1.4.2",
+    "@chelonia/lib": "1.4.3",
     "@chelonia/multiformats": "1.0.0",
     "@chelonia/serdes": "1.0.1",
     "@hapi/boom": "9.1.0",
