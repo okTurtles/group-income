@@ -1,0 +1,17 @@
+{
+  "appVersion": "2.8.0",
+  "contracts": {
+    "gi.contracts/chatroom": {
+      "version": "2.8.0",
+      "path": "contracts/gi.contracts_chatroom/2.8.0/chatroom.2.8.0.manifest.json"
+    },
+    "gi.contracts/group": {
+      "version": "2.8.0",
+      "path": "contracts/gi.contracts_group/2.8.0/group.2.8.0.manifest.json"
+    },
+    "gi.contracts/identity": {
+      "version": "2.8.0",
+      "path": "contracts/gi.contracts_identity/2.8.0/identity.2.8.0.manifest.json"
+    }
+  }
+}

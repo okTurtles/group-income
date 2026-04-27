@@ -45,9 +45,9 @@ import { showNavMixin } from './views/utils/misc.js'
 import { getTextSizeAlias } from '@view-utils/textSizes.js'
 import './views/utils/vStyle.js'
 
-console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('APP_VERSION:', process.env.APP_VERSION)
 console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
-console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('CONTRACTS_VERSION:', JSON.stringify(process.env.CONTRACTS_VERSION))
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
@@ -211,7 +211,11 @@ async function startApp () {
   ).catch(e => {
     console.error('[main] Error setting up service worker', e)
     alert(L('Error while setting up service worker: {err}', { err: e.message }))
-    window.location.reload() // try again, sometimes it fixes it
+    if (process.env.CI || process.env.NODE_ENV === 'development') {
+      alert(L('Try refreshing the page'))
+    } else {
+      window.location.reload() // try again, sometimes it fixes it
+    }
     throw e
   })
 

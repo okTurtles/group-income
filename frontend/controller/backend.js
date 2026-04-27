@@ -23,7 +23,7 @@ const languageFileMap = new Map([
 ])
 
 sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
-  if (versionInfo.GI_VERSION === process.env.GI_VERSION) {
+  if (versionInfo.appVersion === process.env.APP_VERSION) {
     // No refresh necessary, we're already at the latest version
     sessionStorage.removeItem(NOTIFICATION_TYPE.VERSION_INFO)
     return
@@ -40,7 +40,7 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
       if (
         Array.isArray(existingVersionInfo) &&
         !(Date.now() - existingVersionInfo[0] >= 2.5 * HOURS_MILLIS) &&
-        versionInfo.GI_VERSION === existingVersionInfo[1].GI_VERSION
+        versionInfo.appVersion === existingVersionInfo[1].appVersion
       ) {
         console.warn('[NOTIFICATION_TYPE.VERSION_INFO] A different Group Income version is available, but reloading has failed to address it', { existingVersionInfo, versionInfo })
         return
