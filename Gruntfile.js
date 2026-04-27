@@ -377,8 +377,8 @@ module.exports = (grunt) => {
         }
     const proc = spawn('./node_modules/.bin/chel',
       production
-        ? ['serve', 'dist']
-        : ['serve', '--dev', '-m', 'dist/contracts', 'dist']
+        ? ['serve', '--app-manifest', 'chelonia.json', '--manifests-dir', 'contracts', 'dist']
+        : ['serve', '--dev', '--app-manifest', 'chelonia.json', '--manifests-dir', 'dist/contracts', 'dist']
     )
     proc.stdout.on('data', output)
     proc.stderr.on('data', output)
