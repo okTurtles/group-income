@@ -199,10 +199,9 @@
   // horizontal rule styles
   hr {
     margin: 1rem 0;
-    height: 0;
-    border: none;
-    background: none;
-    border-top: 1px dotted $text_1;
+    height: 1px;
+    background-color: $general_0;
+    opacity: 0.785;
   }
 
   // code-fence block styles
