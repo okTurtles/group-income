@@ -521,6 +521,17 @@ export default ({
     visibility: hidden;
     height: 0;
   }
+
+  // Why not passing 'size' prop to Avatar.vue component?
+  // - It requires setting up Javascript .matchMedia() listener. More importantly, changing prop leads to rerendering the components,
+  //  which is more expensive than adding a few more lines of css styles.
+  &.is-md {
+    @include until($chat-narrow-screen) {
+      margin-top: 0.325rem;
+      width: 2.125rem;
+      height: 2.125rem;
+    }
+  }
 }
 
 .c-body,
