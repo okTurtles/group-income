@@ -45,6 +45,7 @@
   h6 {
     font-family: "Poppins";
     font-weight: bold;
+    line-height: 1.3;
 
     code {
       font-size: inherit;
@@ -216,7 +217,7 @@
     margin: 1rem 0;
     height: 1px;
     background-color: $general_0;
-    opacity: 0.785;
+    opacity: 0.8;
   }
 
   // code-fence block styles
