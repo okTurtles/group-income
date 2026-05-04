@@ -189,6 +189,17 @@ export function splitStringByMarkdownCode (
       finalArr.push(...splitByInlineCode)
     }
   }
+
+  // Capture the case where the last entry is a plain text that contains a multi-line code symbols in the middle but doesn't have the closing pair.
+  // In this case, everything after the starting code-fence symbols should be treated as a code block.
+  const lastEntry = finalArr[finalArr.length - 1]
+  if (lastEntry.type === 'plain' && /(?:^|\n)```[a-z]*\n/.test(lastEntry.text)) {
+    const originalText = lastEntry.text
+    const multiLineCodeIndex = originalText.search(/(?:^|\n)```[a-z]*\n/)
+    lastEntry.text = originalText.slice(0, multiLineCodeIndex)
+    finalArr.push({ type: 'code', text: originalText.slice(multiLineCodeIndex).trimEnd() })
+  }
+
   return finalArr
 }
 
