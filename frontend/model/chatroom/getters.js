@@ -243,7 +243,9 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
   },
   getChatroomNameById (state, getters, rootState) {
     return chatRoomID => {
-      const details = getters.chatRoomsInDetail[chatRoomID]
+      // getters.chatRoomsInDetail here will throw in dev environment when this getter is called in SW context
+      // due to getters.chatRoomsInDetail having to access currentGroupState getter internally (refer to 'currentGroupState' getter definition in 'model/getters.js')
+      const details = process.env.NODE_ENV === 'development' && typeof window === 'undefined' ? null : getters.chatRoomsInDetail[chatRoomID]
       if (details) return details.name
 
       const chatroomState = rootState[chatRoomID]
