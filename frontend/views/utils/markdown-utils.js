@@ -225,7 +225,6 @@ export function stripMarkdownSyntax (markdownString: string, truncateTo: number 
     .replace(/`(.*?)`/g, '$1') // 'inline code'
     .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links ([text](url) -> text)
     .replace(/^>\s*/gm, '') // block-quote
-    .replace(/\s+/g, ' ') // Normalize spaces
     .trim()
 
   return truncateTo > 0 ? sanitized.slice(0, truncateTo) : sanitized
