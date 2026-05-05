@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # When the workflow is triggered in a forked PR, which is a condition where parallelization isn't enabled (as CYPRESS_RECORD_KEY is only accessible in the main repository),
+        # When the workflow is triggered in a forked PR, which is a condition where parallelization can't be enabled (as CYPRESS_RECORD_KEY is only accessible in the main repository),
         # fall back to a single container to avoid running tests twice.
         containers: >-
           ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository) &&
