@@ -15,14 +15,14 @@
             v-model='$v.form.messageNotification.$model'
           )
           i18n All new messages
-        label.radio
+        label.radio(v-if='!isDM')
           input.input(
             type='radio'
             name='messageNotification'
-            :value='options.DIRECT_MESSAGES'
+            :value='options.MENTIONS'
             v-model='$v.form.messageNotification.$model'
           )
-          i18n Direct messages and mentions
+          i18n Mentions
         label.radio
           input.input(
             type='radio'
@@ -43,14 +43,14 @@
             v-model='$v.form.messageSound.$model'
           )
           i18n Play sounds for all new messages
-        label.radio
+        label.radio(v-if='!isDM')
           input.input(
             type='radio'
             name='messageSound'
-            :value='options.DIRECT_MESSAGES'
+            :value='options.MENTIONS'
             v-model='$v.form.messageSound.$model'
           )
-          i18n Play sounds for direct messages and mentions
+          i18n Play sounds for mentions
         label.radio
           input.input(
             type='radio'
@@ -76,7 +76,10 @@ import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import {
+  CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY,
+  GLOBAL_MESSAGE_NOTIFY_SETTINGS
+} from '@model/contracts/shared/constants.js'
 import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default ({
@@ -86,7 +89,14 @@ export default ({
     ModalTemplate
   },
   computed: {
-    ...mapGetters(['chatNotificationSettings', 'currentChatRoomId'])
+    ...mapGetters([
+      'chatNotificationSettings',
+      'currentChatRoomId',
+      'isGroupDirectMessage'
+    ]),
+    isDM () {
+      return this.isGroupDirectMessage(this.currentChatRoomId)
+    }
   },
   data () {
     return {
@@ -98,16 +108,33 @@ export default ({
     }
   },
   created () {
-    let settingsFromState
     if (this.chatNotificationSettings[this.currentChatRoomId]) {
-      settingsFromState = this.chatNotificationSettings[this.currentChatRoomId]
+      const settings = this.chatNotificationSettings[this.currentChatRoomId]
+      const handleLegacySetting = (setting) => {
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.js)
+        // So need to handle it here for backward compatibility.
+        return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+          ? this.isDM ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES : MESSAGE_NOTIFY_SETTINGS.MENTIONS
+          : setting
+      }
+      this.form.messageNotification = handleLegacySetting(settings.messageNotification)
+      this.form.messageSound = handleLegacySetting(settings.messageSound)
     } else {
       const rootState = sbp('state/vuex/state')
       const privacyLevelPrivate = rootState[this.currentChatRoomId]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-      settingsFromState = privacyLevelPrivate ? this.chatNotificationSettings.privateDefault : this.chatNotificationSettings.publicDefault
+      const globalSettings = this.chatNotificationSettings[GLOBAL_NOTIFICATION_SETTINGS_KEY]
+      const mappings = {
+        // mapping global settings to per-chatroom settings
+        [GLOBAL_MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES]: MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES,
+        [GLOBAL_MESSAGE_NOTIFY_SETTINGS.DM_AND_MENTIONS]: (this.isDM || privacyLevelPrivate)
+          ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES
+          : MESSAGE_NOTIFY_SETTINGS.MENTIONS,
+        [GLOBAL_MESSAGE_NOTIFY_SETTINGS.NOTHING]: MESSAGE_NOTIFY_SETTINGS.NOTHING
+      }
+
+      this.form.messageNotification = mappings[globalSettings.messageNotification]
+      this.form.messageSound = mappings[globalSettings.messageSound]
     }
-    this.form.messageNotification = settingsFromState.messageNotification
-    this.form.messageSound = settingsFromState.messageSound
   },
   methods: {
     close () {

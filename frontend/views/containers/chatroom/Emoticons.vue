@@ -7,8 +7,8 @@
 <script>
 import sbp from '@sbp/sbp'
 // TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
-import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
-import data from 'emoji-mart-vue-fast/data/apple.json'
+import { Picker } from 'emoji-mart-vue-fast'
+import { emojiIndex } from './emoji-utils.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 import { debounce } from 'turtledash'
@@ -21,7 +21,7 @@ export default ({
   data () {
     return {
       position: undefined,
-      emoji: new EmojiIndex(data),
+      emoji: emojiIndex,
       pos_x: Number,
       pos_y: Number,
       isActive: false,
@@ -41,7 +41,8 @@ export default ({
   },
   methods: {
     handleKeyUp (e) {
-      if (this.content && e.key === 'Escape') {
+      const isFocused = e.target.closest('.c-picker-wrapper') !== null
+      if (this.isActive && isFocused && e.key === 'Escape') {
         e.preventDefault()
         this.closeEmoticonDlg()
       }

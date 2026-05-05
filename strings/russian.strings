@@ -801,7 +801,7 @@
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "Заменить фото";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "Сохранить";
 
 /* views/components/banners/BannerScoped.vue */
@@ -1114,25 +1114,16 @@
 "Undo" = "Отменить";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"All new messages" = "Все новые сообщения";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Direct messages and mentions" = "Личные сообщения и упоминания";
+"Mentions" = "Упоминания";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "Отключить все звуки уведомлений чата";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Nothing" = "Ничего";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "Воспроизводить звуки для всех новых сообщений";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "Воспроизводить звуки для личных сообщений и упоминаний";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Send notifications for:" = "Отправлять уведомления для:";
+"Play sounds for mentions" = "Воспроизводить звук при упоминаниях";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "Звуки:";
@@ -1142,6 +1133,15 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "Уведомления";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All new messages" = "Все новые сообщения";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Nothing" = "Ничего";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
+"Send notifications for:" = "Отправлять уведомления для:";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Добавить описание";
@@ -3180,8 +3180,20 @@
 /* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "Устранение неисправностей";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Allow browser notifications" = "Разрешить уведомления браузера";
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "Все";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "Уведомления в чате по умолчанию";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "ЛС/Упоминания";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Direct messages and mentions" = "Личные сообщения и упоминания";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "Нет";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Уведомления браузера";
@@ -3205,7 +3217,10 @@
 "You have granted browser notification!" = "Вы предоставили разрешение на уведомления браузера!";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "Ваш браузер не поддерживает push-уведомления";
+"Your browser doesn't support push notifications." = "Ваш браузер не поддерживает push-уведомления.";
+
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
+"Allow browser notifications" = "Разрешить уведомления браузера";
 
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "Громкость";
@@ -3553,6 +3568,12 @@
 "My profile" = "Мой профиль";
 
 /* views/pages/UserSettings.vue */
+"Play sounds for:" = "Воспроизводить звуки для:";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "Громкость звуковых уведомлений";
+
+/* views/pages/UserSettings.vue */
 "Text size" = "Размер текста";
 
 /* views/pages/UserSettings.vue */
@@ -3610,8 +3631,14 @@
 "My account" = "Мой аккаунт";
 
 /* Not currently used */
+"Play sounds for direct messages and mentions" = "Воспроизводить звуки для личных сообщений и упоминаний";
+
+/* Not currently used */
 "Reduced Motion" = "Сокращенная анимация";
 
 /* Not currently used */
 "Voting System" = "Система голосования";
+
+/* Not currently used */
+"Your browser doesn't support push notifications" = "Ваш браузер не поддерживает push-уведомления";
 

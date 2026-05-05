@@ -36,6 +36,22 @@
     }
   }
 
+  // heading styles
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Poppins";
+    font-weight: bold;
+    line-height: 1.3;
+
+    code {
+      font-size: inherit;
+    }
+  }
+
   // inline code styles
   code {
     display: inline-block;
@@ -47,18 +63,6 @@
     color: $warning_0;
     margin-left: 1px;
     margin-right: 1px;
-  }
-
-  // multi-line code styles
-  pre > code {
-    display: block;
-    width: 100%;
-    padding: 0.5rem;
-    background-color: $general_1;
-    line-height: 1.4;
-    margin: 0;
-    max-width: 100%;
-    overflow-x: auto;
   }
 
   * + pre,
@@ -161,50 +165,121 @@
     &:has(+ br) {
       padding-bottom: 0;
     }
+
+    table {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      max-width: 100%;
+
+      thead {
+        background-color: $general_2;
+      }
+
+      tr {
+        height: auto;
+        box-shadow: none;
+        border-bottom: 1px solid $general_2;
+      }
+
+      th,
+      td {
+        min-width: max-content;
+        padding: 0.5rem 1rem 0.5rem 0;
+        word-break: break-word;
+
+        &:first-child {
+          padding-left: 0.75rem;
+        }
+
+        .c-message-text {
+          word-break: keep-all;
+        }
+
+        @include from ($tablet) {
+          padding: 0.75rem 1.25rem 0.75rem 0;
+        }
+      }
+
+      th {
+        color: $text_0;
+        font-weight: 600;
+      }
+    }
   }
 
   br + .table-container {
     padding-top: 0;
   }
 
-  table {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    max-width: 100%;
+  // horizontal rule styles
+  hr {
+    margin: 1rem 0;
+    height: 1px;
+    background-color: $general_0;
+    opacity: 0.8;
+  }
 
-    thead {
-      background-color: $general_2;
+  // code-fence block styles
+  .code-fence-block {
+    display: block;
+    background-color: $general_2;
+    margin: 0.25rem 0;
+  }
+
+  .code-fence-table {
+    td {
+      line-height: 1.5;
+      padding: 0;
+
+      &.line-number {
+        text-align: right;
+        color: $text_1;
+        min-width: max-content;
+        white-space: nowrap;
+        user-select: none;
+        opacity: 0.625;
+        font-size: 0.675rem;
+        padding-top: 0.25rem;
+
+        @include from($chat-narrow-screen) {
+          padding-right: 0.5rem;
+        }
+      }
+
+      &.code-line {
+        color: $warning_0;
+        white-space: pre-wrap;
+        word-break: break-all;
+        padding-left: 0.5rem;
+      }
+    }
+
+    code {
+      white-space: pre-wrap;
+      padding: 0;
+      word-break: break-all;
     }
 
     tr {
-      height: auto;
-      box-shadow: none;
-      border-bottom: 1px solid $general_2;
-    }
-
-    th,
-    td {
-      min-width: max-content;
-      padding: 0.5rem 1rem 0.5rem 0;
-      word-break: break-word;
-
       &:first-child {
-        padding-left: 0.75rem;
+        padding-top: 0.25rem;
+
+        td.line-number {
+          padding-top: 0.675rem;
+        }
+
+        td.code-line {
+          padding-top: 0.5rem;
+        }
       }
 
-      .c-message-text {
-        word-break: keep-all;
+      &:last-child {
+        td.line-number,
+        td.code-line {
+          padding-bottom: 0.5rem;
+        }
       }
-
-      @include from ($tablet) {
-        padding: 0.75rem 1.25rem 0.75rem 0;
-      }
-    }
-
-    th {
-      color: $text_0;
-      font-weight: 600;
     }
   }
 
@@ -228,7 +303,7 @@
 .c-message {
   &:hover,
   &:has(.c-menu .is-active) {
-    table {
+    .table-container table {
       thead {
         background-color: $general_1;
       }
@@ -237,5 +312,16 @@
         border-bottom: 1px solid $general_1;
       }
     }
+
+    .code-fence-block {
+      background-color: $general_1;
+    }
+  }
+}
+
+// dark-theme specific styles
+.is-dark-theme .custom-markdown-content {
+  .code-fence-block {
+    background-color: $general_1;
   }
 }
