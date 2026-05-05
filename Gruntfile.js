@@ -504,8 +504,7 @@ module.exports = (grunt) => {
           key: process.env.CYPRESS_RECORD_KEY,
           parallel: true,
           // Cypress Cloud uses the ciBuildId to group machines together for a single attempt, so this should be a unique value for every single workflow execution.
-          ciBuildId: process.env.RUN_ID,
-          group: 'E2E Test'
+          ciBuildId: process.env.RUN_ID
         })
       },
       open: {
