@@ -19,7 +19,7 @@ jobs:
         # fall back to a single container to avoid running tests twice.
         containers: >-
           ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository) &&
-          fromJSON('[1]') || fromJSON('[1, 2]') }}
+          fromJSON('[1]') || fromJSON('[1, 2, 3]') }}
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
