@@ -90,6 +90,15 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   ourGroupProfile (state, getters) {
     return getters.ourGroupProfileForGroup(getters.currentGroupState)
   },
+  ourGroupPermissions (state, getters) {
+    return getters.getGroupPermissionsByMemberId(getters.ourIdentityContractId)
+  },
+  ourGroupPermissionsHas (state, getters) {
+    return (permission) => getters.ourGroupPermissions.includes(permission)
+  },
+  ourRoleName (state, getters) {
+    return getters.getGroupMemberRoleNameById(getters.ourIdentityContractId)
+  },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
     const userContract = getters.currentIdentityState || {}
