@@ -2,6 +2,7 @@ name: NodeJS with Grunt
 
 env:
   CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+  RUN_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }} # unique ID for every single workflow execution
 
 on:
   push:
@@ -10,12 +11,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm]
-    runs-on: ${{ matrix.os }}
+  linting-and-unit-test:
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -23,4 +20,24 @@ jobs:
         node-version: 22
         cache: 'npm'
     - run: npm ci
-    - run: npm test
+    - run: grunt ci-test:unit
+
+  cypress:
+    needs: linting-and-unit-test
+    strategy:
+      fail-fast: false
+      matrix:
+        # When the workflow is triggered in a forked PR, which is a condition where parallelization can't be enabled (as CYPRESS_RECORD_KEY is only accessible in the main repository),
+        # fall back to a single container to avoid running tests twice.
+        containers: >-
+          ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository) &&
+          fromJSON('[1]') || fromJSON('[1, 2, 3]') }}
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: 'npm'
+    - run: npm ci
+    - run: grunt ci-test:cypress
