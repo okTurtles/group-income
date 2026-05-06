@@ -184,9 +184,8 @@
 
       th,
       td {
-        min-width: max-content;
         padding: 0.5rem 1rem 0.5rem 0;
-        word-break: break-word;
+        word-break: normal;
 
         &:first-child {
           padding-left: 0.75rem;
