@@ -59,7 +59,7 @@
     send-area-attachments-gallery
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
-          v-if='[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA, config.CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(fileType(entry))'
+          v-if='config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA === fileType(entry)'
           :key='entry.url'
           :class='"is-" + fileType(entry)'
         )

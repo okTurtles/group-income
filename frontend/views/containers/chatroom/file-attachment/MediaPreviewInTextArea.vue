@@ -18,6 +18,20 @@
         )
         .c-video-play-icon
           i.icon-play
+  template(v-else-if='fileType === "audio"')
+    .c-audio-preview-container
+      button.c-audio-play-btn
+        i.icon-play
+
+      .c-play-panel
+        .c-audio-metadata
+          .c-file-name.has-ellipsis {{ attachment.name }}
+        .c-audio-progress
+          .c-audio-progress-bar
+            audio-player.c-audio-player(
+              :src='attachment.url'
+              :mimeType='attachment.mimeType'
+            )
 
   button.c-attachment-remove-btn(
     type='button'
@@ -28,10 +42,14 @@
 </template>
 
 <script>
+import AudioPlayer from '@components/AudioPlayer.vue'
 import { getFileType } from '@view-utils/filters.js'
 
 export default {
   name: 'MediaPreviewInTextArea',
+  components: {
+    AudioPlayer
+  },
   props: {
     attachment: {
       type: Object,
@@ -209,6 +227,37 @@ export default {
 
       i {
         transform: translateX(1px);
+      }
+    }
+  }
+
+  &.is-audio {
+    width: 14.25rem;
+
+    .c-audio-preview-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: $general_1;
+      overflow: hidden;
+      border-radius: inherit;
+      display: flex;
+      align-items: center;
+      column-gap: 0.5rem;
+      padding: 0.5rem;
+
+      .c-audio-play-btn {
+        flex-shrink: 0;
+      }
+
+      .c-play-panel {
+        flex-grow: 1;
+
+        .c-audio-metadata {
+          .c-file-name {
+            font-weight: bold;
+          }
+        }
       }
     }
   }
