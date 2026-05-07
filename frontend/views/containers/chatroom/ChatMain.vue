@@ -110,6 +110,8 @@
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
 
+    toast-container(area='chat-main')
+
   .c-footer
     send-area(
       ref='sendArea'
@@ -167,6 +169,7 @@ import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.js'
 import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatroom/utils.js'
+import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
 
@@ -285,7 +288,8 @@ export default ({
     MessagePoll,
     SendArea,
     ViewArea,
-    DragActiveOverlay
+    DragActiveOverlay,
+    ToastContainer
   },
   props: {
     summary: {
@@ -1402,13 +1406,14 @@ export default ({
           // (using a link with an `mhash` parameter) or if the 'read until'
           // state gets corrupted.
           if (this.ephemeral.initialScroll.hash) {
-            // TODO: A toast notification should be shown to the user
-            // Note: At this point, we don't know exactly what the error was
-            // If it was ChelErrorResourceGone, it likely indicates a non-existent
-            // initial scroll message. Other initial-message related errors could
-            // be, e.g., an invalid CID. It could also be a message that exists
-            // but doesn't belong to this chatroom.
             console.error('[ChatMain.vue] Error with initial scroll. Falling back', chatRoomID, e)
+            sbp('gi.ui/toast', 'chat-main', {
+              message: L("Couldn't find the message."),
+              variant: 'warning',
+              position: 'bottom-center',
+              duration: 5000,
+              closeable: true
+            })
             // If we have any messages in the state, scroll to the latest
             // Otherwise, unset initialScroll, which will take us to the top
             this.ephemeral.initialScroll.hash =

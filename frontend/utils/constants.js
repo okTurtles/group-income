@@ -35,6 +35,23 @@ export const KV_LOAD_STATUS = {
   LOADED: 'loaded'
 }
 
+// toast-related constants
+export const MAX_TOAST_COUNT = 4
+export const TOAST_POSITIONS = {
+  TOP_RIGHT: 'top-right',
+  TOP_LEFT: 'top-left',
+  TOP_CENTER: 'top-center',
+  BOTTOM_RIGHT: 'bottom-right',
+  BOTTOM_LEFT: 'bottom-left',
+  BOTTOM_CENTER: 'bottom-center'
+}
+export const TOAST_VARIANTS = {
+  DEFAULT: 'default',
+  SUCCESS: 'success',
+  WARNING: 'warning',
+  ERROR: 'error'
+}
+
 export const MAX_LOG_ENTRIES = 2000
 // The throttle window for updating lastLoggedIn
 export const LAST_LOGGED_IN_THROTTLE_WINDOW = 30 * 60E3 // 30 minutes
