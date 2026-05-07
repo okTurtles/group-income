@@ -25,6 +25,8 @@
         v-if='items.length'
         :class='["for-small-screen", "is-" + position]'
         :key='position'
+        role='status'
+        aria-live='polite'
       )
         toast-card(
           v-for='item in items'

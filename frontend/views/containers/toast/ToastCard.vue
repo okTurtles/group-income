@@ -16,6 +16,7 @@
     button.is-unstyled.c-toast-close(
       v-if='showCloseButton'
       type='button'
+      :aria-label='L("Close toast")'
       @click.stop='closeToast'
     )
       i.icon-times
