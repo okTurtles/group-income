@@ -1,21 +1,20 @@
 <template lang="pug">
 .c-audio-player-card(:class='{ "for-send-area": forSendArea }')
-  .c-card-upper-section
-    button.is-unstyled.c-audio-play-button(
-      :class='{ "is-loading": ephemeral.isLoading }'
-      type='button'
-      :aria-label='L("Play")'
-      @click.stop='togglePlay'
-    )
-      .simple-spinner.c-spinner(v-if='ephemeral.loadingStatus === "loading"')
-      i.icon-pause(v-else-if='ephemeral.isPlaying')
-      i.icon-play(v-else)
+  button.is-unstyled.c-audio-play-button(
+    :class='{ "is-loading": ephemeral.isLoading }'
+    type='button'
+    :aria-label='L("Play")'
+    @click.stop='togglePlay'
+  )
+    .simple-spinner.c-spinner(v-if='ephemeral.loadingStatus === "loading"')
+    i.icon-pause(v-else-if='ephemeral.isPlaying')
+    i.icon-play(v-else)
 
-    .c-audio-metadata
-      .c-file-name.has-ellipsis(v-if='attachment.name' :title='attachment.name') {{ attachment.name }}
-      .c-file-size(v-if='size') {{ size }}
+  .c-audio-metadata
+    .c-file-name.has-ellipsis(v-if='attachment.name' :title='attachment.name') {{ attachment.name }}
+    .c-file-size(v-if='size') {{ size }}
 
-  audio-player.c-audio-player(
+  audio-player.c-audio-player-controls(
     ref='audioPlayer'
     :key='src || "audio-player"'
     :hideDefaultPlayButton='true'
@@ -113,16 +112,19 @@ export default {
 .c-audio-player-card {
   position: relative;
   width: 100%;
-
-  .c-card-upper-section {
-    display: flex;
-    align-items: center;
-    column-gap: 0.75rem;
-    padding: 0.25rem 1rem 0 0.25rem;
-    margin-bottom: 0.25rem;
-  }
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "play-button metadata"
+    "player player"
+    "error error";
+  column-gap: 0.75rem;
+  padding-top: 0.25rem;
+  align-items: center;
 
   button.c-audio-play-button {
+    grid-area: play-button;
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -130,6 +132,7 @@ export default {
     flex-shrink: 0;
     width: 2.5rem;
     height: 2.5rem;
+    margin-left: 0.25rem;
     min-height: 0;
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0);
@@ -151,9 +154,10 @@ export default {
   }
 
   .c-audio-metadata {
+    grid-area: metadata;
     position: relative;
-    flex-grow: 1;
     min-width: 0;
+    padding-right: 0.25rem;
 
     .c-file-name {
       position: relative;
@@ -174,10 +178,17 @@ export default {
       }
     }
   }
-}
 
-.is-dark-theme button.c-audio-play-button {
-  background-color: $primary_2;
+  .c-audio-player-controls {
+    grid-area: player;
+  }
+
+  .c-error {
+    grid-area: error;
+    font-size: $size_5;
+    padding-left: 0.25rem;
+    margin-top: 0.25rem;
+  }
 }
 
 .c-spinner {
@@ -187,9 +198,8 @@ export default {
   color: $primary_0;
 }
 
-.c-error {
-  font-size: $size_5;
-  padding-left: 0.25rem;
-  margin-top: 0.25rem;
+// dark-theme style adjustments
+.is-dark-theme button.c-audio-play-button {
+  background-color: $primary_2;
 }
 </style>
