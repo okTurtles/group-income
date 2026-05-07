@@ -20,18 +20,12 @@
           i.icon-play
   template(v-else-if='fileType === "audio"')
     .c-audio-preview-container
-      button.c-audio-play-btn
-        i.icon-play
-
-      .c-play-panel
-        .c-audio-metadata
-          .c-file-name.has-ellipsis {{ attachment.name }}
-        .c-audio-progress
-          .c-audio-progress-bar
-            audio-player.c-audio-player(
-              :src='attachment.url'
-              :mimeType='attachment.mimeType'
-            )
+      audio-player-card(
+        :attachment='attachment'
+        :src='attachment.url'
+        :mimeType='attachment.mimeType'
+        :forSendArea='true'
+      )
 
   button.c-attachment-remove-btn(
     type='button'
@@ -42,13 +36,13 @@
 </template>
 
 <script>
-import AudioPlayer from '@components/AudioPlayer.vue'
+import AudioPlayerCard from '@containers/chatroom/audio-player/AudioPlayerCard.vue'
 import { getFileType } from '@view-utils/filters.js'
 
 export default {
   name: 'MediaPreviewInTextArea',
   components: {
-    AudioPlayer
+    AudioPlayerCard
   },
   props: {
     attachment: {

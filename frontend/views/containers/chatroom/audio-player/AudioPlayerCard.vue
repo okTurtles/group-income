@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-audio-player-card
+.c-audio-player-card(:class='{ "for-send-area": forSendArea }')
   .c-card-upper-section
     button.is-unstyled.c-audio-play-button(
       :class='{ "is-loading": ephemeral.isLoading }'
@@ -22,6 +22,7 @@
     :disabled='!src'
     :src='src'
     :mimeType='mimeType'
+    :mode='forSendArea ? "minimal" : "default"'
     @playing='onPlaying'
     @pause='onPaused'
   )
@@ -50,6 +51,10 @@ export default {
     mimeType: {
       type: String,
       required: false
+    },
+    forSendArea: {
+      type: Boolean,
+      default: false
     },
     attachment: Object,
     size: String
