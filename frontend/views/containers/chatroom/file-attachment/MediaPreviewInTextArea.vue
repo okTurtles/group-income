@@ -232,7 +232,7 @@ export default {
       position: relative;
       width: 100%;
       height: 100%;
-      background-color: $general_1;
+      background-color: $general_2;
       overflow: hidden;
       border-radius: inherit;
       display: flex;

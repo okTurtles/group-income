@@ -189,6 +189,20 @@ export default {
     padding-left: 0.25rem;
     margin-top: 0.25rem;
   }
+
+  &.for-send-area {
+    // minimal layout/styles for audio attachments in send area
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "play-button metadata"
+      "play-button player";
+    column-gap: 0.5rem;
+    padding-top: 0;
+    align-items: center;
+    background-color: $general_2;
+    max-width: 100%;
+  }
 }
 
 .c-spinner {

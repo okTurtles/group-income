@@ -127,5 +127,16 @@ $phone_narrow: 430px;
         display: none;
       }
     }
+
+    &.is-minimal {
+      // minimal audio player controls for SendArea.vue
+      .plyr__volume {
+        display: none;
+      }
+
+      .plyr__progress__container {
+        margin-left: 0;
+      }
+    }
   }
 }

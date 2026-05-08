@@ -1,7 +1,5 @@
 <template lang="pug">
-.c-audio-player.plyr_override.for-audio(
-  :class='{ "hide-default-play-button": hideDefaultPlayButton, "is-unplayable": disabled, "is-minimal": mode === "minimal" }'
-)
+.c-audio-player.plyr_override.for-audio(:class='classObjs')
   audio(ref='audioEl' controls playsinline)
     source(:src='src' :type='mimeType')
 </template>
@@ -43,6 +41,15 @@ export default {
       ephemeral: {
         player: null,
         isReady: false
+      }
+    }
+  },
+  computed: {
+    classObjs () {
+      return {
+        'hide-default-play-button': this.hideDefaultPlayButton,
+        'is-unplayable': this.disabled,
+        'is-minimal': this.mode === 'minimal'
       }
     }
   },
