@@ -147,6 +147,10 @@ $phone_narrow: 430px;
         color: v.$text_1;
       }
 
+      .plyr__progress__container {
+        padding-left: 0;
+      }
+
       input[type="range"]::-moz-range-track,
       .plyr__progress__buffer {
         height: 4px;

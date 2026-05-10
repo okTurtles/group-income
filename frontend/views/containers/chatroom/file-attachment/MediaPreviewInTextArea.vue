@@ -231,7 +231,7 @@ export default {
     min-height: 3.5rem;
     height: auto;
     width: auto;
-  
+
     .c-audio-preview-container {
       position: relative;
       width: 100%;
