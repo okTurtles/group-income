@@ -136,6 +136,7 @@ $phone_narrow: 430px;
 
       .plyr__progress__container {
         margin-left: 0;
+        padding-left: 0;
       }
 
       .plyr--audio {
@@ -145,10 +146,6 @@ $phone_narrow: 430px;
       .plyr__time {
         font-size: v.$size_5;
         color: v.$text_1;
-      }
-
-      .plyr__progress__container {
-        padding-left: 0;
       }
 
       input[type="range"]::-moz-range-track,
