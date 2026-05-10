@@ -226,8 +226,12 @@ export default {
   }
 
   &.is-audio {
-    width: 14.25rem;
-
+    min-width: 14rem;
+    max-width: 17.25rem;
+    min-height: 3.5rem;
+    height: auto;
+    width: auto;
+  
     .c-audio-preview-container {
       position: relative;
       width: 100%;

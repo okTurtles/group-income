@@ -192,7 +192,7 @@ export default {
 
   &.for-send-area {
     // minimal layout/styles for audio attachments in send area
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto auto;
     grid-template-areas:
       "play-button metadata"
@@ -201,7 +201,34 @@ export default {
     padding-top: 0;
     align-items: center;
     background-color: $general_2;
+    min-width: 0;
     max-width: 100%;
+
+    button.c-audio-play-button {
+      margin-left: 0;
+      width: 2.25rem;
+    height: 2.25rem;
+    }
+
+    .c-audio-metadata {
+      max-width: 100%;
+      line-height: 1.15;
+
+      .c-file-name {
+        padding-top: 0.25rem;
+        font-size: $size_5;
+        line-height: 1.125;
+      }
+    }
+
+    .c-audio-player-controls {
+      max-width: 100%;
+      min-width: 0;
+
+      ::v-deep plyr--audio {
+        min-width: 0;
+      }
+    }
   }
 }
 
