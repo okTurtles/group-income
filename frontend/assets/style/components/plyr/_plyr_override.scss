@@ -148,11 +148,15 @@ $phone_narrow: 430px;
         color: v.$text_1;
       }
 
+      input[type="range"]::-webkit-slider-runnable-track,
+      input[type="range"]::-ms-track,
       input[type="range"]::-moz-range-track,
       .plyr__progress__buffer {
         height: 4px;
       }
 
+      input[type="range"]::-webkit-slider-thumb,
+      input[type="range"]::-ms-thumb,
       input[type="range"]::-moz-range-thumb {
         width: 10px;
         height: 10px;

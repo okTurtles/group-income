@@ -39,8 +39,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        player: null,
-        isReady: false
+        player: null
       }
     }
   },
@@ -67,10 +66,6 @@ export default {
       )
 
       // event listeners
-      this.ephemeral.player.on('ready', () => {
-        this.ephemeral.isReady = true
-      })
-
       const events = ['play', 'playing', 'pause', 'ended']
       events.forEach(event => {
         this.ephemeral.player.on(event, () => this.$emit(event))
