@@ -1,12 +1,12 @@
 <template lang="pug">
 .c-audio-player-card(:class='{ "for-send-area": forSendArea }')
   button.is-unstyled.c-audio-play-button(
-    :class='{ "is-loading": ephemeral.isLoading }'
+    :class='{ "is-loading": isLoading }'
     type='button'
     :aria-label='L("Play")'
     @click.stop='togglePlay'
   )
-    .simple-spinner.c-spinner(v-if='ephemeral.loadingStatus === "loading"')
+    .simple-spinner.c-spinner(v-if='isLoading')
     i.icon-pause(v-else-if='ephemeral.isPlaying')
     i.icon-play(v-else)
 
@@ -27,7 +27,7 @@
   )
 
   i18n.error.c-error(
-    v-if='ephemeral.loadingStatus === "error" || true'
+    v-if='ephemeral.loadingStatus === "error"'
     tag='p'
   ) Failed to load audio. Please retry.
 </template>
@@ -64,6 +64,11 @@ export default {
         loadingStatus: 'idle',
         isPlaying: false
       }
+    }
+  },
+  computed: {
+    isLoading () {
+      return this.ephemeral.loadingStatus === 'loading'
     }
   },
   methods: {
