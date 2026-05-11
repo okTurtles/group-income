@@ -242,20 +242,6 @@ export default {
       align-items: center;
       column-gap: 0.5rem;
       padding: 0.5rem;
-
-      .c-audio-play-btn {
-        flex-shrink: 0;
-      }
-
-      .c-play-panel {
-        flex-grow: 1;
-
-        .c-audio-metadata {
-          .c-file-name {
-            font-weight: bold;
-          }
-        }
-      }
     }
   }
 }
