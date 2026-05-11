@@ -27,7 +27,7 @@
   )
 
   i18n.error.c-error(
-    v-if='ephemeral.loadingStatus === "error"'
+    v-if='ephemeral.loadingStatus === "error" || true'
     tag='p'
   ) Failed to load audio. Please retry.
 </template>
@@ -228,6 +228,11 @@ export default {
       ::v-deep .plyr--audio {
         min-width: 0;
       }
+    }
+
+    .c-error {
+      // irrelevant in send area (any file attachment with a problem just won't be shown in the send area)
+      display: none;
     }
   }
 }

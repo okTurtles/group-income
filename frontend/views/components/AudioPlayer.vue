@@ -91,6 +91,11 @@ export default {
   },
   mounted () {
     this.initPlayer()
+  },
+  beforeDestroy () {
+    if (this.ephemeral.player) {
+      this.ephemeral.player.destroy()
+    }
   }
 }
 </script>

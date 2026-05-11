@@ -1062,7 +1062,7 @@ export default ({
         list.push(attachment)
       }
 
-      // sort the list so that the media types come first in the array. (videos -> images -> non-media files)
+      // sort the list so that the media types come first in the array. (videos -> images -> audio -> non-media files)
       const priority = {
         [CHATROOM_ATTACHMENT_TYPES.VIDEO]: 0,
         [CHATROOM_ATTACHMENT_TYPES.IMAGE]: 1,
