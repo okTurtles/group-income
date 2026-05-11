@@ -1,7 +1,5 @@
 <template lang="pug">
-.c-audio-player.plyr_override.for-audio(
-  :class='{ "hide-default-play-button": hideDefaultPlayButton, "is-unplayable": disabled }'
-)
+.c-audio-player.plyr_override.for-audio(:class='classObjs')
   audio(ref='audioEl' controls playsinline)
     source(:src='src' :type='mimeType')
 </template>
@@ -24,6 +22,11 @@ export default {
       type: Boolean,
       default: false
     },
+    mode: {
+      type: String,
+      validator: v => ['default', 'minimal'].includes(v), // 'minimal' mode is intended for use in send area
+      default: 'default'
+    },
     disabled: {
       type: Boolean,
       default: false
@@ -36,8 +39,16 @@ export default {
   data () {
     return {
       ephemeral: {
-        player: null,
-        isReady: false
+        player: null
+      }
+    }
+  },
+  computed: {
+    classObjs () {
+      return {
+        'hide-default-play-button': this.hideDefaultPlayButton,
+        'is-unplayable': this.disabled,
+        'is-minimal': this.mode === 'minimal'
       }
     }
   },
@@ -55,10 +66,6 @@ export default {
       )
 
       // event listeners
-      this.ephemeral.player.on('ready', () => {
-        this.ephemeral.isReady = true
-      })
-
       const events = ['play', 'playing', 'pause', 'ended']
       events.forEach(event => {
         this.ephemeral.player.on(event, () => this.$emit(event))
@@ -79,6 +86,11 @@ export default {
   },
   mounted () {
     this.initPlayer()
+  },
+  beforeDestroy () {
+    if (this.ephemeral.player) {
+      this.ephemeral.player.destroy()
+    }
   }
 }
 </script>

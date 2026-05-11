@@ -18,6 +18,14 @@
         )
         .c-video-play-icon
           i.icon-play
+  template(v-else-if='fileType === "audio"')
+    .c-audio-preview-container
+      audio-player-card(
+        :attachment='attachment'
+        :src='attachment.url'
+        :mimeType='attachment.mimeType'
+        :forSendArea='true'
+      )
 
   button.c-attachment-remove-btn(
     type='button'
@@ -28,10 +36,14 @@
 </template>
 
 <script>
+import AudioPlayerCard from '@containers/chatroom/audio-player/AudioPlayerCard.vue'
 import { getFileType } from '@view-utils/filters.js'
 
 export default {
   name: 'MediaPreviewInTextArea',
+  components: {
+    AudioPlayerCard
+  },
   props: {
     attachment: {
       type: Object,
@@ -210,6 +222,26 @@ export default {
       i {
         transform: translateX(1px);
       }
+    }
+  }
+
+  &.is-audio {
+    min-width: 14rem;
+    max-width: 17.25rem;
+    min-height: 3.5rem;
+    height: auto;
+    width: auto;
+
+    .c-audio-preview-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background-color: $general_2;
+      border-radius: inherit;
+      display: flex;
+      align-items: center;
+      column-gap: 0.5rem;
+      padding: 0.5rem;
     }
   }
 }
