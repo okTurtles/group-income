@@ -11,7 +11,6 @@
     i.icon-play(v-else)
 
   .c-audio-metadata
-    i.icon-music.c-audio-icon
     .c-file-name.has-ellipsis(v-if='attachment.name' :title='attachment.name') {{ attachment.name }}
     .c-file-size(v-if='size') {{ size }}
 
@@ -166,17 +165,6 @@ export default {
       max-width: 100%;
     }
 
-    .c-audio-icon {
-      display: none;
-      font-size: 0.725em;
-      padding: 0.125rem 0.175rem;
-      border-radius: 2px;
-      color: $success_0;
-      background-color: $success_2;
-      transform: translateY(1px);
-      margin-bottom: 1px;
-    }
-
     .c-file-size {
       display: flex;
       align-items: center;
@@ -223,16 +211,9 @@ export default {
     }
 
     .c-audio-metadata {
-      display: flex;
-      align-items: center;
-      column-gap: 0.2rem;
       max-width: 100%;
       padding-top: 0.25rem;
       line-height: 1.15;
-
-      .c-audio-icon {
-        display: inline-block;
-      }
 
       .c-file-name {
         font-size: 0.8rem;
