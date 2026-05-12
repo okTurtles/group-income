@@ -16,21 +16,11 @@ marked.use({
         const { isValid, isExternalLink } = validateURL(token.href, true)
 
         if (isValid) {
-          const { href } = token
-          // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link, hence requiring manual conversion.
-          // As <a> tag is an inline element, it makes sense to do manual conversion only for other inline elements.
-          const inlineMarkdownMap = {
-            'strong': /\*\*(.*?)\*\*/g, // NOTE: link itself is already in bold style, so <strong> tag doesn't visually stand out after conversion but still supporting it here anyways.
-            'code': /`(.*?)`/g,
-            'em': /_(.*?)_/g,
-            'del': /~(.*?)~/g
-          }
-
-          let text = token.text
-          Object.entries(inlineMarkdownMap).forEach(([elName, regex]) => {
-            text = text.replace(regex, `<${elName}>$1</${elName}>`)
-          })
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
+          const { href, text } = token
+          // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
+          // So we need to perform another conversion step here.
+          const parsedText = marked.parseInline(text, { gfm: true })
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
         return token.raw
       }
