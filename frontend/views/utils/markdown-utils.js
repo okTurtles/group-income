@@ -17,7 +17,8 @@ marked.use({
 
         if (isValid) {
           const { href, text } = token
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
+          const transformedText = text.replace(/`(.*?)`/g, '<code>$1</code>')
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${transformedText}</a>`
         }
         return token.raw
       }

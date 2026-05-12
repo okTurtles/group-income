@@ -282,11 +282,17 @@
     }
   }
 
-  // miscellaneous
+  // link styles
   .link {
     border-bottom-color: currentColor;
+
+    code {
+      padding: 0.25rem 0.25rem 1px;
+      color: $primary_0;
+    }
   }
 
+  // miscellaneous
   .c-edited {
     margin-left: 0.2rem;
     font-size: 0.7rem;
