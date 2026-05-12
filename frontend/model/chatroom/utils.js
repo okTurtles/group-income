@@ -58,7 +58,7 @@ export function swapMentionIDForDisplayname (
   // Only perform the mention swap for plain text segments.
   // The content of code fence or inline code segments are not supposed to be transformed.
   const msgSplitByCodeMarkdown = splitStringByMarkdownCode(text)
-  msgSplitByCodeMarkdown.forEach((entry, index) => {
+  msgSplitByCodeMarkdown.forEach((entry) => {
     if (entry.type === 'plain') {
       entry.text = entry.text.split(regEx)
         .map(t => regEx.test(t) ? swap(t) : t)
