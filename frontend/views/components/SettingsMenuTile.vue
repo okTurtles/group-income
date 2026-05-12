@@ -11,19 +11,14 @@ button.is-unstyled.menu-tile(
       slot(name='info')
     i(v-if='!noIcon' :class='iconClasses')
 
-  transition-expand
-    .tile-lower-section(v-if='isExpandable && ephemeral.expanded')
-      slot(name='lower')
+  .tile-lower-section(v-if='isExpandable')
+    slot(name='lower')
 </template>
 
 <script>
-import TransitionExpand from './TransitionExpand.vue'
 
 export default {
   name: 'SettingsMenuTile',
-  components: {
-    TransitionExpand
-  },
   props: {
     variant: {
       type: String,
