@@ -17,7 +17,10 @@ marked.use({
 
         if (isValid) {
           const { href } = token
+          // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link, hence requiring manual conversion.
+          // As <a> tag is an inline element, it makes sense to do manual conversion only for other inline elements.
           const inlineMarkdownMap = {
+            'strong': /\*\*(.*?)\*\*/g, // NOTE: link itself is already in bold style, so <strong> tag doesn't visually stand out after conversion but still supporting it here anyways.
             'code': /`(.*?)`/g,
             'em': /_(.*?)_/g,
             'del': /~(.*?)~/g
