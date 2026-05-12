@@ -16,9 +16,18 @@ marked.use({
         const { isValid, isExternalLink } = validateURL(token.href, true)
 
         if (isValid) {
-          const { href, text } = token
-          const transformedText = text.replace(/`(.*?)`/g, '<code>$1</code>')
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${transformedText}</a>`
+          const { href } = token
+          const inlineMarkdownMap = {
+            'code': /`(.*?)`/g,
+            'em': /_(.*?)_/g,
+            'del': /~(.*?)~/g
+          }
+
+          let text = token.text
+          Object.entries(inlineMarkdownMap).forEach(([elName, regex]) => {
+            text = text.replace(regex, `<${elName}>$1</${elName}>`)
+          })
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
         }
         return token.raw
       }
