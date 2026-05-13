@@ -183,7 +183,9 @@ export default (sbp('sbp/selectors/register', {
     picture,
     token
   }) {
-    let finalPicture = `${self.location.origin}/assets/images/user-avatar-default.png`
+    // FIX: Use relative path instead of self.location.origin to avoid localhost domain
+    // when using grunt tunnel (see issue #1025)
+    let finalPicture = '/assets/images/user-avatar-default.png'
 
     // Unwrap secrets
     wIPK = wIPK.valueOf()
