@@ -131,7 +131,9 @@ export default (sbp('sbp/selectors/register', {
     },
     publishOptions
   }) {
-    let finalPicture = `${self.location.origin}/assets/images/group-avatar-default.png`
+    // FIX: Use relative path instead of self.location.origin to avoid localhost domain
+    // when using grunt tunnel (see issue #1025)
+    let finalPicture = '/assets/images/group-avatar-default.png'
 
     const rootState = sbp('chelonia/rootState')
     const userID = rootState.loggedIn.identityContractID
