@@ -4,6 +4,7 @@ button.is-unstyled.menu-tile(
   @click.stop='onTileClick'
   :class='["is-style-" + variant, { "is-expanded": ephemeral.expanded }]'
   :aria-disabled='isDisabled'
+  :aria-expanded='ephemeral.expanded'
 )
   .tile-upper-section(:data-test='testId')
     .tile-text {{ menuName }}
@@ -11,7 +12,10 @@ button.is-unstyled.menu-tile(
       slot(name='info')
     i(v-if='!noIcon' :class='iconClasses')
 
-  .tile-lower-section(v-if='isExpandable')
+  .tile-lower-section(
+    v-if='isExpandable'
+    :aria-hidden='!ephemeral.expanded'
+  )
     slot(name='lower')
 </template>
 
