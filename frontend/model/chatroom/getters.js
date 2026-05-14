@@ -5,6 +5,15 @@ import {
   CHATROOM_PRIVACY_LEVEL, GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS
 } from '@model/contracts/shared/constants.js'
 
+const filterExistingUnreadMessages = (unreadMessages, chatRoomState) => {
+  if (!Array.isArray(unreadMessages) || !Array.isArray(chatRoomState?.messages)) {
+    return unreadMessages || []
+  }
+
+  const messageHashes = new Set(chatRoomState.messages.map(({ hash }) => hash))
+  return unreadMessages.filter(({ messageHash }) => messageHashes.has(messageHash))
+}
+
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
     return state.currentChatRoomIDs[rootState.currentGroupId] || null
@@ -155,10 +164,13 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
     // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
-  chatRoomUnreadMessages (state, getters) {
+  chatRoomUnreadMessages (state, getters, rootState) {
     return (chatRoomID: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return getters.ourUnreadMessages[chatRoomID]?.unreadMessages || []
+      return filterExistingUnreadMessages(
+        getters.ourUnreadMessages[chatRoomID]?.unreadMessages,
+        rootState[chatRoomID]
+      )
     }
   },
   isChatRoomManuallyMarkedUnread (state, getters) {
@@ -172,7 +184,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       const isGroupChatroom = cID => Object.keys(rootState[groupID]?.chatRooms || {}).includes(cID)
       return Object.keys(getters.ourUnreadMessages)
         .filter(cID => isGroupDirectMessage(cID) || isGroupChatroom(cID))
-        .map(cID => getters.ourUnreadMessages[cID].unreadMessages.length)
+        .map(cID => getters.chatRoomUnreadMessages(cID).length)
         .reduce((sum, n) => sum + n, 0)
     }
   },

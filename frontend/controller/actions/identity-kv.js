@@ -33,6 +33,37 @@ const checkAndAugmentNames = async (currentNames: string[]) => {
   return union(unconflictedNames, recheckedNames)
 }
 
+const pruneDeletedChatRoomUnreadMessages = (currentData: Object = {}) => {
+  let updatedData = currentData
+  const rootState = sbp('state/vuex/state')
+
+  for (const contractID of Object.keys(currentData)) {
+    const unreadMessages = currentData[contractID]?.unreadMessages
+    const messages = rootState[contractID]?.messages
+
+    if (!Array.isArray(unreadMessages) || !Array.isArray(messages)) {
+      continue
+    }
+
+    const messageHashes = new Set(messages.map(({ hash }) => hash))
+    const filteredUnreadMessages = unreadMessages.filter(({ messageHash }) => {
+      return messageHashes.has(messageHash)
+    })
+
+    if (filteredUnreadMessages.length !== unreadMessages.length) {
+      if (updatedData === currentData) {
+        updatedData = { ...currentData }
+      }
+      updatedData[contractID] = {
+        ...currentData[contractID],
+        unreadMessages: filteredUnreadMessages
+      }
+    }
+  }
+
+  return updatedData === currentData ? null : updatedData
+}
+
 const updateKVPreferences = (updater: Function) => {
   return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
     const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
@@ -96,7 +127,22 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+      let currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
+      const prunedUnreadMessages = pruneDeletedChatRoomUnreadMessages(currentChatRoomUnreadMessages)
+
+      if (prunedUnreadMessages) {
+        const pruneOnConflict = ({ currentData = {}, etag } = {}) => {
+          const prunedUnreadMessages = pruneDeletedChatRoomUnreadMessages(currentData)
+          return prunedUnreadMessages ? [prunedUnreadMessages, etag] : null
+        }
+
+        currentChatRoomUnreadMessages = prunedUnreadMessages
+        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', {
+          data: currentChatRoomUnreadMessages,
+          onconflict: pruneOnConflict
+        })
+      }
+
       sbp('okTurtles.events/emit', NEW_UNREAD_MESSAGES, currentChatRoomUnreadMessages)
     })
   },
