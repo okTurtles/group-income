@@ -137,7 +137,7 @@ module.exports = (grunt) => {
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
       console.log(stdout)
     }
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'" + version))
+    grunt.log.writeln(chalk.underline(`\nRunning 'chel manifest' (version ${version})`))
     const cmd = `ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest --name gi.contracts/{} --contract-version ${version} --slim ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`
     grunt.log.writeln(cmd)
     // TODO: do this with JS instead of POSIX commands for Windows support

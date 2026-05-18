@@ -309,8 +309,8 @@ const setupChelonia = async (): Promise<*> => {
 
   const diffContractVersion = (va?: Object, vb?: Object): boolean => {
     // Sort contract by name
-    const ea = Object.entries(va || {}).sort(([a], [b]) => a - b)
-    const eb = Object.entries(vb || {}).sort(([a], [b]) => a - b)
+    const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+    const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
     // If different number of contracts, contract version object is different
     if (ea.length !== eb.length) return false
     for (let i = 0; i < ea.length; i++) {
