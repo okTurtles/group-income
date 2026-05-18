@@ -114,7 +114,7 @@ export default {
       // Note: This logic is naive and assumes names like 'gi.contracts/chatroom', meaning it won't work if this structure changes.
       // For example, it might not provide the desired result for a future contract named 'gi.contracts/chat-room'
       // Also, these names are _not_ localised, so users in every locale will see 'Chatroom'. This was determined to be fine since this is technical information that might be more useful if left as close as possible to the actual technical name.
-      // A translation table could be used to do translation properly, but some code like the following will still be needed as a fallback, as there's a possiblity that a future contract name that wasn't known (or forgotten) when the app bundle was created.
+      // A translation table could be used to do translation properly, but some code like the following will still be needed as a fallback, as there's a possibility that a future contract name that wasn't known (or forgotten) when the app bundle was created.
       const parts = name.split('/')
       return parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1)
     },
