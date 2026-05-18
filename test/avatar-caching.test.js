@@ -121,7 +121,7 @@ describe('avatar file serving', function () {
     assert.equal(headers.get('etag'), `"${manifestCid}"`)
     // Not checking for a `last-modified` header.
     assert.equal(headers.get('x-content-type-options'), 'nosniff')
-    assert.equal(headers.get('x-frame-options'), 'DENY')
+    assert.equal(headers.get('x-frame-options').toUpperCase(), 'DENY')
 
     const { headers: cHeaders } = await fetch(`${apiURL}/file/${chunkCid}`)
     assert.match(cHeaders.get('cache-control'), /immutable/)
