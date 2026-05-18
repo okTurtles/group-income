@@ -729,8 +729,8 @@ module.exports = (grunt) => {
 
   // CI-specific test tasks - splitting linting/unit tests and cypress separately to use parallel mode in Cypress Cloud.
   // It's not possible for different jobs in a GHA workflow to share a session. So both tasks still need to repeat build/back-end setup steps.
-  grunt.registerTask('ci-test:unit', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test'])
-  grunt.registerTask('ci-test:cypress', ['build:skiplint', 'chelDeploy', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('ci-test:unit', ['build', 'chelDeploy', 'backend:launch', 'exec:test'])
+  grunt.registerTask('ci-test:cypress', ['build:skiplint', 'chelDeploy', 'backend:launch', 'cypress'])
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
