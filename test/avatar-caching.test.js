@@ -131,6 +131,6 @@ describe('avatar file serving', function () {
     assert.equal(cHeaders.get('etag'), `"${chunkCid}"`)
     // Not checking for a `last-modified` header.
     assert.equal(cHeaders.get('x-content-type-options'), 'nosniff')
-    assert.equal(cHeaders.get('x-frame-options'), 'DENY')
+    assert.equal(cHeaders.get('x-frame-options').toUpperCase(), 'DENY')
   })
 })

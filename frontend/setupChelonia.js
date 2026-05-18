@@ -312,12 +312,12 @@ const setupChelonia = async (): Promise<*> => {
     const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
     const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
     // If different number of contracts, contract version object is different
-    if (ea.length !== eb.length) return false
+    if (ea.length !== eb.length) return true
     for (let i = 0; i < ea.length; i++) {
       // If either the name or the version don't match, contract version is different
-      if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return false
+      if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return true
     }
-    return true
+    return false
   }
 
   // must create the connection before we call login
