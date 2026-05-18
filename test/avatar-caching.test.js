@@ -24,7 +24,7 @@ async function createIdentity (username) {
   )
 
   // append random id to username to prevent conflict across runs
-  // when GI_PERSIST environment variable is defined
+  // when using a persistent backend
   username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
   const msg = await sbp('chelonia/out/registerContract', {
     contractName: 'gi.contracts/identity',

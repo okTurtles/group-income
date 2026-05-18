@@ -307,6 +307,19 @@ const setupChelonia = async (): Promise<*> => {
   })
   await sbp('chelonia.persistentActions/load')
 
+  const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+    // Sort contract by name
+    const ea = Object.entries(va || {}).sort(([a], [b]) => a - b)
+    const eb = Object.entries(vb || {}).sort(([a], [b]) => a - b)
+    // If different number of contracts, contract version object is different
+    if (ea.length !== eb.length) return false
+    for (let i = 0; i < ea.length; i++) {
+      // If either the name or the version don't match, contract version is different
+      if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return false
+    }
+    return true
+  }
+
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
@@ -317,8 +330,7 @@ const setupChelonia = async (): Promise<*> => {
         const ourContractsVersion = process.env.CONTRACTS_VERSION
         const theirContractsVersion = msg.data.contractsVersion
 
-        // TODO
-        const isContractVersionDiff = JSON.stringify(ourContractsVersion) !== JSON.stringify(theirContractsVersion)
+        const isContractVersionDiff = diffContractVersion(ourContractsVersion, theirContractsVersion)
         const isAppVersionDiff = ourVersion !== theirVersion
         // We only compare appVersion in development mode so that the page auto-refreshes if `grunt dev` is re-run
         // This check cannot be done in production mode as it would lead to an infinite page refresh bug
