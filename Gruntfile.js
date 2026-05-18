@@ -318,24 +318,69 @@ module.exports = (grunt) => {
 
   grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
-    const appVersion = cheloniaJSON.appVersion
 
-    // NOTE: the latest version
-    await mkdir(`${distContracts}/${appVersion}`)
+    // The freshly built contracts live as flat files directly under
+    // `dist/contracts/` (e.g. `chatroom.js`, `chatroom-slim.js`,
+    // `chatroom.<version>.manifest.json`). They need to be relocated into the
+    // per-contract / per-version layout used by `chel serve` and `chel pin`:
+    //   dist/contracts/<contractDirName>/<version>/<files>
+    // where `<contractDirName>` is the same directory name used under the
+    // top-level `contracts/` folder (e.g. `gi.contracts_chatroom`).
+    //
+    // We also copy every previously pinned version from `contracts/` into
+    // `dist/contracts/` so the served `dist/` archive contains the full
+    // history of pinned contracts.
+
+    // Build a mapping from the short contract name (e.g. `chatroom`) to its
+    // pinned directory name and version, derived from `chelonia.json`.
+    // `name` in `chelonia.json` looks like `gi.contracts/chatroom`; the
+    // matching on-disk directory is `gi.contracts_chatroom`.
+    const contractInfoByShortName = Object.fromEntries(
+      Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => {
+        const shortName = name.split('/').pop()
+        const dirName = name.replace(/\//g, '_')
+        return [shortName, { dirName, version }]
+      })
+    )
+
+    // NOTE: the latest (just-built) version — move flat files into
+    // `dist/contracts/<dirName>/<version>/`. Ensure the directory exists
+    // since `dist/` is not version controlled and may not exist yet.
+    await mkdir(distContracts, { recursive: true })
     for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
-      if (dirent.isFile()) {
-        const fileName = dirent.name
-        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${appVersion}/${fileName}`)
-        await rm(`${distContracts}/${fileName}`)
+      if (!dirent.isFile()) continue
+      const fileName = dirent.name
+      // The short contract name is the part of the filename before the first
+      // `.` or `-` (e.g. `chatroom.js`, `chatroom-slim.js`,
+      // `chatroom.2.8.0.manifest.json` all map to `chatroom`).
+      const shortName = fileName.split(/[.-]/)[0]
+      const info = contractInfoByShortName[shortName]
+      if (!info) {
+        throw new Error(`copyAndMoveContracts: unrecognized contract file in ${distContracts}: ${fileName}`)
       }
+      const destDir = `${distContracts}/${info.dirName}/${info.version}`
+      await mkdir(destDir, { recursive: true })
+      await copyFile(`${distContracts}/${fileName}`, `${destDir}/${fileName}`)
+      await rm(`${distContracts}/${fileName}`)
     }
 
-    // NOTE: all previously pinned versions
-    const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
-      return dirent.isDirectory() && dirent.name !== appVersion
-    }).map(dirent => dirent.name)
-    for (const version of versions) {
-      await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
+    // NOTE: all previously pinned versions — mirror the
+    // `contracts/<dirName>/<version>/` tree under `dist/contracts/`, skipping
+    // the version that was just built (already written above).
+    for (const dirent of await readdir('contracts', { withFileTypes: true })) {
+      if (!dirent.isDirectory()) continue
+      const contractDirName = dirent.name
+      const currentVersion = Object.values(contractInfoByShortName)
+        .find(info => info.dirName === contractDirName)?.version
+      for (const versionDir of await readdir(`contracts/${contractDirName}`, { withFileTypes: true })) {
+        if (!versionDir.isDirectory()) continue
+        if (versionDir.name === currentVersion) continue
+        await cp(
+          `contracts/${contractDirName}/${versionDir.name}`,
+          `${distContracts}/${contractDirName}/${versionDir.name}`,
+          { recursive: true }
+        )
+      }
     }
 
     done()
