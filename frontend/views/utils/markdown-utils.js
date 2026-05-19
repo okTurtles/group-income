@@ -17,7 +17,10 @@ marked.use({
 
         if (isValid) {
           const { href, text } = token
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${text}</a>`
+          // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
+          // So we need to perform another conversion step here.
+          const parsedText = marked.parseInline(text, { gfm: true })
+          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
         return token.raw
       }
