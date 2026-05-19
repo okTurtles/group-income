@@ -15,6 +15,10 @@ import {
 } from '@model/chatroom/utils.js'
 import { makeNotification } from './nativeNotification.js'
 
+function hasMessageHash (chatRoomState: ?Object, messageHash: string): boolean {
+  return chatRoomState?.messages?.some(message => message.hash === messageHash) || false
+}
+
 async function messageReceivePostEffect ({
   contractID, messageHash, height, text,
   isDMOrMention, messageType, memberID, chatRoomName
@@ -61,6 +65,9 @@ async function messageReceivePostEffect ({
 
   await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
   try {
+    const chatRoomState = await sbp('chelonia/contract/state', contractID)
+    if (!hasMessageHash(chatRoomState, messageHash)) return
+
     if (shouldAddToUnreadMessages) {
       sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height }).catch(e => {
         console.error('[messageReceivePostEffect] Error calling addChatRoomUnreadMessage', e)
