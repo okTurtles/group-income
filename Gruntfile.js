@@ -22,8 +22,8 @@ const execP = util.promisify(exec)
 const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
-const { resolve } = path
 const packageJSON = require('./package.json')
+const { loadBundler } = require('./scripts/bundlers')
 
 // =======================
 // Global environment variables setup
@@ -104,14 +104,6 @@ module.exports = (grunt) => {
 
   // Helper functions
 
-  function pick (o, props) {
-    const x = {}
-    for (const k of props) { x[k] = o[k] }
-    return x
-  }
-
-  const clone = o => JSON.parse(JSON.stringify(o))
-
   async function execWithErrMsg (cmd, errMsg) {
     const { stdout, stderr } = await execP(cmd, {
       // this is needed to get it to work in certain Windows environments
@@ -165,23 +157,22 @@ module.exports = (grunt) => {
     await deployAndUpdateMainSrc(dir, dest)
   }
 
-  // Used by both the alias plugin and the Vue plugin.
-  const aliasPluginOptions = {
-    entries: {
-      '@assets': './frontend/assets',
-      '@common': './frontend/common',
-      '@components': './frontend/views/components',
-      '@containers': './frontend/views/containers',
-      '@controller': './frontend/controller',
-      '@model': './frontend/model',
-      '@pages': './frontend/views/pages',
-      '@svgs': './frontend/assets/svgs',
-      '@utils': './frontend/utils',
-      '@view-utils': './frontend/views/utils',
-      '@views': './frontend/views',
-      'vue': './node_modules/vue/dist/vue.esm.js',
-      '~': '.'
-    }
+  // Bundler-neutral path alias map (issue #1085). Adapters under
+  // `scripts/bundlers/` translate these to their bundler's native format.
+  const bundleAliases = {
+    '@assets': './frontend/assets',
+    '@common': './frontend/common',
+    '@components': './frontend/views/components',
+    '@containers': './frontend/views/containers',
+    '@controller': './frontend/controller',
+    '@model': './frontend/model',
+    '@pages': './frontend/views/pages',
+    '@svgs': './frontend/assets/svgs',
+    '@utils': './frontend/utils',
+    '@view-utils': './frontend/views/utils',
+    '@views': './frontend/views',
+    'vue': './node_modules/vue/dist/vue.esm.js',
+    '~': '.'
   }
 
   // https://browsersync.io/docs/options
@@ -216,87 +207,20 @@ module.exports = (grunt) => {
     }
   }
 
-  // https://esbuild.github.io/api/
-  const esbuildOptionBags = {
-    // Native options that are shared between our esbuild tasks.
-    default: {
-      bundle: true,
-      chunkNames: '[name]-[hash]-cached',
-      define: {
-        'process.env.BUILD': "'web'", // Required by Vuelidate.
-        'process.env.CI': `'${CI}'`,
-        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-        'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
-        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
-        'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
-        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
-      },
-      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-      format: 'esm',
-      loader: {
-        '.eot': 'file',
-        '.ttf': 'file',
-        '.woff': 'file',
-        '.woff2': 'file'
-      },
-      minifyIdentifiers: production,
-      minifySyntax: production,
-      minifyWhitespace: production,
-      outdir: distJS,
-      sourcemap: true,
-      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks')
-    },
-    // Native options used when building the main entry point.
-    main: {
-      assetNames: '../css/[name]',
-      entryPoints: [mainSrc]
-    },
-    // Native options used when building our service worker(s).
-    serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
-    }
-  }
-  esbuildOptionBags.contracts = {
-    ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle'
-    ]),
-    // Format must be 'iife' because we don't want 'import' in the output
-    format: 'iife',
-    // banner: {
-    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
-    splitting: false,
-    outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
-    external: ['@sbp/sbp']
-  }
-  // prevent contract hash from changing each time we build them
-  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
-  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
-  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
-
-  // Additional options which are not part of the esbuild API.
-  const esbuildOtherOptionBags = {
-    main: {
-      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-      // making a post-build copying operation necessary.
-      postoperation: async ({ fileEventName, filePath } = {}) => {
-        // Only after a fresh build or a rebuild caused by a CSS file event.
-        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-          if (development) {
-            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-          }
-        }
-      }
-    }
+  // Bundler-neutral `define` map (string → string-literal). Adapters pass this
+  // through to their bundler's equivalent of `process.env.X` replacement.
+  const bundleDefine = {
+    'process.env.BUILD': "'web'", // Required by Vuelidate.
+    'process.env.CI': `'${CI}'`,
+    'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
+    'process.env.GI_VERSION': `'${GI_VERSION}'`,
+    'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
+    'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+    'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
+    'process.env.NODE_ENV': `'${NODE_ENV}'`,
+    'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+    'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+    'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -306,32 +230,7 @@ module.exports = (grunt) => {
     throwOnWarning: false
   }
 
-  // By default, `flow-remove-types` doesn't process files which don't start with a `@flow` annotation,
-  // so we have to pass the `all` option since we don't use `@flow` annotations.
-  const flowRemoveTypesPluginOptions = {
-    all: true,
-    cache: new Map()
-  }
-
   const puglintOptions = {}
-
-  // https://github.com/sass/dart-sass#javascript-api
-  const sassPluginOptions = {
-    cache: false, // Enabling it causes an error: "Cannot read property 'resolveDir' of undefined".
-    sourceMap: development, // This option has currently no effect.
-    outputStyle: development ? 'expanded' : 'compressed',
-    loadPaths: [
-      resolve('./node_modules'), // So we can write `@import 'vue-slider-component/lib/theme/default.scss';` in .vue <style>.
-      resolve('./frontend/assets/style') // So we can write `@import '_variables.scss';` in .vue <style> section.
-    ],
-    // This option has currently no effect, so I had to add at-import path aliasing in the Vue plugin.
-    importer (url, previous, done) {
-      // So we can write `@import '@assets/style/_variables.scss'` in the <style> section of .vue components too.
-      return url.startsWith('@assets/')
-        ? { file: resolve('./frontend/assets', url.slice('@assets/'.length)) }
-        : null
-    }
-  }
 
   // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md#options
   const stylelintOptions = {
@@ -341,26 +240,6 @@ module.exports = (grunt) => {
     syntax: 'scss',
     throwOnError: false,
     throwOnWarning: false
-  }
-
-  const svgInlineVuePluginOptions = {
-    // This map's keys will be relative SVG file paths without leading dot,
-    // while its values will be corresponding compiled JS strings.
-    cache: new Map(),
-    debug: false
-  }
-
-  const vuePluginOptions = {
-    aliases: {
-      ...aliasPluginOptions.entries,
-      // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
-      'vue-slider-component': './node_modules/vue-slider-component'
-    },
-    // This map's keys will be relative Vue file paths without leading dot,
-    // while its values will be corresponding compiled JS strings.
-    cache: new Map(),
-    debug: false,
-    flowtype: flowRemoveTypesPluginOptions
   }
 
   // Helper functions
@@ -483,14 +362,14 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('build', function () {
-    const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
+    const bundle = this.flags.watch ? 'bundle:watch' : 'bundle'
 
     if (!grunt.option('skipbuild')) {
       const lintTasks = ['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint']
 
       grunt.task.run([
         ...(this.flags.skiplint ? [] : lintTasks),
-        'clean', 'copy', esbuild
+        'clean', 'copy', bundle
       ])
     }
   })
@@ -584,43 +463,35 @@ module.exports = (grunt) => {
   grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
 
   // --------------------
-  // - Our esbuild task
+  // - Our bundle task (bundler-agnostic — see scripts/bundlers/)
   // --------------------
 
-  grunt.registerTask('esbuild', async function () {
+  grunt.registerTask('bundle', async function () {
     const done = this.async()
-    const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
-    const aliasPlugin = createAliasPlugin(aliasPluginOptions)
-    const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
-    const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
-    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
-    const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
-    const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
-    const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
+    const bundler = loadBundler()
+    const tasks = bundler.createBundleTasks({
+      development,
+      production,
+      noChunks: !!grunt.option('no-chunks'),
+      paths: {
+        distContracts,
+        distCSS,
+        distJS,
+        contractsDir,
+        serviceWorkerDir,
+        mainSrc
+      },
+      define: bundleDefine,
+      aliases: bundleAliases
+    })
 
-    const buildMain = createEsbuildTask({
-      ...esbuildOptionBags.default,
-      ...esbuildOptionBags.main,
-      plugins: [...defaultPlugins, sassPlugin, svgPlugin, vuePlugin]
-    }, esbuildOtherOptionBags.main)
-
-    const buildServiceWorkers = createEsbuildTask({
-      ...esbuildOptionBags.default,
-      ...esbuildOptionBags.serviceWorkers,
-      plugins: defaultPlugins
-    })
-    const buildContracts = createEsbuildTask({
-      ...esbuildOptionBags.contracts, plugins: defaultPlugins
-    })
-    const buildContractsSlim = createEsbuildTask({
-      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
-    })
+    grunt.log.writeln(chalk`{green bundler:} ${bundler.name}`)
 
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
-    await Promise.all([buildContracts.run(), buildContractsSlim.run()])
+    await Promise.all([tasks.contracts.run(), tasks.contractsSlim.run()])
       .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
-      .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
+      .then(() => Promise.all([tasks.main.run(), tasks.serviceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
@@ -635,7 +506,7 @@ module.exports = (grunt) => {
     const { chalkFileEvent, chalkLintingTime } = require('./scripts/esbuild-plugins/utils.js')
 
     // BrowserSync setup.
-    const browserSync = require('browser-sync').create('esbuild')
+    const browserSync = require('browser-sync').create('bundle')
 
     // If there is port override, use it.
     const portOverride = grunt.option('browsersync-port') || process.env.BROWSER_SYNC_PORT
@@ -654,16 +525,15 @@ module.exports = (grunt) => {
       [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/assets/svgs/**/*.svg'], []],
       [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
-    ].forEach(([globs, tasks]) => {
+    ].forEach(([globs, watchTasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (fileEventName, filePath) => {
-          const extension = path.extname(filePath)
           grunt.log.writeln(chalkFileEvent(fileEventName, filePath))
 
           if (fileEventName === 'add' || fileEventName === 'change') {
             // Read and lint the changed file.
             const code = await readFile(filePath, 'utf8')
-            const linters = tasks.filter(task => typeof task === 'object')
+            const linters = watchTasks.filter(task => typeof task === 'object')
             const lintingStartMs = Date.now()
 
             await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
@@ -674,42 +544,27 @@ module.exports = (grunt) => {
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
           }
 
-          if (fileEventName === 'change' || fileEventName === 'unlink') {
-            // Remove the corresponding plugin cache entry, if any.
-            if (extension === '.js') {
-              flowRemoveTypesPluginOptions.cache.delete(filePath)
-            } else if (extension === '.svg') {
-              svgInlineVuePluginOptions.cache.delete(filePath)
-            } else if (extension === '.vue') {
-              vuePluginOptions.cache.delete(filePath)
-            }
-            // Clear the whole Vue plugin cache if a Sass or SVG file was
-            // changed since some compiled Vue files might include it.
-            if (['.sass', '.scss', '.svg'].includes(extension)) {
-              vuePluginOptions.cache.clear()
-            }
-          }
           // Only rebuild the relevant entry point.
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
-              await buildServiceWorkers.run({ fileEventName, filePath })
+              await tasks.serviceWorkers.run({ fileEventName, filePath })
             } else if (filePath.startsWith(contractsDir)) {
-              await buildContracts.run({ fileEventName, filePath })
-              await buildContractsSlim.run({ fileEventName, filePath })
+              await tasks.contracts.run({ fileEventName, filePath })
+              await tasks.contractsSlim.run({ fileEventName, filePath })
               const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
-              await buildMain.run({ fileEventName, filePath })
+              await tasks.main.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
-              await buildMain.run({ fileEventName, filePath })
+              await tasks.main.run({ fileEventName, filePath })
             } else {
               grunt.log.error('no builder defined for path:', filePath)
             }
           } catch (error) {
             grunt.log.error(error.message)
           }
-          grunt.task.run(tasks.filter(task => typeof task === 'string'))
+          grunt.task.run(watchTasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])
 
           // Allow the task queue to move forward.
