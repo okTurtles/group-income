@@ -114,8 +114,8 @@ function clearOldPayments ({ contractID, state, getters }) {
   )
 }
 
-function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
-  const period = getters.periodStampGivenDate(meta.createdDate)
+function initFetchPeriodPayments ({ contractID, meta, periodTo = '', state, getters }) {
+  const period = periodTo || getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = fetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ meta, getters }))
   const previousPeriod = getters.periodBeforePeriod(period)
 
@@ -1362,16 +1362,64 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/updateDistributionDate': {
       validate: actionRequireActiveMember(optional),
       process ({ meta, contractID }, { state, getters }) {
-        const period = getters.periodStampGivenDate(meta.createdDate)
+        const periodTo = getters.periodStampGivenDate(meta.createdDate)
+        const periodLength = getters.groupSettings.distributionPeriodLength
         const current = state.settings?.distributionDate
 
-        if (current !== period) {
-          // right before updating to the new distribution period, make sure to update various payment-related group streaks.
-          updateGroupStreaks({ state, getters })
-          state.settings.distributionDate = period
-        }
+        console.log('!@# updating DistributionDate: (update-to, current)', periodTo, current)
+        if (comparePeriodStamps(periodTo, current) > 0) {
+          const getAllPeriodsBetween = (from, to) => {
+            const periods = []
+            let current = from
+            while (true) {
+              const period = plusOnePeriodLength(current, periodLength)
+              if (comparePeriodStamps(to, period) > 0) {
+                periods.push(period)
+                current = period
+              } else {
+                break
+              }
+            }
+            return periods
+          }
 
-        initFetchPeriodPayments({ contractID, meta, state, getters })
+          const allPeriodsToUpdate = [
+            ...getAllPeriodsBetween(current, periodTo),
+            periodTo
+          ]
+          console.log('!@# allPeriodsToUpdate: ', allPeriodsToUpdate)
+
+          allPeriodsToUpdate.forEach((period, index) => {
+            initFetchPeriodPayments({ contractID, meta, periodTo: period, state, getters })
+          })
+
+          // There can be two cases:
+          // 1) The period to update comes right after current period
+          // 2) There are one or more empty periods (periods with no payments made) between current period and the period to update.
+          // In case of 1), we add +1 to the payment-related group streaks.
+          // In case of 2), those streaks need to be reset except for 'missedPayments' streak.
+          if (allPeriodsToUpdate.length === 1) {
+            updateGroupStreaks({ state, getters })
+          } else {
+            state.streaks = {
+              ...state.streaks,
+              ...({
+                lastStreakPeriod: null,
+                fullMonthlyPledges: 0,
+                fullMonthlySupport: 0,
+                onTimePayments: {}
+              })
+            }
+
+            // update 'missedPayments' streaks
+            const emptyPeriodsCount = allPeriodsToUpdate.length - 1
+            for (const memberID in state.streaks.missedPayments) {
+              state.streaks.missedPayments[memberID] += emptyPeriodsCount
+            }
+          }
+
+          state.settings.distributionDate = periodTo
+        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
