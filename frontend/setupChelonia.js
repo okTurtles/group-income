@@ -15,6 +15,19 @@ import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.j
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 import { KV_KEYS } from './utils/constants.js'
 
+const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+  // Sort contract by name
+  const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  // If different number of contracts, contract version object is different
+  if (ea.length !== eb.length) return true
+  for (let i = 0; i < ea.length; i++) {
+    // If either the name or the version don't match, contract version is different
+    if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return true
+  }
+  return false
+}
+
 const handleDeletedContract = async (contractID: string) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
@@ -306,19 +319,6 @@ const setupChelonia = async (): Promise<*> => {
     databaseKey: '_private_persistent_actions'
   })
   await sbp('chelonia.persistentActions/load')
-
-  const diffContractVersion = (va?: Object, vb?: Object): boolean => {
-    // Sort contract by name
-    const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
-    const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
-    // If different number of contracts, contract version object is different
-    if (ea.length !== eb.length) return true
-    for (let i = 0; i < ea.length; i++) {
-      // If either the name or the version don't match, contract version is different
-      if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return true
-    }
-    return false
-  }
 
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {

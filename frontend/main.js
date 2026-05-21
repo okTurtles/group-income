@@ -212,7 +212,7 @@ async function startApp () {
     console.error('[main] Error setting up service worker', e)
     alert(L('Error while setting up service worker: {err}', { err: e.message }))
     if (process.env.CI || process.env.NODE_ENV === 'development') {
-      // In development, we don't auto-refresh to avoid infinite loops and because it might remove useful informaiton from the console.
+      // In development, we don't auto-refresh to avoid infinite loops and because it might remove useful information from the console.
       alert(L('Try refreshing the page'))
     } else {
       window.location.reload() // try again, sometimes it fixes it
