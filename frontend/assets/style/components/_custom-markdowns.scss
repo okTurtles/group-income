@@ -36,6 +36,22 @@
     }
   }
 
+  // heading styles
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Poppins";
+    font-weight: bold;
+    line-height: 1.3;
+
+    code {
+      font-size: inherit;
+    }
+  }
+
   // inline code styles
   code {
     display: inline-block;
@@ -168,9 +184,8 @@
 
       th,
       td {
-        min-width: max-content;
         padding: 0.5rem 1rem 0.5rem 0;
-        word-break: break-word;
+        word-break: normal;
 
         &:first-child {
           padding-left: 0.75rem;
@@ -194,6 +209,14 @@
 
   br + .table-container {
     padding-top: 0;
+  }
+
+  // horizontal rule styles
+  hr {
+    margin: 1rem 0;
+    height: 1px;
+    background-color: $general_0;
+    opacity: 0.8;
   }
 
   // code-fence block styles
@@ -259,11 +282,17 @@
     }
   }
 
-  // miscellaneous
+  // link styles
   .link {
     border-bottom-color: currentColor;
+
+    code {
+      padding: 0.25rem 0.25rem 1px;
+      color: inherit;
+    }
   }
 
+  // miscellaneous
   .c-edited {
     margin-left: 0.2rem;
     font-size: 0.7rem;

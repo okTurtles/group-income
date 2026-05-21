@@ -486,7 +486,12 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
+      const lintTasks = ['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint']
+
+      grunt.task.run([
+        ...(this.flags.skiplint ? [] : lintTasks),
+        'clean', 'copy', esbuild
+      ])
     }
   })
 
@@ -501,7 +506,10 @@ module.exports = (grunt) => {
         headed: grunt.option('browser') === true,
         ...(process.env.CYPRESS_RECORD_KEY && {
           record: true,
-          key: process.env.CYPRESS_RECORD_KEY
+          key: process.env.CYPRESS_RECORD_KEY,
+          parallel: true,
+          // Cypress Cloud uses the ciBuildId to group machines together for a single attempt, so this should be a unique value for every single workflow execution.
+          ciBuildId: process.env.RUN_ID
         })
       },
       open: {
@@ -725,6 +733,10 @@ module.exports = (grunt) => {
   grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
   grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
 
+  // CI-specific test tasks - splitting linting/unit tests and cypress separately to use parallel mode in Cypress Cloud.
+  // It's not possible for different jobs in a GHA workflow to share a session. So both tasks still need to repeat build/back-end setup steps.
+  grunt.registerTask('ci-test:unit', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test'])
+  grunt.registerTask('ci-test:cypress', ['build:skiplint', 'chelDeploy', 'backend:relaunch', 'cypress'])
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
