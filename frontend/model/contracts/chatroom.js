@@ -33,7 +33,7 @@ import {
   validateChatRoomName
 } from './shared/functions.js'
 import chatroomGetters from './shared/getters/chatroom.js'
-import { cloneDeep, merge, uniq } from 'turtledash'
+import { cloneDeep, merge } from 'turtledash'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 
 export const GIChatroomAlreadyMemberError: typeof Error = ChelErrorGenerator('GIChatroomAlreadyMemberError')
@@ -505,7 +505,7 @@ sbp('chelonia/defineContract', {
         if (!Array.isArray(state.deletedMessageHashes)) {
           state.deletedMessageHashes = []
         }
-        state.deletedMessageHashes = uniq([...state.deletedMessageHashes, data.hash])
+        state.deletedMessageHashes.push(data.hash)
         while (state.deletedMessageHashes.length > CHATROOM_MAX_DELETED_MESSAGE_HASHES) {
           state.deletedMessageHashes.shift()
         }
