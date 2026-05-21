@@ -261,6 +261,16 @@
                   data-test='attachments'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
+            tooltip(
+              v-if='ephemeral.voiceRecording.supported'
+              direction='top'
+              :text='L("Record voice message")'
+            )
+              button.is-icon(
+                :aria-label='L("Record voice message")'
+                @click='recordVoiceMessage'
+              )
+                i.icon-microphone
 
           button.c-send-button(
             id='mobileSendButton'
@@ -308,6 +318,7 @@ import {
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
+import { canUseVoiceRecording } from './voice-recording/voice-recording-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -378,7 +389,10 @@ export default ({
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
         typingUsers: [],
-        chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
+        chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
+        voiceRecording: {
+          supported: false
+        }
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -424,6 +438,7 @@ export default ({
     this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = this.mediaIsPhone.matches
     this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
+    this.checkVoiceRecordingSupport()
   },
   mounted () {
     this.initializeTextArea()
@@ -1237,7 +1252,15 @@ export default ({
         console.error('Error emitting user stopped typing event', e)
       })
     },
-    swapMentionIDForDisplayname
+    swapMentionIDForDisplayname,
+    checkVoiceRecordingSupport () {
+      canUseVoiceRecording().then(supported => {
+        this.ephemeral.voiceRecording.supported = supported
+      })
+    },
+    recordVoiceMessage () {
+      console.log('TODO: launch voice message recording UI.')
+    }
   }
 }: Object)
 </script>
