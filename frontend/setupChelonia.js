@@ -252,6 +252,10 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
+    },
+    journal: {
+      enabled: true,
+      snapshotInterval: 75
     }
   })
 
