@@ -11,6 +11,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_MAX_MESSAGES,
+  CHATROOM_MAX_DELETED_MESSAGE_HASHES,
   CHATROOM_MAX_MESSAGE_LEN,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_PRIVACY_LEVEL,
@@ -108,6 +109,7 @@ sbp('chelonia/defineContract', {
           },
           members: {},
           messages: [],
+          deletedMessageHashes: [],
           pinnedMessages: []
         }, data)
         for (const key in initialState) {
@@ -476,6 +478,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, innerSigningContractID }, { state }) {
         if (!state.messages) return
+
         [state.messages, state.pinnedMessages].forEach(messageArray => {
           const msgIndex = findMessageIdx(data.hash, messageArray)
           if (msgIndex >= 0) {
@@ -492,6 +495,20 @@ sbp('chelonia/defineContract', {
             }
           }
         })
+
+        // Add the message hash to the 'deletedMessageHashes' array.
+        // Context: (reference issue: https://github.com/okTurtles/group-income/issues/2442)
+        // Previously there was an issue where user sees unread message notification UI for a deleted message
+        // when that message was deleted while user isn't logged in or the device(phone) is asleep/locked.
+        // So messageReceivePostEffect function is required to have a guard to check if a message has been deleted before sending a notification.
+        // 'deletedMessageHashes' is used for this check but can be useful elsewhere too.
+        if (!Array.isArray(state.deletedMessageHashes)) {
+          state.deletedMessageHashes = []
+        }
+        state.deletedMessageHashes.push(data.hash)
+        while (state.deletedMessageHashes.length > CHATROOM_MAX_DELETED_MESSAGE_HASHES) {
+          state.deletedMessageHashes.shift()
+        }
       },
       sideEffect ({ data, contractID, innerSigningContractID }, { getters }) {
         const rootState = sbp('state/vuex/state')
