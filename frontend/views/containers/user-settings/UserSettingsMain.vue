@@ -65,7 +65,7 @@
     .version-item
       i18n App Version:
       span.c-version-value {{ ephemeral.versions.app }}
-    .version-item(v-for='(version, name) in contractsVersion')
+    .version-item(v-for='(version, name) in contractsVersion' :key='name')
       i18n(:args='{ contract: contractDisplayName(name) }') {contract} Version:
       span.c-version-value {{ version }}
     .version-item
