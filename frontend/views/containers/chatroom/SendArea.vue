@@ -285,6 +285,8 @@
       ref='mask'
     )
 
+    voice-recorder(ref='voiceRecorder')
+
     create-poll.c-poll(ref='poll' @created-poll='$emit("jump-to-latest")')
 </template>
 
@@ -298,6 +300,7 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
+import VoiceRecorder from './voice-recording/VoiceRecorder.vue'
 import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
@@ -350,7 +353,8 @@ export default ({
     Tooltip,
     CreatePoll,
     ChatAttachmentPreview,
-    EmojiShortcutItemDisplay
+    EmojiShortcutItemDisplay,
+    VoiceRecorder
   },
   props: {
     defaultText: String,
