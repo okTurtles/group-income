@@ -268,7 +268,7 @@
             )
               button.is-icon(
                 :aria-label='L("Record voice message")'
-                @click='recordVoiceMessage'
+                @click='openVoiceRecorder'
               )
                 i.icon-microphone
 
@@ -285,7 +285,11 @@
       ref='mask'
     )
 
-    voice-recorder(ref='voiceRecorder')
+    voice-recorder(
+      ref='voiceRecorder'
+      v-if='ephemeral.voiceRecording.isOpen'
+      @close='closeVoiceRecorder'
+    )
 
     create-poll.c-poll(ref='poll' @created-poll='$emit("jump-to-latest")')
 </template>
@@ -395,7 +399,8 @@ export default ({
         typingUsers: [],
         chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
         voiceRecording: {
-          supported: false
+          supported: false,
+          isOpen: false
         }
       },
       config: {
@@ -508,7 +513,8 @@ export default ({
         })
     },
     isActive () {
-      return this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0
+      return !this.ephemeral.voiceRecording.isOpen &&
+        (this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0)
     },
     textareaStyles () {
       return {
@@ -1262,8 +1268,11 @@ export default ({
         this.ephemeral.voiceRecording.supported = supported
       })
     },
-    recordVoiceMessage () {
-      console.log('TODO: launch voice message recording UI.')
+    openVoiceRecorder () {
+      this.ephemeral.voiceRecording.isOpen = true
+    },
+    closeVoiceRecorder () {
+      this.ephemeral.voiceRecording.isOpen = false
     }
   }
 }: Object)

@@ -1,11 +1,13 @@
 <template lang="pug">
-.c-voice-recorder
-  button.is-unstyled.c-close-btn(@click='close')
-    i.icon-times
-  .c-sound-patterns
-    .c-pattern-bar(v-for='i in ephemeral.patternCount' :key='i')
-  button.is-unstyled.c-record-btn(@click='record')
-    i.icon-check
+.c-voice-recorder-container
+  .c-backdrop
+  .c-voice-recorder
+    button.is-unstyled.c-close-btn(@click='close')
+      i.icon-times
+    .c-sound-patterns
+      .c-pattern-bar(v-for='i in ephemeral.patternCount' :key='i')
+    button.is-unstyled.c-record-btn(@click='record')
+      i.icon-check
 </template>
 
 <script>
@@ -14,14 +16,13 @@ export default {
   data () {
     return {
       ephemeral: {
-        isOpen: false,
         patternCount: 30
       }
     }
   },
   methods: {
     close () {
-      console.log('TODO: close voice recorder UI')
+      this.$emit('close')
     },
     record () {
       console.log('TODO: record voice')
@@ -35,6 +36,28 @@ export default {
 
 $shadow-color: rgba(54, 54, 54, 0.3);
 $shadow-color-dark: rgba(38, 38, 38, 0.895);
+
+.c-voice-recorder-container {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 5;
+
+  .c-backdrop {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    background: $general_1;
+    opacity: 0.275;
+  }
+}
 
 .c-voice-recorder {
   position: absolute;
