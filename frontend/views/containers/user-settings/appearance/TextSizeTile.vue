@@ -8,7 +8,7 @@ MenuItem(
 
   template(#lower='')
     .c-slider-container
-      Slider(
+      Slider.c-size-slider(
         :value='fontSize'
         :data='fontData'
         :range='fontRange'
@@ -67,5 +67,9 @@ export default {
 <style lang="scss" scoped>
 .c-slider-container {
   padding: 0 0.75rem;
+
+  .c-size-slider {
+    padding-bottom: 0;
+  }
 }
 </style>
