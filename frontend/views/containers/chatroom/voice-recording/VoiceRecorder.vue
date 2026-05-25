@@ -33,31 +33,60 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+$shadow-color: rgba(54, 54, 54, 0.3);
+$shadow-color-dark: rgba(38, 38, 38, 0.895);
+
 .c-voice-recorder {
   position: absolute;
   right: 0;
   top: -0.5rem;
   transform: translateY(-100%);
   display: flex;
-  align-items: center;
-  column-gap: 0.25rem;
-  padding: 0.2rem 0.375rem;
-  height: 1.875rem;
+  column-gap: 0.5rem;
+  padding: 0.2rem 0.25rem;
   border-radius: 1.5rem;
-  background-color: $general_0;
+  border: 1px solid $general_1;
+  background-color: $general_2;
+  box-shadow: $shadow-color;
+}
+
+.is-dark-theme .c-voice-recorder {
+  box-shadow: $shadow-color-dark;
 }
 
 .c-close-btn,
 .c-record-btn {
   position: relative;
   flex-shrink: 0;
-  font-size: $size_5;
-  width: 1.25rem;
-  height: 1.25rem;
+  font-size: 0.75rem;
+  width: 1.275rem;
+  height: 1.275rem;
   border-radius: 50%;
-  background-color: $general_1;
-  color: $text_1;
   transform: translateY(1px);
+}
+
+.c-close-btn {
+  background-color: $text_1;
+  color: $general_1;
+
+  &:focus,
+  &:focus-within,
+  &:hover {
+    background-color: $text_0;
+  }
+}
+
+.c-record-btn {
+  background-color: $success_2;
+  color: $success_0;
+  font-size: 0.7rem;
+
+  &:focus,
+  &:focus-within,
+  &:hover {
+    background-color: $success_0;
+    color: $success_2;
+  }
 }
 
 .c-sound-patterns {
@@ -70,9 +99,11 @@ export default {
 
   .c-pattern-bar {
     position: relative;
-    height: 0.875rem;
+    display: block;
+    height: 25%;
     width: 2px;
-    background-color: $primary_0;
+    background-color: $text_1;
+    opacity: 0.625;
   }
 }
 </style>
