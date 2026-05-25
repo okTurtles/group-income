@@ -6,6 +6,7 @@
     - [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
         - [Licensing and Ownership](#licensing-and-ownership)
         - [Pull Request Requirements](#pull-request-requirements)
+- [AI Usage Policy](#ai-usage-policy)
 - [How to help by translating](#how-to-help-by-translating)
 - [How to submit an issue](#how-to-submit-an-issue)
 
