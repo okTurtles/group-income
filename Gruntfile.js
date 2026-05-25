@@ -24,6 +24,7 @@ const fs = require('fs')
 const path = require('path')
 const { resolve } = path
 const cheloniaJSON = require('./chelonia.json')
+const packageJSON = require('./package.json')
 
 // =======================
 // Global environment variables setup
@@ -53,12 +54,12 @@ if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
 // Build the per-contract CONTRACTS_VERSION object from chelonia.json
-const CONTRACTS_VERSION = Object.fromEntries(
+let CONTRACTS_VERSION = Object.fromEntries(
   Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
 )
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-const APP_VERSION = cheloniaJSON.appVersion + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
+let APP_VERSION = cheloniaJSON.appVersion + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { APP_VERSION })
@@ -486,39 +487,88 @@ module.exports = (grunt) => {
       .then(r => done(r.totalFailed === 0)).catch(done)
   })
 
-  grunt.registerTask('_pin', async function (version) {
+  grunt.registerTask('_pin', async function (filter) {
     // a task internally executed in 'pin' task below
     const done = this.async()
+    const version = cheloniaJSON.appVersion
 
     try {
       const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
-      for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith('.manifest.json')) {
-          await execWithErrMsg(`./node_modules/.bin/chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
-          console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
-        }
+      const manifests = entries.filter(e => e.isFile() && e.name.endsWith('.manifest.json'))
+      // `filter` is a contract short-name (e.g. 'chatroom'), a full SBP name
+      // (e.g. 'gi.contracts/chatroom'), or a manifest path. When unset, pin all.
+      const matches = manifests.filter(entry => {
+        if (!filter || filter === '--all') return true
+        const shortName = entry.name.split('.')[0]
+        const fullName = `gi.contracts/${shortName}`
+        return filter === shortName ||
+          filter === fullName ||
+          path.basename(filter) === entry.name ||
+          path.basename(filter).startsWith(`${shortName}.`)
+      })
+      if (matches.length === 0) {
+        throw new Error(`grunt pin: no contract matches '${filter}'`)
+      }
+      for (const entry of matches) {
+        await execWithErrMsg(`./node_modules/.bin/chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
+        console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
       }
     } finally {
       done()
     }
   })
 
-  grunt.registerTask('pin', function (version) {
-    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
-    // it's possible for the UI to get updated without the contracts getting updated,
-    // so we keep their version numbers separate.
-    // we do this here first so that any code that uses `process.env.CONTRACTS_VERSION` inside the contracts
-    // themselves will be built using this latest version number, and so that the contract manifests
-    // are generated using this version number
-    for (const name of Object.keys(cheloniaJSON.contracts)) {
-      cheloniaJSON.contracts[name].version = version
-      CONTRACTS_VERSION[name] = version
+  grunt.registerTask('pin', function () {
+    // Usage:
+    //   grunt pin                       → print usage and exit
+    //   grunt pin --all                 → bump appVersion and pin every contract
+    //   grunt pin --none                → bump appVersion only (no pinning)
+    //   grunt pin:<contract>            → bump appVersion and pin only <contract>
+    //
+    // In every "doing-something" variant, `appVersion` in chelonia.json is set
+    // to the `version` field from package.json so that contract versions stay
+    // in lockstep with the app version (see follow-up issue #3129).
+    const arg = this.args[0]
+    const all = grunt.option('all')
+    const none = grunt.option('none')
+
+    if (!arg && !all && !none) {
+      grunt.log.writeln('Usage:')
+      grunt.log.writeln('  grunt pin --all              Pin all contracts to the current app version')
+      grunt.log.writeln('  grunt pin --none             Update appVersion only; do not pin any contract')
+      grunt.log.writeln('  grunt pin:<contract>         Pin only the named contract (e.g. grunt pin:chatroom)')
+      grunt.log.writeln('')
+      grunt.log.writeln(`Current appVersion: ${cheloniaJSON.appVersion}`)
+      grunt.log.writeln(`Target  appVersion: ${packageJSON.version} (from package.json)`)
+      return
     }
-    fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated chelonia.json contract versions to:'), version)
+
+    // Update appVersion in chelonia.json from package.json before anything else
+    // so that the subsequent build embeds the new version into the manifests.
+    const newVersion = packageJSON.version
+    if (cheloniaJSON.appVersion !== newVersion) {
+      cheloniaJSON.appVersion = newVersion
+      fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
+      console.log(chalk.green('updated chelonia.json "appVersion" to:'), newVersion)
+    } else {
+      console.log(chalk.green('chelonia.json "appVersion" already matches package.json:'), newVersion)
+    }
+    // Refresh derived values so `build` / `esbuild` pick up the new version.
+    APP_VERSION = cheloniaJSON.appVersion
+    process.env.APP_VERSION = APP_VERSION
+    CONTRACTS_VERSION = Object.fromEntries(
+      Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
+    )
+
+    if (none) {
+      console.log(chalk.green('--none specified: skipping contract pinning'))
+      return
+    }
+
     // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
     // registering handlers for 'unhandledRejection' or 'uncaughtException'
-    grunt.task.run(['build', `_pin:${version}`])
+    const filter = all ? '--all' : arg
+    grunt.task.run(['build', `_pin:${filter}`])
   })
 
   grunt.registerTask('deploy', function () {
