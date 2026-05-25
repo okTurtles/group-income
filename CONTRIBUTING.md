@@ -45,14 +45,39 @@ Pull requests (PRs) must adhere to the following requirements (unless the Founat
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
 2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
-3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code. The exception being new dependencies, however in that case you **MUST** recieve approval from a maintainer to use the third-party dependency.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.
 6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/src/Style-Guide.md).
-7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
-8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
-9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
-10. Only **maintainers** may merge PRs. Maintainers **SHOULD** use "squash-merging" when merging to keep the `master` branch commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
+7. A PR **MUST** document any AI-assistance, by specifying the precise modules used. See [AI Usage Policy](#ai-usage-policy) for details.
+8. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
+9. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
+10. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
+11. Only **maintainers** may merge PRs. Maintainers **SHOULD** use "squash-merging" when merging to keep the `master` branch commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
+
+## AI Usage Policy
+
+_With credit to the [Peersky AI Usage Policy](https://github.com/p2plabsxyz/peersky-browser?tab=contributing-ov-file#ai-usage-policy)_
+
+At okTurtles, we encourage contributors to use AI tools to improve efficiency and productivity. AI can be valuable for research, drafting, refactoring, and exploring ideas.
+
+However, AI is an assistive tool. **It does not replace professional skill, judgment, or accountability.**
+
+All AI-generated output must be thoroughly reviewed and fully understood before submission. Contributors are responsible for every line of code they commit, regardless of how it was produced.
+
+**If you cannot clearly explain, modify, or defend the code without AI assistance, it should not be submitted in the first place.**
+
+**We expect contributors to already possess the skills required to complete tasks independently. AI should enhance your workflow, not compensate for gaps in knowledge or experience.**
+
+Finally, all PRs submitted that use AI-assistance **must specify the precise model(s) that were used in their PR descriptions.**
+
+For example:
+
+```
+### AI Disclosure
+
+Co-authored with: Opus 4.7, GPT-5.5 (xhigh), GLM-5.1
+```
 
 ## How to help by translating
 
