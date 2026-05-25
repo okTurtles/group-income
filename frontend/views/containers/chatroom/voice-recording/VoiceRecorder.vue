@@ -27,7 +27,9 @@ export default {
       ephemeral: {
         patternCount: 30,
         isHighlighted: false,
-        isRecording: false
+        isRecording: false,
+        audioChunks: [],
+        recorderInstance: null
       }
     }
   },
@@ -51,6 +53,43 @@ export default {
     },
     focusContainer () {
       this.$refs.container.focus()
+    },
+    async startRecording () {
+      try {
+        // 1. Get the live microphone stream
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+        // --- AUDIO RECORDING LOGIC ---
+        this.ephemeral.recorderInstance = new MediaRecorder(stream)
+        // Capture data chunks as they become available
+        this.ephemeral.recorderInstance.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.ephemeral.audioChunks.push(event.data)
+          }
+        }
+
+        // When stopped, package the chunks into a playable audio file
+        this.ephemeral.recorderInstance.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+          const audioUrl = URL.createObjectURL(audioBlob)
+
+          // Stop all hardware tracks (turns off the browser's red recording light)
+          stream.getTracks().forEach(track => track.stop())
+
+          // Send this audioUrl to your chat UI or audio player element
+          this.$emit('recording-completed', audioUrl)
+        }
+      } catch (err) {
+        // TODO: error handling UI
+        console.error('Error starting recording', err)
+      }
+    },
+    stopRecording () {
+      if (this.ephemeral.recorderInstance &&
+        this.ephemeral.recorderInstance.state === 'recording'
+      ) {
+        this.ephemeral.recorderInstance.stop()
+      }
     }
   },
   mounted () {
@@ -151,7 +190,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     background-color: $success_2;
     color: $success_0;
     font-size: 0.7rem;
-    
+
     i {
       transform: scale(1);
     }
