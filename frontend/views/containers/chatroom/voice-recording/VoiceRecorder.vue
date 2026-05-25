@@ -1,13 +1,22 @@
 <template lang="pug">
-.c-voice-recorder-container
-  .c-backdrop
-  .c-voice-recorder
-    button.is-unstyled.c-close-btn(@click='close')
+.c-voice-recorder-container(
+  ref='container'
+  tabindex='0'
+)
+  .c-backdrop(@click.stop='highlightRecorder')
+  .c-voice-recorder(
+    :class='{ "is-highlighted": ephemeral.isHighlighted }'
+  )
+    button.is-unstyled.c-close-btn(@click.stop='close')
       i.icon-times
     .c-sound-patterns
       .c-pattern-bar(v-for='i in ephemeral.patternCount' :key='i')
-    button.is-unstyled.c-record-btn(@click='record')
-      i.icon-check
+    button.is-unstyled.c-record-btn(
+      :class='{ "is-recording": ephemeral.isRecording }'
+      @click.stop='recordOrStop'
+    )
+      i.icon-play(v-if='!ephemeral.isRecording')
+      i.icon-check(v-else)
 </template>
 
 <script>
@@ -16,7 +25,9 @@ export default {
   data () {
     return {
       ephemeral: {
-        patternCount: 30
+        patternCount: 30,
+        isHighlighted: false,
+        isRecording: false
       }
     }
   },
@@ -24,9 +35,26 @@ export default {
     close () {
       this.$emit('close')
     },
-    record () {
-      console.log('TODO: record voice')
+    recordOrStop () {
+      if (!this.ephemeral.isRecording) {
+        this.ephemeral.isRecording = true
+        this.focusContainer()
+      } else {
+        this.close()
+      }
+    },
+    highlightRecorder () {
+      this.ephemeral.isHighlighted = true
+      setTimeout(() => {
+        this.ephemeral.isHighlighted = false
+      }, 1000)
+    },
+    focusContainer () {
+      this.$refs.container.focus()
     }
+  },
+  mounted () {
+    this.focusContainer()
   }
 }
 </script>
@@ -71,6 +99,11 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   border: 1px solid $general_1;
   background-color: $general_2;
   box-shadow: $shadow-color;
+  transition: box-shadow 150ms ease-in;
+
+  &.is-highlighted {
+    box-shadow: 0 0 0 2px $primary_1;
+  }
 }
 
 .is-dark-theme .c-voice-recorder {
@@ -100,15 +133,35 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 }
 
 .c-record-btn {
-  background-color: $success_2;
-  color: $success_0;
-  font-size: 0.7rem;
+  background-color: $primary_2;
+  color: $primary_0;
+
+  i {
+    transform: scale(0.75);
+  }
 
   &:focus,
   &:focus-within,
   &:hover {
-    background-color: $success_0;
-    color: $success_2;
+    background-color: $primary_0;
+    color: $primary_2;
+  }
+
+  &.is-recording {
+    background-color: $success_2;
+    color: $success_0;
+    font-size: 0.7rem;
+    
+    i {
+      transform: scale(1);
+    }
+
+    &:focus,
+    &:focus-within,
+    &:hover {
+      background-color: $success_0;
+      color: $success_2;
+    }
   }
 }
 
@@ -126,7 +179,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     height: 25%;
     width: 2px;
     background-color: $text_1;
-    opacity: 0.625;
+    opacity: 0.675;
   }
 }
 </style>
