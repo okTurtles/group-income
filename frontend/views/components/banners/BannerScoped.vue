@@ -41,11 +41,18 @@ export default ({
       severity: null
     }
   }),
+  computed: {
+    hasMessage () {
+      return this.ephemeral.text?.trim().length > 0
+    }
+  },
   methods: {
     // To be used by parent. Example:
     // this.$refs.BannerScoped.success(L('Changes saved!'))
     clean () {
-      this.updateBanner('', '')
+      if (this.hasMessage) {
+        this.updateBanner('', '')
+      }
     },
     danger (text) {
       this.updateBanner(text, 'danger')

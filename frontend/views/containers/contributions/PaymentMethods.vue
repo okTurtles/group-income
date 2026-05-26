@@ -29,6 +29,7 @@ fieldset(data-test='paymentMethods')
             :aria-label='L("Payment value")'
             :placeholder='getPaymentInfoPlaceholder(method.name)'
             :class='{error: $v.form.methods.$each[index].value.$error}'
+            @input='emitUpdate'
           )
           button.is-icon-small.is-btn-shifted(
             type='button'
@@ -131,6 +132,7 @@ export default ({
     handleSelectChange (methName, index) {
       // Focus the respective input
       this.$refs.fields.childNodes[index].getElementsByTagName('input')[0].focus()
+      this.emitUpdate()
     },
     getFirstErrorMessage (index) {
       const cur = this.$v.form.methods.$each[index].value
@@ -174,6 +176,9 @@ export default ({
     },
     getPaymentInfoPlaceholder (method) {
       return this.config.placeholders[method] || ''
+    },
+    emitUpdate () {
+      this.$emit('component-updated')
     }
   }
 }: Object)
