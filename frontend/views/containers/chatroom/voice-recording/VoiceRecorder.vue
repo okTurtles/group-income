@@ -2,28 +2,45 @@
 .c-voice-recorder-container(
   ref='container'
   tabindex='0'
+  v-on-clickaway='close'
 )
   .c-backdrop(@click.stop='highlightRecorder')
   .c-voice-recorder(
     :class='{ "is-highlighted": ephemeral.isHighlighted }'
   )
-    button.is-unstyled.c-close-btn(@click.stop='close')
-      i.icon-times
+    tooltip(
+      direction='bottom'
+      :text='L("Close")'
+    )
+      button.is-unstyled.c-close-btn(@click.stop='close')
+        i.icon-times
+
     .c-sound-patterns
       .c-pattern-bar(v-for='i in ephemeral.patternCount' :key='i')
-    button.is-unstyled.c-record-btn(
-      :class='{ "is-recording": ephemeral.isRecording }'
-      @click.stop='recordOrStop'
+
+    tooltip(
+      direction='top'
+      :text='ephemeral.isRecording ? L("Stop") : L("Record")'
     )
-      i.icon-play(v-if='!ephemeral.isRecording')
-      i.icon-check(v-else)
+      button.is-unstyled.c-record-btn(
+        :class='{ "is-recording": ephemeral.isRecording }'
+        @click.stop='recordOrStop'
+      )
+        i.icon-microphone(v-if='!ephemeral.isRecording')
+        i.icon-check(v-else)
 </template>
 
 <script>
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
+import { mixin as clickaway } from 'vue-clickaway'
+import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'VoiceRecorder',
+  mixins: [clickaway],
+  components: {
+    Tooltip
+  },
   data () {
     return {
       ephemeral: {
@@ -113,7 +130,7 @@ export default {
         this.ephemeral.audioStream = null
       }
     },
-    cleanupAudioRecording() {
+    cleanupAudioRecording () {
       if (this.ephemeral.recorderInstance) {
         this.ephemeral.recorderInstance.ondataavailable = null
         this.ephemeral.recorderInstance.onstop = null
@@ -208,10 +225,6 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 .c-record-btn {
   background-color: $primary_2;
   color: $primary_0;
-
-  i {
-    transform: scale(0.75);
-  }
 
   &:focus,
   &:focus-within,

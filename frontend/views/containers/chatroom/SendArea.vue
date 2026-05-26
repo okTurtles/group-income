@@ -917,6 +917,9 @@ export default ({
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
       this.ephemeral.chatroomHasDraftSaved = false
+      if (this.ephemeral.voiceRecording.count > 0) {
+        this.ephemeral.voiceRecording.count = 0
+      }
 
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
