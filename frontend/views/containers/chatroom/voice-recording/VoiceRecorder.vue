@@ -105,17 +105,29 @@ export default {
         this.ephemeral.recorderInstance.stop()
       }
 
-      // 2. IMMEDIATELY turn off the hardware microphone (fixes the Mac toolbar light)
+      // Turn off the hardware microphone
       if (this.ephemeral.audioStream) {
         this.ephemeral.audioStream.getTracks().forEach(track => {
           track.stop()
         })
         this.ephemeral.audioStream = null
       }
+    },
+    cleanupAudioRecording() {
+      if (this.ephemeral.recorderInstance) {
+        this.ephemeral.recorderInstance.ondataavailable = null
+        this.ephemeral.recorderInstance.onstop = null
+        this.ephemeral.recorderInstance = null
+      }
+
+      this.ephemeral.audioChunks = []
     }
   },
   mounted () {
     this.focusContainer()
+  },
+  beforeDestroy () {
+    this.cleanupAudioRecording()
   }
 }
 </script>
