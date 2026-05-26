@@ -392,7 +392,7 @@ module.exports = (grunt) => {
   })
 
   let child
-  grunt.registerTask('backend:launch', '[internal]', async function () {
+  grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async() // Tell Grunt we're async.
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
