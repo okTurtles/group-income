@@ -16,7 +16,7 @@ import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIE
 import { KV_KEYS } from './utils/constants.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
-  // Sort contract by name
+  // Sort contracts by name
   const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
   const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
   // If different number of contracts, contract version object is different
