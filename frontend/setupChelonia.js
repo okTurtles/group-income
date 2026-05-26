@@ -16,6 +16,8 @@ import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIE
 import { KV_KEYS } from './utils/constants.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+  // If the types don't match, a different release has been made
+  if (typeof va !== typeof vb) return true
   // Sort contracts by name
   const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
   const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
@@ -329,10 +331,18 @@ const setupChelonia = async (): Promise<*> => {
     messageHandlers: {
       [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
         const ourVersion = process.env.APP_VERSION
-        const theirVersion = msg.data.appVersion
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.GI_VERSION`) should be removed in a future release
+        const theirVersion = msg.data.appVersion || msg.data.GI_VERSION
 
         const ourContractsVersion = process.env.CONTRACTS_VERSION
-        const theirContractsVersion = msg.data.contractsVersion
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.CONTRACTS_VERSION`) should be removed in a future release
+        const theirContractsVersion = msg.data.contractsVersion || msg.data.CONTRACTS_VERSION
 
         const isContractVersionDiff = diffContractVersion(ourContractsVersion, theirContractsVersion)
         const isAppVersionDiff = ourVersion !== theirVersion
@@ -346,7 +356,15 @@ const setupChelonia = async (): Promise<*> => {
           theirContractsVersion
         })
         if (isContractVersionDiff || isAppVersionDiff) {
-          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, msg.data)
+          // TODO REMOVEME: Transitional legacy version info support
+          // The GI_VERSION field has been renamed, but kept here in the
+          // check for backwards-compatibility.
+          // This fallback (`{ ...msg.data, GI_VERSION, CONTRACTS_VERSION }`) should be removed in a future release and replaced with just `msg.data`
+          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, {
+            ...msg.data,
+            GI_VERSION: theirVersion,
+            CONTRACTS_VERSION: theirContractsVersion
+          })
         }
       },
       [REQUEST_TYPE.PUSH_ACTION] (msg) {

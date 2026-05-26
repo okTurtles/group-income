@@ -23,7 +23,11 @@ const languageFileMap = new Map([
 ])
 
 sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
-  if (versionInfo.appVersion === process.env.APP_VERSION) {
+  // TODO REMOVEME: Transitional legacy version info support
+  // The GI_VERSION field has been renamed, but kept here in the
+  // check for backwards-compatibility.
+  // This fallback (` || versionInfo.GI_VERSION`) should be removed in a future release
+  if ((versionInfo.appVersion || versionInfo.GI_VERSION) === process.env.APP_VERSION) {
     // No refresh necessary, we're already at the latest version
     sessionStorage.removeItem(NOTIFICATION_TYPE.VERSION_INFO)
     return

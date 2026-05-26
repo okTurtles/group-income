@@ -391,23 +391,9 @@ module.exports = (grunt) => {
     grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
   })
 
-  // Used with `grunt dev` only, makes it possible to restart just the server when
-  // backend or shared files are modified.
   let child
   grunt.registerTask('backend:launch', '[internal]', async function () {
     const done = this.async() // Tell Grunt we're async.
-    if (child) {
-      grunt.log.writeln('backend: terminating dangling child...')
-      await new Promise((resolve, reject) => {
-        child.on('close', resolve)
-        setTimeout(resolve, 500)
-        child.kill()
-      })
-      if (child) {
-        grunt.log.writeln('backend: force terminating dangling child...')
-        child.kill('SIGKILL')
-      }
-    }
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
     const redirectOutput = (data) => {
@@ -431,10 +417,9 @@ module.exports = (grunt) => {
     proc.on('close', (rc) => {
       pinoPrettyChild?.kill('SIGKILL')
       if (child === proc) child = undefined
-      if (rc !== 0) {
+      if (rc) {
         grunt.log.error(`child exited with error code: ${rc}`.bold)
-        // ^C can cause c to be null, which is an OK error.
-        process.exit(rc || 0)
+        process.exit(rc)
       }
     })
     child = proc
