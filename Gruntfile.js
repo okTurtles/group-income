@@ -528,6 +528,9 @@ module.exports = (grunt) => {
     // In every "doing-something" variant, `appVersion` in chelonia.json is set
     // to the `version` field from package.json so that contract versions stay
     // in lockstep with the app version (see follow-up issue #3129).
+    // Keeping `version` and `appVersion` in lockstep is a GI
+    // convention; contract versioning is arbitrary and a different
+    // convention could be chosen (this is, contracts _could_ follow their own versioning scheme that's separate and independent from GI versions).
     const arg = this.args[0]
     const all = grunt.option('all')
     const none = grunt.option('none')
@@ -545,6 +548,10 @@ module.exports = (grunt) => {
 
     // Update appVersion in chelonia.json from package.json before anything else
     // so that the subsequent build embeds the new version into the manifests.
+    // We always make a new 'version' for the app even if only
+    // the contracts changed, since the app needs to track the
+    // latest contract manifest CIDs: a change affecting
+    // just contracts will always result in a modified app.
     const newVersion = packageJSON.version
     if (cheloniaJSON.appVersion !== newVersion) {
       cheloniaJSON.appVersion = newVersion
