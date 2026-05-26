@@ -20,6 +20,8 @@
 </template>
 
 <script>
+import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
+
 export default {
   name: 'VoiceRecorder',
   data () {
@@ -29,6 +31,7 @@ export default {
         isHighlighted: false,
         isRecording: false,
         audioChunks: [],
+        audioStream: null,
         recorderInstance: null
       }
     }
@@ -40,9 +43,10 @@ export default {
     recordOrStop () {
       if (!this.ephemeral.isRecording) {
         this.ephemeral.isRecording = true
-        this.focusContainer()
+        this.focusContainer() // To unfocus the play button
+        this.startRecording()
       } else {
-        this.close()
+        this.stopRecording()
       }
     },
     highlightRecorder () {
@@ -56,29 +60,39 @@ export default {
     },
     async startRecording () {
       try {
-        // 1. Get the live microphone stream
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        // 1. Get the live microphone stream and save it to the component state
+        this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-        // --- AUDIO RECORDING LOGIC ---
-        this.ephemeral.recorderInstance = new MediaRecorder(stream)
+        // 2. Create the MediaRecorder instance using the saved stream
+        this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream)
+
         // Capture data chunks as they become available
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
-          if (event.data.size > 0) {
+          if (event.data && event.data.size > 0) {
             this.ephemeral.audioChunks.push(event.data)
           }
         }
 
         // When stopped, package the chunks into a playable audio file
         this.ephemeral.recorderInstance.onstop = () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
-          const audioUrl = URL.createObjectURL(audioBlob)
+          if (this.ephemeral.audioChunks.length > 0) {
+            const audioBlob = new Blob(this.ephemeral.audioChunks, { type: VOICE_RECORDING_MIME_TYPE })
+            const audioUrl = URL.createObjectURL(audioBlob)
 
-          // Stop all hardware tracks (turns off the browser's red recording light)
-          stream.getTracks().forEach(track => track.stop())
-
-          // Send this audioUrl to your chat UI or audio player element
-          this.$emit('recording-completed', audioUrl)
+            // Send this audioUrl to your chat UI or audio player element
+            this.$emit('recording-completed', {
+              url: audioUrl,
+              type: audioBlob.type,
+              size: audioBlob.size
+            })
+          } else {
+            console.warn('No audio chunks were captured.')
+          }
         }
+
+        // Start recording.
+        this.ephemeral.recorderInstance.start(1000)
+        // TODO: implement visualising the sound pattern.
       } catch (err) {
         // TODO: error handling UI
         console.error('Error starting recording', err)
@@ -89,6 +103,14 @@ export default {
         this.ephemeral.recorderInstance.state === 'recording'
       ) {
         this.ephemeral.recorderInstance.stop()
+      }
+
+      // 2. IMMEDIATELY turn off the hardware microphone (fixes the Mac toolbar light)
+      if (this.ephemeral.audioStream) {
+        this.ephemeral.audioStream.getTracks().forEach(track => {
+          track.stop()
+        })
+        this.ephemeral.audioStream = null
       }
     }
   },

@@ -286,8 +286,8 @@
     )
 
     voice-recorder(
-      ref='voiceRecorder'
       v-if='ephemeral.voiceRecording.isOpen'
+      @recording-completed='onRecordingCompleted'
       @close='closeVoiceRecorder'
     )
 
@@ -400,7 +400,8 @@ export default ({
         chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
         voiceRecording: {
           supported: false,
-          isOpen: false
+          isOpen: false,
+          count: 0
         }
       },
       config: {
@@ -753,6 +754,17 @@ export default ({
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
+    onRecordingCompleted (recordingData) {
+      // TODO: use sbp event listener logic here instead, for an easier cleanup logic in VoiceRecorder.vue
+      this.ephemeral.voiceRecording.count++
+      this.fileAttachmentHandler([{
+        ...recordingData,
+        isVoiceRecording: true,
+        name: L('Voice message {count}', { count: this.ephemeral.voiceRecording.count })
+      }])
+
+      this.closeVoiceRecorder()
+    },
     addSelectedSegment (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
@@ -1061,7 +1073,7 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
-        const fileUrl = URL.createObjectURL(file)
+        const fileUrl = file?.isVoiceRecording ? file.url : URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
