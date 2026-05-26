@@ -44,7 +44,11 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
       if (
         Array.isArray(existingVersionInfo) &&
         !(Date.now() - existingVersionInfo[0] >= 2.5 * HOURS_MILLIS) &&
-        versionInfo.appVersion === existingVersionInfo[1].appVersion
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || .GI_VERSION`) should be removed in a future release
+        (versionInfo.appVersion || versionInfo.GI_VERSION) === (existingVersionInfo[1].appVersion || existingVersionInfo[1].GI_VERSION)
       ) {
         console.warn('[NOTIFICATION_TYPE.VERSION_INFO] A different Group Income version is available, but reloading has failed to address it', { existingVersionInfo, versionInfo })
         return
