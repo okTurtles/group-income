@@ -150,6 +150,7 @@ export default ({
         name: 'choose',
         value: ''
       })
+      this.emitUpdate()
     },
     removeMethod (index) {
       if (this.form.methods.length > 1) {
@@ -162,6 +163,7 @@ export default ({
           value: ''
         })
       }
+      this.emitUpdate()
     },
     checkHasUpdates () {
       // check if the payment details have been updated since load.

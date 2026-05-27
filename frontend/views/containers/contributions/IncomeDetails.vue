@@ -46,6 +46,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
                 pattern='[0-9]*'
                 v-model='$v.form.amount.$model'
                 data-test='inputIncomeOrPledge'
+                @input='clearFormMsg'
               )
               .suffix {{ groupMincomeSymbolWithCode }}
             .helper(v-if='needsIncome && whoIsPledging.length')
@@ -172,6 +173,7 @@ export default ({
     resetAmount () {
       this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
+      this.clearFormMsg()
     },
     closeModal () {
       this.$refs.modal.close()
