@@ -8,7 +8,7 @@
   .c-voice-recorder(
     :class='{ "is-highlighted": ephemeral.isHighlighted }'
   )
-    tooltip(
+    tooltip.c-btn-tooltip(
       direction='top'
       :text='L("Close")'
     )
@@ -21,7 +21,7 @@
         :style='{ height: getBarHeight(aveFrequency) }'
       )
 
-    tooltip(
+    tooltip.c-btn-tooltip(
       direction='top'
       :text='ephemeral.isRecording ? L("Stop") : L("Record")'
     )
@@ -39,6 +39,13 @@ import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
 const MAX_SOUND_PATTERN_COUNT = 30
+const getRepresentativeFrequency = (frequencyData) => {
+  // Get the large 10 frequency values and compute the mean of them.
+  const cloned = Array.from(frequencyData)
+  cloned.sort((a, b) => b - a)
+  const largestSome = cloned.slice(0, 20)
+  return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
+}
 
 export default {
   name: 'VoiceRecorder',
@@ -133,7 +140,7 @@ export default {
 
         this.ephemeral.audioAnalyser = this.ephemeral.audioContext.createAnalyser()
         // fftSize: essentially specifies how much data should be collected.
-        this.ephemeral.audioAnalyser.fftSize = 32
+        this.ephemeral.audioAnalyser.fftSize = 64
 
         source.connect(this.ephemeral.audioAnalyser)
         this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
@@ -168,10 +175,9 @@ export default {
     },
     captureSoundPatterns () {
       this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
-      // Average frequency value of the sound stream represents a rough visual indication of how loud the sound is.
-      const aveFrequencyData = this.ephemeral.frequencyData.reduce((acc, curr) => acc + curr, 0) / this.ephemeral.frequencyData.length
-
-      this.ephemeral.soundBars.push(aveFrequencyData / 230 * 100) // 230 here (A smaller value than the actual max value of 255) is to make the visualizer UI more sensitive to a small sound frequency.
+      // get the representative frequency value of the sound stream
+      const representativeFrequency = getRepresentativeFrequency(this.ephemeral.frequencyData)
+      this.ephemeral.soundBars.push(representativeFrequency / 255 * 100)
 
       // Pop the oldest sound pattern if the number exceeds the maximum bar count.
       while (this.ephemeral.soundBars.length > MAX_SOUND_PATTERN_COUNT) {
@@ -200,8 +206,6 @@ export default {
       if (aveFreqPercentage < 5) {
         // minimum height here is required to prevent 0 height bars in the visualizer UI.
         aveFreqPercentage = 5
-      } else if (aveFreqPercentage > 100) {
-        aveFreqPercentage = 100
       }
 
       return `${aveFreqPercentage}%`
@@ -265,6 +269,10 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 
 .is-dark-theme .c-voice-recorder {
   box-shadow: $shadow-color-dark;
+}
+
+.c-btn-tooltip {
+  line-height: 1;
 }
 
 .c-close-btn,
