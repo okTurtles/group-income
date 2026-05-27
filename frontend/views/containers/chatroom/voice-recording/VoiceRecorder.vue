@@ -90,10 +90,13 @@ export default {
     },
     async startRecording () {
       try {
-        // 1. Get the live microphone stream and save it to the component state
+        // Use MediaRecorder API to record the audio stream from the hardware microphone.
+        // Reference: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder
+
+        // Turn on or request permission to use the hardware microphone.
         this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-        // 2. Create the MediaRecorder instance using the saved stream
+        // Create a MediaRecorder to start/stop recording and receive the audio data chunks.
         this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream)
 
         // Capture data chunks as they become available
@@ -104,7 +107,7 @@ export default {
           }
         }
 
-        // When stopped, package the chunks into a playable audio file
+        // When stopped, turn the chunks into a playable audio file
         this.ephemeral.recorderInstance.onstop = () => {
           if (this.ephemeral.audioChunks.length > 0) {
             const audioBlob = new Blob(this.ephemeral.audioChunks, { type: VOICE_RECORDING_MIME_TYPE })
@@ -122,6 +125,7 @@ export default {
         }
 
         // --- Audio visualization logic ---
+        // Reference: https://wesbos.com/javascript/15-final-round-of-exercise/85-audio-visualization#time-data-visualization
         this.ephemeral.audioContext = new AudioContext()
 
         // Create a source: source is sort of a node that pipe the audio stream to the audio context.
@@ -129,7 +133,7 @@ export default {
 
         this.ephemeral.audioAnalyser = this.ephemeral.audioContext.createAnalyser()
         // fftSize: essentially specifies how much data should be collected.
-        this.ephemeral.audioAnalyser.fftSize = 64
+        this.ephemeral.audioAnalyser.fftSize = 32
 
         source.connect(this.ephemeral.audioAnalyser)
         this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
