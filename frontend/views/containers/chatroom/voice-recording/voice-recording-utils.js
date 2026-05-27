@@ -5,14 +5,13 @@ export function isBrowserSupportsVoiceRecording (): boolean {
     // 'window.MediaRecorder' (https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder):
     // - capturing the audio stream and turning it into an audio file
     // 'navigator.permissions' : checking the current permission state
-    // AudioContext: utilities for visualizing the audio stream
+    // AudioContext: utilities for processing/visualizing the sound stream
 
     navigator.permissions &&
     navigator.mediaDevices &&
     navigator.mediaDevices.getUserMedia &&
     (navigator.mediaDevices.enumerateDevices && typeof navigator.mediaDevices.enumerateDevices === 'function') &&
-    (window.AudioContext || window.webkitAudioContext) &&
-    window.MediaRecorder
+    AudioContext && window.MediaRecorder
   )
 }
 

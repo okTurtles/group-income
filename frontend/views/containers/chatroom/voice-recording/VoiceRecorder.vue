@@ -9,14 +9,17 @@
     :class='{ "is-highlighted": ephemeral.isHighlighted }'
   )
     tooltip(
-      direction='bottom'
+      direction='top'
       :text='L("Close")'
     )
       button.is-unstyled.c-close-btn(@click.stop='close')
         i.icon-times
 
     .c-sound-patterns
-      .c-pattern-bar(v-for='i in ephemeral.patternCount' :key='i')
+      .c-pattern-bar(v-for='(aveFrequency, index) in ephemeral.soundBars'
+        :key='index'
+        :style='{ height: getBarHeight(aveFrequency) }'
+      )
 
     tooltip(
       direction='top'
@@ -35,6 +38,8 @@ import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
+const MAX_SOUND_PATTERN_COUNT = 30
+
 export default {
   name: 'VoiceRecorder',
   mixins: [clickaway],
@@ -44,17 +49,25 @@ export default {
   data () {
     return {
       ephemeral: {
-        patternCount: 30,
+        soundBars: new Array(MAX_SOUND_PATTERN_COUNT).fill(0),
         isHighlighted: false,
         isRecording: false,
         audioChunks: [],
         audioStream: null,
-        recorderInstance: null
+        audioContext: null,
+        audioAnalyser: null,
+        recorderInstance: null,
+        timeData: null,
+        frequencyData: null,
+        analyserTimeoutId: null
       }
     }
   },
   methods: {
     close () {
+      if (this.ephemeral.isRecording) {
+        this.stopRecording()
+      }
       this.$emit('close')
     },
     recordOrStop () {
@@ -87,6 +100,7 @@ export default {
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             this.ephemeral.audioChunks.push(event.data)
+            this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
           }
         }
 
@@ -107,11 +121,26 @@ export default {
           }
         }
 
+        // --- Audio visualization logic ---
+        this.ephemeral.audioContext = new AudioContext()
+
+        // Create a source: source is sort of a node that pipe the audio stream to the audio context.
+        const source = this.ephemeral.audioContext.createMediaStreamSource(this.ephemeral.audioStream)
+
+        this.ephemeral.audioAnalyser = this.ephemeral.audioContext.createAnalyser()
+        // fftSize: essentially specifies how much data should be collected.
+        this.ephemeral.audioAnalyser.fftSize = 64
+
+        source.connect(this.ephemeral.audioAnalyser)
+        this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
+
         // Start recording.
-        this.ephemeral.recorderInstance.start(1000)
-        // TODO: implement visualising the sound pattern.
+        this.ephemeral.recorderInstance.start(250)
+        this.captureSoundPatterns()
       } catch (err) {
-        // TODO: error handling UI
+        this.stopRecording()
+
+        // TODO: error handling UI - e.g. show a toast error notification.
         console.error('Error starting recording', err)
       }
     },
@@ -129,6 +158,30 @@ export default {
         })
         this.ephemeral.audioStream = null
       }
+
+      this.stopCapturingSoundPattern()
+      this.ephemeral.frequencyData = null
+    },
+    captureSoundPatterns () {
+      this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
+      // Average frequency value of the sound stream represents a rough visual indication of how loud the sound is.
+      const aveFrequencyData = this.ephemeral.frequencyData.reduce((acc, curr) => acc + curr, 0) / this.ephemeral.frequencyData.length
+
+      this.ephemeral.soundBars.push(aveFrequencyData / 230 * 100) // 230 here (A smaller value than the actual max value of 255) is to make the visualizer UI more sensitive to a small sound frequency.
+
+      // Pop the oldest sound pattern if the number exceeds the maximum bar count.
+      while (this.ephemeral.soundBars.length > MAX_SOUND_PATTERN_COUNT) {
+        this.ephemeral.soundBars.shift()
+      }
+
+      this.ephemeral.analyserTimeoutId = setTimeout(() => {
+        this.captureSoundPatterns()
+      }, 100)
+    },
+    stopCapturingSoundPattern () {
+      clearTimeout(this.ephemeral.analyserTimeoutId)
+      this.ephemeral.analyserTimeoutId = null
+      this.ephemeral.soundBars = new Array(MAX_SOUND_PATTERN_COUNT).fill(0)
     },
     cleanupAudioRecording () {
       if (this.ephemeral.recorderInstance) {
@@ -138,6 +191,16 @@ export default {
       }
 
       this.ephemeral.audioChunks = []
+    },
+    getBarHeight (aveFreqPercentage) {
+      if (aveFreqPercentage < 5) {
+        // minimum height here is required to prevent 0 height bars in the visualizer UI.
+        aveFreqPercentage = 5
+      } else if (aveFreqPercentage > 100) {
+        aveFreqPercentage = 100
+      }
+
+      return `${aveFreqPercentage}%`
     }
   },
   mounted () {
@@ -256,7 +319,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   display: flex;
   flex-grow: 1;
   align-items: center;
-  flex-direction: row-reverse;
+  flex-direction: row;
   column-gap: 0.25rem;
 
   .c-pattern-bar {
