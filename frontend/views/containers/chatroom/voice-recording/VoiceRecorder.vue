@@ -18,6 +18,7 @@
     .c-sound-patterns
       .c-pattern-bar(v-for='(aveFrequency, index) in ephemeral.soundBars'
         :key='index'
+        :class='{ "is-active": aveFrequency !== 0 }'
         :style='{ height: getBarHeight(aveFrequency) }'
       )
 
@@ -197,6 +198,10 @@ export default {
       this.ephemeral.soundBars = new Array(MAX_SOUND_PATTERN_COUNT).fill(0)
     },
     cleanupAudioRecording () {
+      if (this.ephemeral.isRecording) {
+        this.stopRecording()
+      }
+
       if (this.ephemeral.recorderInstance) {
         this.ephemeral.recorderInstance.ondataavailable = null
         this.ephemeral.recorderInstance.onstop = null
@@ -344,6 +349,11 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
     width: 2px;
     background-color: $text_1;
     opacity: 0.675;
+
+    &.is-active {
+      background-color: $text_0;
+      opacity: 1;
+    }
   }
 }
 </style>
