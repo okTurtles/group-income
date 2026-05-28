@@ -38,6 +38,7 @@
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
+import { isBraveDesktop } from './voice-recording-utils.js'
 
 const MAX_SOUND_PATTERN_COUNT = 35
 const getRepresentativeFrequency = (frequencyData) => {
@@ -56,6 +57,9 @@ export default {
   },
   data () {
     return {
+      config: {
+        isBraveDesktop: false
+      },
       ephemeral: {
         soundBars: new Array(MAX_SOUND_PATTERN_COUNT).fill(0),
         isHighlighted: false,
@@ -105,7 +109,13 @@ export default {
         this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
         // Create a MediaRecorder to start/stop recording and receive the audio data chunks.
-        this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream, { mimeType: VOICE_RECORDING_MIME_TYPE })
+        // On Brave desktop, an explicit mimeType is required for the recorded
+        // file to carry a usable duration; other browsers either don't need it
+        // (Chrome, Safari) or reject the unsupported type (Firefox).
+        const recorderOptions = this.config.isBraveDesktop
+          ? { mimeType: VOICE_RECORDING_MIME_TYPE }
+          : {}
+        this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream, recorderOptions)
 
         // Capture data chunks as they become available
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
@@ -218,6 +228,11 @@ export default {
 
       return `${aveFreqPercentage}%`
     }
+  },
+  created () {
+    isBraveDesktop().then(result => {
+      this.config.isBraveDesktop = result
+    })
   },
   mounted () {
     this.focusContainer()

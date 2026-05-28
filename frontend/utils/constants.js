@@ -13,7 +13,6 @@ export const IMAGE_ATTACHMENT_MAX_SIZE = 400 * KILOBYTE // 400KB
 export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP = 500 * 1.25 // in px
 export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value of mobile is more tolerant considering smaller screen size.
 export const EMOJI_REGEX: any = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
-// TODO: have 'audio/webm' as the default value, and fallback to 'audio/mp4' if 'audio/webm' is not supported.
 export const VOICE_RECORDING_MIME_TYPE = 'audio/mp4'
 
 export const TextObjectType = {
