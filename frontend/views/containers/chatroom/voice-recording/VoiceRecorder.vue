@@ -44,7 +44,7 @@ const getRepresentativeFrequency = (frequencyData) => {
   // Get some of the largest frequency values and compute the mean of them.
   const cloned = Array.from(frequencyData) // Unit8Array -> a normal array
   cloned.sort((a, b) => b - a)
-  const largestSome = cloned.slice(0, 32)
+  const largestSome = cloned.slice(0, 20)
   return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
 }
 
@@ -144,7 +144,7 @@ export default {
 
         this.ephemeral.audioAnalyser = this.ephemeral.audioContext.createAnalyser()
         // fftSize: essentially specifies how much data should be collected.
-        this.ephemeral.audioAnalyser.fftSize = 128
+        this.ephemeral.audioAnalyser.fftSize = 64
 
         source.connect(this.ephemeral.audioAnalyser)
         this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
