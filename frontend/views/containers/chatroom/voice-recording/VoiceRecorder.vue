@@ -38,12 +38,12 @@ import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
-const MAX_SOUND_PATTERN_COUNT = 30
+const MAX_SOUND_PATTERN_COUNT = 35
 const getRepresentativeFrequency = (frequencyData) => {
-  // Get the large 10 frequency values and compute the mean of them.
-  const cloned = Array.from(frequencyData)
+  // Get some of the largest frequency values and compute the mean of them.
+  const cloned = Array.from(frequencyData) // Unit8Array -> a normal array
   cloned.sort((a, b) => b - a)
-  const largestSome = cloned.slice(0, 20)
+  const largestSome = cloned.slice(0, 32)
   return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
 }
 
@@ -110,7 +110,10 @@ export default {
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             this.ephemeral.audioChunks.push(event.data)
-            this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
+
+            if (this.ephemeral.frequencyData) {
+              this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
+            }
           }
         }
 
@@ -140,7 +143,7 @@ export default {
 
         this.ephemeral.audioAnalyser = this.ephemeral.audioContext.createAnalyser()
         // fftSize: essentially specifies how much data should be collected.
-        this.ephemeral.audioAnalyser.fftSize = 64
+        this.ephemeral.audioAnalyser.fftSize = 128
 
         source.connect(this.ephemeral.audioAnalyser)
         this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
@@ -279,9 +282,9 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
 .c-record-btn {
   position: relative;
   flex-shrink: 0;
-  font-size: 0.75rem;
-  width: 1.275rem;
-  height: 1.275rem;
+  font-size: 0.8rem;
+  width: 1.375rem;
+  height: 1.375rem;
   border-radius: 50%;
   transform: translateY(1px);
 }
@@ -311,7 +314,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   &.is-recording {
     background-color: $success_2;
     color: $success_0;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
 
     i {
       transform: scale(1);
@@ -332,12 +335,12 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   flex-grow: 1;
   align-items: center;
   flex-direction: row;
-  column-gap: 0.25rem;
+  column-gap: 0.2rem;
 
   .c-pattern-bar {
     position: relative;
     display: block;
-    height: 25%;
+    height: 1px; // will be overriden by the inline styles.
     width: 2px;
     background-color: $text_1;
     opacity: 0.675;
