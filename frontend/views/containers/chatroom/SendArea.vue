@@ -90,6 +90,7 @@
 
     chat-attachment-preview(
       v-if='ephemeral.attachments.length'
+      key='attachment-preview'
       :attachmentList='ephemeral.attachments'
       :ownerID='ourIdentityContractId'
       @remove='removeAttachment'
@@ -287,6 +288,7 @@
 
     voice-recorder(
       v-if='ephemeral.voiceRecording.isOpen'
+      key='voice-recorder'
       @recording-completed='onRecordingCompleted'
       @close='closeVoiceRecorder'
     )
@@ -761,9 +763,15 @@ export default ({
         ...recordingData,
         isVoiceRecording: true,
         name: L('Voice message {count}', { count: this.ephemeral.voiceRecording.count })
-      }])
+      }], true)
 
-      this.closeVoiceRecorder()
+      // Defer closing the recorder so that mounting <chat-attachment-preview>
+      // (from the line above) and unmounting <voice-recorder> don't happen in
+      // the same render tick. Without this split, a weird bug where the current text draft
+      // gets injected to .c-send-actions happens.
+      this.$nextTick(() => {
+        this.closeVoiceRecorder()
+      })
     },
     addSelectedSegment (index) {
       const curValue = this.$refs.textarea.value
