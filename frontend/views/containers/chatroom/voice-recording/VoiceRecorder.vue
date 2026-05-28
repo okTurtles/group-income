@@ -105,7 +105,7 @@ export default {
         this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
         // Create a MediaRecorder to start/stop recording and receive the audio data chunks.
-        this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream)
+        this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream, { mimeType: VOICE_RECORDING_MIME_TYPE })
 
         // Capture data chunks as they become available
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
