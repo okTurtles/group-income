@@ -30,24 +30,6 @@ export async function canUseVoiceRecording (): Promise<boolean> {
   }
 }
 
-// There is brave-desktop specific issue where the browser doesn't properly detect the
-// audio duration if a mimeType is not provided when creating the MediaRecorder instance.
-// Specifying mimeType breaks voice recording in some other browsers such as FF, we need to apply this workaround only for brave-desktop.
-// Refer to VoiceRecorder.vue for the relevant code.
-export async function isBraveDesktop (): Promise<boolean> {
-  const navigator: any = window.navigator
-  const brave: any = navigator.brave
-
-  if (!brave || typeof brave.isBrave !== 'function') return false
-
-  try {
-    if (!(await brave.isBrave())) return false
-    return navigator.userAgentData?.mobile !== true
-  } catch (err) {
-    return false
-  }
-}
-
 export async function checkCurrentPermissionState (): Promise<string> {
   try {
     const result = await navigator.permissions.query({ name: 'microphone' })
