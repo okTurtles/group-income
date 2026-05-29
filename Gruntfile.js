@@ -152,6 +152,9 @@ module.exports = (grunt) => {
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest\.json:.*(zL7mM9d4Xb4.+)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    if (Object.keys(manifests).length === 0) {
+      throw new Error('deployAndUpdateMainSrc: failed to parse any manifest CIDs from chel deploy output')
+    }
     fs.writeFileSync(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n', 'utf8')
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
@@ -399,13 +402,22 @@ module.exports = (grunt) => {
     const redirectOutput = (data) => {
       grunt.log.write(data)
     }
+    let pinoPrettyAvailable = !production
     const pinoPrettyChild = production ? null : spawn('./node_modules/.bin/pino-pretty', ['--colorize'])
     pinoPrettyChild?.stdout.on('data', redirectOutput)
     pinoPrettyChild?.stderr.on('data', redirectOutput)
+    pinoPrettyChild?.on('error', (err) => {
+      grunt.log.error(`pino-pretty failed to spawn: ${err.message}`.bold)
+      pinoPrettyAvailable = false
+    })
     const output = production
       ? redirectOutput
       : (data) => {
-          pinoPrettyChild.stdin.write(data)
+          if (pinoPrettyAvailable) {
+            pinoPrettyChild.stdin.write(data)
+          } else {
+            redirectOutput(data)
+          }
         }
     const proc = spawn('./node_modules/.bin/chel',
       production
@@ -414,6 +426,10 @@ module.exports = (grunt) => {
     )
     proc.stdout.on('data', output)
     proc.stderr.on('data', output)
+    proc.on('error', (err) => {
+      grunt.log.error(`chel serve failed to spawn: ${err.message}`.bold)
+      process.exit(1)
+    })
     proc.on('close', (rc) => {
       pinoPrettyChild?.kill('SIGKILL')
       if (child === proc) child = undefined
@@ -582,7 +598,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:launch', 'keepalive'])
 
-  // n------------------
+  // --------------------
   // - Our esbuild task
   // --------------------
 
