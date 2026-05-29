@@ -514,8 +514,9 @@ module.exports = (grunt) => {
         await execWithErrMsg(`./node_modules/.bin/chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
         console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
       }
-    } finally {
       done()
+    } catch (e) {
+      done(e)
     }
   })
 
