@@ -35,6 +35,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
@@ -160,9 +162,13 @@ export default {
         this.captureSoundPatterns()
       } catch (err) {
         this.stopRecording()
-
-        // TODO: error handling UI - e.g. show a toast error notification.
-        console.error('Error starting recording', err)
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L('Failed to start recording. Please try again.'),
+          duration: 5000,
+          closeable: true,
+          variant: 'error',
+          position: 'bottom-center'
+        })
       }
     },
     stopRecording () {
