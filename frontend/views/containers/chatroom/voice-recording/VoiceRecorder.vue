@@ -161,6 +161,7 @@ export default {
         this.ephemeral.recorderInstance.start(250)
         this.captureSoundPatterns()
       } catch (err) {
+        console.error('[VoiceRecorder.vue] Error starting recording', err)
         this.stopRecording()
         sbp('gi.ui/toast', 'chat-main', {
           message: L('Failed to start recording. Please try again.'),
