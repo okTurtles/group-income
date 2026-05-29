@@ -65,9 +65,9 @@
     .version-item
       i18n App Version:
       span.c-version-value {{ ephemeral.versions.app }}
-    .version-item
-      i18n Contracts Version:
-      span.c-version-value {{ ephemeral.versions.contracts }}
+    .version-item(v-for='(version, name) in contractsVersion' :key='name')
+      i18n(:args='{ contract: contractDisplayName(name) }') {contract} Version:
+      span.c-version-value {{ version }}
     .version-item
       i18n SW Version:
       span.c-version-value(
@@ -95,19 +95,31 @@ export default {
         versions: {
           loadingSWVersion: false,
           app: '-',
-          contracts: '-',
           sw: '-'
         }
       }
+    }
+  },
+  computed: {
+    contractsVersion () {
+      return process.env.CONTRACTS_VERSION
     }
   },
   methods: {
     handleDeleteAccount () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     },
+    contractDisplayName (name: string) {
+      // Extract contract name from full path (e.g., 'gi.contracts/chatroom' -> 'Chatroom')
+      // Note: This logic is naive and assumes names like 'gi.contracts/chatroom', meaning it won't work if this structure changes.
+      // For example, it might not provide the desired result for a future contract named 'gi.contracts/chat-room'
+      // Also, these names are _not_ localised, so users in every locale will see 'Chatroom'. This was determined to be fine since this is technical information that might be more useful if left as close as possible to the actual technical name.
+      // A translation table could be used to do translation properly, but some code like the following will still be needed as a fallback, as there's a possibility that a future contract name that wasn't known (or forgotten) when the app bundle was created.
+      const parts = name.split('/')
+      return parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1)
+    },
     async loadVersionInfo () {
-      this.ephemeral.versions.app = process.env.GI_VERSION.split('@')[0]
-      this.ephemeral.versions.contracts = process.env.CONTRACTS_VERSION
+      this.ephemeral.versions.app = process.env.APP_VERSION.split('@')[0]
 
       try {
         this.ephemeral.versions.loadingSWVersion = true

@@ -17,12 +17,13 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, execSync, fork } = require('child_process')
+const { exec, execSync, spawn } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, access, rm, copyFile, readFile } = require('fs/promises')
+const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
+const cheloniaJSON = require('./chelonia.json')
 const packageJSON = require('./package.json')
 
 // =======================
@@ -39,6 +40,7 @@ const packageJSON = require('./package.json')
 // require('@babel/register')
 
 const {
+  DENO_DIR = path.join(process.cwd(), '.deno'),
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
   MAX_EVENTS_AFTER = '',
@@ -51,16 +53,19 @@ const {
 if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
-// 'grunt pin' can override this
-let CONTRACTS_VERSION = packageJSON.contractsVersion
+// Build the per-contract CONTRACTS_VERSION object from chelonia.json
+let CONTRACTS_VERSION = Object.fromEntries(
+  Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
+)
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-const GI_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
+let APP_VERSION = cheloniaJSON.appVersion + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
-Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
+Object.assign(process.env, { APP_VERSION })
+// Make some important runtime variables available to subprocesses
+Object.assign(process.env, { DENO_DIR, NODE_ENV })
 
-const backendIndex = './backend/index.js'
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distCSS = `${distDir}/assets/css`
@@ -75,20 +80,16 @@ const manifestJSON = path.join(contractsDir, 'manifests.json')
 const development = NODE_ENV === 'development'
 const production = !development
 
-// Make database path available to subprocess
-const dbPath = process.env.DB_PATH || './data'
-if (!process.env.DB_PATH) {
-  Object.assign(process.env, { DB_PATH: dbPath })
-}
-
 const isValidPort = (port) => {
+  // Using `isNaN` because port could be string. `Number.isInteger` won't work
+  // without casting.
   return !Number.isNaN(port) && port >= 1024 && port <= 65535
 }
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
-  const GI_GIT_VERSION = process.env.CI ? process.env.GI_VERSION : execSync('git describe --dirty').toString('utf8').trim()
+  const GI_GIT_VERSION = process.env.CI ? process.env.APP_VERSION : execSync('git describe --dirty').toString('utf8').trim()
   Object.assign(process.env, { GI_GIT_VERSION })
 
   // Ensure API_PORT and API_URL envars are defined and available to subprocesses.
@@ -99,7 +100,9 @@ module.exports = (grunt) => {
       throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
     }
     process.env.API_PORT = String(API_PORT)
-    process.env.API_URL = 'http://127.0.0.1:' + API_PORT
+    if (!process.env.API_URL) {
+      process.env.API_URL = 'http://127.0.0.1:' + API_PORT
+    }
   })()
 
   // Helper functions
@@ -113,15 +116,16 @@ module.exports = (grunt) => {
   const clone = o => JSON.parse(JSON.stringify(o))
 
   async function execWithErrMsg (cmd, errMsg) {
-    const { stdout, stderr } = await execP(cmd, {
+    try {
+      const { stdout } = await execP(cmd, {
       // this is needed to get it to work in certain Windows environments
-      shell: process.env.SHELL || '/bin/sh'
-    })
-    if (stderr) {
-      console.error(chalk`{red ${errMsg}:}`, stderr)
+        shell: process.env.SHELL || '/bin/sh'
+      })
+      return { stdout }
+    } catch (e) {
+      console.error(chalk`{red ${errMsg}:}`, e.stderr)
       throw new Error(errMsg)
     }
-    return { stdout }
   }
 
   async function generateManifests (dir, version) {
@@ -134,33 +138,28 @@ module.exports = (grunt) => {
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
       console.log(stdout)
     }
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    grunt.log.writeln(chalk.underline(`\nRunning 'chel manifest' (version ${version})`))
+    const cmd = `ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest --name gi.contracts/{} --contract-version ${version} --slim ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`
+    grunt.log.writeln(cmd)
     // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -n gi.contracts/{} -v ${version} -s ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`, 'error generating manifests')
+    const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
     console.log(stdout)
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
-    grunt.log.writeln(chalk.underline(`Running 'chel deploy' to ${dest}`))
-    // If we're writing to a URL, don't try to create a directory
-    try {
-      const url = new URL(dest)
-      // Likely a drive letter
-      if (url.protocol.length < 3) {
-        throw new Error('Not a URL')
-      }
-    } catch {
-      await access(dest).catch(async () => await mkdir(dest))
-    }
-    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ${dest ? `--url ${dest}` : ''} ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
-    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*\/(.*)/g
+    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest\.json:.*(zL7mM9d4Xb4.+)/g
     const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    if (Object.keys(manifests).length === 0) {
+      throw new Error('deployAndUpdateMainSrc: failed to parse any manifest CIDs from chel deploy output')
+    }
     fs.writeFileSync(manifestJSON, JSON.stringify({ manifests }, null, 2) + '\n', 'utf8')
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest = dbPath) {
+  async function genManifestsAndDeploy (dir, version, dest) {
     await generateManifests(dir, version)
     await deployAndUpdateMainSrc(dir, dest)
   }
@@ -205,98 +204,6 @@ module.exports = (grunt) => {
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
-  }
-
-  const databaseOptionBags = {
-    fs: {
-      dest: dbPath
-    },
-    sqlite: {
-      dest: `${dbPath}/groupincome.db`
-    }
-  }
-
-  // https://esbuild.github.io/api/
-  const esbuildOptionBags = {
-    // Native options that are shared between our esbuild tasks.
-    default: {
-      bundle: true,
-      chunkNames: '[name]-[hash]-cached',
-      define: {
-        'process.env.BUILD': "'web'", // Required by Vuelidate.
-        'process.env.CI': `'${CI}'`,
-        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
-        'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
-        'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
-        'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
-        'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
-        'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
-      },
-      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-      format: 'esm',
-      loader: {
-        '.eot': 'file',
-        '.ttf': 'file',
-        '.woff': 'file',
-        '.woff2': 'file'
-      },
-      minifyIdentifiers: production,
-      minifySyntax: production,
-      minifyWhitespace: production,
-      outdir: distJS,
-      sourcemap: true,
-      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
-      splitting: !grunt.option('no-chunks')
-    },
-    // Native options used when building the main entry point.
-    main: {
-      assetNames: '../css/[name]',
-      entryPoints: [mainSrc]
-    },
-    // Native options used when building our service worker(s).
-    serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
-    }
-  }
-  esbuildOptionBags.contracts = {
-    ...pick(clone(esbuildOptionBags.default), [
-      'define', 'bundle'
-    ]),
-    // Format must be 'iife' because we don't want 'import' in the output
-    format: 'iife',
-    // banner: {
-    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
-    // },
-    splitting: false,
-    outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
-    external: ['@sbp/sbp']
-  }
-  // prevent contract hash from changing each time we build them
-  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
-  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
-  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
-
-  // Additional options which are not part of the esbuild API.
-  const esbuildOtherOptionBags = {
-    main: {
-      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-      // making a post-build copying operation necessary.
-      postoperation: async ({ fileEventName, filePath } = {}) => {
-        // Only after a fresh build or a rebuild caused by a CSS file event.
-        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-          if (development) {
-            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-          }
-        }
-      }
-    }
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -404,8 +311,8 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: { SKIP_DB_FS_CASE_SENSITIVITY_CHECK: 'true', ...process.env } }
       },
-      chelDevDeploy: `find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`,
-      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ${dbPath}`
+      chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy',
+      chelProdDeploy: `find ${distContracts} -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy`
     }
   })
 
@@ -413,28 +320,71 @@ module.exports = (grunt) => {
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  let child = null
-
   grunt.registerTask('copyAndMoveContracts', async function () {
     const done = this.async()
-    const { contractsVersion } = packageJSON
 
-    // NOTE: the latest version
-    await mkdir(`${distContracts}/${contractsVersion}`)
+    // The freshly built contracts live as flat files directly under
+    // `dist/contracts/` (e.g. `chatroom.js`, `chatroom-slim.js`,
+    // `chatroom.<version>.manifest.json`). They need to be relocated into the
+    // per-contract / per-version layout used by `chel serve` and `chel pin`:
+    //   dist/contracts/<contractDirName>/<version>/<files>
+    // where `<contractDirName>` is the same directory name used under the
+    // top-level `contracts/` folder (e.g. `gi.contracts_chatroom`).
+    //
+    // We also copy every previously pinned version from `contracts/` into
+    // `dist/contracts/` so the served `dist/` archive contains the full
+    // history of pinned contracts.
+
+    // Build a mapping from the short contract name (e.g. `chatroom`) to its
+    // pinned directory name and version, derived from `chelonia.json`.
+    // `name` in `chelonia.json` looks like `gi.contracts/chatroom`; the
+    // matching on-disk directory is `gi.contracts_chatroom`.
+    const contractInfoByShortName = Object.fromEntries(
+      Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => {
+        const shortName = name.split('/').pop()
+        const dirName = name.replace(/\//g, '_')
+        return [shortName, { dirName, version }]
+      })
+    )
+
+    // NOTE: the latest (just-built) version — move flat files into
+    // `dist/contracts/<dirName>/<version>/`. Ensure the directory exists
+    // since `dist/` is not version controlled and may not exist yet.
+    await mkdir(distContracts, { recursive: true })
     for (const dirent of await readdir(distContracts, { withFileTypes: true })) {
-      if (dirent.isFile()) {
-        const fileName = dirent.name
-        await copyFile(`${distContracts}/${fileName}`, `${distContracts}/${contractsVersion}/${fileName}`)
-        await rm(`${distContracts}/${fileName}`)
+      if (!dirent.isFile()) continue
+      const fileName = dirent.name
+      // The short contract name is the part of the filename before the first
+      // `.` or `-` (e.g. `chatroom.js`, `chatroom-slim.js`,
+      // `chatroom.2.8.0.manifest.json` all map to `chatroom`).
+      const shortName = fileName.split(/[.-]/)[0]
+      const info = contractInfoByShortName[shortName]
+      if (!info) {
+        throw new Error(`copyAndMoveContracts: unrecognized contract file in ${distContracts}: ${fileName}`)
       }
+      const destDir = `${distContracts}/${info.dirName}/${info.version}`
+      await mkdir(destDir, { recursive: true })
+      await copyFile(`${distContracts}/${fileName}`, `${destDir}/${fileName}`)
+      await rm(`${distContracts}/${fileName}`)
     }
 
-    // NOTE: all previously pinned versions
-    const versions = (await readdir('contracts', { withFileTypes: true })).filter(dirent => {
-      return dirent.isDirectory() && dirent.name !== contractsVersion
-    }).map(dirent => dirent.name)
-    for (const version of versions) {
-      await cp(`contracts/${version}`, `${distContracts}/${version}`, { recursive: true })
+    // NOTE: all previously pinned versions — mirror the
+    // `contracts/<dirName>/<version>/` tree under `dist/contracts/`, skipping
+    // the version that was just built (already written above).
+    for (const dirent of await readdir('contracts', { withFileTypes: true })) {
+      if (!dirent.isDirectory()) continue
+      const contractDirName = dirent.name
+      const currentVersion = Object.values(contractInfoByShortName)
+        .find(info => info.dirName === contractDirName)?.version
+      for (const versionDir of await readdir(`contracts/${contractDirName}`, { withFileTypes: true })) {
+        if (!versionDir.isDirectory()) continue
+        if (versionDir.name === currentVersion) continue
+        await cp(
+          `contracts/${contractDirName}/${versionDir.name}`,
+          `${distContracts}/${contractDirName}/${versionDir.name}`,
+          { recursive: true }
+        )
+      }
     }
 
     done()
@@ -444,42 +394,52 @@ module.exports = (grunt) => {
     grunt.task.run([production ? 'exec:chelProdDeploy' : 'exec:chelDevDeploy'])
   })
 
-  // Used with `grunt dev` only, makes it possible to restart just the server when
-  // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
+  let child
+  grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: { NODE_ENV, ...process.env },
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      done()
+    grunt.log.writeln('backend: forking...')
+    grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
+    const redirectOutput = (data) => {
+      grunt.log.write(data)
     }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
+    let pinoPrettyAvailable = !production
+    const pinoPrettyChild = production ? null : spawn('./node_modules/.bin/pino-pretty', ['--colorize'])
+    pinoPrettyChild?.stdout.on('data', redirectOutput)
+    pinoPrettyChild?.stderr.on('data', redirectOutput)
+    pinoPrettyChild?.on('error', (err) => {
+      grunt.log.error(`pino-pretty failed to spawn: ${err.message}`.bold)
+      pinoPrettyAvailable = false
+    })
+    const output = production
+      ? redirectOutput
+      : (data) => {
+          if (pinoPrettyAvailable) {
+            pinoPrettyChild.stdin.write(data)
+          } else {
+            redirectOutput(data)
+          }
+        }
+    const proc = spawn('./node_modules/.bin/chel',
+      production
+        ? ['serve', '--app-manifest', 'chelonia.json', '--manifests-dir', 'contracts', 'dist']
+        : ['serve', '--dev', '--app-manifest', 'chelonia.json', '--manifests-dir', 'dist/contracts', 'dist']
+    )
+    proc.stdout.on('data', output)
+    proc.stderr.on('data', output)
+    proc.on('error', (err) => {
+      grunt.log.error(`chel serve failed to spawn: ${err.message}`.bold)
+      process.exit(1)
+    })
+    proc.on('close', (rc) => {
+      pinoPrettyChild?.kill('SIGKILL')
+      if (child === proc) child = undefined
+      if (rc) {
+        grunt.log.error(`child exited with error code: ${rc}`.bold)
+        process.exit(rc)
+      }
+    })
+    child = proc
+    done()
   })
 
   grunt.registerTask('build', function () {
@@ -528,40 +488,96 @@ module.exports = (grunt) => {
       .then(r => done(r.totalFailed === 0)).catch(done)
   })
 
-  grunt.registerTask('_pin', async function (version) {
+  grunt.registerTask('_pin', async function (filter) {
     // a task internally executed in 'pin' task below
     const done = this.async()
-    const dirPath = `contracts/${version}`
+    const version = cheloniaJSON.appVersion
 
-    if (fs.existsSync(dirPath)) {
-      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
-        fs.rmSync(dirPath, { recursive: true })
-      } else {
-        throw new Error(`already exists: ${dirPath}`)
+    try {
+      const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
+      const manifests = entries.filter(e => e.isFile() && e.name.endsWith('.manifest.json'))
+      // `filter` is a contract short-name (e.g. 'chatroom'), a full SBP name
+      // (e.g. 'gi.contracts/chatroom'), or a manifest path. When unset, pin all.
+      const matches = manifests.filter(entry => {
+        if (!filter || filter === '--all') return true
+        const shortName = entry.name.split('.')[0]
+        const fullName = `gi.contracts/${shortName}`
+        return filter === shortName ||
+          filter === fullName ||
+          path.basename(filter) === entry.name ||
+          path.basename(filter).startsWith(`${shortName}.`)
+      })
+      if (matches.length === 0) {
+        throw new Error(`grunt pin: no contract matches '${filter}'`)
       }
+      for (const entry of matches) {
+        await execWithErrMsg(`./node_modules/.bin/chel pin ${grunt.option('overwrite') ? '--overwrite' : ''} ${path.join(distContracts, entry.name)} ${version}`, 'error pinning contract')
+        console.log(chalk`{green Version} {bold ${version}} {green pinned} ${entry.name}`)
+      }
+      done()
+    } catch (e) {
+      done(e)
     }
-    if (!fs.existsSync('contracts')) {
-      console.error(chalk`{red folder needed but doesn't exist:} {bold contracts/}`)
-      throw new Error("doesn't exist: contracts/")
-    }
-    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
-    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    done()
   })
 
-  grunt.registerTask('pin', function (version) {
-    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
-    // it's possible for the UI to get updated without the contracts getting updated,
-    // so we keep their version numbers separate.
-    // we do this here first so that any code that uses `process.env.CONTRACTS_VERSION` inside the contracts
-    // themselves will be built using this latest version number, and so that the contract manifests
-    // are generated using this version number
-    packageJSON.contractsVersion = CONTRACTS_VERSION = process.env.CONTRACTS_VERSION = version
-    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated package.json "contractsVersion" to:'), packageJSON.contractsVersion)
+  grunt.registerTask('pin', function () {
+    // Usage:
+    //   grunt pin                       → print usage and exit
+    //   grunt pin --all                 → bump appVersion and pin every contract
+    //   grunt pin --none                → bump appVersion only (no pinning)
+    //   grunt pin:<contract>            → bump appVersion and pin only <contract>
+    //
+    // In every "doing-something" variant, `appVersion` in chelonia.json is set
+    // to the `version` field from package.json so that contract versions stay
+    // in lockstep with the app version (see follow-up issue #3129).
+    // Keeping `version` and `appVersion` in lockstep is a GI
+    // convention; contract versioning is arbitrary and a different
+    // convention could be chosen (this is, contracts _could_ follow their own versioning scheme that's separate and independent from GI versions).
+    const arg = this.args[0]
+    const all = grunt.option('all')
+    const none = grunt.option('none')
+
+    if (!arg && !all && !none) {
+      grunt.log.writeln('Usage:')
+      grunt.log.writeln('  grunt pin --all              Pin all contracts to the current app version')
+      grunt.log.writeln('  grunt pin --none             Update appVersion only; do not pin any contract')
+      grunt.log.writeln('  grunt pin:<contract>         Pin only the named contract (e.g. grunt pin:chatroom)')
+      grunt.log.writeln('')
+      grunt.log.writeln(`Current appVersion: ${cheloniaJSON.appVersion}`)
+      grunt.log.writeln(`Target  appVersion: ${packageJSON.version} (from package.json)`)
+      return
+    }
+
+    // Update appVersion in chelonia.json from package.json before anything else
+    // so that the subsequent build embeds the new version into the manifests.
+    // We always make a new 'version' for the app even if only
+    // the contracts changed, since the app needs to track the
+    // latest contract manifest CIDs: a change affecting
+    // just contracts will always result in a modified app.
+    const newVersion = packageJSON.version
+    if (cheloniaJSON.appVersion !== newVersion) {
+      cheloniaJSON.appVersion = newVersion
+      fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
+      console.log(chalk.green('updated chelonia.json "appVersion" to:'), newVersion)
+    } else {
+      console.log(chalk.green('chelonia.json "appVersion" already matches package.json:'), newVersion)
+    }
+    // Refresh derived values so `build` / `esbuild` pick up the new version.
+    APP_VERSION = cheloniaJSON.appVersion
+    process.env.APP_VERSION = APP_VERSION
+    CONTRACTS_VERSION = Object.fromEntries(
+      Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
+    )
+
+    if (none) {
+      console.log(chalk.green('--none specified: skipping contract pinning'))
+      return
+    }
+
     // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
     // registering handlers for 'unhandledRejection' or 'uncaughtException'
-    grunt.task.run(['build', `_pin:${version}`])
+    const filter = all ? '--all' : arg
+    grunt.task.run(['build', `_pin:${filter}`])
   })
 
   grunt.registerTask('deploy', function () {
@@ -577,17 +593,100 @@ module.exports = (grunt) => {
     // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
     // contract manifests match the ones that are the dist archive. We do this in both production
     // and development environments to make sure they match when serving the site using grunt serve.
-    grunt.task.run(['exec:chelProdDeploy', 'backend:relaunch', 'keepalive'])
+    grunt.task.run(['exec:chelProdDeploy', 'backend:launch', 'keepalive'])
   })
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['exec:gitconfig', 'checkDependencies', 'chelDeploy', 'build:watch', 'backend:launch', 'keepalive'])
 
   // --------------------
   // - Our esbuild task
   // --------------------
 
   grunt.registerTask('esbuild', async function () {
+  // https://esbuild.github.io/api/
+    const esbuildOptionBags = {
+    // Native options that are shared between our esbuild tasks.
+      default: {
+        bundle: true,
+        chunkNames: '[name]-[hash]-cached',
+        define: {
+          'process.env.BUILD': "'web'", // Required by Vuelidate.
+          'process.env.CI': `'${CI}'`,
+          'process.env.CONTRACTS_VERSION': JSON.stringify(CONTRACTS_VERSION),
+          'process.env.APP_VERSION': `'${APP_VERSION}'`,
+          'process.env.GI_GIT_VERSION': `'${GI_GIT_VERSION}'`,
+          'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
+          'process.env.MAX_EVENTS_AFTER': `'${MAX_EVENTS_AFTER}'`,
+          'process.env.NODE_ENV': `'${NODE_ENV}'`,
+          'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+          'process.env.ENABLE_UNSAFE_NULL_CRYPTO': `'${ENABLE_UNSAFE_NULL_CRYPTO}'`,
+          'process.env.UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS': `'${UNSAFE_TRUST_ALL_MANIFEST_SIGNING_KEYS}'`
+        },
+        external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+        format: 'esm',
+        loader: {
+          '.eot': 'file',
+          '.ttf': 'file',
+          '.woff': 'file',
+          '.woff2': 'file'
+        },
+        minifyIdentifiers: production,
+        minifySyntax: production,
+        minifyWhitespace: production,
+        outdir: distJS,
+        sourcemap: true,
+        // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+        splitting: !grunt.option('no-chunks')
+      },
+      // Native options used when building the main entry point.
+      main: {
+        assetNames: '../css/[name]',
+        entryPoints: [mainSrc]
+      },
+      // Native options used when building our service worker(s).
+      serviceWorkers: {
+        entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+      }
+    }
+    esbuildOptionBags.contracts = {
+      ...pick(clone(esbuildOptionBags.default), [
+        'define', 'bundle'
+      ]),
+      // Format must be 'iife' because we don't want 'import' in the output
+      format: 'iife',
+      // banner: {
+      //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
+      // },
+      splitting: false,
+      outdir: distContracts,
+      entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
+      external: ['@sbp/sbp']
+    }
+    // prevent contract hash from changing each time we build them
+    esbuildOptionBags.contracts.define['process.env.APP_VERSION'] = "'x.x.x'"
+    esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
+    esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
+    esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
+
+    // Additional options which are not part of the esbuild API.
+    const esbuildOtherOptionBags = {
+      main: {
+      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
+      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
+      // making a post-build copying operation necessary.
+        postoperation: async ({ fileEventName, filePath } = {}) => {
+        // Only after a fresh build or a rebuild caused by a CSS file event.
+          if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
+            await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+            if (development) {
+              await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+            }
+          }
+        }
+      }
+    }
+
     const done = this.async()
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
     const aliasPlugin = createAliasPlugin(aliasPluginOptions)
@@ -619,7 +718,7 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => genManifestsAndDeploy(distContracts, packageJSON.contractsVersion))
+      .then(() => genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
@@ -647,7 +746,6 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -696,8 +794,8 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              const dest = databaseOptionBags[process.env.GI_PERSIST]?.dest ?? process.env.API_URL
-              await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion, dest)
+              const dest = process.env.API_URL
+              await genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion, dest)
               // genManifestsAndDeploy modifies manifests.json, which means we need
               // to regenerate the main bundle since it imports that file
               await buildMain.run({ fileEventName, filePath })
@@ -729,14 +827,14 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:relaunch', 'exec:test'])
-  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('test', ['build', 'chelDeploy', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test:cypress', ['build', 'chelDeploy', 'backend:launch', 'cypress'])
 
   // CI-specific test tasks - splitting linting/unit tests and cypress separately to use parallel mode in Cypress Cloud.
   // It's not possible for different jobs in a GHA workflow to share a session. So both tasks still need to repeat build/back-end setup steps.
-  grunt.registerTask('ci-test:unit', ['build', 'chelDeploy', 'backend:relaunch', 'exec:test'])
-  grunt.registerTask('ci-test:cypress', ['build:skiplint', 'chelDeploy', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('ci-test:unit', ['build', 'chelDeploy', 'backend:launch', 'exec:test'])
+  grunt.registerTask('ci-test:cypress', ['build:skiplint', 'chelDeploy', 'backend:launch', 'cypress'])
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
@@ -751,7 +849,7 @@ module.exports = (grunt) => {
     // will exit leaving a dangling child server process.
     if (child) {
       grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
+      child.kill('SIGKILL')
     }
     // Stops the Flowtype server.
     exec('./node_modules/.bin/flow stop')
