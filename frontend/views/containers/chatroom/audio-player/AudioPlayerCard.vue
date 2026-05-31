@@ -22,8 +22,10 @@
     :src='src'
     :mimeType='mimeType'
     :mode='forSendArea ? "minimal" : "default"'
+    :notifyProgressUpdates='true'
     @playing='onPlaying'
     @pause='onPaused'
+    @progressUpdate='onProgressUpdate'
   )
 
   i18n.error.c-error(
@@ -106,6 +108,9 @@ export default {
         console.error('AudioPlayerCard.vue caught:', err)
         this.ephemeral.loadingStatus = 'error'
       }
+    },
+    onProgressUpdate (progressFraction) {
+      console.log('!@# progress update', progressFraction)
     }
   }
 }

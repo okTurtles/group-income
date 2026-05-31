@@ -34,12 +34,17 @@ export default {
     hideDefaultPlayButton: {
       type: Boolean,
       default: false
+    },
+    notifyProgressUpdates: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
       ephemeral: {
-        player: null
+        player: null,
+        progressAnimationId: null
       }
     }
   },
@@ -66,10 +71,39 @@ export default {
       )
 
       // event listeners
-      const events = ['play', 'playing', 'pause', 'ended']
-      events.forEach(event => {
+      this.ephemeral.player.on('play', this.handleInstancePlay)
+      this.ephemeral.player.on('pause', this.handleInstancePause)
+
+      // events to merely relay to the parent component
+      const relayingEvents = ['playing', 'ended']
+      relayingEvents.forEach(event => {
         this.ephemeral.player.on(event, () => this.$emit(event))
       })
+    },
+    handleInstancePlay () {
+      this.$emit('play')
+
+      if (this.notifyProgressUpdates) {
+        const currentTime = this.ephemeral.player.currentTime || 0
+        const duration = this.ephemeral.player.duration
+
+        if (duration > 0) {
+          const progressPercent = (currentTime / duration)
+
+          if (progressPercent <= 1) {
+            this.$emit('progressUpdate', progressPercent)
+            this.ephemeral.progressAnimationId = requestAnimationFrame(this.handleInstancePlay)
+          }
+        }
+      }
+    },
+    handleInstancePause () {
+      this.$emit('pause')
+
+      if (this.notifyProgressUpdates && this.ephemeral.progressAnimationId) {
+        cancelAnimationFrame(this.ephemeral.progressAnimationId)
+        this.ephemeral.progressAnimationId = null
+      }
     },
     play () {
       this.ephemeral.player.play()
