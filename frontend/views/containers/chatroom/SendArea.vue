@@ -757,6 +757,7 @@ export default ({
       }
     },
     onRecordingCompleted (recordingData) {
+      console.log('!@# Recording completed with data: ', recordingData)
       // TODO: use sbp event listener logic here instead, for an easier cleanup logic in VoiceRecorder.vue
       this.ephemeral.voiceRecording.count++
       this.fileAttachmentHandler([{
