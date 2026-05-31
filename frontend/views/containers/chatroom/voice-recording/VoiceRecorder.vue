@@ -16,7 +16,7 @@
         i.icon-times
 
     .c-sound-patterns
-      .c-pattern-bar(v-for='(aveFrequency, index) in ephemeral.soundBars'
+      .c-pattern-bar(v-for='(aveFrequency, index) in soundBarsToShow'
         :key='index'
         :class='{ "is-active": aveFrequency !== 0 }'
         :style='{ height: getBarHeight(aveFrequency) }'
@@ -60,6 +60,7 @@ export default {
     return {
       ephemeral: {
         soundBars: new Array(MAX_SOUND_PATTERN_COUNT).fill(0),
+        soundBarsFinal: [],
         isHighlighted: false,
         isRecording: false,
         audioChunks: [],
@@ -71,6 +72,13 @@ export default {
         frequencyData: null,
         analyserTimeoutId: null
       }
+    }
+  },
+  computed: {
+    soundBarsToShow () {
+      const len = this.ephemeral.soundBars.length
+      const sliceIndex = Math.max(0, len - MAX_SOUND_PATTERN_COUNT)
+      return this.ephemeral.soundBars.slice(sliceIndex)
     }
   },
   methods: {
@@ -86,6 +94,7 @@ export default {
         this.focusContainer() // To unfocus the play button
         this.startRecording()
       } else {
+        this.getRepresentativeSoundBars()
         this.stopRecording()
       }
     },
@@ -187,19 +196,16 @@ export default {
         this.ephemeral.audioStream = null
       }
 
-      this.stopCapturingSoundPattern()
-      this.ephemeral.frequencyData = null
+      this.$nextTick(() => {
+        this.stopCapturingSoundPattern()
+        this.ephemeral.frequencyData = null
+      })
     },
     captureSoundPatterns () {
       this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
       // get the representative frequency value of the sound stream
       const representativeFrequency = getRepresentativeFrequency(this.ephemeral.frequencyData)
       this.ephemeral.soundBars.push(representativeFrequency / 255 * 100)
-
-      // Pop the oldest sound pattern if the number exceeds the maximum bar count.
-      while (this.ephemeral.soundBars.length > MAX_SOUND_PATTERN_COUNT) {
-        this.ephemeral.soundBars.shift()
-      }
 
       this.ephemeral.analyserTimeoutId = setTimeout(() => {
         this.captureSoundPatterns()
@@ -209,6 +215,9 @@ export default {
       clearTimeout(this.ephemeral.analyserTimeoutId)
       this.ephemeral.analyserTimeoutId = null
       this.ephemeral.soundBars = new Array(MAX_SOUND_PATTERN_COUNT).fill(0)
+    },
+    getRepresentativeSoundBars () {
+      // TODO: Implement this
     },
     cleanupAudioRecording () {
       if (this.ephemeral.isRecording) {
