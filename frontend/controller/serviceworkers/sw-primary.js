@@ -38,9 +38,9 @@ import {
 import './push.js'
 import './sw-namespace.js'
 
-console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('APP_VERSION:', process.env.APP_VERSION)
 console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
-console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('CONTRACTS_VERSION:', JSON.stringify(process.env.CONTRACTS_VERSION))
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
@@ -285,9 +285,9 @@ sbp('sbp/selectors/register', {
 sbp('sbp/selectors/register', {
   'sw/version': () => {
     return {
-      GI_VERSION: process.env.GI_VERSION,
+      appVersion: process.env.APP_VERSION,
       GI_GIT_VERSION: process.env.GI_GIT_VERSION,
-      CONTRACTS_VERSION: process.env.CONTRACTS_VERSION,
+      contractsVersion: process.env.CONTRACTS_VERSION,
       LIGHTWEIGHT_CLIENT: process.env.LIGHTWEIGHT_CLIENT,
       NODE_ENV: process.env.NODE_ENV
     }
@@ -435,7 +435,7 @@ self.addEventListener('message', function (event) {
           port.postMessage({
             type: 'ready',
             currentSyncs: sbp('chelonia/contract/currentSyncs'),
-            GI_VERSION: process.env.GI_VERSION
+            appVersion: process.env.APP_VERSION
           })
         }, (e) => {
           port.postMessage({ type: 'error', error: e })
@@ -443,15 +443,15 @@ self.addEventListener('message', function (event) {
           port.close()
         })
 
-        // If the window is outdated (different GI_VERSION), trigger an event
+        // If the window is outdated (different appVersion), trigger an event
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
         // This handles new SW clients that have an outdated
-        // `process.env.GI_VERSION` (for example, by having loaded a cached
+        // `process.env.APP_VERSION` (for example, by having loaded a cached
         // version of `main.js`).
         if (
           currentVersionInfo &&
           event.source &&
-          event.data.GI_VERSION !== currentVersionInfo.GI_VERSION
+          event.data.appVersion !== currentVersionInfo.appVersion
         ) {
           event.source.postMessage({
             type: 'event',
