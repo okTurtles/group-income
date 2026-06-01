@@ -11,6 +11,7 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
+import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
@@ -19,7 +20,7 @@ import setupChelonia from '~/frontend/setupChelonia.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
+import { CHELONIA_KV_STATUS_CHANGED, CHELONIA_KV_UPDATED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
 import '@chelonia/lib/persistent-actions'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
@@ -30,7 +31,7 @@ import {
   JOINED_CHATROOM, JOINED_GROUP,
   KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_NOTIFICATION_SETTINGS,
-  NEW_CHATROOM_SCROLL_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
+  NEW_CHATROOM_SCROLL_POSITION, NEW_PREFERENCES,
   NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
@@ -138,9 +139,10 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED,
   LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NEW_KV_LOAD_STATUS,
   NOTIFICATION_TYPE.VERSION_INFO,
-  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
+  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION,
   NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
   NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
   RECONNECTING, RECONNECTION_FAILED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
@@ -319,7 +321,10 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
 
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
-const setupPromise = setupChelonia()
+const setupPromise = setupChelonia().then(() => {
+  // `chelonia/kv/*` selectors are now registered; safe to declare slots.
+  registerKvSlots()
+})
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
@@ -537,10 +542,6 @@ sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
   // the following keys mirror the corresponding keys in Vuex modules in the
   // app
   switch (key) {
-    case KV_KEYS.LAST_LOGGED_IN: {
-      rootState.lastLoggedIn[contractID] = data
-      break
-    }
     case KV_KEYS.UNREAD_MESSAGES: {
       rootState.chatroom.unreadMessages = data
       break
@@ -602,12 +603,25 @@ const cheloniaReactiveSet = (state, key, value) => {
   reactiveSet(state, key, value)
 }
 
+// The new `@chelonia/lib` KV slot API fires `CHELONIA_KV_UPDATED` in this (SW)
+// context whenever a slot's mirror value changes (load / pubsub / local write).
+// Project the values back into the purpose-built rootState slices the getters
+// and contract sideEffects read from, replacing the old per-key `NEW_*`/
+// `KV_EVENT` switches as each key is migrated. (KV-REVAMPED.md §9)
+sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, ({ contractType, contractID, key, value }) => {
+  switch (`${contractType}::${key}`) {
+    case `gi.contracts/group::${KV_KEYS.LAST_LOGGED_IN}`: {
+      const rootState = sbp('state/vuex/state')
+      if (!rootState.lastLoggedIn) cheloniaReactiveSet(rootState, 'lastLoggedIn', Object.create(null))
+      cheloniaReactiveSet(rootState.lastLoggedIn, contractID, value)
+      sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+      break
+    }
+  }
+})
+
 // These `NEW_*` events are emitted in KV files. To keep things consistent with
 // the browser state, we update the state when these events are generated.
-sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState.lastLoggedIn, contractID, data)
-})
 sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
   const rootState = sbp('state/vuex/state')
   cheloniaReactiveSet(rootState, 'preferences', preferences)
