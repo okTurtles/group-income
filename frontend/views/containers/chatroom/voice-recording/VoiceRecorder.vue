@@ -43,13 +43,6 @@ import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
 const MAX_SOUND_PATTERN_COUNT = 35
-const getRepresentativeFrequency = (frequencyData) => {
-  // Get some of the largest frequency values and compute the mean of them.
-  const cloned = Array.from(frequencyData) // Unit8Array -> a normal array
-  cloned.sort((a, b) => b - a)
-  const largestSome = cloned.slice(0, 18)
-  return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
-}
 
 export default {
   name: 'VoiceRecorder',
@@ -68,7 +61,6 @@ export default {
         audioContext: null,
         audioAnalyser: null,
         recorderInstance: null,
-        frequencyData: null,
         volumeData: null,
         analyserTimeoutId: null
       }
@@ -128,9 +120,6 @@ export default {
           if (event.data && event.data.size > 0) {
             this.ephemeral.audioChunks.push(event.data)
 
-            if (this.ephemeral.frequencyData) {
-              this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
-            }
             if (this.ephemeral.volumeData) {
               this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
             }
@@ -166,7 +155,6 @@ export default {
         this.ephemeral.audioAnalyser.fftSize = 64
 
         source.connect(this.ephemeral.audioAnalyser)
-        this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
         this.ephemeral.volumeData = new Uint8Array(this.ephemeral.audioAnalyser.fftSize)
 
         // Start recording.
@@ -201,18 +189,14 @@ export default {
 
       this.$nextTick(() => {
         this.stopCapturingSoundPattern()
-        this.ephemeral.frequencyData = null
         this.ephemeral.volumeData = null
       })
     },
     captureSoundPatterns () {
-      this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
       this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
-      // get the representative frequency value of the sound stream
-      const representativeFrequency = getRepresentativeFrequency(this.ephemeral.frequencyData)
-      console.log('!@# representativeFrequency', representativeFrequency)
-      const volume = getAmplitudeFromTimeDataSamples(this.ephemeral.volumeData)
-      this.ephemeral.soundBars.push(volume)
+      // get the volume amplitude value of the sound stream
+      const volumeAmplitude = getAmplitudeFromTimeDataSamples(this.ephemeral.volumeData)
+      this.ephemeral.soundBars.push(volumeAmplitude)
 
       this.ephemeral.analyserTimeoutId = setTimeout(() => {
         this.captureSoundPatterns()
@@ -324,9 +308,9 @@ $shadow-color-dark: rgba(38, 38, 38, 0.425);
 .c-record-btn {
   position: relative;
   flex-shrink: 0;
-  font-size: 0.8rem;
-  width: 1.425rem;
-  height: 1.425rem;
+  font-size: 0.875rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
   transform: translateY(1px);
 }
@@ -356,7 +340,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.425);
   &.is-recording {
     background-color: $success_2;
     color: $success_0;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
 
     i {
       transform: scale(1);
