@@ -931,7 +931,7 @@ export default (sbp('sbp/selectors/register', {
         }, { billableContractID })
         const { delete: token, download: downloadData } = response
         return {
-          attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression']),
+          attributes: omit(attachment, ['url', 'compressedBlob', 'needsImageCompression', 'isVoiceRecording']),
           downloadData,
           deleteData: { token }
         }
