@@ -792,7 +792,7 @@
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "사진 교체";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "저장";
 
 /* views/components/banners/BannerScoped.vue */
@@ -1105,25 +1105,16 @@
 "Undo" = "실행 취소";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"All new messages" = "모든 새 메시지";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Direct messages and mentions" = "다이렉트 메시지 및 멘션";
+"Mentions" = "멘션";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "채팅 알림의 모든 소리 음소거";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Nothing" = "아무것도";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "모든 새 메시지에 대한 소리 재생";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "다이렉트 메시지 및 멘션에 대한 소리 재생";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Send notifications for:" = "알림 보내기:";
+"Play sounds for mentions" = "멘션 소리 재생";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "소리:";
@@ -1133,6 +1124,15 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "알림";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All new messages" = "모든 새 메시지";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Nothing" = "아무것도";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
+"Send notifications for:" = "알림 보내기:";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "설명 추가";
@@ -3180,8 +3180,20 @@
 /* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "문제 해결";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Allow browser notifications" = "브라우저 알림 허용";
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "전체";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "채팅 기본 알림";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "DM/멘션";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Direct messages and mentions" = "다이렉트 메시지 및 멘션";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "없음";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "브라우저 알림";
@@ -3205,7 +3217,10 @@
 "You have granted browser notification!" = "브라우저 알림 권한이 부여되었습니다!";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "브라우저가 푸시 알림을 지원하지 않습니다";
+"Your browser doesn't support push notifications." = "브라우저가 푸시 알림을 지원하지 않습니다.";
+
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
+"Allow browser notifications" = "브라우저 알림 허용";
 
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "볼륨";
@@ -3553,6 +3568,12 @@
 "My profile" = "내 프로필";
 
 /* views/pages/UserSettings.vue */
+"Play sounds for:" = "소리 재생:";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "알림 소리 볼륨";
+
+/* views/pages/UserSettings.vue */
 "Text size" = "텍스트 크기";
 
 /* views/pages/UserSettings.vue */
@@ -3610,8 +3631,14 @@
 "My account" = "내 계정";
 
 /* Not currently used */
+"Play sounds for direct messages and mentions" = "다이렉트 메시지 및 멘션에 대한 소리 재생";
+
+/* Not currently used */
 "Reduced Motion" = "감소된 모션";
 
 /* Not currently used */
 "Voting System" = "투표 시스템";
+
+/* Not currently used */
+"Your browser doesn't support push notifications" = "브라우저가 푸시 알림을 지원하지 않습니다";
 

@@ -855,7 +855,7 @@
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "Foto ersetzen";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "Speichern";
 
 /* views/components/banners/BannerScoped.vue */
@@ -1168,25 +1168,16 @@
 "Undo" = "Rückgängig";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"All new messages" = "Alle neuen Nachrichten";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Direct messages and mentions" = "Direktnachrichten und Erwähnungen";
+"Mentions" = "Erwähnungen";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "Alle Chat-Benachrichtigungstöne stummschalten";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Nothing" = "Nichts";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "Töne für alle neuen Nachrichten abspielen";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "Töne für Direktnachrichten und Erwähnungen abspielen";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Send notifications for:" = "Benachrichtigungen senden für:";
+"Play sounds for mentions" = "Sounds für Erwähnungen abspielen";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "Töne:";
@@ -1196,6 +1187,15 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "Benachrichtigungen";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All new messages" = "Alle neuen Nachrichten";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Nothing" = "Nichts";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
+"Send notifications for:" = "Benachrichtigungen senden für:";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Eine Beschreibung hinzufügen";
@@ -3186,8 +3186,20 @@
 /* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "Fehlerbehebung";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Allow browser notifications" = "Browser-Benachrichtigungen erlauben";
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "Alle";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "Standard-Chatbenachrichtigungen";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "DM/Erwähnungen";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Direct messages and mentions" = "Direktnachrichten und Erwähnungen";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "Keine";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Browser-Benachrichtigungen";
@@ -3211,7 +3223,10 @@
 "You have granted browser notification!" = "Sie haben Browser-Benachrichtigungen gewährt!";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "Ihr Browser unterstützt keine Push-Benachrichtigungen";
+"Your browser doesn't support push notifications." = "Dein Browser unterstützt keine Push-Benachrichtigungen.";
+
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
+"Allow browser notifications" = "Browser-Benachrichtigungen erlauben";
 
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "Lautstärke";
@@ -3556,6 +3571,12 @@
 "My profile" = "Mein Profil";
 
 /* views/pages/UserSettings.vue */
+"Play sounds for:" = "Sounds abspielen für:";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "Lautstärke für Sound-Benachrichtigungen";
+
+/* views/pages/UserSettings.vue */
 "Text size" = "Textgröße";
 
 /* views/pages/UserSettings.vue */
@@ -3610,8 +3631,14 @@
 "My account" = "Mein Konto";
 
 /* Not currently used */
+"Play sounds for direct messages and mentions" = "Töne für Direktnachrichten und Erwähnungen abspielen";
+
+/* Not currently used */
 "Reduced Motion" = "Reduzierte Bewegung";
 
 /* Not currently used */
 "Voting System" = "Abstimmungssystem";
+
+/* Not currently used */
+"Your browser doesn't support push notifications" = "Ihr Browser unterstützt keine Push-Benachrichtigungen";
 

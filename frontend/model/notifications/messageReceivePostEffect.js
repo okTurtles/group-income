@@ -15,6 +15,10 @@ import {
 } from '@model/chatroom/utils.js'
 import { makeNotification } from './nativeNotification.js'
 
+function isMessageDeleted (chatRoomState: ?Object, messageHash: string): boolean {
+  return chatRoomState?.deletedMessageHashes?.includes(messageHash) || false
+}
+
 async function messageReceivePostEffect ({
   contractID, messageHash, height, text,
   isDMOrMention, messageType, memberID, chatRoomName
@@ -61,71 +65,75 @@ async function messageReceivePostEffect ({
 
   await sbp('chelonia/contract/retain', contractID, { ephemeral: true })
   try {
-    if (shouldAddToUnreadMessages) {
-      sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height }).catch(e => {
-        console.error('[messageReceivePostEffect] Error calling addChatRoomUnreadMessage', e)
-      })
-    }
-
-    /*
-    // TODO: This needs to be done differently in the SW
-    const currentRoute = sbp('controller/router').history.current || ''
-    const isTargetChatroomCurrentlyActive = currentRoute.path.includes('/group-chat') &&
-  rootGetters.currentChatRoomId === contractID // when the target chatroom is currently open/active on the browser, No need to send a notification.
-    if (isTargetChatroomCurrentlyActive) return // Skip notifications
-    // END TODO: This needs to be done differently in the SW
-    */
-
-    let title = `# ${chatRoomName}`
-    let icon
-    if (isDM) {
-    // NOTE: partner identity contract could not be synced yet
-      const members = rootState[contractID].members
-      const membersList = Object.keys(members)
-      const isDMToMyself = membersList.length === 1 && membersList[0] === identityContractID
-      const partnersList = membersList
-        .filter(memberID => memberID !== identityContractID)
-        .sort((p1, p2) => {
-          const p1JoinedDate = new Date(members[p1].joinedDate).getTime()
-          const p2JoinedDate = new Date(members[p2].joinedDate).getTime()
-          return p1JoinedDate - p2JoinedDate
+    const chatRoomState = await sbp('chelonia/contract/state', contractID)
+    // if the message has been deleted, don't add it to the unreadMessages / send a notification
+    if (!isMessageDeleted(chatRoomState, messageHash)) {
+      if (shouldAddToUnreadMessages) {
+        sbp('gi.actions/identity/kv/addChatRoomUnreadMessage', { contractID, messageHash, createdHeight: height }).catch(e => {
+          console.error('[messageReceivePostEffect] Error calling addChatRoomUnreadMessage', e)
         })
-      const lastJoinedPartner = isDMToMyself ? identityContractID : partnersList[partnersList.length - 1]
+      }
 
-      title = isDMToMyself
-        ? rootGetters.userDisplayNameFromID(identityContractID)
-        : partnersList.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
-      icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
-    } else {
-      icon = rootGetters.ourContactProfilesById[memberID]?.picture
+      /*
+      // TODO: This needs to be done differently in the SW
+      const currentRoute = sbp('controller/router').history.current || ''
+      const isTargetChatroomCurrentlyActive = currentRoute.path.includes('/group-chat') &&
+      rootGetters.currentChatRoomId === contractID // when the target chatroom is currently open/active on the browser, No need to send a notification.
+      if (isTargetChatroomCurrentlyActive) return // Skip notifications
+      // END TODO: This needs to be done differently in the SW
+      */
+
+      let title = `# ${chatRoomName}`
+      let icon
+      if (isDM) {
+      // NOTE: partner identity contract could not be synced yet
+        const members = rootState[contractID].members
+        const membersList = Object.keys(members)
+        const isDMToMyself = membersList.length === 1 && membersList[0] === identityContractID
+        const partnersList = membersList
+          .filter(memberID => memberID !== identityContractID)
+          .sort((p1, p2) => {
+            const p1JoinedDate = new Date(members[p1].joinedDate).getTime()
+            const p2JoinedDate = new Date(members[p2].joinedDate).getTime()
+            return p1JoinedDate - p2JoinedDate
+          })
+        const lastJoinedPartner = isDMToMyself ? identityContractID : partnersList[partnersList.length - 1]
+
+        title = isDMToMyself
+          ? rootGetters.userDisplayNameFromID(identityContractID)
+          : partnersList.map(cID => rootGetters.userDisplayNameFromID(cID)).join(', ')
+        icon = rootGetters.ourContactProfilesById[lastJoinedPartner]?.picture
+      } else {
+        icon = rootGetters.ourContactProfilesById[memberID]?.picture
+      }
+      const path = `/group-chat/${contractID}`
+
+      // If the contract is syncing (meaning we're loading the app, joining a
+      // chatroom, etc.), don't use a native notification or sound. Do this only
+      // for messages coming over the WS.
+      // This may not be 100% reliable, but `firstSync` should make it work in
+      // most cases.
+      const isSyncing = sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })
+      // TODO: This could be an issue (false positive for emitting a native
+      // notification) when the initial sync gets interrupted (e.g., network issues)
+      // and then resumed.
+      // In this case, we may get sound notifications for old events that we
+      // should not, because technically it's not the first sync.
+      if (!isSyncing) {
+        shouldNotifyMessage && makeNotification({
+          title,
+          body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
+          icon,
+          path
+        })
+        // `MESSAGE_RECEIVE` should be forwarded to the tab
+        shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {
+          contractID,
+          messageHash,
+          messageType
+        })
+      }
     }
-    const path = `/group-chat/${contractID}`
-
-    // If the contract is syncing (meaning we're loading the app, joining a
-    // chatroom, etc.), don't use a native notification or sound. Do this only
-    // for messages coming over the WS.
-    // This may not be 100% reliable, but `firstSync` should make it work in
-    // most cases.
-    const isSyncing = sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })
-    // TODO: This could be an issue (false positive for emitting a native
-    // notification) when the initial sync gets interrupted (e.g., network issues)
-    // and then resumed.
-    // In this case, we may get sound notifications for old events that we
-    // should not, because technically it's not the first sync.
-    if (isSyncing) return
-
-    shouldNotifyMessage && makeNotification({
-      title,
-      body: messageType === MESSAGE_TYPES.TEXT ? swapMentionIDForDisplayname(text) : L('New message'),
-      icon,
-      path
-    })
-    // `MESSAGE_RECEIVE` should be forwarded to the tab
-    shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {
-      contractID,
-      messageHash,
-      messageType
-    })
   } finally {
     await sbp('chelonia/contract/release', contractID, { ephemeral: true })
   }

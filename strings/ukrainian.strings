@@ -10,9 +10,6 @@
 "Bitcoin" = "Bitcoin";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
-"Paypal" = "Paypal";
-
-/* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Venmo" = "Venmo";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue, views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
@@ -807,7 +804,7 @@
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "Замінити фото";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "Зберегти";
 
 /* views/components/banners/BannerScoped.vue */
@@ -1120,25 +1117,16 @@
 "Undo" = "Скасувати";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"All new messages" = "Усі нові повідомлення";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Direct messages and mentions" = "Прямі повідомлення та згадки";
+"Mentions" = "Згадки";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "Приглушити всі звуки з повідомлень чату";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Nothing" = "Нічого";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "Програти звуки для всіх нових повідомлень";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "Програти звуки для прямих повідомлень та згадок";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Send notifications for:" = "Надсилати повідомлення для:";
+"Play sounds for mentions" = "Відтворювати звук для згадок";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "Звуки:";
@@ -1148,6 +1136,15 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "Повідомлення";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All new messages" = "Усі нові повідомлення";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Nothing" = "Нічого";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
+"Send notifications for:" = "Надсилати повідомлення для:";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Додати опис";
@@ -1949,6 +1946,9 @@
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Payment value" = "Значення платежу";
+
+/* views/containers/contributions/PaymentMethods.vue */
+"Paypal" = "PayPal";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Remove method" = "Видалити метод";
@@ -3180,8 +3180,20 @@
 /* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "Усунення несправностей";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Allow browser notifications" = "Дозволити сповіщення браузера";
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "Усі";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "Типові сповіщення чату";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "ОП/Згадки";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Direct messages and mentions" = "Прямі повідомлення та згадки";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "Жодних";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Сповіщення браузера";
@@ -3205,7 +3217,10 @@
 "You have granted browser notification!" = "Ви надали дозвіл на сповіщення браузера!";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "Ваш браузер не підтримує push-сповіщення";
+"Your browser doesn't support push notifications." = "Ваш браузер не підтримує push-сповіщення.";
+
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
+"Allow browser notifications" = "Дозволити сповіщення браузера";
 
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "Гучність";
@@ -3553,6 +3568,12 @@
 "My profile" = "Мій профіль";
 
 /* views/pages/UserSettings.vue */
+"Play sounds for:" = "Відтворювати звуки для:";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "Гучність звукових сповіщень";
+
+/* views/pages/UserSettings.vue */
 "Text size" = "Розмір тексту";
 
 /* views/pages/UserSettings.vue */
@@ -3610,8 +3631,14 @@
 "My account" = "Мій обліковий запис";
 
 /* Not currently used */
+"Play sounds for direct messages and mentions" = "Програти звуки для прямих повідомлень та згадок";
+
+/* Not currently used */
 "Reduced Motion" = "Зменшена анімація";
 
 /* Not currently used */
 "Voting System" = "Система голосування";
+
+/* Not currently used */
+"Your browser doesn't support push notifications" = "Ваш браузер не підтримує push-сповіщення";
 

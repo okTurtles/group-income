@@ -798,7 +798,7 @@
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Replace photo" = "写真を置き換え";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
 "Save" = "保存";
 
 /* views/components/banners/BannerScoped.vue */
@@ -1111,25 +1111,16 @@
 "Undo" = "元に戻す";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"All new messages" = "すべての新しいメッセージ";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Direct messages and mentions" = "ダイレクト メッセージとメンション";
+"Mentions" = "メンション";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Mute all sounds from chat notifications" = "チャット通知のすべての音をミュート";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Nothing" = "なし";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Play sounds for all new messages" = "すべての新しいメッセージで音を再生";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Play sounds for direct messages and mentions" = "ダイレクトメッセージとメンションで音を再生";
-
-/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
-"Send notifications for:" = "通知を送信:";
+"Play sounds for mentions" = "メンションのサウンドを再生する";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue */
 "Sounds:" = "音:";
@@ -1139,6 +1130,15 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/pages/UserSettings.vue */
 "Notifications" = "通知";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All new messages" = "すべての新しいメッセージ";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Nothing" = "なし";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/pages/UserSettings.vue */
+"Send notifications for:" = "通知を送信:";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "説明を追加";
@@ -3180,8 +3180,20 @@
 /* views/containers/user-settings/AppLogs.vue, views/pages/UserSettings.vue */
 "Troubleshooting" = "トラブルシューティング";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Allow browser notifications" = "ブラウザ通知を許可";
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"All" = "すべて";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Chat default notifications" = "チャットのデフォルト通知設定";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"DM/Mentions" = "DM/メンション";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"Direct messages and mentions" = "ダイレクト メッセージとメンション";
+
+/* views/containers/user-settings/ChatDefaultNotificationSettings.vue */
+"None" = "なし";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "ブラウザ通知";
@@ -3205,7 +3217,10 @@
 "You have granted browser notification!" = "ブラウザ通知を許可しました！";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Your browser doesn't support push notifications" = "お使いのブラウザはプッシュ通知をサポートしていません";
+"Your browser doesn't support push notifications." = "お使いのブラウザはプッシュ通知に対応していません。";
+
+/* views/containers/user-settings/NotificationSettings.vue, views/pages/UserSettings.vue */
+"Allow browser notifications" = "ブラウザ通知を許可";
 
 /* views/containers/user-settings/NotificationVolume.vue */
 "Volume" = "音量";
@@ -3553,6 +3568,12 @@
 "My profile" = "マイプロフィール";
 
 /* views/pages/UserSettings.vue */
+"Play sounds for:" = "サウンドを再生する対象:";
+
+/* views/pages/UserSettings.vue */
+"Sound notification volume" = "通知音の音量";
+
+/* views/pages/UserSettings.vue */
 "Text size" = "テキストサイズ";
 
 /* views/pages/UserSettings.vue */
@@ -3610,8 +3631,14 @@
 "My account" = "マイアカウント";
 
 /* Not currently used */
+"Play sounds for direct messages and mentions" = "ダイレクトメッセージとメンションで音を再生";
+
+/* Not currently used */
 "Reduced Motion" = "動きを減らす";
 
 /* Not currently used */
 "Voting System" = "投票システム";
+
+/* Not currently used */
+"Your browser doesn't support push notifications" = "お使いのブラウザはプッシュ通知をサポートしていません";
 

@@ -59,14 +59,13 @@
     send-area-attachments-gallery
       template(v-for='(entry, entryIndex) in attachmentList')
         .c-attachment-preview(
-          v-if='[config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA, config.CHATROOM_ATTACHMENT_TYPES.AUDIO].includes(fileType(entry))'
+          v-if='config.CHATROOM_ATTACHMENT_TYPES.NON_MEDIA === fileType(entry)'
           :key='entry.url'
           :class='"is-" + fileType(entry)'
         )
           .c-preview-non-media(@click.stop='')
             .c-non-media-icon
-              i.icon-headphones(v-if='fileType(entry) === config.CHATROOM_ATTACHMENT_TYPES.AUDIO')
-              i.icon-file(v-else)
+              i.icon-file
 
             .c-non-media-file-info
               .c-file-name.has-ellipsis {{ entry.name }}
@@ -514,7 +513,6 @@ export default {
   border-radius: 0.25rem;
   flex-shrink: 0;
 
-  &.is-audio,
   &.is-non-media {
     max-width: 17.25rem;
     min-width: 14rem;

@@ -5,6 +5,7 @@ $gap: 1rem;
 $tablet: 769px;
 $desktop: 1200px;
 $payment-table-desktop-bp: 1290px;
+$chat-narrow-screen: 541px;
 
 @mixin fa($size, $dimensions) {
   display: inline-block;

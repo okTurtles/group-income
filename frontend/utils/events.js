@@ -86,3 +86,4 @@ export const CONTRACT_SYNCS_RESET = 'new-current-syncs'
 export const SERIOUS_ERROR = 'serious-error'
 
 export const GROUP_PERMISSIONS_UPDATE_SUCCESS = 'group-permissions-update-success'
+export const SHOW_TOAST = 'show-toast'

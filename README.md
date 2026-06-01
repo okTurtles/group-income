@@ -45,16 +45,6 @@ We are continually improving the user experience for everyone, and applying the 
 - [:book: Style Guide — Our development guidelines](docs/src/Style-Guide.md)
 - [:book: Information Flow - walkthrough of the logical layer](docs/src/Information-Flow.md)
 
-#### Bounties
-
-Some issues have [bounties](https://github.com/okTurtles/group-income/issues?q=is%3Aissue+is%3Aopen+label%3ANote%3ABounty) assigned to them.
-
-- Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
-- Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
-- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ)!
-
-Any open contractor positions are posted to: [Open Positions](https://groupincome.org/positions/)
-
 #### Basic workflow
 
 To get started with development, follow the steps in **[Getting Started](#getting-started)** first.
@@ -69,39 +59,14 @@ grunt dev
 
 Create a tunnel to share access over the Internet:
 
+Try [ngrok](https://ngrok.com/) (recommended), [tunnl.gg](https://tunnl.gg/), [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
+
 ```
-grunt dev --tunnel
-```
-
-> [!IMPORTANT]
-> This service (localtunnel) doesn't seem to work anymore.
-> Instead please try [ngrok](https://ngrok.com/) (recommended), [tunnl.gg](https://tunnl.gg/), [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
-> ```
-> $ grunt dev
-> # then, in another terminal:
-> $ ngrok http http://localhost:8000
-> # or:
-> $ ssh -R 80:localhost:8000 nokey@localhost.run
-> ```
-
-Pin a new version of contracts:
-
-```bash
-$ NODE_ENV=production grunt pin:0.1.0
-```
-
-Build the app for distribution:
-
-```bash
-# Update the version in package.json
-$ npm install # update package-lock.json
-$ git add . && git commit -m "<commit message>"
-$ git tag -u <email> v1.1.0  # create the tag before calling grunt deploy
-$ NODE_ENV=production grunt deploy
-$ tar cfz gi-v2.7.0.tgz dist
-# Debug build is the same except without NODE_ENV var
-$ grunt deploy
-$ tar cfz gi-v2.7.0.debug.tgz dist
+$ grunt dev
+# then, in another terminal:
+$ ngrok http http://localhost:8000
+# or:
+$ ssh -R 80:localhost:8000 nokey@localhost.run
 ```
 
 Clean up files in `dist/`:
@@ -160,6 +125,42 @@ For details, see: **[`Docker.md`](docs/src/Docker.md)**
 If you run into any errors [during the setup](docs/src/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/src/Troubleshooting.md).
 
 Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/okTurtles/group-income)
+
+## Making a release
+
+### Pin a new version of contracts
+
+Contract versions are tied to the app `version` in `package.json`. `grunt pin`
+reads that value, writes it to `appVersion` in `chelonia.json`, then pins the
+selected contracts to that version. Because the version is derived from
+`package.json`, it is not passed on the command line.
+
+```bash
+# Print usage (also shows current vs. target appVersion):
+$ grunt pin
+
+# Bump appVersion in chelonia.json and pin every contract to it:
+$ NODE_ENV=production grunt pin --all
+
+# Bump appVersion only, without pinning any contract
+# (useful when releasing an app update with no contract changes):
+$ NODE_ENV=production grunt pin --none
+
+# Bump appVersion and pin only the named contract:
+$ NODE_ENV=production grunt pin:chatroom
+```
+
+Add `--overwrite` to replace an already-pinned version on disk.
+
+### Build the app for distribution
+
+```bash
+# Update the version in package.json
+$ npm install # update package-lock.json
+$ git add . && git commit -m "<commit message>"
+$ git tag -u '<email>' v1.1.0  # create the tag before calling grunt deploy
+$ ./scripts/dist.sh
+```
 
 ## Donating
 

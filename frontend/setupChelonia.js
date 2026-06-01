@@ -15,6 +15,21 @@ import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.j
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 import { KV_KEYS } from './utils/constants.js'
 
+const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+  // If the types don't match, a different release has been made
+  if (typeof va !== typeof vb) return true
+  // Sort contracts by name
+  const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  // If different number of contracts, contract version object is different
+  if (ea.length !== eb.length) return true
+  for (let i = 0; i < ea.length; i++) {
+    // If either the name or the version don't match, contract version is different
+    if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return true
+  }
+  return false
+}
+
 const handleDeletedContract = async (contractID: string) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
@@ -240,6 +255,10 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
+    },
+    journal: {
+      enabled: true,
+      snapshotInterval: 75
     }
   })
 
@@ -312,15 +331,23 @@ const setupChelonia = async (): Promise<*> => {
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
       [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-        const ourVersion = process.env.GI_VERSION
-        const theirVersion = msg.data.GI_VERSION
+        const ourVersion = process.env.APP_VERSION
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.GI_VERSION`) should be removed in a future release
+        const theirVersion = msg.data.appVersion || msg.data.GI_VERSION
 
         const ourContractsVersion = process.env.CONTRACTS_VERSION
-        const theirContractsVersion = msg.data.CONTRACTS_VERSION
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.CONTRACTS_VERSION`) should be removed in a future release
+        const theirContractsVersion = msg.data.contractsVersion || msg.data.CONTRACTS_VERSION
 
-        const isContractVersionDiff = ourContractsVersion !== theirContractsVersion
-        const isGIVersionDiff = ourVersion !== theirVersion
-        // We only compare GI_VERSION in development mode so that the page auto-refreshes if `grunt dev` is re-run
+        const isContractVersionDiff = diffContractVersion(ourContractsVersion, theirContractsVersion)
+        const isAppVersionDiff = ourVersion !== theirVersion
+        // We only compare appVersion in development mode so that the page auto-refreshes if `grunt dev` is re-run
         // This check cannot be done in production mode as it would lead to an infinite page refresh bug
         // when using `grunt deploy` with `grunt serve`
         console.info('VERSION_INFO received:', {
@@ -329,8 +356,16 @@ const setupChelonia = async (): Promise<*> => {
           ourContractsVersion,
           theirContractsVersion
         })
-        if (isContractVersionDiff || isGIVersionDiff) {
-          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, msg.data)
+        if (isContractVersionDiff || isAppVersionDiff) {
+          // TODO REMOVEME: Transitional legacy version info support
+          // The GI_VERSION field has been renamed, but kept here in the
+          // check for backwards-compatibility.
+          // This fallback (`{ ...msg.data, GI_VERSION, CONTRACTS_VERSION }`) should be removed in a future release and replaced with just `msg.data`
+          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, {
+            ...msg.data,
+            GI_VERSION: theirVersion,
+            CONTRACTS_VERSION: theirContractsVersion
+          })
         }
       },
       [REQUEST_TYPE.PUSH_ACTION] (msg) {

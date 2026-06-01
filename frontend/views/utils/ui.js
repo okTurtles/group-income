@@ -2,12 +2,25 @@
 
 import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
-import { OPEN_MODAL, MODAL_RESPONSE } from '@utils/events.js'
+import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
 
 // Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
 // sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
 // sbp('gi.ui/clearBanner')
+
+type ToastData = {
+  // These are the data definitions for 'gi.ui/toast' sbp call.
+  // In .vue component, there can be additional properties added on top of these depending on the need.
+  // e.g.) Properties like 'entered' don't need to be specified earlier at the call time.
+  message: string,
+  title?: string,
+  variant?: 'default' | 'success' | 'warning' | 'error',
+  position?: 'top-right' | 'top-left' | 'top-center' | 'bottom-right' | 'bottom-left' | 'bottom-center',
+  duration?: number, // in milliseconds
+  icon?: string,
+  closeable?: boolean
+}
 
 export default (sbp('sbp/selectors/register', {
   'gi.ui/prompt' (params: Object): Promise<*> {
@@ -17,6 +30,26 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/once', MODAL_RESPONSE, function (response) {
         resolve(response)
       })
+    })
+  },
+  'gi.ui/toast' (area: string, data: ToastData): void {
+    if (!area || !data) {
+      throw Error('sbp("gi.ui/toast") failed - Missing parameters')
+    }
+
+    if (!data.message || typeof data.message !== 'string') {
+      throw Error('sbp("gi.ui/toast") failed - "message" is required and must be a string')
+    }
+
+    const defaultData = {
+      // Some default settings for the toast. Can be overridden by the data passed in.
+      variant: 'default',
+      position: 'bottom-right',
+      closeable: true
+    }
+
+    sbp('okTurtles.events/emit', SHOW_TOAST, area, {
+      ...defaultData, ...data
     })
   },
   'gi.ui/clearBanner' (): void {

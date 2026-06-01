@@ -5,6 +5,7 @@ import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
+import CodeFence from './CodeFence.vue'
 import { EMOJI_REGEX } from '@utils/constants.js'
 
 // reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
@@ -30,6 +31,7 @@ const RenderMessageWithMarkdown: any = {
         const hasChildren = Array.isArray(entry.children)
         const isCodeElement = entry.tagName === 'CODE'
         const routerOptions = { isInAppRouter: false, route: {}, href: '' }
+
         if (entry.tagName === 'A' && entry.attributes.href) {
           const { href } = entry.attributes
           const { url, isHttpValid } = validateURL(href, true)
@@ -46,6 +48,16 @@ const RenderMessageWithMarkdown: any = {
             routerOptions.href = this.$router.resolve(routerOptions.route).href
             routerOptions.isInAppRouter = true
           }
+        }
+
+        // Special handling for code fence block.
+        if (entry.tagName === 'PRE' && entry.children?.length === 1 && entry.children[0].tagName === 'CODE') {
+          const codeContent = entry.children[0].text
+          return createElement(CodeFence, {
+            props: {
+              content: codeContent
+            }
+          })
         }
 
         const opts = routerOptions.isInAppRouter
