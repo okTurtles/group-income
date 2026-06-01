@@ -16,10 +16,6 @@ export const OFFLINE = 'offline'
 export const RECONNECTING = 'reconnecting'
 export const RECONNECTION_FAILED = 'reconnection-failed'
 
-export const KV_QUEUE = 'kv-queue'
-export const KV_EVENT = 'kv-event'
-export const NEW_KV_LOAD_STATUS = 'new-kv-load-status'
-
 export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'
 export const JOINED_GROUP = 'joined-group'
@@ -76,7 +72,6 @@ export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'
 
 export const NEW_CHATROOM_SCROLL_POSITION = 'new-chatroom-scroll-position'
 export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
-export const NEW_PREFERENCES = 'new-preferences'
 
 export const NEW_CHATROOM_NOTIFICATION_SETTINGS = 'new-chatroom-notification-settings'
 

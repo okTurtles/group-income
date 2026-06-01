@@ -3,9 +3,9 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { CHELONIA_KV_STATUS_CHANGED } from '@chelonia/lib/events'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
@@ -157,8 +157,12 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   }
 })
 
-sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
-  if (name === 'identity' && status === KV_LOAD_STATUS.LOADED) {
+sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, status }) => {
+  if (
+    contractType === 'gi.contracts/identity' &&
+    key === KV_KEYS.UNREAD_MESSAGES &&
+    status === KV_LOAD_STATUS.LOADED
+  ) {
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())
     }

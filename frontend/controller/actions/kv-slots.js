@@ -16,6 +16,34 @@
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
+import { isExpired } from '@model/notifications/utils.js'
+import { checkAndAugmentNames } from './identity-kv.js'
+
+// Prune-expired transform for the notifications slot. Zod is not installed, so
+// the slot's `schema` is a plain `{ parse }` object. This is the canonical
+// `applyStorageRules` normalization from `identity-kv.js` (drop entries past
+// their max age) modelled as a `schema.transform` so it runs once on every
+// reducer output before the network write and on every load/pubsub value
+// (KV-REVAMPED.md §6). It must:
+//   - reject the reserved wire sentinels `null` / `undefined` (defineSlot
+//     guards probe these at registration time);
+//   - be idempotent on its own output (`parse(parse(x))` deep-equals
+//     `parse(x)`): pruning an already-pruned map is a no-op;
+//   - return a plain JSON object (no Date/Map) for the mirror.
+// The stored shape is `{ [hash]: { timestamp, read } }`.
+const notificationStatusSchema = {
+  parse (value: Object): Object {
+    if (value == null || typeof value !== 'object') {
+      throw new TypeError('notifications: expected an object of notification statuses')
+    }
+    return Object.keys(value).reduce((acc, hash) => {
+      if (!isExpired(value[hash])) {
+        acc[hash] = value[hash]
+      }
+      return acc
+    }, {})
+  }
+}
 
 // Identity-scoped slots attach only to the logged-in user's own identity
 // contract. Without this predicate the slot would attach to every identity
@@ -44,7 +72,74 @@ export const registerKvSlots = (): void => {
     defaultValue: {}
   })
 
-  // Phase C–F add the remaining `defineSlot` calls here.
+  // `preferences` — per-user UI preferences on the own identity contract
+  // (e.g. `hideDistributionBanner`, `lastSeenNewsDate`). Single-shape slot:
+  // every write shallow-merges a patch over the previous value, so call sites
+  // use the `value` form of `chelonia/kv/update` (KV-REVAMPED.md §4.1 / §7.2).
+  // No schema (Zod is not installed).
+  sbp('chelonia/kv/defineSlot', {
+    contractType: 'gi.contracts/identity',
+    key: KV_KEYS.PREFERENCES,
+    defaultValue: {},
+    match: onOwnIdentity,
+    defaultUpdater: (patch) => (prev) => ({ ...prev, ...patch })
+  })
+
+  // `notifications` — per-user notification read/seen status on the own
+  // identity contract, keyed by notification hash (`{ [hash]: { timestamp,
+  // read } }`). Multiple distinct write intents (add-new, mark-read) so the
+  // call sites use explicit `updater`s, not the `value`/`defaultUpdater`
+  // sugar. The TTL prune that used to live in `saveNotificationStatus` is the
+  // slot `schema.transform` (`notificationStatusSchema`), applied once per
+  // reducer output and per load/pubsub value. (KV-REVAMPED.md §6 / §7.2)
+  sbp('chelonia/kv/defineSlot', {
+    contractType: 'gi.contracts/identity',
+    key: KV_KEYS.NOTIFICATIONS,
+    defaultValue: {},
+    match: onOwnIdentity,
+    schema: notificationStatusSchema
+  })
+
+  // `unreadMessages` — per-chatroom unread cursor + message list on the own
+  // identity contract:
+  //   `{ [chatRoomID]: { readUntil: { messageHash, createdHeight,
+  //      isManuallyMarked? }, unreadMessages: Array<{ messageHash,
+  //      createdHeight }> } }`.
+  // Multiple distinct write intents against this key (init / set-read-cursor /
+  // mark-unread / add-msg / remove-msg / delete-room), so the call sites keep
+  // explicit `updater`s rather than the `value`/`defaultUpdater` sugar
+  // (KV-REVAMPED.md §4.1 / §8). No schema (Zod is not installed). `autoSubscribe`
+  // (default) replaces the manual `setFilter` entry; `autoLoad: 'on-sync'`
+  // (default) replaces the `loadChatRoomUnreadMessages` initial fetch.
+  sbp('chelonia/kv/defineSlot', {
+    contractType: 'gi.contracts/identity',
+    key: KV_KEYS.UNREAD_MESSAGES,
+    defaultValue: {},
+    match: onOwnIdentity
+  })
+
+  // `namespace-cache` — the set of namespace (username) lookups the user
+  // knows, stored as a sorted `string[]` on the own identity contract. Unlike
+  // the other identity slots this one is `autoSubscribe: false` (it was never
+  // in the pubsub `setFilter`) and `autoLoad: 'on-demand'` (fetched explicitly
+  // by `gi.actions/identity/kv/loadCachedNames` → `chelonia/kv/sync`, not on
+  // every sync). `onUpdate` re-runs `checkAndAugmentNames` on every value
+  // change (load / local write), which reconciles the cache against
+  // `namespaceLookups` and re-verifies conflicted names. This single hook
+  // replaces both the post-fetch augmentation that lived in `loadCachedNames`
+  // and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT` switch.
+  // `checkAndAugmentNames` is async; the library serializes `onUpdate` per
+  // contract and catches throws, so it cannot wedge the pipeline.
+  // (KV-REVAMPED.md §4.1 / §4.8)
+  sbp('chelonia/kv/defineSlot', {
+    contractType: 'gi.contracts/identity',
+    key: KV_KEYS.NS_CACHE,
+    defaultValue: [],
+    match: onOwnIdentity,
+    autoSubscribe: false,
+    autoLoad: 'on-demand',
+    onUpdate: (value) => checkAndAugmentNames(value || [])
+  })
 }
 
 // `registerKvSlots()` is NOT called eagerly here because the `chelonia/kv/*`

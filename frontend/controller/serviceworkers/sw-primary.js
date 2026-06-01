@@ -24,15 +24,15 @@ import { CHELONIA_KV_STATUS_CHANGED, CHELONIA_KV_UPDATED, CHELONIA_RESET, CONTRA
 import '@chelonia/lib/persistent-actions'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
-  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, NEW_KV_LOAD_STATUS,
+  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   JOINED_CHATROOM, JOINED_GROUP,
-  KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
+  LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_NOTIFICATION_SETTINGS,
-  NEW_CHATROOM_SCROLL_POSITION, NEW_PREFERENCES,
-  NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
+  NEW_CHATROOM_SCROLL_POSITION,
+  NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
@@ -140,10 +140,10 @@ const broadcastMessage = (...args) => {
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
   CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED,
-  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NEW_KV_LOAD_STATUS,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP,
   NOTIFICATION_TYPE.VERSION_INFO,
   MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION,
-  NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
+  NOTIFICATION_EMITTED,
   NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
   RECONNECTING, RECONNECTION_FAILED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
 ].forEach(et => {
@@ -535,38 +535,6 @@ self.addEventListener('notificationclick', event => {
     }))
 })
 
-sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
-  const rootState = sbp('chelonia/rootState')
-  const ourIdentityContractID = rootState.loggedIn?.identityContractID
-  if (contractID !== ourIdentityContractID) return
-  // the following keys mirror the corresponding keys in Vuex modules in the
-  // app
-  switch (key) {
-    case KV_KEYS.UNREAD_MESSAGES: {
-      rootState.chatroom.unreadMessages = data
-      break
-    }
-    case KV_KEYS.PREFERENCES: {
-      rootState.preferences = data
-      break
-    }
-    case KV_KEYS.NOTIFICATIONS: {
-      rootState.notifications.status = data
-      break
-    }
-    case KV_KEYS.NS_CACHE: {
-      // saveCachedNames will do conflict resolution
-      sbp('gi.actions/identity/kv/saveCachedNames').catch(e => {
-        console.error('[NS_CACHE] Error on processing KV update', e)
-      })
-      break
-    }
-    default:
-      return
-  }
-  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
-})
-
 sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, ({ chatRoomID, messageHash }) => {
   const rootState = sbp('chelonia/rootState')
   if (messageHash) {
@@ -617,19 +585,27 @@ sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, ({ contractType, contractID, key
       sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
       break
     }
+    case `gi.contracts/identity::${KV_KEYS.PREFERENCES}`: {
+      const rootState = sbp('state/vuex/state')
+      cheloniaReactiveSet(rootState, 'preferences', value)
+      sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+      break
+    }
+    case `gi.contracts/identity::${KV_KEYS.NOTIFICATIONS}`: {
+      // `setNotificationStatus` writes `rootState.notifications.status` and
+      // emits the load/state events the notification getters depend on.
+      sbp('gi.notifications/setNotificationStatus', value)
+      break
+    }
+    case `gi.contracts/identity::${KV_KEYS.UNREAD_MESSAGES}`: {
+      const rootState = sbp('state/vuex/state')
+      cheloniaReactiveSet(rootState.chatroom, 'unreadMessages', value)
+      sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
+      break
+    }
   }
 })
 
-// These `NEW_*` events are emitted in KV files. To keep things consistent with
-// the browser state, we update the state when these events are generated.
-sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState, 'preferences', preferences)
-})
-sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState.chatroom, 'unreadMessages', currentChatRoomUnreadMessages)
-})
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
   const rootState = sbp('chelonia/rootState')
   if (isGlobal) {
@@ -652,16 +628,22 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
   }
 })
 
-sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
+// The `kvStoreStatus.identity` flag gates chat message processing
+// (`controller/actions/chatroom.js`) on the identity `unreadMessages` slot
+// being loaded. Drive it from the library's `CHELONIA_KV_STATUS_CHANGED` event
+// (which mirrors the slot's load lifecycle), replacing the hand-rolled
+// `NEW_KV_LOAD_STATUS` machinery. (KV-REVAMPED.md §4.6)
+sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, status }) => {
+  if (contractType !== 'gi.contracts/identity' || key !== KV_KEYS.UNREAD_MESSAGES) return
   const rootState = sbp('state/vuex/state')
   const defaultObj = {
-    // enum of 'non-init' | 'loading' | 'loaded'
+    // enum of 'non-init' | 'loading' | 'loaded' | 'error'
     identity: KV_LOAD_STATUS.NON_INIT,
     group: KV_LOAD_STATUS.NON_INIT
   }
 
   cheloniaReactiveSet(rootState, 'kvStoreStatus', {
     ...(rootState?.kvStoreStatus || defaultObj),
-    [name]: status
+    identity: status
   })
 })

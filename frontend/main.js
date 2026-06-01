@@ -23,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -349,28 +349,12 @@ async function startApp () {
       sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
         sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
       })
-      sbp('okTurtles.events/on', KV_EVENT, ({ key, data }) => {
-        switch (key) {
-          case KV_KEYS.UNREAD_MESSAGES:
-            sbp('state/vuex/commit', 'setUnreadMessages', data)
-            break
-          case KV_KEYS.PREFERENCES:
-            sbp('state/vuex/commit', 'setPreferences', data)
-            break
-          case KV_KEYS.NOTIFICATIONS:
-            sbp('state/vuex/commit', 'setNotificationStatus', data)
-            break
-        }
-      })
 
       // Generic mirror of the new `@chelonia/lib` KV API (`chelonia/kv/*`) into
-      // the purpose-built Vuex slices the UI already reads from. This replaces
-      // the per-key `KV_EVENT` switch above on a key-by-key basis: as each key
-      // is migrated to a `chelonia/kv/defineSlot` (Phases B–F), its branch in
-      // the `KV_EVENT` switch is removed and its `CHELONIA_KV_UPDATED` event
-      // drives the matching entry below instead. Until the first slot is
-      // registered no `CHELONIA_KV_UPDATED` fires, so this listener is inert and
-      // does not double-commit. (KV-REVAMPED.md §9(b))
+      // the purpose-built Vuex slices the UI already reads from. Each migrated
+      // key's `CHELONIA_KV_UPDATED` event drives the matching commit below; the
+      // old per-key `KV_EVENT`/`NEW_*` switches have been removed as their keys
+      // were migrated to `chelonia/kv/defineSlot` (Phases B–F). (KV-REVAMPED.md §9(b))
       const KV_VUEX_MIRROR = {
         [`gi.contracts/identity::${KV_KEYS.PREFERENCES}`]: ({ value }) => sbp('state/vuex/commit', 'setPreferences', value),
         [`gi.contracts/identity::${KV_KEYS.UNREAD_MESSAGES}`]: ({ value }) => sbp('state/vuex/commit', 'setUnreadMessages', value),
