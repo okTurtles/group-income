@@ -169,12 +169,12 @@ export default {
   }
 
   .c-permission-item:not(:last-child) {
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.4rem;
   }
 
   .c-permission-name {
     background-color: $general_1_opacity_6;
-    padding: 0.125rem 0.25rem;
+    padding: 0.2rem 0.4rem 0.3rem;
     border-radius: 4px;
     line-height: 1.175;
     display: inline-block;
