@@ -46,7 +46,7 @@ const getRepresentativeFrequency = (frequencyData) => {
   // Get some of the largest frequency values and compute the mean of them.
   const cloned = Array.from(frequencyData) // Unit8Array -> a normal array
   cloned.sort((a, b) => b - a)
-  const largestSome = cloned.slice(0, 20)
+  const largestSome = cloned.slice(0, 15)
   return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
 }
 
@@ -253,8 +253,18 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$shadow-color: rgba(54, 54, 54, 0.3);
-$shadow-color-dark: rgba(38, 38, 38, 0.895);
+$shadow-color: rgba(219, 219, 219, 0.6);
+$shadow-color-dark: rgba(38, 38, 38, 0.425);
+
+@mixin applyShadow($color) {
+  box-shadow: 0 0 20px $color;
+
+  &.is-highlighted {
+    box-shadow:
+      0 0 20px $color,
+      0 0 0 2px $primary_1;
+  }
+}
 
 .c-voice-recorder-container {
   position: absolute;
@@ -289,16 +299,11 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   border-radius: 1.5rem;
   border: 1px solid $general_1;
   background-color: $general_2;
-  box-shadow: $shadow-color;
-  transition: box-shadow 150ms ease-in;
-
-  &.is-highlighted {
-    box-shadow: 0 0 0 2px $primary_1;
-  }
+  @include applyShadow($shadow-color);
 }
 
 .is-dark-theme .c-voice-recorder {
-  box-shadow: $shadow-color-dark;
+  @include applyShadow($shadow-color-dark);
 }
 
 .c-btn-tooltip {
@@ -310,8 +315,8 @@ $shadow-color-dark: rgba(38, 38, 38, 0.895);
   position: relative;
   flex-shrink: 0;
   font-size: 0.8rem;
-  width: 1.375rem;
-  height: 1.375rem;
+  width: 1.425rem;
+  height: 1.425rem;
   border-radius: 50%;
   transform: translateY(1px);
 }

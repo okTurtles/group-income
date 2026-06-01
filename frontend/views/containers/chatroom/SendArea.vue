@@ -757,11 +757,14 @@ export default ({
       }
     },
     onRecordingCompleted (recordingData) {
-      this.ephemeral.voiceRecording.count++
+      const existingVoiceRecordingCount = this.ephemeral.attachments.filter(attachment => attachment.isVoiceRecording).length
       this.fileAttachmentHandler([{
         ...recordingData,
         isVoiceRecording: true,
-        name: L('[audio_message] {count}', { count: this.ephemeral.voiceRecording.count })
+        name: L(
+          'audio_message{count}',
+          { count: existingVoiceRecordingCount ? `_${existingVoiceRecordingCount + 1}` : '' }
+        )
       }], true)
 
       // Defer closing the recorder so that mounting <chat-attachment-preview>
@@ -924,9 +927,6 @@ export default ({
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
       this.ephemeral.chatroomHasDraftSaved = false
-      if (this.ephemeral.voiceRecording.count > 0) {
-        this.ephemeral.voiceRecording.count = 0
-      }
 
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
