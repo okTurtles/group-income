@@ -46,7 +46,7 @@ const getRepresentativeFrequency = (frequencyData) => {
   // Get some of the largest frequency values and compute the mean of them.
   const cloned = Array.from(frequencyData) // Unit8Array -> a normal array
   cloned.sort((a, b) => b - a)
-  const largestSome = cloned.slice(0, 15)
+  const largestSome = cloned.slice(0, 18)
   return largestSome.reduce((acc, curr) => acc + curr, 0) / largestSome.length
 }
 

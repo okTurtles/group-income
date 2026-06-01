@@ -1083,12 +1083,14 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
-        const fileUrl = file?.isVoiceRecording ? file.url : URL.createObjectURL(file)
+        const isVoiceRecording = file?.isVoiceRecording || false
+        const fileUrl = isVoiceRecording ? file.url : URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
           size: fileSize,
+          isVoiceRecording,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         }
 
