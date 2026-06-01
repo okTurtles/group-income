@@ -757,13 +757,11 @@ export default ({
       }
     },
     onRecordingCompleted (recordingData) {
-      console.log('!@# Recording completed with data: ', recordingData)
-      // TODO: use sbp event listener logic here instead, for an easier cleanup logic in VoiceRecorder.vue
       this.ephemeral.voiceRecording.count++
       this.fileAttachmentHandler([{
         ...recordingData,
         isVoiceRecording: true,
-        name: L('Voice message {count}', { count: this.ephemeral.voiceRecording.count })
+        name: L('[audio_message] {count}', { count: this.ephemeral.voiceRecording.count })
       }], true)
 
       // Defer closing the recorder so that mounting <chat-attachment-preview>
