@@ -127,5 +127,40 @@ $phone_narrow: 430px;
         display: none;
       }
     }
+
+    &.is-minimal {
+      // minimal audio player controls for SendArea.vue
+      .plyr__volume {
+        display: none;
+      }
+
+      .plyr__progress__container {
+        margin-left: 0;
+        padding-left: 0;
+      }
+
+      .plyr--audio {
+        min-width: 0;
+      }
+
+      .plyr__time {
+        font-size: v.$size_5;
+        color: v.$text_1;
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track,
+      input[type="range"]::-ms-track,
+      input[type="range"]::-moz-range-track,
+      .plyr__progress__buffer {
+        height: 4px;
+      }
+
+      input[type="range"]::-webkit-slider-thumb,
+      input[type="range"]::-ms-thumb,
+      input[type="range"]::-moz-range-thumb {
+        width: 10px;
+        height: 10px;
+      }
+    }
   }
 }

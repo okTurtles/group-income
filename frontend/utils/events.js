@@ -84,3 +84,5 @@ export const NEW_CHATROOM_NOTIFICATION_SETTINGS = 'new-chatroom-notification-set
 export const CONTRACT_SYNCS_RESET = 'new-current-syncs'
 
 export const SERIOUS_ERROR = 'serious-error'
+
+export const SHOW_TOAST = 'show-toast'
