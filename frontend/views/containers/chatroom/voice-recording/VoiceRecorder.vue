@@ -37,7 +37,6 @@
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { cloneDeep } from 'turtledash'
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
@@ -61,7 +60,6 @@ export default {
     return {
       ephemeral: {
         soundBars: new Array(MAX_SOUND_PATTERN_COUNT).fill(0),
-        soundBarsFinal: [],
         isHighlighted: false,
         isRecording: false,
         audioChunks: [],
@@ -69,7 +67,6 @@ export default {
         audioContext: null,
         audioAnalyser: null,
         recorderInstance: null,
-        timeData: null,
         frequencyData: null,
         analyserTimeoutId: null
       }
@@ -95,7 +92,6 @@ export default {
         this.focusContainer() // To unfocus the play button
         this.startRecording()
       } else {
-        this.getRepresentativeSoundBars()
         this.stopRecording()
       }
     },
@@ -146,10 +142,8 @@ export default {
             this.$emit('recording-completed', {
               url: audioUrl,
               type: audioBlob.type,
-              size: audioBlob.size,
-              patterns: cloneDeep(this.ephemeral.soundBarsFinal)
+              size: audioBlob.size
             })
-            this.ephemeral.soundBarsFinal = []
           } else {
             console.warn('No audio chunks were captured.')
           }
@@ -218,43 +212,6 @@ export default {
       clearTimeout(this.ephemeral.analyserTimeoutId)
       this.ephemeral.analyserTimeoutId = null
       this.ephemeral.soundBars = new Array(MAX_SOUND_PATTERN_COUNT).fill(0)
-    },
-    getRepresentativeSoundBars () {
-      // Extract 16 most representative sound bars from the sound patterns captured during the recording.
-      const DEFAULT_HEIGHT = 10
-      const TARGET_COUNT = 16
-      const bars = this.ephemeral.soundBars
-      let result = []
-
-      if (bars.length === 0) {
-        this.ephemeral.soundBarsFinal = new Array(TARGET_COUNT).fill(DEFAULT_HEIGHT)
-        return
-      }
-
-      if (bars.length >= TARGET_COUNT) {
-        // If sound pattern counts exceed the target count, split them into bins and
-        // take the largest value in each bin as the representative value for that bin.
-        // This way we can preserve the peaks in the sound patterns.
-        const baseSize = Math.floor(bars.length / TARGET_COUNT) // Base bin size.
-        const remainder = bars.length % TARGET_COUNT // Spread the remainder to the bins that are closer to the start of the array.
-        let offset = 0
-
-        for (let i = 0; i < TARGET_COUNT; i++) {
-          const binSize = i < remainder ? baseSize + 1 : baseSize
-          const bin = bars.slice(offset, offset + binSize)
-          result.push(Math.max(...bin, DEFAULT_HEIGHT))
-          offset += binSize
-        }
-      } else {
-        // If the captured sound pattern counts are less than the target count, simply spread them out evenly and fill the rest with a default height.
-        result = new Array(TARGET_COUNT).fill(DEFAULT_HEIGHT)
-
-        for (let j = 0; j < bars.length; j++) {
-          result[Math.floor(j * TARGET_COUNT / bars.length)] = bars[j]
-        }
-      }
-
-      this.ephemeral.soundBarsFinal = result
     },
     cleanupAudioRecording () {
       if (this.ephemeral.isRecording) {
