@@ -38,6 +38,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
+import { getAmplitudeFromTimeDataSamples } from './voice-recording-utils.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
@@ -68,6 +69,7 @@ export default {
         audioAnalyser: null,
         recorderInstance: null,
         frequencyData: null,
+        volumeData: null,
         analyserTimeoutId: null
       }
     }
@@ -129,6 +131,9 @@ export default {
             if (this.ephemeral.frequencyData) {
               this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
             }
+            if (this.ephemeral.volumeData) {
+              this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
+            }
           }
         }
 
@@ -162,6 +167,7 @@ export default {
 
         source.connect(this.ephemeral.audioAnalyser)
         this.ephemeral.frequencyData = new Uint8Array(this.ephemeral.audioAnalyser.frequencyBinCount)
+        this.ephemeral.volumeData = new Uint8Array(this.ephemeral.audioAnalyser.fftSize)
 
         // Start recording.
         this.ephemeral.recorderInstance.start(250)
@@ -196,13 +202,17 @@ export default {
       this.$nextTick(() => {
         this.stopCapturingSoundPattern()
         this.ephemeral.frequencyData = null
+        this.ephemeral.volumeData = null
       })
     },
     captureSoundPatterns () {
       this.ephemeral.audioAnalyser.getByteFrequencyData(this.ephemeral.frequencyData)
+      this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
       // get the representative frequency value of the sound stream
       const representativeFrequency = getRepresentativeFrequency(this.ephemeral.frequencyData)
-      this.ephemeral.soundBars.push(representativeFrequency / 255 * 100)
+      console.log('!@# representativeFrequency', representativeFrequency)
+      const volume = getAmplitudeFromTimeDataSamples(this.ephemeral.volumeData)
+      this.ephemeral.soundBars.push(volume)
 
       this.ephemeral.analyserTimeoutId = setTimeout(() => {
         this.captureSoundPatterns()
