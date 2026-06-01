@@ -1033,7 +1033,9 @@ export default ({
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
-          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
+          continue
+          // TODO: replace this with a toast notification
+          // return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
         const fileUrl = URL.createObjectURL(file)
