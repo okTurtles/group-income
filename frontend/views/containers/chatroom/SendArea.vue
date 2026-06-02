@@ -765,7 +765,7 @@ export default ({
           'audio_message{count}',
           { count: existingVoiceRecordingCount ? `_${existingVoiceRecordingCount + 1}` : '' }
         )
-      }], true)
+      }])
 
       // Defer closing the recorder so that mounting <chat-attachment-preview>
       // (from the line above) and unmounting <voice-recorder> don't happen in

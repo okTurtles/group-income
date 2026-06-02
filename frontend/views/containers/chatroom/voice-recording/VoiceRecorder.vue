@@ -16,10 +16,10 @@
         i.icon-times
 
     .c-sound-patterns
-      .c-pattern-bar(v-for='(aveFrequency, index) in soundBarsToShow'
+      .c-pattern-bar(v-for='(value, index) in soundBarsToShow'
         :key='index'
-        :class='{ "is-active": aveFrequency !== 0 }'
-        :style='{ height: getBarHeight(aveFrequency) }'
+        :class='{ "is-active": value !== 0 }'
+        :style='{ height: getBarHeight(value) }'
       )
 
     tooltip.c-btn-tooltip(
@@ -99,12 +99,18 @@ export default {
       this.$refs.container.focus()
     },
     async startRecording () {
+      let permissionError = false
       try {
         // Use MediaRecorder API to record the audio stream from the hardware microphone.
         // Reference: https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder
 
         // Turn on or request permission to use the hardware microphone.
-        this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        try {
+          this.ephemeral.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        } catch (err) {
+          permissionError = true
+          throw err
+        }
 
         // Create a MediaRecorder to start/stop recording and receive the audio data chunks.
         // Passing an explicit mimeType is required for the recorded file to correctly detect
@@ -161,22 +167,30 @@ export default {
         this.ephemeral.recorderInstance.start(250)
         this.captureSoundPatterns()
       } catch (err) {
-        console.error('[VoiceRecorder.vue] Error starting recording', err)
-        this.stopRecording()
-        sbp('gi.ui/toast', 'chat-main', {
-          message: L('Failed to start recording. Please try again.'),
+        console.error('[VoiceRecorder.vue] Error while starting recording', err)
+        if (permissionError) {
+          this.close()
+        } else {
+          this.stopRecording()
+        }
+
+        const toastConfig = {
+          message: permissionError
+            ? L('Permission to use the microphone was denied or blocked.')
+            : L('Failed to start recording. Please try again.'),
+          variant: permissionError ? 'warning' : 'error',
           duration: 5000,
           closeable: true,
-          variant: 'error',
           position: 'bottom-center'
-        })
+        }
+        sbp('gi.ui/toast', 'chat-main', toastConfig)
       }
     },
-    stopRecording () {
+    async stopRecording () {
       if (this.ephemeral.recorderInstance &&
         this.ephemeral.recorderInstance.state === 'recording'
       ) {
-        this.ephemeral.recorderInstance.stop()
+        await this.ephemeral.recorderInstance.stop()
       }
 
       // Turn off the hardware microphone
@@ -190,9 +204,12 @@ export default {
       this.$nextTick(() => {
         this.stopCapturingSoundPattern()
         this.ephemeral.volumeData = null
+        this.ephemeral.isRecording = false
       })
     },
     captureSoundPatterns () {
+      if (!this.ephemeral.audioAnalyser || !this.ephemeral.volumeData) { return }
+
       this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
       // get the volume amplitude value of the sound stream
       const volumeAmplitude = getAmplitudeFromTimeDataSamples(this.ephemeral.volumeData)
@@ -218,13 +235,17 @@ export default {
         this.ephemeral.recorderInstance = null
       }
 
+      if (this.ephemeral.analyserTimeoutId) {
+        clearTimeout(this.ephemeral.analyserTimeoutId)
+      }
+
+      this.ephemeral.audioContext.close() // release any system audio resources it uses.
       this.ephemeral.audioContext = null
       this.ephemeral.audioAnalyser = null
       this.ephemeral.audioStream = null
 
       this.ephemeral.audioChunks = []
       this.ephemeral.soundBars = []
-      this.ephemeral.soundBarsFinal = []
     },
     getBarHeight (aveFreqPercentage) {
       if (aveFreqPercentage < 5) {
