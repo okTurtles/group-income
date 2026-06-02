@@ -100,8 +100,7 @@ const initialState = {
     //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
     //
     // { [name]: 'non-init' | 'loading' | 'loaded' }
-    identity: KV_LOAD_STATUS.NON_INIT,
-    group: KV_LOAD_STATUS.NON_INIT
+    identity: KV_LOAD_STATUS.NON_INIT
   }
 }
 
@@ -150,8 +149,7 @@ sbp('sbp/selectors/register', {
     }
     if (!state.kvStoreStatus) {
       state.kvStoreStatus = {
-        identity: KV_LOAD_STATUS.NON_INIT,
-        group: KV_LOAD_STATUS.NON_INIT
+        identity: KV_LOAD_STATUS.NON_INIT
       }
     }
     if (state.periodicNotificationAlreadyFiredMap) {

@@ -261,6 +261,7 @@ export default (sbp('sbp/selectors/register', {
         let isUpdated = false
         for (const hash of hashes) {
           const existing = notifications.find(n => n.hash === hash)
+          if (!existing) continue
           if (!next[hash]) {
             next[hash] = initNotificationStatus({ timestamp: existing.timestamp })
           } else {
@@ -295,21 +296,37 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
     }
-    // Capture our local lookups once outside the reducer so conflict-retry
-    // invocations read a stable snapshot (KV-REVAMPED.md §3.3). Union with the
-    // server's `prev` so we never clobber names another device knows about; the
-    // slot's `onUpdate` prunes invalid names afterwards. NOOP if unchanged.
-    const localNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
-    return sbp('chelonia/kv/update', {
+    // Prune-on-write MUST validate the value the write actually races against:
+    // the *server* value seen on each conflict retry. The declarative
+    // `chelonia/kv/update` reducer cannot express this — it is synchronous and
+    // re-runs against the server `prev` on a 409/412, but `checkAndAugmentNames`
+    // is async and §3.3 forbids network calls in the reducer. A reducer that
+    // pre-computes a validated set from the (possibly stale) local mirror would
+    // silently drop valid server names another device added (this slot is
+    // `autoSubscribe: false` + `autoLoad: 'on-demand'`, so the mirror is
+    // routinely stale). We therefore keep the low-level `chelonia/kv/queuedSet`
+    // + async `onconflict` for this one slot, re-validating the real server
+    // value on every retry exactly as the pre-revamp code did, so a valid name
+    // another device knows about is never clobbered.
+    const onconflict = async ({ currentData = [], etag } = {}) => {
+      if (!Array.isArray(currentData)) currentData = []
+      // `checkAndAugmentNames` unions the server value with our local lookups
+      // and re-verifies the conflicted names, dropping only those that no
+      // longer resolve (left group / deleted username).
+      const data = await checkAndAugmentNames(currentData)
+      data.sort()
+      const sortedCurrent = [...currentData].sort()
+      // Skip the write when nothing changed.
+      if (data.length === sortedCurrent.length && data.every((n, i) => n === sortedCurrent[i])) {
+        return null
+      }
+      return [data, etag]
+    }
+    return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NS_CACHE,
-      updater: (prev = []) => {
-        const merged = union(prev, localNames).sort()
-        if (merged.length === prev.length && merged.every((n, i) => n === prev[i])) {
-          return KV_NOOP
-        }
-        return merged
-      }
+      data: Object.keys(sbp('state/vuex/state').namespaceLookups || {}).sort(),
+      onconflict
     })
   },
   'gi.actions/identity/kv/loadCachedNames': () => {

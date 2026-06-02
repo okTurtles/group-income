@@ -638,8 +638,7 @@ sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, sta
   const rootState = sbp('state/vuex/state')
   const defaultObj = {
     // enum of 'non-init' | 'loading' | 'loaded' | 'error'
-    identity: KV_LOAD_STATUS.NON_INIT,
-    group: KV_LOAD_STATUS.NON_INIT
+    identity: KV_LOAD_STATUS.NON_INIT
   }
 
   cheloniaReactiveSet(rootState, 'kvStoreStatus', {

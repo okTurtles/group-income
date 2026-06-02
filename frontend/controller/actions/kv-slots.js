@@ -138,7 +138,16 @@ export const registerKvSlots = (): void => {
     match: onOwnIdentity,
     autoSubscribe: false,
     autoLoad: 'on-demand',
-    onUpdate: (value) => checkAndAugmentNames(value || [])
+    onUpdate: (value, ctx) => {
+      // Augment on load/remote/reconnect. `saveCachedNames` writes through the
+      // low-level `chelonia/kv/queuedSet` (see identity-kv.js) and so never
+      // produces a 'local' mirror update for this slot, but the guard is kept
+      // as cheap insurance: re-running `checkAndAugmentNames` after our own
+      // write would only schedule a redundant batch of `namespace/lookup`
+      // calls. (KV-REVAMPED.md §4.1)
+      if (ctx.reason === 'local') return
+      return checkAndAugmentNames(value || [])
+    }
   })
 }
 

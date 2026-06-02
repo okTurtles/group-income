@@ -71,7 +71,6 @@ export const NOTIFICATION_REMOVED = 'notification-removed'
 export const NOTIFICATION_STATUS_LOADED = 'notification-status-loaded'
 
 export const NEW_CHATROOM_SCROLL_POSITION = 'new-chatroom-scroll-position'
-export const NEW_UNREAD_MESSAGES = 'new-unread-messages'
 
 export const NEW_CHATROOM_NOTIFICATION_SETTINGS = 'new-chatroom-notification-settings'
 

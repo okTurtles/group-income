@@ -139,12 +139,19 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
   // NOTE: in some situations `rootState.kvStoreStatus` can be undefined
-  if (rootState.kvStoreStatus?.identity !== 'loaded') {
+  const identityKvStatus = rootState.kvStoreStatus?.identity
+  if (
+    identityKvStatus !== KV_LOAD_STATUS.LOADED &&
+    identityKvStatus !== KV_LOAD_STATUS.ERROR
+  ) {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
     // wrong computations and thus wrong behaviour.
     // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
     // So queueing the events here and then processing them after the kv-store is loaded.
+    // On `ERROR` we stop queueing and process events anyway: the slot will not
+    // reach `'loaded'`, so blocking forever would silently drop all incoming
+    // chat messages for the rest of the session.
     messageReceivedRawQueue.push(eventParams)
   } else {
     if (messageReceivedRawQueue.length) {
@@ -161,7 +168,10 @@ sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, sta
   if (
     contractType === 'gi.contracts/identity' &&
     key === KV_KEYS.UNREAD_MESSAGES &&
-    status === KV_LOAD_STATUS.LOADED
+    // Flush on `ERROR` as well as `LOADED`: the slot will not reach
+    // `'loaded'` after a load failure, so keeping the queue would block all
+    // incoming chat messages for the rest of the session.
+    (status === KV_LOAD_STATUS.LOADED || status === KV_LOAD_STATUS.ERROR)
   ) {
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())
