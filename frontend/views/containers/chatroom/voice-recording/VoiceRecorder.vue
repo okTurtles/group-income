@@ -28,6 +28,7 @@
     )
       button.is-unstyled.c-record-btn(
         :class='{ "is-recording": ephemeral.isRecording }'
+        :disabled='ephemeral.recordClicked && !ephemeral.isRecording'
         @click.stop='recordOrStop'
       )
         i.icon-microphone(v-if='!ephemeral.isRecording')
@@ -55,7 +56,8 @@ export default {
       ephemeral: {
         soundBars: new Array(MAX_SOUND_PATTERN_COUNT).fill(0),
         isHighlighted: false,
-        isRecording: false,
+        recordClicked: false, // User clicked the record button to start recording.
+        isRecording: false, // MediaRecorder is recording.
         audioChunks: [],
         audioStream: null,
         audioContext: null,
@@ -67,15 +69,15 @@ export default {
     }
   },
   methods: {
-    async close () {
+    close () {
       if (this.ephemeral.isRecording) {
-        await this.stopRecording()
+        this.stopRecording()
       }
       this.$emit('close')
     },
     recordOrStop () {
-      if (!this.ephemeral.isRecording) {
-        this.ephemeral.isRecording = true
+      if (!this.ephemeral.recordClicked) {
+        this.ephemeral.recordClicked = true
         this.focusContainer() // To unfocus the play button
         this.startRecording()
       } else {
@@ -140,6 +142,10 @@ export default {
           }
         }
 
+        this.ephemeral.recorderInstance.onstart = () => {
+          this.ephemeral.isRecording = true
+        }
+
         // --- Audio visualization logic ---
         // Reference: https://wesbos.com/javascript/15-final-round-of-exercise/85-audio-visualization#time-data-visualization
         this.ephemeral.audioContext = new AudioContext()
@@ -180,11 +186,11 @@ export default {
         sbp('gi.ui/toast', 'chat-main', toastConfig)
       }
     },
-    async stopRecording () {
+    stopRecording () {
       if (this.ephemeral.recorderInstance &&
         this.ephemeral.recorderInstance.state === 'recording'
       ) {
-        await this.ephemeral.recorderInstance.stop()
+        this.ephemeral.recorderInstance.stop()
       }
 
       // Turn off the hardware microphone
@@ -199,6 +205,7 @@ export default {
         this.stopCapturingSoundPattern()
         this.ephemeral.volumeData = null
         this.ephemeral.isRecording = false
+        this.ephemeral.recordClicked = false
       })
     },
     captureSoundPatterns () {
@@ -357,6 +364,12 @@ $shadow-color-dark: rgba(38, 38, 38, 0.425);
   &:hover {
     background-color: $primary_0;
     color: $primary_2;
+  }
+
+  &:disabled {
+    background-color: $general_0;
+    color: $general_1;
+    pointer-events: none;
   }
 
   &.is-recording {
