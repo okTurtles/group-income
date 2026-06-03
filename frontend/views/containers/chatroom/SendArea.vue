@@ -757,13 +757,13 @@ export default ({
       }
     },
     onRecordingCompleted (recordingData) {
-      const existingVoiceRecordingCount = this.ephemeral.attachments.filter(attachment => attachment.isVoiceRecording).length
+      this.ephemeral.voiceRecording.count++
       this.fileAttachmentHandler([{
         ...recordingData,
         isVoiceRecording: true,
         name: L(
           'audio_message{count}',
-          { count: existingVoiceRecordingCount ? `_${existingVoiceRecordingCount + 1}` : '' }
+          { count: this.ephemeral.voiceRecording.count > 1 ? `_${this.ephemeral.voiceRecording.count}` : '' }
         )
       }])
 
@@ -914,6 +914,7 @@ export default ({
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endSegmentSelection()
+      this.ephemeral.voiceRecording.count = 0
       if (this.hasAttachments) { this.clearAllAttachments() }
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
@@ -1083,14 +1084,12 @@ export default ({
           return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
         }
 
-        const isVoiceRecording = file?.isVoiceRecording || false
-        const fileUrl = isVoiceRecording ? file.url : URL.createObjectURL(file)
+        const fileUrl = file?.isVoiceRecording ? file.url : URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
           size: fileSize,
-          isVoiceRecording,
           downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
         }
 

@@ -16,7 +16,7 @@
         i.icon-times
 
     .c-sound-patterns
-      .c-pattern-bar(v-for='(value, index) in soundBarsToShow'
+      .c-pattern-bar(v-for='(value, index) in ephemeral.soundBars'
         :key='index'
         :class='{ "is-active": value !== 0 }'
         :style='{ height: getBarHeight(value) }'
@@ -66,17 +66,10 @@ export default {
       }
     }
   },
-  computed: {
-    soundBarsToShow () {
-      const len = this.ephemeral.soundBars.length
-      const sliceIndex = Math.max(0, len - MAX_SOUND_PATTERN_COUNT)
-      return this.ephemeral.soundBars.slice(sliceIndex)
-    }
-  },
   methods: {
-    close () {
+    async close () {
       if (this.ephemeral.isRecording) {
-        this.stopRecording()
+        await this.stopRecording()
       }
       this.$emit('close')
     },
@@ -125,10 +118,6 @@ export default {
         this.ephemeral.recorderInstance.ondataavailable = (event) => {
           if (event.data && event.data.size > 0) {
             this.ephemeral.audioChunks.push(event.data)
-
-            if (this.ephemeral.volumeData) {
-              this.ephemeral.audioAnalyser.getByteTimeDomainData(this.ephemeral.volumeData)
-            }
           }
         }
 
@@ -152,6 +141,9 @@ export default {
         // --- Audio visualization logic ---
         // Reference: https://wesbos.com/javascript/15-final-round-of-exercise/85-audio-visualization#time-data-visualization
         this.ephemeral.audioContext = new AudioContext()
+        if (this.ephemeral.audioContext.state === 'suspended') {
+          await this.ephemeral.audioContext.resume()
+        }
 
         // Create a source: source is sort of a node that pipe the audio stream to the audio context.
         const source = this.ephemeral.audioContext.createMediaStreamSource(this.ephemeral.audioStream)
@@ -215,6 +207,10 @@ export default {
       const volumeAmplitude = getAmplitudeFromTimeDataSamples(this.ephemeral.volumeData)
       this.ephemeral.soundBars.push(volumeAmplitude)
 
+      while (this.ephemeral.soundBars.length > MAX_SOUND_PATTERN_COUNT) {
+        this.ephemeral.soundBars.shift()
+      }
+
       this.ephemeral.analyserTimeoutId = setTimeout(() => {
         this.captureSoundPatterns()
       }, 100)
@@ -239,8 +235,11 @@ export default {
         clearTimeout(this.ephemeral.analyserTimeoutId)
       }
 
-      this.ephemeral.audioContext.close() // release any system audio resources it uses.
-      this.ephemeral.audioContext = null
+      if (this.ephemeral.audioContext) {
+        // release any system audio resources it uses.
+        this.ephemeral.audioContext.close()
+        this.ephemeral.audioContext = null
+      }
       this.ephemeral.audioAnalyser = null
       this.ephemeral.audioStream = null
 
