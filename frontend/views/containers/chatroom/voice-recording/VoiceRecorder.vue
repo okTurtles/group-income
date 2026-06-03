@@ -124,7 +124,9 @@ export default {
         // When stopped, turn the chunks into a playable audio file
         this.ephemeral.recorderInstance.onstop = () => {
           if (this.ephemeral.audioChunks.length > 0) {
-            const audioBlob = new Blob(this.ephemeral.audioChunks, { type: VOICE_RECORDING_MIME_TYPE })
+            const audioBlob = new Blob(this.ephemeral.audioChunks, {
+              type: this.ephemeral.recorderInstance?.mimeType || VOICE_RECORDING_MIME_TYPE
+            })
             const audioUrl = URL.createObjectURL(audioBlob)
 
             // Send this audioUrl to your chat UI or audio player element
@@ -168,7 +170,7 @@ export default {
 
         const toastConfig = {
           message: permissionError
-            ? L('Permission to use the microphone was denied or blocked.')
+            ? L('Permission to use the microphone was denied or blocked. Please check your browser settings and try again.')
             : L('Failed to start recording. Please try again.'),
           variant: permissionError ? 'warning' : 'error',
           duration: 5000,
