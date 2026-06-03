@@ -553,7 +553,23 @@ export default (sbp('sbp/selectors/register', {
       //      queues), including their side-effects (the `${contractID}` queues)
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
+      //   5. Pending KV writes (the `public:${contractID}` queues), which
+      //      `chelonia/reset` does not drain on its own
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
+      // Drain in-flight KV writes before reset tears down state and aborts
+      // outstanding fetches. KV writes (`chelonia/kv/update` /
+      // `chelonia/kv/queuedSet`) run on the per-contract `public:${cID}` queue,
+      // which `chelonia/reset` does NOT wait for (it only drains the internal
+      // `${cID}` and `publish:${cID}` queues). `chelonia/queueInvocation` posts
+      // to that same `public:${cID}` lane, so awaiting it here blocks until any
+      // pending/mid-flight KV write for each subscribed contract has finished.
+      await Promise.all(
+        Object.keys(sbp('chelonia/rootState').contracts || {}).map(
+          (contractID) => sbp('chelonia/queueInvocation', contractID, () => {})
+        )
+      ).catch((e) => {
+        console.error('[gi.actions/identity/_private/logout] Error draining pending KV writes', e)
+      })
       // reset will wait until we have processed any remaining actions
       cheloniaState = await sbp('chelonia/reset', async () => {
         // some of the actions that reset waited for might have side-effects

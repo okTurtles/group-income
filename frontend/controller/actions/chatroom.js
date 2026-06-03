@@ -142,7 +142,8 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const identityKvStatus = rootState.kvStoreStatus?.identity
   if (
     identityKvStatus !== KV_LOAD_STATUS.LOADED &&
-    identityKvStatus !== KV_LOAD_STATUS.ERROR
+    identityKvStatus !== KV_LOAD_STATUS.ERROR &&
+    identityKvStatus !== KV_LOAD_STATUS.NON_INIT
   ) {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
@@ -171,7 +172,7 @@ sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, sta
     // Flush on `ERROR` as well as `LOADED`: the slot will not reach
     // `'loaded'` after a load failure, so keeping the queue would block all
     // incoming chat messages for the rest of the session.
-    (status === KV_LOAD_STATUS.LOADED || status === KV_LOAD_STATUS.ERROR)
+    (status === KV_LOAD_STATUS.LOADED || status === KV_LOAD_STATUS.ERROR || status === KV_LOAD_STATUS.NON_INIT)
   ) {
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())

@@ -66,6 +66,14 @@ export const registerKvSlots = (): void => {
   // branch of the manual `setFilter` switch in `setupChelonia.js`). The
   // 30-minute write throttle lives in the reducer at the call site
   // (`gi.actions/group/kv/updateLastLoggedIn`), not here. (KV-REVAMPED.md §7.2)
+  //
+  // The value is read per group by the member-activity dashboard
+  // (`getters.lastLoggedIn` → `GroupMembersActivity.vue`), so the mirror must
+  // be populated for every group: `autoLoad: 'on-sync'` (default) is required,
+  // not a regression to remove. The resulting per-group GET fan-out at login is
+  // fire-and-forget on each contract's `queueInvocation` lane (it never blocks
+  // login) and mirrors the per-group fetch `master` already performed, so it is
+  // correctness-neutral and accepted.
   sbp('chelonia/kv/defineSlot', {
     contractType: 'gi.contracts/group',
     key: KV_KEYS.LAST_LOGGED_IN,
