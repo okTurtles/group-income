@@ -5,6 +5,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
+import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@view-utils/markdown-utils.js'
 
 export function makeChannelMention (str: string, withId: boolean = false): string {
   return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
@@ -54,10 +55,18 @@ export function swapMentionIDForDisplayname (
     return t
   }
 
-  return text
-    .split(regEx)
-    .map(t => regEx.test(t) ? swap(t) : t)
-    .join('')
+  // Only perform the mention swap for plain text segments.
+  // The content of code fence or inline code segments are not supposed to be transformed.
+  const msgSplitByCodeMarkdown = splitStringByMarkdownCode(text)
+  msgSplitByCodeMarkdown.forEach((entry) => {
+    if (entry.type === 'plain') {
+      entry.text = entry.text.split(regEx)
+        .map(t => regEx.test(t) ? swap(t) : t)
+        .join('')
+    }
+  })
+
+  return combineMarkdownSegmentListIntoString(msgSplitByCodeMarkdown)
 }
 
 // This function serves two purposes, depending on the forceUsername parameter
@@ -75,6 +84,23 @@ export function makeMentionFromUsername (username: string, forceUsername: ?boole
   // that it exists, so that we know it'll later succeed.
   const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
   return makeMentionFromUserID(forceUsername && userID ? username : userID)
+}
+
+export function stripMarkdownSyntax (markdownString: string, truncateTo: number = -1): string {
+  markdownString = swapMentionIDForDisplayname(markdownString) // eg. '@identityContractID' -> '@user1'
+
+  const sanitized = markdownString
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 'bold'
+    .replace(/_(.*?)_/g, '$1') // 'italic'
+    .replace(/~(.*?)~/g, '$1') // 'strike-through'
+    .replace(/```/g, '') // 'code block'
+    .replace(/`(.*?)`/g, '$1') // 'inline code'
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links ([text](url) -> text)
+    .replace(/^>\s*/gm, '') // block-quote
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .trim()
+
+  return truncateTo > 0 ? sanitized.slice(0, truncateTo) : sanitized
 }
 
 export { makeMentionFromUserID }
