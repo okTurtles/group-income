@@ -15,15 +15,13 @@
 ### 1. Decide what to work on
 
 - Check the [open issues](https://github.com/okTurtles/group-income/issues).
-- View the [project board](https://github.com/okTurtles/group-income/projects).
-- Check especially what's [`up for grabs`](https://github.com/okTurtles/group-income/labels/Note%3AUp-for-grabs), [`high priority`](https://github.com/okTurtles/group-income/labels/Priority%3AHigh), [`level: starter`](https://github.com/okTurtles/group-income/labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
-- Read some docs, like: __[:book: Frontend: Getting Started](docs/src/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/src/Style-Guide.md)__
+- Read some docs, like the __[:book: Style Guide](docs/src/Style-Guide.md)__, and if you're just starting out as a developer, __[:book: Frontend: Getting Started](docs/src/Getting-Started-frontend.md)__.
 
-Then, [tell folks what you'll be working on](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ), and:
+We recommend [joining `#groupincome` on Slack](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ) and telling folks what you're interested in working on.
 
 ### 2. Create a fork of the repo, or work in a topic branch
 
-Our process for submitting code is inspired by the [C4.1](http://hintjens.com/blog:93) process (documentation may be edited directly by maintainers):
+Our process for submitting code is inspired by the [C4.1](https://web.archive.org/web/20190921024411/http://hintjens.com/blog:93) process (documentation may be edited directly by maintainers):
 
 1. **Always** either work in your own fork or a topic-branch and submit pull requests (PRs) to `master`. Our [Cypress Dashboard](https://dashboard.cypress.io/) integration currently makes topic-branches a better option for long-term contributor.
 2. **Always** add/update tests for any new/modified functionality. (:exclamation:)
@@ -32,7 +30,7 @@ Our process for submitting code is inspired by the [C4.1](http://hintjens.com/bl
 
 ### 3. Follow this Contribution Policy
 
-This contribution policy will evolve over time. For now it is based on a slightly modified subset of [C4.1](https://rfc.zeromq.org/spec:42/C4/).
+This contribution policy will evolve over time. For now it is based on a slightly modified subset of [C4.1](https://web.archive.org/web/20190628105022/https://rfc.zeromq.org/spec:42/C4/).
 
 #### Licensing and Ownership
 
