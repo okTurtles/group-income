@@ -1080,13 +1080,18 @@ export default ({
 
       for (const file of filesList) {
         const fileSize = file.size
+        const isVoiceRecordingItem = file?.isVoiceRecording
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           exceedsSizeLimitCount++
+          if (isVoiceRecordingItem && file.url) {
+            URL.revokeObjectURL(file.url)
+          }
+
           continue
         }
 
-        const fileUrl = file?.isVoiceRecording ? file.url : URL.createObjectURL(file)
+        const fileUrl = isVoiceRecordingItem ? file.url : URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,

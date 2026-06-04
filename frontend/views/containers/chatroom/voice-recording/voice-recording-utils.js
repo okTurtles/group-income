@@ -11,7 +11,7 @@ export function isBrowserSupportsVoiceRecording (): boolean {
     navigator.mediaDevices &&
     navigator.mediaDevices.getUserMedia &&
     (navigator.mediaDevices.enumerateDevices && typeof navigator.mediaDevices.enumerateDevices === 'function') &&
-    AudioContext && window.MediaRecorder
+    window.AudioContext && window.MediaRecorder
   )
 }
 

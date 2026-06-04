@@ -138,7 +138,9 @@ export default {
               size: audioBlob.size
             })
           } else {
-            console.warn('No audio chunks were captured.')
+            console.warn('[VoiceRecorder.vue] No audio chunks were captured.')
+            // If there is no audio chunks to process, simply close the recorder UI.
+            this.$emit('close')
           }
         }
 
