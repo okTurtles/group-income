@@ -68,6 +68,8 @@ All AI-generated output must be thoroughly reviewed and fully understood before 
 
 **We expect contributors to already possess the skills required to complete tasks independently. AI should enhance your workflow, not compensate for gaps in knowledge or experience.**
 
+If AI is used at all, then we strongly encourage you to work with the best performing model(s) available at the time.
+
 Finally, all PRs submitted that use AI-assistance **must specify the precise model(s) that were used in their PR descriptions.**
 
 For example:
