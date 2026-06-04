@@ -65,9 +65,9 @@ export default {
         opts
       )
 
-      // event listeners
-      const events = ['play', 'playing', 'pause', 'ended']
-      events.forEach(event => {
+      // event listeners to relay to the parent component
+      const relayingEvents = ['play', 'pause', 'playing', 'ended']
+      relayingEvents.forEach(event => {
         this.ephemeral.player.on(event, () => this.$emit(event))
       })
     },
