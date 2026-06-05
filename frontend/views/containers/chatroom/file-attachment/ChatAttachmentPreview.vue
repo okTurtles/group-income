@@ -409,11 +409,11 @@ export default {
             : null
         }).filter(Boolean)
       const initialIndex = attachmentDetailsList.findIndex(attachment => attachment[objURLKey] === objectURL)
-      const clickedAttachmentMimeType = initialIndex >= 0 ? attachmentDetailsList[initialIndex].mimeType : ''
+      const clickedAttachment = initialIndex >= 0 ? attachmentDetailsList[initialIndex] : null
 
       if (type === CHATROOM_ATTACHMENT_TYPES.VIDEO &&
-      clickedAttachmentMimeType &&
-        !checkBrowserVideoMimeTypeSupport(clickedAttachmentMimeType)) {
+        clickedAttachment &&
+        !checkBrowserVideoMimeTypeSupport(clickedAttachment.mimeType)) {
         sbp('gi.ui/toast', 'chat-main', {
           message: L('This video format is not supported by your browser. Please use a different browser to view it.'),
           variant: 'warning',

@@ -47,7 +47,7 @@ export function checkBrowserVideoMimeTypeSupport (mimeType: string = ''): boolea
   if (!mimeType) {
     return false
   }
-  const videoEl: any = document.createElement('video')
+  const videoEl = document.createElement('video')
   // videoElement.canPlayType() can return 'probably'|'maybe' and '' for unsupported mime types.
   // It is observed that major browsers like Chrome, Firefox says 'maybe' for widely supported mime types like 'video/mp4' as well.
   // So checking for both 'probably' and 'maybe' here.

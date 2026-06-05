@@ -48,14 +48,14 @@
           .c-filesize {{ fileSizeDisplay }}
 
         button.is-small.is-outlined.c-load-video-button(
-          v-if='browserSupportsVideo'
+          v-if='isVideoMimeTypeSupported'
           :class='{ "is-loading": isVideoStatus("loading") || isDownloading, "is-danger": isVideoStatus("error") }'
           type='button'
           @click.stop='loadVideo'
         )
           i18n(v-if='isDownloading') Downloading...
           span(v-else) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
-        .c-video-mime-type-unsupported-message(v-else tag='p')
+        .c-video-mime-type-unsupported-message(v-else)
           i.icon-exclamation-triangle
           i18n This video format is not supported by your browser. Please use a different browser or download the file to view it.
 
@@ -171,7 +171,7 @@ export default {
     isVideoReady () {
       return this.isVideo && this.mediaObjectURL
     },
-    browserSupportsVideo () {
+    isVideoMimeTypeSupported () {
       return this.isVideo && checkBrowserVideoMimeTypeSupport(this.attachment.mimeType)
     },
     isMediaType () {
