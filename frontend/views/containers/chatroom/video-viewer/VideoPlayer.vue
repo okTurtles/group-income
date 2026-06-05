@@ -11,6 +11,7 @@
 </template>
 
 <script>
+import { checkBrowserVideoMimeTypeSupport } from '../file-attachment/attachment-utils'
 import Plyr from 'plyr'
 
 export default {
@@ -44,7 +45,8 @@ export default {
         player: null
       },
       ephemeral: {
-        isTallerThanWider: false
+        isTallerThanWider: false,
+        browserCanPlay: false
       }
     }
   },
@@ -99,7 +101,15 @@ export default {
     },
     isPlaying () {
       return this.config.player.playing
+    },
+    checkBrowserMimeTypeSupport () {
+      if (this.mimeType) {
+        this.ephemeral.browserCanPlay = checkBrowserVideoMimeTypeSupport(this.mimeType)
+      }
     }
+  },
+  created () {
+    this.checkBrowserMimeTypeSupport()
   },
   mounted () {
     this.initPlayer()

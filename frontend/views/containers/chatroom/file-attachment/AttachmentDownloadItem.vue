@@ -31,7 +31,7 @@
   .c-video-card(v-else-if='isVideo')
     video-player.c-video-player(
       ref='videoPlayer'
-      v-if='isVideoPlayable'
+      v-if='isVideoReady'
       :src='mediaObjectURL'
       :mimeType='attachment.mimeType'
       mode='simple'
@@ -48,12 +48,17 @@
           .c-filesize {{ fileSizeDisplay }}
 
         button.is-small.is-outlined.c-load-video-button(
+          v-if='browserSupportsVideo'
           :class='{ "is-loading": isVideoStatus("loading") || isDownloading, "is-danger": isVideoStatus("error") }'
           type='button'
           @click.stop='loadVideo'
         )
           i18n(v-if='isDownloading') Downloading...
           span(v-else) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
+        i18n.c-video-mime-type-unsupported-message(
+          v-else
+          tag='p'
+        ) This video format is not supported by your browser. Please use a different browser or download the file to view it.
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -93,7 +98,7 @@
             i.icon-trash-alt
 
         tooltip(
-          v-if='isVideoPlayable'
+          v-if='isVideoReady'
           direction='top'
           :text='L("Expand")'
         )
@@ -107,6 +112,7 @@
 <script>
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { checkBrowserVideoMimeTypeSupport } from './attachment-utils.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
 import AudioPlayerCard from '../audio-player/AudioPlayerCard.vue'
@@ -164,8 +170,11 @@ export default {
     isAudio () {
       return this.fileType === CHATROOM_ATTACHMENT_TYPES.AUDIO
     },
-    isVideoPlayable () {
+    isVideoReady () {
       return this.isVideo && this.mediaObjectURL
+    },
+    browserSupportsVideo () {
+      return this.isVideo && checkBrowserVideoMimeTypeSupport(this.attachment.mimeType)
     },
     isMediaType () {
       return this.isImage || this.isVideo || this.isAudio
@@ -525,6 +534,17 @@ $mobile-narrow: 441px;
         height: 1rem;
       }
     }
+  }
+
+  .c-video-mime-type-unsupported-message {
+    display: block;
+    text-align: center;
+    font-size: $size_5;
+    color: $warning_0;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 20rem;
+    padding: 0 1rem;
   }
 
   .c-video-player {
