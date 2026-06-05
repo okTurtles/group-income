@@ -55,10 +55,9 @@
         )
           i18n(v-if='isDownloading') Downloading...
           span(v-else) {{ getLoadBtnText(ephemeral.videoLoadingStatus) }}
-        i18n.c-video-mime-type-unsupported-message(
-          v-else
-          tag='p'
-        ) This video format is not supported by your browser. Please use a different browser or download the file to view it.
+        .c-video-mime-type-unsupported-message(v-else tag='p')
+          i.icon-exclamation-triangle
+          i18n This video format is not supported by your browser. Please use a different browser or download the file to view it.
 
   .c-pending-flag(v-if='isPending')
   .c-failed-flag(v-else-if='isFailed')
@@ -112,7 +111,7 @@
 <script>
 import { getFileExtension, getFileType, formatBytesDecimal } from '@view-utils/filters.js'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
-import { checkBrowserVideoMimeTypeSupport } from './attachment-utils.js'
+import { checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
 import AudioPlayerCard from '../audio-player/AudioPlayerCard.vue'
@@ -545,6 +544,12 @@ $mobile-narrow: 441px;
     margin-right: auto;
     max-width: 20rem;
     padding: 0 1rem;
+
+    i {
+      display: inline-block;
+      font-size: 0.875em;
+      margin-right: 2px;
+    }
   }
 
   .c-video-player {
