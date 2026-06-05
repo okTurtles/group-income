@@ -45,6 +45,21 @@ const updateKVPreferences = (updater: Function) => {
   })
 }
 
+// Shallow-merge `patch` over the current preferences via the slot's
+// `defaultUpdater` (kv-slots.js). Use this for single-shape writes; use
+// `updateKVPreferences` when the write needs to read `prev` (e.g. nested merges).
+const setKVPreferences = (patch: Object) => {
+  const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+  if (!identityContractID) {
+    throw new Error('Unable to update preferences without an active session')
+  }
+  return sbp('chelonia/kv/update', {
+    contractID: identityContractID,
+    key: KV_KEYS.PREFERENCES,
+    value: patch
+  })
+}
+
 sbp('okTurtles.events/on', ONLINE, () => {
   if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
     return
@@ -221,7 +236,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/kv/updatePreference': ({ key, value }: { key: string, value: any }) => {
-    return updateKVPreferences((currentPreferences) => ({ ...currentPreferences, [key]: value }))
+    return setKVPreferences({ [key]: value })
   },
   // Notifications
   'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
