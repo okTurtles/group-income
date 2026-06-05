@@ -99,7 +99,7 @@ export default {
     },
     isPlaying () {
       return this.config.player.playing
-    },
+    }
   },
   mounted () {
     this.initPlayer()

@@ -43,7 +43,7 @@ export const formatBytesDecimal = (bytes: number, decimals: number = 2): string 
   return `${formattedValue} ${sizes[i]}`
 }
 
-export function checkBrowserVideoMimeTypeSupport (mimeType = ''): boolean {
+export function checkBrowserVideoMimeTypeSupport (mimeType: string = ''): boolean {
   if (!mimeType) {
     return false
   }
@@ -53,7 +53,6 @@ export function checkBrowserVideoMimeTypeSupport (mimeType = ''): boolean {
   // So checking for both 'probably' and 'maybe' here.
   return ['probably', 'maybe'].includes(videoEl.canPlayType(mimeType))
 }
-
 
 /**
  * this function filters `list` by `keyword`
