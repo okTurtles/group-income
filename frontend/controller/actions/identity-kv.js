@@ -1,9 +1,9 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_NOOP } from '@chelonia/lib'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
-import { KV_QUEUE, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
-import { isExpired } from '@model/notifications/utils.js'
+import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // Name discrepancies between the KV store and `namespaceLookups` may occur
@@ -11,7 +11,7 @@ const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // a group) or due to the username being deleted. This function attempts to
 // determine which case it is, and determine all of the names that are currently
 // valid.
-const checkAndAugmentNames = async (currentNames: string[]) => {
+export const checkAndAugmentNames = async (currentNames: string[]): Promise<string[]> => {
   const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
   const unconflictedNames = intersection(currentNames, ourNames)
   // Batch the lookups to avoid too many concurrent requests
@@ -34,13 +34,29 @@ const checkAndAugmentNames = async (currentNames: string[]) => {
 }
 
 const updateKVPreferences = (updater: Function) => {
-  return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-    const getUpdatedPreferences = ({ etag, currentData: currentPreferences = {} } = {}) => {
-      return [updater(currentPreferences), etag]
-    }
+  const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+  if (!identityContractID) {
+    throw new Error('Unable to update preferences without an active session')
+  }
+  return sbp('chelonia/kv/update', {
+    contractID: identityContractID,
+    key: KV_KEYS.PREFERENCES,
+    updater
+  })
+}
 
-    const data = getUpdatedPreferences()[0]
-    await sbp('gi.actions/identity/kv/savePreferences', { data, onconflict: getUpdatedPreferences })
+// Shallow-merge `patch` over the current preferences via the slot's
+// `defaultUpdater` (kv-slots.js). Use this for single-shape writes; use
+// `updateKVPreferences` when the write needs to read `prev` (e.g. nested merges).
+const setKVPreferences = (patch: Object) => {
+  const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+  if (!identityContractID) {
+    throw new Error('Unable to update preferences without an active session')
+  }
+  return sbp('chelonia/kv/update', {
+    contractID: identityContractID,
+    key: KV_KEYS.PREFERENCES,
+    value: patch
   })
 }
 
@@ -56,69 +72,41 @@ sbp('okTurtles.events/on', ONLINE, () => {
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
-    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADING })
 
-    await sbp('gi.actions/identity/kv/loadChatRoomUnreadMessages')
-    await sbp('gi.actions/identity/kv/loadPreferences')
-    await sbp('gi.actions/identity/kv/loadNotificationStatus')
     await sbp('gi.actions/identity/kv/loadCachedNames')
 
     console.info('identity key-value store data loaded!')
-    sbp('okTurtles.events/emit', NEW_KV_LOAD_STATUS, { name: 'identity', status: KV_LOAD_STATUS.LOADED })
   },
-  // Unread Messages
-  'gi.actions/identity/kv/fetchChatRoomUnreadMessages': async () => {
-    // Using 'chelonia/rootState' here as 'state/vuex/state' is not available
-    // in the SW, and because, even without a SW, 'loggedIn' is not yet there
-    // in Vuex state when logging in
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-    if (!identityContractID) {
-      throw new Error('Unable to fetch chatroom unreadMessages without an active session')
-    }
-    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
-  },
-  'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
+  // Unread Messages.
+  //
+  // The `unreadMessages` slot (`gi.contracts/identity::unreadMessages`,
+  // registered in `kv-slots.js`) owns subscription (`autoSubscribe`), the
+  // initial fetch (`autoLoad: 'on-sync'`), and the mirror into
+  // `rootState.chatroom.unreadMessages` (via `CHELONIA_KV_UPDATED`). The
+  // selectors below are thin shims kept for backward compatibility — contract
+  // sideEffects call `initChatRoomUnreadMessages` and
+  // `deleteChatRoomUnreadMessages`, so their names/signatures MUST NOT change
+  // (Calls-From-Contracts.md). Each delegates to `chelonia/kv/update` with a
+  // pure reducer; the library serializes writes per-contract and retries
+  // conflicts, replacing the old `KV_QUEUE` + `queuedSet`/`onconflict`
+  // plumbing. Reducers return `KV_NOOP` to skip a write. (KV-REVAMPED.md §8)
+  'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
+    contractID: string, messageHash: string, createdHeight: number
+  }) => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-
-    // NOTE: added the function `chelonia/kv/set` in identityContractID invocation queue in order to remove conflict error
-    //       because it uses fields of the identity contract state including height, cek, csk
-    //       this conflict error can cause the heisenbug mostly in Cypress
-    //       https://okturtles.slack.com/archives/C0EH7P20Y/p1720053305870019?thread_ts=1720025185.746849&cid=C0EH7P20Y
-    return sbp('chelonia/kv/queuedSet', {
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
-      data,
-      onconflict
-    })
-  },
-  'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const currentChatRoomUnreadMessages = await sbp('gi.actions/identity/kv/fetchChatRoomUnreadMessages')
-      sbp('okTurtles.events/emit', NEW_UNREAD_MESSAGES, currentChatRoomUnreadMessages)
-    })
-  },
-  'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
-    contractID: string, messageHash: string, createdHeight: number
-  }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        if (!currentData[contractID]) {
-          return [{
-            ...currentData,
-            [contractID]: {
-              readUntil: { messageHash, createdHeight },
-              unreadMessages: []
-            }
-          }, etag]
+      updater: (prev = {}) => {
+        if (prev[contractID]) return KV_NOOP
+        return {
+          ...prev,
+          [contractID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [] }
         }
-        return null
       }
-
-      const data = getUpdatedUnreadMessages()?.[0]
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { data, onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight, forceUpdate = false }: {
@@ -131,22 +119,24 @@ export default (sbp('sbp/selectors/register', {
     // (reference: https://github.com/okTurtles/group-income/issues/2729)
     forceUpdate: boolean
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        if (forceUpdate || currentData[contractID]?.readUntil.createdHeight < createdHeight) {
-          const { unreadMessages } = currentData[contractID]
-          return [{
-            ...currentData,
-            [contractID]: {
-              readUntil: { messageHash, createdHeight },
-              unreadMessages: unreadMessages.filter(msg => msg.createdHeight > createdHeight)
-            }
-          }, etag]
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update chatroom unreadMessages without an active session')
+    }
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      updater: (prev = {}) => {
+        const entry = prev[contractID]
+        if (!forceUpdate && !(entry?.readUntil.createdHeight < createdHeight)) return KV_NOOP
+        return {
+          ...prev,
+          [contractID]: {
+            readUntil: { messageHash, createdHeight },
+            unreadMessages: (entry?.unreadMessages ?? []).filter(msg => msg.createdHeight > createdHeight)
+          }
         }
-        return null
       }
-
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
@@ -155,102 +145,87 @@ export default (sbp('sbp/selectors/register', {
     createdHeight: number,
     unreadMessages: Array<{ messageHash: string, createdHeight: number }>
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        const existingReadUntil = currentData[contractID]?.readUntil
-
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update chatroom unreadMessages without an active session')
+    }
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      updater: (prev = {}) => {
+        const existingReadUntil = prev[contractID]?.readUntil
         // If the requested mark-unread hash has already been set, ignore it.
         if (existingReadUntil &&
           existingReadUntil.isManuallyMarked &&
-          existingReadUntil?.messageHash === messageHash) { return null }
-
-        return [{
-          ...currentData,
+          existingReadUntil.messageHash === messageHash) { return KV_NOOP }
+        return {
+          ...prev,
           [contractID]: {
             readUntil: { messageHash, createdHeight, isManuallyMarked: true },
             unreadMessages
           }
-        }, etag]
+        }
       }
-
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        if (currentData[contractID]?.readUntil.createdHeight < createdHeight) {
-          const index = currentData[contractID].unreadMessages.findIndex(msg => msg.messageHash === messageHash)
-          if (index === -1) {
-            currentData[contractID].unreadMessages.push({ messageHash, createdHeight })
-            return [currentData, etag]
-          }
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update chatroom unreadMessages without an active session')
+    }
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      updater: (prev = {}) => {
+        const entry = prev[contractID]
+        if (!(entry?.readUntil.createdHeight < createdHeight)) return KV_NOOP
+        if (entry.unreadMessages.some(msg => msg.messageHash === messageHash)) return KV_NOOP
+        return {
+          ...prev,
+          [contractID]: { ...entry, unreadMessages: [...entry.unreadMessages, { messageHash, createdHeight }] }
         }
-        return null
       }
-
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
     contractID: string, messageHash: string
   }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        const index = currentData[contractID]?.unreadMessages.findIndex(msg => msg.messageHash === messageHash)
-        // NOTE: index could be undefined if unreadMessages is not initialized
-        if (Number.isInteger(index) && index >= 0) {
-          currentData[contractID].unreadMessages.splice(index, 1)
-          return [currentData, etag]
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update chatroom unreadMessages without an active session')
+    }
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      updater: (prev = {}) => {
+        const entry = prev[contractID]
+        // NOTE: entry could be undefined if unreadMessages is not initialized
+        if (!entry?.unreadMessages.some(msg => msg.messageHash === messageHash)) return KV_NOOP
+        return {
+          ...prev,
+          [contractID]: { ...entry, unreadMessages: entry.unreadMessages.filter(msg => msg.messageHash !== messageHash) }
         }
-        return null
       }
-
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedUnreadMessages = ({ currentData = {}, etag } = {}) => {
-        if (currentData[contractID]) {
-          delete currentData[contractID]
-          return [currentData, etag]
-        }
-        return null
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update chatroom unreadMessages without an active session')
+    }
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.UNREAD_MESSAGES,
+      updater: (prev = {}) => {
+        if (!(contractID in prev)) return KV_NOOP
+        const { [contractID]: _gone, ...rest } = prev
+        return rest
       }
-
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   // Preferences
-  'gi.actions/identity/kv/fetchPreferences': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-    if (!identityContractID) {
-      throw new Error('Unable to fetch preferences without an active session')
-    }
-    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.PREFERENCES))?.data || {}
-  },
-  'gi.actions/identity/kv/savePreferences': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-    if (!identityContractID) {
-      throw new Error('Unable to update preferences without an active session')
-    }
-
-    return sbp('chelonia/kv/queuedSet', {
-      contractID: identityContractID,
-      key: KV_KEYS.PREFERENCES,
-      data,
-      onconflict
-    })
-  },
-  'gi.actions/identity/kv/loadPreferences': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const preferences = await sbp('gi.actions/identity/kv/fetchPreferences')
-      sbp('okTurtles.events/emit', NEW_PREFERENCES, preferences)
-    })
-  },
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
     return updateKVPreferences((currentPreferences) => {
       const hideDistributionBanner = {
@@ -261,133 +236,107 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/kv/updatePreference': ({ key, value }: { key: string, value: any }) => {
-    return updateKVPreferences((currentPreferences) => ({ ...currentPreferences, [key]: value }))
+    return setKVPreferences({ [key]: value })
   },
   // Notifications
-  'gi.actions/identity/kv/fetchNotificationStatus': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-    if (!identityContractID) {
-      throw new Error('Unable to fetch notification status without an active session')
-    }
-    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NOTIFICATIONS))?.data || {}
-  },
-  'gi.actions/identity/kv/saveNotificationStatus': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
+  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
+    const { hash, timestamp } = notification
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
-
-    const applyStorageRules = (notificationStatus) => {
-      return Object.keys(notificationStatus).reduce((acc, hash) => {
-        if (!isExpired(notificationStatus[hash])) {
-          acc[hash] = notificationStatus[hash]
-        }
-        return acc
-      }, {})
-    }
-
-    const updatedOnConflict = async (...args) => {
-      const result = await (onconflict: Function)(...args)
-      if (!result) return null
-
-      const [data, etag] = result
-      return [applyStorageRules(data), etag]
-    }
-
-    return sbp('chelonia/kv/queuedSet', {
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
-      data: !!data && applyStorageRules(data),
-      onconflict: typeof onconflict === 'function' ? updatedOnConflict : null
-    })
-  },
-  'gi.actions/identity/kv/loadNotificationStatus': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const status = await sbp('gi.actions/identity/kv/fetchNotificationStatus')
-      sbp('gi.notifications/setNotificationStatus', status)
-    })
-  },
-  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
-    const { hash, timestamp } = notification
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const getUpdatedNotificationStatus = ({ currentData = {}, etag } = {}) => {
-        if (!currentData?.[hash]) {
-          return [{
-            ...currentData,
-            [hash]: initNotificationStatus({ timestamp })
-          }, etag]
-        }
-        return null
+      // Add this notification's status only if it isn't already tracked; the
+      // reducer is re-run on conflict retries, so a concurrent write that
+      // added the same hash collapses to a no-op (KV-REVAMPED.md §3.3).
+      updater: (currentData = {}) => {
+        if (currentData[hash]) return KV_NOOP
+        return { ...currentData, [hash]: initNotificationStatus({ timestamp }) }
       }
-
-      const data = getUpdatedNotificationStatus()?.[0]
-      await sbp('gi.actions/identity/kv/saveNotificationStatus', { data, onconflict: getUpdatedNotificationStatus })
     })
   },
   'gi.actions/identity/kv/markNotificationStatusRead': (hashes: string | string[]) => {
     if (typeof hashes === 'string') {
       hashes = [hashes]
     }
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const notifications = sbp('chelonia/rootState').notifications.items
-      const getUpdatedNotificationStatus = ({ currentData = {}, etag } = {}) => {
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to update notification status without an active session')
+    }
+    // Capture the client-side notification list once outside the reducer so
+    // conflict-retry invocations read a stable snapshot (KV-REVAMPED.md §3.3).
+    const notifications = sbp('chelonia/rootState').notifications.items
+    return sbp('chelonia/kv/update', {
+      contractID: identityContractID,
+      key: KV_KEYS.NOTIFICATIONS,
+      updater: (currentData = {}) => {
+        const next = { ...currentData }
         let isUpdated = false
         for (const hash of hashes) {
           const existing = notifications.find(n => n.hash === hash)
-          if (!currentData[hash]) {
-            currentData[hash] = initNotificationStatus({ timestamp: existing.timestamp })
+          if (!existing) continue
+          if (!next[hash]) {
+            next[hash] = initNotificationStatus({ timestamp: existing.timestamp })
+          } else {
+            next[hash] = { ...next[hash] }
           }
 
-          const isUnRead = currentData[hash].read === false
+          const isUnRead = next[hash].read === false
           // NOTE: sometimes the value from KV store could be different from the one
           //       from client Vuex store when the device is offline or on bad network
           //       in this case, we need to allow users to force the notifications to be marked as read
-          const isDifferent = currentData[hash].read !== existing.read
+          const isDifferent = next[hash].read !== existing.read
           if (isUnRead || isDifferent) {
-            currentData[hash].read = true
+            next[hash].read = true
             isUpdated = true
           }
         }
-        return isUpdated ? [currentData, etag] : null
+        return isUpdated ? next : KV_NOOP
       }
-
-      await sbp('gi.actions/identity/kv/saveNotificationStatus', { onconflict: getUpdatedNotificationStatus })
     })
   },
   // Namespace lookups
-  'gi.actions/identity/kv/fetchCachedNames': async () => {
-    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
-    if (!identityContractID) {
-      throw new Error('Unable to fetch cached names without an active session')
-    }
-    return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.NS_CACHE))?.data || []
-  },
+  //
+  // The `namespace-cache` slot (`gi.contracts/identity::namespace-cache`,
+  // registered in `kv-slots.js`) owns the on-demand fetch (`autoLoad:
+  // 'on-demand'`) and re-runs `checkAndAugmentNames` on every value change via
+  // its `onUpdate` hook (replacing the post-fetch augmentation that used to
+  // live here and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT`
+  // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
+  // matching the original behavior. (KV-REVAMPED.md §4.8)
   'gi.actions/identity/kv/saveCachedNames': () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
     }
-
+    // Prune-on-write MUST validate the value the write actually races against:
+    // the *server* value seen on each conflict retry. The declarative
+    // `chelonia/kv/update` reducer cannot express this — it is synchronous and
+    // re-runs against the server `prev` on a 409/412, but `checkAndAugmentNames`
+    // is async and §3.3 forbids network calls in the reducer. A reducer that
+    // pre-computes a validated set from the (possibly stale) local mirror would
+    // silently drop valid server names another device added (this slot is
+    // `autoSubscribe: false` + `autoLoad: 'on-demand'`, so the mirror is
+    // routinely stale). We therefore keep the low-level `chelonia/kv/queuedSet`
+    // + async `onconflict` for this one slot, re-validating the real server
+    // value on every retry exactly as the pre-revamp code did, so a valid name
+    // another device knows about is never clobbered.
     const onconflict = async ({ currentData = [], etag } = {}) => {
-      if (!currentData) currentData = []
+      if (!Array.isArray(currentData)) currentData = []
+      // `checkAndAugmentNames` unions the server value with our local lookups
+      // and re-verifies the conflicted names, dropping only those that no
+      // longer resolve (left group / deleted username).
       const data = await checkAndAugmentNames(currentData)
-
       data.sort()
-      currentData.sort()
-
-      // If there's no difference, there's no point in sending an update
-      if (data.length === currentData.length) {
-        let i = 0
-        for (; i < data.length; i++) {
-          if (data[i] !== currentData[i]) break
-        }
-        // If `i` equals `data.length`, the loop has ended and all items matched
-        if (i === data.length) return
+      const sortedCurrent = [...currentData].sort()
+      // Skip the write when nothing changed.
+      if (data.length === sortedCurrent.length && data.every((n, i) => n === sortedCurrent[i])) {
+        return null
       }
-
       return [data, etag]
     }
-
     return sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NS_CACHE,
@@ -396,13 +345,13 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/identity/kv/loadCachedNames': () => {
-    return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
-      const currentData = await sbp('gi.actions/identity/kv/fetchCachedNames')
-
-      // `checkAndAugmentNames` will handle updating the namespace cache as
-      // necessary. The return value isn't needed.
-      await checkAndAugmentNames(currentData || [])
-    })
+    const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
+    if (!identityContractID) {
+      throw new Error('Unable to load cached names without an active session')
+    }
+    // Force a fetch of the on-demand slot; the refresh fires the slot's
+    // `onUpdate` (reason 'load'), which runs `checkAndAugmentNames`.
+    return sbp('chelonia/kv/sync', identityContractID, KV_KEYS.NS_CACHE)
   }
 }): string[])
 

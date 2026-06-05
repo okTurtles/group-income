@@ -3,9 +3,9 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
+import { CHELONIA_KV_STATUS_CHANGED } from '@chelonia/lib/events'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
@@ -139,12 +139,20 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
   // NOTE: in some situations `rootState.kvStoreStatus` can be undefined
-  if (rootState.kvStoreStatus?.identity !== 'loaded') {
+  const identityKvStatus = rootState.kvStoreStatus?.identity
+  if (
+    identityKvStatus !== KV_LOAD_STATUS.LOADED &&
+    identityKvStatus !== KV_LOAD_STATUS.ERROR &&
+    identityKvStatus !== KV_LOAD_STATUS.NON_INIT
+  ) {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
     // wrong computations and thus wrong behaviour.
     // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
     // So queueing the events here and then processing them after the kv-store is loaded.
+    // On `ERROR` we stop queueing and process events anyway: the slot will not
+    // reach `'loaded'`, so blocking forever would silently drop all incoming
+    // chat messages for the rest of the session.
     messageReceivedRawQueue.push(eventParams)
   } else {
     if (messageReceivedRawQueue.length) {
@@ -157,8 +165,15 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   }
 })
 
-sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
-  if (name === 'identity' && status === KV_LOAD_STATUS.LOADED) {
+sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, status }) => {
+  if (
+    contractType === 'gi.contracts/identity' &&
+    key === KV_KEYS.UNREAD_MESSAGES &&
+    // Flush on `ERROR` as well as `LOADED`: the slot will not reach
+    // `'loaded'` after a load failure, so keeping the queue would block all
+    // incoming chat messages for the rest of the session.
+    (status === KV_LOAD_STATUS.LOADED || status === KV_LOAD_STATUS.ERROR || status === KV_LOAD_STATUS.NON_INIT)
+  ) {
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())
     }

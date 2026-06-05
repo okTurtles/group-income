@@ -12,7 +12,7 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import { CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
+import { CHELONIA_KV_UPDATED, CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
 import '@chelonia/lib/local-selectors'
 import { KV_KEYS } from './utils/constants.js'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
@@ -23,7 +23,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -349,22 +349,21 @@ async function startApp () {
       sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
         sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
       })
-      sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
-        switch (key) {
-          case KV_KEYS.LAST_LOGGED_IN: {
-            sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
-            break
-          }
-          case KV_KEYS.UNREAD_MESSAGES:
-            sbp('state/vuex/commit', 'setUnreadMessages', data)
-            break
-          case KV_KEYS.PREFERENCES:
-            sbp('state/vuex/commit', 'setPreferences', data)
-            break
-          case KV_KEYS.NOTIFICATIONS:
-            sbp('state/vuex/commit', 'setNotificationStatus', data)
-            break
-        }
+
+      // Generic mirror of the new `@chelonia/lib` KV API (`chelonia/kv/*`) into
+      // the purpose-built Vuex slices the UI already reads from. Each migrated
+      // key's `CHELONIA_KV_UPDATED` event drives the matching commit below; the
+      // old per-key `KV_EVENT`/`NEW_*` switches have been removed as their keys
+      // were migrated to `chelonia/kv/defineSlot` (Phases B–F). (KV-REVAMPED.md §9(b))
+      const KV_VUEX_MIRROR = {
+        [`gi.contracts/identity::${KV_KEYS.PREFERENCES}`]: ({ value }) => sbp('state/vuex/commit', 'setPreferences', value),
+        [`gi.contracts/identity::${KV_KEYS.UNREAD_MESSAGES}`]: ({ value }) => sbp('state/vuex/commit', 'setUnreadMessages', value),
+        [`gi.contracts/identity::${KV_KEYS.NOTIFICATIONS}`]: ({ value }) => sbp('state/vuex/commit', 'setNotificationStatus', value),
+        [`gi.contracts/group::${KV_KEYS.LAST_LOGGED_IN}`]: ({ contractID, value }) => sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, value])
+      }
+      sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, (e) => {
+        const fn = KV_VUEX_MIRROR[`${e.contractType}::${e.key}`]
+        if (fn) fn(e)
       })
 
       // Useful in case the app is started in offline mode.
