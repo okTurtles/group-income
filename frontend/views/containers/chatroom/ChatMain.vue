@@ -109,6 +109,8 @@
     .c-initializing(v-if='!ephemeral.messagesInitiated')
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
+    .c-fetching-messages(v-if='isFetchingMessages')
+      i18n Fetching messages...
 
     toast-container(area='chat-main')
 
@@ -330,6 +332,7 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
+        messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
         scrollActionId: null,
@@ -409,7 +412,17 @@ export default ({
         !this.ephemeral.loadingUp &&
         !this.ephemeral.loadingDown &&
         // Rendering the current contract state
-        this.messageState.contract.messages === this.ephemeral.messages
+        this.messageState.contract.messages === this.ephemeral.messagesSource
+      )
+    },
+    isFetchingMessages () {
+      return !!this.ephemeral.messagesInitiated && (
+        !!this.ephemeral.loadingDown ||
+        (
+          this.latestHeight != null &&
+          this.ephemeral.currentHighestHeight != null &&
+          this.ephemeral.currentHighestHeight < this.latestHeight
+        )
       )
     },
     needsFromScratch () {
@@ -512,9 +525,12 @@ export default ({
     setMessages: debounce(function () {
       if (!this.ephemeral.renderingChatRoomId) return
       const newMessages = this.messageState.contract?.messages || []
-      if (this.ephemeral.messages === newMessages) return
+      if (this.ephemeral.messagesSource === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
-      this.ephemeral.messages = newMessages
+      this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
+        .sort((a, b) => a.message.height - b.message.height || a.index - b.index)
+        .map(({ message }) => message)
+      this.ephemeral.messagesSource = newMessages
       const postSetMessageState = this.ephemeral.postSetMessageState
       delete this.ephemeral.postSetMessageState
       if (!postSetMessageState?.noRerender) {
@@ -844,6 +860,9 @@ export default ({
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
+              this.ephemeral.messagesSource = null
+              this.setMessages()
+              this.setMessages.flush?.()
               pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
@@ -1030,11 +1049,12 @@ export default ({
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
+        if (!this.$refs.conversation) return
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince()) return
+            if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
             this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
@@ -1043,6 +1063,7 @@ export default ({
             }, 1500)
           })
         } else {
+          if (!this.$refs.conversation) return
           this.$refs.conversation.scrollToItem(index)
 
           // Sometimes, scrollToItem() above doesn't necessarily lead to 'scroll' event (eg. target message is the latest message but the scroll position is already at the bottom)
@@ -1137,8 +1158,13 @@ export default ({
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const index = this.ephemeral.messages.indexOf(msg)
-      if (index >= 0) this.ephemeral.messages.splice(index, 1)
+      const index = this.messageState.contract.messages.indexOf(msg)
+      if (index >= 0) {
+        this.messageState.contract.messages.splice(index, 1)
+        this.ephemeral.messagesSource = null
+        this.setMessages()
+        this.setMessages.flush?.()
+      }
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1541,7 +1567,8 @@ export default ({
       createdHeight,
       // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
-      forceUpdate = false
+      forceUpdate = false,
+      retryCount = 1
     }) {
       const isTabInactive = document.hidden || !document.hasFocus()
       if ((isTabInactive && !forceUpdate) ||
@@ -1561,9 +1588,21 @@ export default ({
           return
         }
 
+        const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
+          // The identity contract was still behind the server when we tried to
+          // write; retry once after a short delay to give it time to catch up.
+          if ((e?.name === 'GIErrorChatRoomReadUntilHeightAhead' ||
+            e?.cause?.name === 'GIErrorChatRoomReadUntilHeightAhead') && retryCount > 0) {
+            console.warn('[ChatMain.vue] Delaying read until update until identity contract catches up', e)
+            setTimeout(() => {
+              if (hasChatroomSwitchedSince()) return
+              this.updateReadUntilMessageHash({ messageHash, createdHeight, forceUpdate, retryCount: retryCount - 1 })
+            }, 5000)
+            return
+          }
           console.error('[ChatMain.vue] Error setting read until', e)
         })
       }
@@ -1710,9 +1749,9 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            const latestValidMessage = this.ephemeral.messages.filter(m => !m.pending && !m.hasFailed).pop()
 
-            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
+            if (this.ephemeral.scrollableDistance < 50 && this.ephemeral.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
@@ -1930,6 +1969,7 @@ export default ({
         this.ephemeral.messagesInitiated = undefined
         this.ephemeral.startedUnreadMessageHash = null
         this.ephemeral.messages = []
+        this.ephemeral.messagesSource = null
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
@@ -2069,6 +2109,19 @@ export default ({
 
 .c-invisible {
   visibility: hidden;
+}
+
+.c-fetching-messages {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background-color: $text_0;
+  color: $background;
+  font-size: $size_5;
 }
 
 .c-initializing,
