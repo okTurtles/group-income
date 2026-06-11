@@ -387,6 +387,7 @@ export default ({
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
+    this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
     this.cleanupFailedMessagesAttachments()
   },
@@ -525,14 +526,19 @@ export default ({
     setMessages: debounce(function () {
       if (!this.ephemeral.renderingChatRoomId) return
       const newMessages = this.messageState.contract?.messages || []
-      if (this.ephemeral.messagesSource === newMessages) return
+      const postSetMessageState = this.ephemeral.postSetMessageState
+      delete this.ephemeral.postSetMessageState
+      if (this.ephemeral.messagesSource === newMessages) {
+        if (postSetMessageState) {
+          this.$nextTick(postSetMessageState)
+        }
+        return
+      }
       const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
         .sort((a, b) => a.message.height - b.message.height || a.index - b.index)
         .map(({ message }) => message)
       this.ephemeral.messagesSource = newMessages
-      const postSetMessageState = this.ephemeral.postSetMessageState
-      delete this.ephemeral.postSetMessageState
       if (!postSetMessageState?.noRerender) {
         this.rerenderEvents(currentVisibleMessage)
       }
@@ -1161,10 +1167,10 @@ export default ({
       const index = this.messageState.contract.messages.indexOf(msg)
       if (index >= 0) {
         this.messageState.contract.messages.splice(index, 1)
-        this.ephemeral.messagesSource = null
-        this.setMessages()
-        this.setMessages.flush?.()
       }
+      this.ephemeral.messagesSource = null
+      this.setMessages()
+      this.setMessages.flush?.()
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
