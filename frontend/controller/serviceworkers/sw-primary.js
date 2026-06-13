@@ -299,6 +299,17 @@ sbp('sbp/selectors/register', {
   },
   'sw/deviceSettings/get': (key) => {
     return sbp('chelonia/rootState').deviceSettings[key]
+  },
+  'sw/journal/getAll': () => {
+    const rootState = sbp('chelonia/rootState')
+    const journals = Object.create(null)
+
+    for (const contractID of Object.keys(rootState.contracts || {})) {
+      const journal = sbp('chelonia/journal/get', contractID)
+      if (journal) journals[contractID] = journal
+    }
+
+    return journals
   }
 })
 
