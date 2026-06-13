@@ -45,6 +45,10 @@
                     option(value='serviceworker')
                       i18n Service worker
 
+          label.checkbox.c-include-journal
+            input.input(type='checkbox' name='include-journal' v-model='form.includeJournal')
+            i18n Include contract journals
+
           button-submit.is-small.c-download(@click='downloadOrShareLogs')
             template(v-if='ephemeral.useWebShare')
               i.icon-share-alt.is-prefix
@@ -88,7 +92,8 @@ export default ({
     return {
       form: {
         filter: this.$store.state.settings.appLogsFilter,
-        source: 'combined'
+        source: 'combined',
+        includeJournal: true
       },
       ephemeral: {
         ready: false,
@@ -186,7 +191,7 @@ export default ({
     openTroubleshooting () {
       this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
-    downloadOrShareLogs () {
+    async downloadOrShareLogs () {
       const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
       const isDownload = actionType === 'download'
 
@@ -194,14 +199,23 @@ export default ({
         const elLink = this.$refs.linkDownload
         const filename = 'gi_logs.json.txt'
         const mimeType = 'text/plain'
-
-        const blob = new Blob([JSON.stringify({
+        const payload: Object = {
         // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),
           logs: this.ephemeral.logs
-        }, undefined, 2)], { type: mimeType })
+        }
+
+        if (this.form.includeJournal) {
+          try {
+            payload.journal = await sbp('sw/journal/getAll')
+          } catch (err) {
+            throw new Error(L('Failed to obtain contract journals. {reportError}', LError(err)))
+          }
+        }
+
+        const blob = new Blob([JSON.stringify(payload, undefined, 2)], { type: mimeType })
 
         if (isDownload) {
           if (!elLink) { return }
@@ -215,7 +229,7 @@ export default ({
             URL.revokeObjectURL(url)
           }, 0)
         } else {
-          return navigator.share({
+          return (navigator: any).share({
             files: [new File([blob], filename, { type: blob.type })],
             title: L('Application Logs')
           })
@@ -329,6 +343,10 @@ export default ({
   }
 }
 
+.c-include-journal {
+  width: 100%;
+}
+
 .c-source .c-label {
   display: flex;
   align-items: center;
@@ -341,6 +359,7 @@ export default ({
 
 .c-filters,
 .c-source,
+.c-include-journal,
 .c-download,
 .c-logs {
   margin-bottom: 1rem;
