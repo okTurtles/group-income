@@ -46,6 +46,10 @@ describe('journal redactions', () => {
 
   it('redacts group financial and payment memo details', () => {
     const redacted = redact({
+      settings: {
+        groupName: 'Private group',
+        groupPicture: { manifestCid: 'zGroupAvatar', downloadParams: { IKM: 'group-avatar-secret' } }
+      },
       profiles: {
         user1: {
           incomeDetailsType: 'pledgeAmount',
@@ -69,6 +73,9 @@ describe('journal redactions', () => {
       }
     })
 
+    assert.strictEqual(redacted.settings.groupName, 'Private group')
+    assert.strictEqual(redacted.settings.groupPicture.manifestCid, 'zGroupAvatar')
+    assert.strictEqual(redacted.settings.groupPicture.downloadParams, REDACTED)
     assert.strictEqual(redacted.profiles.user1.incomeDetailsType, 'pledgeAmount')
     assert.strictEqual(redacted.profiles.user1.incomeAmount, REDACTED)
     assert.strictEqual(redacted.profiles.user1.pledgeAmount, REDACTED)
@@ -93,7 +100,7 @@ describe('journal redactions', () => {
           name: 'secret.pdf',
           mimeType: 'application/pdf',
           size: 123,
-          downloadData: { manifestCid: 'zAttachment' }
+          downloadData: { manifestCid: 'zAttachment', downloadParams: { IKM: 'attachment-secret' } }
         }]
       }],
       pinnedMessages: [{
@@ -107,7 +114,7 @@ describe('journal redactions', () => {
           name: 'pinned.pdf',
           mimeType: 'application/pdf',
           size: 456,
-          downloadData: { manifestCid: 'zPinnedAttachment' }
+          downloadData: { manifestCid: 'zPinnedAttachment', downloadParams: { IKM: 'pinned-secret' } }
         }]
       }]
     }
@@ -121,13 +128,16 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted.messages[0].attachments[0].name, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].attachments[0].mimeType, 'application/pdf')
     assert.strictEqual(redacted.messages[0].attachments[0].downloadData.manifestCid, 'zAttachment')
+    assert.strictEqual(redacted.messages[0].attachments[0].downloadData.downloadParams, REDACTED)
     assert.strictEqual(redacted.pinnedMessages[0].text, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].replyingMessage.text, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.question, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].value, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].name, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.manifestCid, 'zPinnedAttachment')
+    assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.downloadParams, REDACTED)
     assert.strictEqual(original.messages[0].text, 'secret chat')
+    assert.deepStrictEqual(original.messages[0].attachments[0].downloadData.downloadParams, { IKM: 'attachment-secret' })
     assert.strictEqual(original.pinnedMessages[0].attachments[0].name, 'pinned.pdf')
   })
 

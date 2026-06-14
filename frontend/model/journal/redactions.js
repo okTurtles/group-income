@@ -27,6 +27,9 @@ export const JOURNAL_REDACTIONS = [
   { path: 'pinnedMessages.*.pollData.options.*.value', redact: messageTextRedactor },
   { path: 'messages.*.attachments.*.name', redact: messageTextRedactor },
   { path: 'pinnedMessages.*.attachments.*.name', redact: messageTextRedactor },
+  { path: 'messages.*.attachments.*.downloadData.downloadParams', redact: redactedRedactor },
+  { path: 'pinnedMessages.*.attachments.*.downloadData.downloadParams', redact: redactedRedactor },
+  { path: 'settings.groupPicture.downloadParams', redact: redactedRedactor },
   { path: '_vm.authorizedKeys.*._private', redact: redactedRedactor },
   { path: '_vm.authorizedKeys.*.meta.private.content', redact: hashRedactor },
   { path: '_vm.invites.*.inviteSecret', redact: redactedRedactor }
