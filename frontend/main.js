@@ -12,9 +12,8 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import { CHELONIA_KV_UPDATED, CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
+import { CHELONIA_KV_UPDATED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '@chelonia/lib/events'
 import '@chelonia/lib/local-selectors'
-import { KV_KEYS } from './utils/constants.js'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
@@ -111,6 +110,18 @@ async function startApp () {
 
   // Set up event listeners to keep local (Vuex) and Chelonia states in sync
   sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
+  sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, ({ contractID }) => {
+    sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
+      const state = sbp('state/vuex/state')
+      const { kvState } = await sbp('chelonia/contract/fullState', contractID)
+      if (kvState) {
+        if (!state._kv) Vue.set(state, '_kv', Object.create(null))
+        Vue.set(state._kv, contractID, kvState)
+      } else if (state._kv) {
+        Vue.delete(state._kv, contractID)
+      }
+    })
+  })
 
   // [SW] The following is be needed to keep namespace registrations in sync
   // between the SW and each tab. It is not needed if everything is running in
@@ -348,22 +359,6 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
         sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
-      })
-
-      // Generic mirror of the new `@chelonia/lib` KV API (`chelonia/kv/*`) into
-      // the purpose-built Vuex slices the UI already reads from. Each migrated
-      // key's `CHELONIA_KV_UPDATED` event drives the matching commit below; the
-      // old per-key `KV_EVENT`/`NEW_*` switches have been removed as their keys
-      // were migrated to `chelonia/kv/defineSlot` (Phases B–F). (KV-REVAMPED.md §9(b))
-      const KV_VUEX_MIRROR = {
-        [`gi.contracts/identity::${KV_KEYS.PREFERENCES}`]: ({ value }) => sbp('state/vuex/commit', 'setPreferences', value),
-        [`gi.contracts/identity::${KV_KEYS.UNREAD_MESSAGES}`]: ({ value }) => sbp('state/vuex/commit', 'setUnreadMessages', value),
-        [`gi.contracts/identity::${KV_KEYS.NOTIFICATIONS}`]: ({ value }) => sbp('state/vuex/commit', 'setNotificationStatus', value),
-        [`gi.contracts/group::${KV_KEYS.LAST_LOGGED_IN}`]: ({ contractID, value }) => sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, value])
-      }
-      sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, (e) => {
-        const fn = KV_VUEX_MIRROR[`${e.contractType}::${e.key}`]
-        if (fn) fn(e)
       })
 
       // Useful in case the app is started in offline mode.

@@ -80,9 +80,8 @@ export default (sbp('sbp/selectors/register', {
   // Unread Messages.
   //
   // The `unreadMessages` slot (`gi.contracts/identity::unreadMessages`,
-  // registered in `kv-slots.js`) owns subscription (`autoSubscribe`), the
-  // initial fetch (`autoLoad: 'on-sync'`), and the mirror into
-  // `rootState.chatroom.unreadMessages` (via `CHELONIA_KV_UPDATED`). The
+  // registered in `kv-slots.js`) owns subscription (`autoSubscribe`) and the
+  // initial fetch (`autoLoad: 'on-sync'`). The
   // selectors below are thin shims kept for backward compatibility — contract
   // sideEffects call `initChatRoomUnreadMessages` and
   // `deleteChatRoomUnreadMessages`, so their names/signatures MUST NOT change

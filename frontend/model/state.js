@@ -6,7 +6,7 @@
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
-import { KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
@@ -87,20 +87,9 @@ const initialState = {
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   reverseNamespaceLookups: Object.create(null), // { [contractID]: username }
   contractSigningKeys: Object.create(null),
-  lastLoggedIn: {}, // Group last logged in information
-  preferences: {}, // { hideDistributionBanner: { [groupContractID]: boolean }, lastSeenNewsDate: string }
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
-    lastRun: Object.create(null) // { notificationKey: number },
-  },
-  kvStoreStatus: {
-    // Context: Various parts of the app are closely related to kv-store. (eg. chatroom's 'readUntil' property is managed
-    //          via kv-store so it's shared across multiple devices of the same user.)
-    //          and thus sometimes need to know whether kv-store data has been loaded from the server and
-    //          'kvStoreStatus' attribute here can be used to check the loading statuses of them.
-    //
-    // { [name]: 'non-init' | 'loading' | 'loaded' }
-    identity: KV_LOAD_STATUS.NON_INIT
+    lastRun: Object.create(null) // { notificationKey: number }
   }
 }
 
@@ -140,18 +129,6 @@ sbp('sbp/selectors/register', {
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
-    // Example:
-    // if (!state.preferences) {
-    //   state.preferences = {}
-    // }
-    if (!state.preferences) {
-      state.preferences = {}
-    }
-    if (!state.kvStoreStatus) {
-      state.kvStoreStatus = {
-        identity: KV_LOAD_STATUS.NON_INIT
-      }
-    }
     if (state.periodicNotificationAlreadyFiredMap) {
       if (!state.periodicNotificationAlreadyFiredMap.alreadyFired) {
         state.periodicNotificationAlreadyFiredMap.alreadyFired = Object.create(null)
@@ -377,7 +354,8 @@ sbp('sbp/selectors/register', {
       }
 
       const { identityContractID, encryptionParams } = state.loggedIn
-      state.notifications.items = applyStorageRules(state.notifications.items || [], state.notifications.status || {})
+      const notificationStatus = state._kv?.[identityContractID]?.[KV_KEYS.NOTIFICATIONS]?.value ?? {}
+      state.notifications.items = applyStorageRules(state.notifications.items || [], notificationStatus)
       if (encrypted) {
         await sbp('gi.db/settings/saveEncrypted', identityContractID, state, encryptionParams)
       } else {
@@ -408,20 +386,6 @@ const mutations = {
       sbp('controller/router').push({ path: '/' }).catch(() => {})
     } else if (isNewlyCreated) {
       sbp('controller/router').push({ path: '/pending-approval' }).catch(() => {})
-    }
-  },
-  setPreferences (state, value) {
-    Vue.set(state, 'preferences', value)
-  },
-  setLastLoggedIn (state, [groupID, value]) {
-    Vue.set(state.lastLoggedIn, groupID, value)
-  },
-  setKvStoreStatus (state, { name, status }) {
-    if (name && status) {
-      if (!Object.values(KV_LOAD_STATUS).includes(status)) {
-        return console.warn(`bad setKvStoreStatus for ${name}: ${status}`)
-      }
-      state.kvStoreStatus[name] = status
     }
   },
   // Since Chelonia directly modifies contract state without using 'commit', we

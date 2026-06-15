@@ -7,10 +7,9 @@ import Vue from 'vue'
 import { Buffer } from 'buffer'
 import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, OPEN_MODAL } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
-import { CHELONIA_KV_STATUS_CHANGED, EVENT_HANDLED } from '@chelonia/lib/events'
+import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 
@@ -150,13 +149,6 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
     }
   })
-})
-
-// handle incoming identity-related events that are sent from the service worker
-sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, status }) => {
-  if (contractType === 'gi.contracts/identity' && key === KV_KEYS.UNREAD_MESSAGES) {
-    sbp('state/vuex/commit', 'setKvStoreStatus', { name: 'identity', status })
-  }
 })
 
 /* Commented out as persistentActions are not being used

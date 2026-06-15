@@ -138,12 +138,14 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const rootState = sbp('chelonia/rootState')
   const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
-  // NOTE: in some situations `rootState.kvStoreStatus` can be undefined
-  const identityKvStatus = rootState.kvStoreStatus?.identity
+  const identityContractID = rootState.loggedIn?.identityContractID
+  const unreadMessagesStatus = identityContractID
+    ? sbp('chelonia/kv/status', identityContractID, KV_KEYS.UNREAD_MESSAGES)
+    : KV_LOAD_STATUS.NON_INIT
   if (
-    identityKvStatus !== KV_LOAD_STATUS.LOADED &&
-    identityKvStatus !== KV_LOAD_STATUS.ERROR &&
-    identityKvStatus !== KV_LOAD_STATUS.NON_INIT
+    unreadMessagesStatus !== KV_LOAD_STATUS.LOADED &&
+    unreadMessagesStatus !== KV_LOAD_STATUS.ERROR &&
+    unreadMessagesStatus !== KV_LOAD_STATUS.NON_INIT
   ) {
     // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
     // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to

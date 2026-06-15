@@ -4,6 +4,7 @@ import { merge, union } from 'turtledash'
 import {
   CHATROOM_PRIVACY_LEVEL, GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS
 } from '@model/contracts/shared/constants.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   currentChatRoomId (state, getters, rootState) {
@@ -25,8 +26,10 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
       }
     }, state.chatNotificationSettings || {})
   },
-  ourUnreadMessages (state) {
-    return state.unreadMessages || {}
+  ourUnreadMessages (state, getters, rootState) {
+    const identityContractID = rootState.loggedIn?.identityContractID
+    if (!identityContractID) return {}
+    return rootState._kv?.[identityContractID]?.[KV_KEYS.UNREAD_MESSAGES]?.value ?? {}
   },
   directMessagesByGroup (state, getters, rootState) {
     return groupID => {
