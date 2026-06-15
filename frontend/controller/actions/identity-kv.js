@@ -264,11 +264,13 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
+    // Capture the client-side notification list once outside the reducer so
+    // conflict-retry invocations read a stable snapshot (KV-REVAMPED.md §3.3).
+    const notifications = sbp('chelonia/rootState').notifications.items
     return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       updater: (currentData = {}) => {
-        const notifications = sbp('chelonia/rootState').notifications.items
         const next = { ...currentData }
         let isUpdated = false
         for (const hash of hashes) {

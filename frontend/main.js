@@ -12,7 +12,7 @@ import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import IdleVue from 'idle-vue'
 import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
-import { CHELONIA_KV_UPDATED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from '@chelonia/lib/events'
+import { CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
 import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
@@ -110,18 +110,6 @@ async function startApp () {
 
   // Set up event listeners to keep local (Vuex) and Chelonia states in sync
   sbp('chelonia/externalStateSetup', { stateSelector: 'state/vuex/state', reactiveSet: Vue.set, reactiveDel: Vue.delete })
-  sbp('okTurtles.events/on', CHELONIA_KV_UPDATED, ({ contractID }) => {
-    sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, async () => {
-      const state = sbp('state/vuex/state')
-      const { kvState } = await sbp('chelonia/contract/fullState', contractID)
-      if (kvState) {
-        if (!state._kv) Vue.set(state, '_kv', Object.create(null))
-        Vue.set(state._kv, contractID, kvState)
-      } else if (state._kv) {
-        Vue.delete(state._kv, contractID)
-      }
-    })
-  })
 
   // [SW] The following is be needed to keep namespace registrations in sync
   // between the SW and each tab. It is not needed if everything is running in
