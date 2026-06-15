@@ -29,7 +29,14 @@ describe('journal redactions', () => {
       attributes: {
         username: 'alice',
         email: 'alice@example.com',
+        bio: 'private bio',
         picture: { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } }
+      },
+      groups: {
+        group1: { inviteSecretId: 'secret invite key' }
+      },
+      fileDeleteTokens: {
+        zAliceAvatar: { token: 'delete-token' }
       }
     }
 
@@ -37,10 +44,13 @@ describe('journal redactions', () => {
 
     assert.strictEqual(redacted.attributes.username, 'alice')
     assert.notStrictEqual(redacted.attributes.email, original.attributes.email)
+    assert.strictEqual(redacted.attributes.bio, 'xxxxxxxx')
     assert.notStrictEqual(redacted.attributes.picture, original.attributes.picture)
     assert.strictEqual(typeof redacted.attributes.email, 'string')
     assert.strictEqual(redacted.attributes.email.length, 6)
     assert.strictEqual(redacted.attributes.picture.length, 6)
+    assert.strictEqual(redacted.groups.group1.inviteSecretId, REDACTED)
+    assert.strictEqual(redacted.fileDeleteTokens, REDACTED)
     assert.deepStrictEqual(original.attributes.picture, { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } })
   })
 
@@ -64,8 +74,16 @@ describe('journal redactions', () => {
           data: {
             details: { routingNumber: '123' },
             memo: 'private memo',
-            amount: 25
+            amount: 25,
+            txid: 'external transaction id'
           }
+        }
+      },
+      paymentsByPeriod: {
+        '2026-01': {
+          haveNeedsSnapshot: [{ memberID: 'user1', amount: 100 }],
+          lastAdjustedDistribution: [{ from: 'user1', to: 'user2', amount: 25 }],
+          paymentsFrom: { user1: { user2: ['payment1'] } }
         }
       },
       thankYousFrom: {
@@ -83,7 +101,11 @@ describe('journal redactions', () => {
     assert.deepStrictEqual(redacted.profiles.user1.nonMonetaryContributions, ['childcare'])
     assert.strictEqual(redacted.payments.payment1.data.details, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.memo, REDACTED)
-    assert.strictEqual(redacted.payments.payment1.data.amount, 25)
+    assert.strictEqual(redacted.payments.payment1.data.amount, REDACTED)
+    assert.strictEqual(redacted.payments.payment1.data.txid, REDACTED)
+    assert.strictEqual(redacted.paymentsByPeriod['2026-01'].haveNeedsSnapshot, REDACTED)
+    assert.strictEqual(redacted.paymentsByPeriod['2026-01'].lastAdjustedDistribution, REDACTED)
+    assert.deepStrictEqual(redacted.paymentsByPeriod['2026-01'].paymentsFrom, { user1: { user2: ['payment1'] } })
     assert.strictEqual(redacted.thankYousFrom.user1.user2, REDACTED)
   })
 
@@ -95,6 +117,10 @@ describe('journal redactions', () => {
         pollData: {
           question: 'secret question',
           options: [{ id: 'o1', value: 'secret option' }]
+        },
+        proposal: {
+          proposalId: 'proposal1',
+          proposalData: { reason: 'private reason' }
         },
         attachments: [{
           name: 'secret.pdf',
@@ -109,6 +135,10 @@ describe('journal redactions', () => {
         pollData: {
           question: 'pinned question',
           options: [{ id: 'o2', value: 'pinned option' }]
+        },
+        proposal: {
+          proposalId: 'proposal2',
+          proposalData: { reason: 'pinned private reason' }
         },
         attachments: [{
           name: 'pinned.pdf',
@@ -125,6 +155,7 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted.messages[0].replyingMessage.text, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].pollData.question, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].proposal.proposalData, REDACTED)
     assert.strictEqual(redacted.messages[0].attachments[0].name, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].attachments[0].mimeType, 'application/pdf')
     assert.strictEqual(redacted.messages[0].attachments[0].downloadData.manifestCid, 'zAttachment')
@@ -133,6 +164,7 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted.pinnedMessages[0].replyingMessage.text, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.question, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].proposal.proposalData, REDACTED)
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].name, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.manifestCid, 'zPinnedAttachment')
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.downloadParams, REDACTED)
@@ -151,6 +183,7 @@ describe('journal redactions', () => {
             meta: {
               private: {
                 content: 'secret content',
+                oldKeys: 'old secret keys',
                 shareable: true
               },
               public: 'metadata'
@@ -172,6 +205,8 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted._vm.authorizedKeys.key1._private, REDACTED)
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.content.length, 6)
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.content, hashRedactor('secret content'))
+    assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.oldKeys.length, 6)
+    assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.oldKeys, hashRedactor('old secret keys'))
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.shareable, true)
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.public, 'metadata')
     assert.strictEqual(redacted._vm.invites.invite1.inviteSecret, REDACTED)

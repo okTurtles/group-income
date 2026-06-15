@@ -82,6 +82,15 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
+type LogPayload = {
+  _instructions: string,
+  ua: string,
+  version_info: Object,
+  includeJournal: boolean,
+  logs: Object[],
+  journal?: Object
+}
+
 export default ({
   name: 'AppLogs',
   components: {
@@ -93,7 +102,7 @@ export default ({
       form: {
         filter: this.$store.state.settings.appLogsFilter,
         source: 'combined',
-        includeJournal: true
+        includeJournal: Boolean(this.$store.state.settings.appLogsIncludeJournal)
       },
       ephemeral: {
         ready: false,
@@ -125,6 +134,9 @@ export default ({
     'form.filter' (filter) {
       this.setAppLogsFilter(filter)
     },
+    'form.includeJournal' (includeJournal) {
+      this.setAppLogsIncludeJournal(includeJournal)
+    },
     'form.source' (to, from) {
       if (to === from) return
       this.getLogs()
@@ -154,7 +166,8 @@ export default ({
   },
   methods: {
     ...mapMutations([
-      'setAppLogsFilter'
+      'setAppLogsFilter',
+      'setAppLogsIncludeJournal'
     ]),
     async loadVersionInfo () {
       let swVersion = ''
@@ -199,19 +212,22 @@ export default ({
         const elLink = this.$refs.linkDownload
         const filename = 'gi_logs.json.txt'
         const mimeType = 'text/plain'
-        const payload: Object = {
+        const payload: LogPayload = {
         // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),
+          includeJournal: this.form.includeJournal,
           logs: this.ephemeral.logs
         }
+        let journalError = null
 
         if (this.form.includeJournal) {
           try {
             payload.journal = await sbp('sw/journal/getAll')
           } catch (err) {
-            throw new Error(L('Failed to obtain contract journals. {reportError}', LError(err)))
+            journalError = err
+            console.error('AppLogs.vue: Failed to obtain contract journals:', err)
           }
         }
 
@@ -229,10 +245,14 @@ export default ({
             URL.revokeObjectURL(url)
           }, 0)
         } else {
-          return (navigator: any).share({
+          await (navigator: any).share({
             files: [new File([blob], filename, { type: blob.type })],
             title: L('Application Logs')
           })
+        }
+
+        if (journalError) {
+          this.$refs.errBanner.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
         }
       } catch (err) {
         const errorDisplay = isDownload

@@ -12,7 +12,7 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
+import { JOURNAL_REDACTIONS, JOURNAL_REDACTIONS_VERSION } from './model/journal/redactions.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 import { DEVICE_SETTINGS, KV_KEYS } from './utils/constants.js'
 
@@ -141,18 +141,17 @@ const setupChelonia = async (): Promise<*> => {
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
   const clearStaleJournalsAfterRedactions = () => {
     const rootState = sbp('chelonia/rootState')
-    if (!rootState?.contracts || Object.keys(rootState.contracts).length === 0) return
-
     const cheloniaConfig = sbp('chelonia/config')
     if (!rootState.deviceSettings) {
       cheloniaConfig.reactiveSet(rootState, 'deviceSettings', Object.create(null))
     }
-    if (rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED]) return
+    if (rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED] === JOURNAL_REDACTIONS_VERSION) return
+    if (!rootState?.contracts || Object.keys(rootState.contracts).length === 0) return
 
     const cleared = sbp('chelonia/journal/clear')
-    cheloniaConfig.reactiveSet(rootState.deviceSettings, DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED, true)
+    cheloniaConfig.reactiveSet(rootState.deviceSettings, DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED, JOURNAL_REDACTIONS_VERSION)
     if (cleared > 0) {
-      console.info(`[setupChelonia] Cleared ${cleared} stale Chelonia journals after enabling redactions`)
+      console.info(`[setupChelonia] Cleared ${cleared} stale Chelonia journals after updating redactions`)
     }
   }
 
@@ -165,7 +164,7 @@ const setupChelonia = async (): Promise<*> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Object, k: string, v: string) => {
+    reactiveSet: (o: Object, k: string, v: mixed) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
@@ -291,6 +290,8 @@ const setupChelonia = async (): Promise<*> => {
     sbp('gi.actions/identity/kv/load').catch(e => {
       console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
     })
+
+    clearStaleJournalsAfterRedactions()
 
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
