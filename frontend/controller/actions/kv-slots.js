@@ -33,7 +33,7 @@ import { checkAndAugmentNames } from './identity-kv.js'
 // The stored shape is `{ [hash]: { timestamp, read } }`.
 const notificationStatusSchema = {
   parse (value: Object): Object {
-    if (value == null || typeof value !== 'object') {
+    if (value == null || typeof value !== 'object' || Array.isArray(value)) {
       throw new TypeError('notifications: expected an object of notification statuses')
     }
     return Object.keys(value).reduce((acc, hash) => {
