@@ -107,7 +107,7 @@ They cannot do this if they haven't reviewed the code the AI wrote. Therefore we
 We understand that Github's UI doesn't let you "review your own PRs", so here's what we expect:
 
 - Go line-by-line through the PR. Post comments on anything that needs improving or fixing
-- Have your agent use the `gh` command to fetch the oldest unresolved comment, and reply to it and/or perform the fix. Then push a commit with those changes.
+- Have your agent use the `gh` command to fetch the oldest unresolved comment, and reply to it and/or perform the fix. Then resolve the comment and push a commit with those changes.
   - Repeat this in a fresh session for each comment you left on the PR
 - Finally: post a comment saying "Approved!" or something to that effect to let us know that you've (1) reviewed the entire PR yourself, and (2) fixed all the issues you found.
 
