@@ -1,3 +1,21 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Contributing](#contributing)
+  - [How to contribute code](#how-to-contribute-code)
+    - [1. Decide what to work on](#1-decide-what-to-work-on)
+    - [2. Create a fork of the repo, or work in a topic branch](#2-create-a-fork-of-the-repo-or-work-in-a-topic-branch)
+    - [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
+      - [Licensing and Ownership](#licensing-and-ownership)
+      - [Pull Request Requirements (❗️)](#pull-request-requirements-)
+  - [AI Usage Policy](#ai-usage-policy)
+    - [❗️ Mandatory Self-Reviews on AI PRs](#-mandatory-self-reviews-on-ai-prs)
+  - [How to help by translating](#how-to-help-by-translating)
+  - [How to submit an issue](#how-to-submit-an-issue)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Contributing
 
 - [How to contribute code](#how-to-contribute-code)
@@ -79,6 +97,19 @@ For example:
 
 Co-authored with: Opus 4.7, GPT-5.5 (xhigh), GLM-5.1
 ```
+
+### ❗️ Mandatory Self-Reviews on AI PRs
+
+AI-assisted PRs are really PRs from an AI with human assistance. Therefore the human submitting the PR is expected to understand what they are submitting.
+
+They cannot do this if they haven't reviewed the code the AI wrote. Therefore we **require** that the human submitting an AI-assisted PR review that PR.
+
+We understand that Github's UI doesn't let you "review your own PRs", so here's what we expect:
+
+- Go line-by-line through the PR. Post comments on anything that needs improving or fixing
+- Have your agent use the `gh` command to fetch the oldest unresolved comment, and reply to it and/or perform the fix. Then push a commit with those changes.
+  - Repeat this in a fresh session for each comment you left on the PR
+- Finally: post a comment saying "Approved!" or something to that effect to let us know that you've (1) reviewed the entire PR yourself, and (2) fixed all the issues you found.
 
 ## How to help by translating
 
