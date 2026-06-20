@@ -12,7 +12,7 @@ import sbp from '@sbp/sbp'
 import promiseWithResolvers from '@utils/promiseWithResolvers.js'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { JOINED_CHATROOM, KV_QUEUE, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
+import { JOINED_CHATROOM, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedIncomingData, encryptedIncomingDataWithRawKey, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
@@ -553,6 +553,7 @@ export default (sbp('sbp/selectors/register', {
       //      queues), including their side-effects (the `${contractID}` queues)
       //   4. (In reset handler) Outgoing actions from side-effects (again, in
       //      the `encrypted-action` queue)
+      //   5. (In reset) Pending KV writes (the `public:${contractID}` queues)
       await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
       // reset will wait until we have processed any remaining actions
       cheloniaState = await sbp('chelonia/reset', async () => {
@@ -565,9 +566,6 @@ export default (sbp('sbp/selectors/register', {
         // TODO: We might not need this second await and 1-3 could be fine (i.e.,
         // we could avoid waiting on these 2nd layer of actions)
         await sbp('okTurtles.eventQueue/queueEvent', 'encrypted-action', () => {})
-
-        // NOTE: wait for all the pending KV_QUEUE invocations to be finished
-        await sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, () => {})
 
         // See comment below for 'gi.db/settings/delete'
         const cheloniaState = await sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, async () => {

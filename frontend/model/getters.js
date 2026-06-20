@@ -3,6 +3,7 @@ import { INVITE_INITIAL_CREATOR, PROFILE_STATUS } from '@model/contracts/shared/
 import { INVITE_STATUS } from '@chelonia/lib/constants'
 import { adjustedDistribution, unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import chatroomGetters from './contracts/shared/getters/chatroom.js'
 import groupGetters from './contracts/shared/getters/group.js'
 import identityGetters from './contracts/shared/getters/identity.js'
@@ -76,7 +77,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     return state.loggedIn && getters.usernameFromID(state.loggedIn.identityContractID)
   },
   ourPreferences (state) {
-    return state.preferences
+    return state._kv?.[state.loggedIn?.identityContractID]?.[KV_KEYS.PREFERENCES]?.value ?? {}
   },
   ourProfileActive (state, getters) {
     return getters.profileActive(getters.ourIdentityContractId)
@@ -107,7 +108,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     )
   },
   currentGroupLastLoggedIn (state) {
-    return state.lastLoggedIn[state.currentGroupId] || {}
+    return state._kv?.[state.currentGroupId]?.[KV_KEYS.LAST_LOGGED_IN]?.value ?? {}
   },
   // NOTE: since this getter is written using `getters.ourUsername`, which is based
   //       on vuexState.loggedIn (a user preference), we cannot use this getter

@@ -1,10 +1,12 @@
 import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { age, isNew, isOlder } from './utils.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
   notifications (state, getters, rootState) {
+    const status = rootState._kv?.[rootState.loggedIn?.identityContractID]?.[KV_KEYS.NOTIFICATIONS]?.value ?? {}
     return state.items.map(item => {
-      const notification = { ...item, ...state.status[item.hash] }
+      const notification = { ...item, ...status[item.hash] }
       // Notifications older than MAX_AGE_UNREAD are discarded
       if (age(notification) > MAX_AGE_UNREAD) {
         return null

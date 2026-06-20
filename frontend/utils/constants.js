@@ -32,7 +32,8 @@ export const KV_KEYS = {
 export const KV_LOAD_STATUS = {
   NON_INIT: 'non-init',
   LOADING: 'loading',
-  LOADED: 'loaded'
+  LOADED: 'loaded',
+  ERROR: 'error'
 }
 
 // toast-related constants

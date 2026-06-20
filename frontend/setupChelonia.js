@@ -6,14 +6,12 @@ import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
-import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
-import { KV_KEYS } from './utils/constants.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   // If the types don't match, a different release has been made
@@ -300,27 +298,6 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
-    // Wait for the added contracts to be ready, then call the update function
-    if (!added.length) return
-    const rootState = sbp('chelonia/rootState')
-    added.forEach((cID) => {
-      switch (rootState.contracts[cID]?.type) {
-        case 'gi.contracts/identity':
-          if (cID === rootState.loggedIn?.identityContractID) {
-            sbp('chelonia/kv/setFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
-            return
-          }
-          // Use the default case for foreign identity contracts
-          break
-        case 'gi.contracts/group':
-          sbp('chelonia/kv/setFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
-          return
-      }
-      sbp('chelonia/kv/setFilter', cID, [])
-    })
-  })
-
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
   })
@@ -387,11 +364,10 @@ const setupChelonia = async (): Promise<*> => {
           }
         }
       },
-      [NOTIFICATION_TYPE.KV] ([key, value]) {
-        const { contractID, data } = value
-        if (!data) return
-
-        sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
+      [NOTIFICATION_TYPE.KV] () {
+        // KV pubsub frames are handled by the `@chelonia/lib` slot dispatcher
+        // (`chelonia/kv/_handleRemote`), which mirrors values and fires
+        // `CHELONIA_KV_UPDATED`. No GI-side translation is required.
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
         console.info('[messageHandler] Contract ID ' + contractID + ' has been deleted')
