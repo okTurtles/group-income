@@ -120,15 +120,19 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
 
       // NOTE: users could notice that they leave the group by someone
       // else when they log in
-      const currentState = sbp('state/vuex/state')
-      if (!currentState.currentGroupId) {
-        const gId = Object.keys(currentState.contracts)
-          .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
+      sbp('chelonia/queueInvocation', identityContractID, () => {
+        const currentState = sbp('state/vuex/state')
+        if (!currentState.currentGroupId && currentState[identityContractID]?.groups) {
+          const gId = Object.keys(currentState.contracts)
+            .find(cID => currentState[identityContractID].groups[cID] && !currentState[identityContractID].groups[cID].hasLeft)
 
-        if (gId) {
-          sbp('gi.app/group/switch', gId)
+          if (gId) {
+            sbp('gi.app/group/switch', gId)
+          }
         }
-      }
+      }).catch(e => {
+        console.error('[LOGIN] Error setting current group ID', e)
+      })
 
       // Whenever there's an active session, the encrypted save state should be
       // removed, as it is only used for recovering the state when logging in
