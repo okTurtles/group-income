@@ -5,6 +5,7 @@ import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, ke
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { CHELONIA_KV_STATUS_CHANGED } from '@chelonia/lib/events'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
+import { LOGOUT } from '~/frontend/utils/events.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
@@ -17,6 +18,17 @@ import messageReceivePostEffect from '@model/notifications/messageReceivePostEff
 import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
 
 const messageReceivedRawQueue = []
+
+// Tracks whether the identity `unreadMessages` slot has reached a terminal
+// load status this session. `chelonia/kv/status` returns `NON_INIT` both when
+// the slot's load is still pending (not yet activated / queued behind contract
+// sync) AND when a settled load found no server value (404 → default). Only the
+// latter is safe to process against; the former must be queued or we compute
+// `ourUnreadMessages` against a stale default. This flag disambiguates the two:
+// it flips to `true` once the slot reaches any terminal status (`LOADED` /
+// `ERROR` / settled `NON_INIT`) and is reset on logout so the next session
+// re-gates from scratch.
+let unreadMessagesLoadSettled = false
 
 // Function debounced because it might get called too often (on every chatroom
 // key update)
@@ -139,19 +151,17 @@ sbp('okTurtles.events/on', MESSAGE_RECEIVE_RAW, ({
   const eventParams = { contractID, data, innerSigningContractID, newMessage }
 
   const identityContractID = rootState.loggedIn?.identityContractID
-  const unreadMessagesStatus = identityContractID
-    ? sbp('chelonia/kv/status', identityContractID, KV_KEYS.UNREAD_MESSAGES)
-    : KV_LOAD_STATUS.NON_INIT
-  if (
-    unreadMessagesStatus !== KV_LOAD_STATUS.LOADED &&
-    unreadMessagesStatus !== KV_LOAD_STATUS.ERROR &&
-    unreadMessagesStatus !== KV_LOAD_STATUS.NON_INIT
-  ) {
-    // Without identity-kv store loaded, logics in messageReceivedRawHandler() would use wrong
-    // getters.chatRoomUnreadMessages and getters.ourUnreadMessages which leads to
-    // wrong computations and thus wrong behaviour.
-    // (eg. 'message-received' sound for DM plays even when the user has already read them from another device)
-    // So queueing the events here and then processing them after the kv-store is loaded.
+  // Queue while the identity `unreadMessages` slot load is still pending. Once
+  // it settles (terminal status, tracked by `unreadMessagesLoadSettled`) the
+  // mirror is authoritative and messages can be processed directly. Without a
+  // logged-in identity there is no slot to wait on, so process immediately.
+  if (identityContractID && !unreadMessagesLoadSettled) {
+    // Without the identity-kv store loaded, logic in messageReceivedRawHandler()
+    // would use the wrong getters.chatRoomUnreadMessages and
+    // getters.ourUnreadMessages, leading to wrong computations and thus wrong
+    // behaviour. (eg. 'message-received' sound for a DM plays even when the user
+    // has already read it from another device.) So we queue the events here and
+    // process them once the slot reaches a terminal load status.
     // On `ERROR` we stop queueing and process events anyway: the slot will not
     // reach `'loaded'`, so blocking forever would silently drop all incoming
     // chat messages for the rest of the session.
@@ -171,15 +181,24 @@ sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, key, sta
   if (
     contractType === 'gi.contracts/identity' &&
     key === KV_KEYS.UNREAD_MESSAGES &&
-    // Flush on `ERROR` as well as `LOADED`: the slot will not reach
-    // `'loaded'` after a load failure, so keeping the queue would block all
-    // incoming chat messages for the rest of the session.
+    // A terminal status means the mirror is now authoritative. Flush on `ERROR`
+    // as well as `LOADED`: the slot will not reach `'loaded'` after a load
+    // failure, so keeping the queue would block all incoming chat messages for
+    // the rest of the session. `NON_INIT` here is the settled "no server value"
+    // case (404 → default), which is equally safe to process against.
     (status === KV_LOAD_STATUS.LOADED || status === KV_LOAD_STATUS.ERROR || status === KV_LOAD_STATUS.NON_INIT)
   ) {
+    unreadMessagesLoadSettled = true
     while (messageReceivedRawQueue.length > 0) {
       messageReceivedRawHandler(messageReceivedRawQueue.shift())
     }
   }
+})
+
+// Re-gate on logout so a subsequent login waits for its own slot load before
+// processing chat messages, rather than reusing the previous session's flag.
+sbp('okTurtles.events/on', LOGOUT, () => {
+  unreadMessagesLoadSettled = false
 })
 
 export default (sbp('sbp/selectors/register', {
