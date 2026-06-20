@@ -46,13 +46,14 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
                 pattern='[0-9]*'
                 v-model='$v.form.amount.$model'
                 data-test='inputIncomeOrPledge'
+                @input='clearFormMsg'
               )
               .suffix {{ groupMincomeSymbolWithCode }}
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
 
-          payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
+          payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods' @component-updated='clearFormMsg')
 
           non-monetary-pledges.c-non-monetary-pledges( ref='nonMonetaryPledges' :optional='isPledging')
 
@@ -172,6 +173,7 @@ export default ({
     resetAmount () {
       this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
+      this.clearFormMsg()
     },
     closeModal () {
       this.$refs.modal.close()
@@ -249,6 +251,9 @@ export default ({
         console.error('IncomeDetails submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
+    },
+    clearFormMsg () {
+      this.$refs.formMsg?.clean()
     }
   },
   validations () {
