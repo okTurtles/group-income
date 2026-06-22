@@ -417,14 +417,8 @@ export default ({
       )
     },
     isFetchingMessages () {
-      return !!this.ephemeral.messagesInitiated && (
-        !!this.ephemeral.loadingDown ||
-        (
-          this.latestHeight != null &&
-          this.ephemeral.currentHighestHeight != null &&
-          this.ephemeral.currentHighestHeight < this.latestHeight
-        )
-      )
+      return !!this.ephemeral.messagesInitiated &&
+        (!!this.ephemeral.loadingDown || !!this.ephemeral.loadingUp)
     },
     needsFromScratch () {
       return (
@@ -1618,6 +1612,10 @@ export default ({
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
       const index = this.ephemeral.messages.findIndex(msg => msg.hash === messageHash)
+      if (index < 0) {
+        console.warn('[ChatMain.vue] markAsUnread: message not found', messageHash)
+        return
+      }
       const isFirstMessage = index === 0
       const targetMsg = isFirstMessage ? this.ephemeral.messages[index] : this.ephemeral.messages[index - 1]
 
