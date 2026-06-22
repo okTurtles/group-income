@@ -1049,13 +1049,16 @@ export default ({
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
-        if (!this.$refs.conversation) return
+        const conversation = this.$refs.conversation
+        if (!conversation) return
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
+        if (index < 0) return
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
-            this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
+            const conversation = this.$refs.conversation
+            if (hasChatroomSwitchedSince() || !conversation) return
+            conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
               if (this.ephemeral.focusedEffect !== messageHash) return
@@ -1063,8 +1066,9 @@ export default ({
             }, 1500)
           })
         } else {
-          if (!this.$refs.conversation) return
-          this.$refs.conversation.scrollToItem(index)
+          const conversation = this.$refs.conversation
+          if (!conversation) return
+          conversation.scrollToItem(index)
 
           // Sometimes, scrollToItem() above doesn't necessarily lead to 'scroll' event (eg. target message is the latest message but the scroll position is already at the bottom)
           // and in that case, some scroll-position related states (currentChatRoomReadUntil, currentChatRoomScrollPosition, etc.) doesn't get updated which leads to a bug
