@@ -1,9 +1,25 @@
 'use strict'
 import sbp from '@sbp/sbp'
+import { GIErrorChatRoomReadUntilHeightAhead } from '@common/common.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { KV_QUEUE, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
+
+// Matches the message thrown by chelonia's `parseEncryptedOrUnencryptedMessage`
+// when the embedded height is greater than the local contract height. Chelonia
+// throws a plain `Error` for this, so the check is kept here, at the single
+// boundary that owns the rethrow, instead of leaking the string match to
+// callers.
+const isHeightAheadError = (e: ?Object): boolean => {
+  const re = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
+  // Chelonia may rewrap the original error, so walk the cause chain instead of
+  // only checking the top-level message.
+  for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
+    if (typeof cur.message === 'string' && re.test(cur.message)) return true
+  }
+  return false
+}
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // Name discrepancies between the KV store and `namespaceLookups` may occur
@@ -146,7 +162,17 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
+      try {
+        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
+      } catch (e) {
+        // The local identity contract is behind the server: rethrow as a typed
+        // error so callers can retry once it has caught up. (See the note on
+        // GIErrorChatRoomReadUntilHeightAhead above.)
+        if (isHeightAheadError(e)) {
+          throw new GIErrorChatRoomReadUntilHeightAhead(e.message, { cause: e })
+        }
+        throw e
+      }
     })
   },
   'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
