@@ -57,6 +57,8 @@ if (process.env.CI) {
 deserializer.register(SPMessage)
 deserializer.register(Secret)
 
+const MAX_JOURNAL_EXPORT_BYTES = 5 * 1024 * 1024
+
 // https://serviceworke.rs/message-relay_service-worker_doc.html
 // https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
 // https://jakearchibald.com/2014/using-serviceworker-today/
@@ -299,6 +301,27 @@ sbp('sbp/selectors/register', {
   },
   'sw/deviceSettings/get': (key) => {
     return sbp('chelonia/rootState').deviceSettings[key]
+  },
+  'sw/journal/getAll': () => {
+    const rootState = sbp('chelonia/rootState')
+    const journals = Object.create(null)
+    const EMPTY_OBJECT_BYTES = 2 // for "{}"
+    let exportBytes = EMPTY_OBJECT_BYTES
+    let truncated = false
+
+    for (const contractID of Object.keys(rootState.contracts || {})) {
+      const journal = sbp('chelonia/journal/get', contractID)
+      if (!journal) continue
+      const journalBytes = JSON.stringify(journal).length + contractID.length + 5
+      if (exportBytes + journalBytes > MAX_JOURNAL_EXPORT_BYTES) {
+        truncated = true
+        continue
+      }
+      journals[contractID] = journal
+      exportBytes += journalBytes
+    }
+
+    return { journals, truncated }
   }
 })
 

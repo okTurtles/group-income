@@ -12,6 +12,8 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
+import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
+import { clearStaleJournalsAfterRedactions } from './model/journal/migration.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 import { KV_KEYS } from './utils/constants.js'
 
@@ -138,6 +140,11 @@ const setupChelonia = async (): Promise<*> => {
     return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
   })
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
+  const clearStaleJournals = () => clearStaleJournalsAfterRedactions(
+    sbp('chelonia/rootState'),
+    sbp('chelonia/config'),
+    () => sbp('chelonia/journal/clear')
+  )
 
   // When running in a SW, this call here needs to be moved to be made from the
   // SW itself
@@ -148,7 +155,7 @@ const setupChelonia = async (): Promise<*> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Object, k: string, v: string) => {
+    reactiveSet: (o: Object, k: string, v: mixed) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
@@ -257,9 +264,12 @@ const setupChelonia = async (): Promise<*> => {
     },
     journal: {
       enabled: true,
-      snapshotInterval: 75
+      snapshotInterval: 75,
+      redactions: JOURNAL_REDACTIONS
     }
   })
+
+  clearStaleJournals()
 
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
     const state = sbp('chelonia/rootState')
@@ -271,6 +281,8 @@ const setupChelonia = async (): Promise<*> => {
     sbp('gi.actions/identity/kv/load').catch(e => {
       console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
     })
+
+    clearStaleJournals()
 
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
