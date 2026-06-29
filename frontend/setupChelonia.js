@@ -12,9 +12,10 @@ import { groupContractsByType, syncContractsInOrder } from './controller/actions
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { JOURNAL_REDACTIONS, JOURNAL_REDACTIONS_VERSION } from './model/journal/redactions.js'
+import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
+import { clearStaleJournalsAfterRedactions } from './model/journal/migration.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
-import { DEVICE_SETTINGS, KV_KEYS } from './utils/constants.js'
+import { KV_KEYS } from './utils/constants.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   // If the types don't match, a different release has been made
@@ -139,21 +140,11 @@ const setupChelonia = async (): Promise<*> => {
     return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
   })
   const saveCheloniaDebounced = debounce(saveChelonia, 200)
-  const clearStaleJournalsAfterRedactions = () => {
-    const rootState = sbp('chelonia/rootState')
-    const cheloniaConfig = sbp('chelonia/config')
-    if (!rootState.deviceSettings) {
-      cheloniaConfig.reactiveSet(rootState, 'deviceSettings', Object.create(null))
-    }
-    if (rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED] === JOURNAL_REDACTIONS_VERSION) return
-    if (!rootState?.contracts || Object.keys(rootState.contracts).length === 0) return
-
-    const cleared = sbp('chelonia/journal/clear')
-    cheloniaConfig.reactiveSet(rootState.deviceSettings, DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED, JOURNAL_REDACTIONS_VERSION)
-    if (cleared > 0) {
-      console.info(`[setupChelonia] Cleared ${cleared} stale Chelonia journals after updating redactions`)
-    }
-  }
+  const clearStaleJournals = () => clearStaleJournalsAfterRedactions(
+    sbp('chelonia/rootState'),
+    sbp('chelonia/config'),
+    () => sbp('chelonia/journal/clear')
+  )
 
   // When running in a SW, this call here needs to be moved to be made from the
   // SW itself
@@ -278,7 +269,7 @@ const setupChelonia = async (): Promise<*> => {
     }
   })
 
-  clearStaleJournalsAfterRedactions()
+  clearStaleJournals()
 
   sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
     const state = sbp('chelonia/rootState')
@@ -291,7 +282,7 @@ const setupChelonia = async (): Promise<*> => {
       console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
     })
 
-    clearStaleJournalsAfterRedactions()
+    clearStaleJournals()
 
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)

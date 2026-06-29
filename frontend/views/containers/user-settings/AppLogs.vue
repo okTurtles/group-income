@@ -88,7 +88,8 @@ type LogPayload = {
   version_info: Object,
   includeJournal: boolean,
   logs: Object[],
-  journal?: Object
+  journal?: Object,
+  journalTruncated?: boolean
 }
 
 export default ({
@@ -224,7 +225,9 @@ export default ({
 
         if (this.form.includeJournal) {
           try {
-            payload.journal = await sbp('sw/journal/getAll')
+            const { journals, truncated } = await sbp('sw/journal/getAll')
+            payload.journal = journals
+            payload.journalTruncated = truncated
           } catch (err) {
             journalError = err
             console.error('AppLogs.vue: Failed to obtain contract journals:', err)
@@ -253,6 +256,8 @@ export default ({
 
         if (journalError) {
           this.$refs.errBanner.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
+        } else if (payload.journalTruncated) {
+          this.$refs.errBanner.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
         const errorDisplay = isDownload

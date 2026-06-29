@@ -305,20 +305,23 @@ sbp('sbp/selectors/register', {
   'sw/journal/getAll': () => {
     const rootState = sbp('chelonia/rootState')
     const journals = Object.create(null)
-    let exportBytes = 2
+    const EMPTY_OBJECT_BYTES = 2 // for "{}"
+    let exportBytes = EMPTY_OBJECT_BYTES
+    let truncated = false
 
     for (const contractID of Object.keys(rootState.contracts || {})) {
       const journal = sbp('chelonia/journal/get', contractID)
       if (!journal) continue
       const journalBytes = JSON.stringify(journal).length + contractID.length + 5
       if (exportBytes + journalBytes > MAX_JOURNAL_EXPORT_BYTES) {
-        throw new Error('Contract journal export is too large')
+        truncated = true
+        continue
       }
       journals[contractID] = journal
       exportBytes += journalBytes
     }
 
-    return journals
+    return { journals, truncated }
   }
 })
 

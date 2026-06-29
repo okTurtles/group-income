@@ -4,10 +4,13 @@ import assert from 'node:assert'
 import { applyRedactions, shortHashRedactor } from '@chelonia/lib/journal'
 import {
   JOURNAL_REDACTIONS,
+  JOURNAL_REDACTIONS_VERSION,
   REDACTED,
   hashRedactor,
   messageTextRedactor
 } from './redactions.js'
+import { clearStaleJournalsAfterRedactions } from './migration.js'
+import { DEVICE_SETTINGS } from '../../utils/constants.js'
 
 const redact = (state, contractName = 'gi.contracts/group') => applyRedactions(state, JOURNAL_REDACTIONS, contractName)
 
@@ -212,5 +215,166 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted._vm.invites.invite1.inviteSecret, REDACTED)
     assert.strictEqual(redacted._vm.invites.invite1.creatorID, 'user1')
     assert.strictEqual(original._vm.authorizedKeys.key1.meta.private.content, 'secret content')
+  })
+
+  it('redacts group proposal payload and proposalData while keeping structure', () => {
+    const original = {
+      proposals: {
+        hash1: {
+          data: {
+            proposalType: 'invite-member',
+            proposalData: { memberName: 'bob', reason: 'private reason' }
+          },
+          payload: { secret: 'invite-key-material' },
+          status: 'passed',
+          creatorID: 'user1'
+        }
+      }
+    }
+
+    const redacted = redact(original)
+
+    assert.strictEqual(redacted.proposals.hash1.payload, REDACTED)
+    assert.strictEqual(redacted.proposals.hash1.data.proposalData, REDACTED)
+    assert.strictEqual(redacted.proposals.hash1.data.proposalType, 'invite-member')
+    assert.strictEqual(redacted.proposals.hash1.status, 'passed')
+    assert.strictEqual(redacted.proposals.hash1.creatorID, 'user1')
+    assert.deepStrictEqual(original.proposals.hash1.payload, { secret: 'invite-key-material' })
+  })
+
+  it('redacts chat notification channel descriptions and poll voters', () => {
+    const original = {
+      messages: [{
+        notification: {
+          type: 'GROUP_UPDATED',
+          params: { channelName: 'general', channelDescription: 'private description', count: 3 }
+        },
+        pollData: {
+          question: 'secret question',
+          options: [{ id: 'o1', value: 'secret option', voted: ['alice', 'bob'] }]
+        }
+      }],
+      pinnedMessages: [{
+        notification: {
+          type: 'GROUP_UPDATED',
+          params: { channelName: 'pinned-channel', channelDescription: 'pinned description', count: 1 }
+        },
+        pollData: {
+          question: 'pinned question',
+          options: [{ id: 'o2', value: 'pinned option', voted: ['carol'] }]
+        }
+      }]
+    }
+
+    const redacted = redact(original, 'gi.contracts/chatroom')
+
+    assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'general')
+    assert.strictEqual(redacted.messages[0].notification.params.count, 3)
+    assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].pollData.options[0].voted, REDACTED)
+    assert.strictEqual(redacted.messages[0].pollData.options[0].id, 'o1')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelDescription, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'pinned-channel')
+    assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].voted, REDACTED)
+    assert.deepStrictEqual(original.messages[0].pollData.options[0].voted, ['alice', 'bob'])
+  })
+
+  it('pins the redaction rule set so changes force a version review', () => {
+    // When you intentionally change JOURNAL_REDACTIONS, update this list AND bump
+    // JOURNAL_REDACTIONS_VERSION so persisted journals get re-cleared via
+    // clearStaleJournalsAfterRedactions.
+    const expectedPaths = [
+      '_vm.authorizedKeys.*._private',
+      '_vm.authorizedKeys.*.meta.private.content',
+      '_vm.authorizedKeys.*.meta.private.oldKeys',
+      '_vm.invites.*.inviteSecret',
+      'attributes.bio',
+      'attributes.email',
+      'attributes.picture',
+      'fileDeleteTokens',
+      'groups.*.inviteSecretId',
+      'messages.*.attachments.*.downloadData.downloadParams',
+      'messages.*.attachments.*.name',
+      'messages.*.notification.params.channelDescription',
+      'messages.*.pollData.options.*.value',
+      'messages.*.pollData.options.*.voted',
+      'messages.*.pollData.question',
+      'messages.*.proposal.proposalData',
+      'messages.*.replyingMessage.text',
+      'messages.*.text',
+      'payments.*.data.amount',
+      'payments.*.data.details',
+      'payments.*.data.memo',
+      'payments.*.data.txid',
+      'paymentsByPeriod.*.haveNeedsSnapshot',
+      'paymentsByPeriod.*.lastAdjustedDistribution',
+      'pinnedMessages.*.attachments.*.downloadData.downloadParams',
+      'pinnedMessages.*.attachments.*.name',
+      'pinnedMessages.*.notification.params.channelDescription',
+      'pinnedMessages.*.pollData.options.*.value',
+      'pinnedMessages.*.pollData.options.*.voted',
+      'pinnedMessages.*.pollData.question',
+      'pinnedMessages.*.proposal.proposalData',
+      'pinnedMessages.*.replyingMessage.text',
+      'pinnedMessages.*.text',
+      'profiles.*.incomeAmount',
+      'profiles.*.paymentMethods',
+      'profiles.*.pledgeAmount',
+      'proposals.*.data.proposalData',
+      'proposals.*.payload',
+      'settings.groupPicture.downloadParams',
+      'thankYousFrom.*.*'
+    ]
+
+    const actualPaths = JOURNAL_REDACTIONS.map(r => r.path).sort()
+    assert.deepStrictEqual(actualPaths, expectedPaths)
+  })
+})
+
+describe('clearStaleJournalsAfterRedactions migration', () => {
+  const makeConfig = () => ({
+    reactiveSet: (o, k, v) => { o[k] = v }
+  })
+
+  it('initializes deviceSettings and records the version when no contracts exist', () => {
+    const rootState = { contracts: {} }
+    let cleared = 0
+    const clearJournals = () => { cleared++; return 0 }
+
+    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
+
+    assert.strictEqual(cleared, 0)
+    assert.strictEqual(
+      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED],
+      JOURNAL_REDACTIONS_VERSION
+    )
+  })
+
+  it('clears journals and records the version when contracts exist', () => {
+    const rootState = { contracts: { contract1: {} }, deviceSettings: Object.create(null) }
+    let cleared = 0
+    const clearJournals = () => { cleared++; return 1 }
+
+    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
+
+    assert.strictEqual(cleared, 1)
+    assert.strictEqual(
+      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED],
+      JOURNAL_REDACTIONS_VERSION
+    )
+  })
+
+  it('is a no-op when the current version was already recorded', () => {
+    const rootState = {
+      contracts: { contract1: {} },
+      deviceSettings: { [DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED]: JOURNAL_REDACTIONS_VERSION }
+    }
+    let cleared = 0
+    const clearJournals = () => { cleared++; return 1 }
+
+    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
+
+    assert.strictEqual(cleared, 0)
   })
 })
