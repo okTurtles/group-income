@@ -343,7 +343,8 @@ export default ({
         // Used for non-joined chatrooms
         latestHeight: undefined,
         // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
-        failedMessagesAttachments: {}
+        failedMessagesAttachments: {},
+        readUntilRetryTimer: null
       },
       messageState: {
         // `fetched` indicates whether we've loaded messages dynamically
@@ -389,6 +390,7 @@ export default ({
     window.removeEventListener('focus', this.windowFocusHandler)
     this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
+    clearTimeout(this.ephemeral.readUntilRetryTimer)
     this.cleanupFailedMessagesAttachments()
   },
   computed: {
@@ -418,6 +420,8 @@ export default ({
     },
     isFetchingMessages () {
       return !!this.ephemeral.messagesInitiated &&
+        // Only show while incrementally catching up, not during the very first load.
+        this.ephemeral.messages.length > 0 &&
         (!!this.ephemeral.loadingDown || !!this.ephemeral.loadingUp)
     },
     needsFromScratch () {
@@ -530,7 +534,16 @@ export default ({
       }
       const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
-        .sort((a, b) => a.message.height - b.message.height || a.index - b.index)
+        .sort((a, b) => {
+          const ha = a.message.height
+          const hb = b.message.height
+          if (ha !== hb) {
+            // Missing heights fall back to original order to keep the sort total.
+            if (ha == null || hb == null) return a.index - b.index
+            return ha - hb
+          }
+          return a.index - b.index
+        })
         .map(({ message }) => message)
       this.ephemeral.messagesSource = newMessages
       if (!postSetMessageState?.noRerender) {
@@ -1601,7 +1614,9 @@ export default ({
           if ((e?.name === 'GIErrorChatRoomReadUntilHeightAhead' ||
             e?.cause?.name === 'GIErrorChatRoomReadUntilHeightAhead') && retryCount > 0) {
             console.warn('[ChatMain.vue] Delaying read until update until identity contract catches up', e)
-            setTimeout(() => {
+            clearTimeout(this.ephemeral.readUntilRetryTimer)
+            this.ephemeral.readUntilRetryTimer = setTimeout(() => {
+              this.ephemeral.readUntilRetryTimer = null
               if (hasChatroomSwitchedSince()) return
               this.updateReadUntilMessageHash({ messageHash, createdHeight, forceUpdate, retryCount: retryCount - 1 })
             }, 5000)
@@ -1967,6 +1982,8 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.switchController.abort(new Error('Switched chatrooms'))
+        clearTimeout(this.ephemeral.readUntilRetryTimer)
+        this.ephemeral.readUntilRetryTimer = null
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()

@@ -11,9 +11,14 @@ import { isExpired } from '@model/notifications/utils.js'
 // throws a plain `Error` for this, so the check is kept here, at the single
 // boundary that owns the rethrow, instead of leaking the string match to
 // callers.
-const isHeightAheadError = (e: Object): boolean => {
-  return /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
-    .test(e?.message || e?.cause?.message || '')
+const isHeightAheadError = (e: ?Object): boolean => {
+  const re = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
+  // Chelonia may rewrap the original error, so walk the cause chain instead of
+  // only checking the top-level message.
+  for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
+    if (typeof cur.message === 'string' && re.test(cur.message)) return true
+  }
+  return false
 }
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
