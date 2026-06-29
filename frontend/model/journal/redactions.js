@@ -49,5 +49,7 @@ export const JOURNAL_REDACTIONS = [
   { path: '_vm.authorizedKeys.*._private', redact: redactedRedactor },
   { path: '_vm.authorizedKeys.*.meta.private.content', redact: hashRedactor },
   { path: '_vm.authorizedKeys.*.meta.private.oldKeys', redact: hashRedactor },
-  { path: '_vm.invites.*.inviteSecret', redact: redactedRedactor }
+  { path: '_vm.invites.*.inviteSecret', redact: redactedRedactor },
+  { path: 'settings.groupName', redact: redactedRedactor },
+  { path: 'settings.sharedValues', redact: redactedRedactor }
 ]
