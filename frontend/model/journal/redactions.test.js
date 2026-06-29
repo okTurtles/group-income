@@ -94,7 +94,7 @@ describe('journal redactions', () => {
       }
     })
 
-    assert.strictEqual(redacted.settings.groupName, 'Private group')
+    assert.strictEqual(redacted.settings.groupName, '[REDACTED]')
     assert.strictEqual(redacted.settings.groupPicture.manifestCid, 'zGroupAvatar')
     assert.strictEqual(redacted.settings.groupPicture.downloadParams, REDACTED)
     assert.strictEqual(redacted.profiles.user1.incomeDetailsType, 'pledgeAmount')
@@ -323,7 +323,9 @@ describe('journal redactions', () => {
       'profiles.*.pledgeAmount',
       'proposals.*.data.proposalData',
       'proposals.*.payload',
+      'settings.groupName',
       'settings.groupPicture.downloadParams',
+      'settings.sharedValues',
       'thankYousFrom.*.*'
     ]
 
