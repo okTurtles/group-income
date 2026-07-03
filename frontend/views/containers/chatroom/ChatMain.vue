@@ -275,6 +275,39 @@ const onScrollEnd = function () {
   }
 }
 
+const setMessages = function () {
+  if (!this.ephemeral.renderingChatRoomId) return
+  const newMessages = this.messageState.contract?.messages || []
+  const postSetMessageState = this.ephemeral.postSetMessageState
+  delete this.ephemeral.postSetMessageState
+  if (this.ephemeral.messagesSource === newMessages) {
+    if (postSetMessageState) {
+      this.$nextTick(postSetMessageState)
+    }
+    return
+  }
+  const currentVisibleMessage = this.visibleMessageIterator().next().value
+  this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
+    .sort((a, b) => {
+      const ha = a.message.height
+      const hb = b.message.height
+      if (ha !== hb) {
+        // Missing heights fall back to original order to keep the sort total.
+        if (ha == null || hb == null) return a.index - b.index
+        return ha - hb
+      }
+      return a.index - b.index
+    })
+    .map(({ message }) => message)
+  this.ephemeral.messagesSource = newMessages
+  if (!postSetMessageState?.noRerender) {
+    this.rerenderEvents(currentVisibleMessage)
+  }
+  if (postSetMessageState) {
+    this.$nextTick(postSetMessageState)
+  }
+}
+
 export default ({
   name: 'ChatMain',
   components: {
@@ -374,6 +407,7 @@ export default ({
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), process.env.CI ? 30 : 300)
     this.ephemeral.onScrollStart = debounce(onScrollStart.bind(this), process.env.CI ? 20 : 200)
     this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
+    this.ephemeral.setMessages = debounce(setMessages.bind(this), process.env.CI ? 10 : 100)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
     window.addEventListener('focus', this.windowFocusHandler)
@@ -390,6 +424,7 @@ export default ({
     window.removeEventListener('focus', this.windowFocusHandler)
     this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
+    this.ephemeral.setMessages?.clear?.()
     clearTimeout(this.ephemeral.readUntilRetryTimer)
     this.cleanupFailedMessagesAttachments()
   },
@@ -521,38 +556,6 @@ export default ({
         Vue.delete(this.ephemeral.isEditing, hash)
       }
     },
-    setMessages: debounce(function () {
-      if (!this.ephemeral.renderingChatRoomId) return
-      const newMessages = this.messageState.contract?.messages || []
-      const postSetMessageState = this.ephemeral.postSetMessageState
-      delete this.ephemeral.postSetMessageState
-      if (this.ephemeral.messagesSource === newMessages) {
-        if (postSetMessageState) {
-          this.$nextTick(postSetMessageState)
-        }
-        return
-      }
-      const currentVisibleMessage = this.visibleMessageIterator().next().value
-      this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
-        .sort((a, b) => {
-          const ha = a.message.height
-          const hb = b.message.height
-          if (ha !== hb) {
-            // Missing heights fall back to original order to keep the sort total.
-            if (ha == null || hb == null) return a.index - b.index
-            return ha - hb
-          }
-          return a.index - b.index
-        })
-        .map(({ message }) => message)
-      this.ephemeral.messagesSource = newMessages
-      if (!postSetMessageState?.noRerender) {
-        this.rerenderEvents(currentVisibleMessage)
-      }
-      if (postSetMessageState) {
-        this.$nextTick(postSetMessageState)
-      }
-    }, process.env.CI ? 10 : 100),
     * visibleMessageIterator () {
       if (!this.$refs.conversation) return
       // The following is slightly more efficient if using `vue-virtual-scroller'
@@ -874,8 +877,8 @@ export default ({
               msg.hash = message.hash()
               msg.height = message.height()
               this.ephemeral.messagesSource = null
-              this.setMessages()
-              this.setMessages.flush?.()
+              this.ephemeral.setMessages()
+              this.ephemeral.setMessages.flush()
               pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
@@ -1180,8 +1183,8 @@ export default ({
         this.messageState.contract.messages.splice(index, 1)
       }
       this.ephemeral.messagesSource = null
-      this.setMessages()
-      this.setMessages.flush?.()
+      this.ephemeral.setMessages()
+      this.ephemeral.setMessages.flush()
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1996,6 +1999,7 @@ export default ({
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()
+        this.ephemeral.setMessages?.flush()
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
@@ -2023,7 +2027,7 @@ export default ({
     },
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
-      this.setMessages()
+      this.ephemeral.setMessages()
     },
     'ephemeral.renderingChatRoomId' (to) {
       if (!to) return
