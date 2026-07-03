@@ -911,7 +911,7 @@ export default ({
           }
 
           const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
+          if (msgIndex >= 0) {
             const failedMsg = this.messageState.contract.messages[msgIndex]
             Vue.set(failedMsg, 'hasFailed', true)
 
@@ -1772,9 +1772,18 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.ephemeral.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            // Use the freshly processed contract state here. `ephemeral.messages` is
+            // only the debounced rendered view and can still be stale immediately
+            // after processEvents() returns.
+            const messages = this.messageState.contract.messages || []
+            const latestValidMessage = messages
+              .filter(m => !m.pending && !m.hasFailed)
+              .reduce((latest, message) => {
+                if (!latest) return message
+                return message.height > latest.height ? message : latest
+              }, null)
 
-            if (this.ephemeral.scrollableDistance < 50 && this.ephemeral.messages.length) {
+            if (this.ephemeral.scrollableDistance < 50 && messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
