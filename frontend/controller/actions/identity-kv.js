@@ -14,12 +14,13 @@ import { isExpired } from '@model/notifications/utils.js'
 // Source: @chelonia/lib `chelonia.ts`, parseEncryptedOrUnencryptedMessage:
 //   `[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${h}; it must be between 0 and ${currentHeight}`
 // Re-verify this literal if upgrading @chelonia/lib.
+const HEIGHT_AHEAD_RE = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
+
 const isHeightAheadError = (e: ?Object): boolean => {
-  const re = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
   // Chelonia may rewrap the original error, so walk the cause chain instead of
   // only checking the top-level message.
   for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
-    if (typeof cur.message === 'string' && re.test(cur.message)) return true
+    if (typeof cur.message === 'string' && HEIGHT_AHEAD_RE.test(cur.message)) return true
   }
   return false
 }

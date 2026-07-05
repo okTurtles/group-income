@@ -295,11 +295,10 @@ const setMessages = function () {
     .sort((a, b) => {
       const ha = a.message.height
       const hb = b.message.height
-      if (ha !== hb) {
-        // Missing heights fall back to original order to keep the sort total.
-        if (ha == null || hb == null) return a.index - b.index
-        return ha - hb
-      }
+      // Pending (height-less) messages sort last; ties keep original order.
+      const ra = ha == null ? Infinity : ha
+      const rb = hb == null ? Infinity : hb
+      if (ra !== rb) return ra - rb
       return a.index - b.index
     })
     .map(({ message }) => message)
@@ -371,11 +370,16 @@ export default ({
         loadingUp: undefined,
         messages: [],
         // IDENTITY CACHE INVARIANT: `messagesSource` holds the array reference
-        // last consumed by `setMessages()`. It MUST be reset to `null` before
-        // any in-place mutation of `messageState.contract.messages` (e.g. a
-        // `.splice` or a `Vue.set(msg, 'hasFailed', true)` that isn't followed
-        // by a contract reference swap), otherwise the UI silently stops
-        // updating. Use `forceRerenderMessages()` to do this safely.
+        // last consumed by `setMessages()`. It MUST be reset to `null` (via
+        // `forceRerenderMessages()`) before any STRUCTURAL in-place mutation of
+        // `messageState.contract.messages` — i.e. a `.splice` / `.push` / `.shift`
+        // / reordering that changes which elements the array contains. Because
+        // `ephemeral.messages` is a separately-built (sorted) array, structural
+        // edits to the source aren't otherwise reflected in the rendered list.
+        //
+        // NOTE: mutating a *property* on an existing message object (e.g.
+        // `Vue.set(msg, 'hasFailed', true)`) does NOT require a reset — rendered
+        // items are the same reactive object references, so Vue tracks the change.
         messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
@@ -1187,8 +1191,8 @@ export default ({
     },
     forceRerenderMessages () {
       this.ephemeral.messagesSource = null
-      this.ephemeral.setMessages()
-      this.ephemeral.setMessages.flush()
+      this.ephemeral.setMessages?.()
+      this.ephemeral.setMessages?.flush?.()
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
@@ -1626,8 +1630,7 @@ export default ({
         }).catch(e => {
           // The identity contract was still behind the server when we tried to
           // write; retry once after a short delay to give it time to catch up.
-          if ((e?.name === 'GIErrorKVHeightAhead' ||
-            e?.cause?.name === 'GIErrorKVHeightAhead') && retryCount > 0) {
+          if (e?.name === 'GIErrorKVHeightAhead' && retryCount > 0) {
             console.warn('[ChatMain.vue] Delaying read until update until identity contract catches up', e)
             clearTimeout(this.ephemeral.readUntilRetryTimer)
             this.ephemeral.readUntilRetryTimer = setTimeout(() => {
@@ -1834,6 +1837,8 @@ export default ({
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
               createdHeight: value.data.height
+            }).catch(e => {
+              console.error('[ChatMain.vue] Error updating unreadMessages', e)
             })
           }
         })()
