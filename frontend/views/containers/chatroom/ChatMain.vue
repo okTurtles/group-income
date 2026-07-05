@@ -109,7 +109,11 @@
     .c-initializing(v-if='!ephemeral.messagesInitiated')
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
-    .c-fetching-messages(v-if='isFetchingMessages')
+    .c-fetching-messages(
+      v-if='isFetchingMessages'
+      role='status'
+      aria-live='polite'
+    )
       i18n Fetching messages...
 
     toast-container(area='chat-main')
@@ -346,6 +350,7 @@ export default ({
         onChatScroll: null,
         onScrollStart: () => {},
         onScrollEnd: () => {},
+        setMessages: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
@@ -365,6 +370,12 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
+        // IDENTITY CACHE INVARIANT: `messagesSource` holds the array reference
+        // last consumed by `setMessages()`. It MUST be reset to `null` before
+        // any in-place mutation of `messageState.contract.messages` (e.g. a
+        // `.splice` or a `Vue.set(msg, 'hasFailed', true)` that isn't followed
+        // by a contract reference swap), otherwise the UI silently stops
+        // updating. Use `forceRerenderMessages()` to do this safely.
         messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
@@ -876,9 +887,7 @@ export default ({
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
-              this.ephemeral.messagesSource = null
-              this.ephemeral.setMessages()
-              this.ephemeral.setMessages.flush()
+              this.forceRerenderMessages()
               pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
@@ -985,6 +994,9 @@ export default ({
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
+              // SAFE re: messagesSource invariant — the contract reference is
+              // swapped via Vue.set in the beforeRequest hook right after this,
+              // which fires the watcher and re-sorts. No manual flush needed.
               messages.splice(msgIndex, 1)
             }
           }
@@ -1064,10 +1076,7 @@ export default ({
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
 
-      const scrollAndHighlight = () => {
-        const conversation = this.$refs.conversation
-        if (!conversation) return
-        const index = findMessageIdx(messageHash, this.ephemeral.messages)
+      const scrollAndHighlight = (index) => {
         if (index < 0) return
 
         if (effect) {
@@ -1176,15 +1185,18 @@ export default ({
           : behavior
       })
     },
+    forceRerenderMessages () {
+      this.ephemeral.messagesSource = null
+      this.ephemeral.setMessages()
+      this.ephemeral.setMessages.flush()
+    },
     retryMessage (msg) {
       const message = cloneDeep(msg)
       const index = this.messageState.contract.messages.indexOf(msg)
       if (index >= 0) {
         this.messageState.contract.messages.splice(index, 1)
       }
-      this.ephemeral.messagesSource = null
-      this.ephemeral.setMessages()
-      this.ephemeral.setMessages.flush()
+      this.forceRerenderMessages()
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1614,8 +1626,8 @@ export default ({
         }).catch(e => {
           // The identity contract was still behind the server when we tried to
           // write; retry once after a short delay to give it time to catch up.
-          if ((e?.name === 'GIErrorChatRoomReadUntilHeightAhead' ||
-            e?.cause?.name === 'GIErrorChatRoomReadUntilHeightAhead') && retryCount > 0) {
+          if ((e?.name === 'GIErrorKVHeightAhead' ||
+            e?.cause?.name === 'GIErrorKVHeightAhead') && retryCount > 0) {
             console.warn('[ChatMain.vue] Delaying read until update until identity contract catches up', e)
             clearTimeout(this.ephemeral.readUntilRetryTimer)
             this.ephemeral.readUntilRetryTimer = setTimeout(() => {
@@ -1999,7 +2011,7 @@ export default ({
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()
-        this.ephemeral.setMessages?.flush()
+        this.ephemeral.setMessages?.clear?.()
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
@@ -2027,7 +2039,7 @@ export default ({
     },
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
-      this.ephemeral.setMessages()
+      this.ephemeral.setMessages?.()
     },
     'ephemeral.renderingChatRoomId' (to) {
       if (!to) return

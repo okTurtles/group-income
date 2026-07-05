@@ -1,6 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { GIErrorChatRoomReadUntilHeightAhead } from '@common/common.js'
+import { GIErrorKVHeightAhead } from '@common/common.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { KV_QUEUE, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
@@ -9,8 +9,11 @@ import { isExpired } from '@model/notifications/utils.js'
 // Matches the message thrown by chelonia's `parseEncryptedOrUnencryptedMessage`
 // when the embedded height is greater than the local contract height. Chelonia
 // throws a plain `Error` for this, so the check is kept here, at the single
-// boundary that owns the rethrow, instead of leaking the string match to
-// callers.
+// shared boundary (saveChatRoomUnreadMessages) that owns the rethrow, instead
+// of leaking the string match to callers.
+// Source: @chelonia/lib `chelonia.ts`, parseEncryptedOrUnencryptedMessage:
+//   `[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${h}; it must be between 0 and ${currentHeight}`
+// Re-verify this literal if upgrading @chelonia/lib.
 const isHeightAheadError = (e: ?Object): boolean => {
   const re = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
   // Chelonia may rewrap the original error, so walk the cause chain instead of
@@ -93,7 +96,7 @@ export default (sbp('sbp/selectors/register', {
     }
     return (await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES))?.data || {}
   },
-  'gi.actions/identity/kv/saveChatRoomUnreadMessages': ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
+  'gi.actions/identity/kv/saveChatRoomUnreadMessages': async ({ data, onconflict }: { data: Object, onconflict?: Function }) => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
@@ -103,12 +106,24 @@ export default (sbp('sbp/selectors/register', {
     //       because it uses fields of the identity contract state including height, cek, csk
     //       this conflict error can cause the heisenbug mostly in Cypress
     //       https://okturtles.slack.com/archives/C0EH7P20Y/p1720053305870019?thread_ts=1720025185.746849&cid=C0EH7P20Y
-    return sbp('chelonia/kv/queuedSet', {
-      contractID: identityContractID,
-      key: KV_KEYS.UNREAD_MESSAGES,
-      data,
-      onconflict
-    })
+    try {
+      return await sbp('chelonia/kv/queuedSet', {
+        contractID: identityContractID,
+        key: KV_KEYS.UNREAD_MESSAGES,
+        data,
+        onconflict
+      })
+    } catch (e) {
+      // The local identity contract is behind the server: rethrow as a typed
+      // error so callers can retry once it has caught up. Centralized here so
+      // that every caller of this selector (setChatRoomReadUntil, markAsUnread,
+      // addChatRoomUnreadMessage, removeChatRoomUnreadMessage,
+      // initChatRoomUnreadMessages) benefits uniformly.
+      if (isHeightAheadError(e)) {
+        throw new GIErrorKVHeightAhead(e.message, { cause: e })
+      }
+      throw e
+    }
   },
   'gi.actions/identity/kv/loadChatRoomUnreadMessages': () => {
     return sbp('okTurtles.eventQueue/queueEvent', KV_QUEUE, async () => {
@@ -162,17 +177,7 @@ export default (sbp('sbp/selectors/register', {
         return null
       }
 
-      try {
-        await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
-      } catch (e) {
-        // The local identity contract is behind the server: rethrow as a typed
-        // error so callers can retry once it has caught up. (See the note on
-        // GIErrorChatRoomReadUntilHeightAhead above.)
-        if (isHeightAheadError(e)) {
-          throw new GIErrorChatRoomReadUntilHeightAhead(e.message, { cause: e })
-        }
-        throw e
-      }
+      await sbp('gi.actions/identity/kv/saveChatRoomUnreadMessages', { onconflict: getUpdatedUnreadMessages })
     })
   },
   'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
