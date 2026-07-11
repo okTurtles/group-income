@@ -146,6 +146,14 @@ export const registerKvSlots = (): void => {
     match: onOwnIdentity,
     autoSubscribe: false,
     autoLoad: 'on-demand',
+    // `refreshOnReconnect: false` because the `ONLINE` listener in
+    // `identity-kv.js` already triggers an explicit `kv/load` → `loadCachedNames`
+    // → `chelonia/kv/sync` on both pubsub reconnect (`reconnection-succeeded`
+    // emits `ONLINE`) and the browser regaining connectivity. The lib-side
+    // reconnect refetch would duplicate that GET and the `checkAndAugmentNames`
+    // pass. The initial login load is driven by `LOGIN_COMPLETE` → `kv/load`,
+    // not by reconnect. (KV-REVAMPED.md §4.1)
+    refreshOnReconnect: false,
     onUpdate: (value, ctx) => {
       // Augment on load/remote/reconnect. `saveCachedNames` writes through the
       // low-level `chelonia/kv/queuedSet` (see identity-kv.js) and so never
@@ -154,7 +162,14 @@ export const registerKvSlots = (): void => {
       // write would only schedule a redundant batch of `namespace/lookup`
       // calls. (KV-REVAMPED.md §4.1)
       if (ctx.reason === 'local') return
-      return checkAndAugmentNames(value || [])
+      // Fire-and-forget: `checkAndAugmentNames` performs batched network
+      // lookups that can take seconds, and the lib awaits `onUpdate` inside
+      // the identity contract's queue lane. Awaiting here would stall
+      // identity event processing and (via chatroom sideEffects that await
+      // identity KV writes) chatroom event processing too. (KV-REVAMPED.md §4.1)
+      checkAndAugmentNames(value || []).catch((e) => {
+        console.error('[kv-slots] namespace-cache onUpdate error:', e)
+      })
     }
   })
 }

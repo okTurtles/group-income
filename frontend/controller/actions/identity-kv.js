@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
 
@@ -343,16 +343,27 @@ export default (sbp('sbp/selectors/register', {
       onconflict
     })
   },
-  'gi.actions/identity/kv/loadCachedNames': () => {
+  'gi.actions/identity/kv/loadCachedNames': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to load cached names without an active session')
     }
-    // Force a fetch of the on-demand slot; the refresh fires the slot's
+    // Force a fetch of the on-demand slot; a successful load fires the slot's
     // `onUpdate` (reason 'load'), which runs `checkAndAugmentNames`.
-    return sbp('chelonia/kv/sync', identityContractID, KV_KEYS.NS_CACHE)
+    await sbp('chelonia/kv/sync', identityContractID, KV_KEYS.NS_CACHE)
+    // On a 404 (key never written or deleted server-side) the slot settles to
+    // 'non-init' without firing `onUpdate` (the lib only invokes `onUpdate` on
+    // a 404 when the slot previously held a value). The pre-revamp
+    // `loadCachedNames` ran `checkAndAugmentNames` unconditionally, which for
+    // users with cached `namespaceLookups` but no server-side NS_CACHE key
+    // re-verified their local names and (via `NAMESPACE_REGISTRATION` ->
+    // `saveCachedNames`) created the key. Preserve that behavior explicitly
+    // here.
+    if (sbp('chelonia/kv/status', identityContractID, KV_KEYS.NS_CACHE) !== KV_LOAD_STATUS.LOADED) {
+      await checkAndAugmentNames([])
+    }
   }
-}): string[])
+}): Promise<void>)
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.

@@ -88,6 +88,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         if (cheloniaState.namespaceLookups) {
           state.namespaceLookups = cheloniaState.namespaceLookups
         }
+        // Seed the KV mirror from the live Chelonia state. The SW's identity
+        // slots load during the pre-login sync (before `LOGIN` is broadcast),
+        // and `replaceState` below would otherwise clobber the values the tab
+        // projected via `CHELONIA_KV_UPDATED` during that window, leaving the
+        // tab on the previous session's stale snapshot until the next KV event.
+        if (cheloniaState._kv) {
+          state._kv = cheloniaState._kv
+        }
         // End exclude contracts
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
@@ -109,6 +117,11 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         Vue.set(state, 'contracts', cheloniaState.contracts)
         if (cheloniaState.namespaceLookups) {
           Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+        }
+        // Seed the KV mirror from the live Chelonia state (see the branch above
+        // for why this is needed).
+        if (cheloniaState._kv) {
+          Vue.set(state, '_kv', cheloniaState._kv)
         }
         // End exclude contracts
         sbp('state/vuex/postUpgradeVerification', state)

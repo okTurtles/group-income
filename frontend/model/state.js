@@ -138,6 +138,20 @@ sbp('sbp/selectors/register', {
       }
     }
 
+    // Remove orphaned top-level keys left over from the pre-revamp KV plumbing.
+    // Their values now live under rootState._kv (mirrored into Vuex by
+    // `chelonia/externalStateSetup`). Nothing reads these anymore, but persisted
+    // snapshots still carry them, so delete on sight to stop re-persisting them.
+    ;['preferences', 'lastLoggedIn', 'kvStoreStatus'].forEach((k) => {
+      if (k in state) Vue.delete(state, k)
+    })
+    if (state.notifications && 'status' in state.notifications) {
+      Vue.delete(state.notifications, 'status')
+    }
+    if (state.chatroom && 'unreadMessages' in state.chatroom) {
+      Vue.delete(state.chatroom, 'unreadMessages')
+    }
+
     // Fix missing `namespaceLookups`. See issue
     // Promise.resolve to coerce into a promise, making `then` safe
     Promise.resolve(sbp('chelonia/rootState')).then((state) => {

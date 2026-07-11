@@ -7,6 +7,7 @@ import '@chelonia/lib'
 import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
@@ -278,6 +279,29 @@ const setupChelonia = async (): Promise<*> => {
   sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED, () => {
     saveChelonia().catch(e => {
       console.error('CHELONIA_STATE_MODIFIED handler: Error saving Chelonia state', e)
+    })
+  })
+
+  // Foreign identity contracts are never slot-owned: the identity KV slots'
+  // `match` predicate (`onOwnIdentity`) is false for any identity contract that
+  // isn't the logged-in user's own, so the slot layer never sends a filter
+  // frame for them. Without an explicit empty filter the pubsub server defaults
+  // to "receive all keys" (see @chelonia/lib docs/api.md), which means every
+  // client receives the KV frames (unreadMessages / preferences / notifications
+  // writes) for every other member's identity contract it has synced. The frames
+  // are dropped client-side (no attached slot), but the bandwidth and server
+  // fan-out cost scales with group size × chat activity. The own identity is
+  // excluded because `rootState.loggedIn` is populated by `chelonia/reset`
+  // during `gi.actions/identity/login` before the identity contract sync emits
+  // `CONTRACTS_MODIFIED`, so the slot layer owns it.
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
+    if (!added.length) return
+    const rootState = sbp('chelonia/rootState')
+    const ownIdentity = rootState.loggedIn?.identityContractID
+    added.forEach((cID) => {
+      if (rootState.contracts[cID]?.type === 'gi.contracts/identity' && cID !== ownIdentity) {
+        sbp('chelonia/kv/setFilter', cID, [])
+      }
     })
   })
 
