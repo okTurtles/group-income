@@ -44,7 +44,16 @@ module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null
   }
 }
 
-const compiler = componentCompiler.createDefaultCompiler()
+const compiler = componentCompiler.createDefaultCompiler({
+  style: {
+    // In production builds, @vue/component-compiler minifies component styles
+    // with clean-css v4, whose selector 'tidying' predates CSS Selectors
+    // Level 4 and strips descendant combinators inside :has(...), e.g.
+    // `:has(.c-menu .is-active)` becomes `:has(.c-menu.is-active)`, silently
+    // breaking those rules. Keep selectors as written.
+    postcssCleanOptions: { level: { 1: { tidySelectors: false } } }
+  }
+})
 const compile = ({ filename, source, options }) => {
   try {
     if (/^\s*$/.test(source)) {
