@@ -48,8 +48,8 @@ const notificationStatusSchema = {
 // Identity-scoped slots attach only to the logged-in user's own identity
 // contract. Without this predicate the slot would attach to every identity
 // contract the user has synced (group members, mentions, etc.), over-fetching
-// and 404ing. Mirrors the own-identity `setFilter` gating in `setupChelonia.js`.
-// (KV-REVAMPED.md §4.1 / §7.2)
+// data we don't own and almost certainly can't decrypt. Mirrors the own-identity
+// `setFilter` gating in `setupChelonia.js`. (KV-REVAMPED.md §4.1 / §7.2)
 export const onOwnIdentity = (
   contractID: string,
   _contractState: Object,
@@ -132,12 +132,14 @@ export const registerKvSlots = (): void => {
   // in the pubsub `setFilter`) and `autoLoad: 'on-demand'` (fetched explicitly
   // by `gi.actions/identity/kv/loadCachedNames` → `chelonia/kv/sync`, not on
   // every sync). `onUpdate` re-runs `checkAndAugmentNames` on every value
-  // change (load / local write), which reconciles the cache against
+  // change (load / remote write), which reconciles the cache against
   // `namespaceLookups` and re-verifies conflicted names. This single hook
   // replaces both the post-fetch augmentation that lived in `loadCachedNames`
   // and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT` switch.
-  // `checkAndAugmentNames` is async; the library serializes `onUpdate` per
-  // contract and catches throws, so it cannot wedge the pipeline.
+  // `refreshOnReconnect: false` avoids a double fetch on reconnect: the
+  // `ONLINE` listener in `identity-kv.js` already drives an explicit
+  // `kv/load` → `loadCachedNames` → `chelonia/kv/sync` on both pubsub
+  // reconnect and the browser regaining connectivity.
   // (KV-REVAMPED.md §4.1 / §4.8)
   sbp('chelonia/kv/defineSlot', {
     contractType: 'gi.contracts/identity',

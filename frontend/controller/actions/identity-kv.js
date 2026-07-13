@@ -33,6 +33,14 @@ export const checkAndAugmentNames = async (currentNames: string[]): Promise<stri
   return union(unconflictedNames, recheckedNames)
 }
 
+// Uses the explicit `updater` form (not the slot's `defaultUpdater` via
+// `value`) because callers like `updateDistributionBannerVisibility` merge into
+// a nested subkey (`hideDistributionBanner[contractID]`). The slot's
+// `defaultUpdater` is a top-level shallow merge and cannot read `prev`, so a
+// nested write would have to pre-compute the patch from the local mirror —
+// which goes stale on a 409/412 retry and would clobber a concurrent write
+// from another device. Reading `prev` inside the reducer is the only correct
+// way to merge into a nested subkey. (KV-REVAMPED.md §4.1)
 const updateKVPreferences = (updater: Function) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   if (!identityContractID) {
@@ -363,7 +371,7 @@ export default (sbp('sbp/selectors/register', {
       await checkAndAugmentNames([])
     }
   }
-}): Promise<void>)
+}): string[])
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.
