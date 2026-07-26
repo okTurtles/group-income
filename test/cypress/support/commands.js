@@ -859,21 +859,29 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
   }
 })
 
-Cypress.Commands.add('giSendMessage', (sender, message) => {
+Cypress.Commands.add('giSendMessage', (sender, message, { instantInput = false, checkMessage = true } = {}) => {
   // The following is to ensure the chatroom has finished loading (no spinner)
   cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
     // NOTE: Cypress bug: for some reason this {enter} thing is causing the tests to fail
     //       Instead we manually click the send button.
     // cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
-    cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    if (instantInput) {
+      // Instead of mimicking the user typing message character by character (which can be slow for long message),
+      // Just dump the text quickly into the textarea without waiting for typing animations
+      cy.get('textarea').invoke('val', message).trigger('input').trigger('keyup')
+    } else {
+      cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    }
     cy.getByDT('sendMessageButton').click()
     cy.get('textarea').should('be.empty')
   })
+  if (checkMessage) {
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
-    cy.get('.c-message.sent:last-child .c-text').should('contain', message)
-  })
+      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
+    })
+  }
 })
 
 Cypress.Commands.add('giSwitchChannel', (channelName) => {
