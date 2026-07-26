@@ -298,7 +298,7 @@ import {
   CHATROOM_ATTACHMENT_TYPES
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
-import { OPEN_MODAL, CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
+import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
 import {
   injectOrStripSpecialChar,
@@ -1022,6 +1022,7 @@ export default ({
       this.$refs.fileAttachmentInputEl.click()
     },
     fileAttachmentHandler (filesList) {
+      let exceedsSizeLimitCount = 0
       filesList = Array.from(filesList)
 
       // User clicked 'Cancel button'.
@@ -1033,7 +1034,8 @@ export default ({
         const fileSize = file.size
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
-          return sbp('okTurtles.events/emit', OPEN_MODAL, 'ChatFileAttachmentWarningModal')
+          exceedsSizeLimitCount++
+          continue
         }
 
         const fileUrl = URL.createObjectURL(file)
@@ -1073,6 +1075,19 @@ export default ({
 
       this.ephemeral.attachments = list
       this.$refs.fileAttachmentInputEl.value = '' // clear the input value
+
+      if (exceedsSizeLimitCount > 0) {
+        const sizeLimit = (CHAT_ATTACHMENT_SIZE_LIMIT / Math.pow(10, 6)).toFixed(2)
+        sbp('gi.ui/toast', 'chat-main', {
+          message: exceedsSizeLimitCount === 1
+            ? L('1 file exceeds the size limit of {sizeLimit} MB and cannot be uploaded.', { sizeLimit })
+            : L('{count} files exceed the size limit of {sizeLimit} MB and cannot be uploaded.', { count: exceedsSizeLimitCount, sizeLimit }),
+          variant: 'warning',
+          duration: 5000,
+          closeable: true,
+          position: 'bottom-center'
+        })
+      }
 
       this.saveOrDeleteMessageDraft()
     },
