@@ -877,8 +877,8 @@ Cypress.Commands.add('giSendMessage', (sender, message, { instantInput = false, 
     cy.get('textarea').should('be.empty')
   })
   if (checkMessage) {
-  cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
       cy.get('.c-message.sent:last-child .c-text').should('contain', message)
     })
   }

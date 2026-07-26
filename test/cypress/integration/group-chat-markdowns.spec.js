@@ -6,9 +6,12 @@ const user1 = `user1${randomUserSuffix()}`
 // const user2 = `user2${randomUserSuffix()}`
 
 describe('Check basic markdown features - one feature per message', () => {
-  function sendMarkdownMessage(sender, message) {
+  const lastSentMessageSelector = '.c-message.sent:last .c-text'
+
+  function sendMarkdownMessage (sender, message) {
     cy.giSendMessage(sender, message, { instantInput: true, checkMessage: false })
   }
+
   it('user1 creates a group and invites user2', () => {
     // let invitationLinkAnyone
 
@@ -46,9 +49,29 @@ describe('Check basic markdown features - one feature per message', () => {
     sendMarkdownMessage(user1, headingMarkdownMsg)
     cy.getByDT('conversationWrapper').within(() => {
       // The markdown headings should be rendered as <h1>Heading 1</h1>, <h2>Heading 2</h2>, ... <h6>Heading 6</h6>
-      cy.get('.c-message:last-child .c-text').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
         for (let level = 1; level <= 6; level++) {
           cy.get(`h${level}`).should('have.text', `Heading ${level}`)
+        }
+      })
+    })
+
+    // 2. Verifying various inline markdown elements
+    const inlineMarkdownsToTest = {
+      'strong': '**bold**',
+      'em': '_italic_',
+      'code': '`code`',
+      'del': '~strikethrough~'
+    }
+
+    const inlineMarkdownMsg = `Testing inline markdowns: ${Object.values(inlineMarkdownsToTest).join(', ')}`
+    sendMarkdownMessage(user1, inlineMarkdownMsg)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
+        for (const [tagName, val] of Object.entries(inlineMarkdownsToTest)) {
+          const textVal = val.replace(/[^a-z]/g, '')
+          cy.get(tagName).should('contain', textVal)
         }
       })
     })
