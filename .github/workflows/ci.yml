@@ -3,6 +3,7 @@ name: NodeJS with Grunt
 env:
   CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
   RUN_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }} # unique ID for every single workflow execution
+  server_id: test
 
 on:
   push:
