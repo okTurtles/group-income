@@ -74,7 +74,17 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('2. Verify various inline markdown elements', () => {
+  it('2. Verify horizontal rule markdown element', () => {
+    const horizontalRuleMarkdown = '---'
+    sendMarkdownMessage(user1, horizontalRuleMarkdown)
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
+        cy.get('hr').should('exist')
+      })
+    })
+  })
+
+  it('3. Verify various inline markdown elements', () => {
     const inlineMarkdownsToTest = {
       'strong': '**bold**',
       'em': '_italic_',
@@ -91,6 +101,25 @@ describe('Check basic markdown features - one feature per message', () => {
           const textVal = val.replace(/[^a-z]/g, '')
           cy.get(tagName).should('contain', textVal)
         }
+      })
+    })
+
+    // inline code must not render channel/user mentions
+    const inlineCodeWithMention1 = `Mentioning user1 must not be rendered inside inline code: \`@${user1}\``
+    const inlineCodeWithMention2 = 'Likewise Mentioning the channel must not be rendered inside inline code: `#general`'
+
+    cy.log('Verify inline code does not render channel/user mentions')
+    sendMarkdownMessage(user1, inlineCodeWithMention1)
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
+        cy.get('code').should('have.text', `@${user1}`)
+      })
+    })
+
+    sendMarkdownMessage(user1, inlineCodeWithMention2)
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
+        cy.get('code').should('have.text', '#general')
       })
     })
   })
