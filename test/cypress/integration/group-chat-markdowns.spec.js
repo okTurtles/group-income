@@ -12,7 +12,7 @@ describe('Check basic markdown features - one feature per message', () => {
     cy.giSendMessage(sender, message, { instantInput: true, checkMessage: false })
   }
 
-  it('user1 creates a group and invites user2', () => {
+  it('Setup: user1 creates a group and invites user2', () => {
     // let invitationLinkAnyone
 
     cy.visit('/')
@@ -34,19 +34,23 @@ describe('Check basic markdown features - one feature per message', () => {
     // })
   })
 
-  it('user1 sends various simple markdown messages - meaning markdown with no nested structures', () => {
+  it('1. Verify markdown headings', () => {
     // cy.giSwitchUser(user1, { firstLoginAfterJoinGroup: true })
     cy.giRedirectToGroupChat()
 
-    // 1. verifying markdownheadings
-    const headingMarkdownMsg = '# Heading 1\n' +
-    '## Heading 2\n' +
-    '### Heading 3\n' +
-    '#### Heading 4\n' +
-    '##### Heading 5\n' +
-    '###### Heading 6'
+    // Headings only
+    const headingMarkdownSimple = '# Heading 1\n' +
+      '## Heading 2\n' +
+      '### Heading 3\n' +
+      '#### Heading 4\n' +
+      '##### Heading 5\n' +
+      '###### Heading 6'
+    // Headings that contain inline markdown elements
+    const headingMarkdownComplex = '#### Heading with a [link](https://www.google.com)\n' +
+      '#### Heading with an _italic text_, an **bold text**, and a `code` text'
 
-    sendMarkdownMessage(user1, headingMarkdownMsg)
+    sendMarkdownMessage(user1, headingMarkdownSimple)
+    cy.log('Check markdown headings are rendered correctly - simple structure')
     cy.getByDT('conversationWrapper').within(() => {
       // The markdown headings should be rendered as <h1>Heading 1</h1>, <h2>Heading 2</h2>, ... <h6>Heading 6</h6>
       cy.get(lastSentMessageSelector).within(() => {
@@ -56,7 +60,21 @@ describe('Check basic markdown features - one feature per message', () => {
       })
     })
 
-    // 2. Verifying various inline markdown elements
+    sendMarkdownMessage(user1, headingMarkdownComplex)
+    cy.log('Check markdown headings are rendered correctly - complex structure')
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).within(() => {
+        cy.get('h4').eq(0).should('have.text', 'Heading with a link')
+        cy.get('h4').eq(1).should('have.text', 'Heading with an italic text, an bold text, and a code text')
+        cy.get('a').should('have.attr', 'href', 'https://www.google.com')
+        cy.get('em').should('have.text', 'italic text')
+        cy.get('strong').should('have.text', 'bold text')
+        cy.get('code').should('have.text', 'code')
+      })
+    })
+  })
+
+  it('2. Verify various inline markdown elements', () => {
     const inlineMarkdownsToTest = {
       'strong': '**bold**',
       'em': '_italic_',
