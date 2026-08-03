@@ -115,4 +115,31 @@ describe('Check basic markdown features - one feature per message', () => {
       })
     })
   })
+
+  it('4. Verify blockquote markdown element', () => {
+    cy.log('4-1. Verify a simple blockquote')
+
+    const blockquoteMarkdown = '> This is a blockquote example'
+    sendMarkdownMessage(user1, blockquoteMarkdown)
+    checkLastSentMessage(() => {
+      cy.get('blockquote').should('have.text', 'This is a blockquote example')
+    })
+
+    cy.log('4-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
+
+    const multipleBlockquotesMarkdown = 'Some plain text before\n' +
+      '> First blockquote line\n' +
+      '> Second blockquote line\n\n' +
+      'Some plain text after'
+
+    sendMarkdownMessage(user1, multipleBlockquotesMarkdown)
+    checkLastSentMessage(() => {
+      // Both lines are rendered inside one blockquote, separated by a line-break.
+      cy.get('blockquote').should('have.length', 1)
+        .should('contain', 'First blockquote line')
+        .and('contain', 'Second blockquote line')
+      cy.contains('Some plain text before').should('exist')
+      cy.contains('Some plain text after').should('exist')
+    })
+  })
 })
