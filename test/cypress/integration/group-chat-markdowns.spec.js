@@ -127,6 +127,7 @@ describe('Check basic markdown features - one feature per message', () => {
       'This is an example of text inside a code fence.',
       'You can write multiple lines here.',
       'Formatting like *italics* or [links](url) will not render.',
+      `Mentioning @${user1} and #${CHATROOM_GENERAL_NAME} must not be rendered inside a code fence.`,
       '',
       'Some javascript code:',
       'const numbers =;',
@@ -161,9 +162,11 @@ describe('Check basic markdown features - one feature per message', () => {
         })
       })
 
-      // Inline markdown syntaxes must not be transformed.
+      // Ensure markdown syntaxes and mentions aren't transformed.
       cy.get('em').should('not.exist')
       cy.get('a').should('not.exist')
+      cy.get('.c-member-mention').should('not.exist')
+      cy.get('.c-channel-mention').should('not.exist')
     })
 
     cy.log('4-3. Verify the plain texts before/after the code fence are there too.')
@@ -174,8 +177,51 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('5. Verify blockquote markdown element', () => {
-    cy.log('5-1. Verify a simple blockquote')
+  it('5. Verify table markdown element', () => {
+    cy.log('5-1. Verify the table is rendered with the correct structure')
+
+    const introText = 'Below is an example table:'
+    const tableHeaders = ['col1', 'col2', 'col3']
+    const tableRows = [
+      ['Lorem ipsum dolor', 'Lorem ipsum dolor sit amet, consectetur.', 'Abcdef Abcdef, Abcd Abcde'],
+      ['Lorem ipsum', 'Lorem ipsum dolor sit amet', 'Abcd Abcdefghi, Abcdefgh Abcdef Abcd']
+    ]
+    // The inconsistent cell paddings below are intentional - they must not affect the rendered outcome.
+    const tableMarkdown = `${introText}\n\n` +
+      '| col1            | col2                            | col3                      |\n' +
+      '|-----------------|---------------------------------|---------------------------|\n' +
+      '| Lorem ipsum dolor | Lorem ipsum dolor sit amet, consectetur.    | Abcdef Abcdef, Abcd Abcde |\n' +
+      '| Lorem ipsum   |  Lorem ipsum dolor sit amet                              | Abcd Abcdefghi, Abcdefgh Abcdef Abcd |'
+
+    sendMarkdownMessage(user1, tableMarkdown)
+    checkLastSentMessage(() => {
+      cy.contains(introText).should('exist')
+      // A table is wrapped in a <div.table-container> to make it horizontally scrollable.
+      cy.get('.table-container > table.table').should('have.length', 1)
+      cy.get('table.table thead th').should('have.length', tableHeaders.length)
+      cy.get('table.table tbody tr').should('have.length', tableRows.length)
+    })
+
+    cy.log('5-2. Verify the header and the body cells display the correct contents')
+
+    checkLastSentMessage(() => {
+      tableHeaders.forEach((headerText, index) => {
+        cy.get('table.table thead th').eq(index).should('have.text', headerText)
+      })
+
+      tableRows.forEach((rowCells, rowIndex) => {
+        cy.get('table.table tbody tr').eq(rowIndex).within(() => {
+          cy.get('td').should('have.length', rowCells.length)
+          rowCells.forEach((cellText, colIndex) => {
+            cy.get('td').eq(colIndex).should('have.text', cellText)
+          })
+        })
+      })
+    })
+  })
+
+  it('6. Verify blockquote markdown element', () => {
+    cy.log('6-1. Verify a simple blockquote')
 
     const blockquoteMarkdown = '> This is a blockquote example'
     sendMarkdownMessage(user1, blockquoteMarkdown)
@@ -183,7 +229,7 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.get('blockquote').should('have.text', 'This is a blockquote example')
     })
 
-    cy.log('5-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
+    cy.log('6-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
 
     const multipleBlockquotesMarkdown = 'Some plain text before\n' +
       '> First blockquote line\n' +
