@@ -472,4 +472,23 @@ describe('Check basic markdown features - one feature per message', () => {
       })
     })
   })
+
+  it('8. Verify large emoji rendering and a previous bugfix', () => {
+    cy.log('8-1. Verify a message that only contains emojis is rendered with the \'has-only-emojis\' class')
+
+    const emojis = ['🎉', '🚀', '😄']
+
+    sendMarkdownMessage(user1, emojis.join(''))
+    cy.getByDT('conversationWrapper').within(() => {
+      // The class is added to the message body element itself, so it's checked outside of checkLastSentMessage.
+      cy.get(lastSentMessageSelector).should('have.class', 'has-only-emojis')
+    })
+    checkLastSentMessage(() => {
+      // Each emoji is wrapped in its own span so that it can be styled separately.
+      cy.get('.chat-emoji').should('have.length', emojis.length)
+      emojis.forEach((emoji, index) => {
+        cy.get('.chat-emoji').eq(index).should('have.text', emoji)
+      })
+    })
+  })
 })

@@ -17,8 +17,7 @@ code inside a link (issue #3116 regression).
       line-start (otherwise escapes to literal `&gt;`) — cover both cases.
 - [x] **Unordered & ordered lists**, including **nested** lists (custom bullet/number
       styling depends on nesting).
-- [ ] **Emoji rendering** — unicode emoji get wrapped in `<span class="chat-emoji">`,
-      and an emoji-only message gets a `has-only-emojis` class for larger font.
+- [x] **Large Emoji rendering** — Check `has-only-emojis` class gets added for emoji only messages.
 - [ ] **Multiple consecutive line breaks / paragraph spacing** — custom `<br/>`
       reinsertion logic (workaround for a `marked` bug), with cleanup so it doesn't
       double up next to lists/blockquote/hr.
