@@ -9,7 +9,18 @@ describe('Check basic markdown features - one feature per message', () => {
 
   // helper functions
   function sendMarkdownMessage (sender, message) {
-    cy.giSendMessage(sender, message, { instantInput: true, checkMessage: false })
+    cy.getByDT('conversationWrapper').then(wrapperEl => {
+      const sentMessageCount = wrapperEl.find('.c-message.sent').length
+
+      // 'checkMessage: false' is used here because giSendMessage compares the raw markdown text
+      // against the rendered message, which never matches once the markdown is transformed.
+      cy.giSendMessage(sender, message, { instantInput: true, checkMessage: false })
+
+      // A message is rendered with the 'pending' variant first and only becomes 'sent' once it's
+      // confirmed, so wait for the new message to show up. Without this, the assertions that
+      // follow can run against the previously sent message.
+      cy.getByDT('conversationWrapper').find('.c-message.sent').should('have.length', sentMessageCount + 1)
+    })
   }
 
   function checkLastSentMessage (assertions = () => {}) {
@@ -320,6 +331,87 @@ describe('Check basic markdown features - one feature per message', () => {
         })
       })
     })
+
+    cy.log('6-3. Verify a list whose items contain other markdown syntaxes')
+
+    const guideIntro = 'Follow these steps to run the project locally:'
+    const inlineCodeText = 'npm install'
+    const boldText = 'contributing guide'
+    const guideLinkText = 'groupincome.org'
+    const guideLinkHref = 'http://groupincome.org'
+    const codeFenceLines = ['grunt dev', 'grunt test']
+    const tableHeaders = ['service', 'port']
+    const tableRows = [['app', '8000'], ['server', '3000']]
+    const outroText = 'Happy hacking!'
+    // The code fence and the table are indented by 3 spaces so that they belong to their parent list item.
+    const listWithMarkdowns = `${guideIntro}\n\n` +
+      `1. Install the dependencies by running \`${inlineCodeText}\`.\n` +
+      `2. Read the **${boldText}** at [${guideLinkText}](${guideLinkHref}).\n` +
+      `3. Ask @${user1} in #${CHATROOM_GENERAL_NAME} if you get stuck.\n` +
+      '4. Then start the dev server and the test runner:\n' +
+      '   ```\n' +
+      codeFenceLines.map(line => `   ${line}`).join('\n') + '\n' +
+      '   ```\n' +
+      '5. These are the ports being used:\n' +
+      `   | ${tableHeaders.join(' | ')} |\n` +
+      `   |${tableHeaders.map(() => '---------').join('|')}|\n` +
+      tableRows.map(row => `   | ${row.join(' | ')} |`).join('\n') + '\n\n' +
+      outroText
+
+    sendMarkdownMessage(user1, listWithMarkdowns)
+    checkLastSentMessage(() => {
+      cy.contains(guideIntro).should('exist')
+      cy.get('ol > li').should('have.length', 5)
+
+      cy.get('ol > li').eq(0).within(() => {
+        cy.get('code').should('have.text', inlineCodeText)
+      })
+
+      cy.get('ol > li').eq(1).within(() => {
+        cy.get('strong').should('have.text', boldText)
+        cy.get('a').should('have.text', guideLinkText).and('have.attr', 'href', guideLinkHref)
+      })
+
+      cy.get('ol > li').eq(2).within(() => {
+        cy.get('.c-member-mention').should('have.text', `@${user1}`)
+        cy.get('.c-channel-mention').should('have.text', CHATROOM_GENERAL_NAME)
+      })
+
+      // The code fence inside the last item is rendered by the CodeFence component too.
+      cy.get('ol > li').eq(3).within(() => {
+        cy.get('.code-fence-block').should('have.length', 1).within(() => {
+          cy.get('.c-line-count').should('have.text', `${codeFenceLines.length} lines`)
+          cy.get('table.code-fence-table tbody tr').should('have.length', codeFenceLines.length)
+          codeFenceLines.forEach((codeLine, index) => {
+            cy.get('table.code-fence-table tbody tr').eq(index).within(() => {
+              cy.get('td.line-number').should('have.text', `${index + 1}`)
+              // The indentation used to nest the code fence under the list item must be stripped.
+              cy.get('td.code-line').should('have.text', codeLine)
+            })
+          })
+        })
+      })
+
+      // A table nested in a list item is rendered as a table too.
+      cy.get('ol > li').eq(4).within(() => {
+        cy.get('.table-container > table.table').should('have.length', 1)
+        tableHeaders.forEach((headerText, index) => {
+          cy.get('table.table thead th').eq(index).should('have.text', headerText)
+        })
+        cy.get('table.table tbody tr').should('have.length', tableRows.length)
+        tableRows.forEach((rowCells, rowIndex) => {
+          cy.get('table.table tbody tr').eq(rowIndex).within(() => {
+            rowCells.forEach((cellText, colIndex) => {
+              cy.get('td').eq(colIndex).should('have.text', cellText)
+            })
+          })
+        })
+      })
+
+      // The plain text after the list is rendered outside of it.
+      cy.contains(outroText).should('exist')
+      cy.get('ol').should('not.contain', outroText)
+    })
   })
 
   it('7. Verify blockquote markdown element', () => {
@@ -346,6 +438,38 @@ describe('Check basic markdown features - one feature per message', () => {
         .and('contain', 'Second blockquote line')
       cy.contains('Some plain text before').should('exist')
       cy.contains('Some plain text after').should('exist')
+    })
+
+    // Reference issue: https://github.com/okTurtles/group-income/issues/2467
+    cy.log('7-3. Mentions placed after a code fence inside a blockquote must still be rendered as mentions - issue #2467')
+
+    const quotedCodeLines = ['const isFixed = true', 'console.log(isFixed)']
+    const blockquoteWithCodeFence = `> Quoting @${user1} before the code fence:\n` +
+      '> ```\n' +
+      quotedCodeLines.map(line => `> ${line}`).join('\n') + '\n' +
+      '> ```\n' +
+      `> And here are @${user1} and #${CHATROOM_GENERAL_NAME} mentioned after the code fence.`
+
+    sendMarkdownMessage(user1, blockquoteWithCodeFence)
+    checkLastSentMessage(() => {
+      cy.get('blockquote').should('have.length', 1).within(() => {
+        // The code fence inside the blockquote is rendered by the CodeFence component,
+        // with the blockquote markers stripped off from each of its lines.
+        cy.get('.code-fence-block').should('have.length', 1)
+        cy.get('td.code-line').should('have.length', quotedCodeLines.length)
+        quotedCodeLines.forEach((codeLine, index) => {
+          cy.get('td.code-line').eq(index).should('have.text', codeLine)
+        })
+
+        // The quoted texts before/after the code fence are rendered as two separate paragraphs.
+        cy.get('p').should('have.length', 2)
+        cy.get('p').eq(0).find('.c-member-mention').should('have.text', `@${user1}`)
+        // Before the fix, the mentions in this paragraph were left as plain texts.
+        cy.get('p').eq(1).within(() => {
+          cy.get('.c-member-mention').should('have.text', `@${user1}`)
+          cy.get('.c-channel-mention').should('have.text', CHATROOM_GENERAL_NAME)
+        })
+      })
     })
   })
 })
