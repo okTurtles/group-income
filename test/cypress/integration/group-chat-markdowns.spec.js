@@ -116,8 +116,66 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('4. Verify blockquote markdown element', () => {
-    cy.log('4-1. Verify a simple blockquote')
+  it('4. Verify fenced code block markdown element', () => {
+    cy.log('4-1. Verify the code fence UI is rendered by the CodeFence component')
+
+    const textBefore = 'Some plain text before the code fence'
+    const textAfter = 'Some plain text after the code fence'
+    // Non-javascript lines and empty lines are included on purpose: everything inside a code
+    // fence must be kept as it is, instead of being rendered as markdown or collapsed.
+    const codeLines = [
+      'This is an example of text inside a code fence.',
+      'You can write multiple lines here.',
+      'Formatting like *italics* or [links](url) will not render.',
+      '',
+      'Some javascript code:',
+      'const numbers =;',
+      '',
+      'const doubled = numbers.map(num => num * 2);',
+      '',
+      'console.log(doubled);',
+      '',
+      'a<b<c' // This ensures the previously resolved issue #2130 won't reappear.
+    ]
+    const codeFenceMarkdown = `${textBefore}\n\n` +
+      '```\n' + codeLines.join('\n') + '\n```\n\n' +
+      textAfter
+
+    sendMarkdownMessage(user1, codeFenceMarkdown)
+    checkLastSentMessage(() => {
+      cy.get('.code-fence-block').should('have.length', 1).within(() => {
+        // Ensure the ctas in CodeFence components are rendered correctly.
+        cy.get('.c-line-count').should('have.text', `${codeLines.length} lines`)
+        cy.get('button.c-copy-button').should('contain', 'Copy')
+      })
+    })
+
+    cy.log('4-2. Verify each code line is displayed with its line number, with the markdown syntax inside it left unrendered')
+
+    checkLastSentMessage(() => {
+      cy.get('table.code-fence-table tbody tr').should('have.length', codeLines.length)
+      codeLines.forEach((codeLine, index) => {
+        cy.get('table.code-fence-table tbody tr').eq(index).within(() => {
+          cy.get('td.line-number').should('have.text', `${index + 1}`) // Verify the line number.
+          cy.get('td.code-line').should('have.text', codeLine) // Verify the raw text isn't transformed.
+        })
+      })
+
+      // Inline markdown syntaxes must not be transformed.
+      cy.get('em').should('not.exist')
+      cy.get('a').should('not.exist')
+    })
+
+    cy.log('4-3. Verify the plain texts before/after the code fence are there too.')
+
+    checkLastSentMessage(() => {
+      cy.contains(textBefore).should('exist')
+      cy.contains(textAfter).should('exist')
+    })
+  })
+
+  it('5. Verify blockquote markdown element', () => {
+    cy.log('5-1. Verify a simple blockquote')
 
     const blockquoteMarkdown = '> This is a blockquote example'
     sendMarkdownMessage(user1, blockquoteMarkdown)
@@ -125,7 +183,7 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.get('blockquote').should('have.text', 'This is a blockquote example')
     })
 
-    cy.log('4-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
+    cy.log('5-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
 
     const multipleBlockquotesMarkdown = 'Some plain text before\n' +
       '> First blockquote line\n' +

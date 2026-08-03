@@ -10,7 +10,7 @@ code inside a link (issue #3116 regression).
 
 ## Missing coverage
 
-- [ ] **Fenced code blocks** (```` ``` ````) — rendered via the custom `CodeFence.vue`
+- [x] **Fenced code blocks** (```` ``` ````) — rendered via the custom `CodeFence.vue`
       component (line numbers + copy button), not plain `<pre><code>` — assert the
       component renders, not just that the code text is correct.
 - [x] **Blockquotes** (`>`) — custom regex only treats `>` as a blockquote at
