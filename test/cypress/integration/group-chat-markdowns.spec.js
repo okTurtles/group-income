@@ -218,6 +218,40 @@ describe('Check basic markdown features - one feature per message', () => {
         })
       })
     })
+
+    cy.log('5-3. Verify inline markdowns and mentions inside the table cells are rendered correctly')
+
+    const linkText = 'groupincome.org'
+    const linkHref = 'http://groupincome.org'
+    const tableWithInlineMarkdowns = '| col1            | col2                            |\n' +
+      '|-----------------|---------------------------------|\n' +
+      `| **bold** _italic_ ~strikethrough~ \`code\` | A link: [${linkText}](${linkHref}) |\n` +
+      `| User mention: @${user1}    |  Channel mention: #${CHATROOM_GENERAL_NAME} |`
+
+    sendMarkdownMessage(user1, tableWithInlineMarkdowns)
+    checkLastSentMessage(() => {
+      cy.get('table.table tbody tr').should('have.length', 2)
+
+      // The first row contains inline markdown elements and a link.
+      cy.get('table.table tbody tr').eq(0).within(() => {
+        cy.get('td').eq(0).within(() => {
+          cy.get('strong').should('have.text', 'bold')
+          cy.get('em').should('have.text', 'italic')
+          cy.get('del').should('have.text', 'strikethrough')
+          cy.get('code').should('have.text', 'code')
+        })
+        cy.get('td').eq(1).within(() => {
+          cy.get('a').should('have.text', linkText).and('have.attr', 'href', linkHref)
+        })
+      })
+
+      // The second row contains a user mention and a channel mention.
+      cy.get('table.table tbody tr').eq(1).within(() => {
+        cy.get('td').eq(0).find('.c-member-mention').should('have.text', `@${user1}`)
+        // A channel mention displays the channel name preceded by a hashtag icon.
+        cy.get('td').eq(1).find('.c-channel-mention').should('have.text', CHATROOM_GENERAL_NAME)
+      })
+    })
   })
 
   it('6. Verify blockquote markdown element', () => {
