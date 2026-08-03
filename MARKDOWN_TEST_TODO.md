@@ -15,7 +15,7 @@ code inside a link (issue #3116 regression).
       component renders, not just that the code text is correct.
 - [x] **Blockquotes** (`>`) — custom regex only treats `>` as a blockquote at
       line-start (otherwise escapes to literal `&gt;`) — cover both cases.
-- [ ] **Unordered & ordered lists**, including **nested** lists (custom bullet/number
+- [x] **Unordered & ordered lists**, including **nested** lists (custom bullet/number
       styling depends on nesting).
 - [ ] **Emoji rendering** — unicode emoji get wrapped in `<span class="chat-emoji">`,
       and an emoji-only message gets a `has-only-emojis` class for larger font.

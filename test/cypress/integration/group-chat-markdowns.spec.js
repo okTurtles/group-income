@@ -254,8 +254,76 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('6. Verify blockquote markdown element', () => {
-    cy.log('6-1. Verify a simple blockquote')
+  it('6. Verify ordered/unordered list markdown elements', () => {
+    cy.log('6-1. Verify simple ordered/unordered lists inserted in between plain text paragraphs')
+
+    const sentence1 = 'Here are the steps to get started:'
+    const orderedItems = ['Create an account', 'Create or join a group', 'Set your income details']
+    const sentence2 = 'And these are the things you can do in a group:'
+    const unorderedItems = ['Send messages in the group chat', 'Vote on group proposals', 'Check the group dashboard']
+    const sentence3 = 'That is all for now!'
+
+    const listMarkdown = `${sentence1}\n\n` +
+      orderedItems.map((item, index) => `${index + 1}. ${item}`).join('\n') + '\n\n' +
+      `${sentence2}\n\n` +
+      unorderedItems.map(item => `- ${item}`).join('\n') + '\n\n' +
+      sentence3
+
+    sendMarkdownMessage(user1, listMarkdown)
+    checkLastSentMessage(() => {
+      cy.contains(sentence1).should('exist')
+      cy.contains(sentence2).should('exist')
+      cy.contains(sentence3).should('exist')
+
+      cy.get('ol').should('have.length', 1)
+      cy.get('ol > li').should('have.length', orderedItems.length)
+      orderedItems.forEach((itemText, index) => {
+        cy.get('ol > li').eq(index).should('have.text', itemText)
+      })
+
+      cy.get('ul').should('have.length', 1)
+      cy.get('ul > li').should('have.length', unorderedItems.length)
+      unorderedItems.forEach((itemText, index) => {
+        cy.get('ul > li').eq(index).should('have.text', itemText)
+      })
+    })
+
+    cy.log('6-2. Verify a nested list structure - an unordered list that contains ordered lists')
+
+    const nestedListIntro = 'My grocery list for this week:'
+    const nestedListItems = [
+      { category: 'Fruits', items: ['Apples', 'Bananas'] },
+      { category: 'Vegetables', items: ['Carrots', 'Onions'] }
+    ]
+    const nestedListMarkdown = `${nestedListIntro}\n\n` +
+      // The items of an inner list are indented by 2 spaces so they are nested under their parent item.
+      nestedListItems.map(({ category, items }) => {
+        return `- ${category}\n` + items.map((item, index) => `  ${index + 1}. ${item}`).join('\n')
+      }).join('\n')
+
+    sendMarkdownMessage(user1, nestedListMarkdown)
+    checkLastSentMessage(() => {
+      cy.contains(nestedListIntro).should('exist')
+
+      // Only the outer list is unordered, and each of its items nests an ordered list.
+      cy.get('ul').should('have.length', 1)
+      cy.get('ul > li').should('have.length', nestedListItems.length)
+
+      nestedListItems.forEach(({ category, items }, index) => {
+        // 'contain' is used here instead of 'have.text' because a parent item also contains the nested list.
+        cy.get('ul > li').eq(index).should('contain', category)
+        cy.get('ul > li').eq(index).within(() => {
+          cy.get('ol > li').should('have.length', items.length)
+          items.forEach((itemText, itemIndex) => {
+            cy.get('ol > li').eq(itemIndex).should('have.text', itemText)
+          })
+        })
+      })
+    })
+  })
+
+  it('7. Verify blockquote markdown element', () => {
+    cy.log('7-1. Verify a simple blockquote')
 
     const blockquoteMarkdown = '> This is a blockquote example'
     sendMarkdownMessage(user1, blockquoteMarkdown)
@@ -263,7 +331,7 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.get('blockquote').should('have.text', 'This is a blockquote example')
     })
 
-    cy.log('6-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
+    cy.log('7-2. Verify consecutive blockquote lines (single \\n) merge into one blockquote, terminated by a blank line')
 
     const multipleBlockquotesMarkdown = 'Some plain text before\n' +
       '> First blockquote line\n' +
