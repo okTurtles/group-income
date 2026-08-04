@@ -65,7 +65,11 @@ describe('Check basic markdown features - one feature per message', () => {
     checkLastSentMessage(() => {
       cy.get('h4').eq(0).should('have.text', 'Heading with a link')
       cy.get('h4').eq(1).should('have.text', 'Heading with an italic text, an bold text, and a code text')
+
       cy.get('a').should('have.attr', 'href', 'https://www.google.com')
+        // Ensure the fix for #2976(An external link should open in a new tab) isn't regressed.
+        .and('have.attr', 'target', '_blank')
+
       cy.get('em').should('have.text', 'italic text')
       cy.get('strong').should('have.text', 'bold text')
       cy.get('code').should('have.text', 'code')
