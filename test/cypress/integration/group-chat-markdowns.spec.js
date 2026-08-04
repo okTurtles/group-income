@@ -506,8 +506,8 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('9. Miscellaneous checks', () => {
-    cy.log('9-1. Multiple line breaks between sentences should be rendered correctly')
+  it('9. Verify some line break related behaviors', () => {
+    cy.log('9-1. Multiple line breaks between two plain text sentences should be rendered correctly')
 
     const lineBreakCount = 3
     const textsWithSomeLineBreaks = `Sentence 1\n${'\n'.repeat(lineBreakCount)}Sentence 2 after multiple line breaks`
@@ -518,5 +518,23 @@ describe('Check basic markdown features - one feature per message', () => {
       // Line breaks after a sentence must map to the same number of <br> elements.
       cy.get('br').should('have.length', lineBreakCount)
     })
+
+    cy.log('9-2. An empty line directly following a list and blockquote should not be mapped to a <br> element (issue #2529)')
+    // Reference issue: https://github.com/okTurtles/group-income/issues/2529
+    const blockLevelMarkdowns = {
+      'blockquote': '> This is a blockquote',
+      'ol': '1. Item 1\n2. Item 2',
+      'ul': '- Item 1\n- Item 2'
+    }
+    const textAfter = 'Some plain text after'
+    for (const [blockTagName, markdown] of Object.entries(blockLevelMarkdowns)) {
+      sendMarkdownMessage(user1, `${markdown}\n\n${textAfter}`)
+      checkLastSentMessage(() => {
+        cy.get(blockTagName).should('exist')
+          .next().should('contain', textAfter) // .next() here is a directly sibling element and must be a text after.
+
+        cy.get('br').should('not.exist') // Ensure no <br> is generated after the block markdown.
+      })
+    }
   })
 })
