@@ -528,6 +528,8 @@ describe('Check basic markdown features - one feature per message', () => {
     }
     const textAfter = 'Some plain text after'
     for (const [blockTagName, markdown] of Object.entries(blockLevelMarkdowns)) {
+      // The double line breaks here must not be transformed to a <br>
+      // because that's a markdown signifier for the end of blockquote and ordered/unordered lists.
       sendMarkdownMessage(user1, `${markdown}\n\n${textAfter}`)
       checkLastSentMessage(() => {
         cy.get(blockTagName).should('exist')
