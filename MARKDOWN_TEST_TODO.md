@@ -18,7 +18,7 @@ code inside a link (issue #3116 regression).
 - [x] **Unordered & ordered lists**, including **nested** lists (custom bullet/number
       styling depends on nesting).
 - [x] **Large Emoji rendering** — Check `has-only-emojis` class gets added for emoji only messages.
-- [ ] **Multiple consecutive line breaks / paragraph spacing** — custom `<br/>`
+- [x] **Multiple consecutive line breaks** — custom `<br/>`
       reinsertion logic (workaround for a `marked` bug), with cleanup so it doesn't
       double up next to lists/blockquote/hr.
 - [ ] **Raw HTML / XSS escaping** — literal `<`/`>` typed by a user should be escaped,

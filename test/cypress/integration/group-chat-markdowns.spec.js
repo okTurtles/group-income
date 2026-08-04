@@ -490,5 +490,33 @@ describe('Check basic markdown features - one feature per message', () => {
         cy.get('.chat-emoji').eq(index).should('have.text', emoji)
       })
     })
+
+    cy.log('8-2. Verify an emoji directly following an inline markdown is not enlarged (issue #3044)')
+    // Verifying a previous bugfix related to the .has-only-emojis class isn't regressed.
+    // Reference issue: https://github.com/okTurtles/group-income/issues/3044
+    sendMarkdownMessage(user1, `**bold text** ${emojis[0]}`)
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(lastSentMessageSelector).should('not.have.class', 'has-only-emojis')
+    })
+    checkLastSentMessage(() => {
+      cy.get('strong').should('have.text', 'bold text')
+      cy.get('.chat-emoji').should('have.length', 1)
+      cy.get('.chat-emoji').should('have.text', emojis[0])
+      cy.get('.has-only-emojis').should('not.exist')
+    })
+  })
+
+  it('9. Miscellaneous checks', () => {
+    cy.log('9-1. Multiple line breaks between sentences should be rendered correctly')
+
+    const lineBreakCount = 3
+    const textsWithSomeLineBreaks = `Sentence 1\n${'\n'.repeat(lineBreakCount)}Sentence 2 after multiple line breaks`
+    sendMarkdownMessage(user1, textsWithSomeLineBreaks)
+    checkLastSentMessage(() => {
+      cy.contains('Sentence 1').should('exist')
+      cy.contains('Sentence 2 after multiple line breaks').should('exist')
+      // Line breaks after a sentence must map to the same number of <br> elements.
+      cy.get('br').should('have.length', lineBreakCount)
+    })
   })
 })
