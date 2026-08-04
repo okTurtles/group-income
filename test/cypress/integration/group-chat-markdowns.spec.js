@@ -540,4 +540,31 @@ describe('Check basic markdown features - one feature per message', () => {
       })
     }
   })
+
+  it('10. Miscellaneous checks and verify some previous bugfixes', () => {
+    cy.log('10-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
+
+    // Check if the raw html escaping logics in markdown-utils.js work correctly.
+
+    const imgHTML = '<img src="this-image-does-not-exist.png" onerror="window.imgOnerrorExecuted = true">'
+    const pHTML = '<p id="some-random-id"><strong>This is a paragraph</strong> and should be rendered as <em>plain text</em></p>'
+    const rawHtmlMessage = `Sending some raw html:\n\n${imgHTML}\n\n${pHTML}`
+
+    sendMarkdownMessage(user1, rawHtmlMessage)
+    checkLastSentMessage(() => {
+      // The raw html must be kept as visible text, angle brackets and all.
+      cy.contains(imgHTML).should('exist')
+      cy.contains(pHTML).should('exist')
+
+      cy.get('img').should('not.exist')
+      cy.get('p#some-random-id').should('not.exist')
+      cy.get('strong').should('not.exist')
+      cy.get('em').should('not.exist')
+
+      cy.window().should(win => {
+        // Ensure the img onerror handler did not execute.
+        expect(win.imgOnerrorExecuted).to.equal(undefined)
+      })
+    })
+  })
 })
