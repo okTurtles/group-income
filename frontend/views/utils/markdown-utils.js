@@ -13,14 +13,17 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        const { isValid, isExternalLink } = validateURL(token.href, true)
+        const { isValid, isExternalLink, url } = validateURL(token.href, true)
 
         if (isValid) {
           const { href, text } = token
+          // For non-external links, validateURL() could perform some transformations to the path and
+          // in that case, that is returned as 'url' property. Use it if that exists.
+          const urlToUse = !isExternalLink ? (url || href) : href
           // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
           // So we need to perform another conversion step here.
           const parsedText = marked.parseInline(text, { gfm: true })
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
+          return `<a class="link" href="${urlToUse}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
         return token.raw
       }

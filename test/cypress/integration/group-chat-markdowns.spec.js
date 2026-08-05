@@ -579,11 +579,10 @@ describe('Check basic markdown features - one feature per message', () => {
     const slug = 'contributions'
     sendMarkdownMessage(user1, `[Contributions](${slug})`)
     checkLastSentMessage(() => {
-      // The slug is not an http(s) URL, so it's not converted into an in-app router link and
-      // the href is left exactly as it was authored.
+      // validateURL() adds the leading slash to a bare slug.
       cy.get('a').should('have.text', 'Contributions')
         .and('have.class', 'link')
-        .and('have.attr', 'href', slug)
+        .and('have.attr', 'href', `/${slug}`)
         .and('not.have.attr', 'target')
     })
 
