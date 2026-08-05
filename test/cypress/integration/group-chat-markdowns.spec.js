@@ -545,8 +545,68 @@ describe('Check basic markdown features - one feature per message', () => {
     }
   })
 
-  it('10. Miscellaneous checks and verify some previous bugfixes', () => {
-    cy.log('10-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
+  it('10. Verify path-only urls passed to link markdown work as expected', () => {
+    // validateURL() in frontend/views/utils/misc.js is called with 'acceptPathOnly: true' for every link
+    // markdown. Verifying the logics there are working correctly.
+
+    cy.log('10-1. A path starting with \'/app\' is turned into an in-app router link')
+
+    const inAppPath = '/app/dashboard'
+    sendMarkdownMessage(user1, `[Go to the dashboard](${inAppPath})`)
+    checkLastSentMessage(() => {
+      cy.get('a').should('have.text', 'Go to the dashboard')
+        .and('have.class', 'link')
+        // The anchor is re-created by the vue-router, so its href is the route resolved by the app router.
+        .and('have.attr', 'href', inAppPath)
+        // An in-app link stays in the same tab, unlike an external one.
+        .and('not.have.attr', 'target')
+    })
+
+    cy.log('10-2. A query string is attached to the app origin so the app router can handle it')
+
+    const queryParams = ['modal=GroupMembersAllModal', 'userId=abcd123']
+    sendMarkdownMessage(user1, `[Open a modal](?${queryParams.join('&')})`)
+    checkLastSentMessage(() => {
+      cy.get('a').should('have.text', 'Open a modal').and('have.class', 'link')
+      // The resolved href is based on the current route, so only the query part is checked here.
+      queryParams.forEach(param => {
+        cy.get('a').should('have.attr', 'href').and('contain', param)
+      })
+    })
+
+    cy.log('10-3. A bare slug without any URL-related special character is accepted as a link')
+
+    const slug = 'contributions'
+    sendMarkdownMessage(user1, `[Contributions](${slug})`)
+    checkLastSentMessage(() => {
+      // The slug is not an http(s) URL, so it's not converted into an in-app router link and
+      // the href is left exactly as it was authored.
+      cy.get('a').should('have.text', 'Contributions')
+        .and('have.class', 'link')
+        .and('have.attr', 'href', slug)
+        .and('not.have.attr', 'target')
+    })
+
+    cy.log('10-4. A path outside of \'/app\' and an anchor link are accepted as they are')
+
+    const plainPath = '/to-a-path'
+    const anchorLink = '#section-heading'
+    sendMarkdownMessage(user1, `[A plain path](${plainPath}) and [an anchor link](${anchorLink})`)
+    checkLastSentMessage(() => {
+      cy.get('a').should('have.length', 2)
+      cy.get('a').eq(0).should('have.text', 'A plain path')
+        .and('have.class', 'link')
+        .and('have.attr', 'href', plainPath)
+        .and('not.have.attr', 'target')
+      cy.get('a').eq(1).should('have.text', 'an anchor link')
+        .and('have.class', 'link')
+        .and('have.attr', 'href', anchorLink)
+        .and('not.have.attr', 'target')
+    })
+  })
+
+  it('11. Miscellaneous checks and verify some previous bugfixes', () => {
+    cy.log('11-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
 
     // Check if the raw html escaping logics in markdown-utils.js work correctly.
 
