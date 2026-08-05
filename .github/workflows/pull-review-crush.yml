@@ -115,7 +115,7 @@ jobs:
           elif [ "$REVIEW_PROVIDER" = "zai-coding-plan" ]; then
             SMALL_MODEL="glm-5.1"
           else
-            SMALL_MODEL="google/gemini-3-flash-preview"
+            SMALL_MODEL="~deepseek/deepseek-v4-flash-latest"
           fi
 
           # Prefix small model with provider for crush
