@@ -604,7 +604,7 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   })
 
-  it('11. Miscellaneous checks and verify some previous bugfixes', () => {
+  it('11. Miscellaneous checks.', () => {
     cy.log('11-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
 
     // Check if the raw html escaping logics in markdown-utils.js work correctly.
