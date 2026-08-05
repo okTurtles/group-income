@@ -1,26 +1,17 @@
 'use strict'
 import sbp from '@sbp/sbp'
+import { ChelErrorInvalidMessageHeight } from '@chelonia/lib/errors'
 import { GIErrorKVHeightAhead } from '@common/common.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { KV_QUEUE, NAMESPACE_REGISTRATION, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, ONLINE, NEW_KV_LOAD_STATUS } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
 
-// Matches the message thrown by chelonia's `parseEncryptedOrUnencryptedMessage`
-// when the embedded height is greater than the local contract height. Chelonia
-// throws a plain `Error` for this, so the check is kept here, at the single
-// shared boundary (saveChatRoomUnreadMessages) that owns the rethrow, instead
-// of leaking the string match to callers.
-// Source: @chelonia/lib `chelonia.ts`, parseEncryptedOrUnencryptedMessage:
-//   `[chelonia] parseEncryptedOrUnencryptedMessage: Invalid height ${h}; it must be between 0 and ${currentHeight}`
-// Re-verify this literal if upgrading @chelonia/lib.
-const HEIGHT_AHEAD_RE = /parseEncryptedOrUnencryptedMessage: Invalid height \d+; it must be between 0 and \d+/
-
 const isHeightAheadError = (e: ?Object): boolean => {
   // Chelonia may rewrap the original error, so walk the cause chain instead of
-  // only checking the top-level message.
+  // only checking the top-level error.
   for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
-    if (typeof cur.message === 'string' && HEIGHT_AHEAD_RE.test(cur.message)) return true
+    if (cur instanceof ChelErrorInvalidMessageHeight) return true
   }
   return false
 }
