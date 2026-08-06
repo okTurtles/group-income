@@ -2,7 +2,6 @@
 .c-message.force-motion(
   :class='componentRootClasses'
   @click='$emit("wrapperAction")'
-  @mouseleave='mouseLeave'
   v-touch:touchhold='longPressHandler'
   v-touch:swipe.left='reply'
 )
@@ -290,11 +289,6 @@ export default ({
   methods: {
     humanDate,
     swapMentionIDForDisplayname,
-    mouseLeave () {
-      if (this.$refs.messageAction?.$refs?.menu && this.$refs.messageAction.$refs.menu.isActive) {
-        this.$refs.messageAction.$refs.menu.closeMenu()
-      }
-    },
     editMessage () {
       this.$emit('message-is-editing', true)
     },
@@ -446,7 +440,7 @@ export default ({
   }
 
   &:hover,
-  &:has(.c-menu .is-active) {
+  &:has(.c-menu[open]) {
     background-color: $general_2;
 
     &:not(.pending, .failed) {
