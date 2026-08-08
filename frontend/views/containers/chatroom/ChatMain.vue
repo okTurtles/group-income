@@ -391,8 +391,7 @@ export default ({
         // Used for non-joined chatrooms
         latestHeight: undefined,
         // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
-        failedMessagesAttachments: {},
-        readUntilRetryTimer: null
+        failedMessagesAttachments: {}
       },
       messageState: {
         // `fetched` indicates whether we've loaded messages dynamically
@@ -440,7 +439,6 @@ export default ({
     this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
     this.ephemeral.setMessages?.clear?.()
-    clearTimeout(this.ephemeral.readUntilRetryTimer)
     this.cleanupFailedMessagesAttachments()
   },
   computed: {
@@ -998,9 +996,10 @@ export default ({
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
-              // SAFE re: messagesSource invariant — the contract reference is
-              // swapped via Vue.set in the beforeRequest hook right after this,
-              // which fires the watcher and re-sorts. No manual flush needed.
+              // SAFE re: messagesSource invariant. The enclosing beforeRequest hook
+              // either swaps `messageState.contract` via Vue.set (firing the watcher)
+              // or calls forceRerenderMessages(); both rebuild the sorted view, so no
+              // manual flush is needed here.
               messages.splice(msgIndex, 1)
             }
           }
@@ -1603,8 +1602,7 @@ export default ({
       createdHeight,
       // 'forceUpdate' flag here is for the rare case where the 'readUntil' value needs to be set to the msg with lower 'createdHeight'.
       // eg. when the latest message is deleted. (reference: https://github.com/okTurtles/group-income/issues/2729)
-      forceUpdate = false,
-      retryCount = 1
+      forceUpdate = false
     }) {
       const isTabInactive = document.hidden || !document.hasFocus()
       if ((isTabInactive && !forceUpdate) ||
@@ -1624,20 +1622,15 @@ export default ({
           return
         }
 
-        const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
-          // The identity contract was still behind the server when we tried to
-          // write; retry once after a short delay to give it time to catch up.
-          if (e?.name === 'GIErrorKVHeightAhead' && retryCount > 0) {
-            console.warn('[ChatMain.vue] Delaying read until update until identity contract catches up', e)
-            clearTimeout(this.ephemeral.readUntilRetryTimer)
-            this.ephemeral.readUntilRetryTimer = setTimeout(() => {
-              this.ephemeral.readUntilRetryTimer = null
-              if (hasChatroomSwitchedSince()) return
-              this.updateReadUntilMessageHash({ messageHash, createdHeight, forceUpdate, retryCount: retryCount - 1 })
-            }, 5000)
+          // Recovery from the identity contract being behind the server is handled
+          // centrally (see 'syncIdentityIfKvAhead' in identity-kv.js). Reaching this
+          // point with 'GIErrorKVHeightAhead' means that recovery failed, so the
+          // read-until value was not persisted.
+          if (e?.name === 'GIErrorKVHeightAhead') {
+            console.error('[ChatMain.vue] Could not set read until: identity contract is still behind the server', e)
             return
           }
           console.error('[ChatMain.vue] Error setting read until', e)
@@ -1796,9 +1789,9 @@ export default ({
             const messages = this.messageState.contract.messages || []
             const latestValidMessage = messages
               .filter(m => !m.pending && !m.hasFailed)
-              .reduce((latest, message) => {
-                if (!latest) return message
-                return message.height > latest.height ? message : latest
+              .reduce((latest, msg) => {
+                if (!latest) return msg
+                return msg.height > latest.height ? msg : latest
               }, null)
 
             if (this.ephemeral.scrollableDistance < 50 && messages.length) {
@@ -2011,8 +2004,6 @@ export default ({
 
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.switchController.abort(new Error('Switched chatrooms'))
-        clearTimeout(this.ephemeral.readUntilRetryTimer)
-        this.ephemeral.readUntilRetryTimer = null
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()

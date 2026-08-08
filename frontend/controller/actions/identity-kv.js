@@ -16,6 +16,30 @@ const isHeightAheadError = (e: ?Object): boolean => {
   return false
 }
 
+// `chelonia/kv/set` swallows `ChelErrorInvalidMessageHeight` during conflict
+// resolution, so a write attempted while the local identity contract is behind
+// the server is silently dropped (it resolves without persisting anything).
+// `chelonia/kv/get`, in contrast, surfaces this typed error. Detect the
+// behind-state with a read before writing, and recover by force-syncing the
+// identity contract up to the server's height. If the contract is still behind
+// after the recovery attempt, throw `GIErrorKVHeightAhead` so callers know the
+// write did not happen.
+const syncIdentityIfKvAhead = async (identityContractID: string, attempt: number = 0): Promise<void> => {
+  try {
+    await sbp('chelonia/kv/get', identityContractID, KV_KEYS.UNREAD_MESSAGES)
+  } catch (e) {
+    if (e instanceof ChelErrorInvalidMessageHeight) {
+      if (attempt >= 1) {
+        throw new GIErrorKVHeightAhead(e.message, { cause: e })
+      }
+      console.warn('[identity-kv.js] identity contract is behind the KV store; syncing it before writing unreadMessages', e)
+      await sbp('chelonia/contract/sync', identityContractID)
+      return syncIdentityIfKvAhead(identityContractID, attempt + 1)
+    }
+    throw e
+  }
+}
+
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // Name discrepancies between the KV store and `namespaceLookups` may occur
 // due to being unsubcribed from an identity contract (e.g., someone has left
@@ -98,6 +122,12 @@ export default (sbp('sbp/selectors/register', {
     //       because it uses fields of the identity contract state including height, cek, csk
     //       this conflict error can cause the heisenbug mostly in Cypress
     //       https://okturtles.slack.com/archives/C0EH7P20Y/p1720053305870019?thread_ts=1720025185.746849&cid=C0EH7P20Y
+    // If the identity contract is behind the server, recover (sync) first so the
+    // write below is stamped at a current height and actually persists. Doing it
+    // here, at the single shared boundary, means every caller of this selector
+    // (setChatRoomReadUntil, markAsUnread, addChatRoomUnreadMessage,
+    // removeChatRoomUnreadMessage, initChatRoomUnreadMessages) recovers uniformly.
+    await syncIdentityIfKvAhead(identityContractID)
     try {
       return await sbp('chelonia/kv/queuedSet', {
         contractID: identityContractID,
@@ -106,11 +136,9 @@ export default (sbp('sbp/selectors/register', {
         onconflict
       })
     } catch (e) {
-      // The local identity contract is behind the server: rethrow as a typed
-      // error so callers can retry once it has caught up. Centralized here so
-      // that every caller of this selector (setChatRoomReadUntil, markAsUnread,
-      // addChatRoomUnreadMessage, removeChatRoomUnreadMessage,
-      // initChatRoomUnreadMessages) benefits uniformly.
+      // Defensive: after the preflight above the identity contract is at least as
+      // fresh as the KV store, so this should not normally fire. Kept so that any
+      // height-ahead error that still slips through is surfaced as a typed error.
       if (isHeightAheadError(e)) {
         throw new GIErrorKVHeightAhead(e.message, { cause: e })
       }
