@@ -29,6 +29,16 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   }
 
+  function verifyCodeFenceLines (lines) {
+    cy.get('table.code-fence-table tbody tr').should('have.length', lines.length)
+    lines.forEach((codeLine, index) => {
+      cy.get('table.code-fence-table tbody tr').eq(index).within(() => {
+        cy.get('td.line-number').should('have.text', `${index + 1}`) // Verify the line number.
+        cy.get('td.code-line').should('have.text', codeLine) // Verify the raw text isn't transformed.
+      })
+    })
+  }
+
   it('Test setup: user1 creates a group and goes to the group chat', () => {
     cy.visit('/')
     cy.giSignup(user1, { bypassUI: true })
@@ -107,7 +117,7 @@ describe('Check basic markdown features - one feature per message', () => {
 
     // inline code must not render channel/user mentions
     const inlineCodeWithMention1 = `Mentioning user1 must not be rendered inside inline code: \`@${user1}\``
-    const inlineCodeWithMention2 = `Likewise Mentioning the channel must not be rendered inside inline code: \`#${CHATROOM_GENERAL_NAME}\``
+    const inlineCodeWithMention2 = `Likewise, mentioning the channel must not be rendered inside inline code: \`#${CHATROOM_GENERAL_NAME}\``
 
     sendMarkdownMessage(user1, inlineCodeWithMention1)
     checkLastSentMessage(() => {
@@ -169,13 +179,7 @@ describe('Check basic markdown features - one feature per message', () => {
     cy.log('4-2. Verify each code line is displayed with its line number, with the markdown syntax inside it left unrendered')
 
     checkLastSentMessage(() => {
-      cy.get('table.code-fence-table tbody tr').should('have.length', codeLines.length)
-      codeLines.forEach((codeLine, index) => {
-        cy.get('table.code-fence-table tbody tr').eq(index).within(() => {
-          cy.get('td.line-number').should('have.text', `${index + 1}`) // Verify the line number.
-          cy.get('td.code-line').should('have.text', codeLine) // Verify the raw text isn't transformed.
-        })
-      })
+      verifyCodeFenceLines(codeLines)
 
       // Ensure markdown syntaxes and mentions aren't transformed.
       cy.get('em').should('not.exist')
@@ -385,14 +389,7 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.get('ol > li').eq(3).within(() => {
         cy.get('.code-fence-block').should('have.length', 1).within(() => {
           cy.get('.c-line-count').should('have.text', `${codeFenceLines.length} lines`)
-          cy.get('table.code-fence-table tbody tr').should('have.length', codeFenceLines.length)
-          codeFenceLines.forEach((codeLine, index) => {
-            cy.get('table.code-fence-table tbody tr').eq(index).within(() => {
-              cy.get('td.line-number').should('have.text', `${index + 1}`)
-              // The indentation used to nest the code fence under the list item must be stripped.
-              cy.get('td.code-line').should('have.text', codeLine)
-            })
-          })
+          verifyCodeFenceLines(codeFenceLines)
         })
       })
 
