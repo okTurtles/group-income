@@ -860,7 +860,7 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
 })
 
 Cypress.Commands.add('giSendMessage', (sender, message, {
-  // instantInput: Instead of mimicking the user typing message character by character (which can be slow for long or repeatitive message),
+  // instantInput: Instead of mimicking the user typing message character by character (which can be slow for long or repetitive message),
   //               Just dump the text quickly into the textarea without waiting for typing animation to complete.
   // checkMessage: In some cases, the sent message gets transformed (e.g. markdown) and the default check in this function
   //               fails. The default check here can be skipped using this parameter.
@@ -874,8 +874,6 @@ Cypress.Commands.add('giSendMessage', (sender, message, {
     //       Instead we manually click the send button.
     // cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
     if (instantInput) {
-      // Instead of mimicking the user typing message character by character (which can be slow for long message),
-      // Just dump the text quickly into the textarea without waiting for typing animations
       cy.get('textarea').invoke('val', message).trigger('input').trigger('keyup')
     } else {
       cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })

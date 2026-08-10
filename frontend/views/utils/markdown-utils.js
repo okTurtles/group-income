@@ -19,7 +19,7 @@ marked.use({
           const { href, text } = token
           // For non-external links, validateURL() could perform some transformations to the path and
           // in that case, that is returned as 'url' property. Use it if that exists.
-          const urlToUse = !isExternalLink ? (url || href) : href
+          const urlToUse = isExternalLink ? href : url
           // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
           // So we need to perform another conversion step here.
           const parsedText = marked.parseInline(text, { gfm: true })

@@ -59,15 +59,15 @@ describe('Check basic markdown features - one feature per message', () => {
 
     // Complex headings (headings with inline markdowns inside)
     const headingMarkdownComplex = '#### Heading with a [link](https://www.google.com)\n' +
-      '#### Heading with an _italic text_, an **bold text**, and a `code` text'
+      '#### Heading with an _italic text_, a **bold text**, and a `code` text'
 
     sendMarkdownMessage(user1, headingMarkdownComplex)
     checkLastSentMessage(() => {
       cy.get('h4').eq(0).should('have.text', 'Heading with a link')
-      cy.get('h4').eq(1).should('have.text', 'Heading with an italic text, an bold text, and a code text')
+      cy.get('h4').eq(1).should('have.text', 'Heading with an italic text, a bold text, and a code text')
 
       cy.get('a').should('have.attr', 'href', 'https://www.google.com')
-        // Ensure the fix for #2976(An external link should open in a new tab) isn't regressed.
+        // Ensure the fix for #2976 (An external link should open in a new tab) isn't regressed.
         .and('have.attr', 'target', '_blank')
 
       cy.get('em').should('have.text', 'italic text')
@@ -532,13 +532,12 @@ describe('Check basic markdown features - one feature per message', () => {
     }
     const textAfter = 'Some plain text after'
     for (const [blockTagName, markdown] of Object.entries(blockLevelMarkdowns)) {
-      // The extra \n in the middle here must not be transformed to a <br> because it's a markdown signifier for the end of the blockquote and ordered/unordered lists.
-      // double \n\n is a markdown signifier for the end of blockquote and ordered/unordered lists.
+      // The \n\n here is a markdown block separator (not a line break), so it must not produce a <br> element.
       const msgToSend = `${markdown}\n\n${textAfter}`
       sendMarkdownMessage(user1, msgToSend)
       checkLastSentMessage(() => {
         cy.get(blockTagName).should('exist')
-          .next().should('contain', textAfter) // .next() here is a directly sibling element and must be a text after.
+          .next().should('contain', textAfter) // .next() here is a direct sibling element and must be a text after.
 
         cy.get('br').should('not.exist') // Ensure no <br> is generated after the block markdown.
       })
@@ -547,7 +546,7 @@ describe('Check basic markdown features - one feature per message', () => {
 
   it('10. Verify path-only urls passed to link markdown work as expected', () => {
     // validateURL() in frontend/views/utils/misc.js is called with 'acceptPathOnly: true' for every link
-    // markdown. Verifying the logics there are working correctly.
+    // markdown. Verifying that the logic there works correctly.
 
     cy.log('10-1. A path starting with \'/app\' is turned into an in-app router link')
 
