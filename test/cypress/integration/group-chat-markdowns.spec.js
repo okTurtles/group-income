@@ -603,7 +603,7 @@ describe('Check basic markdown features - one feature per message', () => {
   it('11. Miscellaneous checks.', () => {
     cy.log('11-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
 
-    // Check if the raw html escaping logics in markdown-utils.js work correctly.
+    // Check if the raw html escaping logics in markdown-utils.js work correctly
 
     const imgHTML = '<img src="this-image-does-not-exist.png" onerror="window.imgOnerrorExecuted = true">'
     const pHTML = '<p id="some-random-id"><strong>This is a paragraph</strong> and should be rendered as <em>plain text</em></p>'
