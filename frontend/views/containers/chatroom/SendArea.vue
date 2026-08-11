@@ -288,7 +288,7 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
-import { makeMentionFromUsername, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
@@ -820,9 +820,14 @@ export default ({
       const genMentionRegExp = (type = 'member') => {
         // This regular expression matches all mentions (e.g. @username, #channel-name) that are standing alone between spaces
         const mentionStart = type === 'member' ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
-        const availableMentions = type === 'member'
+        const availableMentions = (type === 'member'
           ? this.activeMembers.map(member => member.username)
           : this.mentionableChatroomsInDetails.map(channel => channel.name)
+        ).filter(name => !!name)
+
+        // Without any known name to match, an empty alternation would match the
+        // bare mention character and strip it from the message.
+        if (!availableMentions.length) return null
 
         return new RegExp(`(?<=\\s|^)${mentionStart}(${availableMentions.join('|')})(?=[^\\w\\d]|$)`, 'g')
       }
@@ -830,14 +835,31 @@ export default ({
         const found = this.mentionableChatroomsInDetails.find(entry => entry.name === name)
         return found ? makeChannelMention(found.id, true) : ''
       }
+      // Resolve against the very same list the mention was detected with, so
+      // that detection and conversion cannot disagree about who a username
+      // belongs to. Looking the username up in a different collection is what
+      // allowed a mention to be detected but not resolved, and then dropped.
+      const convertMemberMentionToId = username => {
+        const found = this.activeMembers.find(member => member.username === username)
+        return found ? makeMentionFromUserID(found.memberID).me : ''
+      }
       const convertAllMentions = str => {
-        return str.replace(
-          genMentionRegExp('member'), // 1. replace all member mentions.
-          (_, username) => makeMentionFromUsername(username).me
-        ).replace( // 2. replace all channel mentions.
-          genMentionRegExp('channel'),
-          (_, channelName) => convertChannelMentionToId(channelName)
-        )
+        const memberRegExp = genMentionRegExp('member')
+        const channelRegExp = genMentionRegExp('channel')
+        // An unresolvable mention is left exactly as typed. Replacing it with an
+        // empty string would silently delete part of the message being sent.
+        const result = memberRegExp
+          ? str.replace(
+            memberRegExp, // 1. replace all member mentions.
+            (match, username) => convertMemberMentionToId(username) || match
+          )
+          : str
+        return channelRegExp
+          ? result.replace( // 2. replace all channel mentions.
+            channelRegExp,
+            (match, channelName) => convertChannelMentionToId(channelName) || match
+          )
+          : result
       }
 
       const msgSplitByCodeMarkdown = splitStringByMarkdownCode(msgToSend)

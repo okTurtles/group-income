@@ -14,7 +14,6 @@ import { mapGetters, mapMutations, mapState } from 'vuex'
 import 'wicg-inert'
 import { CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
 import '@chelonia/lib/local-selectors'
-import { KV_KEYS } from './utils/constants.js'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
@@ -23,7 +22,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { KV_EVENT, LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -348,23 +347,6 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
         sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
-      })
-      sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
-        switch (key) {
-          case KV_KEYS.LAST_LOGGED_IN: {
-            sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
-            break
-          }
-          case KV_KEYS.UNREAD_MESSAGES:
-            sbp('state/vuex/commit', 'setUnreadMessages', data)
-            break
-          case KV_KEYS.PREFERENCES:
-            sbp('state/vuex/commit', 'setPreferences', data)
-            break
-          case KV_KEYS.NOTIFICATIONS:
-            sbp('state/vuex/commit', 'setNotificationStatus', data)
-            break
-        }
       })
 
       // Useful in case the app is started in offline mode.
