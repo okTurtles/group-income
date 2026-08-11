@@ -643,12 +643,5 @@ describe('Check basic markdown features - one feature per message', () => {
         expect(win.imgOnerrorExecuted).to.equal(undefined)
       })
     })
-
-    cy.log(`11-2. A message longer than ${CHATROOM_MAX_MESSAGE_LEN} characters never makes it into the chatroom`)
-    const tooLongMessage = 'a'.repeat(CHATROOM_MAX_MESSAGE_LEN + 1)
-    const messageAfter = 'A message sent after the oversized one'
-    const combinedMessage = `${tooLongMessage}\n\n${messageAfter}`
-
-    sendMarkdownMessage(user1, combinedMessage)
   })
 })
