@@ -56,8 +56,8 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
       queryString: /^\?[\w-]+=[\w.~%!$()*+,;:@/?#[\]=-]*(?:&[\w-]+=[\w.~%!$()*+,;:@/?#[\]=-]*)*$/ // eg. ?modal=ModalName&userId=abcd123
     }
 
-    if (regExpMap.pathOnly.test(url) && url.startsWith('/app')) {
-      // Case 1. if the url is a path starts with '/app', take it as a route to an in-app page.
+    if (regExpMap.pathOnly.test(url) && /^\/app(?=$|[/?#])/.test(url)) {
+      // Case 1. if the url is a path starts with '/app/', take it as a route to an in-app page.
       const path = url.slice('/app'.length)
       url = location.origin + '/app' + path
     } else if (regExpMap.queryString.test(url)) {
