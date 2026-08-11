@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME, CHATROOM_MAX_MESSAGE_LEN } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 const groupName = 'Dreamers'
