@@ -39,7 +39,7 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   }
 
-  function verifyTableTextContents(tableHeaders, tableRows) {
+  function verifyTableTextContents (tableHeaders, tableRows) {
     tableHeaders.forEach((headerText, index) => {
       cy.get('table.table thead th').eq(index).should('have.text', headerText)
     })
