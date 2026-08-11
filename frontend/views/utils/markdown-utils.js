@@ -37,6 +37,13 @@ marked.use({
         }
         return token.raw
       }
+    },
+    {
+      name: 'image',
+      level: 'inline',
+      // The chat has its own image upload feature, and an <img> here would load a remote url on render,
+      // leaking every reader's IP to whoever sent the message. So do not render it at all for now unless we plan to allow it.
+      renderer: () => ''
     }
   ],
   renderer: {

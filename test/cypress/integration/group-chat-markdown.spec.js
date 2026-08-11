@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_GENERAL_NAME, CHATROOM_MAX_MESSAGE_LEN } from '../../../frontend/model/contracts/shared/constants.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 const groupName = 'Dreamers'
@@ -487,7 +487,7 @@ describe('Check basic markdown features - one feature per message', () => {
     })
 
     cy.log('8-2. Verify an emoji directly following an inline markdown is not enlarged (issue #3044)')
-    // // Verify that the previous bugfix related to the .has-only-emojis class isn't regressed.
+    // Verify that the previous bugfix related to the .has-only-emojis class isn't regressed.
     // Reference issue: https://github.com/okTurtles/group-income/issues/3044
     sendMarkdownMessage(user1, `**bold text** ${emojis[0]}`)
     cy.getByDT('conversationWrapper').within(() => {
@@ -643,5 +643,12 @@ describe('Check basic markdown features - one feature per message', () => {
         expect(win.imgOnerrorExecuted).to.equal(undefined)
       })
     })
+
+    cy.log(`11-2. A message longer than ${CHATROOM_MAX_MESSAGE_LEN} characters never makes it into the chatroom`)
+    const tooLongMessage = 'a'.repeat(CHATROOM_MAX_MESSAGE_LEN + 1)
+    const messageAfter = 'A message sent after the oversized one'
+    const combinedMessage = `${tooLongMessage}\n\n${messageAfter}`
+
+    sendMarkdownMessage(user1, combinedMessage)
   })
 })
