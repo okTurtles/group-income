@@ -198,11 +198,19 @@ export default {
   }
 }
 
+@mixin toast-style-dark-theme-adjustments {
+  .is-dark-theme &.is-type-warning {
+    --toast-message-color: #{$warning_0};
+    --toast-icon-color: #{$warning_1};
+  }
+}
+
 $shadow-color: rgba(54, 54, 54, 0.3);
 $shadow-color-dark: rgba(38, 38, 38, 0.895);
 
 .c-toast-card {
   @include toast-style-definitions;
+  @include toast-style-dark-theme-adjustments;
   position: relative;
   display: block;
   width: 100%;

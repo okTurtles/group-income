@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { cloneDeep } from 'turtledash'
-import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
+import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 import getters from './getters.js'
 import * as keys from './mutationKeys.js'
 import type { Notification } from './types.flow.js'
@@ -17,12 +17,8 @@ sbp('okTurtles.events/on', NOTIFICATION_REMOVED, (hashes) => {
   hashes.forEach(hash => sbp('state/vuex/commit', keys.REMOVE_NOTIFICATION, hash))
 })
 
-sbp('okTurtles.events/on', NOTIFICATION_STATUS_LOADED, (status) => {
-  sbp('state/vuex/commit', 'setNotificationStatus', status)
-})
-
 const defaultState = {
-  items: [], status: {}
+  items: []
 }
 
 const mutations = {
@@ -60,10 +56,6 @@ const mutations = {
   // Used upon successful login, with notifications from local storage.
   [keys.SET_NOTIFICATIONS] (state, notifications: Notification[]) {
     state.items.splice(0, state.items.length, ...notifications)
-  },
-
-  setNotificationStatus (state, status) {
-    state.status = status
   }
 }
 
