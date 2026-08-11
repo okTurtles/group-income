@@ -7,6 +7,16 @@ export type MarkdownSegment = {
   text: string
 }
 
+const HREF_ESCAPE_MAP = { '"': '%22', "'": '%27', '<': '%3C', '>': '%3E', '`': '%60' }
+
+// The href below is interpolated into a double-quoted HTML attribute, and the resulting string is
+// re-parsed by DOMParser in chat-mentions-utils.js, which hands every attribute it finds straight to
+// Vue. Percent-encode the characters that could otherwise close the attribute and inject a new one.
+// (eg. [x](/a"onclick="alert(1)) )
+function escapeHref (href: any): string {
+  return String(href).replace(/["'<>`]/g, char => HREF_ESCAPE_MAP[char])
+}
+
 marked.use({
   extensions: [
     {
@@ -18,8 +28,8 @@ marked.use({
         if (isValid) {
           const { href, text } = token
           // For non-external links, validateURL() could perform some transformations to the path and
-          // in that case, that is returned as 'url' property. Use it if that exists.
-          const urlToUse = isExternalLink ? href : url
+          // in that case, that is returned as 'url' property.
+          const urlToUse = escapeHref(isExternalLink ? href : url)
           // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
           // So we need to perform another conversion step here.
           const parsedText = marked.parseInline(text, { gfm: true })

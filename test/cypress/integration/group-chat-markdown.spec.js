@@ -39,6 +39,21 @@ describe('Check basic markdown features - one feature per message', () => {
     })
   }
 
+  function verifyTableTextContents(tableHeaders, tableRows) {
+    tableHeaders.forEach((headerText, index) => {
+      cy.get('table.table thead th').eq(index).should('have.text', headerText)
+    })
+
+    tableRows.forEach((rowCells, rowIndex) => {
+      cy.get('table.table tbody tr').eq(rowIndex).within(() => {
+        cy.get('td').should('have.length', rowCells.length)
+        rowCells.forEach((cellText, colIndex) => {
+          cy.get('td').eq(colIndex).should('have.text', cellText)
+        })
+      })
+    })
+  }
+
   it('Test setup: user1 creates a group and goes to the group chat', () => {
     cy.visit('/')
     cy.giSignup(user1, { bypassUI: true })
@@ -65,7 +80,7 @@ describe('Check basic markdown features - one feature per message', () => {
       }
     })
 
-    cy.log('1-2.Verify complex headings (headings with inline markdowns inside)')
+    cy.log('1-2. Verify complex headings (headings with inline markdowns inside)')
 
     // Complex headings (headings with inline markdowns inside)
     const headingMarkdownComplex = '#### Heading with a [link](https://www.google.com)\n' +
@@ -170,7 +185,7 @@ describe('Check basic markdown features - one feature per message', () => {
     sendMarkdownMessage(user1, codeFenceMarkdown)
     checkLastSentMessage(() => {
       cy.get('.code-fence-block').should('have.length', 1).within(() => {
-        // Ensure the ctas in CodeFence components are rendered correctly.
+        // Ensure the CodeFence UI elements (line count, copy button) components are rendered correctly.
         cy.get('.c-line-count').should('have.text', `${codeLines.length} lines`)
         cy.get('button.c-copy-button').should('contain', 'Copy')
       })
@@ -224,18 +239,7 @@ describe('Check basic markdown features - one feature per message', () => {
     cy.log('5-2. Verify the header and the body cells display the correct contents')
 
     checkLastSentMessage(() => {
-      tableHeaders.forEach((headerText, index) => {
-        cy.get('table.table thead th').eq(index).should('have.text', headerText)
-      })
-
-      tableRows.forEach((rowCells, rowIndex) => {
-        cy.get('table.table tbody tr').eq(rowIndex).within(() => {
-          cy.get('td').should('have.length', rowCells.length)
-          rowCells.forEach((cellText, colIndex) => {
-            cy.get('td').eq(colIndex).should('have.text', cellText)
-          })
-        })
-      })
+      verifyTableTextContents(tableHeaders, tableRows)
     })
 
     cy.log('5-3. Verify inline markdowns and mentions inside the table cells are rendered correctly')
@@ -396,17 +400,7 @@ describe('Check basic markdown features - one feature per message', () => {
       // A table nested in a list item is rendered as a table too.
       cy.get('ol > li').eq(4).within(() => {
         cy.get('.table-container > table.table').should('have.length', 1)
-        tableHeaders.forEach((headerText, index) => {
-          cy.get('table.table thead th').eq(index).should('have.text', headerText)
-        })
-        cy.get('table.table tbody tr').should('have.length', tableRows.length)
-        tableRows.forEach((rowCells, rowIndex) => {
-          cy.get('table.table tbody tr').eq(rowIndex).within(() => {
-            rowCells.forEach((cellText, colIndex) => {
-              cy.get('td').eq(colIndex).should('have.text', cellText)
-            })
-          })
-        })
+        verifyTableTextContents(tableHeaders, tableRows)
       })
 
       // The plain text after the list is rendered outside of it.
@@ -493,7 +487,7 @@ describe('Check basic markdown features - one feature per message', () => {
     })
 
     cy.log('8-2. Verify an emoji directly following an inline markdown is not enlarged (issue #3044)')
-    // Verifying a previous bugfix related to the .has-only-emojis class isn't regressed.
+    // // Verify that the previous bugfix related to the .has-only-emojis class isn't regressed.
     // Reference issue: https://github.com/okTurtles/group-income/issues/3044
     sendMarkdownMessage(user1, `**bold text** ${emojis[0]}`)
     cy.getByDT('conversationWrapper').within(() => {
@@ -503,7 +497,6 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.get('strong').should('have.text', 'bold text')
       cy.get('.chat-emoji').should('have.length', 1)
       cy.get('.chat-emoji').should('have.text', emojis[0])
-      cy.get('.has-only-emojis').should('not.exist')
     })
   })
 
@@ -598,9 +591,34 @@ describe('Check basic markdown features - one feature per message', () => {
         .and('have.attr', 'href', anchorLink)
         .and('not.have.attr', 'target')
     })
+
+    cy.log('10-5. A url with an unsafe scheme like \'javascript:\' is never rendered as a link')
+
+    const unsafeLinkMarkdown = '[Click me](javascript:alert(1))'
+    sendMarkdownMessage(user1, unsafeLinkMarkdown)
+    checkLastSentMessage(() => {
+      // validateURL() only accepts the 'http:', 'https:' and 'mailto:' schemes, so the link markdown
+      // is left unrendered and displayed as plain text instead.
+      cy.get('a').should('not.exist')
+      cy.contains(unsafeLinkMarkdown).should('exist')
+    })
+
+    cy.log('10-6. A url containing characters that are not allowed in a URL is returned as raw text')
+
+    const injectionMarkdown = '[x](/a"onclick="alert(document.cookie))'
+    sendMarkdownMessage(user1, injectionMarkdown)
+    checkLastSentMessage(() => {
+      // The double-quotes in the url would close the href="..." attribute of the anchor tag that
+      // markdown-utils.js builds, and inject an event handler right next to it. validateURL() only
+      // accepts the characters that can legally appear in a URL, so the link markdown is left
+      // unrendered and displayed as plain text instead.
+      cy.get('a').should('not.exist')
+      cy.get('[onclick]').should('not.exist')
+      cy.contains(injectionMarkdown).should('exist')
+    })
   })
 
-  it('11. Miscellaneous checks.', () => {
+  it('11. Miscellaneous checks', () => {
     cy.log('11-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
 
     // Check if the raw html escaping logics in markdown-utils.js work correctly

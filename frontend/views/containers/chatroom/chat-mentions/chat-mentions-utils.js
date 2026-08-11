@@ -96,6 +96,11 @@ function createRecursiveDomObjects (element: any): DomObject {
 
   if (element.attributes?.length) {
     for (const attr of element.attributes) {
+      // These attributes are passed straight to Vue's createElement() as 'attrs', so an 'on*' one
+      // would be installed as a real event handler. Nothing we render needs them, and the markdown
+      // renderer is the only thing producing this html, so drop them unconditionally.
+      if (attr.name.toLowerCase().startsWith('on')) continue
+
       nodeObj.attributes[attr.name] = attr.value
     }
   }
