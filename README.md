@@ -55,8 +55,7 @@ grunt dev
 ```
 
 - If all went well you should be able to visit [http://localhost:3000](http://localhost:3000)
-- If `grunt dev` fails with `[chel] Error: Missing required config 'server_id'`, run `./node_modules/.bin/chel init`. This generates a
-  `chel.toml` config file in the project root. Once it's there, run `grunt dev` again.
+- If `grunt dev` fails with `[chel] Error: Missing required config 'server_id'`, run `./node_modules/.bin/chel init`. This generates a `chel.toml` config file in the project root. Once it's there, run `grunt dev` again.
 
 Create a tunnel to share access over the Internet:
 
