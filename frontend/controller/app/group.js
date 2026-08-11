@@ -7,7 +7,7 @@ import {
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
-import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, NEW_LAST_LOGGED_IN, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import { withGroupCurrency } from '@view-utils/misc.js'
 import type { ChelKeyRequestParams } from '@chelonia/lib'
@@ -105,10 +105,6 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
     // open.
     sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupIdToSwitch, forceRefresh: currentGroupId === groupContractID })
   }
-})
-
-sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
-  sbp('state/vuex/commit', 'setLastLoggedIn', [contractID, data])
 })
 
 export default (sbp('sbp/selectors/register', {

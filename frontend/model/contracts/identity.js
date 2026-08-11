@@ -338,11 +338,6 @@ sbp('chelonia/defineContract', {
             console.warn(`[gi.contracts/identity/leaveGroup/sideEffect] Error removing ourselves from group contract ${data.groupContractID}`, e)
           })
 
-          // Remove last logged in information
-          if (sbp('state/vuex/state').lastLoggedIn?.[contractID]) {
-            delete sbp('state/vuex/state').lastLoggedIn[contractID]
-          }
-
           await sbp('gi.contracts/identity/revokeGroupKeyAndRotateOurPEK', contractID, state, data.groupContractID)
           sbp('okTurtles.events/emit', LEFT_GROUP, { identityContractID: contractID, groupContractID: data.groupContractID })
         }).catch(e => {

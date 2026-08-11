@@ -116,6 +116,7 @@ modal-base-template.has-background(
 
 <script>
 import sbp from '@sbp/sbp'
+import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { L, LTags } from '@common/common.js'
 import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -315,6 +316,9 @@ export default ({
     },
     async addToChannel (contractID: string, undoing = false) {
       if (this.isGroupDirectMessage()) {
+        // Drain the tab's state-projection queue so recently-synced DM
+        // contracts are visible before we look for an existing conversation.
+        await sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, () => {})
         const currentPartnerIDs = this.ourGroupDirectMessages[this.currentChatRoomId].partners.map(p => p.contractID)
         const memberIDs = uniq(currentPartnerIDs.concat(contractID))
         const chatRoomID = this.ourGroupDirectMessageFromUserIds(memberIDs)

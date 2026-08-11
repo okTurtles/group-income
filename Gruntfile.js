@@ -431,12 +431,27 @@ module.exports = (grunt) => {
       process.exit(1)
     })
     proc.on('close', (rc) => {
-      pinoPrettyChild?.kill('SIGKILL')
       if (child === proc) child = undefined
       if (rc) {
-        grunt.log.error(`child exited with error code: ${rc}`.bold)
-        process.exit(rc)
+        grunt.log.error(`'chel serve' exited with error code: ${rc}`.bold)
       }
+      // `chel serve` reports fatal errors (e.g. a bad or incomplete chel.toml)
+      // on stderr, which we pipe through pino-pretty. Killing pino-pretty (or
+      // exiting) before it has echoed that output discards the only
+      // explanation of the failure, so give it a chance to drain first.
+      if (!pinoPrettyChild) {
+        if (rc) process.exit(rc)
+        return
+      }
+      // Watchdog: if pino-pretty never exits on its own, don't hang grunt.
+      // Unref'd so it can only fire while the live child keeps the loop open.
+      const drainWatchdog = setTimeout(() => pinoPrettyChild.kill('SIGKILL'), 2000)
+      drainWatchdog.unref()
+      pinoPrettyChild.once('close', () => {
+        clearTimeout(drainWatchdog)
+        if (rc) process.exit(rc)
+      })
+      pinoPrettyChild.stdin.end()
     })
     child = proc
     done()
@@ -726,6 +741,11 @@ module.exports = (grunt) => {
       })
 
     if (!this.flags.watch) {
+      // One-shot build: nothing will rebuild, so let go of the esbuild service
+      // instead of leaving it running for the rest of the grunt session.
+      await Promise.all(
+        [buildContracts, buildContractsSlim, buildMain, buildServiceWorkers].map(task => task.dispose())
+      )
       return done()
     }
     const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
