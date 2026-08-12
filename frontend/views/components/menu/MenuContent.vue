@@ -4,7 +4,7 @@
   data-test='menuContent'
 )
   .c-content-wrapper(
-    v-on-clickaway='closeMenu'
+    v-on-clickaway='onClickAway'
   )
     slot
 </template>
@@ -24,10 +24,11 @@ export default ({
     }
   },
   methods: {
-    closeMenu (e) {
+    onClickAway (e) {
       // Prevent closing the menu when clicking inside of the parent element,
       // except if the event was on `.c-content` (.c-responsive-menu)
-      if (e.target !== this.$el && e.target?.closest('details') === this.$el.closest('details')) {
+      const isInsideParent = e.target !== this.$el && e.target?.closest('details') === this.$el.closest('details')
+      if (!this.isActive || isInsideParent) {
         return
       }
       this.Menu.closeMenu()

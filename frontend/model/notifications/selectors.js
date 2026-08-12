@@ -4,7 +4,8 @@ import sbp from '@sbp/sbp'
 import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
 import templates from './templates.js'
 import { makeNotificationHash } from './utils.js'
-import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED } from '~/frontend/utils/events.js'
+import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 
 /*
  * NOTE: do not refactor occurences of `sbp('state/vuex/state')` by defining a shared constant in the
@@ -56,8 +57,10 @@ sbp('sbp/selectors/register', {
   'gi.notifications/markAllAsRead' (groupID: string) {
     const rootState = sbp('chelonia/rootState')
     if (!rootState.notifications) return
+    const identityContractID = rootState.loggedIn?.identityContractID
+    const status = identityContractID ? sbp('chelonia/kv/read', identityContractID, KV_KEYS.NOTIFICATIONS) || {} : {}
     const hashes = rootState.notifications.items.filter(item => {
-      return !item.read && (!groupID || !item.groupID || item.groupID === groupID)
+      return !(status[item.hash]?.read ?? item.read) && (!groupID || !item.groupID || item.groupID === groupID)
     }).map(item => item.hash)
     sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes)
   },
@@ -75,11 +78,5 @@ sbp('sbp/selectors/register', {
     }).filter((v) => v !== false).sort().map((v, i) => v - i)
     indices.forEach((index) => rootState.notifications.items.splice(index, 1))
     sbp('okTurtles.events/emit', NOTIFICATION_REMOVED, hashes)
-  },
-  'gi.notifications/setNotificationStatus' (status) {
-    const rootState = sbp('chelonia/rootState')
-    rootState.notifications.status = status
-    sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
-    sbp('okTurtles.events/emit', NOTIFICATION_STATUS_LOADED, status)
   }
 })

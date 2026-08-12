@@ -30,7 +30,7 @@
 .*.test.js
 
 [libs]
-./shared/declarations.js
+./frontend/declarations.js
 
 [options]
 all=true
