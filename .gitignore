@@ -59,3 +59,4 @@ strings.exe
 /.tldr*
 /.agents/
 /.crush/
+/.claude/
