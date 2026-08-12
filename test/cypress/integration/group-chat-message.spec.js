@@ -383,7 +383,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
 
   it('user1 sends 20 messages', () => {
     for (let i = 1; i <= 20; i++) {
-      cy.giSendMessage(me, `Text-${i}`)
+      cy.giSendMessage(me, `Text-${i}`, { instantInput: true })
     }
   })
 

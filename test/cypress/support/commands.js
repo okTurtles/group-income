@@ -859,20 +859,33 @@ Cypress.Commands.add('giWaitUntilMessagesLoaded', (isGroupChannel = true) => {
   }
 })
 
-Cypress.Commands.add('giSendMessage', (sender, message) => {
+Cypress.Commands.add('giSendMessage', (sender, message, {
+  // instantInput: Instead of mimicking the user typing message character by character (which can be slow for long or repetitive messages),
+  //               just dump the text quickly into the textarea without waiting for typing animation to complete.
+  // checkMessage: In some cases, the sent message gets transformed (e.g. markdown) and the default check in this function
+  //               fails. The default check here can be skipped using this parameter.
+  instantInput = false,
+  checkMessage = true
+} = {}) => {
   // The following is to ensure the chatroom has finished loading (no spinner)
   cy.giWaitUntilMessagesLoaded(false)
   cy.getByDT('messageInputWrapper').within(() => {
     // NOTE: Cypress bug: for some reason this {enter} thing is causing the tests to fail
     //       Instead we manually click the send button.
     // cy.get('textarea').type(`{selectall}{del}${message}{enter}`, { force: true })
-    cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    if (instantInput) {
+      cy.get('textarea').invoke('val', message).trigger('input').trigger('keyup')
+    } else {
+      cy.get('textarea').type(`{selectall}{del}${message}`, { force: true })
+    }
     cy.getByDT('sendMessageButton').click()
     cy.get('textarea').should('be.empty')
   })
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-message:last-child .c-who > span:first-child').should('contain', sender)
-    cy.get('.c-message.sent:last-child .c-text').should('contain', message)
+    if (checkMessage) {
+      cy.get('.c-message.sent:last-child .c-text').should('contain', message)
+    }
   })
 })
 
