@@ -2127,7 +2127,7 @@ export default ({
     margin-top: 1rem;
   }
 
-  &:has(.c-message .c-menu .is-active) {
+  &:has(.c-message .c-menu[open]) {
     // fix: ensure the menu is visible (otherwise, absolute positioning makes
     // it hidden behind other messages)
     z-index: 1;
@@ -2135,7 +2135,7 @@ export default ({
 }
 
 ::v-deep .vue-recycle-scroller__item-wrapper {
-  &:has(.c-message .c-menu .is-active) {
+  &:has(.c-message .c-menu[open]) {
     // fix: ensure the menu is visible
     overflow: visible;
   }

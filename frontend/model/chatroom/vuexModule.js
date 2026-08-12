@@ -11,7 +11,6 @@ const defaultState = {
   currentChatRoomIDs: {}, // { [groupId | 'global']: currentChatRoomId }
   pendingChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomID]: messageHash
-  unreadMessages: null, // [chatRoomID]: { readUntil: { messageHash, createdHeight, isManuallyMarked?: boolean }, unreadMessages: [{ messageHash, createdHeight }]}
   chatNotificationSettings: {} // { [chatRoomID | GLOBAL_NOTIFICATION_SETTINGS_KEY]: { messageNotification: MESSAGE_NOTIFY_SETTINGS | GLOBAL_MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS | GLOBAL_MESSAGE_NOTIFY_SETTINGS } }
 }
 
@@ -54,9 +53,6 @@ const mutations = {
         Vue.set(state.pendingChatRoomIDs, groupID, null)
       }
     }
-  },
-  setUnreadMessages (state, value) {
-    Vue.set(state, 'unreadMessages', value)
   },
   setChatRoomScrollPosition (state, { chatRoomID, messageHash }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomID, messageHash)

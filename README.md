@@ -3,7 +3,6 @@
     <br />
     <br />
     <a title="Slack" href="https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ"><img src="https://img.shields.io/badge/slack-%23groupincome-green"></a>
-    <a title="Build Status" href="https://app.travis-ci.com/github/okTurtles/group-income"><img src="https://app.travis-ci.com/okTurtles/group-income.svg?branch=master"></a>
     <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income"><img src="https://img.shields.io/badge/visual-source-orange"></a>
     <a title="Ask DeepWiki" href="https://deepwiki.com/okTurtles/group-income"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
     <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
@@ -59,7 +58,7 @@ grunt dev
 
 Create a tunnel to share access over the Internet:
 
-Try [ngrok](https://ngrok.com/) (recommended), [tunnl.gg](https://tunnl.gg/), [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
+Try [ngrok](https://ngrok.com/) (recommended), [zrok](https://github.com/openziti/zrok), [tunnl.gg](https://tunnl.gg/), [localhost.run](https://localhost.run/) or [serveo](https://serveo.net/) instead, e.g.:
 
 ```
 $ grunt dev
