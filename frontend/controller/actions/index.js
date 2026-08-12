@@ -5,6 +5,7 @@ import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
+import './kv-slots.js'
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'

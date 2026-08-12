@@ -89,6 +89,7 @@ import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { difference } from 'turtledash'
 import { mapGetters } from 'vuex'
+import { EVENT_HANDLED } from '@chelonia/lib/events'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UsersSelector from '@components/UsersSelector.vue'
 import ProfileCard from '@components/ProfileCard.vue'
@@ -234,6 +235,13 @@ export default ({
         const memberIds = isDMToMyself
           ? this.selections
           : this.selections.filter(id => id !== this.ourIdentityContractId)
+
+        // Drain the tab's state-projection queue so that recently-synced
+        // contracts (e.g. a DM created by another user) are mirrored into
+        // Vuex before we check for an existing conversation. Without this,
+        // ourGroupDirectMessageFromUserIds can read stale state and create
+        // a duplicate DM instead of opening the existing one.
+        await sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, () => {})
 
         const existingChatRoomID = this.ourGroupDirectMessageFromUserIds(memberIds)
         if (existingChatRoomID) {

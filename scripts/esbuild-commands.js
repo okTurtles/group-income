@@ -44,6 +44,19 @@ const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
       if (postoperation) {
         await postoperation({ fileEventName, filePath })
       }
+    },
+
+    // Releases the underlying esbuild service. Without this, the context keeps
+    // esbuild's child process referenced and mid-conversation with us, so a
+    // later `process.exit()` orphans it while it waits on a plugin callback
+    // that will never come — which makes Go print a scary (but harmless)
+    // "all goroutines are asleep - deadlock!" trace.
+    async dispose () {
+      if (!context) return
+      const ctx = context
+      context = null
+      this.state.result = null
+      await ctx.dispose()
     }
   }
 }

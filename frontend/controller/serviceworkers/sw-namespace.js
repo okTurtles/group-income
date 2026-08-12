@@ -54,7 +54,7 @@ sbp('sbp/selectors/register', {
 
           reactiveDel(cache, name)
           if (reverseCache[currentValue] === name) {
-            reactiveDel(cache, currentValue)
+            reactiveDel(reverseCache, currentValue)
           }
           sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, { name, deletedValue: currentValue })
         }
