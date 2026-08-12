@@ -24,7 +24,7 @@ async function createIdentity (username) {
   )
 
   // append random id to username to prevent conflict across runs
-  // when GI_PERSIST environment variable is defined
+  // when using a persistent backend
   username = `${username}-${performance.now().toFixed(20).replace('.', '')}`
   const msg = await sbp('chelonia/out/registerContract', {
     contractName: 'gi.contracts/identity',
@@ -121,7 +121,7 @@ describe('avatar file serving', function () {
     assert.equal(headers.get('etag'), `"${manifestCid}"`)
     // Not checking for a `last-modified` header.
     assert.equal(headers.get('x-content-type-options'), 'nosniff')
-    assert.equal(headers.get('x-frame-options'), 'deny')
+    assert.equal(headers.get('x-frame-options')?.toUpperCase(), 'DENY')
 
     const { headers: cHeaders } = await fetch(`${apiURL}/file/${chunkCid}`)
     assert.match(cHeaders.get('cache-control'), /immutable/)
@@ -131,6 +131,6 @@ describe('avatar file serving', function () {
     assert.equal(cHeaders.get('etag'), `"${chunkCid}"`)
     // Not checking for a `last-modified` header.
     assert.equal(cHeaders.get('x-content-type-options'), 'nosniff')
-    assert.equal(cHeaders.get('x-frame-options'), 'deny')
+    assert.equal(cHeaders.get('x-frame-options')?.toUpperCase(), 'DENY')
   })
 })

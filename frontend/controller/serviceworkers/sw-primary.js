@@ -11,36 +11,36 @@ import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
 import '~/frontend/controller/actions/index.js'
+import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
-import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
+import { CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
 import '@chelonia/lib/persistent-actions'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
-  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT, NEW_KV_LOAD_STATUS,
+  CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
   CHATROOM_USER_TYPING, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   JOINED_CHATROOM, JOINED_GROUP,
-  KV_EVENT, LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
+  LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
   NEW_CHATROOM_NOTIFICATION_SETTINGS,
-  NEW_CHATROOM_SCROLL_POSITION, NEW_LAST_LOGGED_IN, NEW_PREFERENCES,
-  NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
-  NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE, RECONNECTING,
+  NEW_CHATROOM_SCROLL_POSITION,
+  NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
+  OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
 import './push.js'
 import './sw-namespace.js'
 
-console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('APP_VERSION:', process.env.APP_VERSION)
 console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
-console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
+console.info('CONTRACTS_VERSION:', JSON.stringify(process.env.CONTRACTS_VERSION))
 console.info('LIGHTWEIGHT_CLIENT:', process.env.LIGHTWEIGHT_CLIENT)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
@@ -97,13 +97,9 @@ const setupRootState = () => {
   if (!rootState.chatroom) rootState.chatroom = Object.create(null)
   if (!rootState.chatroom.chatNotificationSettings) rootState.chatroom.chatNotificationSettings = Object.create(null)
   if (!rootState.chatroom.chatRoomScrollPosition) rootState.chatroom.chatRoomScrollPosition = Object.create(null)
-  if (!rootState.chatroom.unreadMessages) rootState.chatroom.unreadMessages = Object.create(null)
-
-  if (!rootState.lastLoggedIn) rootState.lastLoggedIn = Object.create(null)
 
   if (!rootState.notifications) rootState.notifications = Object.create(null)
   if (!rootState.notifications.items) rootState.notifications.items = []
-  if (!rootState.notifications.status) rootState.notifications.status = Object.create(null)
 
   if (!rootState.periodicNotificationAlreadyFiredMap) {
     rootState.periodicNotificationAlreadyFiredMap = {
@@ -138,11 +134,12 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
-  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP, KV_EVENT, NEW_KV_LOAD_STATUS,
+  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED,
+  LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP,
   NOTIFICATION_TYPE.VERSION_INFO,
-  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION, NEW_LAST_LOGGED_IN,
-  NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NOTIFICATION_EMITTED,
-  NOTIFICATION_REMOVED, NOTIFICATION_STATUS_LOADED, OFFLINE, ONLINE,
+  MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION,
+  NOTIFICATION_EMITTED,
+  NOTIFICATION_REMOVED, OFFLINE, ONLINE,
   RECONNECTING, RECONNECTION_FAILED, PROPOSAL_ARCHIVED, SERIOUS_ERROR, SWITCH_GROUP
 ].forEach(et => {
   sbp('okTurtles.events/on', et, (...args) => {
@@ -285,9 +282,9 @@ sbp('sbp/selectors/register', {
 sbp('sbp/selectors/register', {
   'sw/version': () => {
     return {
-      GI_VERSION: process.env.GI_VERSION,
+      appVersion: process.env.APP_VERSION,
       GI_GIT_VERSION: process.env.GI_GIT_VERSION,
-      CONTRACTS_VERSION: process.env.CONTRACTS_VERSION,
+      contractsVersion: process.env.CONTRACTS_VERSION,
       LIGHTWEIGHT_CLIENT: process.env.LIGHTWEIGHT_CLIENT,
       NODE_ENV: process.env.NODE_ENV
     }
@@ -319,7 +316,10 @@ sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
 
 sbp('okTurtles.data/set', 'API_URL', self.location.origin)
 setupRootState()
-const setupPromise = setupChelonia()
+const setupPromise = setupChelonia().then(() => {
+  // `chelonia/kv/*` selectors are now registered; safe to declare slots.
+  registerKvSlots()
+})
 
 self.addEventListener('install', function (event) {
   console.debug('[sw] install')
@@ -435,7 +435,7 @@ self.addEventListener('message', function (event) {
           port.postMessage({
             type: 'ready',
             currentSyncs: sbp('chelonia/contract/currentSyncs'),
-            GI_VERSION: process.env.GI_VERSION
+            appVersion: process.env.APP_VERSION
           })
         }, (e) => {
           port.postMessage({ type: 'error', error: e })
@@ -443,15 +443,15 @@ self.addEventListener('message', function (event) {
           port.close()
         })
 
-        // If the window is outdated (different GI_VERSION), trigger an event
+        // If the window is outdated (different appVersion), trigger an event
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
         // This handles new SW clients that have an outdated
-        // `process.env.GI_VERSION` (for example, by having loaded a cached
+        // `process.env.APP_VERSION` (for example, by having loaded a cached
         // version of `main.js`).
         if (
           currentVersionInfo &&
           event.source &&
-          event.data.GI_VERSION !== currentVersionInfo.GI_VERSION
+          event.data.appVersion !== currentVersionInfo.appVersion
         ) {
           event.source.postMessage({
             type: 'event',
@@ -530,42 +530,6 @@ self.addEventListener('notificationclick', event => {
     }))
 })
 
-sbp('okTurtles.events/on', KV_EVENT, ({ contractID, key, data }) => {
-  const rootState = sbp('chelonia/rootState')
-  const ourIdentityContractID = rootState.loggedIn?.identityContractID
-  if (contractID !== ourIdentityContractID) return
-  // the following keys mirror the corresponding keys in Vuex modules in the
-  // app
-  switch (key) {
-    case KV_KEYS.LAST_LOGGED_IN: {
-      rootState.lastLoggedIn[contractID] = data
-      break
-    }
-    case KV_KEYS.UNREAD_MESSAGES: {
-      rootState.chatroom.unreadMessages = data
-      break
-    }
-    case KV_KEYS.PREFERENCES: {
-      rootState.preferences = data
-      break
-    }
-    case KV_KEYS.NOTIFICATIONS: {
-      rootState.notifications.status = data
-      break
-    }
-    case KV_KEYS.NS_CACHE: {
-      // saveCachedNames will do conflict resolution
-      sbp('gi.actions/identity/kv/saveCachedNames').catch(e => {
-        console.error('[NS_CACHE] Error on processing KV update', e)
-      })
-      break
-    }
-    default:
-      return
-  }
-  sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
-})
-
 sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, ({ chatRoomID, messageHash }) => {
   const rootState = sbp('chelonia/rootState')
   if (messageHash) {
@@ -602,20 +566,6 @@ const cheloniaReactiveSet = (state, key, value) => {
   reactiveSet(state, key, value)
 }
 
-// These `NEW_*` events are emitted in KV files. To keep things consistent with
-// the browser state, we update the state when these events are generated.
-sbp('okTurtles.events/on', NEW_LAST_LOGGED_IN, ([contractID, data]) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState.lastLoggedIn, contractID, data)
-})
-sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState, 'preferences', preferences)
-})
-sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
-  const rootState = sbp('state/vuex/state')
-  cheloniaReactiveSet(rootState.chatroom, 'unreadMessages', currentChatRoomUnreadMessages)
-})
 sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, settings, isGlobal = false }) => {
   const rootState = sbp('chelonia/rootState')
   if (isGlobal) {
@@ -636,18 +586,4 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
 
     cheloniaReactiveSet(rootState.chatroom.chatNotificationSettings, chatRoomID, currentSettings)
   }
-})
-
-sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, ({ name, status }) => {
-  const rootState = sbp('state/vuex/state')
-  const defaultObj = {
-    // enum of 'non-init' | 'loading' | 'loaded'
-    identity: KV_LOAD_STATUS.NON_INIT,
-    group: KV_LOAD_STATUS.NON_INIT
-  }
-
-  cheloniaReactiveSet(rootState, 'kvStoreStatus', {
-    ...(rootState?.kvStoreStatus || defaultObj),
-    [name]: status
-  })
 })

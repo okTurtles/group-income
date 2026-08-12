@@ -5,7 +5,7 @@ import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { Buffer } from 'buffer'
-import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, NEW_PREFERENCES, NEW_UNREAD_MESSAGES, NEW_KV_LOAD_STATUS, OPEN_MODAL } from '~/frontend/utils/events.js'
+import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, OPEN_MODAL } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
@@ -88,6 +88,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         if (cheloniaState.namespaceLookups) {
           state.namespaceLookups = cheloniaState.namespaceLookups
         }
+        // Seed the KV mirror from the live Chelonia state. The SW's identity
+        // slots load during the pre-login sync (before `LOGIN` is broadcast),
+        // and `replaceState` below would otherwise clobber the values the tab
+        // projected via `CHELONIA_KV_UPDATED` during that window, leaving the
+        // tab on the previous session's stale snapshot until the next KV event.
+        if (cheloniaState._kv) {
+          state._kv = cheloniaState._kv
+        }
         // End exclude contracts
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
@@ -109,6 +117,11 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         Vue.set(state, 'contracts', cheloniaState.contracts)
         if (cheloniaState.namespaceLookups) {
           Vue.set(state, 'namespaceLookups', cheloniaState.namespaceLookups)
+        }
+        // Seed the KV mirror from the live Chelonia state (see the branch above
+        // for why this is needed).
+        if (cheloniaState._kv) {
+          Vue.set(state, '_kv', cheloniaState._kv)
         }
         // End exclude contracts
         sbp('state/vuex/postUpgradeVerification', state)
@@ -149,19 +162,6 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       sbp('okTurtles.events/emit', LOGIN_ERROR, { identityContractID, error: e })
     }
   })
-})
-
-// handle incoming identity-related events that are sent from the service worker
-sbp('okTurtles.events/on', NEW_UNREAD_MESSAGES, (currentChatRoomUnreadMessages) => {
-  sbp('state/vuex/commit', 'setUnreadMessages', currentChatRoomUnreadMessages)
-})
-
-sbp('okTurtles.events/on', NEW_PREFERENCES, (preferences) => {
-  sbp('state/vuex/commit', 'setPreferences', preferences)
-})
-
-sbp('okTurtles.events/on', NEW_KV_LOAD_STATUS, (data) => {
-  sbp('state/vuex/commit', 'setKvStoreStatus', data)
 })
 
 /* Commented out as persistentActions are not being used

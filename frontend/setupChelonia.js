@@ -6,14 +6,28 @@ import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
-import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, KV_EVENT, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
-import { KV_KEYS } from './utils/constants.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+
+const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+  // If the types don't match, a different release has been made
+  if (typeof va !== typeof vb) return true
+  // Sort contracts by name
+  const ea = Object.entries(va || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  const eb = Object.entries(vb || {}).sort(([a], [b]) => a > b ? 1 : a === b ? 0 : -1)
+  // If different number of contracts, contract version object is different
+  if (ea.length !== eb.length) return true
+  for (let i = 0; i < ea.length; i++) {
+    // If either the name or the version don't match, contract version is different
+    if (ea[i][0] !== eb[i][0] || ea[i][1] !== eb[i][1]) return true
+  }
+  return false
+}
 
 const handleDeletedContract = async (contractID: string) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
@@ -239,6 +253,10 @@ const setupChelonia = async (): Promise<*> => {
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
         errorNotification('sideEffect', e, message)
       }
+    },
+    journal: {
+      enabled: true,
+      snapshotInterval: 75
     }
   })
 
@@ -264,6 +282,29 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
+  // Foreign identity contracts are never slot-owned: the identity KV slots'
+  // `match` predicate (`onOwnIdentity`) is false for any identity contract that
+  // isn't the logged-in user's own, so the slot layer never sends a filter
+  // frame for them. Without an explicit empty filter the pubsub server defaults
+  // to "receive all keys" (see @chelonia/lib docs/api.md), which means every
+  // client receives the KV frames (unreadMessages / preferences / notifications
+  // writes) for every other member's identity contract it has synced. The frames
+  // are dropped client-side (no attached slot), but the bandwidth and server
+  // fan-out cost scales with group size × chat activity. The own identity is
+  // excluded because `rootState.loggedIn` is populated by `chelonia/reset`
+  // during `gi.actions/identity/login` before the identity contract sync emits
+  // `CONTRACTS_MODIFIED`, so the slot layer owns it.
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
+    if (!added.length) return
+    const rootState = sbp('chelonia/rootState')
+    const ownIdentity = rootState.loggedIn?.identityContractID
+    added.forEach((cID) => {
+      if (rootState.contracts[cID]?.type === 'gi.contracts/identity' && cID !== ownIdentity) {
+        sbp('chelonia/kv/setFilter', cID, [])
+      }
+    })
+  })
+
   sbp('okTurtles.events/on', LOGGING_OUT, () => {
     logoutInProgress = true
   })
@@ -281,27 +322,6 @@ const setupChelonia = async (): Promise<*> => {
     })
   })
 
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
-    // Wait for the added contracts to be ready, then call the update function
-    if (!added.length) return
-    const rootState = sbp('chelonia/rootState')
-    added.forEach((cID) => {
-      switch (rootState.contracts[cID]?.type) {
-        case 'gi.contracts/identity':
-          if (cID === rootState.loggedIn?.identityContractID) {
-            sbp('chelonia/kv/setFilter', cID, [KV_KEYS.UNREAD_MESSAGES, KV_KEYS.PREFERENCES, KV_KEYS.NOTIFICATIONS])
-            return
-          }
-          // Use the default case for foreign identity contracts
-          break
-        case 'gi.contracts/group':
-          sbp('chelonia/kv/setFilter', cID, [KV_KEYS.LAST_LOGGED_IN])
-          return
-      }
-      sbp('chelonia/kv/setFilter', cID, [])
-    })
-  })
-
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
   })
@@ -311,15 +331,23 @@ const setupChelonia = async (): Promise<*> => {
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
       [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
-        const ourVersion = process.env.GI_VERSION
-        const theirVersion = msg.data.GI_VERSION
+        const ourVersion = process.env.APP_VERSION
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.GI_VERSION`) should be removed in a future release
+        const theirVersion = msg.data.appVersion || msg.data.GI_VERSION
 
         const ourContractsVersion = process.env.CONTRACTS_VERSION
-        const theirContractsVersion = msg.data.CONTRACTS_VERSION
+        // TODO REMOVEME: Transitional legacy version info support
+        // The GI_VERSION field has been renamed, but kept here in the
+        // check for backwards-compatibility.
+        // This fallback (` || msg.data.CONTRACTS_VERSION`) should be removed in a future release
+        const theirContractsVersion = msg.data.contractsVersion || msg.data.CONTRACTS_VERSION
 
-        const isContractVersionDiff = ourContractsVersion !== theirContractsVersion
-        const isGIVersionDiff = ourVersion !== theirVersion
-        // We only compare GI_VERSION in development mode so that the page auto-refreshes if `grunt dev` is re-run
+        const isContractVersionDiff = diffContractVersion(ourContractsVersion, theirContractsVersion)
+        const isAppVersionDiff = ourVersion !== theirVersion
+        // We only compare appVersion in development mode so that the page auto-refreshes if `grunt dev` is re-run
         // This check cannot be done in production mode as it would lead to an infinite page refresh bug
         // when using `grunt deploy` with `grunt serve`
         console.info('VERSION_INFO received:', {
@@ -328,8 +356,16 @@ const setupChelonia = async (): Promise<*> => {
           ourContractsVersion,
           theirContractsVersion
         })
-        if (isContractVersionDiff || isGIVersionDiff) {
-          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, msg.data)
+        if (isContractVersionDiff || isAppVersionDiff) {
+          // TODO REMOVEME: Transitional legacy version info support
+          // The GI_VERSION field has been renamed, but kept here in the
+          // check for backwards-compatibility.
+          // This fallback (`{ ...msg.data, GI_VERSION, CONTRACTS_VERSION }`) should be removed in a future release and replaced with just `msg.data`
+          sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, {
+            ...msg.data,
+            GI_VERSION: theirVersion,
+            CONTRACTS_VERSION: theirContractsVersion
+          })
         }
       },
       [REQUEST_TYPE.PUSH_ACTION] (msg) {
@@ -352,11 +388,10 @@ const setupChelonia = async (): Promise<*> => {
           }
         }
       },
-      [NOTIFICATION_TYPE.KV] ([key, value]) {
-        const { contractID, data } = value
-        if (!data) return
-
-        sbp('okTurtles.events/emit', KV_EVENT, { contractID, key, data })
+      [NOTIFICATION_TYPE.KV] () {
+        // KV pubsub frames are handled by the `@chelonia/lib` slot dispatcher
+        // (`chelonia/kv/_handleRemote`), which mirrors values and fires
+        // `CHELONIA_KV_UPDATED`. No GI-side translation is required.
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
         console.info('[messageHandler] Contract ID ' + contractID + ' has been deleted')

@@ -85,7 +85,7 @@ const waitUntilSwReady = () => {
       registration.active.postMessage({
         type: 'ready',
         port: messageChannel.port2,
-        GI_VERSION: process.env.GI_VERSION
+        appVersion: process.env.APP_VERSION
       }, [messageChannel.port2])
     }).catch(reject)
   })

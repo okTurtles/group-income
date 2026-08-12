@@ -8,105 +8,18 @@ Group Income is a voluntary, decentralized, end-to-end encrypted basic income ap
 
 **Architecture**: Single-page application (SPA) with:
 - **Frontend**: Vue.js 2.6 + Vuex + vue-router
-- **Backend**: Hapi.js server (API, pubsub, database)
+- **Backend**: `chel serve` from `@chelonia/cli` (REST API, WebSocket pub/sub, contract storage)
 - **Contract System**: Chelonia framework for event-sourced contract chains
 - **Build**: Grunt + esbuild
 
 **Key Paradigm**: SBP (Selector-based programming) - avoid OOP classes for the most part, prefer SBP namespaces for modularity. OOP can be used for encapsulating types (e.g. see `SPMessage` class).
 
-## Backend Architecture
+## Backend
 
-The backend is a Hapi.js server providing REST API, WebSocket pub/sub, and database abstraction for the Chelonia contract system.
+The backend is provided by `chel serve` from the `@chelonia/cli` package. It serves the REST API, WebSocket pub/sub, and contract storage. It is launched by the `backend:launch` Grunt task and configured via `chelonia.json`.
 
-### Entry Point & Lifecycle
-
-`backend/index.js` is the entry point:
-- Sets up SBP domains (`okTurtles.data`, `okTurtles.events`, `okTurtles.eventQueue`)
-- Handles process signals (SIGHUP, SIGINT, SIGQUIT, SIGTERM) for graceful shutdown
-- Emits `SERVER_EXITING` event to coordinate cleanup
-
-### Server Configuration (`backend/server.js`)
-
-Main Hapi server on port `process.env.API_PORT`:
-- Chelonia framework configured with SERVER preset
-- Worker threads for background tasks (credits, size accounting)
-- State persistence via partitioned keys (`_private_cheloniaState_{contractID}`)
-
-Key SBP selectors:
-| Selector | Purpose |
-|----------|---------|
-| `backend/server/handleEntry` | Process incoming contract messages |
-| `backend/server/broadcastEntry` | Broadcast to pubsub subscribers |
-| `backend/server/saveOwner` | Resource ownership tracking |
-| `backend/deleteContract` | Cascade delete with resources |
-| `backend/deleteFile` | Delete file manifests and chunks |
-
-### Database Layer (`backend/database.js`)
-
-Abstraction layer with LRU caching:
-- **Backends**: `database-fs.js` (filesystem) or `database-sqlite.js`
-- **Key prefix system**: `_private` prefix for internal keys
-- **Index management**: `appendToIndexFactory`/`removeFromIndexFactory` for tracking
-
-Database key patterns:
-| Pattern | Purpose |
-|---------|---------|
-| `_private_cheloniaState_index` | Index of all contract IDs |
-| `_private_cheloniaState_{cid}` | Partitioned contract state |
-| `_private_owner_{rid}` | Resource owner mapping |
-| `_private_resources_{oid}` | Resources owned by owner |
-| `_private_size_{rid}` | Resource size tracking |
-| `_private_kv_{cid}_{key}` | KV store values |
-| `name={name}` | Username to contract ID mapping |
-
-### REST API Routes (`backend/routes.js`)
-
-| Endpoint | Purpose |
-|----------|---------|
-| `POST /event` | Submit contract messages |
-| `GET /eventsAfter/{contractID}/{since}` | Stream contract events |
-| `GET /latestHEADinfo/{contractID}` | Get contract HEAD info |
-| `POST /file` | Upload encrypted files (multipart) |
-| `GET /file/{hash}` | Serve files from Chelonia DB |
-| `POST /deleteFile/{hash}` | Delete file |
-| `POST /deleteContract/{hash}` | Delete contract with cascade |
-| `POST /kv/{contractID}/{key}` | Set KV store value |
-| `GET /kv/{contractID}/{key}` | Get KV store value |
-| `GET /name/{name}` | Username lookup |
-| `POST /zkpp/*` | Zero-knowledge password protocol |
-
-### PubSub Server (`backend/pubsub.js`)
-
-WebSocket server using `ws` library:
-- Channel-based subscriptions
-- KV filtering support
-- Message types: SUB, UNSUB, PUB, PING, PONG, KV_FILTER
-
-### Authentication (`backend/auth.js`)
-
-Two Hapi auth strategies:
-- `chel-shelter`: Verifies Shelter Authorization header using contract SAK
-- `chel-bearer`: Simple bearer token authentication
-
-### Web Push Notifications (`backend/push.js`)
-
-- Web push with VAPID authentication
-- RFC 8188 encryption (aes128gcm)
-- RFC 8291 key derivation
-- Subscriptions tied to WebSocket connections
-
-### Worker Threads (`backend/genericWorker.js`)
-
-Pattern for long-running background tasks:
-- `creditsWorker.js` - Credits calculation
-- `ownerSizeTotalWorker.js` - Size accounting
-
-### Backend Patterns
-
-1. **SBP Selectors**: All functionality exposed via SBP (e.g., `backend/server/handleEntry`)
-2. **Queue-based operations**: `okTurtles.eventQueue/queueEvent` for atomic updates
-3. **Index keys**: Null-separated (`\x00`) string indices for tracking resources
-4. **State partitioning**: Contract state saved per-contract for efficiency
+In development, `grunt dev` runs `chel serve --dev --manifests-dir dist/contracts`.
+In production, `grunt serve` runs `chel serve --app-manifest chelonia.json --manifests-dir contracts dist`.
 
 ## Essential Commands
 
@@ -165,24 +78,9 @@ NODE_ENV=production grunt pin:0.1.0  # Pin contracts to versioned folder
 │   │   └── state.js      # Vuex store setup
 │   ├── utils/            # Utility functions
 │   └── views/            # Vue components, pages, containers
-├── backend/
-│   ├── index.js          # Entry point, SBP setup, signal handling
-│   ├── server.js         # Hapi server, Chelonia config, workers
-│   ├── routes.js         # REST API routes (events, files, KV, zkpp)
-│   ├── database.js       # Database abstraction with LRU cache
-│   ├── database-fs.js    # Filesystem database backend
-│   ├── database-sqlite.js # SQLite database backend
-│   ├── pubsub.js         # WebSocket pub/sub server
-│   ├── auth.js           # Hapi auth strategies (chel-shelter, chel-bearer)
-│   ├── push.js           # Web push notifications with encryption
-│   ├── DatabaseBackend.js # Database backend interface
-│   ├── errors.js         # Custom errors (NotFound, Gone, BadData)
-│   ├── constants.js      # Worker task intervals
-│   └── genericWorker.js  # Worker thread pattern for background tasks
 ├── contracts/            # Version-pinned contract snapshots (generated)
 ├── dist/                 # Build output (generated)
 ├── test/
-│   ├── backend.test.js   # Backend unit tests
 │   └── cypress/          # E2E tests
 └── docs/src/             # Documentation (Style-Guide.md, Information-Flow.md, etc.)
 ```
@@ -309,7 +207,6 @@ SBP domains in this codebase:
 - `gi.app/` - Mostly user-generated actions on the frontend
 - `gi.actions/` - These live in the service worker and are triggered either by `gi.app/` or from within contracts. They are usually for creating `SPMessage`s
 - `controller/router/` - Navigation
-- `backend/` - Server-side operations (handleEntry, broadcastEntry, saveOwner, deleteContract, deleteFile)
 
 ## Testing
 
