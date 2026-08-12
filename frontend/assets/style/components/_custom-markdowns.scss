@@ -307,7 +307,7 @@
 // hover styles
 .c-message {
   &:hover,
-  &:has(.c-menu .is-active) {
+  &:has(.c-menu[open]) {
     .table-container table {
       thead {
         background-color: $general_1;

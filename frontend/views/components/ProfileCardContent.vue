@@ -74,6 +74,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { EVENT_HANDLED } from '@chelonia/lib/events'
 import AvatarUser from '@components/AvatarUser.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import UserName from '@components/UserName.vue'
@@ -169,6 +170,9 @@ export default {
       this.onPostCtaClick && this.onPostCtaClick()
     },
     async sendMessage () {
+      // Drain the tab's state-projection queue so recently-synced DM
+      // contracts are visible before we look for an existing conversation.
+      await sbp('okTurtles.eventQueue/queueEvent', EVENT_HANDLED, () => {})
       const chatRoomID = this.ourGroupDirectMessageFromUserIds(this.contractID)
 
       if (!chatRoomID) {
