@@ -1625,14 +1625,6 @@ export default ({
         sbp('gi.actions/identity/kv/setChatRoomReadUntil', {
           contractID: chatRoomID, messageHash, createdHeight, forceUpdate
         }).catch(e => {
-          // Recovery from the identity contract being behind the server is handled
-          // centrally (see 'syncIdentityIfKvAhead' in identity-kv.js). Reaching this
-          // point with 'GIErrorKVHeightAhead' means that recovery failed, so the
-          // read-until value was not persisted.
-          if (e?.name === 'GIErrorKVHeightAhead') {
-            console.error('[ChatMain.vue] Could not set read until: identity contract is still behind the server', e)
-            return
-          }
           console.error('[ChatMain.vue] Error setting read until', e)
         })
       }

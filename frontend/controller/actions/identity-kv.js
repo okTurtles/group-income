@@ -2,8 +2,6 @@
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
 import { ChelErrorInvalidMessageHeight } from '@chelonia/lib/errors'
-import { CHELONIA_KV_STATUS_CHANGED } from '@chelonia/lib/events'
-import { GIErrorKVHeightAhead } from '@common/common.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
@@ -12,47 +10,32 @@ const isHeightAheadError = (e: ?Object): boolean => {
   // Chelonia may rewrap the original error, so walk the cause chain instead of
   // only checking the top-level error. Matching on `name` as well as on the
   // constructor keeps this working when the error crosses a bundle boundary,
-  // where `instanceof` fails because the class identity differs. The `name`
-  // match also covers the normalized `{ name, message }` objects carried by
-  // `CHELONIA_KV_STATUS_CHANGED` events.
+  // where `instanceof` fails because the class identity differs.
   for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
     if (cur instanceof ChelErrorInvalidMessageHeight) return true
-    if (cur.name === 'ChelErrorInvalidMessageHeight') return true
+    if (cur?.name === 'ChelErrorInvalidMessageHeight') return true
   }
   return false
 }
 
-// A KV value can be written by another device at a contract height that the
-// local identity contract hasn't caught up to yet. Reading such a value throws
-// `ChelErrorInvalidMessageHeight`, and writing while behind is worse: conflict
-// resolution can't decode the server value, so `chelonia/kv/update` would
-// re-run the reducer against the slot default and clobber the other device's
-// data. Sync the slot before reading or writing; on height-ahead, recover by
-// syncing the identity contract up to the server's height and retrying once.
-// If it is still behind after that, throw `GIErrorKVHeightAhead` so callers
-// know the value was neither read nor written. On success the slot mirror is
-// authoritative, so a subsequent `chelonia/kv/update` seeds its reducer from
-// the live server value.
+// The `namespace-cache` slot is `autoLoad: 'on-demand'` and
+// `autoSubscribe: false`, so nothing else keeps its mirror fresh. A KV value
+// can also be written by another device at a contract height the local
+// identity contract hasn't caught up to yet: reading it throws
+// `ChelErrorInvalidMessageHeight`, and writing while behind can clobber the
+// other device's data. Sync the slot before reading or writing it; on
+// height-ahead, recover by syncing the identity contract up to the server's
+// height and retrying once.
 const syncSlotWithRecovery = async (contractID: string, key: string, attempt: number = 0): Promise<void> => {
   try {
     await sbp('chelonia/kv/sync', contractID, key)
   } catch (e) {
     if (!isHeightAheadError(e)) throw e
-    if (attempt >= 1) {
-      throw new GIErrorKVHeightAhead(e.message, { cause: e })
-    }
+    if (attempt >= 1) throw e
     console.warn(`[identity-kv.js] '${key}' is ahead of the local identity contract; syncing before retrying`, e)
     await sbp('chelonia/contract/sync', contractID)
     return syncSlotWithRecovery(contractID, key, attempt + 1)
   }
-}
-
-// Shared boundary for every identity KV write. Syncing the slot first recovers
-// from the height-ahead state described above, and leaves the mirror
-// authoritative so the write's reducer seeds from the live server value.
-const updateIdentityKV = async (args: { contractID: string, key: string, updater?: Function, value?: any }): Promise<any> => {
-  await syncSlotWithRecovery(args.contractID, args.key)
-  return sbp('chelonia/kv/update', args)
 }
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
@@ -96,7 +79,7 @@ const updateKVPreferences = (updater: Function) => {
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
   }
-  return updateIdentityKV({
+  return sbp('chelonia/kv/update', {
     contractID: identityContractID,
     key: KV_KEYS.PREFERENCES,
     updater
@@ -111,7 +94,7 @@ const setKVPreferences = (patch: Object) => {
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
   }
-  return updateIdentityKV({
+  return sbp('chelonia/kv/update', {
     contractID: identityContractID,
     key: KV_KEYS.PREFERENCES,
     value: patch
@@ -127,42 +110,18 @@ sbp('okTurtles.events/on', ONLINE, () => {
   })
 })
 
-// Recover slots whose load failed because the server-side value was written at
-// a contract height ahead of the local identity contract (e.g., another device
-// wrote it right after this one synced). Without this the slot would stay in
-// 'error' until the next reconnection, leaving consumers (unread counts,
-// preferences, notification statuses) stuck on stale defaults.
-sbp('okTurtles.events/on', CHELONIA_KV_STATUS_CHANGED, ({ contractType, contractID, key, status, lastError }) => {
-  if (contractType !== 'gi.contracts/identity' ||
-    status !== KV_LOAD_STATUS.ERROR ||
-    !isHeightAheadError(lastError)) {
-    return
-  }
-  console.warn(`[identity-kv.js] slot '${key}' failed to load because the identity contract is behind; recovering`)
-  syncSlotWithRecovery(contractID, key).catch(e => {
-    console.error(`[identity-kv.js] recovery failed for '${key}':`, e)
-  })
-})
-
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
 
     // Unread messages, preferences and notification statuses are loaded by
-    // their slots (`autoLoad: 'on-sync'` in kv-slots.js), each independently:
-    // a single unreadable key settles that slot to 'error' without blocking the
-    // others, and the height-ahead recovery listener above retries failed
-    // loads. Only the on-demand namespace cache needs an explicit fetch here,
-    // and even that failure must not reject the whole load: incoming chat
-    // messages are buffered until the `unreadMessages` slot settles, so
-    // reporting the store as loaded is preferable to leaving messages
-    // unprocessed indefinitely.
-    try {
-      await sbp('gi.actions/identity/kv/loadCachedNames')
-      console.info('identity key-value store data loaded!')
-    } catch (e) {
-      console.error('identity key-value store loaded with errors (cached names); some values may be stale until the next reconnection', e)
-    }
+    // their slots (`autoLoad: 'on-sync'` in kv-slots.js), each independently.
+    // Only the on-demand namespace cache needs an explicit fetch here; let
+    // failures reject so the login / reconnect handlers log them, while the
+    // chat message gate keeps relying on the `unreadMessages` slot settling.
+    await sbp('gi.actions/identity/kv/loadCachedNames')
+
+    console.info('identity key-value store data loaded!')
   },
   // Unread Messages.
   //
@@ -172,12 +131,10 @@ export default (sbp('sbp/selectors/register', {
   // selectors below are thin shims kept for backward compatibility — contract
   // sideEffects call `initChatRoomUnreadMessages` and
   // `deleteChatRoomUnreadMessages`, so their names/signatures MUST NOT change
-  // (Calls-From-Contracts.md). Each delegates to `chelonia/kv/update` (via
-  // `updateIdentityKV`, which first recovers from the identity contract being
-  // behind the KV store) with a pure reducer; the library serializes writes
-  // per-contract and retries conflicts, replacing the old `KV_QUEUE` +
-  // `queuedSet`/`onconflict` plumbing. Reducers return `KV_NOOP` to skip a
-  // write. (KV-REVAMPED.md §8)
+  // (Calls-From-Contracts.md). Each delegates to `chelonia/kv/update` with a
+  // pure reducer; the library serializes writes per-contract and retries
+  // conflicts, replacing the old `KV_QUEUE` + `queuedSet`/`onconflict`
+  // plumbing. Reducers return `KV_NOOP` to skip a write. (KV-REVAMPED.md §8)
   'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {
@@ -185,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -211,7 +168,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -237,7 +194,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -263,7 +220,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -284,7 +241,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -303,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -333,7 +290,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       // Add this notification's status only if it isn't already tracked; the
@@ -356,7 +313,7 @@ export default (sbp('sbp/selectors/register', {
     // Capture the client-side notification list once outside the reducer so
     // conflict-retry invocations read a stable snapshot (KV-REVAMPED.md §3.3).
     const notifications = sbp('chelonia/rootState').notifications.items
-    return updateIdentityKV({
+    return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       updater: (currentData = {}) => {
@@ -401,8 +358,7 @@ export default (sbp('sbp/selectors/register', {
     }
     // Recover from the identity contract being behind the KV store before
     // writing: otherwise the `onconflict` handler below can't decode the
-    // server value on a conflict retry and would prune it as if it were empty,
-    // dropping valid names another device knows about.
+    // server value on a conflict retry and would prune it as if it were empty.
     await syncSlotWithRecovery(identityContractID, KV_KEYS.NS_CACHE)
     // Prune-on-write MUST validate the value the write actually races against:
     // the *server* value seen on each conflict retry. The declarative
