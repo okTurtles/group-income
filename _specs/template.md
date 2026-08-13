@@ -1,0 +1,29 @@
+# Sepc for <feature-name>
+
+branch: claude/feature/<feature-name>
+figma_component (If used): <figma-component-name>
+
+## Summary
+...
+
+## Functional Requirements
+- ...
+
+## Figma Design Reference (only if referenced)
+- File: ...
+- Component name: ...
+- Key visual constraints: ...
+
+## Possible Edge Cases
+- ...
+
+## Acceptance Criteria
+- ...
+
+## Open Questions
+- ...
+
+## Testing Guidelines
+Create a test file(s) in the ./tests folder for the new feature, and create meaningful tests for the following cases, without going too heavy:
+
+- ...
