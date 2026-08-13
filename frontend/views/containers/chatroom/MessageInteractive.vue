@@ -130,7 +130,7 @@ const proposalSeverity = {
   [STATUS_CANCELLED]: 'is-neutral'
 }
 
-export default ({
+export default {
   name: 'MessageInteractive',
   props: {
     id: String,
@@ -179,7 +179,7 @@ export default ({
       return this.proposal.status === STATUS_EXPIRING
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

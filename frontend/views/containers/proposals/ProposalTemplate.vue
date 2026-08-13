@@ -107,7 +107,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
-export default ({
+export default {
   name: 'ModalForm',
   components: {
     ModalTemplate,
@@ -264,7 +264,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -143,7 +143,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@com
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'GroupChat',
   mixins: [
     ChatMixin
@@ -251,7 +251,7 @@ export default ({
     }
   },
   watch: {
-    '$route' (to: Object, from: Object) {
+    '$route' (to, from) {
       this.$nextTick(() => {
         this.refreshTitle()
       })
@@ -286,7 +286,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -132,7 +132,7 @@ import { L, LTags } from '@common/common.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { timeLeft } from '@view-utils/time.js'
 
-export default ({
+export default {
   name: 'InvitationsTable',
   components: {
     BannerScoped,
@@ -376,7 +376,7 @@ export default ({
   beforeDestroy () {
     this.matchMediaMobile.onchange = null
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

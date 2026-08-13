@@ -46,7 +46,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'GroupMembers',
   components: {
     Avatar,
@@ -94,7 +94,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

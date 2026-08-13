@@ -14,7 +14,7 @@
 <script>
 import { validateURL } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'link-preview',
   props: {
     url: {
@@ -57,5 +57,5 @@ export default ({
       return this.validUrl
     }
   }
-}: Object)
+}
 </script>

@@ -42,7 +42,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
-export default ({
+export default {
   name: 'GroupVotingSystem',
   components: {
     BannerSimple
@@ -142,7 +142,7 @@ export default ({
       }[ruleName]
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

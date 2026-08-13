@@ -1571,7 +1571,7 @@ import SvgAttachment from '@svgs/attachment.svg'
 import { mapGetters, mapMutations } from 'vuex'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
-export default ({
+export default {
   name: 'DesignSystemView',
   data () {
     return {
@@ -1818,7 +1818,7 @@ export default ({
       'isDarkTheme'
     ])
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

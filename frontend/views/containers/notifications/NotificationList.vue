@@ -40,7 +40,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { L } from '@common/common.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 
-export default ({
+export default {
   name: 'NotificationList',
   props: {
     variant: {
@@ -82,7 +82,7 @@ export default ({
     }
   },
   methods: {
-    ageTag (item: Object): string {
+    ageTag (item) {
       return timeSince(item.timestamp)
     },
     handleItemClick (item) {
@@ -98,24 +98,24 @@ export default ({
       }
       this.ephemeral.isSelectingText = false
     },
-    iconBg (level: string): string {
+    iconBg (level) {
       return {
         info: 'has-background-primary has-text-primary',
         success: 'has-background-success has-text-success',
         danger: 'has-background-danger has-text-danger'
       }[level]
     },
-    markAsRead (item: Object): void {
+    markAsRead (item) {
       sbp('gi.notifications/markAsRead', item)
     },
-    swapMemberMention (text: string): string {
+    swapMemberMention (text) {
       return swapMentionIDForDisplayname(text, {
         escaped: false,
         forChat: false
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

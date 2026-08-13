@@ -54,7 +54,7 @@ import NotificationVolume from './NotificationVolume.vue'
 import ChatDefaultNotificationSettings from './ChatDefaultNotificationSettings.vue'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 
-export default ({
+export default {
   name: 'NotificationSettings',
   components: {
     NotificationVolume,
@@ -184,7 +184,7 @@ export default ({
       this.ephemeral.currentVolume = volume
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

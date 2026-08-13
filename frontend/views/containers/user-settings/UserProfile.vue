@@ -84,7 +84,7 @@ import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -164,7 +164,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

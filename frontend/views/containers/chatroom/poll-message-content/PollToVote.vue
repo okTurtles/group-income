@@ -37,7 +37,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'
 
-export default ({
+export default {
   name: 'PollToVote',
   mixins: [PollMixin],
   components: {
@@ -138,7 +138,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

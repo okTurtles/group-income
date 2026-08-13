@@ -77,7 +77,7 @@ export const usernameValidations = {
   [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores
 }
 
-export default ({
+export default {
   name: 'SignupForm',
   mixins: [
     validationMixin,
@@ -186,7 +186,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -41,7 +41,7 @@ import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.j
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 import { Secret } from '@chelonia/lib/Secret'
 
-export default ({
+export default {
   name: 'LoginForm',
   mixins: [
     validationMixin,
@@ -116,7 +116,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

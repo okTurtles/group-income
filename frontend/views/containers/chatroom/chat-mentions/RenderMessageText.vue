@@ -43,7 +43,7 @@ import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } fr
 import { TextObjectType, EMOJI_REGEX } from '@utils/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'RenderMessageText',
   components: {
     ProfileCard
@@ -179,7 +179,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

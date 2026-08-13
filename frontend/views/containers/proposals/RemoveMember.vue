@@ -31,7 +31,7 @@ import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 
-export default ({
+export default {
   name: 'RemoveMember',
   components: {
     Avatar,
@@ -130,7 +130,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

@@ -92,7 +92,7 @@ import { L } from '@common/common.js'
 import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import { GROUP_MAX_PLEDGE_AMOUNT } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'IncomeDetails',
   mixins: [validationMixin],
   components: {
@@ -275,7 +275,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

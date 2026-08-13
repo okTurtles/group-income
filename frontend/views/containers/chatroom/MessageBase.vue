@@ -149,7 +149,7 @@ import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
 import { getFileType } from '@view-utils/filters.js'
 
-export default ({
+export default {
   name: 'MessageBase',
   mixins: [emoticonsMixins],
   inject: [
@@ -399,7 +399,7 @@ export default ({
       this.determineToEnableTruncationToggle()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -53,7 +53,7 @@ import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ProposalsWidget',
   components: {
     ProposalItem,
@@ -251,7 +251,7 @@ export default ({
       this.refreshArchivedProposals()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

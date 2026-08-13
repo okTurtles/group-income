@@ -56,7 +56,7 @@ import { maxLength, required } from 'vuelidate/lib/validators'
 import { GROUP_PAYMENT_METHOD_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import Vue from 'vue'
 
-export default ({
+export default {
   name: 'PaymentMethods',
   components: {},
   mixins: [validationMixin],
@@ -176,7 +176,7 @@ export default ({
       return this.config.placeholders[method] || ''
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

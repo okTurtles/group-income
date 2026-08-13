@@ -41,7 +41,7 @@ import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'PaymentRowTodo',
   components: {
     MenuItem,
@@ -86,7 +86,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

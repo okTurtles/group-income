@@ -33,7 +33,7 @@ import SvgBrokenLink from '@svgs/broken-link.svg'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
 import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'InvitationLinkModal',
   components: {
     ModalTemplate,
@@ -58,6 +58,7 @@ export default ({
       if (key) {
         return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, key)
       }
+      return undefined
     },
     expireDate () {
       return humanDate(this.currentWelcomeInvite.expires, { month: 'long', day: 'numeric' })
@@ -80,7 +81,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

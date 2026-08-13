@@ -47,7 +47,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import VoterAvatars from './VoterAvatars.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'
 
-export default ({
+export default {
   name: 'PollVoteResult',
   props: {
     pollData: Object,
@@ -90,7 +90,7 @@ export default ({
         : `${Math.round(votes.length / this.totalVoteCount * 100)}%`
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

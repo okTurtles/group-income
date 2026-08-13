@@ -26,7 +26,7 @@ import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'SupportHistory',
   data () {
     return {
@@ -77,7 +77,7 @@ export default ({
       this.updateHistory()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

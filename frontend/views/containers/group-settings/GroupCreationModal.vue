@@ -78,7 +78,7 @@ import {
 // but then the browser complains about "require is not defined"
 import { required, between, maxLength, maxValue } from 'vuelidate/lib/validators'
 
-export default ({
+export default {
   name: 'GroupCreationModal',
   mixins: [
     StepAssistant,
@@ -221,7 +221,7 @@ export default ({
       ]
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

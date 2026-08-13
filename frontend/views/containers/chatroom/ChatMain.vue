@@ -273,7 +273,7 @@ const onScrollEnd = function () {
   }
 }
 
-export default ({
+export default {
   name: 'ChatMain',
   components: {
     Avatar,
@@ -461,7 +461,7 @@ export default ({
     //   this.somethingElse()
     // }
     // ```
-    hasChatroomSwitchedSince (): () => boolean {
+    hasChatroomSwitchedSince () {
       const signal = this.ephemeral.switchController.signal
       return () => signal.aborted
     },
@@ -546,7 +546,7 @@ export default ({
         yield msg
       }
     },
-    async loadMoreMessages (chatRoomID: string, hasChatroomSwitchedSince: () => boolean, direction = 'down') {
+    async loadMoreMessages (chatRoomID, hasChatroomSwitchedSince, direction = 'down') {
       // NOTE: 'this.ephemeral.renderingChatRoomId' can be changed while running this function
       //       we save it in the contant variable 'chatRoomID'
       //       'this.ephemeral.messagesInitiated' describes if the messages should be fully removed and re-rendered
@@ -654,7 +654,7 @@ export default ({
 
       return true
     },
-    async processEvents (events, direction: 'up' | 'down' = 'down', replaceIfGap: boolean = false) {
+    async processEvents (events, direction = 'down', replaceIfGap = false) {
       if (!events.length) return
       await enqueue.call(this, async () => {
         const firstEvent = this.latestEvents[0]
@@ -1625,7 +1625,7 @@ export default ({
         }
       }
     },
-    listenChatRoomActions (contractID: string, message?: SPMessage) {
+    listenChatRoomActions (contractID, message) {
       if (this.ephemeral.renderingChatRoomId !== contractID) return
 
       if (message) this.ephemeral.unprocessedEvents.push(message)
@@ -1640,7 +1640,7 @@ export default ({
         const value = message.decryptedValue()
         if (!value) throw new Error('Unable to decrypt message')
 
-        const isMessageAddedOrDeleted = (message: SPMessage) => {
+        const isMessageAddedOrDeleted = (message) => {
           const allowedActionType = [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED]
           const getAllowedMessageAction = (opType, opValue) => {
             if (opType === SPMessage.OP_ATOMIC) {
@@ -1771,7 +1771,7 @@ export default ({
       // NOTE: 40ms makes the container scroll the 25 times a second which feels like animated
       _this.jumpToLatest('instant')
     }, 40),
-    async onScrollEvt (direction: 'up' | 'down' = 'down') {
+    async onScrollEvt (direction = 'down') {
       if (this.ephemeral.messagesInitiated === undefined) return
       if (direction === 'down' && this.ephemeral.currentHighestHeight >= this.latestHeight && this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight) return
 
@@ -1969,7 +1969,7 @@ export default ({
       this.messageState.fetched = true
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

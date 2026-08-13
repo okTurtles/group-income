@@ -25,7 +25,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'Troubleshooting',
   components: {
     BannerScoped,
@@ -93,7 +93,7 @@ Are you sure?`)
       this.ephemeral.progress.percentage = percentage
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

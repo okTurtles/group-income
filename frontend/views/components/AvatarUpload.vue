@@ -30,7 +30,7 @@ import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
-export default ({
+export default {
   name: 'AvatarUpload',
   props: {
     avatar: [String, Object],
@@ -87,7 +87,7 @@ export default ({
   beforeDestroy () {
     sbp('okTurtles.events/off', AVATAR_EDITED, this.uploadEditedImage)
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

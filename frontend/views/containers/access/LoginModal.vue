@@ -24,7 +24,7 @@ import { REPLACE_MODAL } from '@utils/events.js'
 import LoginForm from '@containers/access/LoginForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 
-export default ({
+export default {
   name: 'LoginModal',
   components: {
     ModalTemplate,
@@ -60,5 +60,5 @@ export default ({
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'SignupModal')
     }
   }
-}: Object)
+}
 </script>

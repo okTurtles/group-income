@@ -182,7 +182,7 @@ import {
 } from '@view-utils/lightning-dummy-data.js'
 import { logExceptNavigationDuplicated, withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'Payments',
   mixins: [PaymentsMixin],
   components: {
@@ -543,7 +543,7 @@ export default ({
       )
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

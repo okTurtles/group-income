@@ -78,7 +78,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'AppLogs',
   components: {
     BannerScoped,
@@ -167,7 +167,7 @@ export default ({
         }
       }
     },
-    addLog (entry: Object) {
+    addLog (entry) {
       if (entry) {
         if (this.form.source === 'browser' && entry.source !== 'browser') return
         if (this.form.source === 'serviceworker' && entry.source !== 'sw') return
@@ -289,7 +289,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

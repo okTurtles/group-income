@@ -17,7 +17,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'GroupMincome',
   computed: {
     ...mapGetters([
@@ -33,7 +33,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, 'MincomeProposal')
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -13,7 +13,7 @@ import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'Emoticons',
   components: {
     Picker
@@ -125,7 +125,7 @@ export default ({
       this.setPosition()
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss">
 @import "@assets/style/components/_emoji-mart.scss";

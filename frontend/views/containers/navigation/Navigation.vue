@@ -112,7 +112,7 @@ import { showNavMixin, fetchNews } from '@view-utils/misc.js'
 import { GLOBAL_DASHBOARD_SETTINGS } from '@pages/GlobalDashboard.vue'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'Navigation',
   mixins: [showNavMixin],
   components: {
@@ -236,7 +236,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

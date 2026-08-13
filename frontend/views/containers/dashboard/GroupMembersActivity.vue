@@ -68,7 +68,7 @@ import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.
 import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'GroupMembersActivity',
   components: {
     SentenceWithMemberTooltip
@@ -172,7 +172,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 
 </script>
 

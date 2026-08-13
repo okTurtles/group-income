@@ -58,7 +58,7 @@ import ProgressBar from '@components/graphs/Progress.vue'
 import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
-export default ({
+export default {
   name: 'ContributionsWidget',
   components: {
     PageSection,
@@ -197,7 +197,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

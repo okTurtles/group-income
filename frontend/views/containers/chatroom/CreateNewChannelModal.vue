@@ -134,7 +134,7 @@ const privacyLevelToDisplay = {
   }
 }
 
-export default ({
+export default {
   name: 'CreateNewChannelModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -257,7 +257,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

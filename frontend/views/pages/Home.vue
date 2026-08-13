@@ -79,7 +79,7 @@ import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 import { ignoreWhenNavigationCancelled } from '~/frontend/views/utils/misc.js'
 
-export default ({
+export default {
   name: 'Home',
   components: {
     SvgJoinGroup,
@@ -175,7 +175,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style scoped lang="scss">

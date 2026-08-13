@@ -57,7 +57,7 @@ import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.v
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'PaymentRowSent',
   components: {
     AvatarUser,
@@ -109,7 +109,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

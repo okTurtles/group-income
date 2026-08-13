@@ -109,7 +109,7 @@ export default {
     handleDeleteAccount () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AccountRemovalModal')
     },
-    contractDisplayName (name: string) {
+    contractDisplayName (name) {
       // Extract contract name from full path (e.g., 'gi.contracts/chatroom' -> 'Chatroom')
       // Note: This logic is naive and assumes names like 'gi.contracts/chatroom', meaning it won't work if this structure changes.
       // For example, it might not provide the desired result for a future contract named 'gi.contracts/chat-room'

@@ -24,7 +24,7 @@ import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgHello from '@svgs/hello.svg'
 
-export default ({
+export default {
   name: 'ThankYouNoteModal',
   components: {
     ModalTemplate,
@@ -43,7 +43,7 @@ export default ({
       return this.groupThankYousFrom[this.from]?.[to] || ''
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

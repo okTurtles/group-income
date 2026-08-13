@@ -49,7 +49,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { sanitizeChannelName } from '@view-utils/filters.js'
 
-export default ({
+export default {
   name: 'EditChannelNameModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -140,7 +140,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -52,7 +52,7 @@ import { required } from 'vuelidate/lib/validators'
 import { L } from '~/frontend/common/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-export default ({
+export default {
   name: 'GenericProposal',
   mixins: [
     validationMixin,
@@ -123,7 +123,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

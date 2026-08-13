@@ -331,7 +331,7 @@ const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCo
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
-export default ({
+export default {
   name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
@@ -1276,7 +1276,7 @@ export default ({
     },
     swapMentionIDForDisplayname
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

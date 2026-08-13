@@ -20,7 +20,7 @@
 <script>
 import { toPercent } from '@view-utils/filters.js'
 
-export default ({
+export default {
   name: 'SingleBar',
   props: {
     data: {
@@ -54,7 +54,7 @@ export default ({
   filters: {
     toPercent
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -84,7 +84,7 @@ import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.j
 import { normalizeString } from 'turtledash'
 import { Secret } from '@chelonia/lib/Secret'
 
-export default ({
+export default {
   name: 'AccountRemovalModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -162,7 +162,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

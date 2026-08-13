@@ -21,7 +21,7 @@
 <script>
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'AppSlider',
 
   data () {
@@ -319,7 +319,7 @@ export default ({
     this.isComponentExists = false
     this.unbindEvents()
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

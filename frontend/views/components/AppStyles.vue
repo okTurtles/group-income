@@ -42,7 +42,7 @@ import colorsMixins from '@view-utils/colorsManipulation.js'
 import '@assets/style/main.scss'
 import { mapGetters } from 'vuex'
 
-export default ({
+export default {
   name: 'AppStyles',
 
   mixins: [colorsMixins],
@@ -56,5 +56,5 @@ export default ({
       return this.colors.theme === 'dark' ? 0.1 : -0.1
     }
   }
-}: Object)
+}
 </script>

@@ -84,7 +84,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { PAYMENTS_RECORDED } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'RecordPayment',
   mixins: [validationMixin],
   components: {
@@ -246,7 +246,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

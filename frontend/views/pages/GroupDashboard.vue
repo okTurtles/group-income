@@ -54,7 +54,7 @@ import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
-export default ({
+export default {
   name: 'GroupDashboard',
   components: {
     Page,
@@ -133,7 +133,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

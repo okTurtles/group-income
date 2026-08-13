@@ -64,7 +64,7 @@ import { L } from '@common/common.js'
 
 // TODO: handle showing PAYMENT_CANCELLED ?
 
-export default ({
+export default {
   name: 'PaymentRowReceived',
   components: {
     MenuItem,
@@ -112,7 +112,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

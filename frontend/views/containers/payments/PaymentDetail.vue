@@ -56,7 +56,7 @@ import { withGroupCurrency } from '@view-utils/misc.js'
 import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { cloneDeep } from 'turtledash'
 
-export default ({
+export default {
   name: 'PaymentDetail',
   components: {
     ModalTemplate,
@@ -136,7 +136,7 @@ export default ({
   validations: {
     form: {}
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -51,7 +51,7 @@ import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'GroupPledgesGraph',
   components: {
     PieChart,
@@ -185,7 +185,7 @@ export default ({
       return Math.min(Math.max(0, perc), 1)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

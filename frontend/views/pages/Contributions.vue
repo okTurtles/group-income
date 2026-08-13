@@ -144,7 +144,7 @@ import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'Contributions',
   components: {
     Page,
@@ -248,7 +248,7 @@ export default ({
     },
     withGroupCurrency
   }
-}: Object)
+}
 </script>
 
 <style lang="scss">

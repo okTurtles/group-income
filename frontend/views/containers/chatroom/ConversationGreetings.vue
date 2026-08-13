@@ -28,7 +28,7 @@ import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'ConversationGreetings',
   components: {
     MessageNotification,
@@ -78,7 +78,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -9,7 +9,7 @@ import sbp from '@sbp/sbp'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
 import isPwa from '@utils/isPwa.js'
 
-export default ({
+export default {
   name: 'BackgroundSounds',
   created () {
     sbp('okTurtles.events/on', MESSAGE_RECEIVE, this.playMessageReceive)
@@ -48,11 +48,7 @@ export default ({
         this.isAppIdle
       )
     },
-    playMessageReceive ({ contractID }: {
-      contractID: string,
-      messageHash: string,
-      messageType: string
-    }) {
+    playMessageReceive ({ contractID }) {
       if (this.shouldPlay(contractID)) {
         this.$refs.msgReceive.play()
       }
@@ -76,7 +72,7 @@ export default ({
       this.updateAudioVolumes()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

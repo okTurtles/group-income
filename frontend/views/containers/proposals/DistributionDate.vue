@@ -49,7 +49,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
-export default ({
+export default {
   name: 'DistributionDateProposal',
   components: {
     ProposalTemplate,
@@ -178,7 +178,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

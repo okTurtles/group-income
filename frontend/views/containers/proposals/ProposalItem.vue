@@ -89,7 +89,7 @@ import { TABLET } from '@view-utils/breakpoints.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
 
-export default ({
+export default {
   name: 'ProposalItem',
   props: {
     proposalHash: String,
@@ -346,7 +346,7 @@ export default ({
       this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

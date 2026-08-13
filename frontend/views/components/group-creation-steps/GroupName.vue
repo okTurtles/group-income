@@ -54,7 +54,7 @@ import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
 import { imageDataURItoBlob } from '@utils/image.js'
 import { GROUP_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'GroupName',
   props: {
     group: { type: Object },
@@ -159,7 +159,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

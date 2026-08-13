@@ -28,7 +28,7 @@ portal(
 import { mixin as clickaway } from 'vue-clickaway'
 import ListItem from '@components/ListItem.vue'
 
-export default ({
+export default {
   name: 'MessageActionsMobile',
   inject: ['Menu'],
   mixins: [clickaway],
@@ -53,7 +53,7 @@ export default ({
       return this.Menu.isActive
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -42,7 +42,7 @@ import { mapGetters } from 'vuex'
 import { TABLET } from '@view-utils/breakpoints.js'
 import trapFocus from '@utils/trapFocus.js'
 
-export default ({
+export default {
   name: 'Tooltip',
   mixins: [trapFocus],
   props: {
@@ -357,7 +357,7 @@ export default ({
       document.body.removeEventListener('touchstart', this.hideTooltipOnTouchOutside)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

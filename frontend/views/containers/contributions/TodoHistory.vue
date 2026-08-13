@@ -22,7 +22,7 @@ import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'TodoHistory',
   data () {
     return {
@@ -77,5 +77,5 @@ export default ({
       this.updateHistory()
     }
   }
-}: Object)
+}
 </script>

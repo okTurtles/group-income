@@ -35,7 +35,7 @@ import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'
 
-export default ({
+export default {
   name: 'MessagePoll',
   mixins: [PollMixin],
   components: {
@@ -144,7 +144,7 @@ export default ({
       clearTimeout(this.expirationTimeoutId)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

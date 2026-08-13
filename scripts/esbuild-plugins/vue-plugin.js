@@ -7,7 +7,6 @@ const { relative } = require('path')
 
 // https://github.com/vuejs/vue-component-compiler#api
 const componentCompiler = require('@vue/component-compiler')
-const flowRemoveTypes = require('flow-remove-types')
 
 const { createAliasReplacer } = require('./utils.js')
 
@@ -15,11 +14,9 @@ const { createAliasReplacer } = require('./utils.js')
  * @param {Object} [options.aliases]
  * @param {Map} [options.cache]
  * @param {boolean} [options.debug]
- * @param {Object} [options.flowtype] Options for `flow-remove-types`.
- * Leave it out to disable Flowtype syntax support.
  * @returns {Object}
  */
-module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null } = {}) => {
+module.exports = ({ aliases = null, cache = null, debug = false } = {}) => {
   const aliasReplacer = aliases ? createAliasReplacer(aliases) : null
 
   return {
@@ -35,7 +32,7 @@ module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null
           .then(source => aliasReplacer ? aliasReplacer({ path, source }) : source)
 
         if (debug) console.log('vue plugin: compiling', filename)
-        const result = await compile({ filename, source, options: { flowtype } })
+        const result = await compile({ filename, source })
 
         if (cache && result.contents) cache.set(filename, result)
         return result
@@ -45,7 +42,7 @@ module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null
 }
 
 const compiler = componentCompiler.createDefaultCompiler()
-const compile = ({ filename, source, options }) => {
+const compile = ({ filename, source }) => {
   try {
     if (/^\s*$/.test(source)) {
       throw new Error('File is empty')
@@ -54,9 +51,6 @@ const compile = ({ filename, source, options }) => {
     const errors = combineErrors(descriptor.template, ...descriptor.styles)
     if (errors.length > 0) {
       return { errors }
-    }
-    if (options.flowtype) {
-      descriptor.script.code = flowRemoveTypes(descriptor.script.code, options.flowtype).toString()
     }
     const output = componentCompiler.assemble(compiler, source, descriptor, {})
     return { contents: output.code }

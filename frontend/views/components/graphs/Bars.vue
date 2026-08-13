@@ -65,7 +65,7 @@ import { TABLET } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
 import { withGroupCurrency } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'Bars',
   props: {
     totals: Array,
@@ -252,7 +252,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

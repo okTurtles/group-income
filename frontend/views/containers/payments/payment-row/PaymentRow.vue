@@ -40,7 +40,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 
-export default ({
+export default {
   name: 'PaymentRowSent',
   components: {
     ProfileCard,
@@ -55,7 +55,7 @@ export default ({
   methods: {
     humanDate
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

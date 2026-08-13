@@ -33,7 +33,7 @@ import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
 import { fetchNews } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'NewAndUpdates',
   components: {
     Avatar,
@@ -96,7 +96,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

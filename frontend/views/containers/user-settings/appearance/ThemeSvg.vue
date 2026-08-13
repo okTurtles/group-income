@@ -14,7 +14,7 @@ svg(width='247' height='128' viewBox='0 0 247 128' fill='none' xmlns='http://www
 </template>
 
 <script>
-export default ({
+export default {
   name: 'ThemeSVG',
   props: {
     color: {
@@ -22,7 +22,7 @@ export default ({
       required: true
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

@@ -56,7 +56,7 @@ import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { fetchNews } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'GroupsList',
   components: {
     Avatar,
@@ -146,7 +146,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

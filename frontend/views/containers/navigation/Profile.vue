@@ -32,7 +32,7 @@ import { mapGetters } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'Profile',
   components: {
     AvatarUser,
@@ -54,7 +54,7 @@ export default ({
       this.$router.push({ name: 'UserSettings' }).catch(logExceptNavigationDuplicated)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

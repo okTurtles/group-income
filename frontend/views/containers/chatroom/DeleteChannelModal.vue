@@ -45,7 +45,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-export default ({
+export default {
   name: 'DeleteChannelModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -93,7 +93,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

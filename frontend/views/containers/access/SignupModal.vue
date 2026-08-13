@@ -24,7 +24,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
-export default ({
+export default {
   name: 'Signup',
   components: {
     ModalTemplate,
@@ -60,5 +60,5 @@ export default ({
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'LoginModal')
     }
   }
-}: Object)
+}
 </script>

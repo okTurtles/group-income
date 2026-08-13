@@ -17,7 +17,7 @@
 import sbp from '@sbp/sbp'
 import { Secret } from '@chelonia/lib/Secret'
 
-export default ({
+export default {
   name: 'Avatar',
   props: {
     src: [String, Object], // acts as a placeholder when used together with blobURL
@@ -101,7 +101,7 @@ export default ({
       return this.blobURL || (typeof this.src === 'string' && this.src)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

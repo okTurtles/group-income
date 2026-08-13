@@ -34,7 +34,7 @@ import { mixin as clickaway } from 'vue-clickaway'
 import AvatarUser from '@components/AvatarUser.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 
-export default ({
+export default {
   name: 'VoterAvatars',
   mixins: [
     clickaway
@@ -82,7 +82,7 @@ export default ({
       return profile.displayName || profile.username
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
