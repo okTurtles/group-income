@@ -61,6 +61,16 @@ Two nuances recorded, both easy to get backwards:
 
 Corrections while verifying: (a) the spec claimed `Gruntfile.js` carries a `@flow` pragma — it does not, and **no file in the repo does**; the only `@flow` text is a comment at `Gruntfile.js:216` about `flow-remove-types`' `all` option. (b) 6 of the 22 `.flowconfig` `[ignore]` entries are stale (`Gruntfile.dashboard.js`, `backend/dashboard/`, `shared/multiformats/`, `shared/blake2bstream.js`, `frontend/utils/vuexQueue.js`, `ignored/` — `shared/` and `backend/` no longer exist) and 2 more are redundant with `.*/test/.*`. They should not be transcribed into `tsconfig.json`.
 
+### 004 — Implementation plan written
+
+**Status:** DONE
+
+[`TYPESCRIPT-MIGRATION-PLAN.md`](TYPESCRIPT-MIGRATION-PLAN.md) — 11 steps, single PR, each ending green. Records the six Open Question decisions from the spec (permissive start, staged single PR, ESLint upgrade, `flowTyper.js` → unchecked `.ts`, ambient `@chelonia/*` stubs, no re-pinning).
+
+Key finding that shaped the order: `flow-remove-types-plugin.js:14` filters `/\.js$/`, so `.ts` files bypass it and hit esbuild's native TS loader — **Flow and TypeScript coexist with no extra config**. That allows file-by-file conversion with Flow tooling live, and Flow removal last (Step 9) instead of up front.
+
+Second ordering call: the ESLint upgrade goes **last** (Step 10), after the Flow plugins are deleted — otherwise it would need an `eslint-plugin-flowtype` build compatible with ESLint 8, for tooling about to be removed. Target is ESLint **8.57.1**, not 9: it satisfies `@typescript-eslint` v8's floor while keeping the `package.json` `eslintConfig` block working (ESLint 9 requires flat config).
+
 ---
 
 ## Open items
