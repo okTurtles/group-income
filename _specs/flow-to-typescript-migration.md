@@ -4,7 +4,9 @@ branch: sebin/task/postkey#6-migrate-to-typescript
 
 ## Summary
 
-Group Income currently uses Flow for static typing. Flow is applied globally via `all=true` in `.flowconfig`, so type annotations appear throughout the codebase without needing a `@flow` pragma (only `Gruntfile.js` carries one). Flow types are erased at build time by `flow-remove-types` through a custom esbuild plugin for `.js` files. (It also ran inside the custom Vue SFC plugin for `<script>` blocks until that path was removed — see below.)
+Group Income currently uses Flow for static typing. Flow is applied globally via `all=true` in `.flowconfig`, so type annotations appear throughout the codebase without needing a `@flow` pragma — **no file in the repo carries one**, and `flow-remove-types` is correspondingly configured with `all: true` (see the comment at `Gruntfile.js:216`). Flow types are erased at build time by `flow-remove-types` through a custom esbuild plugin for `.js` files. (It also ran inside the custom Vue SFC plugin for `<script>` blocks until that path was removed — see below.)
+
+Coverage is global *minus* the `[ignore]` block of `.flowconfig`, which is substantial and must be carried over verbatim — see the parity principle below.
 
 This spec covers replacing Flow with TypeScript across the codebase and the toolchain that supports it.
 
@@ -17,22 +19,24 @@ This spec covers replacing Flow with TypeScript across the codebase and the tool
 | `frontend/controller/` | 21 |
 | `frontend/utils/` | 8 |
 | `frontend/common/` | 3 |
-| `historical/` | 3 |
-| Root/other (`Gruntfile.js`, `frontend/setupChelonia.js`, `frontend/declarations.js`, `scripts/refcount-fuzzer.js`, `test/backend.test.js`) | 6 |
-| **Total** | **289** |
+| Root/other (`frontend/setupChelonia.js`, `frontend/declarations.js`, plus the Flow-**ignored** `Gruntfile.js`, `scripts/refcount-fuzzer.js`, `test/backend.test.js`) | 6 |
+| **Total** | **286** |
 
-By extension: **186 `.vue`** and **103 `.js`**.
+By extension: **184 `.vue`** and **102 `.js`**.
+
+**`historical/` is excluded from every count in this spec.** It is Flow-ignored, dead reference code, and unreachable from any esbuild entry point, so it is not migration scope in any sense — not converted, not stripped, not counted. It holds 8 files with Flow syntax (6 `.js`, 2 `.vue`) and they stay exactly as they are, Flow syntax intact. Wherever this document gives a file count, `historical/` has already been subtracted.
 
 **Vue SFCs are out of scope for TypeScript.** Their Flow annotations have been stripped outright rather than converted, for two reasons: (A) the annotations carried no real type information — 184 of the 212 Flow lines in `.vue` files were a single `}: Object)` cast, `Object` being Flow's `any`, and only 19 of 1,148 methods (1.7%) had any annotation at all; and (B) meaningful SFC typing requires `defineComponent` inference that Vue 2.6 cannot provide, and a Vue 3 migration is planned as the next piece of work — so typing SFCs now would be thrown away. SFC `<script>` blocks are therefore plain untyped JavaScript, and typing them is deferred to the Vue 3 migration. This is **done** — see [`PROGRESS.md`](../PROGRESS.md) entry 002.
 
-That leaves the `.js` files as the actual TypeScript migration scope. Re-measuring after the SFC work (full repo sweep, `flow-remove-types` with `all: true`, excluding only `node_modules/`, `dist/`, `dist-dashboard/`) gives **111 `.js` files with Flow syntax** — the earlier figure of 103 undercounted `historical/` and the test files. Those 111 split by whether Flow actually checks them:
+That leaves the `.js` files as the actual TypeScript migration scope. Re-measuring after the SFC work (full repo sweep, `flow-remove-types` with `all: true`) finds 111 `.js` files with Flow syntax; **6 of those are in `historical/` and are dropped from scope**, leaving **105**. (The earlier figure of 103 undercounted the test files.) Those 105 split by whether Flow actually checks them:
 
 | | Files | Migration treatment |
 |---|---|---|
 | Flow-**checked** | 99 | Convert to TypeScript. |
-| Flow-**ignored** (`.flowconfig` `[ignore]`) | 12 | Strip Flow syntax so the file still parses. **No type coverage added** — see the parity principle below. |
+| Flow-**ignored** but still built | 6 | Strip Flow syntax so the file still parses. **No type coverage added** — see the parity principle below. |
+| Flow-**ignored** and not built (`historical/`) | 6 | **Nothing.** Out of scope; excluded from the 105. |
 
-The 12 Flow-ignored files carrying Flow syntax: `Gruntfile.js`, `frontend/controller/service-worker.js`, `frontend/model/contracts/misc/flowTyper.js`, `frontend/model/contracts/shared/distribution/distribution.test.js`, `scripts/refcount-fuzzer.js`, `test/backend.test.js`, and 6 files under `historical/`. (The only 2 remaining `.vue` files with Flow — `historical/views/TimeTravel.vue` and `historical/views/pages/BypassUI.vue` — are likewise Flow-ignored and stay as they are.)
+The 6 Flow-ignored-but-built files: `Gruntfile.js`, `frontend/controller/service-worker.js`, `frontend/model/contracts/misc/flowTyper.js`, `frontend/model/contracts/shared/distribution/distribution.test.js`, `scripts/refcount-fuzzer.js`, `test/backend.test.js`. These need stripping only because esbuild or Babel still parses them — that is the sole reason any Flow-ignored file gets touched, and it is exactly why `historical/` does not.
 
 This is not a mechanical find-and-replace: two areas carry real risk and are called out below — the contract source that feeds pinned snapshots, and the `flowTyper.js` runtime validator library.
 
@@ -42,32 +46,50 @@ This is not a mechanical find-and-replace: two areas carry real risk and are cal
 
 **This migration swaps type systems. It does not expand type coverage.** TypeScript must check exactly what Flow checked, no more and no less. Every path in the `[ignore]` block of `.flowconfig` must have a matching entry in `tsconfig.json`'s `exclude` (and in `eslintIgnore`, where it already does). If a file is untypechecked today, it stays untypechecked after the migration — widening coverage is separate, later work, and pulling it in here would flood the change with unrelated errors and make the diff unreviewable.
 
-The mapping is one-to-one:
+#### The complete ignore list
 
-| `.flowconfig` `[ignore]` | Becomes |
-|---|---|
-| `.*/Gruntfile.js`, `.*/Gruntfile.dashboard.js`, `.*/cypress.config.js` | `exclude` |
-| `.*/dist/.*`, `.*/dist-dashboard/.*` | `exclude` |
-| `<PROJECT_ROOT>/contracts/.*` | `exclude` |
-| `.*/backend/dashboard/.*` | `exclude` |
-| `.*/shared/multiformats/.*`, `.*/shared/blake2bstream.js` | `exclude` |
-| `.*/frontend/assets/.*` | `exclude` |
-| `.*/frontend/controller/service-worker.js` | `exclude` |
-| `.*/frontend/utils/blockies.js`, `.*/frontend/utils/vuexQueue.js` | `exclude` |
-| `.*/frontend/model/contracts/misc/flowTyper.js` | `exclude` |
-| `.*/historical/.*`, `.*/ignored/.*` | `exclude` |
-| `.*/node_modules/.*` | `exclude` |
-| `.*/scripts/.*` | `exclude` |
-| `.*/test/.*`, `.*.test.js` | `exclude` |
+`.flowconfig` `[ignore]` holds 22 entries. Six of them are **stale** — they name paths that no longer exist (`shared/` and `backend/` are gone from the repo entirely) — and two more are redundant with a broader pattern. Those should be dropped rather than transcribed, so `tsconfig.json` starts clean:
 
-Two consequences worth stating explicitly, because they are easy to get wrong:
+| `.flowconfig` `[ignore]` entry | Carry over? | `tsconfig.json` `exclude` |
+|---|---|---|
+| `.*/node_modules/.*` | ✅ | `node_modules` |
+| `.*/dist/.*` | ✅ | `dist` |
+| `.*/dist-dashboard/.*` | ✅ | `dist-dashboard` |
+| `<PROJECT_ROOT>/contracts/.*` | ✅ | `contracts` |
+| `.*/Gruntfile.js` | ✅ | `Gruntfile.js` |
+| `.*/cypress.config.js` | ✅ | `cypress.config.js` |
+| `.*/scripts/.*` | ✅ | `scripts` |
+| `.*/test/.*` | ✅ | `test` |
+| `.*.test.js` | ✅ | `**/*.test.js` |
+| `.*/historical/.*` | ✅ | `historical` |
+| `.*/frontend/assets/.*` | ✅ | `frontend/assets` |
+| `.*/frontend/controller/service-worker.js` | ✅ | `frontend/controller/service-worker.js` |
+| `.*/frontend/utils/blockies.js` | ✅ | `frontend/utils/blockies.js` |
+| `.*/frontend/model/contracts/misc/flowTyper.js` | ✅ | `frontend/model/contracts/misc/flowTyper.js` |
+| `.*/Gruntfile.dashboard.js` | ❌ stale | — file does not exist |
+| `.*/backend/dashboard/.*` | ❌ stale | — `backend/` does not exist |
+| `.*/shared/multiformats/.*` | ❌ stale | — `shared/` does not exist |
+| `.*/shared/blake2bstream.js` | ❌ stale | — `shared/` does not exist |
+| `.*/frontend/utils/vuexQueue.js` | ❌ stale | — file does not exist |
+| `.*/ignored/.*` | ❌ stale | — directory does not exist |
+| `.*/test/backend.js` | ❌ redundant | covered by `test` |
+| `.*/test/frontend.js` | ❌ redundant | covered by `test` |
 
-- **Ignored ≠ untouched by the build.** Flow's `[ignore]` only suppresses *typechecking*; esbuild and Babel still parse these files. Twelve Flow-ignored `.js` files nevertheless contain Flow syntax (list below). Once `flow-remove-types` is gone from the esbuild plugin chain, that syntax no longer parses — so it must still be dealt with, just by **stripping or making it valid TypeScript**, never by adding type coverage the file never had.
-- **No new `@ts-*` debt in excluded files.** An excluded file needs no `@ts-nocheck`, no `any` annotations, no declaration work. If a change to one of these files feels necessary beyond removing Flow syntax, that is a signal the exclusion has been dropped by mistake.
+Dropping a stale entry changes nothing about what gets checked, so it does not violate parity — but each omission should be justified in the PR description so a reviewer can tell a deliberate cleanup from an accidental widening.
+
+Separately, `package.json` `eslintIgnore` is *not* identical to the Flow list — it additionally ignores `test/cypress/cache/*` and `shared/types.js` (also stale), and unlike Flow it does not ignore `Gruntfile.js`, `cypress.config.js`, or `scripts/`. Bringing those two lists into agreement is out of scope here; just don't assume one mirrors the other.
+
+#### Three consequences worth stating explicitly
+
+- **Ignored ≠ untouched by the build.** Flow's `[ignore]` only suppresses *typechecking*; esbuild and Babel still parse most of these files. Six Flow-ignored `.js` files that *are* built nevertheless contain Flow syntax (listed in the Summary). Once `flow-remove-types` is gone from the esbuild plugin chain, that syntax no longer parses — so it must still be dealt with, just by **stripping it**, never by adding type coverage the file never had. The converse also holds: a Flow-ignored file that nothing builds needs no work at all, which is precisely the case for `historical/`.
+- **Ignored ≠ unedited.** Several ignored files are build *configuration* and must change as part of the toolchain swap — `Gruntfile.js` most of all (it defines the esbuild plugin chain, the `exec:flow` task, and the `lintTasks` list). Editing them as configuration is expected and required; what parity forbids is *typechecking* them. `Gruntfile.js` is the file where this distinction matters most, so to be unambiguous: **it is heavily edited and never typechecked.**
+- **No new `@ts-*` debt in excluded files.** An excluded file needs no `@ts-nocheck`, no `any` annotations, no declaration work. If a change to one of these files feels necessary beyond removing Flow syntax or updating build config, that is a signal the exclusion has been dropped by mistake.
 
 ### Toolchain replacement
 
-- Introduce a `tsconfig.json` at the project root. It must reproduce the path aliases currently expressed as `module.name_mapper` entries in `.flowconfig` and as aliases in `Gruntfile.js` (`@components`, `@containers`, `@model`, `@pages`, `@utils`, `@views`, `@view-utils`, plus the `@assets`, `@common`, `@controller`, `@svgs` aliases used by the build).
+*(`Gruntfile.js` and `scripts/` are Flow-ignored and stay TypeScript-excluded. Everything below is build-**configuration** work on them, not type migration — see "Ignored ≠ unedited" above.)*
+
+- Introduce a `tsconfig.json` at the project root. It must reproduce two things from `.flowconfig`: the path aliases currently expressed as `module.name_mapper` entries (and as aliases in `Gruntfile.js` — `@components`, `@containers`, `@model`, `@pages`, `@utils`, `@views`, `@view-utils`, plus `@assets`, `@common`, `@controller`, `@svgs`), and the `[ignore]` block as `exclude`, per the table above.
 - Replace the `flow-remove-types` esbuild plugin (`scripts/esbuild-plugins/flow-remove-types-plugin.js`) with esbuild's native TypeScript loader. esbuild strips TS types but does **not** typecheck, so typechecking must become its own step.
 - Replace the `exec:flow` Grunt task with a `tsc --noEmit` equivalent, and update the `lintTasks` list in `Gruntfile.js` that currently references it.
 - ~~Update `scripts/esbuild-plugins/vue-plugin.js` so SFC `<script>` blocks are handled as TypeScript.~~ **Done** — since SFCs are now plain JS, `flowRemoveTypes` was removed from `vue-plugin.js` entirely rather than swapped for a TypeScript path.
@@ -86,7 +108,7 @@ Two consequences worth stating explicitly, because they are easy to get wrong:
 
 ### Source migration
 
-- Convert Flow annotations to TypeScript across the **99 Flow-checked** `.js` files (the 12 Flow-ignored ones get their syntax stripped only; the 186 `.vue` files are already done — see Summary), including the syntax differences that do not map one-to-one: maybe types (`?T` → `T | null | undefined`), exact object types (`{| |}`), variance sigils (`+`/`-`), `mixed` → `unknown`, `Object`/`Function` catch-alls, `$Keys`/`$Values`/`$Shape`/`$Exact` utility types, opaque types, and `import type` / `export type` forms.
+- Convert Flow annotations to TypeScript across the **99 Flow-checked** `.js` files (the 6 Flow-ignored-but-built ones get their syntax stripped only; `historical/` is untouched; the 184 `.vue` files are already done — see Summary), including the syntax differences that do not map one-to-one: maybe types (`?T` → `T | null | undefined`), exact object types (`{| |}`), variance sigils (`+`/`-`), `mixed` → `unknown`, `Object`/`Function` catch-alls, `$Keys`/`$Values`/`$Shape`/`$Exact` utility types, opaque types, and `import type` / `export type` forms.
 - Rename migrated `.js` files to `.ts`, and update the imports that reference them. The ESLint config sets `import/extensions: [2, "ignorePackages"]`, so explicit extensions in import specifiers are enforced and will need updating in step with the renames.
 - `.vue` SFCs keep plain `<script>` blocks — **not** `<script lang="ts">`. They are untyped JavaScript until the Vue 3 migration. Templates remain Pug and are out of scope for typechecking either way.
 
@@ -97,7 +119,7 @@ Two consequences worth stating explicitly, because they are easy to get wrong:
 - **`flowTyper.js`.** `frontend/model/contracts/misc/flowTyper.js` (460 lines) is a **runtime** validator library, not erased type annotations. It uses Flow generic syntax (e.g. `mapOf<K, V>`, `objectOf<O: TypeValidatorRecord<*>>`) alongside runtime logic that inspects function names (`typeFn.name.includes('optional')`). Converting it risks changing runtime behaviour — particularly anything that depends on function `.name` values surviving compilation. It is bundled into pinned contracts, so behavioural equivalence is mandatory.
   Note it is **already Flow-ignored** (`.flowconfig`) and ESLint-ignored (`eslintIgnore`), so under the parity principle it must be `tsconfig` `exclude`d too — it is not to be typechecked, and no attempt should be made to express its generics as real TypeScript types. It is live source that esbuild parses, though, so its Flow *syntax* still has to go. That makes it a syntax-stripping job with a behavioural-equivalence test harness, not a typing job — the smallest possible change, not the most correct one.
 - **Vue 2.6 SFCs — resolved, no longer in scope.** Vue 2.6's Options API has weak TypeScript inference compared to Vue 2.7+ or Vue 3, so the 186 SFCs had their Flow stripped rather than converted, and stay untyped until the Vue 3 migration. One consequence is worth carrying forward: the `}: Object)` cast had been hiding the components from `eslint-plugin-vue`, which only recognises a component when `export default` is a bare object expression. Removing it switched those rules on across 182 components and immediately surfaced two latent bugs (a shared array prop default, a computed with no return). Expect more `vue/*` findings as SFCs are touched in future work.
-- **`historical/` and `ignored/` — settled by parity: out of scope.** Both are Flow-ignored, so both are TypeScript-excluded. The 8 files under `historical/` that contain Flow syntax (6 `.js`, 2 `.vue`) get their syntax stripped only if the build actually needs them to parse — `historical/` is dead reference code and is not reachable from any esbuild entry point, so the default is to **leave them exactly as they are**, Flow syntax and all.
+- **`historical/` — out of scope entirely. Do not touch it.** It is Flow-ignored, so it is TypeScript-excluded; it is dead reference code unreachable from any esbuild entry point, so nothing parses it and its Flow syntax breaks nothing. Its 8 files with Flow syntax (6 `.js`, 2 `.vue`) are **left exactly as they are, Flow syntax and all**, and are excluded from every file count in this spec. This is the one place where "Flow-ignored" additionally means "unedited". (`ignored/` gets the same treatment in principle, but the directory no longer exists.)
 
 ## Possible Edge Cases
 
@@ -115,7 +137,8 @@ Two consequences worth stating explicitly, because they are easy to get wrong:
 ## Acceptance Criteria
 
 - `tsc --noEmit` passes with no errors across the migrated `.js` → `.ts` files. (`.vue` files are excluded from typechecking — they are untyped by decision, not by oversight.)
-- **Scope parity holds:** every path in the `.flowconfig` `[ignore]` block has a corresponding `exclude` entry in `tsconfig.json`, and no file that Flow ignored is being typechecked by TypeScript. Reviewable by diffing the two lists side by side — they should correspond entry for entry, with any deliberate difference called out in the PR description.
+- **Scope parity holds:** every live path in the `.flowconfig` `[ignore]` block has a corresponding `exclude` entry in `tsconfig.json`, and no file that Flow ignored is being typechecked by TypeScript. Reviewable by diffing the two lists side by side against the table above; the only permitted omissions are the 6 stale and 2 redundant entries, each justified in the PR description.
+- **`Gruntfile.js` is excluded from `tsc` yet updated as build config** — both facts hold simultaneously, and neither is an oversight.
 - No `.flowconfig`, no `flow-bin`, no `flow-remove-types`, and no Flow ESLint plugins remain in the repository or in `package.json`.
 - No source file outside `node_modules/`, `dist/`, `contracts/`, and `historical/` contains Flow syntax (verifiable by re-running the `flow-remove-types` diff check used to scope this work). `historical/` is exempt because it is dead, Flow-ignored, and never built.
 - `grunt dev` starts, builds, and hot-reloads correctly.
@@ -130,15 +153,16 @@ Two consequences worth stating explicitly, because they are easy to get wrong:
 
 ## Open Questions
 
-- **Strictness target.** Should `tsconfig.json` start permissive (`strict: false`, `allowJs: true`, liberal `any`) to get the migration landed, then tighten incrementally? Or should it land strict from the outset, accepting a much larger single change? A permissive start is strongly recommended given the size.
-- **Single PR or phased?** With SFCs already handled, the remaining 103 `.js` files across build tooling and contracts are still large for one reviewable change. A phased approach — toolchain first (with `allowJs` so Flow and TS coexist), then leaf modules, then contracts — is safer but requires the build to support both type systems temporarily. Which does the team prefer?
-- ~~**Vue SFC typing depth.**~~ **Resolved:** no SFC typing. Flow was stripped from all 186 SFCs and they remain plain JavaScript. Rationale in the Summary — the annotations held no real type information, and Vue 2.6 cannot support meaningful inference anyway.
-- ~~**Vue upgrade coupling.**~~ **Resolved:** not bundled here. Vue 3 migration is the next piece of work and will be where SFC typing is revisited; typing them under Vue 2.6 now would be discarded.
-- **ESLint upgrade.** Stay on ESLint 7 with an older compatible `@typescript-eslint`, or upgrade ESLint (and `eslint-config-standard`, `eslint-plugin-vue`) as part of this work?
-- **`flowTyper.js` fate.** Convert it in place, or treat it as a stable runtime dependency and leave its Flow syntax stripped via a narrowly scoped legacy path? Given it is bundled into frozen contracts, leaving it untouched may be the lower-risk option.
-- ~~**`historical/` scope.**~~ **Resolved by the parity principle:** excluded, because Flow excludes it.
-- **`@chelonia/*` packages.** These are external dependencies (`@chelonia/lib`, `@chelonia/cli`, `@chelonia/crypto`, `@chelonia/serdes`, `@chelonia/multiformats`). Do they ship TypeScript declarations? If not, ambient stubs will be needed, and the quality of contract-layer typing will be limited by their absence.
-- **Contract re-pinning.** Existing pins under `contracts/` are already-compiled frozen output and stay untouched. The open part is forward-looking: once the contract *source* is TypeScript, does the next `grunt pin:<version>` need a version bump purely because the emitted JS differs, even when behaviour is identical?
+- **Strictness target.** Should `tsconfig.json` start permissive (`strict: false`, `allowJs: true`, liberal `any`) to get the migration landed, then tighten incrementally? Or should it land strict from the outset, accepting a much larger single change?: A permissive start is strongly recommended given the size. Yes, start permissive.
+
+- **Single PR or phased?** With SFCs already handled, the remaining 103 `.js` files across build tooling and contracts are still large for one reviewable change. A phased approach — toolchain first (with `allowJs` so Flow and TS coexist), then leaf modules, then contracts — is safer but requires the build to support both type systems temporarily. Which does the team prefer?: Single PR is preferred. But would be great if the implementation plan is split into multiple manageable steps.
+
+- **ESLint upgrade.** Stay on ESLint 7 with an older compatible `@typescript-eslint`, or upgrade ESLint (and `eslint-config-standard`, `eslint-plugin-vue`) as part of this work?: Upgrading is preferred, if possible.
+
+- **`flowTyper.js` fate.** Parity settles the *checking* question — it is Flow-ignored, so it stays TypeScript-excluded. What remains open is purely mechanical: strip its Flow syntax in place (leaving a `.js` file), or rename to `.ts` with its generics preserved as-written but unchecked? The first is the smaller diff; the second is more consistent with the rest of the tree. Either way no new type coverage is added.: The second is preferred.
+
+- **`@chelonia/*` packages.** These are external dependencies (`@chelonia/lib`, `@chelonia/cli`, `@chelonia/crypto`, `@chelonia/serdes`, `@chelonia/multiformats`). Do they ship TypeScript declarations? If not, ambient stubs will be needed, and the quality of contract-layer typing will be limited by their absence.: Let's start with ambient stubs for now.
+- **Contract re-pinning.** Existing pins under `contracts/` are already-compiled frozen output and stay untouched. The open part is forward-looking: once the contract *source* is TypeScript, does the next `grunt pin:<version>` need a version bump purely because the emitted JS differs, even when behaviour is identical?: Do not do anything re this for now.
 
 ## Testing Guidelines
 
