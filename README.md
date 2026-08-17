@@ -18,7 +18,9 @@
 2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
 3. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
 4. Install dependencies: `npm install`
-5. Now try out the [dev workflow](#basic-workflow).
+5. Run `./node_modules/.bin/chel init`. This generates a `chel.toml` config file in the project root (required).
+6. Now try out the [dev workflow](#basic-workflow).
+
 - 👩‍🎨 Check out how Group Income will feel like by taking a look at the [design files on Figma](https://www.figma.com/file/mxGadAHfkWH6qApebQvcdN/Group-Income-2.0?node-id=1204%3A0)
 
 ## Contributing
