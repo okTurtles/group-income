@@ -30,7 +30,7 @@
         .c-unsupported-video-message(v-if='!isCurrentVideoSupported')
           .c-video-warning-inner
             i.icon-exclamation-triangle
-            i18n This video format is not supported by your browser. Please use a different browser or download the file to view it.
+            i18n This video format is not supported by your browser. Please use a different browser to view it.
 
         video-player.c-video-player.for-video-modal(
           v-else
