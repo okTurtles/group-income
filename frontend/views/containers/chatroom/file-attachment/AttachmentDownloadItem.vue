@@ -168,11 +168,11 @@ export default {
     isAudio () {
       return this.fileType === CHATROOM_ATTACHMENT_TYPES.AUDIO
     },
-    isVideoReady () {
-      return this.isVideo && this.mediaObjectURL
-    },
     isVideoMimeTypeSupported () {
       return this.isVideo && checkBrowserVideoMimeTypeSupport(this.attachment.mimeType)
+    },
+    isVideoReady () {
+      return this.isVideoMimeTypeSupported && this.mediaObjectURL
     },
     isMediaType () {
       return this.isImage || this.isVideo || this.isAudio
