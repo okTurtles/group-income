@@ -5,7 +5,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@view-utils/markdown-utils.js'
+import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@utils/markdown-parsers.js'
 
 export function makeChannelMention (str: string, withId: boolean = false): string {
   return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
@@ -49,14 +49,15 @@ export function swapMentionIDForDisplayname (
     } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
       // swap channel mention
       const channelID = getIdFromChannelMention(t)
+      const channelName = getChatroomNameById(channelID)
       const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
-      return prefix + getChatroomNameById(channelID)
+      return channelName ? prefix + channelName : t
     }
     return t
   }
 
   // Only perform the mention swap for plain text segments.
-  // The content of code fence or inline code segments are not supposed to be transformed.
+  // The content of code fences and inline code is not supposed to be transformed.
   const msgSplitByCodeMarkdown = splitStringByMarkdownCode(text)
   msgSplitByCodeMarkdown.forEach((entry) => {
     if (entry.type === 'plain') {
@@ -86,6 +87,7 @@ export function makeMentionFromUsername (username: string, forceUsername: ?boole
   return makeMentionFromUserID(forceUsername && userID ? username : userID)
 }
 
+// This function used to be in use in the codebase, but it's not used anymore. Keeping it here just in case it will be used again in the future.
 export function stripMarkdownSyntax (markdownString: string, truncateTo: number = -1): string {
   markdownString = swapMentionIDForDisplayname(markdownString) // eg. '@identityContractID' -> '@user1'
 
