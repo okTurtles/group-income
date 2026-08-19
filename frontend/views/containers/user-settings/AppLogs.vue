@@ -45,6 +45,10 @@
                     option(value='serviceworker')
                       i18n Service worker
 
+          label.checkbox.c-include-journal
+            input.input(type='checkbox' name='include-journal' v-model='form.includeJournal')
+            i18n Include contract journals
+
           button-submit.is-small.c-download(@click='downloadOrShareLogs')
             template(v-if='ephemeral.useWebShare')
               i.icon-share-alt.is-prefix
@@ -78,6 +82,16 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
+type LogPayload = {
+  _instructions: string,
+  ua: string,
+  version_info: Object,
+  includeJournal: boolean,
+  logs: Object[],
+  journal?: Object,
+  journalTruncated?: boolean
+}
+
 export default ({
   name: 'AppLogs',
   components: {
@@ -88,7 +102,8 @@ export default ({
     return {
       form: {
         filter: this.$store.state.settings.appLogsFilter,
-        source: 'combined'
+        source: 'combined',
+        includeJournal: Boolean(this.$store.state.settings.appLogsIncludeJournal)
       },
       ephemeral: {
         ready: false,
@@ -120,6 +135,9 @@ export default ({
     'form.filter' (filter) {
       this.setAppLogsFilter(filter)
     },
+    'form.includeJournal' (includeJournal) {
+      this.setAppLogsIncludeJournal(includeJournal)
+    },
     'form.source' (to, from) {
       if (to === from) return
       this.getLogs()
@@ -149,7 +167,8 @@ export default ({
   },
   methods: {
     ...mapMutations([
-      'setAppLogsFilter'
+      'setAppLogsFilter',
+      'setAppLogsIncludeJournal'
     ]),
     async loadVersionInfo () {
       let swVersion = ''
@@ -186,7 +205,7 @@ export default ({
     openTroubleshooting () {
       this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
-    downloadOrShareLogs () {
+    async downloadOrShareLogs () {
       const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
       const isDownload = actionType === 'download'
 
@@ -194,14 +213,28 @@ export default ({
         const elLink = this.$refs.linkDownload
         const filename = 'gi_logs.json.txt'
         const mimeType = 'text/plain'
-
-        const blob = new Blob([JSON.stringify({
+        const payload: LogPayload = {
         // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),
+          includeJournal: this.form.includeJournal,
           logs: this.ephemeral.logs
-        }, undefined, 2)], { type: mimeType })
+        }
+        let journalError = null
+
+        if (this.form.includeJournal) {
+          try {
+            const { journals, truncated } = await sbp('sw/journal/getAll')
+            payload.journal = journals
+            payload.journalTruncated = truncated
+          } catch (err) {
+            journalError = err
+            console.error('AppLogs.vue: Failed to obtain contract journals:', err)
+          }
+        }
+
+        const blob = new Blob([JSON.stringify(payload, undefined, 2)], { type: mimeType })
 
         if (isDownload) {
           if (!elLink) { return }
@@ -215,10 +248,16 @@ export default ({
             URL.revokeObjectURL(url)
           }, 0)
         } else {
-          return navigator.share({
+          await (navigator: any).share({
             files: [new File([blob], filename, { type: blob.type })],
             title: L('Application Logs')
           })
+        }
+
+        if (journalError) {
+          this.$refs.errBanner.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
+        } else if (payload.journalTruncated) {
+          this.$refs.errBanner.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
         const errorDisplay = isDownload
@@ -329,6 +368,10 @@ export default ({
   }
 }
 
+.c-include-journal {
+  width: 100%;
+}
+
 .c-source .c-label {
   display: flex;
   align-items: center;
@@ -341,6 +384,7 @@ export default ({
 
 .c-filters,
 .c-source,
+.c-include-journal,
 .c-download,
 .c-logs {
   margin-bottom: 1rem;
