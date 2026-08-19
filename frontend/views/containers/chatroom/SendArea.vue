@@ -90,6 +90,7 @@
 
     chat-attachment-preview(
       v-if='ephemeral.attachments.length'
+      key='attachment-preview'
       :attachmentList='ephemeral.attachments'
       :ownerID='ourIdentityContractId'
       @remove='removeAttachment'
@@ -262,6 +263,16 @@
                   data-test='attachments'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
+            tooltip(
+              v-if='ephemeral.voiceRecording.supported'
+              direction='top'
+              :text='L("Record voice message")'
+            )
+              button.is-icon(
+                :aria-label='L("Record voice message")'
+                @click='openVoiceRecorder'
+              )
+                i.icon-microphone
 
           button.c-send-button(
             id='mobileSendButton'
@@ -274,6 +285,13 @@
 
     .textarea.c-send-mask(
       ref='mask'
+    )
+
+    voice-recorder(
+      v-if='ephemeral.voiceRecording.isOpen'
+      key='voice-recorder'
+      @recording-completed='onRecordingCompleted'
+      @close='closeVoiceRecorder'
     )
 
     create-poll.c-poll(ref='poll' @created-poll='$emit("jump-to-latest")')
@@ -289,6 +307,7 @@ import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
+import VoiceRecorder from './voice-recording/VoiceRecorder.vue'
 import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
 import {
   CHATROOM_PRIVACY_LEVEL,
@@ -309,6 +328,7 @@ import {
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
+import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -340,7 +360,8 @@ export default ({
     Tooltip,
     CreatePoll,
     ChatAttachmentPreview,
-    EmojiShortcutItemDisplay
+    EmojiShortcutItemDisplay,
+    VoiceRecorder
   },
   props: {
     defaultText: String,
@@ -379,7 +400,11 @@ export default ({
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
         typingUsers: [],
-        chatroomHasDraftSaved: false // flag to indicate if the chatroom has a draft saved
+        chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
+        voiceRecording: {
+          supported: false,
+          isOpen: false
+        }
       },
       config: {
         messageMaxChar: CHATROOM_MAX_MESSAGE_LEN,
@@ -425,6 +450,7 @@ export default ({
     this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = this.mediaIsPhone.matches
     this.mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
+    this.checkVoiceRecordingSupport()
   },
   mounted () {
     this.initializeTextArea()
@@ -490,7 +516,8 @@ export default ({
         })
     },
     isActive () {
-      return this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0
+      return !this.ephemeral.voiceRecording.isOpen &&
+        (this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0)
     },
     textareaStyles () {
       return {
@@ -729,6 +756,30 @@ export default ({
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
+    onRecordingCompleted (recordingData) {
+      const count = this.hasAttachments ? this.ephemeral.attachments.filter(attachment => attachment.isVoiceRecording).length + 1 : 1
+      const name = count > 1
+        ? L('Voice Message {count}', { count })
+        : L('Voice Message')
+      // The recording is an in-memory blob rather than a picked file, so it has no name of its
+      // own. Derive the extension from its mime type, otherwise the attachment gets downloaded
+      // as an extension-less file that the OS can't associate with an audio player.
+      const ext = getExtensionFromAudioMimeType(recordingData.type)
+
+      this.fileAttachmentHandler([{
+        ...recordingData,
+        isVoiceRecording: true,
+        name: ext ? `${name}.${ext}` : name
+      }])
+
+      // Defer closing the recorder so that mounting <chat-attachment-preview>
+      // (from the line above) and unmounting <voice-recorder> don't happen in
+      // the same render tick. Without this split, a weird bug where the current text draft
+      // gets injected to .c-send-actions happens.
+      this.$nextTick(() => {
+        this.closeVoiceRecorder()
+      })
+    },
     addSelectedSegment (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
@@ -902,6 +953,7 @@ export default ({
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
+      this.closeVoiceRecorder()
       this.ephemeral.chatroomHasDraftSaved = false
 
       if (this.defaultText) {
@@ -930,6 +982,7 @@ export default ({
               mimeType: attachment.mimeType,
               size: attachment.size,
               needsImageCompression: attachment.needsImageCompression || false,
+              isVoiceRecording: attachment.isVoiceRecording || false,
               downloadData: null
             }))
         } else {
@@ -998,6 +1051,7 @@ export default ({
                 mimeType: attachment.mimeType,
                 size: attachment.size,
                 needsImageCompression: attachment.needsImageCompression || false,
+                isVoiceRecording: attachment.isVoiceRecording || false,
                 fileData
               }
             })
@@ -1055,19 +1109,25 @@ export default ({
 
       for (const file of filesList) {
         const fileSize = file.size
+        const isVoiceRecordingItem = !!file?.isVoiceRecording
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           exceedsSizeLimitCount++
+          if (isVoiceRecordingItem && file.url) {
+            URL.revokeObjectURL(file.url)
+          }
+
           continue
         }
 
-        const fileUrl = URL.createObjectURL(file)
+        const fileUrl = isVoiceRecordingItem ? file.url : URL.createObjectURL(file)
         const attachment = {
           url: fileUrl,
           name: file.name,
           mimeType: file.type || '',
           size: fileSize,
-          downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
+          downloadData: null, // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
+          isVoiceRecording: isVoiceRecordingItem
         }
 
         if (getFileType(file.type) === 'image') {
@@ -1275,7 +1335,20 @@ export default ({
         console.error('Error emitting user stopped typing event', e)
       })
     },
-    swapMentionIDForDisplayname
+    swapMentionIDForDisplayname,
+    checkVoiceRecordingSupport () {
+      canUseVoiceRecording().then(supported => {
+        this.ephemeral.voiceRecording.supported = supported
+      })
+    },
+    openVoiceRecorder () {
+      this.ephemeral.voiceRecording.isOpen = true
+    },
+    closeVoiceRecorder () {
+      if (this.ephemeral.voiceRecording.isOpen) {
+        this.ephemeral.voiceRecording.isOpen = false
+      }
+    }
   }
 }: Object)
 </script>
