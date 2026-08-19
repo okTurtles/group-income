@@ -1,10 +1,15 @@
 import { marked } from 'marked'
 import { validateURL } from './misc.js'
-import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { splitStringByMarkdownCode, combineMarkdownSegmentListIntoString } from '@utils/markdown-parsers.js'
 
-export type MarkdownSegment = {
-  type: 'code' | 'plain',
-  text: string
+const HREF_ESCAPE_MAP = { '"': '%22', "'": '%27', '<': '%3C', '>': '%3E', '`': '%60' }
+
+// The href below is interpolated into a double-quoted HTML attribute, and the resulting string is
+// re-parsed by DOMParser in chat-mentions-utils.js, which hands every attribute it finds straight to
+// Vue. Percent-encode the characters that could otherwise close the attribute and inject a new one.
+// (eg. [x](/a"onclick="alert(1)) )
+function escapeHref (href: any): string {
+  return String(href).replace(/["'<>`]/g, char => HREF_ESCAPE_MAP[char])
 }
 
 marked.use({
@@ -13,17 +18,27 @@ marked.use({
       name: 'link',
       level: 'inline',
       renderer (token) {
-        const { isValid, isExternalLink } = validateURL(token.href, true)
+        const { isValid, isExternalLink, url } = validateURL(token.href, true)
 
         if (isValid) {
           const { href, text } = token
+          // For non-external links, validateURL() could perform some transformations to the path and
+          // in that case, that is returned as 'url' property.
+          const urlToUse = escapeHref(isExternalLink ? href : url)
           // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
           // So we need to perform another conversion step here.
           const parsedText = marked.parseInline(text, { gfm: true })
-          return `<a class="link" href="${href}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
+          return `<a class="link" href="${urlToUse}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
         return token.raw
       }
+    },
+    {
+      name: 'image',
+      level: 'inline',
+      // The chat has its own image upload feature, and an <img> here would load a remote url on render,
+      // leaking every reader's IP to whoever sent the message. So do not render it at all for now unless we plan to allow it.
+      renderer: (token) => token.raw
     }
   ],
   renderer: {
@@ -167,69 +182,7 @@ export function injectOrStripLink (
   }
 }
 
-export function splitStringByMarkdownCode (
-  str: string
-): Array<MarkdownSegment> {
-  // This function takes a markdown string and split it by texts written as either inline/block code.
-  // (e.g. `asdf`, ```const var = 123```)
-
-  const regExCodeMultiple = /(```[a-z]*?\n[\s\S]*?```$)/gm // Detecting multi-line code-block by reg-exp - reference: https://regexr.com/4h9sh
-  const regExCodeInline = /(`[^`]+`)/g
-  const splitByMulitpleCode = str.split(regExCodeMultiple)
-  const finalArr = []
-
-  for (const segment of splitByMulitpleCode) {
-    if (regExCodeMultiple.test(segment)) {
-      finalArr.push({ type: 'code', text: segment })
-    } else {
-      const splitByInlineCode = segment.split(regExCodeInline) // Check for inline codes and mark them as type: 'code'
-        .map(piece => {
-          return regExCodeInline.test(piece)
-            ? { type: 'code', text: piece }
-            : { type: 'plain', text: piece }
-        })
-
-      finalArr.push(...splitByInlineCode)
-    }
-  }
-
-  // Capture the case where the last entry is a plain text that contains a multi-line code symbols in the middle but doesn't have the closing pair.
-  // In this case, everything after the starting code-fence symbols should be treated as a code block.
-  const lastEntry = finalArr[finalArr.length - 1]
-  if (lastEntry.type === 'plain' && /(?:^|\n)```[a-z]*\n/.test(lastEntry.text)) {
-    const originalText = lastEntry.text
-    const multiLineCodeIndex = originalText.search(/(?:^|\n)```[a-z]*\n/)
-    lastEntry.text = originalText.slice(0, multiLineCodeIndex)
-    finalArr.push({ type: 'code', text: originalText.slice(multiLineCodeIndex).trimEnd() })
-  }
-
-  return finalArr
-}
-
-export function combineMarkdownSegmentListIntoString (
-  segmentList: Array<MarkdownSegment>
-): string {
-  // This is pretty much reverting what splitStringByMarkdownCode() above does.
-  // It combines the object list into a string.
-  return segmentList.reduce(
-    (concatenated: string, entry: MarkdownSegment) => concatenated + entry.text,
-    ''
-  )
-}
-
-export function stripMarkdownSyntax (markdownString: string, truncateTo: number = -1): string {
-  markdownString = swapMentionIDForDisplayname(markdownString) // eg. '@identityContractID' -> '@user1'
-
-  const sanitized = markdownString
-    .replace(/\*\*(.*?)\*\*/g, '$1') // 'bold'
-    .replace(/_(.*?)_/g, '$1') // 'italic'
-    .replace(/~(.*?)~/g, '$1') // 'strike-through'
-    .replace(/```/g, '') // 'code block'
-    .replace(/`(.*?)`/g, '$1') // 'inline code'
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links ([text](url) -> text)
-    .replace(/^>\s*/gm, '') // block-quote
-    .replace(/\s+/g, ' ') // Normalize spaces
-    .trim()
-
-  return truncateTo > 0 ? sanitized.slice(0, truncateTo) : sanitized
+export {
+  splitStringByMarkdownCode,
+  combineMarkdownSegmentListIntoString
 }
