@@ -757,7 +757,9 @@ export default ({
     },
     onRecordingCompleted (recordingData) {
       const count = this.hasAttachments ? this.ephemeral.attachments.filter(attachment => attachment.isVoiceRecording).length + 1 : 1
-      const name = L('Voice Message{count}', { count: count > 1 ? ` ${count}` : '' })
+      const name = count > 1
+        ? L('Voice Message {count}', { count })
+        : L('Voice Message')
       // The recording is an in-memory blob rather than a picked file, so it has no name of its
       // own. Derive the extension from its mime type, otherwise the attachment gets downloaded
       // as an extension-less file that the OS can't associate with an audio player.

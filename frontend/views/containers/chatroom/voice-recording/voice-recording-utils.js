@@ -4,10 +4,8 @@ export function browserSupportsVoiceRecording (): boolean {
     // - requesting permission and accessing the stream from the hardware microphone
     // 'window.MediaRecorder' (https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder):
     // - capturing the audio stream and turning it into an audio file
-    // 'navigator.permissions' : checking the current permission state
     // AudioContext: utilities for processing/visualizing the sound stream
 
-    navigator.permissions &&
     navigator.mediaDevices &&
     navigator.mediaDevices.getUserMedia &&
     (navigator.mediaDevices.enumerateDevices && typeof navigator.mediaDevices.enumerateDevices === 'function') &&
@@ -59,17 +57,18 @@ export function getExtensionFromAudioMimeType (mimeType: string): string {
   return /^[a-z0-9]+$/.test(subtype) ? subtype : ''
 }
 
-export function getAmplitudeFromTimeDataSamples (timeData: any): any {
+export function getAmplitudeFromTimeDataSamples (timeData: Uint8Array): number {
   // Get the representative amplitude value from the voice message's timeData.
   if (timeData?.length > 0) {
     let sumSquares: number = 0
 
     for (const sample of timeData) {
       // convert this byte sample into a centered waveform amplitude.
-      // Byte sample value reanges from 0 to 255. By dividing it by 128(0 ~ 255 -> -128 ~ +127), we get:
+      // Byte sample values range from 0 to 255. Subtracting 128 centers them (-128 ~ +127):
       // 0: silence/center line
       // +127: high positive amplitude
       // -128: high negative amplitude
+      // and dividing by 128 normalizes the amplitude to roughly -1.0 ~ +1.0
       //
       // (Reference article for similar approach: https://medium.com/@sergejmoor01/visualizing-audio-on-the-web-introduction-dd33bbee8b78)
       const amplitude = (sample - 128) / 128

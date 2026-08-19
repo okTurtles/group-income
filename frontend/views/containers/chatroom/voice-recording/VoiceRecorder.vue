@@ -2,6 +2,8 @@
 .c-voice-recorder-container(
   ref='container'
   tabindex='0'
+  :aria-label='L("Record voice message")'
+  @keydown.esc='close'
   v-on-clickaway='close'
 )
   .c-backdrop(@click.stop='highlightRecorder')
@@ -279,12 +281,8 @@ export default {
       this.ephemeral.soundBars = []
     },
     getBarHeight (amplitudePercentage) {
-      if (amplitudePercentage < 5) {
-        // minimum height here is required to prevent 0 height bars in the visualizer UI.
-        amplitudePercentage = 5
-      }
-
-      return `${amplitudePercentage}%`
+      // Minimum height prevents 0-height bars in the visualizer UI.
+      return `${Math.max(amplitudePercentage, 5)}%`
     }
   },
   mounted () {
