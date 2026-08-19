@@ -12,7 +12,10 @@
       direction='top'
       :text='L("Close")'
     )
-      button.is-unstyled.c-close-btn(@click.stop='close')
+      button.is-unstyled.c-close-btn(
+        @click.stop='close'
+        :aria-label='L("Close")'
+      )
         i.icon-times
 
     .c-sound-patterns
@@ -29,6 +32,7 @@
       button.is-unstyled.c-record-btn(
         :class='{ "is-recording": ephemeral.isRecording }'
         :disabled='ephemeral.recordClicked && !ephemeral.isRecording'
+        :aria-label='ephemeral.isRecording ? L("Stop") : L("Record")'
         @click.stop='recordOrStop'
       )
         i.icon-microphone(v-if='!ephemeral.isRecording')
@@ -64,7 +68,8 @@ export default {
         audioAnalyser: null,
         recorderInstance: null,
         volumeData: null,
-        analyserTimeoutId: null
+        analyserTimeoutId: null,
+        isDestroyed: false
       }
     }
   },
@@ -78,7 +83,7 @@ export default {
     recordOrStop () {
       if (!this.ephemeral.recordClicked) {
         this.ephemeral.recordClicked = true
-        this.focusContainer() // To unfocus the play button
+        this.focusContainer() // To unfocus the record button
         this.startRecording()
       } else {
         this.stopRecording()
@@ -107,6 +112,15 @@ export default {
           throw err
         }
 
+        // The component can be destroyed while the getUserMedia() promise above is still
+        // pending (eg. the user clicks the close button while the permission prompt is still visible).
+        // In that case beforeDestroy() has already done its clean-up and knows nothing about
+        // the stream we just received, so the microphone has to be released here instead.
+        if (this.ephemeral.isDestroyed) {
+          this.releaseAudioStream()
+          return
+        }
+
         // Create a MediaRecorder to start/stop recording and receive the audio data chunks.
         // Passing an explicit mimeType is required for the recorded file to correctly detect
         // audio duration in some Chromium-based browsers. (e.g. Chrome, Brave, both desktop/mobile)
@@ -131,7 +145,6 @@ export default {
             })
             const audioUrl = URL.createObjectURL(audioBlob)
 
-            // Send this audioUrl to your chat UI or audio player element
             this.$emit('recording-completed', {
               url: audioUrl,
               type: audioBlob.type,
@@ -139,7 +152,7 @@ export default {
             })
           } else {
             console.warn('[VoiceRecorder.vue] No audio chunks were captured.')
-            // If there is no audio chunks to process, simply close the recorder UI.
+            // If there are no audio chunks to process, simply close the recorder UI.
             this.$emit('close')
           }
         }
@@ -153,6 +166,11 @@ export default {
         this.ephemeral.audioContext = new AudioContext()
         if (this.ephemeral.audioContext.state === 'suspended') {
           await this.ephemeral.audioContext.resume()
+        }
+
+        if (this.ephemeral.isDestroyed) {
+          this.cleanupAudioRecording()
+          return
         }
 
         // Create a source: source is sort of a node that pipe the audio stream to the audio context.
@@ -195,6 +213,16 @@ export default {
         this.ephemeral.recorderInstance.stop()
       }
 
+      this.releaseAudioStream()
+
+      this.$nextTick(() => {
+        this.stopCapturingSoundPatterns()
+        this.ephemeral.volumeData = null
+        this.ephemeral.isRecording = false
+        this.ephemeral.recordClicked = false
+      })
+    },
+    releaseAudioStream () {
       // Turn off the hardware microphone
       if (this.ephemeral.audioStream) {
         this.ephemeral.audioStream.getTracks().forEach(track => {
@@ -202,13 +230,6 @@ export default {
         })
         this.ephemeral.audioStream = null
       }
-
-      this.$nextTick(() => {
-        this.stopCapturingSoundPattern()
-        this.ephemeral.volumeData = null
-        this.ephemeral.isRecording = false
-        this.ephemeral.recordClicked = false
-      })
     },
     captureSoundPatterns () {
       if (!this.ephemeral.audioAnalyser || !this.ephemeral.volumeData) { return }
@@ -226,7 +247,7 @@ export default {
         this.captureSoundPatterns()
       }, 100)
     },
-    stopCapturingSoundPattern () {
+    stopCapturingSoundPatterns () {
       clearTimeout(this.ephemeral.analyserTimeoutId)
       this.ephemeral.analyserTimeoutId = null
       this.ephemeral.soundBars = new Array(MAX_SOUND_PATTERN_COUNT).fill(0)
@@ -252,24 +273,25 @@ export default {
         this.ephemeral.audioContext = null
       }
       this.ephemeral.audioAnalyser = null
-      this.ephemeral.audioStream = null
+      this.releaseAudioStream()
 
       this.ephemeral.audioChunks = []
       this.ephemeral.soundBars = []
     },
-    getBarHeight (aveFreqPercentage) {
-      if (aveFreqPercentage < 5) {
+    getBarHeight (amplitudePercentage) {
+      if (amplitudePercentage < 5) {
         // minimum height here is required to prevent 0 height bars in the visualizer UI.
-        aveFreqPercentage = 5
+        amplitudePercentage = 5
       }
 
-      return `${aveFreqPercentage}%`
+      return `${amplitudePercentage}%`
     }
   },
   mounted () {
     this.focusContainer()
   },
   beforeDestroy () {
+    this.ephemeral.isDestroyed = true
     this.cleanupAudioRecording()
   }
 }
@@ -403,7 +425,7 @@ $shadow-color-dark: rgba(38, 38, 38, 0.425);
   .c-pattern-bar {
     position: relative;
     display: block;
-    height: 1px; // will be overriden by the inline styles.
+    height: 1px; // will be overridden by the inline styles.
     width: 2px;
     background-color: $text_1;
     opacity: 0.675;

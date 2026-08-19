@@ -1,4 +1,4 @@
-export function isBrowserSupportsVoiceRecording (): boolean {
+export function browserSupportsVoiceRecording (): boolean {
   return Boolean(
     // 'navigator.mediaDevices.getUserMedia' (https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia):
     // - requesting permission and accessing the stream from the hardware microphone
@@ -17,7 +17,7 @@ export function isBrowserSupportsVoiceRecording (): boolean {
 
 export async function canUseVoiceRecording (): Promise<boolean> {
   // Firstly, check if the browser is capable of recording voice messages.
-  if (!isBrowserSupportsVoiceRecording()) return false
+  if (!browserSupportsVoiceRecording()) return false
 
   try {
     const mediaDevices: any = navigator.mediaDevices
@@ -30,21 +30,37 @@ export async function canUseVoiceRecording (): Promise<boolean> {
   }
 }
 
-export async function checkCurrentPermissionState (): Promise<string> {
-  try {
-    const result = await navigator.permissions.query({ name: 'microphone' })
+const AUDIO_MIME_TYPE_TO_EXTENSION = new Map([
+  ['audio/mp4', 'm4a'],
+  ['audio/x-m4a', 'm4a'],
+  ['audio/aac', 'aac'],
+  ['audio/mpeg', 'mp3'],
+  ['audio/webm', 'webm'],
+  ['audio/ogg', 'ogg'],
+  ['application/ogg', 'ogg'],
+  ['audio/wav', 'wav'],
+  ['audio/wave', 'wav'],
+  ['audio/x-wav', 'wav'],
+  ['audio/flac', 'flac'],
+  ['audio/x-flac', 'flac'],
+  ['audio/3gpp', '3gp']
+])
 
-    // result.state will be 'granted'|'denied'|'prompt'
-    return result.state
-  } catch (err) {
-    console.error('Error checking microphone permission state:', err)
-    return 'unknown'
-  }
+export function getExtensionFromAudioMimeType (mimeType: string): string {
+  // Drop the parameters that can follow the mime type (eg. 'audio/webm;codecs=opus' -> 'audio/webm')
+  const cleanedMimeType = (mimeType || '').split(';')[0].trim().toLowerCase()
+
+  const knownExtension = AUDIO_MIME_TYPE_TO_EXTENSION.get(cleanedMimeType)
+  if (knownExtension) { return knownExtension }
+
+  // Fall back to the mime subtype for any container not listed above (eg. 'audio/opus' -> 'opus'),
+  // ignoring subtypes that aren't a plain word and so wouldn't make a sane extension.
+  const subtype = cleanedMimeType.split('/')[1] || ''
+  return /^[a-z0-9]+$/.test(subtype) ? subtype : ''
 }
 
 export function getAmplitudeFromTimeDataSamples (timeData: any): any {
   // Get the representative amplitude value from the voice message's timeData.
-  // (AI disclosure: Below code is written with the assistance of GPT-5.5 model)
   if (timeData?.length > 0) {
     let sumSquares: number = 0
 
@@ -55,7 +71,7 @@ export function getAmplitudeFromTimeDataSamples (timeData: any): any {
       // +127: high positive amplitude
       // -128: high negative amplitude
       //
-      // (Referece article for similar approach: https://medium.com/@sergejmoor01/visualizing-audio-on-the-web-introduction-dd33bbee8b78)
+      // (Reference article for similar approach: https://medium.com/@sergejmoor01/visualizing-audio-on-the-web-introduction-dd33bbee8b78)
       const amplitude = (sample - 128) / 128
       sumSquares += amplitude * amplitude
     }

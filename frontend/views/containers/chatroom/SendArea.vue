@@ -327,7 +327,7 @@ import {
 } from '@view-utils/markdown-utils.js'
 import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
-import { canUseVoiceRecording } from './voice-recording/voice-recording-utils.js'
+import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -402,8 +402,7 @@ export default ({
         chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
         voiceRecording: {
           supported: false,
-          isOpen: false,
-          count: 0
+          isOpen: false
         }
       },
       config: {
@@ -757,14 +756,17 @@ export default ({
       }
     },
     onRecordingCompleted (recordingData) {
-      this.ephemeral.voiceRecording.count++
+      const count = this.hasAttachments ? this.ephemeral.attachments.filter(attachment => attachment.isVoiceRecording).length + 1 : 1
+      const name = L('Voice Message{count}', { count: count > 1 ? ` ${count}` : '' })
+      // The recording is an in-memory blob rather than a picked file, so it has no name of its
+      // own. Derive the extension from its mime type, otherwise the attachment gets downloaded
+      // as an extension-less file that the OS can't associate with an audio player.
+      const ext = getExtensionFromAudioMimeType(recordingData.type)
+
       this.fileAttachmentHandler([{
         ...recordingData,
         isVoiceRecording: true,
-        name: L(
-          'audio_message{count}',
-          { count: this.ephemeral.voiceRecording.count > 1 ? `_${this.ephemeral.voiceRecording.count}` : '' }
-        )
+        name: ext ? `${name}.${ext}` : name
       }])
 
       // Defer closing the recorder so that mounting <chat-attachment-preview>
@@ -936,7 +938,6 @@ export default ({
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endSegmentSelection()
-      this.ephemeral.voiceRecording.count = 0
       if (this.hasAttachments) { this.clearAllAttachments() }
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
@@ -949,6 +950,7 @@ export default ({
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
+      this.closeVoiceRecorder()
       this.ephemeral.chatroomHasDraftSaved = false
 
       if (this.defaultText) {
@@ -977,6 +979,7 @@ export default ({
               mimeType: attachment.mimeType,
               size: attachment.size,
               needsImageCompression: attachment.needsImageCompression || false,
+              isVoiceRecording: attachment.isVoiceRecording || false,
               downloadData: null
             }))
         } else {
@@ -1045,6 +1048,7 @@ export default ({
                 mimeType: attachment.mimeType,
                 size: attachment.size,
                 needsImageCompression: attachment.needsImageCompression || false,
+                isVoiceRecording: attachment.isVoiceRecording || false,
                 fileData
               }
             })
@@ -1102,7 +1106,7 @@ export default ({
 
       for (const file of filesList) {
         const fileSize = file.size
-        const isVoiceRecordingItem = file?.isVoiceRecording
+        const isVoiceRecordingItem = !!file?.isVoiceRecording
 
         if (fileSize > CHAT_ATTACHMENT_SIZE_LIMIT) {
           exceedsSizeLimitCount++
@@ -1119,7 +1123,8 @@ export default ({
           name: file.name,
           mimeType: file.type || '',
           size: fileSize,
-          downloadData: null // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
+          downloadData: null, // NOTE: we can tell if the attachment has been uploaded by seeing if this field is non-null.
+          isVoiceRecording: isVoiceRecordingItem
         }
 
         if (getFileType(file.type) === 'image') {
@@ -1337,7 +1342,9 @@ export default ({
       this.ephemeral.voiceRecording.isOpen = true
     },
     closeVoiceRecorder () {
-      this.ephemeral.voiceRecording.isOpen = false
+      if (this.ephemeral.voiceRecording.isOpen) {
+        this.ephemeral.voiceRecording.isOpen = false
+      }
     }
   }
 }: Object)
