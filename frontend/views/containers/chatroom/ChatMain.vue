@@ -109,6 +109,12 @@
     .c-initializing(v-if='!ephemeral.messagesInitiated')
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
+    .c-fetching-messages(
+      v-if='isFetchingMessages'
+      role='status'
+      aria-live='polite'
+    )
+      i18n Fetching messages...
 
     toast-container(area='chat-main')
 
@@ -273,6 +279,38 @@ const onScrollEnd = function () {
   }
 }
 
+const setMessages = function () {
+  if (!this.ephemeral.renderingChatRoomId) return
+  const newMessages = this.messageState.contract?.messages || []
+  const postSetMessageState = this.ephemeral.postSetMessageState
+  delete this.ephemeral.postSetMessageState
+  if (this.ephemeral.messagesSource === newMessages) {
+    if (postSetMessageState) {
+      this.$nextTick(postSetMessageState)
+    }
+    return
+  }
+  const currentVisibleMessage = this.visibleMessageIterator().next().value
+  this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
+    .sort((a, b) => {
+      const ha = a.message.height
+      const hb = b.message.height
+      // Pending (height-less) messages sort last; ties keep original order.
+      const ra = ha == null ? Infinity : ha
+      const rb = hb == null ? Infinity : hb
+      if (ra !== rb) return ra - rb
+      return a.index - b.index
+    })
+    .map(({ message }) => message)
+  this.ephemeral.messagesSource = newMessages
+  if (!postSetMessageState?.noRerender) {
+    this.rerenderEvents(currentVisibleMessage)
+  }
+  if (postSetMessageState) {
+    this.$nextTick(postSetMessageState)
+  }
+}
+
 export default ({
   name: 'ChatMain',
   components: {
@@ -311,6 +349,7 @@ export default ({
         onChatScroll: null,
         onScrollStart: () => {},
         onScrollEnd: () => {},
+        setMessages: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
@@ -330,6 +369,18 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
+        // IDENTITY CACHE INVARIANT: `messagesSource` holds the array reference
+        // last consumed by `setMessages()`. It MUST be reset to `null` (via
+        // `forceRerenderMessages()`) before any STRUCTURAL in-place mutation of
+        // `messageState.contract.messages` — i.e. a `.splice` / `.push` / `.shift`
+        // / reordering that changes which elements the array contains. Because
+        // `ephemeral.messages` is a separately-built (sorted) array, structural
+        // edits to the source aren't otherwise reflected in the rendered list.
+        //
+        // NOTE: mutating a *property* on an existing message object (e.g.
+        // `Vue.set(msg, 'hasFailed', true)`) does NOT require a reset — rendered
+        // items are the same reactive object references, so Vue tracks the change.
+        messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
         scrollActionId: null,
@@ -370,6 +421,7 @@ export default ({
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), process.env.CI ? 30 : 300)
     this.ephemeral.onScrollStart = debounce(onScrollStart.bind(this), process.env.CI ? 20 : 200)
     this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
+    this.ephemeral.setMessages = debounce(setMessages.bind(this), process.env.CI ? 10 : 100)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
     window.addEventListener('focus', this.windowFocusHandler)
@@ -384,7 +436,9 @@ export default ({
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
+    this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
+    this.ephemeral.setMessages?.clear?.()
     this.cleanupFailedMessagesAttachments()
   },
   computed: {
@@ -409,8 +463,14 @@ export default ({
         !this.ephemeral.loadingUp &&
         !this.ephemeral.loadingDown &&
         // Rendering the current contract state
-        this.messageState.contract.messages === this.ephemeral.messages
+        this.messageState.contract.messages === this.ephemeral.messagesSource
       )
+    },
+    isFetchingMessages () {
+      return !!this.ephemeral.messagesInitiated &&
+        // Only show while incrementally catching up, not during the very first load.
+        this.ephemeral.messages.length > 0 &&
+        (!!this.ephemeral.loadingDown || !!this.ephemeral.loadingUp)
     },
     needsFromScratch () {
       return (
@@ -509,21 +569,6 @@ export default ({
         Vue.delete(this.ephemeral.isEditing, hash)
       }
     },
-    setMessages: debounce(function () {
-      if (!this.ephemeral.renderingChatRoomId) return
-      const newMessages = this.messageState.contract?.messages || []
-      if (this.ephemeral.messages === newMessages) return
-      const currentVisibleMessage = this.visibleMessageIterator().next().value
-      this.ephemeral.messages = newMessages
-      const postSetMessageState = this.ephemeral.postSetMessageState
-      delete this.ephemeral.postSetMessageState
-      if (!postSetMessageState?.noRerender) {
-        this.rerenderEvents(currentVisibleMessage)
-      }
-      if (postSetMessageState) {
-        this.$nextTick(postSetMessageState)
-      }
-    }, process.env.CI ? 10 : 100),
     * visibleMessageIterator () {
       if (!this.$refs.conversation) return
       // The following is slightly more efficient if using `vue-virtual-scroller'
@@ -844,6 +889,7 @@ export default ({
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
+              this.forceRerenderMessages()
               pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
@@ -879,7 +925,7 @@ export default ({
           }
 
           const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
+          if (msgIndex >= 0) {
             const failedMsg = this.messageState.contract.messages[msgIndex]
             Vue.set(failedMsg, 'hasFailed', true)
 
@@ -950,6 +996,10 @@ export default ({
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
+              // SAFE re: messagesSource invariant. The enclosing beforeRequest hook
+              // either swaps `messageState.contract` via Vue.set (firing the watcher)
+              // or calls forceRerenderMessages(); both rebuild the sorted view, so no
+              // manual flush is needed here.
               messages.splice(msgIndex, 1)
             }
           }
@@ -1029,13 +1079,14 @@ export default ({
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
 
-      const scrollAndHighlight = () => {
-        const index = findMessageIdx(messageHash, this.ephemeral.messages)
+      const scrollAndHighlight = (index) => {
+        if (index < 0) return
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince()) return
-            this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
+            const conversation = this.$refs.conversation
+            if (hasChatroomSwitchedSince() || !conversation) return
+            conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
               if (this.ephemeral.focusedEffect !== messageHash) return
@@ -1043,7 +1094,9 @@ export default ({
             }, 1500)
           })
         } else {
-          this.$refs.conversation.scrollToItem(index)
+          const conversation = this.$refs.conversation
+          if (!conversation) return
+          conversation.scrollToItem(index)
 
           // Sometimes, scrollToItem() above doesn't necessarily lead to 'scroll' event (eg. target message is the latest message but the scroll position is already at the bottom)
           // and in that case, some scroll-position related states (currentChatRoomReadUntil, currentChatRoomScrollPosition, etc.) doesn't get updated which leads to a bug
@@ -1135,10 +1188,18 @@ export default ({
           : behavior
       })
     },
+    forceRerenderMessages () {
+      this.ephemeral.messagesSource = null
+      this.ephemeral.setMessages?.()
+      this.ephemeral.setMessages?.flush?.()
+    },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const index = this.ephemeral.messages.indexOf(msg)
-      if (index >= 0) this.ephemeral.messages.splice(index, 1)
+      const index = this.messageState.contract.messages.indexOf(msg)
+      if (index >= 0) {
+        this.messageState.contract.messages.splice(index, 1)
+      }
+      this.forceRerenderMessages()
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1573,6 +1634,10 @@ export default ({
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
       const index = this.ephemeral.messages.findIndex(msg => msg.hash === messageHash)
+      if (index < 0) {
+        console.warn('[ChatMain.vue] markAsUnread: message not found', messageHash)
+        return
+      }
       const isFirstMessage = index === 0
       const targetMsg = isFirstMessage ? this.ephemeral.messages[index] : this.ephemeral.messages[index - 1]
 
@@ -1710,9 +1775,18 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            // Use the freshly processed contract state here. `ephemeral.messages` is
+            // only the debounced rendered view and can still be stale immediately
+            // after processEvents() returns.
+            const messages = this.messageState.contract.messages || []
+            const latestValidMessage = messages
+              .filter(m => !m.pending && !m.hasFailed)
+              .reduce((latest, msg) => {
+                if (!latest) return msg
+                return msg.height > latest.height ? msg : latest
+              }, null)
 
-            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
+            if (this.ephemeral.scrollableDistance < 50 && messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
@@ -1748,6 +1822,8 @@ export default ({
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
               createdHeight: value.data.height
+            }).catch(e => {
+              console.error('[ChatMain.vue] Error updating unreadMessages', e)
             })
           }
         })()
@@ -1923,6 +1999,7 @@ export default ({
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()
+        this.ephemeral.setMessages?.clear?.()
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
@@ -1930,6 +2007,7 @@ export default ({
         this.ephemeral.messagesInitiated = undefined
         this.ephemeral.startedUnreadMessageHash = null
         this.ephemeral.messages = []
+        this.ephemeral.messagesSource = null
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
@@ -1949,7 +2027,7 @@ export default ({
     },
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
-      this.setMessages()
+      this.ephemeral.setMessages?.()
     },
     'ephemeral.renderingChatRoomId' (to) {
       if (!to) return
@@ -2069,6 +2147,19 @@ export default ({
 
 .c-invisible {
   visibility: hidden;
+}
+
+.c-fetching-messages {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background-color: $text_0;
+  color: $background;
+  font-size: $size_5;
 }
 
 .c-initializing,

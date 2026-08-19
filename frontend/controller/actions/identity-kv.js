@@ -1,9 +1,42 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
+import { ChelErrorInvalidMessageHeight } from '@chelonia/lib/errors'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
+
+const isHeightAheadError = (e: ?Object): boolean => {
+  // Chelonia may rewrap the original error, so walk the cause chain instead of
+  // only checking the top-level error. Matching on `name` as well as on the
+  // constructor keeps this working when the error crosses a bundle boundary,
+  // where `instanceof` fails because the class identity differs.
+  for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
+    if (cur instanceof ChelErrorInvalidMessageHeight) return true
+    if (cur?.name === 'ChelErrorInvalidMessageHeight') return true
+  }
+  return false
+}
+
+// The `namespace-cache` slot is `autoLoad: 'on-demand'` and
+// `autoSubscribe: false`, so nothing else keeps its mirror fresh. A KV value
+// can also be written by another device at a contract height the local
+// identity contract hasn't caught up to yet: reading it throws
+// `ChelErrorInvalidMessageHeight`, and writing while behind can clobber the
+// other device's data. Sync the slot before reading or writing it; on
+// height-ahead, recover by syncing the identity contract up to the server's
+// height and retrying once.
+const syncSlotWithRecovery = async (contractID: string, key: string, attempt: number = 0): Promise<void> => {
+  try {
+    await sbp('chelonia/kv/sync', contractID, key)
+  } catch (e) {
+    if (!isHeightAheadError(e)) throw e
+    if (attempt >= 1) throw e
+    console.warn(`[identity-kv.js] '${key}' is ahead of the local identity contract; syncing before retrying`, e)
+    await sbp('chelonia/contract/sync', contractID)
+    return syncSlotWithRecovery(contractID, key, attempt + 1)
+  }
+}
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 // Name discrepancies between the KV store and `namespaceLookups` may occur
@@ -81,6 +114,11 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
     console.info('loading data from identity key-value store...')
 
+    // Unread messages, preferences and notification statuses are loaded by
+    // their slots (`autoLoad: 'on-sync'` in kv-slots.js), each independently.
+    // Only the on-demand namespace cache needs an explicit fetch here; let
+    // failures reject so the login / reconnect handlers log them, while the
+    // chat message gate keeps relying on the `unreadMessages` slot settling.
     await sbp('gi.actions/identity/kv/loadCachedNames')
 
     console.info('identity key-value store data loaded!')
@@ -313,11 +351,15 @@ export default (sbp('sbp/selectors/register', {
   // live here and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT`
   // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
   // matching the original behavior. (KV-REVAMPED.md §4.8)
-  'gi.actions/identity/kv/saveCachedNames': () => {
+  'gi.actions/identity/kv/saveCachedNames': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
     }
+    // Recover from the identity contract being behind the KV store before
+    // writing: otherwise the `onconflict` handler below can't decode the
+    // server value on a conflict retry and would prune it as if it were empty.
+    await syncSlotWithRecovery(identityContractID, KV_KEYS.NS_CACHE)
     // Prune-on-write MUST validate the value the write actually races against:
     // the *server* value seen on each conflict retry. The declarative
     // `chelonia/kv/update` reducer cannot express this — it is synchronous and
@@ -357,8 +399,10 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to load cached names without an active session')
     }
     // Force a fetch of the on-demand slot; a successful load fires the slot's
-    // `onUpdate` (reason 'load'), which runs `checkAndAugmentNames`.
-    await sbp('chelonia/kv/sync', identityContractID, KV_KEYS.NS_CACHE)
+    // `onUpdate` (reason 'load'), which runs `checkAndAugmentNames`. The
+    // wrapper recovers when the server-side value was written at a contract
+    // height the local identity contract hasn't reached yet.
+    await syncSlotWithRecovery(identityContractID, KV_KEYS.NS_CACHE)
     // On a 404 (key never written or deleted server-side) the slot settles to
     // 'non-init' without firing `onUpdate` (the lib only invokes `onUpdate` on
     // a 404 when the slot previously held a value). The pre-revamp
