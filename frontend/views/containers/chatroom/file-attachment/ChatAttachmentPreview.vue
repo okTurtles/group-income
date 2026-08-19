@@ -98,7 +98,7 @@ import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
 import SendAreaAttachmentsGallery from './SendAreaAttachmentsGallery.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType } from '@view-utils/filters.js'
+import { getFileExtension, getFileType, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
@@ -409,17 +409,30 @@ export default {
             : null
         }).filter(Boolean)
       const initialIndex = attachmentDetailsList.findIndex(attachment => attachment[objURLKey] === objectURL)
+      const clickedAttachment = initialIndex >= 0 ? attachmentDetailsList[initialIndex] : null
 
-      sbp(
-        'okTurtles.events/emit', OPEN_MODAL, modalName,
-        null,
-        {
-          [type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'images' : 'videos']: attachmentDetailsList,
-          initialIndex: initialIndex === -1 ? 0 : initialIndex,
-          canDelete: this.isMsgSender || this.isGroupCreator, // delete-attachment action can only be performed by the sender or the group creator
-          ...(additionalData || {})
-        }
-      )
+      if (type === CHATROOM_ATTACHMENT_TYPES.VIDEO &&
+        clickedAttachment &&
+        !checkBrowserVideoMimeTypeSupport(clickedAttachment.mimeType)) {
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L('This video format is not supported by your browser. Please use a different browser to view it.'),
+          variant: 'warning',
+          position: 'bottom-center',
+          duration: 7000,
+          closeable: true
+        })
+      } else {
+        sbp(
+          'okTurtles.events/emit', OPEN_MODAL, modalName,
+          null,
+          {
+            [type === CHATROOM_ATTACHMENT_TYPES.IMAGE ? 'images' : 'videos']: attachmentDetailsList,
+            initialIndex: initialIndex === -1 ? 0 : initialIndex,
+            canDelete: this.isMsgSender || this.isGroupCreator, // delete-attachment action can only be performed by the sender or the group creator
+            ...(additionalData || {})
+          }
+        )
+      }
     },
     onImageSrcSettled (url) {
       this.settledImgURLList = uniq([...this.settledImgURLList, url])
