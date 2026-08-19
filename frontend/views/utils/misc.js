@@ -28,6 +28,10 @@ export const showNavMixin = {
   }
 }
 
+// The only schemes we are willing to turn into a clickable link. Anything else - most importantly
+// 'javascript:', but also 'data:', 'blob:', 'file:', 'vbscript:' etc. - is rejected as invalid.
+const ALLOWED_URL_PROTOCOLS = ['http:', 'https:', 'mailto:']
+
 export function validateURL (url: string, acceptPathOnly: boolean = false): Object {
   const response: any = {
     isValid: false,
@@ -38,16 +42,23 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
   }
 
   if (acceptPathOnly) {
+    // These patterns only accept the characters that may legally appear unencoded in the path,
+    // query or fragment of a URL (RFC 3986). Quotes, angle brackets, backticks and whitespace are
+    // deliberately excluded: they can never be part of a real URL, and accepting them is what lets
+    // a message break out of the href="..." attribute that markdown-utils.js builds.
     const regExpMap = {
-      pathOnly: /^\/[^\s]*$/, // eg. /app/chatroom/chatID, /to-a-path,
+      pathOnly: /^\/(?![/\\])[\w.~%!$&()*+,;=:@/?#[\]-]*$/, // eg. /app/chatroom/chatID, /to-a-path
       slugPiece: /^[a-zA-Z0-9_-]+$/, // eg. contributions, payments, dashboard, abc_123
       slugPieceWithLeadingSharp: /^#[a-zA-Z0-9_-]+$/, // eg. #hello, #user_123, #valid-ID
-      queryString: /^\?(?:[a-zA-Z0-9_-]+=[^&]*)(?:&[a-zA-Z0-9_-]+=[^&]*)*$/ // eg. ?modal=ModalName&userId=abcd123
+      // Note the value class is wider than the key class: only the first '=' of a pair is a
+      // separator, so '=', '?', '#' and brackets may all legally appear inside a value.
+      // (eg. ?token=abc==, ?next=/app/x?a=b, ?a=1#frag)
+      queryString: /^\?[\w-]+=[\w.~%!$()*+,;:@/?#[\]=-]*(?:&[\w-]+=[\w.~%!$()*+,;:@/?#[\]=-]*)*$/ // eg. ?modal=ModalName&userId=abcd123
     }
 
-    if (regExpMap.pathOnly.test(url) && url.startsWith('/app')) {
-      // Case 1. if the url is a path starts with '/app', take it as a route to an in-app page.
-      const path = url.split('/app')[1]
+    if (regExpMap.pathOnly.test(url) && /^\/app(?=$|[/?#])/.test(url)) {
+      // Case 1. if the url is a path starts with '/app/', take it as a route to an in-app page.
+      const path = url.slice('/app'.length)
       url = location.origin + '/app' + path
     } else if (regExpMap.queryString.test(url)) {
       // Case 2. if the url is a query string, add it to the current url origin so it can be handled by the app router.
@@ -71,6 +82,12 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): Obje
 
   try {
     const objURL = new URL(url)
+
+    if (!ALLOWED_URL_PROTOCOLS.includes(objURL.protocol)) {
+      // eg. javascript:alert(1) - parses fine but must never become a link.
+      return response
+    }
+
     response.isValid = true
     response.isHttpValid = objURL.protocol === 'http:' || objURL.protocol === 'https:'
     response.isExternalLink = response.isHttpValid && objURL.origin !== window.location.origin
