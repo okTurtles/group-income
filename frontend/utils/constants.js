@@ -15,6 +15,13 @@ export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value 
 export const EMOJI_REGEX: any = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
 export const VOICE_RECORDING_MIME_TYPE = 'audio/mp4'
 
+// GLOBAL_DASHBOARD_KEY is primarily used as the key for the global dashboard
+// in `currentChatRoomIDs`, which maps each user group to its active chatroom ID.
+// Since the global dashboard is not tied to any specific group (and therefore has no groupID),
+// we use a special key, 'global', to represent this context.
+// This key may also be reused in other parts of the application for similar purposes.
+export const GLOBAL_DASHBOARD_KEY = 'global'
+
 export const TextObjectType = {
   Text: 'TEXT',
   InAppLink: 'IN_APP_LINK',
