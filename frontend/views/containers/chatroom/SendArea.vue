@@ -163,6 +163,7 @@
       .c-edit-actions(v-if='isEditing')
         i18n.is-small.is-outlined(
           tag='button'
+          data-test='cancelEditing'
           @click='cancelEditing'
         ) Cancel
 

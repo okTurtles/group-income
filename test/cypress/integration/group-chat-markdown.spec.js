@@ -5,7 +5,8 @@ const groupName = 'Dreamers'
 const user1 = `user1${randomUserSuffix()}`
 
 describe('Check basic markdown features - one feature per message', () => {
-  const lastSentMessageSelector = '.c-message.sent:last .c-text'
+  const lastSendMessageContainerSelector = '.c-message.sent:last'
+  const lastSentMessageSelector = `${lastSendMessageContainerSelector} .c-text`
 
   // helper functions
   function sendMarkdownMessage (sender, message) {
@@ -641,6 +642,29 @@ describe('Check basic markdown features - one feature per message', () => {
       cy.window().should(win => {
         // Ensure the img onerror handler did not execute.
         expect(win.imgOnerrorExecuted).to.equal(undefined)
+      })
+    })
+
+    cy.log('11-2. Channel mention pattern inside inline code must not become null when editing a message (issue #3113)')
+
+    const inlineCodeContent = 'See you in #:chatID:contractID'
+    const msgWithInlineCode = `\`${inlineCodeContent}\``
+    sendMarkdownMessage(user1, msgWithInlineCode)
+    checkLastSentMessage(() => {
+      // text inside inline code isn't transformed
+      cy.get('code').should('have.text', inlineCodeContent)
+    })
+
+    cy.getByDT('conversationWrapper').find(lastSendMessageContainerSelector).within(() => {
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        cy.get('.c-actions button[aria-label="Edit"]').click()
+      })
+      cy.getByDT('messageInputWrapper').within(() => {
+        // Then mention pattern inside the inline code markdown must stay as is in the textarea when edit mode is enabled.
+        // (There was a bug where the part after '#' becomes null and this test item verifies the bugfix for that.)
+        cy.get('textarea').should('have.value', msgWithInlineCode)
+        cy.getByDT('cancelEditing').click()
       })
     })
   })
