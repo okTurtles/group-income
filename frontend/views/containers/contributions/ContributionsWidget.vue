@@ -68,7 +68,6 @@ export default ({
     ...mapGetters([
       'groupSettings',
       'currentGroupState',
-      'groupProfiles',
       'currentIdentityState',
       'ourGroupProfile',
       'ourContributionSummary',
