@@ -40,7 +40,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        player: null
+        player: null,
+        isMeasuringDuration: false
       }
     }
   },
@@ -48,7 +49,7 @@ export default {
     classObjs () {
       return {
         'hide-default-play-button': this.hideDefaultPlayButton,
-        'is-unplayable': this.disabled,
+        'is-unplayable': this.disabled || this.ephemeral.isMeasuringDuration,
         'is-minimal': this.mode === 'minimal'
       }
     }
@@ -67,7 +68,10 @@ export default {
 
       if (!isFirefox || audioEl.duration >= MIN_BELIEVABLE_DURATION) { return }
 
+      this.$emit('measuring-duration')
+      this.setIsMeasuringDuration(true)
       const measuredDuration = await measureAudioDuration(audioEl.currentSrc)
+      this.setIsMeasuringDuration(false)
       // The player is gone if the component was destroyed while the file was being decoded.
       if (!measuredDuration || !this.ephemeral.player) { return }
 
@@ -75,6 +79,10 @@ export default {
       // and it refreshes what it displays on 'durationchange'.
       this.ephemeral.player.config.duration = measuredDuration
       audioEl.dispatchEvent(new Event('durationchange'))
+    },
+    setIsMeasuringDuration (isOn = false) {
+      this.ephemeral.isMeasuringDuration = isOn
+      this.$emit('measuring-duration-changed', isOn)
     },
     initPlayer () {
       const opts = {

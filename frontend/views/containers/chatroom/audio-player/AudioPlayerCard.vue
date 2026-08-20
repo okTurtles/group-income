@@ -24,6 +24,7 @@
     :mode='forSendArea ? "minimal" : "default"'
     @playing='onPlaying'
     @pause='onPaused'
+    @measuring-duration-changed='onMeasuringDurationChanged'
   )
 
   i18n.error.c-error(
@@ -106,6 +107,9 @@ export default {
         console.error('AudioPlayerCard.vue caught:', err)
         this.ephemeral.loadingStatus = 'error'
       }
+    },
+    onMeasuringDurationChanged (isMeasuringDuration) {
+      this.ephemeral.loadingStatus = isMeasuringDuration ? 'loading' : 'idle'
     }
   }
 }
