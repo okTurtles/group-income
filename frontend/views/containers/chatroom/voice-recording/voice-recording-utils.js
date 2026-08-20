@@ -13,6 +13,24 @@ export function browserSupportsVoiceRecording (): boolean {
   )
 }
 
+export async function measureAudioDuration (src: string): Promise<number | null> {
+  // Computing the duration of the audio file by decoding the file using AudioContext.decodeAudioData() API.
+  if (!src) { return null }
+
+  const audioContext = new AudioContext()
+
+  try {
+    const arrayBuffer = await fetch(src).then(res => res.arrayBuffer())
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+    return audioBuffer.duration
+  } catch (err) {
+    console.error('AudioPlayer: failed to measure the audio duration', err)
+    return null
+  } finally {
+    audioContext.close()
+  }
+}
+
 export async function canUseVoiceRecording (): Promise<boolean> {
   // Firstly, check if the browser is capable of recording voice messages.
   if (!browserSupportsVoiceRecording()) return false
