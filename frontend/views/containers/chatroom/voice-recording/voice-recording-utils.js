@@ -62,16 +62,22 @@ const AUDIO_MIME_TYPE_TO_EXTENSION = new Map([
   ['audio/3gpp', '3gp']
 ])
 
-export function getExtensionFromAudioMimeType (mimeType: string): string {
-  // Drop the parameters that can follow the mime type (eg. 'audio/webm;codecs=opus' -> 'audio/webm')
-  const cleanedMimeType = (mimeType || '').split(';')[0].trim().toLowerCase()
+export function getMimeTypeEssence (mimeType: string): string {
+  if (!mimeType) return ''
+  // Drop the parameters that can follow the mime type, such as'audio/webm;codecs=opus' -> 'audio/webm'.
+  // Mimetype with this parameter apparently causes a safari-specific issue where it doesn't recognize and play the audio.
+  return mimeType.split(';')[0].trim().toLowerCase()
+}
 
-  const knownExtension = AUDIO_MIME_TYPE_TO_EXTENSION.get(cleanedMimeType)
+export function getExtensionFromAudioMimeType (mimeType: string): string {
+  const mimeTypeEssence = getMimeTypeEssence(mimeType)
+
+  const knownExtension = AUDIO_MIME_TYPE_TO_EXTENSION.get(mimeTypeEssence)
   if (knownExtension) { return knownExtension }
 
   // Fall back to the mime subtype for any container not listed above (eg. 'audio/opus' -> 'opus'),
   // ignoring subtypes that aren't a plain word and so wouldn't make a sane extension.
-  const subtype = cleanedMimeType.split('/')[1] || ''
+  const subtype = mimeTypeEssence.split('/')[1] || ''
   return /^[a-z0-9]+$/.test(subtype) ? subtype : ''
 }
 

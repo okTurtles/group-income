@@ -1,12 +1,15 @@
 <template lang="pug">
 .c-audio-player.plyr_override.for-audio(:class='classObjs')
   audio(ref='audioEl' controls playsinline @loadedmetadata='onAudioSrcLoaded')
-    source(:src='src' :type='mimeType')
+    source(:src='src' :type='mimeTypeEssence')
 </template>
 
 <script>
 import Plyr from 'plyr'
-import { measureAudioDuration } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
+import {
+  measureAudioDuration,
+  getMimeTypeEssence
+} from '@containers/chatroom/voice-recording/voice-recording-utils.js'
 
 export default {
   name: 'AudioPlayer',
@@ -52,6 +55,9 @@ export default {
         'is-unplayable': this.disabled || this.ephemeral.isMeasuringDuration,
         'is-minimal': this.mode === 'minimal'
       }
+    },
+    mimeTypeEssence () {
+      return this.mimeType ? getMimeTypeEssence(this.mimeType) : ''
     }
   },
   methods: {
