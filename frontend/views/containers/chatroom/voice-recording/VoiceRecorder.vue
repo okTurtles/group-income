@@ -45,7 +45,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
-import { getAmplitudeFromTimeDataSamples } from './voice-recording-utils.js'
+import { getAmplitudeFromTimeDataSamples, getMimeTypeEssence } from './voice-recording-utils.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
@@ -142,8 +142,9 @@ export default {
         // When stopped, turn the chunks into a playable audio file
         this.ephemeral.recorderInstance.onstop = () => {
           if (this.ephemeral.audioChunks.length > 0) {
+            const mimeTypeByRecorderInstance = getMimeTypeEssence(this.ephemeral.recorderInstance?.mimeType)
             const audioBlob = new Blob(this.ephemeral.audioChunks, {
-              type: this.ephemeral.recorderInstance?.mimeType || VOICE_RECORDING_MIME_TYPE
+              type: mimeTypeByRecorderInstance || VOICE_RECORDING_MIME_TYPE
             })
             const audioUrl = URL.createObjectURL(audioBlob)
 
