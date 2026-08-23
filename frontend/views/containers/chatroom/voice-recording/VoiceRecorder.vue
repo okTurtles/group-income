@@ -50,6 +50,7 @@ import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
 const MAX_SOUND_PATTERN_COUNT = 35
+const isFirefox = /\bFirefox\/\d/.test(navigator.userAgent)
 
 export default {
   name: 'VoiceRecorder',
@@ -127,8 +128,11 @@ export default {
         // Passing an explicit mimeType is required for the recorded file to correctly detect
         // audio duration in some Chromium-based browsers. (e.g. Chrome, Brave, both desktop/mobile)
         // Feature-detecting via MediaRecorder.isTypeSupported() and applying this option conditionally safely achieves it.
-        const recorderOptions = MediaRecorder.isTypeSupported(VOICE_RECORDING_MIME_TYPE)
-          ? { mimeType: VOICE_RECORDING_MIME_TYPE }
+        const mimeTypeForRecorder = isFirefox
+          ? VOICE_RECORDING_MIME_TYPE.FIREFOX
+          : VOICE_RECORDING_MIME_TYPE.DEFAULT
+        const recorderOptions = MediaRecorder.isTypeSupported(mimeTypeForRecorder)
+          ? { mimeType: mimeTypeForRecorder }
           : {}
         this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream, recorderOptions)
 
@@ -144,7 +148,7 @@ export default {
           if (this.ephemeral.audioChunks.length > 0) {
             const mimeTypeByRecorderInstance = getMimeTypeEssence(this.ephemeral.recorderInstance?.mimeType)
             const audioBlob = new Blob(this.ephemeral.audioChunks, {
-              type: mimeTypeByRecorderInstance || VOICE_RECORDING_MIME_TYPE
+              type: mimeTypeByRecorderInstance || mimeTypeForRecorder
             })
             const audioUrl = URL.createObjectURL(audioBlob)
 

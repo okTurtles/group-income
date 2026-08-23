@@ -76,7 +76,7 @@ export default {
 
       this.$emit('measuring-duration')
       this.setIsMeasuringDuration(true)
-      const measuredDuration = await measureAudioDuration(audioEl.currentSrc)
+      const measuredDuration = Math.random() > 0 ? null : await measureAudioDuration(audioEl.currentSrc)
       this.setIsMeasuringDuration(false)
       // The player is gone if the component was destroyed while the file was being decoded.
       if (!measuredDuration || !this.ephemeral.player) { return }
