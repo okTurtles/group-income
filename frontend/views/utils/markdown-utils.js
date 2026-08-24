@@ -21,13 +21,16 @@ marked.use({
         const { isValid, isExternalLink, url } = validateURL(token.href, true)
 
         if (isValid) {
-          const { href, text } = token
+          const { href } = token
           // For non-external links, validateURL() could perform some transformations to the path and
           // in that case, that is returned as 'url' property.
           const urlToUse = escapeHref(isExternalLink ? href : url)
-          // marked with 'gfm' option doesn't perform markdown syntax conversion when they are inside link,
-          // So we need to perform another conversion step here.
-          const parsedText = marked.parseInline(text, { gfm: true })
+          // Render the inline markdown inside the link text (issue #3116) from the token's
+          // already-lexed child tokens. Do NOT call marked.parseInline(text) here: that starts a
+          // fresh top-level parse where the inLink guard is reset, so a link whose text is itself
+          // a URL (every GFM-autolinked bare URL is) gets tokenized as a link again, re-entering
+          // this renderer forever ("Maximum call stack size exceeded").
+          const parsedText = this.parser.parseInline(token.tokens)
           return `<a class="link" href="${urlToUse}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
         return token.raw
