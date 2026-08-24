@@ -24,7 +24,7 @@
     :mode='forSendArea ? "minimal" : "default"'
     @playing='onPlaying'
     @pause='onPaused'
-    @measuring-duration-changed='onMeasuringDurationChanged'
+    @audio-metadata-loaded='onAudioMetadataLoaded'
   )
 
   i18n.error.c-error(
@@ -89,27 +89,30 @@ export default {
       this.ephemeral.isPlaying = false
     },
     async loadAudio () {
-      if (this.ephemeral.loadingStatus === 'loading') { return }
+      if (this.checkLoadingStatus('loading')) { return }
 
       try {
-        this.ephemeral.loadingStatus = 'loading'
-
+        this.setLoadingStatus('loading')
         await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.AUDIO)
-        this.ephemeral.loadingStatus = 'idle'
-
-        this.$nextTick(() => {
-          // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
-          if (this.$refs.audioPlayer) {
-            this.togglePlay()
-          }
-        })
       } catch (err) {
         console.error('AudioPlayerCard.vue caught:', err)
-        this.ephemeral.loadingStatus = 'error'
+        this.setLoadingStatus('error')
       }
     },
-    onMeasuringDurationChanged (isMeasuringDuration) {
-      this.ephemeral.loadingStatus = isMeasuringDuration ? 'loading' : 'idle'
+    checkLoadingStatus (status) {
+      return this.ephemeral.loadingStatus === status
+    },
+    setLoadingStatus (status) {
+      this.ephemeral.loadingStatus = status
+    },
+    onAudioMetadataLoaded (metadata) {
+      this.setLoadingStatus('idle')
+      this.$nextTick(() => {
+        // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
+        if (this.$refs.audioPlayer) {
+          this.togglePlay()
+        }
+      })
     }
   }
 }

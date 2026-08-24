@@ -72,23 +72,35 @@ export default {
       const isFirefox = /\bFirefox\/\d/.test(navigator.userAgent)
       const audioEl = e.target
 
-      if (!isFirefox || audioEl.duration >= MIN_BELIEVABLE_DURATION) { return }
+      if (!isFirefox || audioEl.duration >= MIN_BELIEVABLE_DURATION) {
+        this.$emit('audio-metadata-loaded')
+        return
+      }
 
-      this.$emit('measuring-duration')
-      this.setIsMeasuringDuration(true)
-      const measuredDuration = Math.random() > 0 ? null : await measureAudioDuration(audioEl.currentSrc)
-      this.setIsMeasuringDuration(false)
-      // The player is gone if the component was destroyed while the file was being decoded.
-      if (!measuredDuration || !this.ephemeral.player) { return }
+      this.ephemeral.isMeasuringDuration = true
+      const durationMesurementFinished = () => {
+        this.ephemeral.isMeasuringDuration = false
+        this.$emit('audio-metadata-loaded')
+      }
+      const measuredDuration = await measureAudioDuration(audioEl.currentSrc)
+      this.ephemeral.isMeasuringDuration = false
+      if (!this.ephemeral.player) {
+        // The player is gone if the component was destroyed while the file was being decoded.
+        return
+      } else if (!measuredDuration) {
+        // If manual duration measurement somehow fails, just silently falls back to how the browser currently behaves.
+        durationMesurementFinished()
+        return
+      }
 
       // Plyr reads config.duration on every access and prefers it over the element's own value,
       // and it refreshes what it displays on 'durationchange'.
       this.ephemeral.player.config.duration = measuredDuration
       audioEl.dispatchEvent(new Event('durationchange'))
+      durationMesurementFinished()
     },
     setIsMeasuringDuration (isOn = false) {
       this.ephemeral.isMeasuringDuration = isOn
-      this.$emit('measuring-duration-changed', isOn)
     },
     initPlayer () {
       const opts = {

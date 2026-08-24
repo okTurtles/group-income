@@ -15,7 +15,7 @@ export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value 
 export const EMOJI_REGEX: any = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
 export const VOICE_RECORDING_MIME_TYPE = {
   DEFAULT: 'audio/mp4',
-  FIREFOX:'audio/ogg'
+  FIREFOX: 'audio/ogg'
 }
 
 export const TextObjectType = {
