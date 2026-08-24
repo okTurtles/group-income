@@ -156,10 +156,10 @@ describe('Check basic markdown features - one feature per message', () => {
       })
     })
 
-    cy.log('3-4. A bare URL must be auto-linked without crashing the renderer')
+    cy.log('3-4. A bare URL must be auto-linked without crashing the renderer (issue #3155)')
 
-    // A GFM-autolinked bare URL produces a link token whose text is the URL itself. Re-parsing
-    // that text in the link renderer used to recurse infinitely ('Maximum call stack size exceeded').
+    // A GFM-autolinked bare URL previously caused a 'Maximum call stack size exceeded' runtime error.
+    // Below is to verify this issue doesn't reappear.
     const bareUrl = 'https://github.com/okTurtles/group-income/wiki/Some-page'
     sendMarkdownMessage(user1, `check this out: ${bareUrl}`)
     checkLastSentMessage(() => {

@@ -25,11 +25,11 @@ marked.use({
           // For non-external links, validateURL() could perform some transformations to the path and
           // in that case, that is returned as 'url' property.
           const urlToUse = escapeHref(isExternalLink ? href : url)
-          // Render the inline markdown inside the link text (issue #3116) from the token's
-          // already-lexed child tokens. Do NOT call marked.parseInline(text) here: that starts a
-          // fresh top-level parse where the inLink guard is reset, so a link whose text is itself
-          // a URL (every GFM-autolinked bare URL is) gets tokenized as a link again, re-entering
-          // this renderer forever ("Maximum call stack size exceeded").
+          // Do NOT call marked.parseInline(text) here. That leads to a 'Maximum call stack size exceeded' runtime error. (issue #3155)
+          // Here is Fable's finding regarding this bug:
+          // Calling marked.parseInline(text) here  starts a fresh top-level parse where the inLink guard is reset,
+          // so a link whose text is itself a URL (every GFM-autolinked bare URL is) gets tokenized as a link again,
+          // re-entering this renderer forever and creates an infinite loop.
           const parsedText = this.parser.parseInline(token.tokens)
           return `<a class="link" href="${urlToUse}" ${isExternalLink ? 'target="_blank" rel="noopener noreferrer"' : ''}>${parsedText}</a>`
         }
