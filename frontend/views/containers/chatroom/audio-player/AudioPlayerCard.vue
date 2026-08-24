@@ -106,13 +106,15 @@ export default {
       this.ephemeral.loadingStatus = status
     },
     onAudioMetadataLoaded (metadata) {
-      this.setLoadingStatus('idle')
-      this.$nextTick(() => {
-        // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
-        if (this.$refs.audioPlayer) {
-          this.togglePlay()
-        }
-      })
+      if (this.checkLoadingStatus('loading')) {
+        this.setLoadingStatus('idle')
+        this.$nextTick(() => {
+          // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
+          if (!this.forSendArea &&this.$refs.audioPlayer) {
+            this.togglePlay()
+          }
+        })
+      }
     }
   }
 }
