@@ -20,11 +20,12 @@
     :hideDefaultPlayButton='true'
     :disabled='!src'
     :src='src'
-    :mimeType='mimeType'
+    :mimeType='mimeTypeEssence'
     :mode='forSendArea ? "minimal" : "default"'
     @playing='onPlaying'
     @pause='onPaused'
     @audio-metadata-loaded='onAudioMetadataLoaded'
+    @audio-load-failed='onAudioLoadFailed'
   )
 
   i18n.error.c-error(
@@ -36,7 +37,7 @@
 <script>
 import AudioPlayer from '@components/AudioPlayer.vue'
 import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
-
+import { getMimeTypeEssence } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
 export default {
   name: 'AudioPlayerCard',
   components: {
@@ -70,6 +71,9 @@ export default {
   computed: {
     isLoading () {
       return this.ephemeral.loadingStatus === 'loading'
+    },
+    mimeTypeEssence () {
+      return this.mimeType ? getMimeTypeEssence(this.mimeType) : ''
     }
   },
   methods: {
@@ -115,6 +119,10 @@ export default {
           }
         })
       }
+    },
+    onAudioLoadFailed (error) {
+      console.error('AudioPlayerCard.vue caught error:', error)
+      this.setLoadingStatus('error')
     }
   }
 }

@@ -1,15 +1,12 @@
 <template lang="pug">
 .c-audio-player.plyr_override.for-audio(:class='classObjs')
-  audio(ref='audioEl' controls playsinline @loadedmetadata='onAudioSrcLoaded')
-    source(:src='src' :type='mimeTypeEssence')
+  audio(ref='audioEl' controls playsinline @loadedmetadata='onAudioSrcLoaded' @error='onAudioError')
+    source(:src='src' :type='mimeType')
 </template>
 
 <script>
 import Plyr from 'plyr'
-import {
-  measureAudioDuration,
-  getMimeTypeEssence
-} from '@containers/chatroom/voice-recording/voice-recording-utils.js'
+import { measureAudioDuration } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
 
 export default {
   name: 'AudioPlayer',
@@ -55,9 +52,6 @@ export default {
         'is-unplayable': this.disabled || this.ephemeral.isMeasuringDuration,
         'is-minimal': this.mode === 'minimal'
       }
-    },
-    mimeTypeEssence () {
-      return this.mimeType ? getMimeTypeEssence(this.mimeType) : ''
     }
   },
   methods: {
@@ -100,6 +94,10 @@ export default {
       this.ephemeral.player.config.duration = measuredDuration
       audioEl.dispatchEvent(new Event('durationchange'))
       durationMesurementFinished()
+    },
+    onAudioError (e) {
+      console.error('AudioPlayer.vue caught error:', e)
+      this.$emit('audio-load-failed', e)
     },
     initPlayer () {
       const opts = {
