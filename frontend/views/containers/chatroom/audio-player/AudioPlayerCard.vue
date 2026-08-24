@@ -110,7 +110,7 @@ export default {
         this.setLoadingStatus('idle')
         this.$nextTick(() => {
           // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
-          if (!this.forSendArea &&this.$refs.audioPlayer) {
+          if (!this.forSendArea && this.$refs.audioPlayer) {
             this.togglePlay()
           }
         })

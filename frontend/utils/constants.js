@@ -15,6 +15,9 @@ export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value 
 export const EMOJI_REGEX: any = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
 export const VOICE_RECORDING_MIME_TYPE = {
   DEFAULT: 'audio/mp4',
+  // Firefox doesn't support 'recording' audio in mp4 format and defaults to audio/ogg natively. (MediaRecorder.isTypeSupported('audio/mp4') returns false)
+  // Why not use audio/ogg for recording mime type in all other browsers then?:
+  // - In Chromium-based browsers, audio/ogg audio record output leads to a bug where the duration detection doesn't work properly.
   FIREFOX: 'audio/ogg'
 }
 

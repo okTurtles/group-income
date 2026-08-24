@@ -65,7 +65,8 @@ const AUDIO_MIME_TYPE_TO_EXTENSION = new Map([
 export function getMimeTypeEssence (mimeType: string): string {
   if (!mimeType) return ''
   // Drop the parameters that can follow the mime type, such as'audio/webm;codecs=opus' -> 'audio/webm'.
-  // Mimetype with this parameter apparently causes a safari-specific issue where it doesn't recognize and play the audio.
+  // In some Chromium-based browsers, the mime type string includes a 'codecs' parameter for the audio codec used and
+  // This leads to a safari-specific issue where it doesn't recognize and play the audio.
   return mimeType.split(';')[0].trim().toLowerCase()
 }
 

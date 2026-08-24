@@ -63,11 +63,12 @@ export default {
   methods: {
     async onAudioSrcLoaded (e) {
       // Resolving a Firefox specific issue #3150 which is:
-      // Firefox reports a duration of a few milliseconds for files it can't measure and it leads to
-      // a wrong duration being displayed in the player UI.
+      // Firefox reports an wrong durations(Very small values such as 0.00067ms) for audio files it can't measure and
+      // it leads to a UI bug in the audio player.
       //
-      // Anything under this value is treated as an wrong duration detected by browser rather than a genuinely tiny recording
-      // And in that case we use AudioContext.decodeAudioData() API to compute the duration of the audio file.
+      // As a workaround, we choose a reasonable small threshold value and
+      // treats anything under this value as an wrong browser detection.
+      // Then we use AudioContext.decodeAudioData() API to compute the duration of the audio file.
       const MIN_BELIEVABLE_DURATION = 0.1
       const isFirefox = /\bFirefox\/\d/.test(navigator.userAgent)
       const audioEl = e.target
@@ -85,16 +86,17 @@ export default {
       const measuredDuration = await measureAudioDuration(audioEl.currentSrc)
       this.ephemeral.isMeasuringDuration = false
       if (!this.ephemeral.player) {
-        // The player is gone if the component was destroyed while the file was being decoded.
+        // measureAudioDuration() above is an async operation and the component can be destroyed while
+        // it's still in progress. If that's the case, just return.
         return
       } else if (!measuredDuration) {
-        // If manual duration measurement somehow fails, just silently falls back to how the browser currently behaves.
+        // If manual duration measurement somehow fails, just silently falls back to what the browser originally said.
         durationMesurementFinished()
         return
       }
 
       // Plyr reads config.duration on every access and prefers it over the element's own value,
-      // and it refreshes what it displays on 'durationchange'.
+      // and it refreshes what it displays on 'durationchange' event.
       this.ephemeral.player.config.duration = measuredDuration
       audioEl.dispatchEvent(new Event('durationchange'))
       durationMesurementFinished()
