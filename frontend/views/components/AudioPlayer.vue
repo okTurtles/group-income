@@ -99,9 +99,6 @@ export default {
       audioEl.dispatchEvent(new Event('durationchange'))
       durationMesurementFinished()
     },
-    setIsMeasuringDuration (isOn = false) {
-      this.ephemeral.isMeasuringDuration = isOn
-    },
     initPlayer () {
       const opts = {
         debug: false,
