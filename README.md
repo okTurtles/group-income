@@ -129,39 +129,68 @@ Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com
 
 ## Making a release
 
-### Pin a new version of contracts
+The app and its contracts share one version number. The `version` field in
+`package.json` is the source of truth. `grunt pin` copies it to `appVersion`
+in `chelonia.json` and pins the selected contracts to that version. A version
+is never passed on the command line.
 
-Contract versions are tied to the app `version` in `package.json`. `grunt pin`
-reads that value, writes it to `appVersion` in `chelonia.json`, then pins the
-selected contracts to that version. Because the version is derived from
-`package.json`, it is not passed on the command line.
+### 1. Bump the version
+
+```bash
+$ npm version --no-git-tag-version 2.9.0
+```
+
+This updates `package.json` and `package-lock.json` without committing, so the
+version bump can be committed together with the pinned contracts in step 2.
+
+### 2. Pin the contracts
+
+Pinning freezes a built copy of each contract into
+`contracts/<contract>/<version>/`. Old versions are kept forever so that
+clients running older versions keep working.
+
+First check which contracts changed since the last release:
+
+```bash
+$ git diff --name-only v2.8.0 master -- frontend/model/contracts
+```
+
+Files under `frontend/model/contracts/shared/` are bundled into every contract
+that imports them. A change there means every importing contract changed, even
+if the contract's own file did not.
 
 ```bash
 # Print usage (also shows current vs. target appVersion):
 $ grunt pin
 
-# Bump appVersion in chelonia.json and pin every contract to it:
+# Copy the version to chelonia.json and pin every contract:
 $ NODE_ENV=production grunt pin --all
 
-# Bump appVersion only, without pinning any contract
-# (useful when releasing an app update with no contract changes):
+# Copy the version only (app update with no contract changes):
 $ NODE_ENV=production grunt pin --none
 
-# Bump appVersion and pin only the named contract:
+# Copy the version and pin only the named contract:
 $ NODE_ENV=production grunt pin:chatroom
 ```
 
 Add `--overwrite` to replace an already-pinned version on disk.
 
-### Build the app for distribution
+Commit the pinned snapshot together with the files from step 1:
 
 ```bash
-# Update the version in package.json
-$ npm install # update package-lock.json
-$ git add . && git commit -m "<commit message>"
-$ git tag -u '<email>' v1.1.0  # create the tag before calling grunt deploy
+$ git add package.json package-lock.json chelonia.json contracts/
+$ git commit -m "v2.9.0"
+```
+
+### 3. Tag and build
+
+```bash
+$ git tag -u '<email>' v2.9.0  # create the tag before calling grunt deploy
 $ ./scripts/dist.sh
 ```
+
+`dist.sh` reads the version from `package.json`, builds the app twice (debug
+and production), and writes `gi-v2.9.0.tgz` archives.
 
 ## Donating
 

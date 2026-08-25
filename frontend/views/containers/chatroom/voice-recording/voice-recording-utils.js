@@ -13,6 +13,24 @@ export function browserSupportsVoiceRecording (): boolean {
   )
 }
 
+export async function measureAudioDuration (src: string): Promise<number | null> {
+  // Computing the duration of the audio file by decoding the file using AudioContext.decodeAudioData() API.
+  if (!src) { return null }
+
+  const audioContext = new AudioContext()
+
+  try {
+    const arrayBuffer = await fetch(src).then(res => res.arrayBuffer())
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+    return audioBuffer.duration
+  } catch (err) {
+    console.error('voice-recording-utils: failed to measure the audio duration', err)
+    return null
+  } finally {
+    audioContext.close()
+  }
+}
+
 export async function canUseVoiceRecording (): Promise<boolean> {
   // Firstly, check if the browser is capable of recording voice messages.
   if (!browserSupportsVoiceRecording()) return false
@@ -44,16 +62,23 @@ const AUDIO_MIME_TYPE_TO_EXTENSION = new Map([
   ['audio/3gpp', '3gp']
 ])
 
-export function getExtensionFromAudioMimeType (mimeType: string): string {
-  // Drop the parameters that can follow the mime type (eg. 'audio/webm;codecs=opus' -> 'audio/webm')
-  const cleanedMimeType = (mimeType || '').split(';')[0].trim().toLowerCase()
+export function getMimeTypeEssence (mimeType: string): string {
+  if (!mimeType) return ''
+  // Drop the parameters that can follow the mime type, such as 'audio/webm;codecs=opus' -> 'audio/webm'.
+  // In some Chromium-based browsers, the mime type string includes a 'codecs' parameter for the audio codec used and
+  // this leads to a safari-specific issue where it doesn't recognize and play the audio.
+  return mimeType.split(';')[0].trim().toLowerCase()
+}
 
-  const knownExtension = AUDIO_MIME_TYPE_TO_EXTENSION.get(cleanedMimeType)
+export function getExtensionFromAudioMimeType (mimeType: string): string {
+  const mimeTypeEssence = getMimeTypeEssence(mimeType)
+
+  const knownExtension = AUDIO_MIME_TYPE_TO_EXTENSION.get(mimeTypeEssence)
   if (knownExtension) { return knownExtension }
 
   // Fall back to the mime subtype for any container not listed above (eg. 'audio/opus' -> 'opus'),
   // ignoring subtypes that aren't a plain word and so wouldn't make a sane extension.
-  const subtype = cleanedMimeType.split('/')[1] || ''
+  const subtype = mimeTypeEssence.split('/')[1] || ''
   return /^[a-z0-9]+$/.test(subtype) ? subtype : ''
 }
 
