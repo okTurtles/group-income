@@ -12,7 +12,7 @@ export const getFileExtension = (
   return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
 }
 
-export const isPlayableAudioMime = (mimeType: string): boolean => {
+const isPlayableAudioMime = (mimeType: string): boolean => {
   const audio = document.createElement('audio')
   // some audio mime types does not necessarily starts with 'audio/' (eg. 'application/ogg').
   // In this case, this function can be used to check if the mime type is playable by the browser.

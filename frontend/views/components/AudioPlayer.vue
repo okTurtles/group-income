@@ -1,7 +1,7 @@
 <template lang="pug">
 .c-audio-player.plyr_override.for-audio(:class='classObjs')
   audio(ref='audioEl' controls playsinline @loadedmetadata='onAudioSrcLoaded' @error='onAudioError')
-    source(:src='src' :type='mimeType')
+    source(:src='src' :type='mimeType' @error='onAudioError')
 </template>
 
 <script>
@@ -58,10 +58,10 @@ export default {
   methods: {
     async onAudioSrcLoaded (e) {
       // Resolving a Firefox specific issue #3150 which is:
-      // Firefox reports an wrong duration (very small values such as 0.00067s) for audio files it can't measure and
+      // Firefox reports a wrong duration (very small values such as 0.00067s) for audio files it can't measure and
       // it leads to a UI bug in the audio player.
       //
-      // As a workaround, we choose a reasonable small threshold value and
+      // As a workaround, we choose a reasonably small threshold value and
       // treat anything below this value as an incorrect browser-reported duration.
       // Then we use AudioContext.decodeAudioData() API to compute the duration of the audio file.
       const MIN_BELIEVABLE_DURATION = 0.1
@@ -90,7 +90,10 @@ export default {
       this.$emit('audio-metadata-loaded')
     },
     onAudioError (e) {
-      console.error('AudioPlayer.vue caught error:', e)
+      // AudioPlayer.vue can still be used in the UI when src prop isn't passed yet.
+      // If the error is caused by this missing src, just ignore it.
+      if (e.target?.tagName === 'SOURCE' && !this.src) { return }
+      console.error('AudioPlayer.vue caught error:', e.target?.error || e)
       this.$emit('audio-load-failed', e)
     },
     initPlayer () {
