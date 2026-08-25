@@ -38,6 +38,7 @@
 import AudioPlayer from '@components/AudioPlayer.vue'
 import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { getMimeTypeEssence } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
+
 export default {
   name: 'AudioPlayerCard',
   components: {
@@ -113,8 +114,8 @@ export default {
       if (this.checkLoadingStatus('loading')) {
         this.setLoadingStatus('idle')
         this.$nextTick(() => {
-          // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
-          if (!this.forSendArea && this.$refs.audioPlayer) {
+          // The component might be destroyed while waiting, so check the ref before playing.
+          if (this.$refs.audioPlayer) {
             this.togglePlay()
           }
         })
