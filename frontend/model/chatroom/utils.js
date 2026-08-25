@@ -5,6 +5,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@utils/markdown-parsers.js'
 
 export function makeChannelMention (str: string, withId: boolean = false): string {
@@ -51,7 +52,7 @@ export function swapMentionIDForDisplayname (
       const channelID = getIdFromChannelMention(t)
       const channelName = getChatroomNameById(channelID)
       const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
-      return channelName ? prefix + channelName : t
+      return channelName ? prefix + channelName : L('unknown')
     }
     return t
   }
