@@ -7,6 +7,7 @@
 <script>
 import Plyr from 'plyr'
 import { measureAudioDuration } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
+import { isFirefox } from '@view-utils/filters.js'
 
 export default {
   name: 'AudioPlayer',
@@ -57,43 +58,36 @@ export default {
   methods: {
     async onAudioSrcLoaded (e) {
       // Resolving a Firefox specific issue #3150 which is:
-      // Firefox reports an wrong durations(Very small values such as 0.00067ms) for audio files it can't measure and
+      // Firefox reports an wrong duration (very small values such as 0.00067s) for audio files it can't measure and
       // it leads to a UI bug in the audio player.
       //
       // As a workaround, we choose a reasonable small threshold value and
-      // treats anything under this value as an wrong browser detection.
+      // treat anything below this value as an incorrect browser-reported duration.
       // Then we use AudioContext.decodeAudioData() API to compute the duration of the audio file.
       const MIN_BELIEVABLE_DURATION = 0.1
-      const isFirefox = /\bFirefox\/\d/.test(navigator.userAgent)
       const audioEl = e.target
 
-      if (!isFirefox || audioEl.duration >= MIN_BELIEVABLE_DURATION) {
+      if (!isFirefox() || audioEl.duration >= MIN_BELIEVABLE_DURATION) {
         this.$emit('audio-metadata-loaded')
         return
       }
 
       this.ephemeral.isMeasuringDuration = true
-      const durationMesurementFinished = () => {
-        this.ephemeral.isMeasuringDuration = false
-        this.$emit('audio-metadata-loaded')
-      }
       const measuredDuration = await measureAudioDuration(audioEl.currentSrc)
       this.ephemeral.isMeasuringDuration = false
-      if (!this.ephemeral.player) {
-        // measureAudioDuration() above is an async operation and the component can be destroyed while
-        // it's still in progress. If that's the case, just return.
-        return
-      } else if (!measuredDuration) {
-        // If manual duration measurement somehow fails, just silently falls back to what the browser originally said.
-        durationMesurementFinished()
-        return
-      }
+
+      // measureAudioDuration() above is an async operation and the component can be destroyed while
+      // it's still in progress. If that's the case, just return.
+      if (!this.ephemeral.player) { return }
 
       // Plyr reads config.duration on every access and prefers it over the element's own value,
       // and it refreshes what it displays on 'durationchange' event.
-      this.ephemeral.player.config.duration = measuredDuration
-      audioEl.dispatchEvent(new Event('durationchange'))
-      durationMesurementFinished()
+      if (measuredDuration) {
+        this.ephemeral.player.config.duration = measuredDuration
+        audioEl.dispatchEvent(new Event('durationchange'))
+      }
+
+      this.$emit('audio-metadata-loaded')
     },
     onAudioError (e) {
       console.error('AudioPlayer.vue caught error:', e)
@@ -136,6 +130,7 @@ export default {
   beforeDestroy () {
     if (this.ephemeral.player) {
       this.ephemeral.player.destroy()
+      this.ephemeral.player = null
     }
   }
 }

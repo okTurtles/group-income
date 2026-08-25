@@ -109,7 +109,7 @@ export default {
     setLoadingStatus (status) {
       this.ephemeral.loadingStatus = status
     },
-    onAudioMetadataLoaded (metadata) {
+    onAudioMetadataLoaded () {
       if (this.checkLoadingStatus('loading')) {
         this.setLoadingStatus('idle')
         this.$nextTick(() => {

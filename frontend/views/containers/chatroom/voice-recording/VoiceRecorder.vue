@@ -44,13 +44,13 @@
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
+import { VOICE_RECORDING_MIME_TYPES } from '~/frontend/utils/constants.js'
 import { getAmplitudeFromTimeDataSamples, getMimeTypeEssence } from './voice-recording-utils.js'
+import { isFirefox } from '@view-utils/filters.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
 const MAX_SOUND_PATTERN_COUNT = 35
-const isFirefox = /\bFirefox\/\d/.test(navigator.userAgent)
 
 export default {
   name: 'VoiceRecorder',
@@ -128,9 +128,9 @@ export default {
         // Passing an explicit mimeType is required for the recorded file to correctly detect
         // audio duration in some Chromium-based browsers. (e.g. Chrome, Brave, both desktop/mobile)
         // Feature-detecting via MediaRecorder.isTypeSupported() and applying this option conditionally safely achieves it.
-        const mimeTypeForRecorder = isFirefox
-          ? VOICE_RECORDING_MIME_TYPE.FIREFOX
-          : VOICE_RECORDING_MIME_TYPE.DEFAULT
+        const mimeTypeForRecorder = isFirefox()
+          ? VOICE_RECORDING_MIME_TYPES.FIREFOX
+          : VOICE_RECORDING_MIME_TYPES.DEFAULT
         const recorderOptions = MediaRecorder.isTypeSupported(mimeTypeForRecorder)
           ? { mimeType: mimeTypeForRecorder }
           : {}
