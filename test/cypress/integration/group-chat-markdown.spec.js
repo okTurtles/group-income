@@ -155,6 +155,16 @@ describe('Check basic markdown features - one feature per message', () => {
         cy.get('code').should('have.text', 'link with code')
       })
     })
+
+    cy.log('3-4. A bare URL must be auto-linked without crashing the renderer (issue #3155)')
+
+    // A GFM-autolinked bare URL previously caused a 'Maximum call stack size exceeded' runtime error.
+    // Below is to verify this issue doesn't reappear.
+    const bareUrl = 'https://github.com/okTurtles/group-income/wiki/Some-page'
+    sendMarkdownMessage(user1, `check this out: ${bareUrl}`)
+    checkLastSentMessage(() => {
+      cy.get('a').should('have.text', bareUrl).and('have.attr', 'href', bareUrl)
+    })
   })
 
   it('4. Verify fenced code block markdown element', () => {

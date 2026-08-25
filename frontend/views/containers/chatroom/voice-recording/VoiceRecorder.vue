@@ -44,8 +44,9 @@
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { VOICE_RECORDING_MIME_TYPE } from '~/frontend/utils/constants.js'
-import { getAmplitudeFromTimeDataSamples } from './voice-recording-utils.js'
+import { VOICE_RECORDING_MIME_TYPES } from '~/frontend/utils/constants.js'
+import { getAmplitudeFromTimeDataSamples, getMimeTypeEssence } from './voice-recording-utils.js'
+import { isFirefox } from '@view-utils/filters.js'
 import { mixin as clickaway } from 'vue-clickaway'
 import Tooltip from '@components/Tooltip.vue'
 
@@ -127,8 +128,11 @@ export default {
         // Passing an explicit mimeType is required for the recorded file to correctly detect
         // audio duration in some Chromium-based browsers. (e.g. Chrome, Brave, both desktop/mobile)
         // Feature-detecting via MediaRecorder.isTypeSupported() and applying this option conditionally safely achieves it.
-        const recorderOptions = MediaRecorder.isTypeSupported(VOICE_RECORDING_MIME_TYPE)
-          ? { mimeType: VOICE_RECORDING_MIME_TYPE }
+        const mimeTypeForRecorder = isFirefox()
+          ? VOICE_RECORDING_MIME_TYPES.FIREFOX
+          : VOICE_RECORDING_MIME_TYPES.DEFAULT
+        const recorderOptions = MediaRecorder.isTypeSupported(mimeTypeForRecorder)
+          ? { mimeType: mimeTypeForRecorder }
           : {}
         this.ephemeral.recorderInstance = new MediaRecorder(this.ephemeral.audioStream, recorderOptions)
 
@@ -142,8 +146,9 @@ export default {
         // When stopped, turn the chunks into a playable audio file
         this.ephemeral.recorderInstance.onstop = () => {
           if (this.ephemeral.audioChunks.length > 0) {
+            const mimeTypeByRecorderInstance = getMimeTypeEssence(this.ephemeral.recorderInstance?.mimeType)
             const audioBlob = new Blob(this.ephemeral.audioChunks, {
-              type: this.ephemeral.recorderInstance?.mimeType || VOICE_RECORDING_MIME_TYPE
+              type: mimeTypeByRecorderInstance || mimeTypeForRecorder
             })
             const audioUrl = URL.createObjectURL(audioBlob)
 
