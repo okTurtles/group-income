@@ -1,6 +1,5 @@
 <template lang='pug'>
 menu-parent.c-permission-action-menu(
-  v-if='menuOptions.length'
   @select='onMenuSelect'
 )
   menu-trigger.is-icon-small.c-trigger-btn(:aria-label='L("Open permission action menu")')
@@ -9,7 +8,7 @@ menu-parent.c-permission-action-menu(
   menu-content.c-menu-content
     ul
       menu-item.c-menu-item(
-        v-for='option in menuOptions'
+        v-for='option in config.menuOptions'
         tag='button'
         :key='option.id'
         :item-id='option.id'
@@ -23,36 +22,33 @@ import { MenuParent, MenuContent, MenuTrigger, MenuItem } from '@components/menu
 
 export default {
   name: 'PermissionActionMenu',
-  inject: ['permissionsUtils'],
   components: {
     MenuParent,
     MenuContent,
     MenuTrigger,
     MenuItem
   },
-  computed: {
-    menuOptions () {
-      const list = [
-        {
-          id: 'edit',
-          label: L('Edit permissions'),
-          icon: 'edit',
-          enabled: () => this.permissionsUtils.canDelegatePermissions
-        },
-        {
-          id: 'remove',
-          label: L('Remove'),
-          icon: 'trash-alt',
-          enabled: () => this.permissionsUtils.canDelegatePermissions
-        }
-      ]
-
-      return list.filter(entry => entry.enabled())
+  data () {
+    return {
+      config: {
+        menuOptions: [
+          {
+            id: 'edit',
+            label: L('Edit permissions'),
+            icon: 'edit'
+          },
+          {
+            id: 'remove',
+            label: L('Remove role'),
+            icon: 'trash-alt'
+          }
+        ]
+      }
     }
   },
   methods: {
-    onMenuSelect (itemId) {
-      alert(L('Coming soon'))
+    onMenuSelect (actionName) {
+      this.$emit(actionName)
     }
   }
 }
