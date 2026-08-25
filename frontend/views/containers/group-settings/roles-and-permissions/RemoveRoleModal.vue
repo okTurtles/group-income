@@ -59,7 +59,7 @@ export default {
   },
   props: {
     data: {
-      // shape: { roleName: string, permissions: string[], memberID: string }
+      // { roleName: string, permissions: string[], memberID: string }
       type: Object
     }
   },
