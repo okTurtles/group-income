@@ -214,7 +214,7 @@ export default ({
         const filename = 'gi_logs.json.txt'
         const mimeType = 'text/plain'
         const payload: LogPayload = {
-        // Add instructions in case the user opens the file.
+          // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),

@@ -14,6 +14,7 @@ import '~/frontend/controller/actions/index.js'
 import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
+import { EMPTY_OBJECT_BYTES, journalEntryBytes } from '~/frontend/model/journal/exportSize.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
@@ -302,19 +303,24 @@ sbp('sbp/selectors/register', {
   'sw/journal/getAll': () => {
     const rootState = sbp('chelonia/rootState')
     const journals = Object.create(null)
-    const EMPTY_OBJECT_BYTES = 2 // for "{}"
     let exportBytes = EMPTY_OBJECT_BYTES
     let truncated = false
 
     for (const contractID of Object.keys(rootState.contracts || {})) {
       const journal = sbp('chelonia/journal/get', contractID)
       if (!journal) continue
-      const journalBytes = JSON.stringify(journal).length + contractID.length + 5
+      // Contract IDs are opaque hashes, so the export labels each journal with
+      // its contract type to tell groups, chatrooms and identities apart.
+      const entry = {
+        type: rootState.contracts[contractID]?.type ?? '(unknown)',
+        journal
+      }
+      const journalBytes = journalEntryBytes(contractID, entry)
       if (exportBytes + journalBytes > MAX_JOURNAL_EXPORT_BYTES) {
         truncated = true
         continue
       }
-      journals[contractID] = journal
+      journals[contractID] = entry
       exportBytes += journalBytes
     }
 

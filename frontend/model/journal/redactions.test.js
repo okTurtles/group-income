@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 import assert from 'node:assert'
-import { applyRedactions, shortHashRedactor } from '@chelonia/lib/journal'
+import { applyRedactions } from '@chelonia/lib/journal'
 import {
   JOURNAL_REDACTIONS,
   JOURNAL_REDACTIONS_VERSION,
@@ -15,12 +15,27 @@ import { DEVICE_SETTINGS } from '../../utils/constants.js'
 const redact = (state, contractName = 'gi.contracts/group') => applyRedactions(state, JOURNAL_REDACTIONS, contractName)
 
 describe('journal redactions', () => {
-  it('hashRedactor returns a stable 6-character short hash', () => {
+  it('hashRedactor is deterministic and distinguishes different inputs', () => {
     const value = { secret: 'high entropy value' }
 
-    assert.strictEqual(hashRedactor(value), shortHashRedactor(value).slice(0, 6))
     assert.strictEqual(hashRedactor(value).length, 6)
     assert.strictEqual(hashRedactor(value), hashRedactor(value))
+    assert.notStrictEqual(hashRedactor(value), hashRedactor({ secret: 'other' }))
+  })
+
+  it('hashRedactor avoids the constant multiformat hash prefix', () => {
+    // blake32Hash output begins with a fixed 7-character multiformat prefix, so
+    // a prefix slice is identical for every input. This guards against a
+    // regression to `.slice(0, 6)`.
+    const hashes = new Set()
+    for (let i = 0; i < 1000; i++) hashes.add(hashRedactor(`value-${i}`))
+    assert.strictEqual(hashes.size, 1000)
+  })
+
+  it('hashRedactor does not throw on unserializable input', () => {
+    const cyclic = {}
+    cyclic.self = cyclic
+    assert.strictEqual(hashRedactor(cyclic).length, 6)
   })
 
   it('messageTextRedactor returns the message sentinel', () => {
@@ -31,6 +46,7 @@ describe('journal redactions', () => {
     const original = {
       attributes: {
         username: 'alice',
+        displayName: 'Alice A',
         email: 'alice@example.com',
         bio: 'private bio',
         picture: { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } }
@@ -46,12 +62,14 @@ describe('journal redactions', () => {
     const redacted = redact(original, 'gi.contracts/identity')
 
     assert.strictEqual(redacted.attributes.username, 'alice')
+    assert.strictEqual(redacted.attributes.displayName, 'Alice A')
     assert.notStrictEqual(redacted.attributes.email, original.attributes.email)
     assert.strictEqual(redacted.attributes.bio, 'xxxxxxxx')
     assert.notStrictEqual(redacted.attributes.picture, original.attributes.picture)
     assert.strictEqual(typeof redacted.attributes.email, 'string')
     assert.strictEqual(redacted.attributes.email.length, 6)
     assert.strictEqual(redacted.attributes.picture.length, 6)
+    assert.notStrictEqual(redacted.attributes.email, redacted.attributes.picture)
     assert.strictEqual(redacted.groups.group1.inviteSecretId, REDACTED)
     assert.strictEqual(redacted.fileDeleteTokens, REDACTED)
     assert.deepStrictEqual(original.attributes.picture, { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } })
@@ -61,6 +79,8 @@ describe('journal redactions', () => {
     const redacted = redact({
       settings: {
         groupName: 'Private group',
+        mincomeAmount: 1000,
+        mincomeCurrency: 'USD',
         groupPicture: { manifestCid: 'zGroupAvatar', downloadParams: { IKM: 'group-avatar-secret' } }
       },
       profiles: {
@@ -95,13 +115,15 @@ describe('journal redactions', () => {
     })
 
     assert.strictEqual(redacted.settings.groupName, '[REDACTED]')
+    assert.strictEqual(redacted.settings.mincomeAmount, REDACTED)
+    assert.strictEqual(redacted.settings.mincomeCurrency, 'USD')
     assert.strictEqual(redacted.settings.groupPicture.manifestCid, 'zGroupAvatar')
     assert.strictEqual(redacted.settings.groupPicture.downloadParams, REDACTED)
     assert.strictEqual(redacted.profiles.user1.incomeDetailsType, 'pledgeAmount')
     assert.strictEqual(redacted.profiles.user1.incomeAmount, REDACTED)
     assert.strictEqual(redacted.profiles.user1.pledgeAmount, REDACTED)
     assert.strictEqual(redacted.profiles.user1.paymentMethods, REDACTED)
-    assert.deepStrictEqual(redacted.profiles.user1.nonMonetaryContributions, ['childcare'])
+    assert.deepStrictEqual(redacted.profiles.user1.nonMonetaryContributions, ['xxxxxxxx'])
     assert.strictEqual(redacted.payments.payment1.data.details, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.memo, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.amount, REDACTED)
@@ -191,6 +213,14 @@ describe('journal redactions', () => {
               },
               public: 'metadata'
             }
+          },
+          key2: {
+            name: 'cek',
+            meta: { private: { content: 'another secret content' } }
+          },
+          key3: {
+            name: 'inviteKey',
+            meta: { private: { content: 'a third secret content' } }
           }
         },
         invites: {
@@ -215,6 +245,11 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted._vm.invites.invite1.inviteSecret, REDACTED)
     assert.strictEqual(redacted._vm.invites.invite1.creatorID, 'user1')
     assert.strictEqual(original._vm.authorizedKeys.key1.meta.private.content, 'secret content')
+
+    // Each key must hash to a different value. A degenerate redactor makes
+    // every key look identical, which hides key-rotation bugs entirely.
+    const hashes = ['key1', 'key2', 'key3'].map((k) => redacted._vm.authorizedKeys[k].meta.private.content)
+    assert.strictEqual(new Set(hashes).size, hashes.length)
   })
 
   it('redacts group proposal payload and proposalData while keeping structure', () => {
@@ -269,34 +304,92 @@ describe('journal redactions', () => {
     const redacted = redact(original, 'gi.contracts/chatroom')
 
     assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'general')
+    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].notification.params.count, 3)
     assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].pollData.options[0].voted, REDACTED)
     assert.strictEqual(redacted.messages[0].pollData.options[0].id, 'o1')
     assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelDescription, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'pinned-channel')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].voted, REDACTED)
     assert.deepStrictEqual(original.messages[0].pollData.options[0].voted, ['alice', 'bob'])
+  })
+
+  it('redacts chatroom channel name and description in every location', () => {
+    const redacted = redact({
+      attributes: {
+        name: 'Secret channel',
+        description: 'Secret purpose',
+        creatorID: 'zCreator',
+        type: 'group',
+        privacyLevel: 'private'
+      },
+      messages: [{
+        notification: {
+          type: 'update-name',
+          params: { channelName: 'Secret channel', channelDescription: 'Secret purpose' }
+        }
+      }],
+      pinnedMessages: [{
+        notification: { type: 'update-name', params: { channelName: 'Secret channel' } }
+      }]
+    }, 'gi.contracts/chatroom')
+
+    assert.strictEqual(redacted.attributes.name, 'xxxxxxxx')
+    assert.strictEqual(redacted.attributes.description, 'xxxxxxxx')
+    assert.strictEqual(redacted.attributes.privacyLevel, 'private')
+    assert.strictEqual(redacted.attributes.type, 'group')
+    assert.strictEqual(redacted.attributes.creatorID, 'zCreator')
+    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'xxxxxxxx')
+    // The assertion that actually encodes the requirement: nothing sensitive
+    // reaches the exported file, whatever the shape of the state.
+    assert.ok(!JSON.stringify(redacted).includes('Secret'))
+  })
+
+  it('redacts group chatRooms names and descriptions', () => {
+    const redacted = redact({
+      chatRooms: {
+        cid1: {
+          name: 'Secret channel',
+          description: 'Secret purpose',
+          privacyLevel: 'private',
+          members: {}
+        }
+      }
+    })
+
+    assert.strictEqual(redacted.chatRooms.cid1.name, 'xxxxxxxx')
+    assert.strictEqual(redacted.chatRooms.cid1.description, 'xxxxxxxx')
+    assert.strictEqual(redacted.chatRooms.cid1.privacyLevel, 'private')
+    assert.ok(!JSON.stringify(redacted).includes('Secret'))
   })
 
   it('pins the redaction rule set so changes force a version review', () => {
     // When you intentionally change JOURNAL_REDACTIONS, update this list AND bump
     // JOURNAL_REDACTIONS_VERSION so persisted journals get re-cleared via
-    // clearStaleJournalsAfterRedactions.
+    // clearStaleJournalsAfterRedactions. Message rules live in
+    // MESSAGE_FIELD_REDACTIONS, which generates the `messages.*` and
+    // `pinnedMessages.*` pairs below.
     const expectedPaths = [
       '_vm.authorizedKeys.*._private',
       '_vm.authorizedKeys.*.meta.private.content',
       '_vm.authorizedKeys.*.meta.private.oldKeys',
       '_vm.invites.*.inviteSecret',
       'attributes.bio',
+      'attributes.description',
       'attributes.email',
+      'attributes.name',
       'attributes.picture',
+      'chatRooms.*.description',
+      'chatRooms.*.name',
       'fileDeleteTokens',
       'groups.*.inviteSecretId',
       'messages.*.attachments.*.downloadData.downloadParams',
       'messages.*.attachments.*.name',
       'messages.*.notification.params.channelDescription',
+      'messages.*.notification.params.channelName',
       'messages.*.pollData.options.*.value',
       'messages.*.pollData.options.*.voted',
       'messages.*.pollData.question',
@@ -312,6 +405,7 @@ describe('journal redactions', () => {
       'pinnedMessages.*.attachments.*.downloadData.downloadParams',
       'pinnedMessages.*.attachments.*.name',
       'pinnedMessages.*.notification.params.channelDescription',
+      'pinnedMessages.*.notification.params.channelName',
       'pinnedMessages.*.pollData.options.*.value',
       'pinnedMessages.*.pollData.options.*.voted',
       'pinnedMessages.*.pollData.question',
@@ -319,12 +413,14 @@ describe('journal redactions', () => {
       'pinnedMessages.*.replyingMessage.text',
       'pinnedMessages.*.text',
       'profiles.*.incomeAmount',
+      'profiles.*.nonMonetaryContributions.*',
       'profiles.*.paymentMethods',
       'profiles.*.pledgeAmount',
       'proposals.*.data.proposalData',
       'proposals.*.payload',
       'settings.groupName',
       'settings.groupPicture.downloadParams',
+      'settings.mincomeAmount',
       'settings.sharedValues',
       'thankYousFrom.*.*'
     ]
@@ -348,7 +444,7 @@ describe('clearStaleJournalsAfterRedactions migration', () => {
 
     assert.strictEqual(cleared, 0)
     assert.strictEqual(
-      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED],
+      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION],
       JOURNAL_REDACTIONS_VERSION
     )
   })
@@ -362,7 +458,7 @@ describe('clearStaleJournalsAfterRedactions migration', () => {
 
     assert.strictEqual(cleared, 1)
     assert.strictEqual(
-      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED],
+      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION],
       JOURNAL_REDACTIONS_VERSION
     )
   })
@@ -370,7 +466,7 @@ describe('clearStaleJournalsAfterRedactions migration', () => {
   it('is a no-op when the current version was already recorded', () => {
     const rootState = {
       contracts: { contract1: {} },
-      deviceSettings: { [DEVICE_SETTINGS.JOURNAL_REDACTIONS_CLEARED]: JOURNAL_REDACTIONS_VERSION }
+      deviceSettings: { [DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION]: JOURNAL_REDACTIONS_VERSION }
     }
     let cleared = 0
     const clearJournals = () => { cleared++; return 1 }

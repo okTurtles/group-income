@@ -59,5 +59,5 @@ export const LAST_LOGGED_IN_THROTTLE_WINDOW = 30 * 60E3 // 30 minutes
 
 export const DEVICE_SETTINGS = {
   DISABLE_NOTIFICATIONS: 'disableNotifications',
-  JOURNAL_REDACTIONS_CLEARED: 'journalRedactionsCleared'
+  JOURNAL_REDACTIONS_APPLIED_VERSION: 'journalRedactionsVersion'
 }
