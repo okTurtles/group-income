@@ -61,8 +61,11 @@ grunt clean                    # Clean dist/ folder
 
 ### Contract Versioning
 ```bash
-NODE_ENV=production grunt pin:0.1.0  # Pin contracts to versioned folder
+npm version --no-git-tag-version 0.1.0  # Bump app version in package.json (source of truth)
+NODE_ENV=production grunt pin --all      # Copy version to chelonia.json and pin all contracts
 ```
+
+Other pin scopes: `grunt pin --none` (version bump only), `grunt pin:chatroom` (single contract). See "Making a release" in README.md for the full flow.
 
 ## Directory Structure
 
@@ -181,7 +184,7 @@ export default {
 1. **`process` functions**: Update state only, NEVER side effects
 2. **`sideEffect` functions**: Perform side effects only, NEVER state updates
 3. **Reference counting**: Use `retain`/`release` for contract subscriptions
-4. **Version pinning**: Use `grunt pin:<version>` to create frozen snapshots in `contracts/` folder for backwards compatibility
+4. **Version pinning**: Bump `version` in `package.json`, then run `grunt pin --all` to create frozen snapshots in `contracts/<contract>/<version>/` for backwards compatibility
 
 ### Action Handlers
 
@@ -304,9 +307,10 @@ sbp('sbp/selectors/register', {
 When changing contracts:
 
 1. Update contract definition
-2. Run `NODE_ENV=production grunt pin:x.x.x`
-3. This creates a frozen snapshot in `contracts/x.x.x/`
-4. Old versions remain for backwards compatibility
+2. Bump `version` in `package.json` (contract versions follow the app version)
+3. Run `NODE_ENV=production grunt pin --all`
+4. This creates a frozen snapshot in `contracts/<contract>/<version>/`
+5. Old versions remain for backwards compatibility
 
 ### Environment Variables
 
