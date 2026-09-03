@@ -104,6 +104,30 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Scope correction — the strip-only set is 3 files, not 6.** `flow-remove-types` strips the Flow pragma out of *comments*, so a file merely mentioning it registers as containing Flow. `Gruntfile.js` (prose comment at `:216`) and `scripts/refcount-fuzzer.js` (`/* @noflow */` at `:1`) contain **no Flow syntax** — both are comment deletions. Real syntax remains only in `service-worker.js` (7 lines), `test/backend.test.js` (2) and `distribution.test.js` (1). Plan Step 9 updated; its gate is now `check-residual-flow.js --gate`.
 
+### 007 — Step 1: tsconfig.json and a non-blocking typecheck
+
+**Status:** DONE
+
+**Added:** `tsconfig.json`, `npm run typecheck` (`tsc --noEmit`, exits 0), `typescript@6.0.3` pinned exact, and a seeded `frontend/declarations.d.ts`. `npm run typecheck` clean · `grunt build` green (eslint + flow + puglint + stylelint) · `manifests.json` unchanged.
+
+**TypeScript 6.0.3, not 7.** Latest is 7.0.2, but `@typescript-eslint` (still v8, 8.69.0) peers `typescript: >=4.8.4 <6.1.0`, so TS 7 would strand Step 10's lint stack. 6.0.3 is the newest version the planned stack accepts. Its eslint peer `^8.57.0 || ^9 || ^10` also re-confirms the ESLint 8.57.1 target.
+
+**`checkJs: false` does not silence Flow syntax — it suppresses *semantic* errors, not *syntactic* ones.** Rooting the 126 Flow-annotated `.js` files produced thousands of unsuppressable TS8010/TS1005 parse errors. So `include` is **`frontend/**/*.ts` only**: `.js` enters the program solely when a `.ts` imports it, which leaf-first ordering keeps rare. Step 1's "typecheck exits 0 trivially" holds, but not for the reason the plan assumed.
+
+**Corollary, proven by probe:** a `.ts` importing an unconverted Flow `.js` *does* surface that file's parse errors transitively — importing `@common/common.js` lit up `translations.js`, `errors.js`, `stringTemplate.js`. Leaf-first is load-bearing, not just tidy.
+
+**Two TS 6 breaks fixed:** `baseUrl` is deprecated (stops working in 7) — dropped, `paths` now resolve relative to the config. An empty program is a hard error (TS18003), which is why `declarations.d.ts` is seeded now rather than in Step 2.
+
+**`"types": []`.** TypeScript would otherwise auto-include all 19 transitive `node_modules/@types/*` packages as globals, leaking Node types into browser code. Flow drew ambient types only from `[libs]`; this restores that.
+
+**Verified by probe, then deleted:** all 11 aliases and the `@chelonia/*` subpath types resolve — zero TS2307. That confirms the Step 1 `moduleResolution: "bundler"` and Step 2 "no stubs" decisions empirically.
+
+**Exclude list:** 14 live `.flowconfig` entries transcribed and annotated line-by-line; the 6 stale and 2 redundant re-verified as missing from the tree. Arithmetic checks out — 135 `.js` under `frontend/`, minus 3 named exclusions and 6 `*.test.js`, = the 126 the program would otherwise root.
+
+**Bug fixed in the Step 0 checker.** It scanned `.ts` too — but Flow and TypeScript annotations are syntactically identical, so `flow-remove-types` strips a `.ts` file just as happily. Every converted file would have counted as "still containing Flow" and the Step 9 gate could never have reached zero. Now scans `.js` / `.vue` / `.js.flow` only; count back to 108.
+
+**Note — unrelated failure:** `avatar-caching.test.js` now fails (upload 500) against the long-running dev backend from Step 0. Reproduced with all Step 1 changes removed, so it is stale server state, not a regression. Needs a backend restart (`kill 34780`) to reconfirm the 178/178 baseline.
+
 ---
 
 ## Open items

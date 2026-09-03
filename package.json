@@ -13,6 +13,7 @@
     "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
+    "typecheck": "tsc --noEmit",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
@@ -181,6 +182,7 @@
     "sinon": "9.2.1",
     "stylelint": "13.8.0",
     "stylelint-config-standard": "20.0.0",
+    "typescript": "6.0.3",
     "vue-cli-plugin-pug": "2.0.0",
     "vue-template-compiler": "2.6.12",
     "vue-template-es2015-compiler": "1.9.1"

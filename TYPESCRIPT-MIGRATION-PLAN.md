@@ -51,17 +51,26 @@ TypeScript checks exactly what Flow checked — no coverage expansion.
 
 ---
 
-## Step 1 — `tsconfig.json` and a non-blocking typecheck
+## Step 1 — `tsconfig.json` and a non-blocking typecheck — **DONE**
 
-No source changes. Establishes the parity contract before anything moves.
+Establishes the parity contract before anything moves. Nearly no source changes — one seeded `.d.ts`, for the reason below.
 
-- **Install `typescript`** as a devDependency. It is not currently in `package.json` — nothing in the repo depends on it yet, so this is the step that introduces it.
+- **Install `typescript`** — done, pinned exact at **6.0.3**, not latest. TS is at 7.0.2, but `@typescript-eslint` (still v8) peers `typescript: >=4.8.4 <6.1.0`, so installing 7 would strand Step 10's lint stack. 6.0.3 is the newest the planned stack accepts; revisit when typescript-eslint supports 7.
 - `tsconfig.json` at root with `allowJs: true`, `checkJs: false`, `noEmit: true`, `strict: false`, `skipLibCheck: true`, `target`/`module` matching the esbuild output, and `paths` mirroring every `Gruntfile.js` alias (`Gruntfile.js:168-184`): `@assets`, `@common`, `@components`, `@containers`, `@controller`, `@model`, `@pages`, `@svgs`, `@utils`, `@view-utils`, `@views`, plus `~`. Note `.flowconfig` maps only 8 of these (`:44-50`) — the extra three are a deliberate correction, not parity drift, since esbuild resolves all eleven.
 - **`moduleResolution: "bundler"` — required, not a preference.** 11 of the 15 `@chelonia` import specifiers in `frontend/` are subpaths (`@chelonia/lib/events`, `@chelonia/lib/Secret`, `@chelonia/lib/SPMessage`, …). Those packages expose their declarations through the `exports` map's `types` condition; only the bare `.` entry has a top-level `types` field. Under classic `moduleResolution: "node"` every subpath import resolves to nothing and errors. `"bundler"` also matches how esbuild actually resolves, which is the honest description of this build.
-- `exclude` transcribed from the spec's ignore table — the 14 live `.flowconfig` `[ignore]` entries (22 total at `.flowconfig:9-30`, minus 6 stale and 2 redundant). Do **not** carry the 6 stale or 2 redundant ones.
-- Add `npm run typecheck` → `tsc --noEmit`. Not yet in `lintTasks` or CI; it has nothing to check.
+- `exclude` transcribed from the spec's ignore table — the 14 live `.flowconfig` `[ignore]` entries (22 total at `.flowconfig:9-30`, minus 6 stale and 2 redundant), each annotated in the file with the line it maps to. The 6 stale and 2 redundant were re-verified as missing from the tree.
+- **`"types": []`.** TypeScript otherwise auto-includes all 19 transitive `node_modules/@types/*` packages as globals, leaking Node types into browser code. Flow drew ambient types only from `[libs]`; this restores parity.
+- Add `npm run typecheck` → `tsc --noEmit`. Not yet in `lintTasks` or CI.
 
-**Done when:** `npm run typecheck` exits 0 (trivially — no `.ts` files yet), and the `exclude` list has been diffed against `.flowconfig` line by line.
+### The two things TS 6 forced, which the plan had wrong
+
+**`include` is `frontend/**/*.ts` only — not `frontend/**/*`.** `checkJs: false` suppresses *semantic* errors in `.js`, **not syntactic ones**, and a Flow annotation is a syntax error to TypeScript. Rooting the 126 Flow-annotated `.js` files produced thousands of unsuppressable TS8010/TS1005 parse errors. So `.js` files enter the program only when a `.ts` imports one. Verified by probe: a `.ts` importing `@common/common.js` lights up `translations.js`, `errors.js` and `stringTemplate.js` transitively — **leaf-first ordering is load-bearing, not just tidy.** `allowJs: true` and `allowImportingTsExtensions: true` stay, so a converted file can still import an unconverted one.
+
+**`baseUrl` is deprecated in TS 6 and stops working in 7.** Dropped; `paths` now resolve relative to the config file, which TS has supported since 5.0.
+
+Consequently a `.d.ts` had to be seeded now rather than in Step 2: with `.ts`-only roots and no `.ts` files yet, the project has no inputs, and that is a hard error (TS18003). `frontend/declarations.d.ts` exists as a documented placeholder for Step 2 to fill in.
+
+**Done — verified:** `npm run typecheck` exits 0 · `grunt build` green (eslint + flow + puglint + stylelint) · `manifests.json` unchanged · a throwaway probe confirmed all 11 aliases **and** the `@chelonia/*` subpath types resolve with zero TS2307, which is the empirical proof behind both this step's `moduleResolution` choice and Step 2's "no stubs".
 
 ---
 
@@ -148,7 +157,7 @@ Recurring syntax translations: `?T` → `T | null | undefined`; `{| |}` → plai
 This is where a mistake is expensive and slow to surface: per `docs/src/Calls-From-Contracts.md`, anything reachable from a contract is frozen forever once pinned, and a behavioural difference desynchronises state across clients rather than throwing.
 
 - `group.js`, `chatroom.js`, `identity.js`, and `shared/**` (`constants`, `currencies`, `functions`, `time`, `validators`, `distribution/`, `getters/`, `payments/`, `voting/`) — 17 files.
-- **`flowTyper.js` is not part of this wave.** It's Flow-ignored (`.flowconfig:22`), so per parity it stays untypechecked. Rename to `flowTyper.ts` with its generics preserved exactly as written (per the spec decision) and add it to `tsconfig` `exclude`. **Also update the matching `eslintIgnore` entry** in `package.json` — it names `frontend/model/contracts/misc/flowTyper.js` by path, and a stale entry there silently starts linting a file that was deliberately exempt. Runtime behaviour must be byte-for-byte equivalent — the `typeFn.name.includes('optional')` dispatch depends on function `.name` surviving compilation, which no typechecker will catch if broken. The Step 0 harness is the gate.
+- **`flowTyper.js` is not part of this wave.** It's Flow-ignored (`.flowconfig:22`), so per parity it stays untypechecked. Rename to `flowTyper.ts` with its generics preserved exactly as written (per the spec decision). **`exclude` alone will not keep it unchecked** — verified in Step 1: an excluded `.ts` is still fully typechecked once something imports it, and the contracts import this file. `exclude` only filters the *root* set. The escape hatch that actually works is **`// @ts-nocheck` at the top of the file** (confirmed: silences it, `tsc` exits 0). Add the `exclude` entry too, updated from `.js` to `.ts`, so it never becomes a root either. **Also update the matching `eslintIgnore` entry** in `package.json` — it names `frontend/model/contracts/misc/flowTyper.js` by path, and a stale entry there silently starts linting a file that was deliberately exempt. Runtime behaviour must be byte-for-byte equivalent — the `typeFn.name.includes('optional')` dispatch depends on function `.name` surviving compilation, which no typechecker will catch if broken. The Step 0 harness is the gate.
 - **Update the contract entry points at `Gruntfile.js:677`** in the same commit as the `group.js` / `chatroom.js` / `identity.js` renames (Step 3a). Nothing else in the build knows those paths.
 - Do **not** run `grunt pin`. Existing snapshots under `contracts/` must be untouched — the current pinned set runs to `2.9.0`, and `chelonia.json` points at it.
 - Verify `frontend/model/contracts/manifests.json` is byte-identical after a production build — contract hashes must not move.

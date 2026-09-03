@@ -39,7 +39,14 @@ const SKIP_ROOT_PATHS = new Set(['contracts'])
 // entry point, so its Flow syntax is left intact deliberately.
 const HISTORICAL = 'historical'
 
-const SOURCE_EXTENSIONS = /\.(js|ts|vue|flow)$/
+// `.js`, `.vue` and `.js.flow` only — deliberately NOT `.ts`.
+//
+// Flow and TypeScript annotations are syntactically identical, so
+// `flow-remove-types` strips a `.ts` file just as happily as a Flow one. Scanning
+// `.ts` would therefore report every successfully converted file as "still
+// containing Flow", and the Step 9 gate could never reach zero. Residual Flow is
+// only meaningful in the files that are supposed to have none left.
+const SOURCE_EXTENSIONS = /\.(js|vue|flow)$/
 
 const argv = process.argv.slice(2)
 const whyIndex = argv.indexOf('--why')

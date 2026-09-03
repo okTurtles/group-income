@@ -1,0 +1,117 @@
+// Nothing is emitted: esbuild does the compiling and never typechecks, so `tsc`
+// exists purely as the checker Flow used to be.
+{
+  "compilerOptions": {
+    // Reference: https://www.typescriptlang.org/tsconfig/#compilerOptions
+    //
+    // --- Output --------------------------------------------------------------
+    // esbuild builds; tsc only checks.
+    "noEmit": true,
+
+    // esbuild is configured with no `target`, so it does not downlevel anything
+    // (Gruntfile.js esbuildOptionBags.default), and the main bundle is ESM.
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    // --- Module resolution ---------------------------------------------------
+    // REQUIRED, not a preference. Most `@chelonia/*` imports are subpaths
+    // (`@chelonia/lib/events`, `@chelonia/lib/Secret`, …) whose declarations are
+    // reachable only through each package's `exports` map `types` condition.
+    // Classic "node" resolution reads only the top-level `types` field and every
+    // subpath import fails. "bundler" also matches how esbuild actually resolves.
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+
+    // --- Strictness: permissive to start, tightened in a later pass -----------
+    "strict": false,
+    "skipLibCheck": true,
+    "allowJs": true,
+    // Flow-annotated `.js` files are still being converted. Parsing them is
+    // needed for resolution; checking them is not, and would be a coverage
+    // expansion. Flip this only as a deliberate, separate decision.
+    "checkJs": false,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    // Needed so a converted `.ts` file can still import a not-yet-converted
+    // `.js` one during the transition. Combined with the `include` below, `.js`
+    // files enter the program only when imported, never as roots.
+    "allowImportingTsExtensions": true,
+
+    // Flow drew its ambient declarations solely from `[libs]`
+    // (./frontend/declarations.js). TypeScript would instead auto-include every
+    // package under node_modules/@types — 19 of them, all transitive and none
+    // declared in package.json, which would leak Node globals into browser code
+    // and collide with our own declarations. An empty list restores parity;
+    // ambient types come from our `.d.ts` files only (Step 2).
+    "types": [],
+
+    // --- Path aliases --------------------------------------------------------
+    // Mirrors aliasPluginOptions in Gruntfile.js:168-184. Note `.flowconfig`
+    // maps only 8 of these; esbuild resolves all of them, so the full set is
+    // transcribed here deliberately.
+    //
+    // No `baseUrl`: it is deprecated in TypeScript 6 and stops functioning in 7.
+    // Since TS 5.0 `paths` resolves relative to this file, which is what we want.
+    "paths": {
+      "@assets/*": ["./frontend/assets/*"],
+      "@common/*": ["./frontend/common/*"],
+      "@components/*": ["./frontend/views/components/*"],
+      "@containers/*": ["./frontend/views/containers/*"],
+      "@controller/*": ["./frontend/controller/*"],
+      "@model/*": ["./frontend/model/*"],
+      "@pages/*": ["./frontend/views/pages/*"],
+      "@svgs/*": ["./frontend/assets/svgs/*"],
+      "@utils/*": ["./frontend/utils/*"],
+      "@view-utils/*": ["./frontend/views/utils/*"],
+      "@views/*": ["./frontend/views/*"],
+      "~/*": ["./*"]
+    }
+  },
+
+  // ONLY `.ts` files are program roots — deliberately, and this is the least
+  // obvious line in the file.
+  //
+  // `checkJs: false` suppresses *semantic* errors in `.js`, but NOT *syntactic*
+  // ones, and a Flow annotation is a syntax error to TypeScript. Rooting the
+  // 126 Flow-annotated `.js` files here produced thousands of TS8010/TS1005
+  // parse errors — nothing to do with type checking, and unsuppressable.
+  //
+  // So `.js` files enter the program only when a `.ts` file imports one. The
+  // leaf-first conversion order (plan Steps 4-8) means a converted file's own
+  // imports are already converted, so this stays quiet as the migration walks
+  // up the dependency graph. Today it matches nothing and `tsc` trivially
+  // passes; each wave adds real coverage.
+  //
+  // `frontend/**/*.ts` also matches `.d.ts`, which is how Step 2's ambient
+  // declarations get picked up.
+  "include": ["frontend/**/*.ts"],
+
+  // Each entry maps to a live `.flowconfig` [ignore] line. The 6 stale entries
+  // (Gruntfile.dashboard.js, backend/dashboard/, shared/multiformats/,
+  // shared/blake2bstream.js, frontend/utils/vuexQueue.js, ignored/ — all now
+  // missing from the tree) and the 2 redundant ones (test/backend.js,
+  // test/frontend.js, both covered by test/) are deliberately not carried over.
+  "exclude": [
+    "node_modules",                                    // .flowconfig: .*/node_modules/.*
+    "dist",                                            // .flowconfig: .*/dist/.*
+    "dist-dashboard",                                  // .flowconfig: .*/dist-dashboard/.*
+    "contracts",                                       // .flowconfig: <PROJECT_ROOT>/contracts/.*
+    "historical",                                      // .flowconfig: .*/historical/.*
+    "scripts",                                         // .flowconfig: .*/scripts/.*
+    "test",                                            // .flowconfig: .*/test/.*
+    "Gruntfile.js",                                    // .flowconfig: .*/Gruntfile.js
+    "cypress.config.js",                               // .flowconfig: .*/cypress.config.js
+    "frontend/assets",                                 // .flowconfig: .*/frontend/assets/.*
+    "frontend/controller/service-worker.js",           // .flowconfig: .*/frontend/controller/service-worker.js
+    "frontend/utils/blockies.js",                      // .flowconfig: .*/frontend/utils/blockies.js
+    "frontend/model/contracts/misc/flowTyper.js",      // .flowconfig: .*/frontend/model/contracts/misc/flowTyper.js
+    "**/*.test.js",                                    // .flowconfig: .*.test.js
+    // Not a .flowconfig entry: test files stay `.js` for this migration, but the
+    // pattern is here so a future `.test.ts` inherits the same exemption.
+    "**/*.test.ts"
+  ]
+}
