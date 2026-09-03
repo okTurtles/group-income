@@ -1,7 +1,10 @@
 <template lang='pug'>
 .c-content(
-  :class='{ "is-active": isActive }'
+  :class='{ "is-active": isActive, "is-height-animating": ephemeral.isHeightAnimating }'
   data-test='menuContent'
+  @transitionstart='onTransitionStart'
+  @transitionend='onTransitionEnd'
+  @transitioncancel='onTransitionEnd'
 )
   .c-content-wrapper(
     v-on-clickaway='onClickAway'
@@ -18,12 +21,30 @@ export default ({
     clickaway
   ],
   inject: ['Menu'],
+  data () {
+    return {
+      ephemeral: {
+        isHeightAnimating: false
+      }
+    }
+  },
   computed: {
     isActive () {
       return this.Menu.isActive
     }
   },
   methods: {
+    onTransitionStart (e) {
+      // Ignore transitions bubbling up from menu items.
+      if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
+      this.ephemeral.isHeightAnimating = true
+    },
+    onTransitionEnd (e) {
+      // Bound this handler to `transitioncancel` as well, so interrupting the animation (e.g.
+      // closing the menu mid-open) can't leave scrolling permanently disabled.
+      if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
+      this.ephemeral.isHeightAnimating = false
+    },
     onClickAway (e) {
       // Prevent closing the menu when clicking inside of the parent element,
       // except if the event was on `.c-content` (.c-responsive-menu)
@@ -66,7 +87,7 @@ export default ({
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
-  overflow: hidden;
+  overflow: auto;
   pointer-events: none;
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
@@ -82,6 +103,11 @@ export default ({
     max-height: 25rem;
     opacity: 1;
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
+  }
+
+  // See `onTransitionStart` - never scroll while `max-height` is animating.
+  &.is-animated {
+    overflow: hidden;
   }
 
   &.c-responsive-menu {

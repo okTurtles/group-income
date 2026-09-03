@@ -343,6 +343,10 @@ export default ({
     & .c-content {
       position: static;
       overflow: auto;
+
+      &.is-height-animating {
+        overflow: hidden;
+      }
     }
 
     &::backdrop {
