@@ -22,7 +22,7 @@ Spec: [`_specs/flow-to-typescript-migration.md`](_specs/flow-to-typescript-migra
 
 `scripts/esbuild-plugins/flow-remove-types-plugin.js:14` filters on `/\.js$/`. A `.ts` file never reaches it and is handled by esbuild's native TypeScript loader instead. **So Flow `.js` and TypeScript `.ts` coexist in the same build with no extra configuration.**
 
-That single fact sets the whole order below: convert sources file-by-file while Flow tooling stays live, and delete Flow only once nothing needs it (Step 9). The alternative — removing `flow-remove-types` early — breaks all 99 remaining Flow files at once.
+That single fact sets the whole order below: convert sources file-by-file while Flow tooling stays live, and delete Flow only once nothing needs it (Step 9). The alternative — removing `flow-remove-types` early — breaks all 108 remaining Flow files at once.
 
 **Scope reminder, re-measured at `37bc114e9`:** 116 files still contain Flow syntax. Subtract the 8 in `historical/` (out of scope, untouched) and the tree splits into:
 
@@ -161,14 +161,24 @@ This is where a mistake is expensive and slow to surface: per `docs/src/Calls-Fr
 
 Only now is nothing depending on it.
 
-- Strip Flow syntax from the 6 Flow-ignored-but-built files: `Gruntfile.js`, `frontend/controller/service-worker.js`, `frontend/model/contracts/shared/distribution/distribution.test.js`, `scripts/refcount-fuzzer.js`, `test/backend.test.js` (`flowTyper.js` was handled in Step 5). Syntax removal only — **no type coverage added**, these stay excluded.
+- **The strip-only set is 3 files of real syntax, not 6** — measured in Step 0 with `scripts/check-residual-flow.js --why`, which reports per-file what would actually change:
+
+  | File | What's actually there |
+  |---|---|
+  | `frontend/controller/service-worker.js` | 7 real annotations (`(obj: Object)`, `?ServiceWorker`, an `(x: any)` cast) |
+  | `test/backend.test.js` | 2 real signatures |
+  | `.../shared/distribution/distribution.test.js` | 1 real signature |
+  | `Gruntfile.js` | **No Flow syntax.** Its only hit is the prose comment at `:216` naming the pragma |
+  | `scripts/refcount-fuzzer.js` | **No Flow syntax.** Its only hit is the `/* @noflow */` pragma at `:1` |
+
+  `flow-remove-types` strips the pragma out of comments too, so a file that merely *mentions* it registers as containing Flow. Both bottom rows are comment deletions, not conversions. (`flowTyper.js` was handled in Step 5.) Syntax removal only — **no type coverage added**, these stay excluded.
 - Remove `flowRemoveTypesPlugin` from `defaultPlugins` (`Gruntfile.js:707,712`) and delete `scripts/esbuild-plugins/flow-remove-types-plugin.js`.
 - `.babelrc`: drop `@babel/preset-flow`, keep `@babel/preset-typescript`.
 - Replace `exec:flow` (`Gruntfile.js:301`) with a `tsc --noEmit` task; update `lintTasks` (`:463`); remove the `flow stop` call (`:874`) and the `@flow`/`all`-option comment at `:216-217`.
 - Delete `.flowconfig`. Remove `flow-bin`, `flow-remove-types`, `@babel/preset-flow` from `package.json`; replace the `flow` npm script with `typecheck`.
 - **CI wiring — confirmed, not assumed.** `.github/workflows/ci.yml:24` runs `grunt ci-test:unit`, which is `['build', 'chelDeploy', 'backend:launch', 'exec:test']` (`Gruntfile.js:855`); `build` runs `lintTasks` unless `:skiplint` (`:463-466`). So swapping `exec:flow` for the `tsc` task does put typechecking in CI, with no workflow edit. Note the other job, `ci-test:cypress` (`:856`), uses `build:skiplint` and therefore never typechecked under Flow either — leave it that way.
 
-**Gate:** the Step 0 residual-Flow checker reports zero files outside `node_modules/`, `dist/`, `contracts/`, and `historical/`.
+**Gate:** `node scripts/check-residual-flow.js --gate` exits 0 — zero files outside `node_modules/`, `dist/`, `contracts/`, and `historical/`.
 
 ---
 

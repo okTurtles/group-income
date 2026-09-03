@@ -42,6 +42,9 @@ key.pub.json
 
 # Misc
 /ignored
+# Flow → TypeScript migration: pre-migration test output, for comparing
+# later runs against. Local only; the figures are recorded in PROGRESS.md.
+/.baseline/
 /data/*
 !/data/.gitkeep
 .deno

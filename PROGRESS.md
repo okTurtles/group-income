@@ -90,6 +90,20 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Verified unchanged:** the `/\.js$/` filter at `flow-remove-types-plugin.js:14`, all Gruntfile line refs, the `.flowconfig` 14/6/2 split, ESLint versions. Step 9's CI claim is now confirmed, not assumed: `ci-test:unit` → `build` → `lintTasks`.
 
+### 006 — Step 0: baseline and regression harness
+
+**Status:** DONE
+
+**Added:** `test/flowTyper-equivalence.test.js` (79 tests) and `scripts/check-residual-flow.js`. `.baseline/` holds the pre-migration test output and is gitignored.
+
+**Baseline:** unit **99 passing, 0 failing** before this step (178 with the new 79). Cypress **163 tests: 153 passing, 0 failing, 10 pending** across 13 specs (22m13s) — the 10 pending are pre-existing skips (`group-settings` 6, `group-chat` 2, `group-paying` 1, `notifications` 1) and must stay skipped, not silently drop out. Build + `chelDeploy` leave `manifests.json` byte-identical — the contract-hash invariant for Step 5.
+
+**The harness has teeth — verified by mutation, not assumed.** Breaking `objectOf`'s `.name` dispatch to an exact match failed 1 test; making `maybe` anonymous failed 3, covering both the name itself and the resulting behaviour change. `flowTyper.js` restored clean after each.
+
+**Quirks locked in as-is** (observed behaviour, not intended): `isNil` is `=== null` only; `numberRange.type` is a string where every other combinator uses a function, so `getType` ignores it; `objectOf`'s unknown-property message says "missing"; `getType(optional(x))` throws without an options argument; `maybe`'s primitive check tests the *name*, so `?(nil)` and `?(void)` get parenthesised.
+
+**Scope correction — the strip-only set is 3 files, not 6.** `flow-remove-types` strips the Flow pragma out of *comments*, so a file merely mentioning it registers as containing Flow. `Gruntfile.js` (prose comment at `:216`) and `scripts/refcount-fuzzer.js` (`/* @noflow */` at `:1`) contain **no Flow syntax** — both are comment deletions. Real syntax remains only in `service-worker.js` (7 lines), `test/backend.test.js` (2) and `distribution.test.js` (1). Plan Step 9 updated; its gate is now `check-residual-flow.js --gate`.
+
 ---
 
 ## Open items
