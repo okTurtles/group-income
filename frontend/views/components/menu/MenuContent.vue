@@ -40,7 +40,7 @@ export default ({
       this.ephemeral.isHeightAnimating = true
     },
     onTransitionStop (e) {
-      // Bound this handler to `transitioncancel` as well, so interrupting the animation (e.g.
+      // Bound to both `transitionend` and `transitioncancel`, so interrupting the animation (e.g.
       // closing the menu mid-open) can't leave scrolling permanently disabled.
       if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
       this.ephemeral.isHeightAnimating = false
