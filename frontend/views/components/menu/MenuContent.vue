@@ -3,8 +3,8 @@
   :class='{ "is-active": isActive, "is-height-animating": ephemeral.isHeightAnimating }'
   data-test='menuContent'
   @transitionstart='onTransitionStart'
-  @transitionend='onTransitionEnd'
-  @transitioncancel='onTransitionEnd'
+  @transitionend='onTransitionStop'
+  @transitioncancel='onTransitionStop'
 )
   .c-content-wrapper(
     v-on-clickaway='onClickAway'
@@ -39,7 +39,7 @@ export default ({
       if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
       this.ephemeral.isHeightAnimating = true
     },
-    onTransitionEnd (e) {
+    onTransitionStop (e) {
       // Bound this handler to `transitioncancel` as well, so interrupting the animation (e.g.
       // closing the menu mid-open) can't leave scrolling permanently disabled.
       if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
@@ -87,7 +87,7 @@ export default ({
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
-  overflow: auto;
+  overflow: hidden;
   pointer-events: none;
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
@@ -97,17 +97,12 @@ export default ({
   }
 
   &.is-active {
-    // Is that enought for every menu?
+    // Is that enough for every menu?
     // Should we use mask transition instead?
     pointer-events: initial;
     max-height: 25rem;
     opacity: 1;
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
-  }
-
-  // See `onTransitionStart` - never scroll while `max-height` is animating.
-  &.is-animated {
-    overflow: hidden;
   }
 
   &.c-responsive-menu {
