@@ -68,6 +68,8 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         throw new Error('Received login event but there already is an active session')
       }
       const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
+      // The state will be augmented from the Chelonia state, which has the journal.
+      // We have no use for the `_journal` key in Vuex, and keeping it will just bloat the state.
       Object.keys(cheloniaState.contracts || {}).forEach((k) => {
         const c = cheloniaState.contracts[k]
         if (c) delete c._journal
