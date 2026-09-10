@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
-import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.js'
+import { KV_KEYS, LAST_LOGGED_IN_THROTTLE_WINDOW } from '~/frontend/utils/constants.ts'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/kv/updateLastLoggedIn': ({ contractID, throttle }: { contractID: string, throttle: boolean }) => {

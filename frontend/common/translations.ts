@@ -2,11 +2,11 @@
 
 // since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import template from './stringTemplate.js'
+import template from './stringTemplate.ts'
 
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
-const defaultTranslationTable: { [string]: string } = {}
+const defaultTranslationTable: { [key: string]: string } = {}
 
 let currentLanguage = defaultLanguage
 let currentLanguageCode = defaultLanguage.split('-')[0]
@@ -51,7 +51,7 @@ export default (sbp('sbp/selectors/register', {
       console.error(error)
     }
   }
-}): string[])
+}) as string[])
 
 /*
 Examples:
@@ -93,7 +93,7 @@ String with Vue components inside:
   ) Invite {count} members to the party!
 */
 
-export function LTags (...tags: string[]): {|br_: string|} {
+export function LTags (...tags: string[]): { br_: string } {
   const o = {
     'br_': '<br/>'
   }
@@ -106,7 +106,11 @@ export function LTags (...tags: string[]): {|br_: string|} {
 
 export function L (
   key: string,
-  args: Array<*> | Object | void
+  // Flow: `Array<*> | Object | void`.
+  // `Object` becomes `any`, which swallows the `Array<any>` arm, so the union checks
+  // nothing. The accurate type is the array-or-record `template()` accepts;
+  // that belongs to the later strictness pass, not here.
+  args?: Array<any> | any
 ): string {
   return template(currentTranslationTable[key] || key, args)
     // Avoid inopportune linebreaks before certain punctuations.
@@ -116,7 +120,7 @@ export function L (
     .replace(/\s(?=[;:?!])/g, '\u00a0')
 }
 
-export function LError (error: Error, toGithub?: boolean): {|reportError: any|} {
+export function LError (error: Error, toGithub?: boolean): { reportError: any } {
   let url = 'https://github.com/okTurtles/group-income/issues'
   if (!toGithub && sbp('state/vuex/state').loggedIn) {
     const baseRoute = sbp('controller/router').options.base

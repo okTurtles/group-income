@@ -1,5 +1,5 @@
 const trapFocus = {
-  data (): {|focusableElements: string, focusedElement: null|} {
+  data (): { focusableElements: string, focusedElement: null } {
     return {
       // focusedElement used when $el is not available (ex: the tooltip)
       focusedElement: null,
@@ -22,7 +22,7 @@ const trapFocus = {
         // look for focusableChilds each time tab is pressed
         // to catch any element that may have changed disabled attr.
         // ex: submit button gets enabled or a form step changed.
-        const focusableChilds = Array.from(el.querySelectorAll(this.focusableElements))
+        const focusableChilds: any[] = Array.from(el.querySelectorAll(this.focusableElements))
         const firstFocusChild = focusableChilds[0]
         const lastFocusChild = focusableChilds[focusableChilds.length - 1]
 

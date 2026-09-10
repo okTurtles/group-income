@@ -51,7 +51,7 @@ import sbp from '@sbp/sbp'
 import Avatar from '@components/Avatar.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
-import { imageDataURItoBlob } from '@utils/image.js'
+import { imageDataURItoBlob } from '@utils/image.ts'
 import { GROUP_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default {

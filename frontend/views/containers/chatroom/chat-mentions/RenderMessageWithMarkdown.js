@@ -6,7 +6,7 @@ import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'
 import CodeFence from './CodeFence.vue'
-import { EMOJI_REGEX } from '@utils/constants.js'
+import { EMOJI_REGEX } from '@utils/constants.ts'
 
 // reference (Vue render function): https://v2.vuejs.org/v2/guide/render-function
 const RenderMessageWithMarkdown: any = {

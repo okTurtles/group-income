@@ -55,7 +55,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
-import trapFocus from '@utils/trapFocus.js'
+import trapFocus from '@utils/trapFocus.ts'
 import { CLOSE_MODAL, DELETE_ATTACHMENT, DELETE_ATTACHMENT_FEEDBACK } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import PreviewImageArea from './PreviewImageArea.vue'

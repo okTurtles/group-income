@@ -7,7 +7,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
-import isPwa from '@utils/isPwa.js'
+import isPwa from '@utils/isPwa.ts'
 
 export default {
   name: 'BackgroundSounds',

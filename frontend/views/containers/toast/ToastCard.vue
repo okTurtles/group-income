@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import { TOAST_VARIANTS } from '@utils/constants.js'
+import { TOAST_VARIANTS } from '@utils/constants.ts'
 
 export default {
   name: 'ToastCard',

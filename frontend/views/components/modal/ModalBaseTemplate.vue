@@ -16,7 +16,7 @@
 
 <script>
 import modalMixins from './ModalMixins.js'
-import trapFocus from '@utils/trapFocus.js'
+import trapFocus from '@utils/trapFocus.ts'
 
 export default {
   name: 'ModalBaseTemplate',

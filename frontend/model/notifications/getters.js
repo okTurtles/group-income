@@ -1,5 +1,5 @@
 import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import { age, isNew, isOlder } from './utils.js'
 
 const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {

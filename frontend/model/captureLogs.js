@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
-import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.js'
+import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.ts'
 import { createLogger } from './logger.js'
 import logServer from './logServer.js'
 

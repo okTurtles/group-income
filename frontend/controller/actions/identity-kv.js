@@ -1,7 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
-import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
+import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.ts'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
 

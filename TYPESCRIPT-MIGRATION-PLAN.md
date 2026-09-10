@@ -46,6 +46,28 @@ This holds **even when the Flow declaration contradicts the implementation.** `f
 
 **Where the better type goes:** a comment naming the accurate type and the evidence for it, so the later strictness pass can pick it up. See `process` in `frontend/declarations.d.ts` for the shape of that note.
 
+**When the mirror cannot be written at all,** RULES 3 applies. That is the only way out of this rule.
+
+### 3. When the mirror doesn't typecheck, exempt it — and say so
+
+Some Flow annotations have no TypeScript equivalent that compiles. Mirroring those produces a suppression comment instead of a type, which is a worse artifact than the annotation was worth. Those get an exemption from RULES 2.
+
+**The test is narrow, and it is mechanical:** the exemption applies only when the mirrored annotation **fails to compile**, so that keeping it requires a `@ts-expect-error` or an `as` cast to silence TypeScript. Nothing else qualifies. Not "the mirror is ugly." Not "a more accurate type is obvious." Not "the union collapses to `any` and checks nothing." If the mirror compiles, RULES 2 governs and the finding goes in a comment.
+
+The boundary matters, so here it is both ways:
+
+| Situation | Rule | Outcome |
+|---|---|---|
+| `typeof Error` on a `ChelErrorGenerator` result — TS reads it as `ErrorConstructor`, demands the `Error.isError` static, fails TS2741 | **3** | Annotation dropped; inference stands |
+| `Array<*> \| Object \| void` → `args?: Array<any> \| any` — compiles, but `Object` → `any` swallows the other arm so the union checks nothing | **2** | Mirror written as-is, discrepancy noted in a comment (`translations.ts`) |
+| `?Object` → `params?: any \| null` — same collapse, still compiles | **2** | Mirror written as-is (`image.ts`) |
+
+**What an exemption may do:** drop the annotation and let inference stand, or use the nearest type that does compile. Prefer dropping — inference is derived from the value and cannot drift from it, whereas a hand-picked replacement is a new claim that nothing checks. Either way it is the *minimum* departure that compiles, never an opportunity to write the better type; that still belongs to the strictness pass.
+
+**Every exemption is recorded twice:** a comment in the file saying what the annotation was and why it is gone, and a line in `PROGRESS.md` for the step that granted it. An exemption nobody can find later is indistinguishable from a translation error.
+
+**Granted so far:** `typeof Error` — `frontend/common/errors.ts` (Step 4), and `contracts/chatroom.js:39,40` + `contracts/group.js:369,370` when Step 5 reaches them.
+
 ---
 
 ## The mechanism that makes this incremental
@@ -263,13 +285,44 @@ Recurring syntax translations, all governed by RULES 2 — mirror, do not improv
 
 | Step | Wave | Files | Notes |
 |---|---|---|---|
-| **4** | `frontend/common` 3, `frontend/utils` **9** | **12** | Leaf utilities, few dependents. Smallest wave first to shake out the translation patterns. `frontend/utils` gained `markdown-parsers.js` in v2.9.0. **Do not touch `frontend/common/common.js`** — no Flow in it, and it's an esbuild `external` (Step 3a). |
+| **4 — DONE** | `frontend/common` 3, `frontend/utils` **9** | **12** | Leaf utilities, few dependents. Smallest wave first to shake out the translation patterns. `common.js` keeps its name but **did** need its three re-export specifiers rewritten — see below. |
 | **5** | `frontend/model/contracts/**` | 17 | 19 files in the tree contain Flow; 2 of them (`misc/flowTyper.js`, `shared/distribution/distribution.test.js`) are Flow-ignored and belong to the strip-only set. **Highest risk — see below.** |
 | **6** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **10**, `settings` 1 | **24** | Depends on Steps 4–5. Includes `notifications/types.flow.js` → `types.ts`, **moved here from Step 2** — renaming it early breaks Flow for its four `import type` consumers in this same directory, so it converts alongside them. |
 | **7** | `frontend/controller/**`: root 3, `actions` 9, `app` 3, `e2e` 1, `serviceworkers` 3, `utils` 1 | 20 | Controller root holds 4 Flow files; `service-worker.js` is Flow-ignored (strip-only), leaving 3. `serviceworkers/sw-primary.js` is its own esbuild entry — update `Gruntfile.js:663` in the same commit (Step 3a), then rebuild and smoke-test the SW bundle specifically. |
 | **8** | `frontend/views/**` `.js`: `views/utils` 13, `containers/chatroom` 5, `chat-mentions` 2, **`voice-recording` 1**, `components/*` 3, `containers/payments` 1, `roles-and-permissions` 1 — plus root `frontend/setupChelonia.js` | **27** | `views/utils` holds 14 entries; one is the `vueComponentStub.js.flow` stub, superseded on the TypeScript side in Step 2 but deleted only in Step 9, leaving 13 to convert. `voice-recording/voice-recording-utils.js` is new in v2.9.0. View-layer helpers imported by SFCs; SFCs themselves stay untouched plain JS. |
 
 **Total across 4–8: 100.** Plus `frontend/declarations.js`, retired in Step 2 by `declarations.d.ts` = **101 Flow-checked files**, which reconciles with the scope table above.
+
+### What Step 4 turned up — read before starting a wave
+
+Twelve files, all green: `tsc` 0 · `eslint` 0 · `npm run flow` "No errors!" · `grunt build` 0 · **178 passing** · residual Flow **109 → 97**. `frontend/model/contracts/manifests.json` is byte-identical, which matters more here than the count — see the first item.
+
+**Wave 4 already reaches into the contract bundles, so the hash check is not just Step 5's.** The non-slim contract entry points bundle `@common/common.js`, and `common.js` re-exports `translations`, `errors` and (through translations) `stringTemplate` — three of this wave's twelve. Only `contractsSlim` marks `@common/common.js` external (`Gruntfile.js:684`). The manifests came out unchanged, so esbuild's TypeScript loader and `flow-remove-types` emit the same bytes for these files; that is a measured result, not a guarantee, so re-run the check on any wave that touches a module reachable from a contract.
+
+**`common.js` had to be edited after all.** Step 3a says never *rename* it, and that still holds — the `external` string match and the contract hashes both depend on the name. But its three `export * from './errors.js'` / `'./translations.js'` lines are specifiers like any other and had to become `.ts` in this commit. Flow accepts it: `common.js` is still Flow-checked, and the `.ts` stub resolves a re-export the same way it resolves an import.
+
+**Extensionless aliased specifiers keep working across a rename — leave them alone.** `ToastContainer.vue:45` imports `'@utils/constants'` with no extension. `alias-plugin.js` returns an extensionless absolute path from `onResolve`, and esbuild's own resolver then infers the extension, finding `.ts` just as it found `.js`. Verified in the built chunk: `TOAST_POSITIONS` and `MAX_TOAST_COUNT` are bound and their values present. A wave's grep should still find these so you know they exist, but they need no edit. (`PendingApproval.vue:19` has the same shape against `@model/contracts/shared/constants` — Step 5's.)
+
+**`typeof Error` does not survive the mirror — and is the one RULES 2 exemption.** TypeScript reads `typeof Error` as `ErrorConstructor`, which requires the `Error.isError` static; `@chelonia/lib`'s `ChelErrorGenerator` returns a bare constructor without it, so the annotation Flow accepted fails as TS2741. Mirroring it means a `@ts-expect-error` per export, which is a worse artifact than the problem. **Drop the annotation instead** and let the constructor's own type stand — verified assignable to `Error`, with `.message` typed `string` and `instanceof` and `throw` both working. **Step 5 hits this four more times** — `contracts/chatroom.js:39,40` and `contracts/group.js:369,370`; treat them the same way.
+
+**Four TypeScript-only failures that Flow never reported.** None is a translation of a Flow annotation; each is TypeScript checking something Flow inferred loosely, and each is fixed with `any` so that coverage stays where Flow had it:
+
+| Pattern | What TypeScript says | Fix used |
+|---|---|---|
+| `let options = {}` then `options.width` | TS2339 — the type is `{}`, not an unsealed object | `let options: any = {}` (`faviconBadge.ts`) |
+| `function f ({ a, b } = {})` | TS2339 on each destructured name | annotate the parameter `: any` (`lazyLoadedView.ts`) |
+| `new Promise(resolve => …)` with no type argument | infers `Promise<unknown>`; the awaited `.size` is TS2339 | annotate the function's return `Promise<any>` (`image.ts`) |
+| `Array.from(x)` where `x` is `any` | yields `unknown[]`, not `any[]` | annotate the binding `: any[]` (`trapFocus.ts`) |
+
+**`{| |}` → `{ }` widens, and how much depends on the call site.** TypeScript has no exact object type, so this is the one translation that necessarily loses something. It often loses nothing in practice: excess-property checking covers *fresh object literals*, so an annotation on a function that returns one still rejects an extra key (verified in `trapFocus.ts` — TS2353). It does lose the check where the value is not a fresh literal: a `{| |}` parameter receiving a pre-built object, or a return of a variable rather than a literal. Check which shape you have per site; the translation alone does not tell you.
+
+**A `| void` parameter becomes `?`, not `| undefined`.** Flow lets you omit an argument whose type includes `void`; TypeScript does not, and `L('Hello')` is called with one argument throughout the app. So `args: Array<*> | Object | void` → `args?: Array<any> | any`. Note what that mirror produces: `Object` → `any` swallows the other arm, so the union checks nothing. That is the correct output of RULES 2 and the discrepancy goes in a comment — `translations.ts` and `image.ts` both carry one.
+
+**`$FlowFixMe` comments are deleted, not translated.** Most marked things TypeScript accepts. Where TypeScript does object, it gets its own `@ts-expect-error` naming the error code — `isPwa.ts` is the one case in this wave (`navigator.standalone` is Safari-only).
+
+**The Step 3 Mocha hook is confirmed in use.** `frontend/common/stringTemplate.test.js` is a `.js` test importing `./stringTemplate.ts`; it runs and passes, which is the first real exercise of the `extensions` option added to `@babel/register`.
+
+**One process note:** `git ls-files … | xargs -0 perl -pi` for the specifier rewrite. An unquoted `$files` shell variable does **not** word-split in zsh, so passing a file list that way silently rewrites nothing and reports a "File name too long" error that reads like a listing. Check `git status` after a bulk rewrite, not just the command's exit.
 
 ### Step 5 in detail — contract source
 
@@ -278,6 +331,7 @@ This is where a mistake is expensive and slow to surface: per `docs/src/Calls-Fr
 - `group.js`, `chatroom.js`, `identity.js`, and `shared/**` (`constants`, `currencies`, `functions`, `time`, `validators`, `distribution/`, `getters/`, `payments/`, `voting/`) — 17 files.
 - **`flowTyper.js` is not part of this wave.** It's Flow-ignored (`.flowconfig:22`), so per parity it stays untypechecked. Rename to `flowTyper.ts` with its generics preserved exactly as written (per the spec decision). **`exclude` alone will not keep it unchecked** — verified in Step 1: an excluded `.ts` is still fully typechecked once something imports it, and the contracts import this file. `exclude` only filters the *root* set. The escape hatch that actually works is **`// @ts-nocheck` at the top of the file** (confirmed: silences it, `tsc` exits 0). Add the `exclude` entry too, updated from `.js` to `.ts`, so it never becomes a root either. **Also update the matching `eslintIgnore` entry** in `package.json` — it names `frontend/model/contracts/misc/flowTyper.js` by path, and a stale entry there silently starts linting a file that was deliberately exempt. Runtime behaviour must be byte-for-byte equivalent — the `typeFn.name.includes('optional')` dispatch depends on function `.name` surviving compilation, which no typechecker will catch if broken. The Step 0 harness is the gate.
 - **Update the contract entry points at `Gruntfile.js:677`** in the same commit as the `group.js` / `chatroom.js` / `identity.js` renames (Step 3a). Nothing else in the build knows those paths.
+- **Four `typeof Error` annotations get dropped, not mirrored** — `chatroom.js:39,40` and `group.js:369,370`, the same TS2741 Step 4 hit in `common/errors.ts`. Follow that file: no annotation, and its comment explains why.
 - Do **not** run `grunt pin`. Existing snapshots under `contracts/` must be untouched — the current pinned set runs to `2.9.0`, and `chelonia.json` points at it.
 - Verify `frontend/model/contracts/manifests.json` is byte-identical after a production build — contract hashes must not move.
 

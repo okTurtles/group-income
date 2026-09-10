@@ -10,7 +10,7 @@ let currentFavicon = null
 let originalFavicon = null
 let faviconImage
 let canvas = null
-let options = {}
+let options: any = {}
 // Chrome browsers with nonstandard zoom report fractional devicePixelRatio.
 const r = Math.ceil(window.devicePixelRatio) || 1
 const size = 16 * r
@@ -134,7 +134,7 @@ const refreshFavicon = () => {
 }
 
 const FaviconBadge = {
-  setOptions: function (custom: Object) {
+  setOptions: function (custom: any) {
     options = {}
 
     for (const key in defaults) {

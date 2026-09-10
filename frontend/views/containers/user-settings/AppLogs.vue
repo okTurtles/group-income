@@ -70,7 +70,7 @@
 import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
-import { MAX_LOG_ENTRIES } from '@utils/constants.js'
+import { MAX_LOG_ENTRIES } from '@utils/constants.ts'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
 import { L, LError } from '@common/common.js'
 import { omit } from 'turtledash'

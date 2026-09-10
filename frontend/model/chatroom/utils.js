@@ -5,7 +5,7 @@ import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@utils/markdown-parsers.js'
+import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@utils/markdown-parsers.ts'
 
 export function makeChannelMention (str: string, withId: boolean = false): string {
   return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`

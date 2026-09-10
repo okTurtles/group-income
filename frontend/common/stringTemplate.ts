@@ -18,7 +18,6 @@ export default function template (string: string, ...args: any[]): string {
 
     const maybeReplacement = (
       // Avoid accessing inherited properties of the replacement table.
-      // $FlowFixMe
       Object.prototype.hasOwnProperty.call(replacementsByKey, capture)
         ? replacementsByKey[capture]
         : undefined

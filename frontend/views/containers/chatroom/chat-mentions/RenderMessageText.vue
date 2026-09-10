@@ -40,7 +40,7 @@ import {
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
-import { TextObjectType, EMOJI_REGEX } from '@utils/constants.js'
+import { TextObjectType, EMOJI_REGEX } from '@utils/constants.ts'
 import { L } from '@common/common.js'
 
 export default {

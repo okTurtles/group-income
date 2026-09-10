@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import type { Notification, NotificationData, NotificationTemplate } from './types.flow.js'
 import templates from './templates.js'
 import { makeNotificationHash } from './utils.js'
-import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 
 /*

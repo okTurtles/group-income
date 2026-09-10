@@ -6,7 +6,7 @@ import Router from 'vue-router'
 import store from '~/frontend/model/state.js'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
-import { lazyPage } from '@utils/lazyLoadedView.js'
+import { lazyPage } from '@utils/lazyLoadedView.ts'
 import Vue from 'vue'
 
 /*

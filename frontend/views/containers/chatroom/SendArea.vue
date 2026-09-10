@@ -317,7 +317,7 @@ import {
   CHATROOM_MAX_MESSAGE_LEN,
   CHATROOM_ATTACHMENT_TYPES
 } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.ts'
 import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
 import {

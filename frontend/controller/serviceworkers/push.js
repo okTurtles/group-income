@@ -6,7 +6,7 @@ import setupChelonia from '~/frontend/setupChelonia.js'
 import { Buffer } from 'buffer'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
 import { getSubscriptionId } from '@chelonia/lib/functions'
-import { DEVICE_SETTINGS } from '@utils/constants.js'
+import { DEVICE_SETTINGS } from '@utils/constants.ts'
 
 // The application server (public) key could be either an ArrayBuffer (which is
 // what we get from fetching the current subscription), or it could be a

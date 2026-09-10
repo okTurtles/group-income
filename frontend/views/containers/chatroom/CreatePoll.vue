@@ -131,7 +131,7 @@ import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS, POLL_QUESTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import trapFocus from '@utils/trapFocus.js'
+import trapFocus from '@utils/trapFocus.ts'
 
 const createRandomId = () => {
   const randomStr = () => Math.random().toString(20).slice(2)

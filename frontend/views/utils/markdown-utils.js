@@ -1,6 +1,6 @@
 import { marked } from 'marked'
 import { validateURL } from './misc.js'
-import { splitStringByMarkdownCode, combineMarkdownSegmentListIntoString } from '@utils/markdown-parsers.js'
+import { splitStringByMarkdownCode, combineMarkdownSegmentListIntoString } from '@utils/markdown-parsers.ts'
 
 const HREF_ESCAPE_MAP = { '"': '%22', "'": '%27', '<': '%3C', '>': '%3E', '`': '%60' }
 

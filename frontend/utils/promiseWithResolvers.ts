@@ -1,11 +1,9 @@
 const promiseWithResolvers: () => {
-    promise: Promise<*>,
-    resolve: Function,
-    reject: Function
+    promise: Promise<any>,
+    resolve: any,
+    reject: any
 } = (() => {
-  // $FlowFixMe[prop-missing]
   if (Promise.withResolvers) {
-    // $FlowFixMe[prop-missing]
     return () => Promise.withResolvers()
   } else {
     return () => {

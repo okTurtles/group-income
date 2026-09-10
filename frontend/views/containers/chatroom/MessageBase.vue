@@ -144,7 +144,7 @@ import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constan
 import {
   CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE,
   CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
-} from '~/frontend/utils/constants.js'
+} from '~/frontend/utils/constants.ts'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
 import { getFileType } from '@view-utils/filters.js'

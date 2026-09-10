@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { KILOBYTE, IMAGE_ATTACHMENT_MAX_SIZE } from './constants.js'
+import { KILOBYTE, IMAGE_ATTACHMENT_MAX_SIZE } from './constants.ts'
 
 // Copied from https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
 export function objectURLtoBlob (url: string): Promise<Blob> {
@@ -23,7 +23,11 @@ export function imageDataURItoBlob (dataURI: string): Blob {
   return new Blob([ab], { type: imageType })
 }
 
-export const imageUpload = async (imageFile: File, params: ?Object): Promise<Object> => {
+// `params?: any | null` mirrors Flow's `?Object` arm by arm per RULES 2 (`Object`
+// -> `any`, `void` -> the `?`), so it too collapses to `any`. Same for the
+// `Promise<Object>` return: the real shape is chelonia's fileUpload `download`
+// descriptor. Both are for the strictness pass.
+export const imageUpload = async (imageFile: File, params?: any | null): Promise<any> => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   const { download } = await sbp('chelonia/fileUpload', imageFile, { type: file.type, cipher: 'aes256gcm' }, params)
@@ -59,7 +63,7 @@ function generateImageBlobByCanvas ({
   resizingFactor,
   quality,
   compressToType
-}) {
+}): Promise<any> {
   const { naturalWidth, naturalHeight } = sourceImage
   const canvasEl = document.createElement('canvas')
   const c = canvasEl.getContext('2d')

@@ -34,7 +34,7 @@ import {
   LEFT_GROUP,
   LOGOUT
 } from '@utils/events.js'
-import { imageUpload } from '@utils/image.js'
+import { imageUpload } from '@utils/image.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import type { ChelKeyRequestParams } from '@chelonia/lib'

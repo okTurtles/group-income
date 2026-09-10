@@ -162,9 +162,29 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 ---
 
+### 010 — Step 4: first conversion wave (`common` + `utils`)
+
+**Status:** DONE
+
+**Changed:** 12 files renamed `.js` → `.ts` (`common/{errors,stringTemplate,translations}`, `utils/{CircularList,constants,faviconBadge,image,isPwa,lazyLoadedView,markdown-parsers,promiseWithResolvers,trapFocus}`) plus specifier updates in 43 importers. `tsc` 0 · eslint 0 · Flow green · `grunt build` 0 · 178 passing · residual Flow 109 → **97**.
+
+**This wave already reached the contract bundles.** The non-slim contract entry points bundle `@common/common.js`, which re-exports `translations`, `errors` and `stringTemplate` — only `contractsSlim` marks it external. `manifests.json` came out byte-identical, so the TS loader and `flow-remove-types` emit the same bytes here; that is measured, not guaranteed, so the check belongs in every wave that touches a contract-reachable module, not only Step 5.
+
+**`common.js` keeps its name but not its specifiers.** Step 3a's "never rename" still holds — the `external` string match and the hashes depend on it — but its three `export * from './*.js'` lines had to become `.ts`, and Flow resolves a re-export through the Step 3 stub the same way it resolves an import.
+
+**Extensionless aliased imports survive a rename untouched.** `alias-plugin.js` returns an extensionless path and esbuild infers the extension, so `'@utils/constants'` found `.ts` with no edit — confirmed in the built chunk. Grep for them to know they exist; don't change them.
+
+**`typeof Error` is the first RULES 3 exemption** (added to the plan this step: mirror only when the mirror compiles). TS's `ErrorConstructor` requires the `Error.isError` static that `ChelErrorGenerator` doesn't return, so TS2741 where Flow was fine — and mirroring it costs a `@ts-expect-error` per export. Annotation dropped instead; the inferred constructor type is assignable to `Error` and keeps `.message`, `instanceof` and `throw`. Step 5's four cases in `chatroom.js` and `group.js` go the same way.
+
+**Four failures were TypeScript checking what Flow only inferred**, none a translation: `let options = {}` then `options.width`; `function f ({a, b} = {})`; un-parameterized `new Promise` inferring `Promise<unknown>`; `Array.from(any)` yielding `unknown[]`. All fixed with `any` so coverage stays exactly where Flow had it. Also confirmed: a `| void` parameter becomes `?`, since TS otherwise demands the argument and `L()` is called with one everywhere.
+
+**Step 3's Mocha hook got its first real use** — `stringTemplate.test.js` is a `.js` test importing a `.ts` module, and it passes.
+
+---
+
 ## Open items
 
-- 100 Flow-checked `.js` files left to convert (Steps 4–8), plus 3 Flow-ignored ones needing syntax stripped only and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
+- 88 Flow-checked `.js` files left to convert (Steps 5–8), plus 3 Flow-ignored ones needing syntax stripped only and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.js`: convert, or leave frozen as a runtime dependency (lower risk — it's bundled into pinned contracts).
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.
 - ESLint 7.32 limits usable `@typescript-eslint` versions; may force a lint-stack upgrade.

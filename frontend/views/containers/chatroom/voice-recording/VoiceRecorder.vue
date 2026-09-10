@@ -44,7 +44,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { VOICE_RECORDING_MIME_TYPES } from '~/frontend/utils/constants.js'
+import { VOICE_RECORDING_MIME_TYPES } from '~/frontend/utils/constants.ts'
 import { getAmplitudeFromTimeDataSamples, getMimeTypeEssence } from './voice-recording-utils.js'
 import { isFirefox } from '@view-utils/filters.js'
 import { mixin as clickaway } from 'vue-clickaway'
