@@ -9,8 +9,8 @@
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
     "test": "grunt test",
-    "eslint": "eslint \"**/*.{js,vue}\"",
-    "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
+    "eslint": "eslint \"**/*.{js,ts,vue}\"",
+    "eslintfix": "eslint \"**/*.{js,ts,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
     "typecheck": "tsc --noEmit",
@@ -45,7 +45,27 @@
         2,
         "ignorePackages"
       ]
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/*.ts"
+        ],
+        "rules": {
+          "no-undef": "off"
+        }
+      },
+      {
+        "files": [
+          "**/*.d.ts"
+        ],
+        "rules": {
+          "no-redeclare": "off",
+          "no-unused-vars": "off",
+          "no-var": "off"
+        }
+      }
+    ]
   },
   "eslintIgnore": [
     "frontend/assets/*",
@@ -108,6 +128,7 @@
     "@babel/plugin-transform-runtime": "7.12.1",
     "@babel/preset-env": "7.23.8",
     "@babel/preset-flow": "7.12.1",
+    "@babel/preset-typescript": "7.23.3",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.4.0",

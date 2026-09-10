@@ -1,0 +1,14 @@
+// @flow
+
+// Flow's stand-in for any module that has already been converted to TypeScript.
+//
+// `.flowconfig` maps every `.ts` specifier here, the same way it maps `.vue`
+// and `.svg` to `vueComponentStub.js.flow`. Without it, the first conversion in
+// Step 4 breaks `npm run flow` — a CI step — because a still-Flow-checked `.js`
+// importer of a renamed file gets `cannot-resolve-module`. That is what
+// happened when `notifications/types.flow.js` was renamed during Step 2.
+//
+// `any` is the correct value, not a concession: a converted module is
+// TypeScript's to check, and `tsc --noEmit` checks it. Flow only needs to stop
+// asking. This file and the mapper line both disappear in Step 9.
+declare module.exports: any

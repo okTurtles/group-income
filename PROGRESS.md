@@ -142,11 +142,29 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **`notifications/types.flow.js` deferred to Step 6.** Renaming it to `.ts` breaks Flow for its 4 `import type` consumers (4 `cannot-resolve-module`); attempted and reverted. No `.ts` needs it yet. Step 6 is now 24 files, Steps 4–8 total 100.
 
+### 009 — Step 3 + 3a: the build learns `.ts`
+
+**Status:** DONE
+
+**Changed:** `@babel/preset-typescript` installed and added to `.babelrc`; `@babel/register` given `extensions: [… , '.ts']`; three ESLint globs widened to `{js,ts,vue}`; dev watch glob widened; `.flowconfig` gains a `.ts` extension mapper pointing at the new `frontend/tsModuleStub.js.flow`. No source file converted.
+
+**Flow, not esbuild, was the blocker.** A Flow-checked `.js` importing a `.ts` fails `cannot-resolve-module`, and `npm run flow` is a CI step — so Step 4's first rename was unrunnable. Fixed with an extension mapper to an `any` stub, the same shape `.flowconfig` already uses for `.vue`/`.svg`. **Value imports resolve; `import type` does not** (`[value-as-type]`), so any module whose types Flow files consume must convert in the same commit as those consumers. That generalises the `types.flow.js` deferral from 008 into a rule for every wave.
+
+**ESLint needed two `overrides` blocks, not just a wider glob.** `@babel/eslint-parser` parses `.ts` but does no TS scope analysis, so `no-undef` fired on every type name — Flow files escape this only via `flowtype/define-flow-type`, which has no TS equivalent before Step 10. `no-undef` off for `**/*.ts` (`tsc` reports the same as TS2304). And `**/*.ts` matches `.d.ts`, so the glob dragged in Step 2's declarations and failed the build on `no-var` / `no-unused-vars` / `no-redeclare`; those three are off for `**/*.d.ts` rather than ignoring the files, since they are hand-written.
+
+**Babel needed no `overrides`.** The plan assumed presets are extension-scoped; `preset-flow` is configured `{ all: true }` and is not. Verified they coexist anyway — Flow-only and TS-only syntax each compile from their own extension. Installing the preset bumped six `@babel/helper-*` packages, which touches Mocha and ESLint only, never the esbuild path.
+
+**Contract bundles byte-for-byte identical** to a stashed build from `HEAD` — all 6 `dist/contracts/*.js` and 3 manifests. `tsc` 0 · Flow green · eslint 0 · `grunt build` 0 · 178 passing (180 with probes) · `grunt dev` hot reload confirmed live on a `.ts` edit. Residual Flow 108 → **109**: the new stub, which Step 9 deletes.
+
+**3a:** the four hardcoded `Gruntfile.js` paths re-verified at `:77`, `:663`, `:677`, `:684`. Two references that look like they belong there do not — `service-worker.js:119`'s `/assets/js/sw-primary.js` and `index.html:43`'s `/assets/js/main.js` name build *outputs*, and esbuild emits `.js` for a `.ts` entry point (verified), so Steps 5 and 7 leave them correct.
+
+**Resolved:** the orphaned `chel` server from 006/007 is gone; ports 8000/8888 are free and the 178/178 baseline is reconfirmed clean.
+
 ---
 
 ## Open items
 
-- 100 Flow-checked `.js` files left to convert (Steps 4–8), plus 3 Flow-ignored ones needing syntax stripped only and the 1 `.js.flow` stub retired.
+- 100 Flow-checked `.js` files left to convert (Steps 4–8), plus 3 Flow-ignored ones needing syntax stripped only and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.js`: convert, or leave frozen as a runtime dependency (lower risk — it's bundled into pinned contracts).
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.
 - ESLint 7.32 limits usable `@typescript-eslint` versions; may force a lint-stack upgrade.

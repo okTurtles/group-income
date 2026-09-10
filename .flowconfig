@@ -38,6 +38,7 @@ all=true
 emoji=true
 module.ignore_non_literal_requires=true
 module.name_mapper.extension='svg' -> '<PROJECT_ROOT>/frontend/views/utils/vueComponentStub.js.flow'
+module.name_mapper.extension='ts' -> '<PROJECT_ROOT>/frontend/tsModuleStub.js.flow'
 module.name_mapper.extension='vue' -> '<PROJECT_ROOT>/frontend/views/utils/vueComponentStub.js.flow'
 # https://github.com/entwicklerstube/babel-plugin-root-import#dont-let-flow-be-confused
 module.name_mapper='^~/\(.*\)$' -> '<PROJECT_ROOT>/\1'

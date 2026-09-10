@@ -297,7 +297,7 @@ module.exports = (grunt) => {
     },
 
     exec: {
-      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,ts,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet',
       gitconfig: 'git config --local include.path ../.gitconfig',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
@@ -766,7 +766,7 @@ module.exports = (grunt) => {
     ;[
       [['Gruntfile.js'], [eslint]],
       [['frontend/**/*.html'], ['copy']],
-      [['frontend/**/*.js'], [eslint]],
+      [['frontend/**/*.{js,ts}'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
       [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/assets/svgs/**/*.svg'], []],

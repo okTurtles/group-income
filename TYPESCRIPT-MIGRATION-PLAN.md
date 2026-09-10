@@ -140,21 +140,86 @@ Two new files, split by lifetime:
 
 ---
 
-## Step 3 — Teach the build about `.ts` (Flow stays)
+## Step 3 — Teach the build about `.ts` (Flow stays) — **DONE**
 
 Both type systems live side by side after this step. Nothing is removed.
 
-- ~~Add `.ts` to esbuild `resolveExtensions`.~~ **There is no `resolveExtensions` in `Gruntfile.js`**, and esbuild's default already includes `.ts`. Nothing to do — but nothing to rely on either, because of the next point.
-- **Aliased imports get no extension inference at all.** `alias-plugin.js:38,45` returns a concrete `path` from `onResolve`, and esbuild uses a plugin-returned path verbatim — it never appends or guesses an extension. So `@utils/foo.js` keeps pointing at a file that no longer exists the moment `foo.js` becomes `foo.ts`. Every aliased specifier must be hand-edited alongside the rename. `import/extensions: ignorePackages` already forces explicit extensions, so this is mechanical — but it is now the *only* mechanism, not a lint preference.
-- `.babelrc`: add `@babel/preset-typescript` **alongside** `@babel/preset-flow`. Babel applies presets by file extension, so `.js` keeps Flow handling and `.ts` gets TypeScript.
-- **`scripts/mocha-helper.js:8` must pass `extensions: ['.js', '.ts']` to `@babel/register`.** The preset alone is not enough: Babel's require hook defaults to `['.js', '.jsx', '.es6', '.es', '.mjs']` and will not intercept `.ts` at all. Miss this and the first Mocha test that reaches a converted file dies at `require` time with a syntax error — which reads like a Babel misconfiguration and isn't.
-- **Keep every `*.test.js` as `.js`.** `exec:test`'s spec glob (`Gruntfile.js:309`) matches `*.test.js` only, so a renamed test file stops running *silently* — green output, one fewer suite. Five of them sit inside conversion waves (`frontend/common/stringTemplate.test.js`, and `currencies` / `time` / `voting/rules` / `distribution/mincome-proportional` under `contracts/shared/`). They're Flow-ignored anyway (`.flowconfig:30`), so parity says leave them; widening the glob to `*.test.{js,ts}` is the deferred alternative, not this PR's job.
-- ESLint globs — **three places, not one**: `package.json` `eslint` and `eslintfix` scripts, and `exec:eslint` at `Gruntfile.js:298`. All go from `**/*.{js,vue}` to `**/*.{js,ts,vue}`. `@babel/eslint-parser` parses `.ts` via the newly added preset — no `@typescript-eslint` needed yet, which is exactly why the ESLint upgrade can wait until Step 10.
-- Add `.ts` to the `grunt dev` watch pattern (`Gruntfile.js:769`, `frontend/**/*.js` → `frontend/**/*.{js,ts}`). The extension check at `:796` needs no `.ts` branch — a `.ts` file has no `flowRemoveTypesPluginOptions.cache` entry to evict — but confirm it doesn't fall into the `.js` branch.
+### What changed
 
-**Verify with a throwaway:** rename one trivial leaf file to `.ts`, confirm `grunt dev`, `grunt build`, `grunt test:unit`, and lint all handle it, then either keep it or revert it.
+| File | Change |
+|---|---|
+| `package.json` | `@babel/preset-typescript` 7.23.3 added; `eslint` / `eslintfix` globs → `**/*.{js,ts,vue}`; two new `eslintConfig.overrides` blocks |
+| `.babelrc` | `@babel/preset-typescript` added alongside `@babel/preset-flow` |
+| `scripts/mocha-helper.js` | `extensions: [...defaults, '.ts']` on `@babel/register` |
+| `Gruntfile.js` | `exec:eslint` glob → `**/*.{js,ts,vue}`; dev watch glob → `frontend/**/*.{js,ts}` |
+| `.flowconfig` | `module.name_mapper.extension='ts'` → the new stub |
+| `frontend/tsModuleStub.js.flow` | **New.** Flow's `any` stand-in for already-converted modules |
 
-**Done when:** a `.ts` file builds, lints, hot-reloads, and runs under Mocha, with Flow files still working unchanged.
+`resolveExtensions` was a non-issue as predicted — it does not appear in `Gruntfile.js` and esbuild's default already covers `.ts`. The alias plugin's no-inference behaviour was confirmed by reading `alias-plugin.js:38,45`: it returns a resolved path verbatim, so aliased specifiers must still be hand-edited alongside every rename.
+
+### Flow could not resolve `.ts` at all — the blocker the plan missed
+
+The first probe build failed at `exec:flow`, not at esbuild:
+
+```
+Cannot resolve module `@utils/__ts-probe2.ts`. [cannot-resolve-module]
+```
+
+This is the same failure that forced `types.flow.js` back out of Step 2, and it is **not** specific to that file. `.flowconfig` has `all=true`, so Flow checks every `.js` in the project; the moment Step 4 renames its first leaf, every still-Flow importer of that leaf fails, and `npm run flow` is a CI step. Step 4 was unrunnable until this was fixed.
+
+The fix follows the shape `.flowconfig` already uses for `.vue` and `.svg`: an extension mapper pointing at a stub that exports `any`. A converted module is TypeScript's to check and `tsc --noEmit` checks it; Flow only needs to stop asking. The mapper line and `frontend/tsModuleStub.js.flow` both die in Step 9.
+
+**The limit of that stub, which constrains Steps 4–8:** it resolves *value* imports only. Verified both ways —
+
+| From a Flow-checked `.js` | Result |
+|---|---|
+| `import widen, { asAny } from '@utils/x.ts'` | **Works.** Aliased and relative specifiers both resolve to `any` |
+| `import type { Shape } from '@utils/x.ts'` | **Fails** — `Cannot use Shape as a type because it is an any-typed value` `[value-as-type]` |
+
+So a module whose *types* are consumed by a still-Flow importer must be converted in the same commit as those importers. This is exactly why `notifications/types.flow.js` sits in Step 6 with its four consumers rather than in Step 2, and the same test now applies to every wave: before renaming a file, check for `import type` against it, not just `import`.
+
+### Babel: no `overrides` needed, but the preset was not installed
+
+`@babel/preset-typescript` was absent from `package.json` — the plan said "add to `.babelrc`" and stopped there. Installed at 7.23.3 to sit with `@babel/core` 7.23.7.
+
+The plan's claim that "Babel applies presets by file extension" is only half true: `@babel/preset-flow` is configured `{ all: true }` and is **not** extension-scoped, so the two presets share every file. Verified directly that they still coexist — `preset-typescript` scopes itself internally, and Flow-only syntax (`{| +a: number |}`, `mixed`) and TypeScript-only syntax (`as`, `enum`, `!`) each compile correctly from their own extension. No `overrides` block was needed.
+
+Installing it bumped six shared `@babel/helper-*` packages to 7.29.7. Babel is not in the esbuild path — it serves `@babel/register` for Mocha and `@babel/eslint-parser` for linting only — so the build is untouched, and the contract-hash check below proves it.
+
+### ESLint: widening the glob broke two things
+
+`@babel/eslint-parser` *parses* `.ts` once the preset is in place, but it does not do TypeScript scope analysis, so core `no-undef` fired on every type name:
+
+```
+7:6  error  'ProbeShape' is not defined  no-undef
+9:6  error  'ProbeMode' is not defined   no-undef
+```
+
+Flow files escape this only because `plugin:flowtype/recommended` enables `flowtype/define-flow-type`, which registers Flow type identifiers as globals. There is no equivalent for TypeScript without `@typescript-eslint`, which is Step 10. `no-undef` is therefore turned **off** for `**/*.ts` — not lost coverage, since `tsc` reports the same thing as TS2304, and `@typescript-eslint` recommends disabling it for TS anyway.
+
+Second, `**/*.ts` also matches `.d.ts`, so the glob dragged in Step 2's ambient declarations and failed the build on them:
+
+```
+frontend/declarations.d.ts  79:13  error  'process' is defined but never used   no-unused-vars
+frontend/shims.d.ts          38:9  error  'component' is already defined        no-redeclare
+```
+
+Every one is inherent to declaration files. `no-redeclare`, `no-unused-vars` and `no-var` are off for `**/*.d.ts` rather than ignoring those files outright — they are hand-written and comment-heavy, so the remaining style rules are worth keeping on them.
+
+### Verified
+
+Probes (a `.ts` leaf, a `.ts` type module, a `.ts` importer of both, a Mocha spec, and a temporary `frontend/main.js` import) exercised every path, then were deleted. Nothing under `frontend/` was converted in this step.
+
+- `tsc --noEmit` exit 0, with `.ts` roots resolving `@utils/*` aliases and pulling a `.js` sibling into the program
+- `npm run flow` **No errors!** — with and without a `.ts` import present
+- `npm run eslint` exit 0 across `.js`, `.ts`, `.d.ts`, `.vue`
+- `grunt build` exit 0 with a `.ts` module bundled into `main.js` (`chel deploy` ran, `manifests.json` written)
+- **Contract bundles byte-for-byte identical** to a build from `HEAD` with every Step 3 change stashed — all 6 `dist/contracts/*.js` and all 3 manifests. Step 3 moves no contract hashes.
+- `grunt test:unit` 180 passing with 2 probe specs, **178 passing** after removing them — matches the Step 0 baseline. Negative control: dropping the `extensions` option from `mocha-helper.js` reintroduces the failure, so that bullet is real and not defensive.
+- `grunt dev` hot reload confirmed live on a `.ts` edit: `file event: 'change' detected on frontend/utils/__ts-probe.ts` → `eslint: linted … in 0.9s` → `esbuild: created dist/assets/js from frontend/main.js in 0.4s` → `[Browsersync] Reloading Browsers`, with the edited value present in the rebuilt bundle. The extension check at `Gruntfile.js:796` needs no `.ts` branch as predicted — a `.ts` file never enters `flowRemoveTypesPluginOptions.cache`, whose plugin filter is `/\.js$/`.
+- `scripts/check-residual-flow.js` **108 → 109**, the one new file being `frontend/tsModuleStub.js.flow`. Expected: it is Flow-only scaffolding, and Step 9 deletes it.
+
+**Kept from the plan unchanged:** every `*.test.js` stays `.js` (`exec:test`'s glob at `Gruntfile.js:309` matches `*.test.js` only, and a renamed spec would vanish silently), and the spec glob is not widened — that stays deferred.
 
 ---
 
@@ -162,7 +227,7 @@ Both type systems live side by side after this step. Nothing is removed.
 
 Small, but its own step because these are the renames that break the build from *outside* the file being renamed, so no amount of care inside a wave catches them.
 
-`Gruntfile.js` names four source paths as literal strings. Two are entry points that Steps 5 and 7 will rename; two must never be renamed at all.
+`Gruntfile.js` names four source paths as literal strings. Two are entry points that Steps 5 and 7 will rename; two must never be renamed at all. Line numbers re-verified after the Step 3 edits.
 
 | `Gruntfile.js` | String | When |
 |---|---|---|
@@ -173,7 +238,18 @@ Small, but its own step because these are the renames that break the build from 
 
 `frontend/common/common.js` and `frontend/main.js` contain **no Flow syntax**, so scope parity already excludes them from conversion — the risk is a "convert the whole directory" reflex in Step 4, not the plan. Renaming `common.js` would break the slim-contract `external` match, change what gets bundled into the slim contracts, and **move contract hashes** — failing Step 5's central invariant from a file in a different wave entirely.
 
-**Done when:** the table is transcribed into the Step 5 and Step 7 checklists, and Step 4's diff shows `frontend/common/common.js` untouched.
+### Output filenames are not affected — verified
+
+A sweep for other hardcoded references turned up two that look like they belong in the table and do not:
+
+- `frontend/controller/service-worker.js:119` registers `/assets/js/sw-primary.js`
+- `frontend/index.html:43` loads `/assets/js/main.js`
+
+Both name **build outputs**, not sources. esbuild writes `.js` for a JS-format bundle regardless of the entry point's extension — confirmed directly: an entry of `__ts-probe-types.ts` produced `__ts-probe-types.js`. So Step 7's `sw-primary.ts` rename leaves the registration URL correct, and Step 5's contract renames leave `dist/contracts/group.js` and the manifest filenames correct. Neither needs editing, and neither is a hidden break.
+
+Three config files also name concrete `.js` source paths — `tsconfig.json`'s `exclude`, `package.json`'s `eslintIgnore`, and `.flowconfig`'s `[ignore]`. Every path they name (`service-worker.js`, `blockies.js`, `flowTyper.js`) is in the Flow-ignored / strip-only set, and `flowTyper.js` is the only one that is ever renamed — already covered by the Step 5 checklist below.
+
+**Done when:** the table is transcribed into the Step 5 and Step 7 checklists (done — see both), and Step 4's diff shows `frontend/common/common.js` untouched.
 
 ---
 
@@ -181,7 +257,9 @@ Small, but its own step because these are the renames that break the build from 
 
 Same procedure for each wave: convert Flow syntax → TypeScript, rename `.js` → `.ts`, update importers' explicit extensions (`import/extensions` is set to `ignorePackages`, so specifiers and filenames must change together in one commit), run `npm run typecheck` + `grunt test:unit`.
 
-Recurring syntax translations: `?T` → `T | null | undefined` (default rule — but a `?boolean` guarding a default parameter should drop the `| null`, since defaults fire only on `undefined` and `null` takes the falsy branch instead; see `fetchServerTime` in Step 2); `{| |}` → plain object types; `+`/`-` variance → `readonly` where it applies; `mixed` → `unknown`; `Object`/`Function` → `any` initially (tighten later, not now); `$Keys`/`$Values`/`$Shape`/`$Exact` → `keyof`/indexed access/`Partial`/exact-ish equivalents; `import type` carries over directly.
+Recurring syntax translations, all governed by RULES 2 — mirror, do not improve: `?T` → `T | null | undefined`, with no exception for a `?boolean` guarding a default parameter (the `| null` is wrong there, and it still gets written; the finding goes in a comment — see `fetchServerTime` in Step 2); `{| |}` → plain object types; `+`/`-` variance → `readonly` where it applies; `mixed` → `unknown`; `Object`/`Function` → `any` initially (tighten later, not now); `$Keys`/`$Values`/`$Shape`/`$Exact` → `keyof`/indexed access/`Partial`/exact-ish equivalents; `import type` carries over directly.
+
+**Before renaming any file, grep for `import type` against it.** Flow's `.ts` stub (Step 3) resolves value imports to `any`, but a `import type { X } from './y.ts'` in a still-Flow importer fails with `[value-as-type]`. A module whose types are consumed by Flow files must be converted in the same commit as those consumers — which is why `notifications/types.flow.js` is in Step 6 and not Step 2.
 
 | Step | Wave | Files | Notes |
 |---|---|---|---|
@@ -226,6 +304,7 @@ Only now is nothing depending on it.
 - `.babelrc`: drop `@babel/preset-flow`, keep `@babel/preset-typescript`.
 - Replace `exec:flow` (`Gruntfile.js:301`) with a `tsc --noEmit` task; update `lintTasks` (`:463`); remove the `flow stop` call (`:874`) and the `@flow`/`all`-option comment at `:216-217`.
 - Delete `.flowconfig`. Remove `flow-bin`, `flow-remove-types`, `@babel/preset-flow` from `package.json`; replace the `flow` npm script with `typecheck`.
+- **Delete `frontend/tsModuleStub.js.flow`** (added in Step 3) along with the `module.name_mapper.extension='ts'` line that points at it. It is the one file the residual-Flow gate would otherwise trip on, and by this point every `.ts` importer is a `.ts` file, so nothing resolves through it any more. `vueComponentStub.js.flow` goes at the same time, superseded by `shims.d.ts` since Step 2.
 - **CI wiring — confirmed, not assumed.** `.github/workflows/ci.yml:24` runs `grunt ci-test:unit`, which is `['build', 'chelDeploy', 'backend:launch', 'exec:test']` (`Gruntfile.js:855`); `build` runs `lintTasks` unless `:skiplint` (`:463-466`). So swapping `exec:flow` for the `tsc` task does put typechecking in CI, with no workflow edit. Note the other job, `ci-test:cypress` (`:856`), uses `build:skiplint` and therefore never typechecked under Flow either — leave it that way.
 
 **Gate:** `node scripts/check-residual-flow.js --gate` exits 0 — zero files outside `node_modules/`, `dist/`, `contracts/`, and `historical/`.
@@ -237,7 +316,7 @@ Only now is nothing depending on it.
 Deliberately last. Doing it earlier would mean finding an `eslint-plugin-flowtype` build that runs on ESLint 8 — extra work for tooling being deleted anyway. By now the Flow plugins are gone, so nothing constrains the upgrade.
 
 - ESLint 7.32 → **8.57.1**, not 9. ESLint 9 requires flat config and drops `package.json` `eslintConfig` support, which would force rewriting the whole config; 8.57.1 keeps the existing `eslintConfig` block working and satisfies `@typescript-eslint` v8's minimum of ESLint ≥ 8.57.0. CI's Node 22 clears the Node ≥ 18.18 floor.
-- Add `@typescript-eslint/parser` + `@typescript-eslint/eslint-plugin` v8. Set `parser` for `.ts` via an `overrides` block so `.vue` files keep `@babel/eslint-parser` — `eslint-plugin-vue` still needs it. Start with `plugin:@typescript-eslint/recommended`; **defer type-aware linting** (`recommended-type-checked`) — it needs `projectService`/`project` wiring and is a meaningful slowdown, so it belongs to the later strictness pass.
+- **The two `eslintConfig.overrides` blocks from Step 3 are not scaffolding** — neither gets removed as part of finishing the migration. `no-undef` on `.ts` is wrong under any parser (TypeScript reports the same thing as TS2304), and the `**/*.d.ts` exemptions describe what declaration files inherently are. What *may* change here is whether they are still needed **explicitly**: `plugin:@typescript-eslint/recommended` pulls in `eslint-recommended`, which disables `no-undef` (and `no-redeclare`) for TS itself, and `@typescript-eslint/no-unused-vars` may already exempt ambient declarations. Check each of the four rules against the new config and delete only the ones proven redundant — do not assume, and do not delete the blocks wholesale. Add `@typescript-eslint/parser` + `@typescript-eslint/eslint-plugin` v8. Set `parser` for `.ts` via an `overrides` block so `.vue` files keep `@babel/eslint-parser` — `eslint-plugin-vue` still needs it. Start with `plugin:@typescript-eslint/recommended`; **defer type-aware linting** (`recommended-type-checked`) — it needs `projectService`/`project` wiring and is a meaningful slowdown, so it belongs to the later strictness pass.
 - Companion bumps ESLint 8 requires, all versions confirmed against `package.json`: `eslint-config-standard` 16.0.2 → 17.1, `eslint-plugin-vue` 7.20.0 → 9, `eslint-plugin-promise` 4.2.1 → 6, `eslint-plugin-import` 2.22.1 → 2.29+, and `eslint-plugin-node` 11.1.0 → `eslint-plugin-n` (renamed).
 - Removing Flow from ESLint is **three** edits to the `package.json` `eslintConfig` block, not one — miss any and the config fails to load once the plugin is uninstalled: the `plugin:flowtype/recommended` entry in `extends`, `"flowtype"` in `plugins`, and the `flowtype/no-types-missing-file-annotation` entry in `rules`. Then drop both packages. `eslint-plugin-flowtype-errors` is a devDependency with **no** config entry — package removal only.
 - **Expect new findings.** `eslint-plugin-vue` 7 → 9 adds rules, and the Step 002 discovery still applies: the removed `}: Object)` cast had been hiding 182 components from `vue/*` rules entirely. Fix what it surfaces or explicitly disable with a reason — don't blanket-disable.
