@@ -14,3 +14,12 @@ require('@babel/register')({
     }]
   ]
 })
+
+// Tests involving localization may depend on the user locale being 'en-US'.
+// For example, currencies.test.js.
+// https://github.com/okTurtles/group-income/issues/3164
+// See also 'window:before:load' in ~/test/cypress/support/index.js.
+if (typeof globalThis.navigator === 'object' && globalThis.navigator.language !== 'en-US') {
+  Object.defineProperty(globalThis.navigator, 'language', { value: 'en-US', configurable: true })
+  Object.defineProperty(globalThis.navigator, 'languages', { value: ['en-US', 'en'], configurable: true })
+}
