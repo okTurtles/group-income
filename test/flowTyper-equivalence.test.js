@@ -612,7 +612,7 @@ describe('flowTyper — function .name survival (dispatch dependency)', function
     should(Object.prototype.hasOwnProperty.call(out, 'b')).equal(false)
   })
 
-  it('an exact-match dispatch would break, proving .includes is load-bearing', function () {
+  it('an exact-match dispatch would break, proving .includes is what survives renaming', function () {
     const inner = maybe(string)
     const renamed = Object.defineProperty(
       (v, s) => inner(v, s), 'name', { value: 'maybe2' }

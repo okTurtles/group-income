@@ -18,6 +18,36 @@ Spec: [`_specs/flow-to-typescript-migration.md`](_specs/flow-to-typescript-migra
 
 ---
 
+## RULES
+
+Non-negotiable for the duration of this migration. They apply to every step, every commit, and every file.
+
+### 1. Never write "load-bearing"
+
+Banned in all documentation — code comments, Markdown, commit messages, PR descriptions, test names, log output. No variants ("load bearing", "loadbearing", "carries load"). Say what the thing actually does instead: *"ordering the conversion leaf-first is what keeps Flow `.js` out of the program"* rather than *"leaf-first ordering is load-bearing."* The replacement is always more specific than the phrase it replaces, which is the point.
+
+### 2. Mirror Flow exactly — no narrowing, no additions
+
+A Flow type translates to its precise TypeScript equivalent and nothing else. Not a better type. Not a tighter type. Not an extra field, overload, or `readonly`. Not a fixed type, even when the Flow one is provably wrong.
+
+| Flow | TypeScript | Not |
+|---|---|---|
+| `?T` | `T \| null \| undefined` | `T \| undefined` |
+| `any` | `any` | an inferred or hand-written shape |
+| `Object` | `any` | `Record<string, unknown>`, an interface |
+| `Function` | `any` | a call signature |
+| `mixed` | `unknown` | `any` |
+| `{ +x: T }` | `{ readonly x: T }` | `{ x: T }` |
+| optional param with a default | mirror the annotation, not the default | — |
+
+This holds **even when the Flow declaration contradicts the implementation.** `fetchServerTime` is the worked example: Flow declares `fallback: ?boolean`, but the implementation is `async (fallback = true)`, so `null` skips the fallback and throws rather than meaning "unspecified". The mirror is still `fallback?: boolean | null`. Record the discrepancy in a comment; do not encode the fix in the type.
+
+**Why:** scope parity is what makes this migration reviewable and reversible. TypeScript must check exactly what Flow checked — no more — so that any behavioural difference after the switch is a bug rather than an intended improvement. Mixing "translate" with "improve" makes the two indistinguishable in a 100-file diff.
+
+**Where the better type goes:** a comment naming the accurate type and the evidence for it, so the later strictness pass can pick it up. See `process` in `frontend/declarations.d.ts` for the shape of that note.
+
+---
+
 ## The mechanism that makes this incremental
 
 `scripts/esbuild-plugins/flow-remove-types-plugin.js:14` filters on `/\.js$/`. A `.ts` file never reaches it and is handled by esbuild's native TypeScript loader instead. **So Flow `.js` and TypeScript `.ts` coexist in the same build with no extra configuration.**
@@ -28,9 +58,9 @@ That single fact sets the whole order below: convert sources file-by-file while 
 
 | | Count | Treatment |
 |---|---:|---|
-| Flow-checked `.js` | **101** | Convert to `.ts` (2 of them in Step 2, 99 across Steps 4–8) |
+| Flow-checked `.js` | **101** | 1 retired in Step 2 (`declarations.js`), 100 converted across Steps 4–8 |
 | Flow-ignored but still built | 6 | Strip syntax only, stay `.js`, stay unchecked |
-| `.js.flow` stub | 1 | `vueComponentStub.js.flow` — replaced by module shims in Step 2 |
+| `.js.flow` stub | 1 | `vueComponentStub.js.flow` — superseded by `shims.d.ts` in Step 2, deleted in Step 9 |
 | **In scope** | **108** | |
 
 TypeScript checks exactly what Flow checked — no coverage expansion.
@@ -64,7 +94,7 @@ Establishes the parity contract before anything moves. Nearly no source changes 
 
 ### The two things TS 6 forced, which the plan had wrong
 
-**`include` is `frontend/**/*.ts` only — not `frontend/**/*`.** `checkJs: false` suppresses *semantic* errors in `.js`, **not syntactic ones**, and a Flow annotation is a syntax error to TypeScript. Rooting the 126 Flow-annotated `.js` files produced thousands of unsuppressable TS8010/TS1005 parse errors. So `.js` files enter the program only when a `.ts` imports one. Verified by probe: a `.ts` importing `@common/common.js` lights up `translations.js`, `errors.js` and `stringTemplate.js` transitively — **leaf-first ordering is load-bearing, not just tidy.** `allowJs: true` and `allowImportingTsExtensions: true` stay, so a converted file can still import an unconverted one.
+**`include` is `frontend/**/*.ts` only — not `frontend/**/*`.** `checkJs: false` suppresses *semantic* errors in `.js`, **not syntactic ones**, and a Flow annotation is a syntax error to TypeScript. Rooting the 126 Flow-annotated `.js` files produced thousands of unsuppressable TS8010/TS1005 parse errors. So `.js` files enter the program only when a `.ts` imports one. Verified by probe: a `.ts` importing `@common/common.js` lights up `translations.js`, `errors.js` and `stringTemplate.js` transitively — **converting leaf-first is what keeps unconverted Flow out of the program, not merely what keeps the diff tidy.** `allowJs: true` and `allowImportingTsExtensions: true` stay, so a converted file can still import an unconverted one.
 
 **`baseUrl` is deprecated in TS 6 and stops working in 7.** Dropped; `paths` now resolve relative to the config file, which TS has supported since 5.0.
 
@@ -74,28 +104,39 @@ Consequently a `.d.ts` had to be seeded now rather than in Step 2: with `.ts`-on
 
 ---
 
-## Step 2 — Ambient declarations
+## Step 2 — Ambient declarations — **DONE**
 
-Everything Step 4 onward will depend on. Nothing here changes runtime behaviour.
+Everything Step 4 onward depends on. No runtime behaviour changes; no source file converted.
 
-- `frontend/declarations.js` (311 lines of Flow libdefs) → `frontend/declarations.d.ts`: globals (`fetchServerTime`, `logger`, `process`, `Compartment`, `crypto`) and `declare module` stubs (`@hapi/*`, `pino`, …).
-- `*.vue` and `*.svg` module shims replacing `frontend/views/utils/vueComponentStub.js.flow` and the `.flowconfig` `module.name_mapper.extension` entries. Keep them loose — `any`-typed default export — since SFCs carry no type information.
-- **`@chelonia/*` need no stubs — checked, and they ship declarations.** The "only stub what doesn't" check has been run:
+Two new files, split by lifetime:
 
-  | Package | Declarations | Action |
-  |---|---|---|
-  | `@chelonia/lib` 1.5.0 | `exports` map, `types` per subpath (`dist/cjs/*.d.cts`, `dist/esm/*.d.mts`) | Use as-is |
-  | `@chelonia/crypto` 1.0.1 | `./dist/umd/index.d.cts` | Use as-is |
-  | `@chelonia/serdes` 1.0.1 | `dist/umd/index.d.cts` | Use as-is |
-  | `@chelonia/multiformats` 1.0.0 | `dist/umd/index.d.cts` | Use as-is |
-  | `@chelonia/cli` 3.4.0 | none | No stub needed — nothing in `frontend/` imports it; it's the `chel serve` binary |
+| File | Counterpart of | Lifetime |
+|---|---|---|
+| `frontend/declarations.d.ts` | `.flowconfig` `[libs]` → `frontend/declarations.js` | Shrinks toward empty |
+| `frontend/shims.d.ts` | `.flowconfig` `module.name_mapper.extension` + `vueComponentStub.js.flow` | Permanent |
 
-  Reaching them requires the `moduleResolution: "bundler"` set in Step 1.
+**`declarations.d.ts` is 300 lines shorter than the Flow libdef it replaces, and that is the finding of this step.** `frontend/declarations.js` is 311 lines carrying 88 `declare module` stubs plus 5 globals; the TypeScript equivalent needs `fetchServerTime` and `process.env`. Everything else falls into one of four buckets, each verified rather than assumed:
 
-  **This makes Steps 4–8 harder, not easier, and that is the point.** Stubs would have made every `@chelonia` value `any` and let the waves through unchallenged; real declarations mean real errors at the largest API surface the frontend touches. Budget for it. Where a genuine mismatch surfaces, prefer `@ts-expect-error` with a one-line reason over reshaping runtime code — behaviour changes are out of scope for this PR, and an untangled `@ts-expect-error` is a visible TODO where a silent `any` is not.
-- `frontend/model/notifications/types.flow.js` (52 lines) → `types.ts`. **Counted here, not in Step 6** — it lives in `frontend/model/notifications/`, so don't convert it twice.
+| Bucket | Examples | Why it's gone |
+|---|---|---|
+| **Resolves on its own** (41 of the 73 package stubs) | `vue`, `vuex`, `vue-router`, `marked`, `turtledash`, `@sbp/*`, `@chelonia/*`, `dompurify`, `vuelidate` | All **42** bare specifiers imported anywhere under `frontend/` were imported from a throwaway `.ts` and typechecked: **zero resolution errors**. Re-stubbing would *outrank* the real declarations and hand back `any` — the exact inversion of the `@chelonia/*` decision |
+| **Dead** (the other 32 package stubs) | `@hapi/*`, `hapi-pino`, `pino`, `chalk`, `form-data`, `ws`, `better-sqlite3`, `node:*`, `favico.js`, `lru-cache`, `uuid`, `bottleneck`, `@apeleghq/rfc8188/*`, `@chelonia/multiformats/*`, `@chelonia/lib/{db,presets,zkppConstants}` | Appear nowhere in the repo except `declarations.js`. Leftovers from when the backend lived here, before `chel serve`. Several aren't even installed |
+| **Impossible** (all 15 local-path stubs) | `@utils/blockies.js`, `~/frontend/model/contracts/misc/flowTyper.js`, `@common/common.js`, `@model/contracts/shared/*.js`, `./controller/service-worker.js` | **`paths` resolution beats an ambient `declare module` with the same specifier.** Probed: declaring `flowTyper.js` as `any` left all 387 parse errors from its Flow syntax in place. What keeps Flow `.js` out of the program is the leaf-first order, not a stub |
+| **Superseded / dead globals** | `crypto`, `logger`, `Compartment` | `lib.dom.d.ts` already declares `crypto: Crypto` (better than the Flow shape, covers all 11 uses; redeclaring collides). `logger` has no global consumer left — every `logger` in `frontend/` is a local binding. `Compartment` has zero references |
 
-**Done when:** `npm run typecheck` still passes and the declarations are referenced by `tsconfig.json`.
+`process` stays `any`, as Flow had it — scope parity, decided explicitly rather than by default. Typing it as the 11 keys esbuild actually defines (`Gruntfile.js:627-639`) would be the accurate version and would turn a mistyped env key into a compile error instead of a white-screen ReferenceError: esbuild's `define` is a *textual* substitution, so a key outside that set doesn't read as `undefined`, it throws. All 63 reads across 23 files are literal `process.env.<KEY>` and the 7 keys used are all within the 11 defined, so that shape is green today. Rejected here as a coverage expansion; revisit when strictness is tightened.
+
+`shims.d.ts` declares `*.vue`, `*.svg` and `*.scss` with an `any` default export — the same thing `vueComponentStub.js.flow` said, per extension. Loose on purpose: SFC script blocks are not typechecked by this migration, so a `.vue` module has no type information to expose. Only `*.vue` is reached from a `.ts` today (538 imports, 9 of them from `.js` files that Steps 4-8 convert); `*.svg` and `*.scss` are reached only from `.vue` files so far and are carried for parity. **`vueComponentStub.js.flow` is not deleted here** — Flow still needs it until Step 9.
+
+**`@chelonia/*` need no stubs — confirmed.** Four of the five packages ship real declarations; `@chelonia/cli` doesn't, and nothing in `frontend/` imports it (it's the `chel serve` binary). Reaching the subpath declarations requires the `moduleResolution: "bundler"` set in Step 1.
+
+> This makes Steps 4–8 harder, not easier, and that is the point. Stubs would have made every `@chelonia` value `any` and let the waves through unchallenged; real declarations mean real errors at the largest API surface the frontend touches. Budget for it. Where a genuine mismatch surfaces, prefer `@ts-expect-error` with a one-line reason over reshaping runtime code — behaviour changes are out of scope for this PR, and an untangled `@ts-expect-error` is a visible TODO where a silent `any` is not.
+
+### Moved out of this step
+
+`frontend/model/notifications/types.flow.js` → `types.ts` **is deferred to Step 6.** Attempted and reverted: four Flow files (`selectors.js`, `templates.js`, `utils.js`, `vuexModule.js`) do `import type … from './types.flow.js'`, and Flow cannot read `.ts`, so the rename turns a green `npm run flow` into **4 `cannot-resolve-module` errors**. Nothing in `.ts` imports these types yet, so converting now buys nothing and would cost either a broken Flow run or a second copy of 52 type definitions maintained in parallel for four steps. It converts with its consumers.
+
+**Done:** `npm run typecheck` exits 0 with both `.d.ts` files in the program (confirmed via `tsc --listFiles`), `npm run flow` still reports no errors, `grunt build` succeeds, ESLint exits 0, residual-Flow count unchanged at 108.
 
 ---
 
@@ -140,17 +181,17 @@ Small, but its own step because these are the renames that break the build from 
 
 Same procedure for each wave: convert Flow syntax → TypeScript, rename `.js` → `.ts`, update importers' explicit extensions (`import/extensions` is set to `ignorePackages`, so specifiers and filenames must change together in one commit), run `npm run typecheck` + `grunt test:unit`.
 
-Recurring syntax translations: `?T` → `T | null | undefined`; `{| |}` → plain object types; `+`/`-` variance → `readonly` where it applies; `mixed` → `unknown`; `Object`/`Function` → `any` initially (tighten later, not now); `$Keys`/`$Values`/`$Shape`/`$Exact` → `keyof`/indexed access/`Partial`/exact-ish equivalents; `import type` carries over directly.
+Recurring syntax translations: `?T` → `T | null | undefined` (default rule — but a `?boolean` guarding a default parameter should drop the `| null`, since defaults fire only on `undefined` and `null` takes the falsy branch instead; see `fetchServerTime` in Step 2); `{| |}` → plain object types; `+`/`-` variance → `readonly` where it applies; `mixed` → `unknown`; `Object`/`Function` → `any` initially (tighten later, not now); `$Keys`/`$Values`/`$Shape`/`$Exact` → `keyof`/indexed access/`Partial`/exact-ish equivalents; `import type` carries over directly.
 
 | Step | Wave | Files | Notes |
 |---|---|---|---|
 | **4** | `frontend/common` 3, `frontend/utils` **9** | **12** | Leaf utilities, few dependents. Smallest wave first to shake out the translation patterns. `frontend/utils` gained `markdown-parsers.js` in v2.9.0. **Do not touch `frontend/common/common.js`** — no Flow in it, and it's an esbuild `external` (Step 3a). |
 | **5** | `frontend/model/contracts/**` | 17 | 19 files in the tree contain Flow; 2 of them (`misc/flowTyper.js`, `shared/distribution/distribution.test.js`) are Flow-ignored and belong to the strip-only set. **Highest risk — see below.** |
-| **6** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **9**, `settings` 1 | **23** | Depends on Steps 4–5. `notifications` holds 10 Flow files, but `types.flow.js` was already converted in Step 2 — 9 remain here. |
+| **6** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **10**, `settings` 1 | **24** | Depends on Steps 4–5. Includes `notifications/types.flow.js` → `types.ts`, **moved here from Step 2** — renaming it early breaks Flow for its four `import type` consumers in this same directory, so it converts alongside them. |
 | **7** | `frontend/controller/**`: root 3, `actions` 9, `app` 3, `e2e` 1, `serviceworkers` 3, `utils` 1 | 20 | Controller root holds 4 Flow files; `service-worker.js` is Flow-ignored (strip-only), leaving 3. `serviceworkers/sw-primary.js` is its own esbuild entry — update `Gruntfile.js:663` in the same commit (Step 3a), then rebuild and smoke-test the SW bundle specifically. |
-| **8** | `frontend/views/**` `.js`: `views/utils` 13, `containers/chatroom` 5, `chat-mentions` 2, **`voice-recording` 1**, `components/*` 3, `containers/payments` 1, `roles-and-permissions` 1 — plus root `frontend/setupChelonia.js` | **27** | `views/utils` holds 14 entries; one is the `vueComponentStub.js.flow` stub retired in Step 2, leaving 13. `voice-recording/voice-recording-utils.js` is new in v2.9.0. View-layer helpers imported by SFCs; SFCs themselves stay untouched plain JS. |
+| **8** | `frontend/views/**` `.js`: `views/utils` 13, `containers/chatroom` 5, `chat-mentions` 2, **`voice-recording` 1**, `components/*` 3, `containers/payments` 1, `roles-and-permissions` 1 — plus root `frontend/setupChelonia.js` | **27** | `views/utils` holds 14 entries; one is the `vueComponentStub.js.flow` stub, superseded on the TypeScript side in Step 2 but deleted only in Step 9, leaving 13 to convert. `voice-recording/voice-recording-utils.js` is new in v2.9.0. View-layer helpers imported by SFCs; SFCs themselves stay untouched plain JS. |
 
-**Total across 4–8: 99.** Plus the 2 converted in Step 2 (`declarations.js`, `notifications/types.flow.js`) = **101 Flow-checked files**, which reconciles with the scope table above.
+**Total across 4–8: 100.** Plus `frontend/declarations.js`, retired in Step 2 by `declarations.d.ts` = **101 Flow-checked files**, which reconciles with the scope table above.
 
 ### Step 5 in detail — contract source
 

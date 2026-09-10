@@ -114,7 +114,7 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **`checkJs: false` does not silence Flow syntax — it suppresses *semantic* errors, not *syntactic* ones.** Rooting the 126 Flow-annotated `.js` files produced thousands of unsuppressable TS8010/TS1005 parse errors. So `include` is **`frontend/**/*.ts` only**: `.js` enters the program solely when a `.ts` imports it, which leaf-first ordering keeps rare. Step 1's "typecheck exits 0 trivially" holds, but not for the reason the plan assumed.
 
-**Corollary, proven by probe:** a `.ts` importing an unconverted Flow `.js` *does* surface that file's parse errors transitively — importing `@common/common.js` lit up `translations.js`, `errors.js`, `stringTemplate.js`. Leaf-first is load-bearing, not just tidy.
+**Corollary, proven by probe:** a `.ts` importing an unconverted Flow `.js` *does* surface that file's parse errors transitively — importing `@common/common.js` lit up `translations.js`, `errors.js`, `stringTemplate.js`.
 
 **Two TS 6 breaks fixed:** `baseUrl` is deprecated (stops working in 7) — dropped, `paths` now resolve relative to the config. An empty program is a hard error (TS18003), which is why `declarations.d.ts` is seeded now rather than in Step 2.
 
@@ -128,11 +128,25 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Note — unrelated failure:** `avatar-caching.test.js` now fails (upload 500) against the long-running dev backend from Step 0. Reproduced with all Step 1 changes removed, so it is stale server state, not a regression. Needs a backend restart (`kill 34780`) to reconfirm the 178/178 baseline.
 
+### 008 — Step 2: ambient declarations
+
+**Status:** DONE
+
+**Added:** `frontend/declarations.d.ts` (globals) and `frontend/shims.d.ts` (`*.vue` / `*.svg` / `*.scss`). Typecheck clean · Flow still green · `grunt build` green · eslint 0 · residual Flow unchanged at 108.
+
+**The 311-line Flow libdef needs 2 declarations in TypeScript.** Of its 88 `declare module` stubs: 41 resolve on their own (probed all 42 bare specifiers used under `frontend/` — zero TS2307), 32 are dead leftovers from the in-repo backend era, 15 are impossible. Globals: `crypto` is better served by `lib.dom.d.ts`; `logger` and `Compartment` have no consumers left. Kept: `fetchServerTime` and `process`, the latter left `any` for parity — typing it as esbuild's 11 defined keys would catch a mistyped key (a ReferenceError, not `undefined`, since `define` substitutes textually) and is green today, but that's a coverage expansion. Deferred to the strictness pass.
+
+**`paths` beats an ambient `declare module` for the same specifier.** Declaring `~/…/flowTyper.js` as `any` left all 387 of its Flow parse errors in place — TypeScript opens the real file regardless. Flow `.js` is kept out of the program by conversion order, not by stubs. This is why the local-path stubs can't be carried over.
+
+**RULES section added to the plan** — (1) the phrase "load-bearing" is banned in all documentation, (2) Flow → TypeScript translations mirror Flow exactly, with no narrowing or additions, even where the Flow type is provably wrong. Applied retroactively: `process` is back to `any`, and `fetchServerTime` back to `fallback?: boolean | null` (the exact mirror of `?boolean`) despite the implementation being `async (fallback = true)`, where `null` is falsy and throws rather than meaning "unspecified". Both discrepancies recorded as comments for the later strictness pass.
+
+**`notifications/types.flow.js` deferred to Step 6.** Renaming it to `.ts` breaks Flow for its 4 `import type` consumers (4 `cannot-resolve-module`); attempted and reverted. No `.ts` needs it yet. Step 6 is now 24 files, Steps 4–8 total 100.
+
 ---
 
 ## Open items
 
-- 101 Flow-checked `.js` files to convert (2 in Step 2, 99 across Steps 4–8), plus 6 Flow-ignored ones needing syntax stripped only and the 1 `.js.flow` stub retired.
+- 100 Flow-checked `.js` files left to convert (Steps 4–8), plus 3 Flow-ignored ones needing syntax stripped only and the 1 `.js.flow` stub retired.
 - `flowTyper.js`: convert, or leave frozen as a runtime dependency (lower risk — it's bundled into pinned contracts).
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.
 - ESLint 7.32 limits usable `@typescript-eslint` versions; may force a lint-stack upgrade.
