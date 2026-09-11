@@ -100,17 +100,17 @@ declare module 'turtledash' { declare module.exports: any }
 declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
 declare module '@utils/blockies.js' { declare module.exports: Object }
-declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.exports: Object }
-declare module '~/frontend/model/contracts/shared/time.js' { declare module.exports: Object }
-declare module '@model/contracts/shared/time.js' { declare module.exports: Object }
+declare module '~/frontend/model/contracts/misc/flowTyper.ts' { declare module.exports: Object }
+declare module '~/frontend/model/contracts/shared/time.ts' { declare module.exports: Object }
+declare module '@model/contracts/shared/time.ts' { declare module.exports: Object }
 declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
-declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
-declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }
-declare module '@model/contracts/shared/voting/proposals.js' { declare module.exports: any }
-declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
+declare module '@model/contracts/shared/distribution/distribution.ts' { declare module.exports: any }
+declare module '@model/contracts/shared/voting/rules.ts' { declare module.exports: any }
+declare module '@model/contracts/shared/voting/proposals.ts' { declare module.exports: any }
+declare module '@model/contracts/shared/functions.ts' { declare module.exports: any }
 declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
-declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
+declare module '@model/contracts/shared/payments/index.ts' { declare module.exports: any }
 declare module './controller/service-worker.js' { declare module.exports: any }
 declare module '@controller/instance-keys.js' { declare module.exports: any }
 // @chelonia/lib

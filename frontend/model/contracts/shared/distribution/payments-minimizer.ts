@@ -3,8 +3,8 @@
 // greedy algorithm responsible for "balancing" payments
 // such that the least number of payments are made.
 export default function minimizeTotalPaymentsCount (
-  distribution: Array<Object>
-): Array<any | {|fromMemberID: string, toMemberID: string, amount: number|}> {
+  distribution: Array<any>
+): Array<any | { fromMemberID: string, toMemberID: string, amount: number }> {
   const neederTotalReceived = {}
   const haverTotalHave = {}
   const haversSorted = []

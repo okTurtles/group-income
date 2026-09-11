@@ -51,7 +51,7 @@ import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,

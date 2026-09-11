@@ -3,7 +3,7 @@
 import type { JSONObject } from '@chelonia/lib/types'
 
 import sbp from '@sbp/sbp'
-import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.ts'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'

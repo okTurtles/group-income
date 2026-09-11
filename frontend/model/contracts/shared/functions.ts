@@ -13,7 +13,7 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
 } from './constants.js'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
-import { humanDate } from './time.js'
+import { humanDate } from './time.ts'
 
 // !!!!!!!!!!!!!!!
 // !! IMPORTANT !!
@@ -32,7 +32,7 @@ import { humanDate } from './time.js'
 
 // group.js related
 
-export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[] {
+export function paymentHashesFromPaymentPeriod (periodPayments: any): string[] {
   let hashes = []
   if (periodPayments) {
     const { paymentsFrom } = periodPayments
@@ -46,7 +46,7 @@ export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[
   return hashes
 }
 
-export function createPaymentInfo (paymentHash: string, payment: Object): {
+export function createPaymentInfo (paymentHash: string, payment: any): {
   fromMemberID: string, toMemberID: string, hash: string, amount: number, isLate: boolean, when: string
 } {
   return {
@@ -59,7 +59,7 @@ export function createPaymentInfo (paymentHash: string, payment: Object): {
   }
 }
 
-export function getProposalDetails (proposal: Object): Object {
+export function getProposalDetails (proposal: any): any {
   const { creatorID, status } = proposal
   const { proposalType, proposalData } = proposal.data
 
@@ -69,7 +69,7 @@ export function getProposalDetails (proposal: Object): Object {
     'votingSystem': L('voting system'),
     'votingRule': L('voting rules')
   }
-  const options = {}
+  const options: any = {}
   if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
     if (proposalData.ruleName !== proposalData.current.ruleName) {
       options['settingType'] = 'votingSystem'
@@ -107,14 +107,14 @@ export function getProposalDetails (proposal: Object): Object {
 // chatroom.js related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
-  meta: Object,
-  data: Object,
+  meta: any,
+  data: any,
   hash: string,
   height: number,
-  state?: Object,
+  state?: any,
   pending?: boolean,
   innerSigningContractID?: String
-}): Object {
+}): any {
   const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
@@ -160,7 +160,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function postLeaveChatRoomCleanup (contractID: string, state: Object) {
+export async function postLeaveChatRoomCleanup (contractID: string, state: any) {
   if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
   }
@@ -174,7 +174,7 @@ export async function postLeaveChatRoomCleanup (contractID: string, state: Objec
   // contract (for DMs).
 }
 
-export function findMessageIdx (hash: string, messages: Array<Object> = []): number {
+export function findMessageIdx (hash: string, messages: Array<any> = []): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].hash === hash) {
       return i
@@ -200,7 +200,7 @@ export const validateChatRoomName = (name: string) => {
   //
   // Reference: RegExp match based on unicode character class escape(\p{}) -
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
-  const nameValidationMap: {[string]: Function} = {
+  const nameValidationMap: { [key: string]: any } = {
     [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/.test(v),
     [L('Chatroom name cannot contain capital letters')]: (v: string): boolean => /\p{Lu}/u.test(v),
     [L('Chatroom name cannot contain punctuation or special characters except hyphens')]: (v: string): boolean => /[^\p{L}\p{M}\p{Nd}-]/u.test(v)
@@ -283,7 +283,7 @@ export const validateChatRoomName = (name: string) => {
 //                             function into the queue.
 //   queue slot 5: [referenceTally]: Function pushed onto the queue by event 3.
 //                              Since the temp count is -1, release is called.
-export const referenceTally = (selector: string): Object => {
+export const referenceTally = (selector: string): any => {
   const delta = {
     'retain': 1,
     'release': -1

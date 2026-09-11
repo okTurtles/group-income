@@ -77,7 +77,7 @@ import PageSection from '@components/PageSection.vue'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 
 export default {
   name: 'MemberRequest',

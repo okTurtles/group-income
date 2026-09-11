@@ -53,7 +53,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { withGroupCurrency } from '@view-utils/misc.js'
-import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.ts'
 import { cloneDeep } from 'turtledash'
 
 export default {

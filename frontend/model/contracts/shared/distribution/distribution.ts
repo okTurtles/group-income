@@ -1,16 +1,16 @@
 'use strict'
 
 import { cloneDeep } from 'turtledash'
-import { DECIMALS_MAX, saferFloat } from '../currencies.js'
-import mincomeProportional from './mincome-proportional.js'
-import minimizeTotalPaymentsCount from './payments-minimizer.js'
+import { DECIMALS_MAX, saferFloat } from '../currencies.ts'
+import mincomeProportional from './mincome-proportional.ts'
+import minimizeTotalPaymentsCount from './payments-minimizer.ts'
 
-type Distribution = Array<Object>;
+type Distribution = Array<any>;
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
 export function unadjustedDistribution ({ haveNeeds = [], minimize = true }: {
-  haveNeeds: Array<Object>, minimize?: boolean
+  haveNeeds: Array<any>, minimize?: boolean
 }): Distribution {
   const distribution = mincomeProportional(haveNeeds)
   return minimize ? minimizeTotalPaymentsCount(distribution) : distribution

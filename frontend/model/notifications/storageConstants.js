@@ -1,4 +1,4 @@
-import { DAYS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
+import { DAYS_MILLIS } from '~/frontend/model/contracts/shared/time.ts'
 
 // The maximum allowed age of read (resp. unread) stored notifications.
 // Not to be confused with maximum storage duration.

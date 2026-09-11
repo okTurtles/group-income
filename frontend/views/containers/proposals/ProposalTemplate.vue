@@ -101,7 +101,7 @@
 import { mapGetters } from 'vuex'
 import { L, LTags } from '@common/common.js'
 import { PROPOSAL_REASON_MAX_CHAR } from '@model/contracts/shared/constants.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.ts'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'

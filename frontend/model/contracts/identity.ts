@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.ts'
 import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import {
@@ -12,8 +12,8 @@ import {
   MAX_HASH_LEN,
   MAX_URL_LEN
 } from './shared/constants.js'
-import { referenceTally } from './shared/functions.js'
-import identityGetters from './shared/getters/identity.js'
+import { referenceTally } from './shared/functions.ts'
+import identityGetters from './shared/getters/identity.ts'
 import { has, merge } from 'turtledash'
 import {
   allowedUsernameCharacters,
@@ -21,7 +21,7 @@ import {
   noLeadingOrTrailingHyphen,
   noLeadingOrTrailingUnderscore,
   noUppercase
-} from './shared/validators.js'
+} from './shared/validators.ts'
 
 const attributesType = objectMaybeOf({
   username: stringMax(IDENTITY_USERNAME_MAX_CHARS, 'username'),

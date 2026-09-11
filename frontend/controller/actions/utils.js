@@ -1,6 +1,6 @@
 'use strict'
 
-import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedOutgoingData } from '@chelonia/lib/encryptedData'

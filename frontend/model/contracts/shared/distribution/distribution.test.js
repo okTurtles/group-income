@@ -3,7 +3,7 @@
 // run with: ./node_modules/.bin/mocha -w --require @babel/register frontend/model/contracts/distribution/distribution.test.js
 
 import should from 'should'
-import { unadjustedDistribution, adjustedDistribution } from './distribution.js'
+import { unadjustedDistribution, adjustedDistribution } from './distribution.ts'
 
 const setup = []
 

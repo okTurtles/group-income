@@ -15,17 +15,17 @@ export default ({
     return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
   },
   isJoinedChatRoomForChatRoom (state, getters) {
-    return (state: Object, memberID?: string) => {
+    return (state: any, memberID?: string) => {
       if (!memberID) memberID = getters.ourIdentityContractId
       const members = state?.members
       return !!members?.[memberID] && !members[memberID].hasLeft
     }
   },
   chatRoomActiveMemberIdsForChatRoom () {
-    return (state: Object) => {
+    return (state: any) => {
       const members = state?.members
       if (!members) return []
       return Object.keys(members).filter(memberID => !members[memberID].hasLeft)
     }
   }
-}: Object)
+} as any)

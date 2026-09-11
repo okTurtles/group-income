@@ -36,12 +36,12 @@ import {
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { getProposalDetails } from '@model/contracts/shared/functions.js'
+import { getProposalDetails } from '@model/contracts/shared/functions.ts'
 import MessageBase from './MessageBase.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { get } from 'turtledash'
 
 export const interactiveMessage = (proposal, baseOptions = {}) => {

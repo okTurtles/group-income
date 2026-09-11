@@ -6,15 +6,15 @@ import type {
 
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import {
   STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
 } from '@model/contracts/shared/constants.js'
-import { getProposalDetails } from '@model/contracts/shared/functions.js'
+import { getProposalDetails } from '@model/contracts/shared/functions.ts'
 import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
-import { withCurrency } from '@model/contracts/shared/currencies.js'
+import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {

@@ -25,7 +25,7 @@ export const minusOnePeriodLength = (timestamp: string, periodLength: number): s
 export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength, guess }: { knownSortedStamps: string[], periodLength: number, guess?: boolean }
-): Object {
+): any {
   // $FlowFixMe - Pedantic '[method-unbinding]' error
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
     throw new TypeError('must be ISO string or Date object')
@@ -177,15 +177,14 @@ export function getLocale (): string {
   return typeof navigator === 'undefined'
     // Fallback for Mocha tests.
     ? fallback
-    // Flow considers `navigator.languages` to be of type `$ReadOnlyArray<string>`,
-    // which is not compatible with the `string[]` expected by `.toLocaleDateString()`.
-    // Casting to `string[]` through `any` as a workaround.
-    : (navigator.languages: any) ?? navigator.language ?? fallback
+    // `navigator.languages` is `readonly string[]`, which is not compatible with the
+    // `string[]` expected by `.toLocaleDateString()`. Casting through `any` as a workaround.
+    : (navigator.languages as any) ?? navigator.language ?? fallback
 }
 
 export function humanDate (
   date: number | Date | string,
-  options?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
 ): string {
   const dateObj = new Date(date)
   // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
@@ -199,7 +198,7 @@ export function humanDate (
 
 export function humanTimeString (
   date: number | Date | string,
-  options?: any = { hour: '2-digit', minute: '2-digit' }
+  options: any = { hour: '2-digit', minute: '2-digit' }
 ): string {
   const dateObj = new Date(date)
   return dateObj.toLocaleTimeString(getLocale(), options)

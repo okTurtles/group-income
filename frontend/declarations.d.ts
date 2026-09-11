@@ -44,7 +44,7 @@
 // cannot be reproduced in TypeScript even if we wanted them: `paths` resolution
 // wins over an ambient `declare module` with the same specifier, so TypeScript
 // opens the real file regardless. Confirmed by probe — declaring
-// `'~/frontend/model/contracts/misc/flowTyper.js'` as `any` left all 387 parse
+// `'~/frontend/model/contracts/misc/flowTyper.ts'` as `any` left all 387 parse
 // errors from that file's Flow syntax in place. The mechanism that keeps those
 // files out of the program is the leaf-first conversion order, not a stub.
 

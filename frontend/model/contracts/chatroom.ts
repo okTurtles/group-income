@@ -5,7 +5,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
@@ -31,18 +31,20 @@ import {
   makeMentionFromUserID,
   referenceTally,
   validateChatRoomName
-} from './shared/functions.js'
-import chatroomGetters from './shared/getters/chatroom.js'
+} from './shared/functions.ts'
+import chatroomGetters from './shared/getters/chatroom.ts'
 import { cloneDeep, merge } from 'turtledash'
-import { chatRoomAttributesType, messageType } from './shared/types.js'
+import { chatRoomAttributesType, messageType } from './shared/types.ts'
 
-export const GIChatroomAlreadyMemberError: typeof Error = ChelErrorGenerator('GIChatroomAlreadyMemberError')
-export const GIChatroomNotMemberError: typeof Error = ChelErrorGenerator('GIChatroomNotMemberError')
+// These two used to carry a `typeof Error` annotation. TypeScript infers the
+// constructor type from `ChelErrorGenerator`, so it is no longer needed.
+export const GIChatroomAlreadyMemberError = ChelErrorGenerator('GIChatroomAlreadyMemberError')
+export const GIChatroomNotMemberError = ChelErrorGenerator('GIChatroomNotMemberError')
 
 function createNotificationData (
   notificationType: string,
-  moreParams: Object = {}
-): Object {
+  moreParams: any = {}
+): any {
   return {
     type: MESSAGE_TYPES.NOTIFICATION,
     notification: {
@@ -52,7 +54,7 @@ function createNotificationData (
   }
 }
 
-async function deleteEncryptedFiles (manifestCids: string | string[], option: Object) {
+async function deleteEncryptedFiles (manifestCids: string | string[], option: any) {
   if (Object.values(option).reduce((a, c) => a || c, false)) {
     if (!Array.isArray(manifestCids)) {
       manifestCids = [manifestCids]
@@ -762,8 +764,7 @@ sbp('chelonia/defineContract', {
       if (request === 'missing' && state.members[originatingContractID] && !state.members[originatingContractID].hasLeft) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
-            // $FlowFixMe[incompatible-use]
-            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .filter(([, key]: [string, any]) => !!key.meta?.private?.shareable)
             .map(([kId]) => kId),
           skipInviteAccounting: true
         }

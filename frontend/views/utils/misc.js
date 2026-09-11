@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import VueRouter from 'vue-router'
 import { L } from '@common/common.js'
-import { withCurrency } from '@model/contracts/shared/currencies.js'
+import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
 export function logExceptNavigationDuplicated (err: Object) {
   err.name !== 'NavigationDuplicated' && console.error(err)

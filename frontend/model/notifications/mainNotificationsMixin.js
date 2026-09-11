@@ -1,6 +1,6 @@
 'use strict'
 
-import { compareISOTimestamps, dateToPeriodStamp, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, dateToPeriodStamp, MONTHS_MILLIS } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 

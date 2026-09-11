@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

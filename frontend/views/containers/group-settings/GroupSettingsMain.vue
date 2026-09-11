@@ -80,7 +80,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.ts'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L, LError } from '@common/common.js'
 

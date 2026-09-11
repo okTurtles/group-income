@@ -23,9 +23,9 @@ import {
   STATUS_CANCELLED
 } from '@model/contracts/shared/constants.js'
 import { debounce, merge, omit, randomIntFromRange } from 'turtledash'
-import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.js'
-import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
-import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
+import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.ts'
+import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.ts'
+import { VOTE_FOR } from '@model/contracts/shared/voting/rules.ts'
 import sbp from '@sbp/sbp'
 import {
   ACCEPTED_GROUP,

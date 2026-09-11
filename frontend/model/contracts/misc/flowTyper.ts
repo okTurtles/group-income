@@ -1,3 +1,13 @@
+// @ts-nocheck
+// Flow never typechecked this file (`.flowconfig` [ignore]), and TypeScript does not
+// either: scope parity. `exclude` in tsconfig.json is not enough on its own, because
+// the contracts import this file and an excluded file is still checked once imported.
+//
+// Every export is annotated `any` for the same reason. An ignored module's exports are
+// `any` to Flow, so the contracts' call sites into this file were never checked. Left to
+// infer, TypeScript would type them from the implementation and start checking those
+// call sites -- new checking Flow never did, on code that is frozen once pinned. The
+// internal types below are preserved as written, and are what a later pass would use.
 // to make rollup happy, I copied flowTyper-js
 // library into this file (it was refusing to
 // import because of the way functions were being
@@ -17,11 +27,11 @@
 
 type LiteralValue = boolean | number | string
 type ObjectRecord<T> = { [key: string]: T }
-type TypeValidator<T> = (mixed, _?: string) => T
-type TypeMaybeValidator<T> = (mixed, _?: string) => ?T
-type TypeArrayValidator<T> = (mixed, _?: string) => T[]
+type TypeValidator<T> = (value: unknown, _?: string) => T
+type TypeMaybeValidator<T> = (value: unknown, _?: string) => T | null | undefined
+type TypeArrayValidator<T> = (value: unknown, _?: string) => T[]
 type TypeValidatorRecord<T> = ObjectRecord<TypeValidator<T>>
-type $Literal<T: LiteralValue> = TypeValidator<T>
+type $Literal<T extends LiteralValue> = TypeValidator<T>
 
 type TypeValidatorsOf2<T, U> = [
   TypeValidator<T>,
@@ -49,17 +59,17 @@ type TypeValidatorsOf5<T, U, V, Z, X> = [
   TypeValidator<X>
 ]
 
-export const EMPTY_VALUE = Symbol('@@empty')
-export const isEmpty = v => v === EMPTY_VALUE
-export const isNil = v => v === null
-export const isUndef = v => typeof v === 'undefined'
-export const isBoolean = v => typeof v === 'boolean'
-export const isNumber = v => typeof v === 'number'
-export const isString = v => typeof v === 'string'
-export const isObject = v => !isNil(v) && typeof v === 'object'
-export const isFunction = v => typeof v === 'function'
+export const EMPTY_VALUE: any = Symbol('@@empty')
+export const isEmpty: any = v => v === EMPTY_VALUE
+export const isNil: any = v => v === null
+export const isUndef: any = v => typeof v === 'undefined'
+export const isBoolean: any = v => typeof v === 'boolean'
+export const isNumber: any = v => typeof v === 'number'
+export const isString: any = v => typeof v === 'string'
+export const isObject: any = v => !isNil(v) && typeof v === 'object'
+export const isFunction: any = v => typeof v === 'function'
 
-export const isType = typeFn => (v, _scope = '') => {
+export const isType: any = typeFn => (v, _scope = '') => {
   try {
     typeFn(v, _scope)
     return true
@@ -70,8 +80,8 @@ export const isType = typeFn => (v, _scope = '') => {
 
 // This function will return value based on schema with inferred types. This
 // value can be used to define type in Flow with 'typeof' utility.
-export const typeOf = schema => schema(EMPTY_VALUE, '')
-export const getType = (typeFn, _options) => {
+export const typeOf: any = schema => schema(EMPTY_VALUE, '')
+export const getType: any = (typeFn, _options) => {
   if (isFunction(typeFn.type)) return typeFn.type(_options)
   return typeFn.name || '?'
 }
@@ -85,12 +95,12 @@ export class TypeValidatorError extends Error {
   sourceFile: string
 
   constructor (
-    message: ?string,
+    message: string | null | undefined,
     expectedType: string,
     valueType: string,
     value: string,
     typeName: string = '',
-    typeScope: ?string = ''
+    typeScope: string | null | undefined = ''
   ) {
     const errMessage = message ||
       `invalid "${valueType}" value type; ${typeName || expectedType} type expected`
@@ -128,8 +138,8 @@ export class TypeValidatorError extends Error {
 
 const validatorError = <T>(
   typeFn: TypeValidator<T>,
-  value: mixed,
-  scope: ?string,
+  value: unknown,
+  scope: string | null | undefined,
   message?: string,
   expectedType?: string,
   valueType?: string
@@ -144,7 +154,7 @@ const validatorError = <T>(
   )
 }
 
-export const arrayOf =
+export const arrayOf: any =
   <T>(typeFn: TypeValidator<T>, _scope?: string = 'Array'): TypeArrayValidator<T> => {
     function array (value) {
       if (isEmpty(value)) return [typeFn(value)]
@@ -158,8 +168,8 @@ export const arrayOf =
     return array
   }
 
-export const literalOf =
-  <T: LiteralValue>(primitive: T): TypeValidator<T> => {
+export const literalOf: any =
+  <T extends LiteralValue>(primitive: T): TypeValidator<T> => {
     function literal (value, _scope = '') {
       if (isEmpty(value) || (value === primitive)) return primitive
       throw validatorError(literal, value, _scope)
@@ -171,7 +181,7 @@ export const literalOf =
     return literal
   }
 
-export const mapOf = <K, V>(
+export const mapOf: any = <K, V>(
   keyTypeFn: TypeValidator<K>,
   typeFn: TypeValidator<V>
 ): TypeValidator<{ [K]: V }> => {
@@ -195,7 +205,7 @@ export const mapOf = <K, V>(
 const isPrimitiveFn = (typeName) =>
   ['undefined', 'null', 'boolean', 'number', 'string'].includes(typeName)
 
-export const maybe =
+export const maybe: any =
   <T>(typeFn: TypeValidator<T>): TypeMaybeValidator<T> => {
     function maybe (value, _scope = '') {
       return (isNil(value) || isUndef(value)) ? value : typeFn(value, _scope)
@@ -204,24 +214,24 @@ export const maybe =
     return maybe
   }
 
-export const mixed = (
+export const mixed: any = (
   function mixed (value) {
     return value
-  }: TypeValidator<*>
+  } as TypeValidator<any>
 )
 
-export const object = (
+export const object: any = (
   function (value) {
     if (isEmpty(value)) return {}
     if (isObject(value) && !Array.isArray(value)) {
       return Object.assign({}, value)
     }
     throw validatorError(object, value)
-  }: TypeValidator<ObjectRecord<mixed>>
+  } as TypeValidator<ObjectRecord<unknown>>
 )
 
-export const objectOf = <O: TypeValidatorRecord<*>>
-  (typeObj: O, _scope?: string = 'Object'): TypeValidator<$ObjMap<O, <V>(TypeValidator<V>) => V>> => {
+export const objectOf: any = <O extends TypeValidatorRecord<any>>
+  (typeObj: O, _scope: string = 'Object'): TypeValidator<$ObjMap<O, <V>(v: TypeValidator<V>) => V>> => {
   function object2 (value) {
     const o = object(value)
     const typeAttrs = Object.keys(typeObj)
@@ -279,7 +289,7 @@ export const objectOf = <O: TypeValidatorRecord<*>>
 }
 
 // TODO: add flow type annotations and make it use validatorError etc.
-export function objectMaybeOf (validations: Object, _scope?: string = 'Object'): Object {
+export function objectMaybeOf (validations: any, _scope: string = 'Object'): any {
   return function (data: any) {
     object(data)
     for (const key in data) {
@@ -289,7 +299,7 @@ export function objectMaybeOf (validations: Object, _scope?: string = 'Object'):
   }
 }
 
-export const optional =
+export const optional: any =
   <T>(typeFn: TypeValidator<T>): TypeValidator<T | void> => {
     const unionFn = unionOf(typeFn, undef)
     function optional (v) {
@@ -299,40 +309,37 @@ export const optional =
     return optional
   }
 
-export const nil = (
+export const nil: any = (
   function nil (value) {
     if (isEmpty(value) || isNil(value)) return null
     throw validatorError(nil, value)
-  }
-  : TypeValidator<null>
+  } as TypeValidator<null>
 )
 
-export function undef (value, _scope = '') {
+export function undef (value: any, _scope: string = ''): any {
   if (isEmpty(value) || isUndef(value)) return undefined
   throw validatorError(undef, value, _scope)
 }
 undef.type = () => 'void'
 // export const undef = (undef: TypeValidator<void>)
 
-export const boolean = (
+export const boolean: any = (
   function boolean (value, _scope = '') {
     if (isEmpty(value)) return false
     if (isBoolean(value)) return value
     throw validatorError(boolean, value, _scope)
-  }
-  : TypeValidator<boolean>
+  } as TypeValidator<boolean>
 )
 
-export const number = (
+export const number: any = (
   function number (value, _scope = '') {
     if (isEmpty(value)) return 0
     if (isNumber(value)) return value
     throw validatorError(number, value, _scope)
-  }
-  : TypeValidator<number>
+  } as TypeValidator<number>
 )
 
-export const numberRange = (from: number, to: number, key: string = ''): TypeValidator<number> => {
+export const numberRange: any = (from: number, to: number, key: string = ''): TypeValidator<number> => {
   if (!isNumber(from) || !isNumber(to)) { throw new TypeError('Params for numberRange must be numbers') }
   if (from >= to) { throw new TypeError('Params "to" should be bigger than "from"') }
 
@@ -352,16 +359,15 @@ export const numberRange = (from: number, to: number, key: string = ''): TypeVal
   return numberRange
 }
 
-export const string = (
+export const string: any = (
   function string (value, _scope = '') {
     if (isEmpty(value)) return ''
     if (isString(value)) return value
     throw validatorError(string, value, _scope)
-  }
-  : TypeValidator<string>
+  } as TypeValidator<string>
 )
 
-export const stringMax = (numChar: number, key: string = ''): TypeValidator<string> => {
+export const stringMax: any = (numChar: number, key: string = ''): TypeValidator<string> => {
   if (!isNumber(numChar)) { throw new Error('param for stringMax must be number') }
 
   function stringMax (value, _scope = '') {
@@ -382,19 +388,19 @@ export const stringMax = (numChar: number, key: string = ''): TypeValidator<stri
 
 type V<T> = TypeValidator<T>
 type TupleT =
-    (<A>(V<A>) => TypeValidator<[A]>)
-  & (<A, B>(V<A>, V<B>) => TypeValidator<[A, B]>)
-  & (<A, B, C>(V<A>, V<B>, V<C>) => TypeValidator<[A, B, C]>)
-  & (<A, B, C, D>(V<A>, V<B>, V<C>, V<D>) => TypeValidator<[A, B, C, D]>)
-  & (<A, B, C, D, E>(V<A>, V<B>, V<C>, V<D>, V<E>) => TypeValidator<[A, B, C, D, E]>)
-  & (<A, B, C, D, E, F>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>) => TypeValidator<[A, B, C, D, E, F]>)
-  & (<A, B, C, D, E, F, G>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>) => TypeValidator<[A, B, C, D, E, F, G]>)
-  & (<A, B, C, D, E, F, G, H>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>) => TypeValidator<[A, B, C, D, E, F, G, H]>)
-  & (<A, B, C, D, E, F, G, H, I>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>) => TypeValidator<[A, B, C, D, E, F, G, H, I]>)
-  & (<A, B, C, D, E, F, G, H, I, J>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>) => TypeValidator<[A, B, C, D, E, F, G, H, I, J]>)
+    (<A>(a: V<A>) => TypeValidator<[A]>)
+  & (<A, B>(a: V<A>, b: V<B>) => TypeValidator<[A, B]>)
+  & (<A, B, C>(a: V<A>, b: V<B>, c: V<C>) => TypeValidator<[A, B, C]>)
+  & (<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V<D>) => TypeValidator<[A, B, C, D]>)
+  & (<A, B, C, D, E>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>) => TypeValidator<[A, B, C, D, E]>)
+  & (<A, B, C, D, E, F>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>) => TypeValidator<[A, B, C, D, E, F]>)
+  & (<A, B, C, D, E, F, G>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>) => TypeValidator<[A, B, C, D, E, F, G]>)
+  & (<A, B, C, D, E, F, G, H>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>) => TypeValidator<[A, B, C, D, E, F, G, H]>)
+  & (<A, B, C, D, E, F, G, H, I>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>, i: V<I>) => TypeValidator<[A, B, C, D, E, F, G, H, I]>)
+  & (<A, B, C, D, E, F, G, H, I, J>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>, i: V<I>, j: V<J>) => TypeValidator<[A, B, C, D, E, F, G, H, I, J]>)
 
 function tupleOf_ (...typeFuncs) {
-  function tuple (value: mixed, _scope = '') {
+  function tuple (value: unknown, _scope = '') {
     const cardinality = typeFuncs.length
     if (isEmpty(value)) return typeFuncs.map(fn => fn(value))
     if (Array.isArray(value) && value.length === cardinality) {
@@ -412,22 +418,22 @@ function tupleOf_ (...typeFuncs) {
 
 // $FlowFixMe - $Tuple<(A, B, C, ...)[]>
 // const tupleOf: TupleT = tupleOf_
-export const tupleOf = tupleOf_
+export const tupleOf: any = tupleOf_
 
 type UnionT =
-    (<A>(V<A>) => TypeValidator<A>)
-  & (<A, B>(V<A>, V<B>) => TypeValidator<A | B>)
-  & (<A, B, C>(V<A>, V<B>, V<C>) => TypeValidator<A | B | C>)
-  & (<A, B, C, D>(V<A>, V<B>, V<C>, V<D>) => TypeValidator<A | B | C | D>)
-  & (<A, B, C, D, E>(V<A>, V<B>, V<C>, V<D>, V<E>) => TypeValidator<A | B | C | D | E>)
-  & (<A, B, C, D, E, F>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>) => TypeValidator<A | B | C | D | E | F>)
-  & (<A, B, C, D, E, F, G>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>) => TypeValidator<A | B | C | D | E | F | G>)
-  & (<A, B, C, D, E, F, G, H>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>) => TypeValidator<A | B | C | D | E | F | G | H>)
-  & (<A, B, C, D, E, F, G, H, I>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>) => TypeValidator<A | B | C | D | E | F | G | H | I>)
-  & (<A, B, C, D, E, F, G, H, I, J>(V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>) => TypeValidator<A | B | C | D | E | F | G | H | I | J>)
+    (<A>(a: V<A>) => TypeValidator<A>)
+  & (<A, B>(a: V<A>, b: V<B>) => TypeValidator<A | B>)
+  & (<A, B, C>(a: V<A>, b: V<B>, c: V<C>) => TypeValidator<A | B | C>)
+  & (<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V<D>) => TypeValidator<A | B | C | D>)
+  & (<A, B, C, D, E>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>) => TypeValidator<A | B | C | D | E>)
+  & (<A, B, C, D, E, F>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>) => TypeValidator<A | B | C | D | E | F>)
+  & (<A, B, C, D, E, F, G>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>) => TypeValidator<A | B | C | D | E | F | G>)
+  & (<A, B, C, D, E, F, G, H>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>) => TypeValidator<A | B | C | D | E | F | G | H>)
+  & (<A, B, C, D, E, F, G, H, I>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>, i: V<I>) => TypeValidator<A | B | C | D | E | F | G | H | I>)
+  & (<A, B, C, D, E, F, G, H, I, J>(a: V<A>, b: V<B>, c: V<C>, d: V<D>, e: V<E>, f: V<F>, g: V<G>, h: V<H>, i: V<I>, j: V<J>) => TypeValidator<A | B | C | D | E | F | G | H | I | J>)
 
 function unionOf_ (...typeFuncs) {
-  function union (value: mixed, _scope = '') {
+  function union (value: unknown, _scope = '') {
     for (const typeFn of typeFuncs) {
       try {
         return typeFn(value, _scope)
@@ -440,17 +446,17 @@ function unionOf_ (...typeFuncs) {
 }
 // $FlowFixMe
 // const unionOf: UnionT = (unionOf_)
-export const unionOf = unionOf_
+export const unionOf: any = unionOf_
 
-export const actionRequireInnerSignature = (next: Function): Function => (data, props) => {
+export const actionRequireInnerSignature: any = (next: Function): Function => (data, props) => {
   const innerSigningContractID = props.message.innerSigningContractID
   if (!innerSigningContractID || innerSigningContractID === props.contractID) {
     throw new Error('Missing inner signature')
   }
   return next(data, props)
 }
-export const validatorFrom = (fn) => {
-  function customType (value: mixed, _scope = '') {
+export const validatorFrom: any = (fn) => {
+  function customType (value: unknown, _scope = '') {
     if (!fn(value)) {
       throw validatorError(customType, value, _scope)
     }

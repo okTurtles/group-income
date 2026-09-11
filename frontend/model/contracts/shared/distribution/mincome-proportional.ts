@@ -5,7 +5,7 @@ export type HaveNeedObject = {
   haveNeed: number
 }
 
-export default function mincomeProportional (haveNeeds: Array<HaveNeedObject>): Array<Object> {
+export default function mincomeProportional (haveNeeds: Array<HaveNeedObject>): Array<any> {
   let totalHave = 0
   let totalNeed = 0
   const havers = []

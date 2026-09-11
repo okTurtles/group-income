@@ -1,6 +1,6 @@
 'use strict'
 
-import { literalOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { literalOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
 import {
   PROPOSAL_REMOVE_MEMBER,
   PROFILE_STATUS
@@ -30,7 +30,7 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
 
 const getPopulation = (state) => Object.keys(state.profiles).filter(p => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length
 
-const rules: Object = {
+const rules: any = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
     let population = getPopulation(state)

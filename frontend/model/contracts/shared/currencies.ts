@@ -1,15 +1,15 @@
 'use strict'
 
-type Currency = {|
+type Currency = {
   decimalsMax: number;
   displayWithCurrency(n: number): string;
   displayWithoutCurrency(n: number): string;
   isCrypto: boolean;
-  numberFormat: Object;
+  numberFormat: any;
   symbol: string;
   symbolWithCode: string;
   validate(n: string): boolean;
-|}
+}
 
 // https://github.com/okTurtles/group-income/issues/813#issuecomment-593680834
 // round all accounting to DECIMALS_MAX decimal places max to avoid consensus
@@ -24,7 +24,7 @@ function commaToDots (value: string | number): string {
 }
 
 function isNumeric (nr: string): boolean {
-  return !isNaN((nr: any) - parseFloat(nr))
+  return !isNaN((nr as any) - parseFloat(nr))
 }
 
 function isInDecimalsLimit (nr: string, decimalsMax: number) {
@@ -107,7 +107,7 @@ function makeCurrency (options): Currency {
 //       a json file that's read in and generates this object. For
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
-const currencies: { [string]: Currency } = {
+const currencies: { [key: string]: Currency } = {
   USD: makeCurrency({
     code: 'USD',
     symbol: '$',

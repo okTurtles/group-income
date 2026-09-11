@@ -58,8 +58,8 @@ import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.v
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { L } from '@common/common.js'
 
 // TODO: handle showing PAYMENT_CANCELLED ?

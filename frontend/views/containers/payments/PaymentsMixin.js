@@ -1,8 +1,8 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
-import { humanDate, dateFromPeriodStamp, periodStampsForDate } from '@model/contracts/shared/time.js'
+import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.ts'
+import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.ts'
+import { humanDate, dateFromPeriodStamp, periodStampsForDate } from '@model/contracts/shared/time.ts'
 import { cloneDeep } from 'turtledash'
 
 // NOTE: this mixin combines payment information

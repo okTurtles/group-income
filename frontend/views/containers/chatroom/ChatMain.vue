@@ -163,8 +163,8 @@ import {
 import {
   CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
 } from '@utils/events.js'
-import { findMessageIdx } from '@model/contracts/shared/functions.js'
-import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { findMessageIdx } from '@model/contracts/shared/functions.ts'
+import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.ts'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { compressImage } from '@utils/image.ts'

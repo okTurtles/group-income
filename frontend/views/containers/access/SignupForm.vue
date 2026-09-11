@@ -62,7 +62,7 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase,
   noWhitespace
-} from '@model/contracts/shared/validators.js'
+} from '@model/contracts/shared/validators.ts'
 import { Secret } from '@chelonia/lib/Secret'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 

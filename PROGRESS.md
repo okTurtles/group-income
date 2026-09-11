@@ -180,12 +180,31 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Step 3's Mocha hook got its first real use** — `stringTemplate.test.js` is a `.js` test importing a `.ts` module, and it passes.
 
+### 011 — Step 5: contract wave (`model/contracts/**`)
+
+**Status:** DONE
+
+**Changed:** 17 files renamed `.js` → `.ts` plus `misc/flowTyper.ts`, and 132 specifiers across 77 importers. Gruntfile entry points, `tsconfig` `exclude`, `eslintIgnore` and `.flowconfig` `[ignore]` all repointed at `flowTyper.ts`. `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing incl. the Step 0 `flowTyper` harness. `contracts/` and `chelonia.json` untouched; no `grunt pin`. 88 → **71** left.
+
+**The contract-hash invariant was unverifiable and is now restated.** `manifests.json` is gitignored, so the `git diff` check used through Step 4 could never fail. Baseline properly: two consecutive prod builds byte-identical, then copy-rebuild-diff.
+
+**The hashes move, and it's only a comment.** All three moved. Cause is esbuild's `// <path>` source banner, which a rename rewrites. Rebuilt both trees: all six bundles identical in size and byte-for-byte identical with banners normalised (`group.js` 138092 both ways). Emitted contract code is unchanged. Step 4 moved them too. New invariant: code identical modulo banners, `contracts/**` no git diff.
+
+**`flowTyper`'s exports are annotated `any`.** Flow `[ignore]`s the file, so its exports were `any` and the contracts' call sites into it were never checked. `@ts-nocheck` doesn't reproduce that — TS still infers the real signatures — which surfaced 12 errors in `group`/`identity`/`payments`. Fixing those would have meant editing frozen contract source to satisfy checking Flow never did.
+
+**`@ts-nocheck` doesn't stop syntax errors**, so `flowTyper` needed a genuine syntax translation (110 of the first 114 errors): `<T: B>` → `<T extends B>`, named function-type params, `(x: T)` → `x as T`, `*` → `any`. Runtime untouched — `.name`-survival tests still pass.
+
+**`shared/constants.js` stays `.js`** — no Flow syntax, so parity excludes it, and it's the most-imported file in the wave (70+ specifiers).
+
+**Specifiers are rewritten by resolution, not pattern-matching.** A hand-written pattern pass silently missed `./mincome-proportional.js`; the resolver pass caught all 132 and left `gi.contracts/*` selector strings alone.
+
 ---
 
 ## Open items
 
-- 88 Flow-checked `.js` files left to convert (Steps 5–8), plus 3 Flow-ignored ones needing syntax stripped only and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
-- `flowTyper.js`: convert, or leave frozen as a runtime dependency (lower risk — it's bundled into pinned contracts).
+- 71 Flow-checked `.js` files left to convert (Steps 6–8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
+- `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
+- **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.
 - ESLint 7.32 limits usable `@typescript-eslint` versions; may force a lint-stack upgrade.
 - `*.test.js` files stay `.js` this PR; converting them needs Mocha's spec glob widened to `*.test.{js,ts}` first.

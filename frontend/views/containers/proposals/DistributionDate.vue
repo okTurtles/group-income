@@ -47,7 +47,7 @@ import { L } from '@common/common.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.ts'
 
 export default {
   name: 'DistributionDateProposal',

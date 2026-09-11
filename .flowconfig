@@ -19,7 +19,7 @@
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js
 .*/frontend/utils/vuexQueue.js
-.*/frontend/model/contracts/misc/flowTyper.js
+.*/frontend/model/contracts/misc/flowTyper.ts
 .*/historical/.*
 .*/ignored/.*
 .*/node_modules/.*

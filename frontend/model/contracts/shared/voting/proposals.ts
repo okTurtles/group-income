@@ -1,9 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { DAYS_MILLIS } from '../time.js'
-import rules, { ruleType, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
+import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { DAYS_MILLIS } from '../time.ts'
+import rules, { ruleType, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.ts'
 import {
   PROPOSAL_RESULT,
   PROPOSAL_INVITE_MEMBER,
@@ -19,11 +19,11 @@ import {
 } from '../constants.js'
 
 export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contractID, meta, height }: {
-  state: Object,
+  state: any,
   proposalHash: string,
   proposal: any,
   contractID: string,
-  meta: Object,
+  meta: any,
   height: number
 }) {
   delete state.proposals[proposalHash]
@@ -49,7 +49,7 @@ export const proposalSettingsType: any = objectOf({
   })
 })
 
-export function oneVoteToCloseWith (state: Object, proposalHash: string, expectedResult: string): boolean {
+export function oneVoteToCloseWith (state: any, proposalHash: string, expectedResult: string): boolean {
   const proposal = state.proposals[proposalHash]
   const votes = Object.assign({}, proposal.votes)
   const currentResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
@@ -64,12 +64,12 @@ export function oneVoteToCloseWith (state: Object, proposalHash: string, expecte
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (state: Object, proposalHash: string): boolean {
+export function oneVoteToPass (state: any, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_FOR)
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToFail (state: Object, proposalHash: string): boolean {
+export function oneVoteToFail (state: any, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_AGAINST)
 }
 
@@ -89,10 +89,10 @@ export const proposalDefaults = {
   ruleSettings: ({
     [RULE_PERCENTAGE]: { threshold: 0.66 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
-  }: {|disagreement: {|threshold: number|}, percentage: {|threshold: number|}|})
+  } as { disagreement: { threshold: number }, percentage: { threshold: number } })
 }
 
-const proposals: Object = {
+const proposals: any = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {

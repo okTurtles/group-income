@@ -35,7 +35,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { timeSince } from '@model/contracts/shared/time.js'
+import { timeSince } from '@model/contracts/shared/time.ts'
 import AvatarUser from '@components/AvatarUser.vue'
 import { L } from '@common/common.js'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'

@@ -66,7 +66,7 @@ The boundary matters, so here it is both ways:
 
 **Every exemption is recorded twice:** a comment in the file saying what the annotation was and why it is gone, and a line in `PROGRESS.md` for the step that granted it. An exemption nobody can find later is indistinguishable from a translation error.
 
-**Granted so far:** `typeof Error` — `frontend/common/errors.ts` (Step 4), and `contracts/chatroom.js:39,40` + `contracts/group.js:369,370` when Step 5 reaches them.
+**Granted so far:** `typeof Error` — `frontend/common/errors.ts` (Step 4), and `contracts/chatroom.ts:39,40` + `contracts/group.ts:369,370` (Step 5, dropped exactly as Step 4 did). No new exemptions in Step 5. `paymentStatusType`/`paymentType` in `shared/payments/index.ts` looked like candidates — their Flow `: string` describes a validator function and failed as TS2322 — but the `flowTyper`-exports-are-`any` decision made the mirror compile, so both annotations stay exactly as Flow wrote them. Restoring parity beats granting an exemption; check for that before reaching for RULES 3.
 
 ---
 
@@ -286,7 +286,7 @@ Recurring syntax translations, all governed by RULES 2 — mirror, do not improv
 | Step | Wave | Files | Notes |
 |---|---|---|---|
 | **4 — DONE** | `frontend/common` 3, `frontend/utils` **9** | **12** | Leaf utilities, few dependents. Smallest wave first to shake out the translation patterns. `common.js` keeps its name but **did** need its three re-export specifiers rewritten — see below. |
-| **5** | `frontend/model/contracts/**` | 17 | 19 files in the tree contain Flow; 2 of them (`misc/flowTyper.js`, `shared/distribution/distribution.test.js`) are Flow-ignored and belong to the strip-only set. **Highest risk — see below.** |
+| **5 — DONE** | `frontend/model/contracts/**` | **17** + `flowTyper` | 19 files in the tree contain Flow; 2 of them (`misc/flowTyper.js`, `shared/distribution/distribution.test.js`) are Flow-ignored and belong to the strip-only set. The parenthetical list below named `constants` and omitted `types` — it is the other way round: `shared/constants.js` has **no Flow syntax** and so stays `.js` under parity, and `shared/types.js` converts. **Highest risk — see below.** |
 | **6** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **10**, `settings` 1 | **24** | Depends on Steps 4–5. Includes `notifications/types.flow.js` → `types.ts`, **moved here from Step 2** — renaming it early breaks Flow for its four `import type` consumers in this same directory, so it converts alongside them. |
 | **7** | `frontend/controller/**`: root 3, `actions` 9, `app` 3, `e2e` 1, `serviceworkers` 3, `utils` 1 | 20 | Controller root holds 4 Flow files; `service-worker.js` is Flow-ignored (strip-only), leaving 3. `serviceworkers/sw-primary.js` is its own esbuild entry — update `Gruntfile.js:663` in the same commit (Step 3a), then rebuild and smoke-test the SW bundle specifically. |
 | **8** | `frontend/views/**` `.js`: `views/utils` 13, `containers/chatroom` 5, `chat-mentions` 2, **`voice-recording` 1**, `components/*` 3, `containers/payments` 1, `roles-and-permissions` 1 — plus root `frontend/setupChelonia.js` | **27** | `views/utils` holds 14 entries; one is the `vueComponentStub.js.flow` stub, superseded on the TypeScript side in Step 2 but deleted only in Step 9, leaving 13 to convert. `voice-recording/voice-recording-utils.js` is new in v2.9.0. View-layer helpers imported by SFCs; SFCs themselves stay untouched plain JS. |
@@ -335,7 +335,31 @@ This is where a mistake is expensive and slow to surface: per `docs/src/Calls-Fr
 - Do **not** run `grunt pin`. Existing snapshots under `contracts/` must be untouched — the current pinned set runs to `2.9.0`, and `chelonia.json` points at it.
 - Verify `frontend/model/contracts/manifests.json` is byte-identical after a production build — contract hashes must not move.
 
-**Done when each wave:** typecheck passes, unit tests pass, build succeeds, and — for Step 5 — contract hashes and `flowTyper` equivalence tests are unchanged.
+**Done when each wave:** typecheck passes, unit tests pass, build succeeds, and — for Step 5 — the emitted contract code and the `flowTyper` equivalence tests are unchanged. On "contract hashes", read the next section first: the hashes *do* move, and the reason is not what the invariant assumed.
+
+### What Step 5 turned up — the contract-hash invariant was wrong
+
+Seventeen files converted plus `flowTyper`, all green: `tsc` 0 · `eslint` 0 · `npm run flow` "No errors!" · `NODE_ENV=production grunt build` 0 · **178 passing**, Step 0's `flowTyper` equivalence harness included. Pinned snapshots under `contracts/` untouched, `chelonia.json` untouched, no `grunt pin`.
+
+**`manifests.json` is gitignored, so `git diff` on it can never fail.** It is a build output (`frontend/model/contracts/.gitignore:1`) and is not tracked. Any "hashes unmoved, verified by `git diff`" claim — Step 4's included — checked nothing. The real check is: copy the file, rebuild, `diff` the copies. Two consecutive production builds were confirmed byte-identical first, so the baseline is trustworthy. The git-verifiable invariant is `contracts/**`, the pinned snapshots, which *are* tracked.
+
+**The contract hashes move on any wave that renames a file reachable from a contract, and that is unavoidable.** All three moved here. The cause is esbuild's source-path banner: the bundle contains `// frontend/model/contracts/group.js` comment lines naming each input file, and a rename rewrites them. Proven by rebuilding both trees and comparing: all six bundles (`group`, `chatroom`, `identity` and their `-slim` variants) are **identical in size and byte-for-byte identical once the banner comments are normalised** — 138092 bytes both ways for `group.js`, and the only differing lines in the raw diff are banners. So the emitted contract *code* is unchanged; only a comment is.
+
+This means Step 4 moved the hashes too, and its "byte-identical" note was an artifact of the broken check. Nothing pinned is affected either way — pinned versions are frozen files under `contracts/`, and this wave does not touch them. The next `grunt pin` will produce different bytes than it would have pre-migration, which is expected of a new version and is not a behaviour change.
+
+**Restate the invariant as:** the emitted contract code must be identical modulo esbuild path banners, and `contracts/**` must show no git diff. Verify with a normalised comparison of the built bundles, not with the hash.
+
+**An ignored module's exports are `any` to Flow, and letting TypeScript infer them instead is a scope expansion.** `flowTyper` is in `.flowconfig` `[ignore]`, so Flow resolved every import from it to `any` and never checked the contracts' call sites into it. `@ts-nocheck` does not reproduce that: it silences errors *inside* the file, but TypeScript still infers the exports' real signatures and checks callers against them. That produced 12 errors in `group.ts`, `identity.ts` and `payments/index.ts` — wrong argument counts, non-callable expressions, a validator assigned to `: string` — all of them new checking on code that is frozen once pinned. Fixing them would have meant editing contract source to satisfy types Flow never enforced. Every `flowTyper` export is annotated `any` instead, which is exactly the face Flow presented; the internal types stay as written. **Steps 6–8: any other `.flowconfig` `[ignore]` file that gets renamed needs the same treatment.**
+
+**`@ts-nocheck` does not suppress syntax errors, so a strip-only file still needs a real syntax translation.** Step 1 verified `@ts-nocheck` silences an excluded file; it does not silence a *parse* failure, and `flowTyper` is dense with Flow syntax (110 of the first 114 errors). Bounded generics `<T: B>` → `<T extends B>`, unnamed function-type params `(mixed, _?: string) => T` → named, Flow casts `(x: T)` → `x as T`, `*` → `any`, `?T` → `T | null | undefined`, `?p: T = d` → `p: T = d`. Runtime is untouched by all of it — the equivalence harness, including the `.name`-survival tests the dispatch depends on, still passes.
+
+**Two Flow/TS gaps showed up in contract source, both already documented translations.** Unannotated params that call sites omit (`removeGroupChatroomProfile`'s 4th, `leaveChatRoomAction`'s 6th) are optional to Flow's inference and required in TypeScript → mark them `?`. And `const options = {}` is a sealed `{}` in TypeScript, so dot-reads are TS2339 → `: any`, same as `faviconBadge.ts` in Step 4.
+
+**Two dead `$FlowFixMe[incompatible-use]` suppressions were replaced with the file's own idiom, not with `@ts-expect-error`.** Both sit on the same `Object.entries(state._vm.authorizedKeys).filter(([, key]) => key.meta…)` shape, where `Object.entries` of an `any` yields `unknown` values. The same two files already annotate this exact pattern as `([, state]: [string, Object])` three lines over, so the mirror `[string, any]` is what went in. A suppression comment for a checker that no longer reads the file is not worth carrying forward.
+
+**`shared/constants.js` stays `.js`.** No Flow syntax, so parity excludes it — the same reasoning the plan already applies to `common.js` and `main.js`. It is also the most-imported file in the wave by a wide margin (70+ specifiers), so leaving it alone is the difference between 132 specifier edits and 200+.
+
+**Rewrite specifiers by resolving them, not by pattern-matching.** A first pass with hand-written path patterns silently missed relative sibling imports (`./mincome-proportional.js`). The rewrite that ran instead resolves every quoted `.js` specifier through the alias table and `~/`, and rewrites only those that land on a renamed file: 132 specifiers across 77 files, with `gi.contracts/*` SBP selector strings and `shared/constants.js` provably untouched. Worth reusing verbatim for Steps 6–8.
 
 ---
 

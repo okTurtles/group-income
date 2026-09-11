@@ -1,12 +1,12 @@
 import { L } from '@common/common.js'
 import { INVITE_INITIAL_CREATOR, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
-import { adjustedDistribution, unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { adjustedDistribution, unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.ts'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
-import chatroomGetters from './contracts/shared/getters/chatroom.js'
-import groupGetters from './contracts/shared/getters/group.js'
-import identityGetters from './contracts/shared/getters/identity.js'
+import chatroomGetters from './contracts/shared/getters/chatroom.ts'
+import groupGetters from './contracts/shared/getters/group.ts'
+import identityGetters from './contracts/shared/getters/identity.ts'
 
 const checkedUsername = (state: Object, username: string, userID: string) => {
   if (username && state.namespaceLookups?.[username] === userID) {

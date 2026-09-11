@@ -108,7 +108,7 @@
     "frontend/assets",                                 // .flowconfig: .*/frontend/assets/.*
     "frontend/controller/service-worker.js",           // .flowconfig: .*/frontend/controller/service-worker.js
     "frontend/utils/blockies.js",                      // .flowconfig: .*/frontend/utils/blockies.js
-    "frontend/model/contracts/misc/flowTyper.js",      // .flowconfig: .*/frontend/model/contracts/misc/flowTyper.js
+    "frontend/model/contracts/misc/flowTyper.ts",      // .flowconfig: .*/frontend/model/contracts/misc/flowTyper.ts
     "**/*.test.js",                                    // .flowconfig: .*.test.js
     // Not a .flowconfig entry: test files stay `.js` for this migration, but the
     // pattern is here so a future `.test.ts` inherits the same exemption.

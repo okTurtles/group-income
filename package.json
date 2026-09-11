@@ -69,7 +69,7 @@
   },
   "eslintIgnore": [
     "frontend/assets/*",
-    "frontend/model/contracts/misc/flowTyper.js",
+    "frontend/model/contracts/misc/flowTyper.ts",
     "historical/*",
     "shared/types.js",
     "dist/*",

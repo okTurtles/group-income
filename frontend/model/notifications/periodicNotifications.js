@@ -2,8 +2,8 @@
 
 import sbp from '@sbp/sbp'
 // $FlowFixMe
-import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.js'
-import { MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.ts'
+import { MINS_MILLIS } from '@model/contracts/shared/time.ts'
 
 // This file is used in both the SW and window contexts.
 // We do not import Vue for two reasons:

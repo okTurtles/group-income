@@ -5,10 +5,10 @@ import {
   PROFILE_STATUS,
   PROPOSAL_GENERIC
 } from '../constants.js'
-import currencies from '../currencies.js'
-import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '../functions.js'
-import { PAYMENT_COMPLETED } from '../payments/index.js'
-import { addTimeToDate, dateFromPeriodStamp, dateIsWithinPeriod, dateToPeriodStamp, periodStampsForDate } from '../time.js'
+import currencies from '../currencies.ts'
+import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '../functions.ts'
+import { PAYMENT_COMPLETED } from '../payments/index.ts'
+import { addTimeToDate, dateFromPeriodStamp, dateIsWithinPeriod, dateToPeriodStamp, periodStampsForDate } from '../time.ts'
 
 /*
 `-ForGroup` pattern:
@@ -185,7 +185,7 @@ export default ({
     }
   },
   periodBeforePeriodForGroup (state, getters) {
-    return (groupState: Object, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: any, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -196,7 +196,7 @@ export default ({
     return (periodStamp: string, periods?: string[]) => getters.periodBeforePeriodForGroup(getters.currentGroupState, periodStamp, periods)
   },
   periodAfterPeriodForGroup (state, getters) {
-    return (groupState: Object, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: any, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -281,19 +281,19 @@ export default ({
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },
-  groupPeriodPaymentsForGroup (state, getters): Object {
+  groupPeriodPaymentsForGroup (state, getters): any {
     // note: a lot of code expects this to return an object, so keep the || {} below
     return (state) => {
       return state.paymentsByPeriod || {}
     }
   },
-  groupPeriodPayments (state, getters): Object {
+  groupPeriodPayments (state, getters): any {
     return getters.groupPeriodPaymentsForGroup(getters.currentGroupState)
   },
-  groupThankYousFrom (state, getters): Object {
+  groupThankYousFrom (state, getters): any {
     return getters.currentGroupState.thankYousFrom || {}
   },
-  groupStreaks (state, getters): Object {
+  groupStreaks (state, getters): any {
     return getters.currentGroupState.streaks || {}
   },
   groupTotalPledgeAmount (state, getters): number {
@@ -370,4 +370,4 @@ export default ({
   //     return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
   //   }
   // }
-}: Object)
+} as any)

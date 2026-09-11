@@ -5,7 +5,7 @@
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
-import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   MAX_HASH_LEN,
@@ -37,17 +37,17 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
 } from './shared/constants.js'
-import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.js'
-import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.js'
-import groupGetters from './shared/getters/group.js'
+import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.ts'
+import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.ts'
+import groupGetters from './shared/getters/group.ts'
 import { cloneDeep, deepEqualJSONType, merge, omit } from 'turtledash'
-import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.js'
-import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp, isPeriodStamp, plusOnePeriodLength } from './shared/time.js'
-import { chatRoomAttributesType, inviteType } from './shared/types.js'
-import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.js'
-import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType, voteType } from './shared/voting/rules.js'
+import { PAYMENT_COMPLETED, paymentStatusType, paymentType } from './shared/payments/index.ts'
+import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp, isPeriodStamp, plusOnePeriodLength } from './shared/time.ts'
+import { chatRoomAttributesType, inviteType } from './shared/types.ts'
+import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.ts'
+import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType, voteType } from './shared/voting/rules.ts'
 
-function fetchInitKV (obj: Object, key: string, initialValue: any): any {
+function fetchInitKV (obj: any, key: string, initialValue: any): any {
   let value = obj[key]
   if (!value) {
     obj[key] = initialValue
@@ -194,7 +194,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   })
 }
 
-function isActionNewerThanUserJoinedDate (height: number, userProfile: ?Object): boolean {
+function isActionNewerThanUserJoinedDate (height: number, userProfile: any | null | undefined): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
@@ -287,13 +287,13 @@ function updateGroupStreaks ({ state, getters }) {
   }
 }
 
-const removeGroupChatroomProfile = (state, chatRoomID, memberID, ourselvesLeaving) => {
+const removeGroupChatroomProfile = (state, chatRoomID, memberID, ourselvesLeaving?) => {
   if (!state.chatRooms[chatRoomID].members[memberID]) return
 
   state.chatRooms[chatRoomID].members[memberID].status = PROFILE_STATUS.REMOVED
 }
 
-const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID, leavingGroup) => {
+const leaveChatRoomAction = async (groupID, state, chatRoomID, memberID, actorID, leavingGroup?) => {
   const sendingData = leavingGroup || actorID !== memberID
     ? { memberID }
     : {}
@@ -358,7 +358,7 @@ const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
   )
 }
 
-export const actionRequireActiveMember = (next: Function): Function => (data, props) => {
+export const actionRequireActiveMember = (next: any): any => (data, props) => {
   const innerSigningContractID = props.message.innerSigningContractID
   if (!innerSigningContractID || innerSigningContractID === props.contractID) {
     throw new Error('Missing inner signature')
@@ -366,8 +366,10 @@ export const actionRequireActiveMember = (next: Function): Function => (data, pr
   return next(data, props)
 }
 
-export const GIGroupAlreadyJoinedError: typeof Error = ChelErrorGenerator('GIGroupAlreadyJoinedError')
-export const GIGroupNotJoinedError: typeof Error = ChelErrorGenerator('GIGroupNotJoinedError')
+// These two used to carry a `typeof Error` annotation. TypeScript infers the
+// constructor type from `ChelErrorGenerator`, so it is no longer needed.
+export const GIGroupAlreadyJoinedError = ChelErrorGenerator('GIGroupAlreadyJoinedError')
+export const GIGroupNotJoinedError = ChelErrorGenerator('GIGroupNotJoinedError')
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
@@ -833,7 +835,7 @@ sbp('chelonia/defineContract', {
         const memberID = data.memberID || innerSigningContractID
         const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
         if (memberID === identityContractID) {
-          const ourChatrooms = Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Object]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+          const ourChatrooms = Object.entries(state?.chatRooms || {}).filter(([, state]: [string, any]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
           if (ourChatrooms.length) {
             sbp('gi.contracts/group/pushSideEffect', contractID,
               ['gi.contracts/group/referenceTally', contractID, ourChatrooms, 'release'])
@@ -1489,8 +1491,7 @@ sbp('chelonia/defineContract', {
       if (request === 'missing' && state.profiles?.[originatingContractID]?.status === PROFILE_STATUS.ACTIVE) {
         return {
           keyIds: Object.entries(state._vm.authorizedKeys)
-            // $FlowFixMe[incompatible-use]
-            .filter(([, key]) => !!key.meta?.private?.shareable)
+            .filter(([, key]: [string, any]) => !!key.meta?.private?.shareable)
             .map(([kId]) => kId),
           skipInviteAccounting: true
         }
@@ -1506,8 +1507,8 @@ sbp('chelonia/defineContract', {
       // unsubscribe from other group members identity contract
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const dependentContractIDs = [
-        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, Object]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
-        ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Object]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, any]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
+        ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, any]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
       ]
       if (dependentContractIDs.length) {
         sbp('chelonia/contract/release', dependentContractIDs).catch(e => {

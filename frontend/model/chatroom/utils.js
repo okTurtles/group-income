@@ -1,6 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import { makeMentionFromUserID } from '@model/contracts/shared/functions.js'
+import { makeMentionFromUserID } from '@model/contracts/shared/functions.ts'
 import {
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
