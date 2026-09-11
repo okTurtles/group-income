@@ -461,3 +461,96 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giLogout()
   })
 })
+
+// Regression coverage for message ordering (#3132): the rendered conversation
+// must follow contract height order, not the order the messages happen to sit
+// in the contract state array. Locally-inserted pending copies are appended to
+// that array, so a message received over the websocket in the meantime used to
+// render below a message that was actually older.
+//
+// `data-height` is rendered by `ChatMain.vue` on each scroller item. The
+// virtual scroller only mounts visible items, so these assertions are made on
+// short conversations where everything is on screen.
+describe('Chatroom messages are rendered in contract height order', () => {
+  const orderingGroupName = 'Ordering'
+  const orderingSuffix = randomUserSuffix()
+  const orderingUser1 = `order1${orderingSuffix}`
+  const orderingUser2 = `order2${orderingSuffix}`
+  let orderingInvitationLink
+
+  function assertRenderedInHeightOrder () {
+    cy.getByDT('conversationWrapper').find('[data-index]').should('have.length.at.least', 2).then($items => {
+      const heights = [...$items].map(el => {
+        // A height-less message is a temporary one still uploading attachments;
+        // those sort last, as do the `Number.MAX_SAFE_INTEGER` temps.
+        const height = el.getAttribute('data-height')
+        return height === null ? Number.POSITIVE_INFINITY : Number(height)
+      })
+      const expected = [...heights].sort((a, b) => a - b)
+      expect(heights, 'rendered messages are ordered by contract height').to.deep.equal(expected)
+    })
+  }
+
+  function assertNothingPendingOrFailed () {
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message.pending').should('not.exist')
+      cy.get('.c-message.failed').should('not.exist')
+    })
+  }
+
+  it(`${orderingUser1} creates '${orderingGroupName}' and sends several messages back to back`, () => {
+    cy.visit('/')
+    cy.giSignup(orderingUser1, { bypassUI: true })
+    cy.giCreateGroup(orderingGroupName, { bypassUI: true })
+
+    cy.giRedirectToGroupChat()
+    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, orderingUser1)
+
+    // Sent back to back so that the locally-inserted pending copies and the
+    // copies arriving over the websocket coexist in the rendered list.
+    for (let i = 1; i <= 4; i++) {
+      cy.giSendMessage(orderingUser1, `Rapid message ${i}`, { instantInput: true })
+      assertRenderedInHeightOrder()
+    }
+    assertNothingPendingOrFailed()
+
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      orderingInvitationLink = url
+    })
+    cy.giLogout()
+  })
+
+  it(`${orderingUser2} joins and both members' messages stay in height order`, () => {
+    cy.giAcceptGroupInvite(orderingInvitationLink, {
+      username: orderingUser2,
+      existingMemberUsername: orderingUser1,
+      groupName: orderingGroupName,
+      shouldLogoutAfter: false,
+      bypassUI: true
+    })
+
+    cy.giRedirectToGroupChat()
+    assertRenderedInHeightOrder()
+
+    for (let i = 1; i <= 3; i++) {
+      cy.giSendMessage(orderingUser2, `Reply from ${orderingUser2} ${i}`, { instantInput: true })
+      assertRenderedInHeightOrder()
+    }
+    assertNothingPendingOrFailed()
+  })
+
+  it(`${orderingUser1} sees the interleaved conversation in height order`, () => {
+    cy.giSwitchUser(orderingUser1)
+    cy.giRedirectToGroupChat()
+
+    assertRenderedInHeightOrder()
+    assertNothingPendingOrFailed()
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().find('.c-text').should('contain', `Reply from ${orderingUser2} 3`)
+    })
+
+    cy.giLogout()
+  })
+})

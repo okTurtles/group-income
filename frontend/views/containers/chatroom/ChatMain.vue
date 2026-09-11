@@ -54,6 +54,7 @@
           :active='active'
           :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
+          :data-height='message.height'
         )
           .c-divider(
             v-if='changeDay(message, ephemeral.messages[index - 1]) || isNew(message.hash)'
@@ -178,6 +179,7 @@ import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatr
 import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
+import { sortMessages, resolveFailedMessage } from './sortMessages.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -291,17 +293,10 @@ const setMessages = function () {
     return
   }
   const currentVisibleMessage = this.visibleMessageIterator().next().value
-  this.ephemeral.messages = newMessages.map((message, index) => ({ message, index }))
-    .sort((a, b) => {
-      const ha = a.message.height
-      const hb = b.message.height
-      // Pending (height-less) messages sort last; ties keep original order.
-      const ra = ha == null ? Infinity : ha
-      const rb = hb == null ? Infinity : hb
-      if (ra !== rb) return ra - rb
-      return a.index - b.index
-    })
-    .map(({ message }) => message)
+  // Sorts a copy of the source array by contract height, keeping messages
+  // without a usable height (pending sends, temporary attachment uploads)
+  // last. See `sortMessages.js`.
+  this.ephemeral.messages = sortMessages(newMessages)
   this.ephemeral.messagesSource = newMessages
   if (!postSetMessageState?.noRerender) {
     this.rerenderEvents(currentVisibleMessage)
@@ -369,7 +364,7 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
-        // IDENTITY CACHE INVARIANT: `messagesSource` holds the array reference
+        // `messagesSource` INVARIANT: this holds the array reference
         // last consumed by `setMessages()`. It MUST be reset to `null` (via
         // `forceRerenderMessages()`) before any STRUCTURAL in-place mutation of
         // `messageState.contract.messages` — i.e. a `.splice` / `.push` / `.shift`
@@ -380,6 +375,10 @@ export default ({
         // NOTE: mutating a *property* on an existing message object (e.g.
         // `Vue.set(msg, 'hasFailed', true)`) does NOT require a reset — rendered
         // items are the same reactive object references, so Vue tracks the change.
+        //
+        // The structural mutators this invariant protects are
+        // `removeTemporaryMessage()` (inside `handleSendMessage`) and
+        // `retryMessage()`; both pair their splice with a rebuild of the view.
         messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
@@ -867,6 +866,13 @@ export default ({
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
           if (hasChatroomSwitchedSince()) return
+          // `message` is exactly the entry that gets POSTed, so record its hash
+          // synchronously instead of inside the queued hook body below: the POST
+          // can fail before that body has inserted the pending message, and the
+          // `catch` handler needs the hash to flag the right message. On a
+          // 409/412 retry this hook runs again with the recreated entry, which
+          // overwrites the now-stale hash.
+          pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
             beforePrePublish?.()
 
@@ -874,28 +880,39 @@ export default ({
             // the network
             const msg = this.messageState.contract.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) {
-              const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
-              this.ephemeral.postSetMessageState = () => {
-                if (hasChatroomSwitchedSince()) {
-                  return
+              try {
+                const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
+                this.ephemeral.postSetMessageState = () => {
+                  if (hasChatroomSwitchedSince()) {
+                    return
+                  }
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
+                    return
+                  }
+                  this.jumpToLatest()
                 }
-                if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
-                  return
-                }
-                this.jumpToLatest()
+                Vue.set(this.messageState, 'contract', newContractState)
+                this.stopReplying()
+              } catch (e) {
+                // `beforePrePublish` may have already spliced the temporary
+                // attachment-upload message out of the source array. Without the
+                // `Vue.set` above nothing rebuilds the sorted rendered view, so
+                // flush it explicitly (this only nulls `messagesSource` and
+                // flushes the debounce).
+                this.forceRerenderMessages()
+                throw e
               }
-              Vue.set(this.messageState, 'contract', newContractState)
-              this.stopReplying()
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
               this.forceRerenderMessages()
-              pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
               //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
               this.onChatScroll()
             }
+          }).catch(e => {
+            console.error('[ChatMain.vue] Error in the beforeRequest hook', e)
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -919,20 +936,28 @@ export default ({
               }
             })
           }
-        }).catch((e) => {
+        }).catch(async (e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
           }
 
-          const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex >= 0) {
-            const failedMsg = this.messageState.contract.messages[msgIndex]
+          // The `beforeRequest` hook is fire-and-forget, so the local insert of
+          // the pending message (a service-worker round trip) can still be in
+          // flight when the POST fails. Drain the lane before looking it up.
+          await enqueue.call(this, () => {}).catch(() => {})
+          if (hasChatroomSwitchedSince()) return
+
+          const messages = this.messageState.contract.messages || []
+          const failedMsg = resolveFailedMessage(pendingMessageHash, messages)
+          if (failedMsg) {
             Vue.set(failedMsg, 'hasFailed', true)
 
             if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
               // Attachments are kept so that they can be used again for the next re-attempt.
               this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
             }
+          } else if (pendingMessageHash && findMessageIdx(pendingMessageHash, messages) < 0) {
+            console.warn('[ChatMain.vue] send failed; pending message missing from state', e)
           }
         })
       }
@@ -996,10 +1021,13 @@ export default ({
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
-              // SAFE re: messagesSource invariant. The enclosing beforeRequest hook
-              // either swaps `messageState.contract` via Vue.set (firing the watcher)
-              // or calls forceRerenderMessages(); both rebuild the sorted view, so no
-              // manual flush is needed here.
+              // SAFE re: the `messagesSource` invariant. The enclosing
+              // beforeRequest hook either swaps `messageState.contract` via
+              // Vue.set (firing the watcher), calls forceRerenderMessages(), or
+              // flushes the view from its catch block when
+              // `chelonia/in/processMessage` throws after this splice already
+              // ran. Every path rebuilds the sorted view, so no manual flush is
+              // needed here.
               messages.splice(msgIndex, 1)
             }
           }
@@ -1779,12 +1807,11 @@ export default ({
             // only the debounced rendered view and can still be stale immediately
             // after processEvents() returns.
             const messages = this.messageState.contract.messages || []
-            const latestValidMessage = messages
-              .filter(m => !m.pending && !m.hasFailed)
-              .reduce((latest, msg) => {
-                if (!latest) return msg
-                return msg.height > latest.height ? msg : latest
-              }, null)
+            const latestValidMessage = messages.reduce((latest, msg) => {
+              if (msg.pending || msg.hasFailed) return latest
+              if (!latest || msg.height > latest.height) return msg
+              return latest
+            }, null)
 
             if (this.ephemeral.scrollableDistance < 50 && messages.length) {
               const isScrollable = this.$refs.conversation &&

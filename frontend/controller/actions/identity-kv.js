@@ -1,22 +1,10 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
-import { ChelErrorInvalidMessageHeight } from '@chelonia/lib/errors'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
-
-const isHeightAheadError = (e: ?Object): boolean => {
-  // Chelonia may rewrap the original error, so walk the cause chain instead of
-  // only checking the top-level error. Matching on `name` as well as on the
-  // constructor keeps this working when the error crosses a bundle boundary,
-  // where `instanceof` fails because the class identity differs.
-  for (let cur = e, i = 0; cur && i < 5; cur = cur.cause, i++) {
-    if (cur instanceof ChelErrorInvalidMessageHeight) return true
-    if (cur?.name === 'ChelErrorInvalidMessageHeight') return true
-  }
-  return false
-}
+import { isHeightAheadError, withKvGuard, withKvHeightRetry } from './kv-guard.js'
 
 // The `namespace-cache` slot is `autoLoad: 'on-demand'` and
 // `autoSubscribe: false`, so nothing else keeps its mirror fresh. A KV value
@@ -39,6 +27,7 @@ const syncSlotWithRecovery = async (contractID: string, key: string, attempt: nu
 }
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
+
 // Name discrepancies between the KV store and `namespaceLookups` may occur
 // due to being unsubcribed from an identity contract (e.g., someone has left
 // a group) or due to the username being deleted. This function attempts to
@@ -79,11 +68,11 @@ const updateKVPreferences = (updater: Function) => {
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
   }
-  return sbp('chelonia/kv/update', {
+  return withKvGuard(identityContractID, KV_KEYS.PREFERENCES, () => sbp('chelonia/kv/update', {
     contractID: identityContractID,
     key: KV_KEYS.PREFERENCES,
     updater
-  })
+  }))
 }
 
 // Shallow-merge `patch` over the current preferences via the slot's
@@ -94,11 +83,11 @@ const setKVPreferences = (patch: Object) => {
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
   }
-  return sbp('chelonia/kv/update', {
+  return withKvGuard(identityContractID, KV_KEYS.PREFERENCES, () => sbp('chelonia/kv/update', {
     contractID: identityContractID,
     key: KV_KEYS.PREFERENCES,
     value: patch
-  })
+  }))
 }
 
 sbp('okTurtles.events/on', ONLINE, () => {
@@ -142,7 +131,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -152,7 +141,7 @@ export default (sbp('sbp/selectors/register', {
           [contractID]: { readUntil: { messageHash, createdHeight }, unreadMessages: [] }
         }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/setChatRoomReadUntil': ({ contractID, messageHash, createdHeight, forceUpdate = false }: {
     contractID: string,
@@ -168,7 +157,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvGuard(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -182,7 +171,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/markAsUnread': ({ contractID, messageHash, createdHeight, unreadMessages }: {
     contractID: string,
@@ -194,7 +183,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvGuard(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -211,7 +200,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/addChatRoomUnreadMessage': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
@@ -220,7 +209,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -232,7 +221,7 @@ export default (sbp('sbp/selectors/register', {
           [contractID]: { ...entry, unreadMessages: [...entry.unreadMessages, { messageHash, createdHeight }] }
         }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/removeChatRoomUnreadMessage': ({ contractID, messageHash }: {
     contractID: string, messageHash: string
@@ -241,7 +230,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -253,14 +242,14 @@ export default (sbp('sbp/selectors/register', {
           [contractID]: { ...entry, unreadMessages: entry.unreadMessages.filter(msg => msg.messageHash !== messageHash) }
         }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/deleteChatRoomUnreadMessages': ({ contractID }: { contractID: string }) => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update chatroom unreadMessages without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.UNREAD_MESSAGES, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
       updater: (prev = {}) => {
@@ -268,7 +257,7 @@ export default (sbp('sbp/selectors/register', {
         const { [contractID]: _gone, ...rest } = prev
         return rest
       }
-    })
+    }))
   },
   // Preferences
   'gi.actions/identity/kv/updateDistributionBannerVisibility': ({ contractID, hidden }: { contractID: string, hidden: boolean }) => {
@@ -290,7 +279,7 @@ export default (sbp('sbp/selectors/register', {
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.NOTIFICATIONS, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       // Add this notification's status only if it isn't already tracked; the
@@ -300,7 +289,7 @@ export default (sbp('sbp/selectors/register', {
         if (currentData[hash]) return KV_NOOP
         return { ...currentData, [hash]: initNotificationStatus({ timestamp }) }
       }
-    })
+    }))
   },
   'gi.actions/identity/kv/markNotificationStatusRead': (hashes: string | string[]) => {
     if (typeof hashes === 'string') {
@@ -313,7 +302,7 @@ export default (sbp('sbp/selectors/register', {
     // Capture the client-side notification list once outside the reducer so
     // conflict-retry invocations read a stable snapshot (KV-REVAMPED.md §3.3).
     const notifications = sbp('chelonia/rootState').notifications.items
-    return sbp('chelonia/kv/update', {
+    return withKvHeightRetry(identityContractID, KV_KEYS.NOTIFICATIONS, () => sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       updater: (currentData = {}) => {
@@ -340,7 +329,7 @@ export default (sbp('sbp/selectors/register', {
         }
         return isUpdated ? next : KV_NOOP
       }
-    })
+    }))
   },
   // Namespace lookups
   //
@@ -351,15 +340,14 @@ export default (sbp('sbp/selectors/register', {
   // live here and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT`
   // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
   // matching the original behavior. (KV-REVAMPED.md §4.8)
-  'gi.actions/identity/kv/saveCachedNames': async () => {
+  'gi.actions/identity/kv/saveCachedNames': () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
     }
-    // Recover from the identity contract being behind the KV store before
-    // writing: otherwise the `onconflict` handler below can't decode the
-    // server value on a conflict retry and would prune it as if it were empty.
-    await syncSlotWithRecovery(identityContractID, KV_KEYS.NS_CACHE)
+    // `withKvGuard` below syncs the identity contract before the write
+    // (so that `onconflict` can decode the server value instead of pruning it as
+    // if it were empty) and re-syncs + retries once on a height / conflict error.
     // Prune-on-write MUST validate the value the write actually races against:
     // the *server* value seen on each conflict retry. The declarative
     // `chelonia/kv/update` reducer cannot express this — it is synchronous and
@@ -372,6 +360,20 @@ export default (sbp('sbp/selectors/register', {
     // + async `onconflict` for this one slot, re-validating the real server
     // value on every retry exactly as the pre-revamp code did, so a valid name
     // another device knows about is never clobbered.
+    //
+    // RESIDUAL WINDOW: if another device writes this key between the guard's
+    // pre-flight sync and the POST below, the 412 retry is still handed
+    // `currentData === undefined` (a value written at a height we haven't seen
+    // is indistinguishable from an absent key) and `checkAndAugmentNames`
+    // prunes that device's names. The guard's retry half re-syncs and retries
+    // the whole write when that happens; closing the window entirely needs the
+    // lib to surface the decode failure to `onconflict`.
+    //
+    // Do NOT recover from inside `onconflict`: it runs on the identity
+    // contract's queue lane, `chelonia/kv/sync` re-enters that same lane, the
+    // lane is strictly FIFO, and the lib's re-entrancy assertion only covers
+    // `onUpdate`, so it deadlocks instead of failing. Recover by catching the
+    // rejection outside the write (see `withKvHeightRetry`).
     const onconflict = async ({ currentData = [], etag } = {}) => {
       if (!Array.isArray(currentData)) currentData = []
       // `checkAndAugmentNames` unions the server value with our local lookups
@@ -386,12 +388,12 @@ export default (sbp('sbp/selectors/register', {
       }
       return [data, etag]
     }
-    return sbp('chelonia/kv/queuedSet', {
+    return withKvGuard(identityContractID, KV_KEYS.NS_CACHE, () => sbp('chelonia/kv/queuedSet', {
       contractID: identityContractID,
       key: KV_KEYS.NS_CACHE,
       data: Object.keys(sbp('state/vuex/state').namespaceLookups || {}).sort(),
       onconflict
-    })
+    }))
   },
   'gi.actions/identity/kv/loadCachedNames': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
@@ -419,4 +421,11 @@ export default (sbp('sbp/selectors/register', {
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.
-sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => sbp('gi.actions/identity/kv/saveCachedNames'), 300))
+// The emitter drops the debounced callback's promise, so handle rejections
+// here: `saveCachedNames` performs network I/O (contract sync, KV write) and
+// would otherwise surface as an unhandled rejection in the service worker.
+sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => {
+  sbp('gi.actions/identity/kv/saveCachedNames').catch(e => {
+    console.error("Error from 'gi.actions/identity/kv/saveCachedNames':", e)
+  })
+}, 300))
