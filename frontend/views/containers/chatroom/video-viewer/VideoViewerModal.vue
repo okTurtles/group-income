@@ -26,9 +26,14 @@
         i.icon-times
 
     section.c-video-viewer-body
-      .c-video-viewer-body-inner
+      .c-video-viewer-body-inner(v-if='currentVideo')
+        .c-unsupported-video-message(v-if='!isCurrentVideoSupported')
+          .c-video-warning-inner
+            i.icon-exclamation-triangle
+            i18n This video format is not supported by your browser. Please use a different browser to view it.
+
         video-player.c-video-player.for-video-modal(
-          v-if='currentVideo'
+          v-else
           ref='videoPlayer'
           :key='currentVideo.videoUrl'
           :src='currentVideo.videoUrl'
@@ -66,7 +71,7 @@ import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import VideoPlayer from '@containers/chatroom/video-viewer/VideoPlayer.vue'
 import trapFocus from '@utils/trapFocus.js'
-import { formatBytesDecimal } from '@view-utils/filters.js'
+import { formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
 
 export default {
   name: 'VideoViewerModal',
@@ -119,6 +124,9 @@ export default {
     ]),
     currentVideo () {
       return this.ephemeral.videosToShow[this.ephemeral.currentIndex]
+    },
+    isCurrentVideoSupported () {
+      return this.currentVideo && checkBrowserVideoMimeTypeSupport(this.currentVideo.mimeType)
     },
     displayName () {
       if (!this.currentVideo) {
@@ -301,11 +309,40 @@ button.c-close-btn {
   }
 }
 
-.c-video-player {
+.c-video-player,
+.c-unsupported-video-message {
   display: block;
   width: 100%;
   max-height: 100%;
   aspect-ratio: 16/9;
+}
+
+.c-unsupported-video-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .c-video-warning-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 32rem;
+    padding: 0 2rem;
+    color: $warning_0;
+    row-gap: 0.5rem;
+    margin-top: -2rem;
+    text-align: center;
+
+    i {
+      display: inline-block;
+      font-size: $size_1;
+    }
+
+    @include desktop {
+      padding: 0;
+    }
+  }
 }
 
 button.c-video-nav-btn {

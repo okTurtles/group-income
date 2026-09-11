@@ -12,11 +12,15 @@ export const getFileExtension = (
   return toUppercase ? ext.toUpperCase() : ext.toLowerCase()
 }
 
-const isPlayableAudioMime = (mimeType) => {
+const isPlayableAudioMime = (mimeType: string): boolean => {
   const audio = document.createElement('audio')
   // some audio mime types does not necessarily starts with 'audio/' (eg. 'application/ogg').
   // In this case, this function can be used to check if the mime type is playable by the browser.
   return !!audio.canPlayType(mimeType)
+}
+
+export const isFirefox = (): boolean => {
+  return /\bFirefox\/\d/.test(navigator.userAgent)
 }
 
 export const getFileType = (
@@ -41,6 +45,17 @@ export const formatBytesDecimal = (bytes: number, decimals: number = 2): string 
 
   const formattedValue = parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))
   return `${formattedValue} ${sizes[i]}`
+}
+
+export function checkBrowserVideoMimeTypeSupport (mimeType: string = ''): boolean {
+  if (!mimeType) {
+    return false
+  }
+  const videoEl = document.createElement('video')
+  // videoElement.canPlayType() can return 'probably'|'maybe' and '' for unsupported mime types.
+  // It is observed that major browsers like Chrome and Firefox say 'maybe' for widely supported mime types like 'video/mp4' as well.
+  // So checking for both 'probably' and 'maybe' here.
+  return ['probably', 'maybe'].includes(videoEl.canPlayType(mimeType))
 }
 
 /**
