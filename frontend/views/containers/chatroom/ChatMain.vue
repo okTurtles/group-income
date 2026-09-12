@@ -54,6 +54,7 @@
           :active='active'
           :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
+          :data-height='message.height'
         )
           .c-divider(
             v-if='changeDay(message, ephemeral.messages[index - 1]) || isNew(message.hash)'
@@ -109,6 +110,12 @@
     .c-initializing(v-if='!ephemeral.messagesInitiated')
     //-   TODO later - Design a cool skeleton loading
     //-   this should be done only after knowing exactly how server gets each conversation data
+    .c-fetching-messages(
+      v-if='isFetchingMessages'
+      role='status'
+      aria-live='polite'
+    )
+      i18n Fetching messages...
 
     toast-container(area='chat-main')
 
@@ -172,6 +179,7 @@ import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatr
 import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
+import { sortMessages, resolveFailedMessage } from './sortMessages.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -273,6 +281,31 @@ const onScrollEnd = function () {
   }
 }
 
+const setMessages = function () {
+  if (!this.ephemeral.renderingChatRoomId) return
+  const newMessages = this.messageState.contract?.messages || []
+  const postSetMessageState = this.ephemeral.postSetMessageState
+  delete this.ephemeral.postSetMessageState
+  if (this.ephemeral.messagesSource === newMessages) {
+    if (postSetMessageState) {
+      this.$nextTick(postSetMessageState)
+    }
+    return
+  }
+  const currentVisibleMessage = this.visibleMessageIterator().next().value
+  // Sorts a copy of the source array by contract height, keeping messages
+  // without a usable height (pending sends, temporary attachment uploads)
+  // last. See `sortMessages.js`.
+  this.ephemeral.messages = sortMessages(newMessages)
+  this.ephemeral.messagesSource = newMessages
+  if (!postSetMessageState?.noRerender) {
+    this.rerenderEvents(currentVisibleMessage)
+  }
+  if (postSetMessageState) {
+    this.$nextTick(postSetMessageState)
+  }
+}
+
 export default ({
   name: 'ChatMain',
   components: {
@@ -311,6 +344,7 @@ export default ({
         onChatScroll: null,
         onScrollStart: () => {},
         onScrollEnd: () => {},
+        setMessages: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
@@ -330,6 +364,22 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
+        // `messagesSource` INVARIANT: this holds the array reference
+        // last consumed by `setMessages()`. It MUST be reset to `null` (via
+        // `forceRerenderMessages()`) before any STRUCTURAL in-place mutation of
+        // `messageState.contract.messages` — i.e. a `.splice` / `.push` / `.shift`
+        // / reordering that changes which elements the array contains. Because
+        // `ephemeral.messages` is a separately-built (sorted) array, structural
+        // edits to the source aren't otherwise reflected in the rendered list.
+        //
+        // NOTE: mutating a *property* on an existing message object (e.g.
+        // `Vue.set(msg, 'hasFailed', true)`) does NOT require a reset — rendered
+        // items are the same reactive object references, so Vue tracks the change.
+        //
+        // The structural mutators this invariant protects are
+        // `removeTemporaryMessage()` (inside `handleSendMessage`) and
+        // `retryMessage()`; both pair their splice with a rebuild of the view.
+        messagesSource: null,
         isEditing: {},
         uploadingAttachments: {},
         scrollActionId: null,
@@ -370,6 +420,7 @@ export default ({
     this.ephemeral.onChatScroll = debounce(onChatScroll.bind(this), process.env.CI ? 30 : 300)
     this.ephemeral.onScrollStart = debounce(onScrollStart.bind(this), process.env.CI ? 20 : 200)
     this.ephemeral.onScrollEnd = debounce(onScrollEnd.bind(this), process.env.CI ? 20 : 200)
+    this.ephemeral.setMessages = debounce(setMessages.bind(this), process.env.CI ? 10 : 100)
     sbp('okTurtles.events/on', EVENT_HANDLED, this.listenChatRoomActions)
     window.addEventListener('resize', this.resizeEventHandler)
     window.addEventListener('focus', this.windowFocusHandler)
@@ -384,7 +435,9 @@ export default ({
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
+    this.ephemeral.switchController.abort(new Error('Component destroyed'))
 
+    this.ephemeral.setMessages?.clear?.()
     this.cleanupFailedMessagesAttachments()
   },
   computed: {
@@ -409,8 +462,14 @@ export default ({
         !this.ephemeral.loadingUp &&
         !this.ephemeral.loadingDown &&
         // Rendering the current contract state
-        this.messageState.contract.messages === this.ephemeral.messages
+        this.messageState.contract.messages === this.ephemeral.messagesSource
       )
+    },
+    isFetchingMessages () {
+      return !!this.ephemeral.messagesInitiated &&
+        // Only show while incrementally catching up, not during the very first load.
+        this.ephemeral.messages.length > 0 &&
+        (!!this.ephemeral.loadingDown || !!this.ephemeral.loadingUp)
     },
     needsFromScratch () {
       return (
@@ -509,21 +568,6 @@ export default ({
         Vue.delete(this.ephemeral.isEditing, hash)
       }
     },
-    setMessages: debounce(function () {
-      if (!this.ephemeral.renderingChatRoomId) return
-      const newMessages = this.messageState.contract?.messages || []
-      if (this.ephemeral.messages === newMessages) return
-      const currentVisibleMessage = this.visibleMessageIterator().next().value
-      this.ephemeral.messages = newMessages
-      const postSetMessageState = this.ephemeral.postSetMessageState
-      delete this.ephemeral.postSetMessageState
-      if (!postSetMessageState?.noRerender) {
-        this.rerenderEvents(currentVisibleMessage)
-      }
-      if (postSetMessageState) {
-        this.$nextTick(postSetMessageState)
-      }
-    }, process.env.CI ? 10 : 100),
     * visibleMessageIterator () {
       if (!this.$refs.conversation) return
       // The following is slightly more efficient if using `vue-virtual-scroller'
@@ -822,6 +866,13 @@ export default ({
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
           if (hasChatroomSwitchedSince()) return
+          // `message` is exactly the entry that gets POSTed, so record its hash
+          // synchronously instead of inside the queued hook body below: the POST
+          // can fail before that body has inserted the pending message, and the
+          // `catch` handler needs the hash to flag the right message. On a
+          // 409/412 retry this hook runs again with the recreated entry, which
+          // overwrites the now-stale hash.
+          pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
             beforePrePublish?.()
 
@@ -829,27 +880,39 @@ export default ({
             // the network
             const msg = this.messageState.contract.messages.find(m => (m.hash === oldMessage.hash()))
             if (!msg) {
-              const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
-              this.ephemeral.postSetMessageState = () => {
-                if (hasChatroomSwitchedSince()) {
-                  return
+              try {
+                const newContractState = await sbp('chelonia/in/processMessage', message, this.messageState.contract)
+                this.ephemeral.postSetMessageState = () => {
+                  if (hasChatroomSwitchedSince()) {
+                    return
+                  }
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height()) {
+                    return
+                  }
+                  this.jumpToLatest()
                 }
-                if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
-                  return
-                }
-                this.jumpToLatest()
+                Vue.set(this.messageState, 'contract', newContractState)
+                this.stopReplying()
+              } catch (e) {
+                // `beforePrePublish` may have already spliced the temporary
+                // attachment-upload message out of the source array. Without the
+                // `Vue.set` above nothing rebuilds the sorted rendered view, so
+                // flush it explicitly (this only nulls `messagesSource` and
+                // flushes the debounce).
+                this.forceRerenderMessages()
+                throw e
               }
-              Vue.set(this.messageState, 'contract', newContractState)
-              this.stopReplying()
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
-              pendingMessageHash = message.hash()
+              this.forceRerenderMessages()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
               //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
               this.onChatScroll()
             }
+          }).catch(e => {
+            console.error('[ChatMain.vue] Error in the beforeRequest hook', e)
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -873,20 +936,28 @@ export default ({
               }
             })
           }
-        }).catch((e) => {
+        }).catch(async (e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
           }
 
-          const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
-            const failedMsg = this.messageState.contract.messages[msgIndex]
+          // The `beforeRequest` hook is fire-and-forget, so the local insert of
+          // the pending message (a service-worker round trip) can still be in
+          // flight when the POST fails. Drain the lane before looking it up.
+          await enqueue.call(this, () => {}).catch(() => {})
+          if (hasChatroomSwitchedSince()) return
+
+          const messages = this.messageState.contract.messages || []
+          const failedMsg = resolveFailedMessage(pendingMessageHash, messages)
+          if (failedMsg) {
             Vue.set(failedMsg, 'hasFailed', true)
 
             if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
               // Attachments are kept so that they can be used again for the next re-attempt.
               this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
             }
+          } else if (pendingMessageHash && findMessageIdx(pendingMessageHash, messages) < 0) {
+            console.warn('[ChatMain.vue] send failed; pending message missing from state', e)
           }
         })
       }
@@ -924,7 +995,7 @@ export default ({
               await enqueue.call(this, async () => {
                 this.ephemeral.postSetMessageState = () => {
                   if (hasChatroomSwitchedSince()) return
-                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) return
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height()) return
                   this.jumpToLatest()
                 }
 
@@ -950,6 +1021,13 @@ export default ({
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
+              // SAFE re: the `messagesSource` invariant. The enclosing
+              // beforeRequest hook either swaps `messageState.contract` via
+              // Vue.set (firing the watcher), calls forceRerenderMessages(), or
+              // flushes the view from its catch block when
+              // `chelonia/in/processMessage` throws after this splice already
+              // ran. Every path rebuilds the sorted view, so no manual flush is
+              // needed here.
               messages.splice(msgIndex, 1)
             }
           }
@@ -1029,13 +1107,14 @@ export default ({
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
 
-      const scrollAndHighlight = () => {
-        const index = findMessageIdx(messageHash, this.ephemeral.messages)
+      const scrollAndHighlight = (index) => {
+        if (index < 0) return
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince()) return
-            this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
+            const conversation = this.$refs.conversation
+            if (hasChatroomSwitchedSince() || !conversation) return
+            conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
               if (this.ephemeral.focusedEffect !== messageHash) return
@@ -1043,7 +1122,9 @@ export default ({
             }, 1500)
           })
         } else {
-          this.$refs.conversation.scrollToItem(index)
+          const conversation = this.$refs.conversation
+          if (!conversation) return
+          conversation.scrollToItem(index)
 
           // Sometimes, scrollToItem() above doesn't necessarily lead to 'scroll' event (eg. target message is the latest message but the scroll position is already at the bottom)
           // and in that case, some scroll-position related states (currentChatRoomReadUntil, currentChatRoomScrollPosition, etc.) doesn't get updated which leads to a bug
@@ -1135,10 +1216,18 @@ export default ({
           : behavior
       })
     },
+    forceRerenderMessages () {
+      this.ephemeral.messagesSource = null
+      this.ephemeral.setMessages?.()
+      this.ephemeral.setMessages?.flush?.()
+    },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const index = this.ephemeral.messages.indexOf(msg)
-      if (index >= 0) this.ephemeral.messages.splice(index, 1)
+      const index = this.messageState.contract.messages.indexOf(msg)
+      if (index >= 0) {
+        this.messageState.contract.messages.splice(index, 1)
+      }
+      this.forceRerenderMessages()
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1573,6 +1662,10 @@ export default ({
       if (!chatRoomID || !this.isJoinedChatRoom(chatRoomID)) { return }
 
       const index = this.ephemeral.messages.findIndex(msg => msg.hash === messageHash)
+      if (index < 0) {
+        console.warn('[ChatMain.vue] markAsUnread: message not found', messageHash)
+        return
+      }
       const isFirstMessage = index === 0
       const targetMsg = isFirstMessage ? this.ephemeral.messages[index] : this.ephemeral.messages[index - 1]
 
@@ -1710,9 +1803,17 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            // Use the freshly processed contract state here. `ephemeral.messages` is
+            // only the debounced rendered view and can still be stale immediately
+            // after processEvents() returns.
+            const messages = this.messageState.contract.messages || []
+            const latestValidMessage = messages.reduce((latest, msg) => {
+              if (msg.pending || msg.hasFailed) return latest
+              if (!latest || msg.height > latest.height) return msg
+              return latest
+            }, null)
 
-            if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
+            if (this.ephemeral.scrollableDistance < 50 && messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
@@ -1748,6 +1849,8 @@ export default ({
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
               createdHeight: value.data.height
+            }).catch(e => {
+              console.error('[ChatMain.vue] Error updating unreadMessages', e)
             })
           }
         })()
@@ -1923,6 +2026,7 @@ export default ({
         this.ephemeral.onChatScroll?.flush()
         this.ephemeral.onScrollStart.clear?.()
         this.ephemeral.onScrollEnd.clear?.()
+        this.ephemeral.setMessages?.clear?.()
         // Skeleton state is to render what basic information we can get synchronously.
         this.skeletonState(toChatRoomId)
 
@@ -1930,6 +2034,7 @@ export default ({
         this.ephemeral.messagesInitiated = undefined
         this.ephemeral.startedUnreadMessageHash = null
         this.ephemeral.messages = []
+        this.ephemeral.messagesSource = null
         this.ephemeral.scrollableDistance = 0
         this.ephemeral.messageHashToMarkUnread = null
         this.ephemeral.chatroomIdToSwitchTo = toChatRoomId
@@ -1949,7 +2054,7 @@ export default ({
     },
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
-      this.setMessages()
+      this.ephemeral.setMessages?.()
     },
     'ephemeral.renderingChatRoomId' (to) {
       if (!to) return
@@ -2069,6 +2174,19 @@ export default ({
 
 .c-invisible {
   visibility: hidden;
+}
+
+.c-fetching-messages {
+  position: absolute;
+  z-index: 2;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background-color: $text_0;
+  color: $background;
+  font-size: $size_5;
 }
 
 .c-initializing,
