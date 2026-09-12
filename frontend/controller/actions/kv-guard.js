@@ -64,7 +64,12 @@ export const withKvHeightRetry = async (contractID: string, key: string, write: 
   } catch (e) {
     if (!isHeightAheadError(e) && !isKvConflictError(e)) throw e
     console.warn(`[kv-guard.js] '${key}' write on ${contractID} raced a newer server value; syncing before retrying`, e)
-    await ensureContractHeightCurrent(contractID, true)
+    // A failed recovery sync must neither swallow `e` nor cancel the retry: on a
+    // plain KV conflict the retried write can still succeed without it, and the
+    // caller would otherwise see the sync error instead of the write error.
+    await ensureContractHeightCurrent(contractID, true).catch((syncError) => {
+      console.warn(`[kv-guard.js] failed to sync ${contractID} before retrying '${key}'`, syncError)
+    })
     await sbp('chelonia/kv/sync', contractID, key).catch((syncError) => {
       console.warn(`[kv-guard.js] failed to re-sync '${key}' before retrying`, syncError)
     })
@@ -72,11 +77,23 @@ export const withKvHeightRetry = async (contractID: string, key: string, write: 
   }
 }
 
-// Pre-flight sync plus retry. Pass `preflight: false` for writes that run on a
-// timer for many contracts and usually turn out to be a no-op, where an
-// unconditional round trip per contract would cost more than the race it
-// prevents; the retry half still applies. A failed pre-flight is not fatal:
-// the write is attempted anyway.
+// Pre-flight sync plus retry.
+//
+// Which of the two helpers a given write uses follows one rule:
+//
+//   `withKvGuard` (pre-flight on) is for writes driven only by UI interaction
+//   or by a timer, where an extra `latestHEADinfo` round trip is invisible.
+//
+//   `withKvHeightRetry` (pre-flight off) is for writes reachable from a
+//   contract `sideEffect` or from a `MESSAGE_RECEIVE_RAW` handler. Those run on
+//   the chatroom's queue lane; the sync targets the identity contract, so it
+//   cannot deadlock against the lane being held, but adding a network round
+//   trip there would stall chatroom event processing for every member.
+//
+// The one timer-driven exception is `updateLastLoggedIn`, which fans out over
+// every active group and usually turns out to be a `KV_NOOP`; it passes
+// `preflight: false` selectively (see `needsHeightPreflight` in group-kv.js).
+// A failed pre-flight is not fatal: the write is attempted anyway.
 export const withKvGuard = async (
   contractID: string,
   key: string,

@@ -4,7 +4,7 @@ import { KV_NOOP } from '@chelonia/lib'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce, difference, intersection, union } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
-import { isHeightAheadError, withKvGuard, withKvHeightRetry } from './kv-guard.js'
+import { ensureContractHeightCurrent, isHeightAheadError, withKvGuard, withKvHeightRetry } from './kv-guard.js'
 
 // The `namespace-cache` slot is `autoLoad: 'on-demand'` and
 // `autoSubscribe: false`, so nothing else keeps its mirror fresh. A KV value
@@ -20,8 +20,11 @@ const syncSlotWithRecovery = async (contractID: string, key: string, attempt: nu
   } catch (e) {
     if (!isHeightAheadError(e)) throw e
     if (attempt >= 1) throw e
-    console.warn(`[identity-kv.js] '${key}' is ahead of the local identity contract; syncing before retrying`, e)
-    await sbp('chelonia/contract/sync', contractID)
+    console.warn(`[identity-kv.js] the server value for '${key}' was written at a contract height ahead of the local identity contract; syncing before retrying`, e)
+    // Unlike the recovery sync in `withKvHeightRetry`, a failure here is
+    // deliberately not caught: `loadCachedNames` lets it reject so that the
+    // login / reconnect handlers are the ones to log it.
+    await ensureContractHeightCurrent(contractID, true)
     return syncSlotWithRecovery(contractID, key, attempt + 1)
   }
 }
@@ -124,6 +127,13 @@ export default (sbp('sbp/selectors/register', {
   // pure reducer; the library serializes writes per-contract and retries
   // conflicts, replacing the old `KV_QUEUE` + `queuedSet`/`onconflict`
   // plumbing. Reducers return `KV_NOOP` to skip a write. (KV-REVAMPED.md §8)
+  //
+  // Guard choice (see the rule in kv-guard.js): `setChatRoomReadUntil` and
+  // `markAsUnread` are reachable only from ChatMain.vue, so they take the
+  // pre-flight sync via `withKvGuard`. The other four are reachable from
+  // chatroom contract sideEffects and from `MESSAGE_RECEIVE_RAW` handlers,
+  // which run on the chatroom's queue lane, so they use `withKvHeightRetry`
+  // and never add a round trip to that lane.
   'gi.actions/identity/kv/initChatRoomUnreadMessages': ({ contractID, messageHash, createdHeight }: {
     contractID: string, messageHash: string, createdHeight: number
   }) => {

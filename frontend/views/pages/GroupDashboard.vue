@@ -124,12 +124,16 @@ export default ({
       sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
         hidden: true
+      }).catch(e => {
+        console.error("Error from 'gi.actions/identity/kv/updateDistributionBannerVisibility':", e)
       })
     },
     showBanner () {
       sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
         hidden: false
+      }).catch(e => {
+        console.error("Error from 'gi.actions/identity/kv/updateDistributionBannerVisibility':", e)
       })
     }
   }

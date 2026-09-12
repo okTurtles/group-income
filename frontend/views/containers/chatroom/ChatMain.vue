@@ -886,7 +886,7 @@ export default ({
                   if (hasChatroomSwitchedSince()) {
                     return
                   }
-                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) {
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height()) {
                     return
                   }
                   this.jumpToLatest()
@@ -995,7 +995,7 @@ export default ({
               await enqueue.call(this, async () => {
                 this.ephemeral.postSetMessageState = () => {
                   if (hasChatroomSwitchedSince()) return
-                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height) return
+                  if (!this.ephemeral.messages.length || this.ephemeral.messages[this.ephemeral.messages.length - 1].height < message.height()) return
                   this.jumpToLatest()
                 }
 

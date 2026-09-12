@@ -67,7 +67,7 @@ sbp('sbp/selectors/register', {
       return !(status[item.hash]?.read ?? item.read) && (!groupID || !item.groupID || item.groupID === groupID)
     }).map(item => item.hash)
     sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes).catch(e => {
-      console.error("Error from 'gi.actions/identity/kv/markAllAsRead':", e)
+      console.error("Error from 'gi.actions/identity/kv/markNotificationStatusRead':", e)
     })
   },
   'gi.notifications/remove' (hashes: string | string[]) {
