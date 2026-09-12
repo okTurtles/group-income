@@ -123,10 +123,24 @@ describe('journal export size accounting', () => {
     // `,\n` + the key's indentation + `"<contractID>": `
     assert.strictEqual(
       journalKeyBytes('z9brRu3V'),
-      2 + EXPORT_JSON_INDENT * (JOURNAL_ENTRY_DEPTH - 1) + 4 + 'z9brRu3V'.length
+      2 + EXPORT_JSON_INDENT * JOURNAL_ENTRY_DEPTH + 4 + 'z9brRu3V'.length
     )
     // Contract IDs are base58 in practice; this pins the counting to UTF-8.
     assert.strictEqual(journalKeyBytes('秘密') - journalKeyBytes('ab'), '秘密'.length * 2)
+  })
+
+  it('counts the actual indentation of every contract key', () => {
+    const journals = Object.create(null)
+    journals.first = {}
+    journals.second = {}
+    const serialized = JSON.stringify({ journal: journals }, undefined, EXPORT_JSON_INDENT)
+    const secondKey = '    "second": '
+
+    assert.ok(serialized.includes(`\n${secondKey}{}`))
+    assert.strictEqual(
+      journalKeyBytes('second'),
+      utf8Encoder.encode(',\n' + secondKey).length
+    )
   })
 
   it('keeps the per-entry slack that makes the estimate conservative', () => {

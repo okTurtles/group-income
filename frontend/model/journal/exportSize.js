@@ -25,7 +25,7 @@ const utf8Encoder = new TextEncoder()
 
 // `,\n` + the key's indentation + `"<contractID>": `
 export const journalKeyBytes = (contractID: string): number => {
-  return 2 + EXPORT_JSON_INDENT * (JOURNAL_ENTRY_DEPTH - 1) + 4 +
+  return 2 + EXPORT_JSON_INDENT * JOURNAL_ENTRY_DEPTH + 4 +
     utf8Encoder.encode(contractID).length
 }
 

@@ -37,7 +37,7 @@ export const emoticonsRedactor = (value: mixed): Object => {
   }
   return redacted
 }
-export const JOURNAL_REDACTIONS_VERSION = 2
+export const JOURNAL_REDACTIONS_VERSION = 3
 
 type Redactor = (value: mixed) => mixed
 type JournalRedaction = { path: string, redact: Redactor }
@@ -56,8 +56,7 @@ const MESSAGE_FIELD_REDACTIONS: Array<[string, Redactor]> = [
   ['attachments.*.name', messageTextRedactor],
   ['attachments.*.downloadData.downloadParams', redactedRedactor],
   ['proposal.proposalData', redactedRedactor],
-  ['notification.params.channelName', messageTextRedactor],
-  ['notification.params.channelDescription', messageTextRedactor]
+  ['notification.params.*', messageTextRedactor]
 ]
 
 const messageRedactions: Array<JournalRedaction> = ['messages', 'pinnedMessages'].flatMap(

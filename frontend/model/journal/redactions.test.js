@@ -385,12 +385,17 @@ describe('journal redactions', () => {
     assert.deepStrictEqual(original.proposals.hash1.payload, { secret: 'invite-key-material' })
   })
 
-  it('redacts chat notification channel descriptions and poll voters', () => {
+  it('redacts chat notification parameters and poll voters', () => {
     const original = {
       messages: [{
         notification: {
           type: 'GROUP_UPDATED',
-          params: { channelName: 'general', channelDescription: 'private description', count: 3 }
+          params: {
+            channelName: 'general',
+            channelDescription: 'private description',
+            count: 3,
+            smuggledText: 'private notification detail'
+          }
         },
         pollData: {
           question: 'secret question',
@@ -400,7 +405,12 @@ describe('journal redactions', () => {
       pinnedMessages: [{
         notification: {
           type: 'GROUP_UPDATED',
-          params: { channelName: 'pinned-channel', channelDescription: 'pinned description', count: 1 }
+          params: {
+            channelName: 'pinned-channel',
+            channelDescription: 'pinned description',
+            count: 1,
+            smuggledText: 'pinned notification detail'
+          }
         },
         pollData: {
           question: 'pinned question',
@@ -413,13 +423,18 @@ describe('journal redactions', () => {
 
     assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].notification.params.channelName, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.count, 3)
+    assert.strictEqual(redacted.messages[0].notification.params.count, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].notification.params.smuggledText, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
     assert.strictEqual(redacted.messages[0].pollData.options[0].voted, REDACTED)
     assert.strictEqual(redacted.messages[0].pollData.options[0].id, 'o1')
     assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelDescription, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.count, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.smuggledText, 'xxxxxxxx')
     assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].voted, REDACTED)
+    assert.ok(!JSON.stringify(redacted).includes('private notification detail'))
+    assert.ok(!JSON.stringify(redacted).includes('pinned notification detail'))
     assert.deepStrictEqual(original.messages[0].pollData.options[0].voted, ['alice', 'bob'])
   })
 
@@ -498,8 +513,7 @@ describe('journal redactions', () => {
       'messages.*.attachments.*.downloadData.downloadParams',
       'messages.*.attachments.*.name',
       'messages.*.emoticons',
-      'messages.*.notification.params.channelDescription',
-      'messages.*.notification.params.channelName',
+      'messages.*.notification.params.*',
       'messages.*.pollData.options.*.value',
       'messages.*.pollData.options.*.voted',
       'messages.*.pollData.question',
@@ -516,8 +530,7 @@ describe('journal redactions', () => {
       'pinnedMessages.*.attachments.*.downloadData.downloadParams',
       'pinnedMessages.*.attachments.*.name',
       'pinnedMessages.*.emoticons',
-      'pinnedMessages.*.notification.params.channelDescription',
-      'pinnedMessages.*.notification.params.channelName',
+      'pinnedMessages.*.notification.params.*',
       'pinnedMessages.*.pollData.options.*.value',
       'pinnedMessages.*.pollData.options.*.voted',
       'pinnedMessages.*.pollData.question',
