@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-// $FlowFixMe
 import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.ts'
 import { MINS_MILLIS } from '@model/contracts/shared/time.ts'
 
@@ -20,7 +19,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
 }
 
 const ephemeralNotificationState: {
-  notifications: any[], partition: Object, clearTimeout?: Function
+  notifications: any[], partition: any, clearTimeout?: any
 } = {
   notifications: [], partition: Object.create(null)
 }
@@ -92,7 +91,7 @@ async function runNotificationListRecursive () {
   // only in the browser window (instead of also in the SW), a timeout was used
   // for a similar effect.
   await Promise.all(
-    ((Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')): any): [string, (Function | string[])[]])
+    ((Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')) as any) as [string, (any | string[])[]])
       .map(([queue, invocations]) => {
         return !!invocations.length && sbp('okTurtles.eventQueue/queueEvent', queue, () => {}).catch(() => {})
       })

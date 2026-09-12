@@ -1,8 +1,9 @@
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import type {
+  // eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
   NewProposalType,
   NotificationTemplate
-} from './types.flow.js'
+} from './types.ts'
 
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
@@ -17,11 +18,13 @@ import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
 export default ({
-  CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {
+  CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: any }) {
     const { activity, error, message, msgMeta } = data
     const contractID = message.contractID()
-    const opType = message.opType()
-    const value = message.decryptedValue()
+    // `any`: `SPMessage` declares these as `SPOpType` and `unknown`, which the `.includes()`
+    // and `.action` reads below do not compile against (TS2345, TS2339).
+    const opType: any = message.opType()
+    const value: any = message.decryptedValue()
     let action
     if (value) {
       if ([SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_ACTION_UNENCRYPTED].includes(opType)) {
@@ -295,7 +298,7 @@ export default ({
       }]
     }
   },
-  PROPOSAL_EXPIRING (data: { groupID: string, proposalId: string, proposal: Object }) {
+  PROPOSAL_EXPIRING (data: { groupID: string, proposalId: string, proposal: any }) {
     const rootState = sbp('state/vuex/state')
     const { proposalData, proposalType } = data.proposal.data
     const typeToTitleMap = {
@@ -329,7 +332,7 @@ export default ({
       }]
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, proposal: Object, proposalHash: string }) {
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: any, proposalHash: string }) {
     const rootState = sbp('state/vuex/state')
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
     const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
@@ -577,4 +580,4 @@ export default ({
       groupID: data.groupID
     }
   }
-}: { [key: string]: ((data: Object) => NotificationTemplate) })
+} as { [key: string]: ((data: any) => NotificationTemplate) })

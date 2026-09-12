@@ -8,7 +8,7 @@ import chatroomGetters from './contracts/shared/getters/chatroom.ts'
 import groupGetters from './contracts/shared/getters/group.ts'
 import identityGetters from './contracts/shared/getters/identity.ts'
 
-const checkedUsername = (state: Object, username: string, userID: string) => {
+const checkedUsername = (state: any, username: string, userID: string) => {
   if (username && state.namespaceLookups?.[username] === userID) {
     return username
   }
@@ -16,7 +16,7 @@ const checkedUsername = (state: Object, username: string, userID: string) => {
 
 // Find the 'anyone can join' invite ID. Since there could be multiple, and some
 // of those could have exipred, we need a for loop
-const anyoneCanJoinInviteId = (invites: Object, getters: Object): ?string =>
+const anyoneCanJoinInviteId = (invites: any, getters: any): string | null | undefined =>
   Object.keys(invites).find(invite =>
     // First, we want 'anyone can join' invites
     invites[invite].creatorID === INVITE_INITIAL_CREATOR &&
@@ -31,7 +31,7 @@ const anyoneCanJoinInviteId = (invites: Object, getters: Object): ?string =>
 
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
-const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => any } = {
+const getters: { [x: string]: (state: any, getters: { [x: string]: any }) => any } = {
   // !!  IMPORTANT  !!
   //
   // We register pure Vuex getters here, but later on at the bottom of this file,
@@ -61,7 +61,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
   currentGroupState (state) {
     // The service worker should not be using this getter.
     if (process.env.NODE_ENV === 'development' || process.env.CI) {
-      // $FlowFixMe[cannot-resolve-name]
       if (typeof Window === 'undefined') {
         const error = new Error('Tried to access currentGroupState from outside a browsing context')
         Promise.reject(error)
@@ -376,8 +375,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
     // we return event pending groups that we haven't finished joining so that we are not stuck
     // on the /pending-approval page if we are part of another working group already
     return Object.entries(groups)
-    // $FlowFixMe[incompatible-use]
-      .filter(([, { hasLeft }]) => !hasLeft)
+      .filter(([, { hasLeft }]: [string, any]) => !hasLeft)
       .map(([contractID]) => ({ groupName: state[contractID]?.settings?.groupName || L('Pending'), contractID, active: state[contractID]?.profiles?.[identityContractID]?.status === PROFILE_STATUS.ACTIVE }))
   },
   profilesByGroup (state, getters) {
@@ -412,7 +410,6 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }) => 
 
     const groupMembersPending = getters.groupMembersPending
 
-    // $FlowFixMe[method-unbinding]
     return [groupMembersPending, getters.groupProfiles].flatMap(Object.keys)
       .filter(memberID => getters.groupProfiles[memberID] ||
           !(getters.groupMembersPending[memberID].expires < Date.now()))

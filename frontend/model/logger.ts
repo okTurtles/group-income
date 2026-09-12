@@ -6,7 +6,9 @@ const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']
 const originalConsole = console
 const noop = (...args: any) => undefined
 
-export async function createLogger (config: Object, { getItem, removeItem, setItem }: { getItem: Function, removeItem: Function, setItem: Function }): Object {
+// `Promise<any>`, not `any`: TypeScript requires an async function's return type to be
+// `Promise<T>` (TS1064). Callers still get `any` after `await`.
+export async function createLogger (config: any, { getItem, removeItem, setItem }: { getItem: any, removeItem: any, setItem: any }): Promise<any> {
   const entries = new CircularList(config.maxEntries)
   const methods = Object.fromEntries(loggingLevels.map((name) =>
     [name, (...args) => {
@@ -47,7 +49,6 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
       // console.log() doesnt include stack trace, so when logged, we can't access
       // where the log came from (file name), which} difficults debugging if needed.
       for (const level of loggingLevels) {
-        // $FlowFixMe
         consoleProxy[level] = appLogsFilter.includes(level) ? methods[level] : noop
       }
     }
@@ -76,7 +77,7 @@ export async function createLogger (config: Object, { getItem, removeItem, setIt
   return logger
 }
 
-function captureLogEntry (logger: Object, type: string, source: string, ...args) {
+function captureLogEntry (logger: any, type: string, source: string, ...args) {
   const entry = {
     timestamp: new Date().toISOString(),
     source,

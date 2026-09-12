@@ -3,6 +3,13 @@ import sbp from '@sbp/sbp'
 import { Buffer } from 'buffer'
 import { throttle } from 'turtledash'
 
+// This module runs in both a browser window and the service worker, so `self` is
+// a `Window` in one context and a `ServiceWorkerGlobalScope` in the other, and
+// `WorkerGlobalScope` is a global only in the second. These declarations are
+// type-only and erased at emit; they restore the `any` these two had under Flow.
+declare const self: any
+declare const WorkerGlobalScope: any
+
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.
 // we throttle this because some browsers (Chrome) support change handlers
@@ -54,11 +61,11 @@ export const setupNativeNotificationsListeners = () => {
   if (
     !isWebkit && // WebKit doesn't work
     typeof navigator.permissions === 'object' &&
-    // $FlowFixMe[method-unbinding]
     typeof navigator.permissions.query === 'function'
   ) {
     Promise.all([
       navigator.permissions.query({ name: 'notifications' }),
+      // @ts-expect-error TS2353: `userVisibleOnly` (PushPermissionDescriptor) is absent from lib.dom.
       navigator.permissions.query({ name: 'push', userVisibleOnly: true })
     ]).then(
       (statuses) => {
@@ -98,9 +105,11 @@ export async function requestNotificationPermission (
   }
 }
 
+// `icon` is `any`, not `string`: callers also pass picture objects, and TypeScript narrows a
+// `string` through the `typeof icon === 'object'` check below to `null` (TS18047).
 // eslint-disable-next-line require-await
 export async function makeNotification ({ title, body, icon, path, groupID, sbpInvocation }: {
-  title: string, body: string, icon?: string, path?: string, groupID?: string,
+  title: string, body: string, icon?: any, path?: string, groupID?: string,
   sbpInvocation?: any[]
 }): Promise<void> {
   if (typeof Notification !== 'function') return
@@ -118,7 +127,6 @@ export async function makeNotification ({ title, body, icon, path, groupID, sbpI
   // If not running on a SW
   if (typeof WorkerGlobalScope !== 'function') {
     try {
-      // $FlowFixMe[incompatible-type]
       if (navigator.vendor === 'Apple Computer, Inc.') {
         throw new Error('Safari requires a service worker for the notification to be displayed')
       }
@@ -130,7 +138,6 @@ export async function makeNotification ({ title, body, icon, path, groupID, sbpI
       }
     } catch (e) {
       return navigator.serviceWorker?.ready.then(registration => {
-        // $FlowFixMe
         return registration.showNotification(title, { body, icon, data: { groupID, path, sbpInvocation } })
       }).catch(console.warn)
     }

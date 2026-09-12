@@ -28,7 +28,7 @@ const defaultColor: string = checkSystemColor()
 export const defaultSettings = {
   appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info']): string[]),
+    : ['error', 'warn', 'info']) as string[]),
   fontSize: 16,
   increasedContrast: false,
   notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
@@ -125,4 +125,4 @@ export default ({
   state: () => cloneDeep(defaultSettings),
   getters,
   mutations
-}: Object)
+} as any)

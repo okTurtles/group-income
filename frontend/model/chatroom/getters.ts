@@ -6,7 +6,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 
-const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
+const getters: { [x: string]: (state: any, getters: { [x: string]: any }, rootState: any) => any } = {
   currentChatRoomId (state, getters, rootState) {
     return state.currentChatRoomIDs[rootState.currentGroupId] || null
   },
@@ -121,7 +121,7 @@ const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, roo
         if (shouldFindDMToMyself) return chatRoomSettings.isDMToMyself
         else {
           const cPartners = chatRoomSettings.partners.map(partner => partner.contractID)
-          return cPartners.length === partners.length && union(cPartners, ((partners: any): string[])).length === partners.length
+          return cPartners.length === partners.length && union(cPartners, ((partners as any) as string[])).length === partners.length
         }
       })
     }

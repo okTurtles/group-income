@@ -2,11 +2,11 @@
 
 import sbp from '@sbp/sbp'
 import { CURVE25519XSALSA20POLY1305, decrypt, encrypt, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import localforage from './localforage.js'
+import localforage from './localforage.ts'
 
 const CHATROOM_DRAFT_KEY_PREFIX = 'chatDraft:'
 
-export const generateEncryptionParams = async (stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<{ encryptionParams: {
+export const generateEncryptionParams = async (stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<any>): Promise<{ encryptionParams: {
   stateEncryptionKeyId: string,
   salt: string,
   encryptedStateEncryptionKey: string
@@ -59,7 +59,7 @@ sbp('sbp/selectors/register', {
   'gi.db/ready': function () {
     return localforage.ready()
   },
-  'gi.db/settings/save': function (key: string, value: any): Promise<*> {
+  'gi.db/settings/save': function (key: string, value: any): Promise<any> {
   // Items in the DB have a prefix to disambiguate their type.
   //  'u' means unencrypted data
   //  'e' means encrypted data
@@ -70,10 +70,10 @@ sbp('sbp/selectors/register', {
   'gi.db/settings/load': function (key: string): Promise<any> {
     return appSettings.getItem('u' + key)
   },
-  'gi.db/settings/delete': function (key: string): Promise<Object> {
+  'gi.db/settings/delete': function (key: string): Promise<any> {
     return appSettings.removeItem('u' + key)
   },
-  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<*> {
+  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<any> {
     const {
       stateEncryptionKeyId,
       salt,
@@ -97,7 +97,7 @@ sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<*>): Promise<*> {
+  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<any>): Promise<any> {
     return appSettings.getItem('e' + key).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
         throw new EmptyValue(`Unable to retrive state for ${key || ''}`)
@@ -155,10 +155,10 @@ sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<Object> {
+  'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<any> {
     return appSettings.removeItem('k' + stateEncryptionKeyId)
   },
-  'gi.db/settings/deleteEncrypted': function (key: string): Promise<Object> {
+  'gi.db/settings/deleteEncrypted': function (key: string): Promise<any> {
     return appSettings.removeItem('e' + key)
   },
   // Chatroom drafts related selectors
@@ -208,7 +208,7 @@ const filesCache = localforage.createInstance({
 const maxFileEntries = 100
 
 sbp('sbp/selectors/register', {
-  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<*> {
+  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<any> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     // We need to perform several operations in the DB, which includes
     // the operation requested (i.e., saving a file) and updating the `keys`
@@ -257,7 +257,7 @@ sbp('sbp/selectors/register', {
         console.error('[gi.db/filesCache/load] Error updating keys')
       })
     }
-    return ((file: any): Blob)
+    return ((file as any) as Blob)
   },
   'gi.db/filesCache/delete': async function (cacheKey: string): Promise<void> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
@@ -277,7 +277,7 @@ sbp('sbp/selectors/register', {
   'gi.db/filesCache/clear': async function (): Promise<void> {
     await filesCache.clear()
   },
-  'gi.db/filesCache/temporary/save': function (cacheKey: string, blob: Blob): Promise<*> {
+  'gi.db/filesCache/temporary/save': function (cacheKey: string, blob: Blob): Promise<any> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     return sbp('gi.db/filesCache/save', `temporary/${cacheKey}/`, blob)
   },
@@ -312,13 +312,13 @@ const archive = localforage.createInstance({
 })
 
 sbp('sbp/selectors/register', {
-  'gi.db/archive/save': function (key: string, value: any): Promise<*> {
+  'gi.db/archive/save': function (key: string, value: any): Promise<any> {
     return archive.setItem(key, value)
   },
   'gi.db/archive/load': function (key: string): Promise<any> {
     return archive.getItem(key)
   },
-  'gi.db/archive/delete': function (key: string): Promise<Object> {
+  'gi.db/archive/delete': function (key: string): Promise<any> {
     return archive.removeItem(key)
   },
   'gi.db/archive/clear': function (): Promise<any> {
@@ -336,13 +336,13 @@ const logs = localforage.createInstance({
 })
 
 sbp('sbp/selectors/register', {
-  'gi.db/logs/save': function (key: string, value: any): Promise<*> {
+  'gi.db/logs/save': function (key: string, value: any): Promise<any> {
     return logs.setItem(key, value)
   },
   'gi.db/logs/load': function (key: string): Promise<any> {
     return logs.getItem(key)
   },
-  'gi.db/logs/delete': function (key: string): Promise<Object> {
+  'gi.db/logs/delete': function (key: string): Promise<any> {
     return logs.removeItem(key)
   },
   'gi.db/logs/clear': function (): Promise<any> {

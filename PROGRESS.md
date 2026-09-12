@@ -198,11 +198,27 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Specifiers are rewritten by resolution, not pattern-matching.** A hand-written pattern pass silently missed `./mincome-proportional.js`; the resolver pass caught all 132 and left `gi.contracts/*` selector strings alone.
 
+### 012 — Step 6: model wave (`frontend/model/**`, non-contract)
+
+**Status:** DONE
+
+**Changed:** 24 files renamed `.js` → `.ts` (root 10, `chatroom` 3, `notifications` 10 incl. `types.flow.js` → `types.ts`, `settings` 1), 61 specifiers across 34 files, and 2 dead links in `docs/src/Information-Flow.md` (one left over from Step 5). `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. 71 → **47** left.
+
+**No contract bundle moved.** Nothing in this wave is reachable from a contract: all six bundles and `manifests.json` are byte-identical, raw. Per-file emit check (Flow build vs TS loader): 22 of 24 identical, 2 differ only in comments. `main.js`/`sw-primary.js` differ only in chunk hashes and minified identifier names.
+
+**Two RULES 3 exemptions:** `createLogger`'s async `Object` return (TS1064, now `Promise<any>`; dropping it would expose an inferred shape to callers) and `makeNotification`'s `icon?: string` (TS18047, now `any`).
+
+**`@babel/eslint-parser` doesn't count type-only uses**, so the mirrored `import type`s fail `no-unused-vars`. 4 per-site disables, not an override: `tsc` doesn't report unused locals, so an override would lose coverage. Step 10 removes them.
+
+**4 `@ts-expect-error` for lib.dom gaps** in `nativeNotification.ts`, as in `isPwa.ts`. Step 7 has ~17 more service-worker-global sites.
+
+**Everything else is `any`, as Step 4 prescribes**, except `new Promise<void>` where `resolve()` takes no argument (TS2794).
+
 ---
 
 ## Open items
 
-- 71 Flow-checked `.js` files left to convert (Steps 6–8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
+- 47 Flow-checked `.js` files left to convert (Steps 7–8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.

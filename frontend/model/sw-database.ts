@@ -9,7 +9,7 @@
 // We currently use `_private_` for persistent actions.
 
 import sbp from '@sbp/sbp'
-import localforage from './localforage.js'
+import localforage from './localforage.ts'
 
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   const log = localforage.createInstance({

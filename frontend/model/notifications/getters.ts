@@ -1,8 +1,8 @@
 import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
-import { age, isNew, isOlder } from './utils.js'
+import { age, isNew, isOlder } from './utils.ts'
 
-const getters: { [x: string]: (state: Object, getters: { [x: string]: any }, rootState: Object) => any } = {
+const getters: { [x: string]: (state: any, getters: { [x: string]: any }, rootState: any) => any } = {
   notifications (state, getters, rootState) {
     const status = rootState._kv?.[rootState.loggedIn?.identityContractID]?.[KV_KEYS.NOTIFICATIONS]?.value ?? {}
     return state.items.map(item => {

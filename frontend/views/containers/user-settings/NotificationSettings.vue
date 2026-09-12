@@ -49,7 +49,7 @@ import { L } from '@common/common.js'
 import {
   requestNotificationPermission,
   makeNotification
-} from '@model/notifications/nativeNotification.js'
+} from '@model/notifications/nativeNotification.ts'
 import NotificationVolume from './NotificationVolume.vue'
 import ChatDefaultNotificationSettings from './ChatDefaultNotificationSettings.vue'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'

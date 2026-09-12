@@ -7,11 +7,11 @@ import {
   PROFILE_STATUS
 } from '@model/contracts/shared/constants.js'
 import { cloneDeep, has, omit } from 'turtledash'
-import { SETTING_CHELONIA_STATE } from '@model/database.js'
+import { SETTING_CHELONIA_STATE } from '@model/database.ts'
 import sbp from '@sbp/sbp'
 import promiseWithResolvers from '@utils/promiseWithResolvers.ts'
 import { imageUpload, objectURLtoBlob } from '@utils/image.ts'
-import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
+import { SETTING_CURRENT_USER } from '~/frontend/model/database.ts'
 import { JOINED_CHATROOM, LOGIN, LOGOUT, LOGGING_OUT } from '~/frontend/utils/events.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'

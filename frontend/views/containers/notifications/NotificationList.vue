@@ -38,7 +38,7 @@ import { mapGetters } from 'vuex'
 import { timeSince } from '@model/contracts/shared/time.ts'
 import AvatarUser from '@components/AvatarUser.vue'
 import { L } from '@common/common.js'
-import { swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { swapMentionIDForDisplayname } from '@model/chatroom/utils.ts'
 
 export default {
   name: 'NotificationList',

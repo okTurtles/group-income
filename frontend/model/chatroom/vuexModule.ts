@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { cloneDeep } from 'turtledash'
 import { GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
-import getters from './getters.js'
+import getters from './getters.ts'
 import Vue from 'vue'
 
 const defaultState = {
@@ -77,4 +77,4 @@ export default ({
   state: () => cloneDeep(defaultState),
   getters,
   mutations
-}: Object)
+} as any)

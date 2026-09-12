@@ -2,7 +2,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
 
-export default (console: Object): Function => {
+export default (console: any): any => {
   // only log to server if we're in development mode and connected over the
   // tunnel (which creates URLs that begin with 'https://gi' per Gruntfile.js)
   if (process.env.NODE_ENV !== 'development' || !self.location.href.startsWith('https://gi')) return

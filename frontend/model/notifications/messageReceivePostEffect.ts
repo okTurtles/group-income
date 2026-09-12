@@ -12,10 +12,10 @@ import {
 } from '@model/contracts/shared/constants.js'
 import {
   swapMentionIDForDisplayname
-} from '@model/chatroom/utils.js'
-import { makeNotification } from './nativeNotification.js'
+} from '@model/chatroom/utils.ts'
+import { makeNotification } from './nativeNotification.ts'
 
-function isMessageDeleted (chatRoomState: ?Object, messageHash: string): boolean {
+function isMessageDeleted (chatRoomState: any | null | undefined, messageHash: string): boolean {
   return chatRoomState?.deletedMessageHashes?.includes(messageHash) || false
 }
 

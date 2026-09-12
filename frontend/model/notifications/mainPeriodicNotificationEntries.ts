@@ -1,8 +1,8 @@
 import { PROPOSAL_GENERIC, STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
-import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
-import { extractProposalData } from './utils.js'
+import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.ts'
+import { extractProposalData } from './utils.ts'
 
 // util functions
 const myNotificationHas = (checkFunc, groupId = '') => {
@@ -17,9 +17,9 @@ const periodicNotificationEntries: {
   type: string;
   notificationData: {
     stateKey: string;
-    emitCondition: (arg: { rootState: Object, rootGetters: Object }) => boolean;
-    emit: (arg: { rootState: Object, rootGetters: Object }) => void | Promise<void>;
-    shouldClearStateKey: (arg: { rootState: Object, rootGetters: Object }) => boolean;
+    emitCondition: (arg: { rootState: any, rootGetters: any }) => boolean;
+    emit: (arg: { rootState: any, rootGetters: any }) => void | Promise<void>;
+    shouldClearStateKey: (arg: { rootState: any, rootGetters: any }) => boolean;
   }
 }[] = [
   {

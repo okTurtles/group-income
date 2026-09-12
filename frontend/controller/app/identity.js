@@ -9,7 +9,7 @@ import { LOGIN, LOGIN_COMPLETE, LOGIN_ERROR, OPEN_MODAL } from '~/frontend/utils
 import { Secret } from '@chelonia/lib/Secret'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
-import { SETTING_CHELONIA_STATE } from '@model/database.js'
+import { SETTING_CHELONIA_STATE } from '@model/database.ts'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 

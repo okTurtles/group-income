@@ -42,7 +42,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@cheloni
 import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '@chelonia/lib/events'
 import type { GIActionParams } from './types.js'
 import { createInvite, encryptedAction } from './utils.js'
-import { extractProposalData } from '@model/notifications/utils.js'
+import { extractProposalData } from '@model/notifications/utils.ts'
 
 // Function debounced because it might get called too often (on every group
 // key update)

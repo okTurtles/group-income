@@ -19,7 +19,7 @@ export function getIdFromChannelMention (str: string): string {
 
 export function swapMentionIDForDisplayname (
   text: string,
-  options: Object = {
+  options: any = {
     escaped: true, // this indicates that the text contains escaped characters
     forChat: true // this indicates that the function is being used for messages inside chatroom
   }
@@ -77,7 +77,7 @@ export function swapMentionIDForDisplayname (
 // to @<userID>, for internal representation purposes.
 // forceUsername is used for display purposes in the UI, so that we can show
 // a mention like @username instead of @userID in SendArea
-export function makeMentionFromUsername (username: string, forceUsername: ?boolean): {
+export function makeMentionFromUsername (username: string, forceUsername: boolean | null | undefined): {
     me: string, all: string
   } {
   const rootGetters = sbp('state/vuex/getters')

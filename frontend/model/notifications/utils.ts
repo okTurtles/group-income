@@ -1,4 +1,5 @@
-import type { Notification } from './types.flow.js'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
+import type { Notification } from './types.ts'
 import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/model/contracts/shared/time.ts'
 import {
   MAX_AGE_READ,
@@ -43,7 +44,7 @@ export function age (notification: Notification): number {
  *   5f. discard unread notifications, older ones first.
  * 6. Return the remaining notifications.
  */
-export function applyStorageRules (notifications: Notification[], status: { [string]: Notification } = {}): Notification[] {
+export function applyStorageRules (notifications: Notification[], status: { [key: string]: Notification } = {}): Notification[] {
   // Apply the MAX_AGE constraint by selecting items that have not yet expired.
   let items = notifications.filter(item => !isExpired({ ...item, ...status[item.hash] }))
 
@@ -55,7 +56,7 @@ export function applyStorageRules (notifications: Notification[], status: { [str
     ;[
       [item => item.read, MAX_COUNT_READ],
       [item => !item.read, MAX_COUNT_UNREAD]
-    ].forEach(([condition, associatedMaxCount]) => {
+    ].forEach(([condition, associatedMaxCount]: [any, any]) => {
       if (associatedMaxCount !== -1 && associatedMaxCount < MAX_COUNT) {
         let count = 0
 
@@ -125,11 +126,11 @@ export function maxAge (notification: Notification): number {
   return notification.read ? MAX_AGE_READ : MAX_AGE_UNREAD
 }
 
-export function makeNotificationHash (notification: Object): string {
+export function makeNotificationHash (notification: any): string {
   return blake32Hash(JSON.stringify(hashableRepresentation(notification)))
 }
 
-export function extractProposalData (proposal: Object, extraFields: Object = {}): Object {
+export function extractProposalData (proposal: any, extraFields: any = {}): any {
   return {
     proposalType: proposal.data.proposalType,
     proposalData: proposal.data.proposalData,

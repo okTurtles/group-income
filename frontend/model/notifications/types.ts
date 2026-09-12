@@ -9,25 +9,24 @@ export type NewProposalType =
   | 'GENERIC';
 
 export type Notification = {
-  +hash: string;
+  readonly hash: string;
   // Native notification title
-  +title: string;
+  readonly title: string;
   // Indicates which user avatar icon to display alongside the notification.
-  +avatarUserID: string;
-  +body: string;
+  readonly avatarUserID: string;
+  readonly body: string;
   // Body without markup to use in native notifications
-  +plaintextBody: string;
+  readonly plaintextBody: string;
   // If present, indicates in which group's notification list to display the notification.
-  +groupID?: string;
-  +icon: string;
-  +level: NotificationLevel;
-  +linkTo?: string;
+  readonly groupID?: string;
+  readonly icon: string;
+  readonly level: NotificationLevel;
+  readonly linkTo?: string;
   read: boolean;
   // When the corresponding event happened.
-  +timestamp: number;
-  +type: string;
+  readonly timestamp: number;
+  readonly type: string;
   // Other properties might be defined according to the notification's type.
-  ...
 }
 
 export type NotificationData = {
@@ -40,13 +39,13 @@ export type NotificationLevel = 'danger' | 'info';
 export type NotificationScope = 'group' | 'user' | 'app';
 
 export type NotificationTemplate = {
-  +avatarUserID?: string;
-  +body: string;
-  +icon: string;
-  +level: NotificationLevel;
-  +linkTo?: string;
-  +sbpInvocation?: Array<string | Object>;
-  +scope: NotificationScope;
-  +creator?: string;
-  +subtype?: string;
+  readonly avatarUserID?: string;
+  readonly body: string;
+  readonly icon: string;
+  readonly level: NotificationLevel;
+  readonly linkTo?: string;
+  readonly sbpInvocation?: Array<string | any>;
+  readonly scope: NotificationScope;
+  readonly creator?: string;
+  readonly subtype?: string;
 }

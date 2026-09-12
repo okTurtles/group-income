@@ -2,8 +2,8 @@ import sbp from '@sbp/sbp'
 import { debounce } from 'turtledash'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 import { MAX_LOG_ENTRIES } from '~/frontend/utils/constants.ts'
-import { createLogger } from './logger.js'
-import logServer from './logServer.js'
+import { createLogger } from './logger.ts'
+import logServer from './logServer.ts'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -17,11 +17,11 @@ const config = {
 const originalConsole = self.console
 
 // These are initialized in `captureLogsStart()`.
-let logger: Object = null
+let logger: any = null
 let identityContractID: string = ''
 
 // A default storage backend using `IndexedDB`.
-const getItem = (key: string): Promise<?string> => sbp('gi.db/logs/load', `giConsole/${identityContractID}/${key}`)
+const getItem = (key: string): Promise<string | null | undefined> => sbp('gi.db/logs/load', `giConsole/${identityContractID}/${key}`)
 const removeItem = (key: string): Promise<void> => sbp('gi.db/logs/delete', `giConsole/${identityContractID}/${key}`)
 const setItem = (key: string, value: any): Promise<void> => {
   return sbp('gi.db/logs/save', `giConsole/${identityContractID}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
@@ -38,7 +38,7 @@ async function captureLogsStart (userLogged: string) {
   // TODO: Get this dynamically
   logger.setAppLogsFilter((((process.env.NODE_ENV === 'development' || new URLSearchParams(location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info']): string[]))
+    : ['error', 'warn', 'info']) as string[]))
 
   // Subscribe to `swLogsFilter` changes.
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, logger.setAppLogsFilter)
@@ -84,4 +84,4 @@ export default (sbp('sbp/selectors/register', {
     try { await clearLogs() } catch {}
     identityContractID = savedID
   }
-}): string[])
+}) as string[])

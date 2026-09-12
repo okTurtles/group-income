@@ -13,8 +13,8 @@ import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
-import { makeMentionFromUserID } from '@model/chatroom/utils.js'
-import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
+import { makeMentionFromUserID } from '@model/chatroom/utils.ts'
+import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.ts'
 import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
 
 const messageReceivedRawQueue = []

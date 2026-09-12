@@ -10,29 +10,27 @@ import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
-import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import { applyStorageRules } from '~/frontend/model/notifications/utils.ts'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
-import getters from './getters.js'
+import getters from './getters.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { PROFILE_STATUS } from './contracts/shared/constants.js'
 
 // Vuex modules.
-import notificationModule from '~/frontend/model/notifications/vuexModule.js'
-import settingsModule from '~/frontend/model/settings/vuexModule.js'
-import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
+import notificationModule from '~/frontend/model/notifications/vuexModule.ts'
+import settingsModule from '~/frontend/model/settings/vuexModule.ts'
+import chatroomModule from '~/frontend/model/chatroom/vuexModule.ts'
 
 // Wrapper function for performing contract upgrades and migrations
 // Unused as of https://github.com/okTurtles/group-income/pull/2525. For
 // usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
 // eslint-disable-next-line no-unused-vars
-const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
+const contractUpdate = (initialState: any, updateFn: (state: any, contractIDHints: string[] | null | undefined) => any, contractType: string | null | undefined) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early
   const wrappedUpdateFn = contractType
-  // The following disable is because eslint gets confused with 'Object'
-  // eslint-disable-next-line no-use-before-define
-    ? (state: Object, contractIDHints: ?string[]) => {
+    ? (state: any, contractIDHints: string[] | null | undefined) => {
         if (Array.isArray(contractIDHints)) {
           if (!contractIDHints.some(contractID => state.contracts[contractID]?.type === contractType)) {
             return
@@ -126,7 +124,7 @@ sbp('sbp/selectors/register', {
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
   'state/vuex/settings': () => store.state.settings,
-  'state/vuex/postUpgradeVerification': function (state: Object) {
+  'state/vuex/postUpgradeVerification': function (state: any) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
     if (state.periodicNotificationAlreadyFiredMap) {
@@ -158,8 +156,7 @@ sbp('sbp/selectors/register', {
       if (state.namespaceLookups) return
 
       const identityContractIDs = Object.entries(state.contracts)
-        // $FlowFixMe[incompatible-use]
-        .filter(([, { type }]) => type === 'gi.contracts/identity')
+        .filter(([, { type }]: [string, any]) => type === 'gi.contracts/identity')
         .map(([id]) => id)
       console.info('Fixing missing lookup entries', identityContractIDs)
 
@@ -178,13 +175,13 @@ sbp('sbp/selectors/register', {
     // consistent again
     ;(() => {
       Object.entries(state.namespaceLookups)
-        .filter(([, value]) => !state.reverseNamespaceLookups[value])
-        .forEach(([name, value]) => {
+        .filter(([, value]: [string, any]) => !state.reverseNamespaceLookups[value])
+        .forEach(([name, value]: [string, any]) => {
           state.reverseNamespaceLookups[value] = name
         })
       Object.entries(state.reverseNamespaceLookups)
-        .filter(([, name]) => !state.namespaceLookups[name])
-        .forEach(([value, name]) => {
+        .filter(([, name]: [string, any]) => !state.namespaceLookups[name])
+        .forEach(([value, name]: [string, any]) => {
           state.namespaceLookups[name] = value
         })
     })()
@@ -219,8 +216,7 @@ sbp('sbp/selectors/register', {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
       const groupIds = Object.entries(state[ourIdentityContractId]?.groups || {})
-        // $FlowFixMe[incompatible-use]
-        .filter(([id, { hasLeft, inviteSecretId }]) => !hasLeft && state[id]?._vm?.authorizedKeys[inviteSecretId]?.name === 'csk')
+        .filter(([id, { hasLeft, inviteSecretId }]: [string, any]) => !hasLeft && state[id]?._vm?.authorizedKeys[inviteSecretId]?.name === 'csk')
         .map(([id]) => id)
 
       if (!groupIds.length) return
@@ -235,12 +231,10 @@ sbp('sbp/selectors/register', {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
       const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
-        // $FlowFixMe[incompatible-use]
-        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .filter(([id, { hasLeft }]: [string, any]) => !hasLeft && state[id])
         .flatMap(([id]) => {
           return Object.entries(state[id].chatRooms || {})
-            // $FlowFixMe[incompatible-use]
-            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+            .filter(([id, { deletedDate, members, privacyLevel }]: [string, any]) =>
               // Not deleted
               !deletedDate &&
               // This upgrade only makes sense for private chatrooms
@@ -251,7 +245,6 @@ sbp('sbp/selectors/register', {
               state[id]?._vm?.authorizedKeys &&
               // and the group CSK doesn't have OP_KEY_REQUEST permission
               Object.values(state[id]._vm.authorizedKeys)
-                // $FlowFixMe[incompatible-use]
                 .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'group-csk' && !permissions.includes(SPMessage.OP_KEY_REQUEST))
             )
             .map(([id]) => id)
@@ -269,12 +262,10 @@ sbp('sbp/selectors/register', {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId) return
       const chatRoomIds = Object.entries(state[ourIdentityContractId]?.groups || {})
-        // $FlowFixMe[incompatible-use]
-        .filter(([id, { hasLeft }]) => !hasLeft && state[id])
+        .filter(([id, { hasLeft }]: [string, any]) => !hasLeft && state[id])
         .flatMap(([id]) => {
           return Object.entries(state[id].chatRooms || {})
-            // $FlowFixMe[incompatible-use]
-            .filter(([id, { deletedDate, members, privacyLevel }]) =>
+            .filter(([id, { deletedDate, members, privacyLevel }]: [string, any]) =>
               // Not deleted
               !deletedDate &&
               // We should be a member with an active profile
@@ -284,7 +275,6 @@ sbp('sbp/selectors/register', {
               // and the CEK doesn't have OP_KEY_SHARE permission
               // and the CEK doesn't have OP_KEY_REQUEST_SEEN permission
               Object.values(state[id]._vm.authorizedKeys)
-                // $FlowFixMe[incompatible-use]
                 .some(({ name, permissions, _notAfterHeight }) => _notAfterHeight == null && name === 'cek' && (
                   !permissions.includes(SPMessage.OP_KEY_SHARE) ||
                   !permissions.includes(SPMessage.OP_KEY_REQUEST_SEEN)
@@ -328,26 +318,20 @@ sbp('sbp/selectors/register', {
       const ourIdentityContractId = state.loggedIn?.identityContractID
       if (!ourIdentityContractId || !state[ourIdentityContractId]?._vm?.authorizedKeys) return
 
-      const dmk = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
-        // $FlowFixMe[incompatible-type]
-        // $FlowFixMe[incompatible-use]
+      const dmk: any = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k: any) => {
         return k.name === 'dmk' && k._notAfterHeight == null
       })
       // Did we find a DMK?
       if (!dmk) return
 
-      const pek = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k) => {
-        // $FlowFixMe[incompatible-type]
-        // $FlowFixMe[incompatible-use]
+      const pek: any = Object.values(state[ourIdentityContractId]._vm.authorizedKeys).find((k: any) => {
         return k.name === 'pek' && k._notAfterHeight == null
       })
       // Did we find a PEK?
       if (!pek) return
 
-      // $FlowFixMe[incompatible-use]
       if (dmk.meta?.private?.content?.[0] === pek.id) return
 
-      // $FlowFixMe[incompatible-use]
       const hasItBeenSharedBefore = state[ourIdentityContractId]._vm.sharedKeyIds?.some((k) => k.id === dmk.id)
 
       if (hasItBeenSharedBefore) return
@@ -358,7 +342,7 @@ sbp('sbp/selectors/register', {
       })
     })()
   },
-  'state/vuex/save': (encrypted: ?boolean, state: ?Object) => {
+  'state/vuex/save': (encrypted: boolean | null | undefined, state: any | null | undefined) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
       state = state || store.state
       // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!

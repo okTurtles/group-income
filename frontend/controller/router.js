@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import Router from 'vue-router'
-import store from '~/frontend/model/state.js'
+import store from '~/frontend/model/state.ts'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import { lazyPage } from '@utils/lazyLoadedView.ts'

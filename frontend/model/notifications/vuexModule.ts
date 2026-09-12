@@ -4,10 +4,11 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { cloneDeep } from 'turtledash'
 import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
-import getters from './getters.js'
+import getters from './getters.ts'
 import * as keys from './mutationKeys.js'
-import type { Notification } from './types.flow.js'
-import { compareOnTimestamp } from './utils.js'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
+import type { Notification } from './types.ts'
+import { compareOnTimestamp } from './utils.ts'
 
 sbp('okTurtles.events/on', NOTIFICATION_EMITTED, (notification) => {
   sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
@@ -63,4 +64,4 @@ export default ({
   state: () => cloneDeep(defaultState),
   getters,
   mutations
-}: Object)
+} as any)

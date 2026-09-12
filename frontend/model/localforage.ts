@@ -1,4 +1,4 @@
-const _instances: (() => Promise<*>)[] = []
+const _instances: (() => Promise<any>)[] = []
 // Localforage-like API for IndexedDB
 
 const localforage = {
@@ -33,12 +33,12 @@ const localforage = {
               const request = self.indexedDB.open(name + '--' + storeName, version)
 
               // Create the object store if it doesn't exist
-              request.onupgradeneeded = (event) => {
+              request.onupgradeneeded = (event: any) => {
                 const db = event.target.result
                 db.createObjectStore(storeName)
               }
 
-              request.onsuccess = (event) => {
+              request.onsuccess = (event: any) => {
                 const db = event.target.result
                 if (!db.objectStoreNames.contains(storeName)) {
                   return openDB(db.version + 1)
@@ -73,7 +73,7 @@ const localforage = {
         const transaction = db.transaction([storeName], 'readwrite')
         const objectStore = transaction.objectStore(storeName)
         const request = objectStore.clear()
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           request.onsuccess = () => {
             resolve()
           }
@@ -115,7 +115,7 @@ const localforage = {
         const transaction = db.transaction([storeName], 'readwrite')
         const objectStore = transaction.objectStore(storeName)
         const request = objectStore.delete(key)
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           request.onsuccess = () => {
             resolve()
           }
@@ -133,7 +133,7 @@ const localforage = {
           objectStore.delete(key)
         }
 
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           transaction.oncomplete = () => resolve()
           transaction.onerror = (e) => reject(e.target.error)
           transaction.onabort = (e) => reject(e.target.error)
@@ -144,7 +144,7 @@ const localforage = {
         const transaction = db.transaction([storeName], 'readwrite')
         const objectStore = transaction.objectStore(storeName)
         const request = objectStore.put(value, key)
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
           request.onsuccess = () => {
             resolve()
           }
@@ -168,7 +168,7 @@ type LocalforageInstance = {
 
 type Localforage = {
   ready: () => Promise<void>,
-  createInstance: ({ name: string, storeName: string }) => LocalforageInstance
+  createInstance: (options: { name: string, storeName: string }) => LocalforageInstance
 }
 
-export default (localforage: Localforage)
+export default (localforage as Localforage)

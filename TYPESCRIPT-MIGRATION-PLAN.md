@@ -35,7 +35,7 @@ A Flow type translates to its precise TypeScript equivalent and nothing else. No
 | `?T` | `T \| null \| undefined` | `T \| undefined` |
 | `any` | `any` | an inferred or hand-written shape |
 | `Object` | `any` | `Record<string, unknown>`, an interface |
-| `Function` | `any` | a call signature |
+| `Function` | `any` | a call signature (see Deferred) |
 | `mixed` | `unknown` | `any` |
 | `{ +x: T }` | `{ readonly x: T }` | `{ x: T }` |
 | optional param with a default | mirror the annotation, not the default | — |
@@ -62,11 +62,13 @@ The boundary matters, so here it is both ways:
 | `Array<*> \| Object \| void` → `args?: Array<any> \| any` — compiles, but `Object` → `any` swallows the other arm so the union checks nothing | **2** | Mirror written as-is, discrepancy noted in a comment (`translations.ts`) |
 | `?Object` → `params?: any \| null` — same collapse, still compiles | **2** | Mirror written as-is (`image.ts`) |
 
-**What an exemption may do:** drop the annotation and let inference stand, or use the nearest type that does compile. Prefer dropping — inference is derived from the value and cannot drift from it, whereas a hand-picked replacement is a new claim that nothing checks. Either way it is the *minimum* departure that compiles, never an opportunity to write the better type; that still belongs to the strictness pass.
+**What an exemption may do:** drop the annotation and let inference stand, or use the nearest type that does compile. Prefer dropping — inference is derived from the value and cannot drift from it, whereas a hand-picked replacement is a new claim that nothing checks. **The exception is an annotation that gave callers `any`**, such as an exported function's `Object` return. Dropping it hands callers the inferred shape where Flow gave them `any`, which is new checking, the same scope expansion as Step 5's `flowTyper` exports. Use the nearest type that compiles instead: `createLogger` in `model/logger.ts` is `Promise<any>`. Either way it is the *minimum* departure that compiles, never an opportunity to write the better type; that still belongs to the strictness pass.
 
 **Every exemption is recorded twice:** a comment in the file saying what the annotation was and why it is gone, and a line in `PROGRESS.md` for the step that granted it. An exemption nobody can find later is indistinguishable from a translation error.
 
 **Granted so far:** `typeof Error` — `frontend/common/errors.ts` (Step 4), and `contracts/chatroom.ts:39,40` + `contracts/group.ts:369,370` (Step 5, dropped exactly as Step 4 did). No new exemptions in Step 5. `paymentStatusType`/`paymentType` in `shared/payments/index.ts` looked like candidates — their Flow `: string` describes a validator function and failed as TS2322 — but the `flowTyper`-exports-are-`any` decision made the mirror compile, so both annotations stay exactly as Flow wrote them. Restoring parity beats granting an exemption; check for that before reaching for RULES 3.
+
+**Step 6 granted two.** `model/logger.ts` — `createLogger`'s `Object` return: `any` is rejected as an async function's return type (TS1064), so it is `Promise<any>`, the nearest type that compiles. It is not dropped, because inference would hand the callers the logger's full shape where Flow gave them `any` (see "What an exemption may do"). `notifications/nativeNotification.ts` — `makeNotification`'s `icon?: string`: the body's `typeof icon === 'object'` branch narrows a `string` to `null` and reads `.manifestCid` from it (TS18047), so keeping `string` would take a cast. `icon` is a member of a destructured object type and can't be dropped on its own, so it is `any`, the nearest type that compiles. Both files carry a comment.
 
 ---
 
@@ -287,7 +289,7 @@ Recurring syntax translations, all governed by RULES 2 — mirror, do not improv
 |---|---|---|---|
 | **4 — DONE** | `frontend/common` 3, `frontend/utils` **9** | **12** | Leaf utilities, few dependents. Smallest wave first to shake out the translation patterns. `common.js` keeps its name but **did** need its three re-export specifiers rewritten — see below. |
 | **5 — DONE** | `frontend/model/contracts/**` | **17** + `flowTyper` | 19 files in the tree contain Flow; 2 of them (`misc/flowTyper.js`, `shared/distribution/distribution.test.js`) are Flow-ignored and belong to the strip-only set. The parenthetical list below named `constants` and omitted `types` — it is the other way round: `shared/constants.js` has **no Flow syntax** and so stays `.js` under parity, and `shared/types.js` converts. **Highest risk — see below.** |
-| **6** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **10**, `settings` 1 | **24** | Depends on Steps 4–5. Includes `notifications/types.flow.js` → `types.ts`, **moved here from Step 2** — renaming it early breaks Flow for its four `import type` consumers in this same directory, so it converts alongside them. |
+| **6 — DONE** | `frontend/model/**` (non-contract): root 10, `chatroom` 3, `notifications` **10**, `settings` 1 | **24** | Depends on Steps 4–5. Includes `notifications/types.flow.js` → `types.ts`, **moved here from Step 2** — renaming it early breaks Flow for its four `import type` consumers in this same directory, so it converts alongside them. |
 | **7** | `frontend/controller/**`: root 3, `actions` 9, `app` 3, `e2e` 1, `serviceworkers` 3, `utils` 1 | 20 | Controller root holds 4 Flow files; `service-worker.js` is Flow-ignored (strip-only), leaving 3. `serviceworkers/sw-primary.js` is its own esbuild entry — update `Gruntfile.js:663` in the same commit (Step 3a), then rebuild and smoke-test the SW bundle specifically. |
 | **8** | `frontend/views/**` `.js`: `views/utils` 13, `containers/chatroom` 5, `chat-mentions` 2, **`voice-recording` 1**, `components/*` 3, `containers/payments` 1, `roles-and-permissions` 1 — plus root `frontend/setupChelonia.js` | **27** | `views/utils` holds 14 entries; one is the `vueComponentStub.js.flow` stub, superseded on the TypeScript side in Step 2 but deleted only in Step 9, leaving 13 to convert. `voice-recording/voice-recording-utils.js` is new in v2.9.0. View-layer helpers imported by SFCs; SFCs themselves stay untouched plain JS. |
 
@@ -361,6 +363,33 @@ This means Step 4 moved the hashes too, and its "byte-identical" note was an art
 
 **Rewrite specifiers by resolving them, not by pattern-matching.** A first pass with hand-written path patterns silently missed relative sibling imports (`./mincome-proportional.js`). The rewrite that ran instead resolves every quoted `.js` specifier through the alias table and `~/`, and rewrites only those that land on a renamed file: 132 specifiers across 77 files, with `gi.contracts/*` SBP selector strings and `shared/constants.js` provably untouched. Worth reusing verbatim for Steps 6–8.
 
+### What Step 6 turned up
+
+Twenty-four files, all green: `tsc` 0 · `eslint` 0 · `npm run flow` "No errors!" · `NODE_ENV=production grunt build` 0 · **178 passing** · 71 → 47 left. `contracts/**` and `chelonia.json` untouched. The Step 5 resolver was reused, extended to map `<name>.flow.js` to `<name>.ts`: 61 specifiers across 34 files.
+
+**No contract bundle moved, as expected.** Contract source reaches outside `contracts/` only for `@common/common.js` and `@utils/events.js`, so nothing in this wave is in a contract's module graph. All six bundles and `manifests.json` are byte-identical to a pre-change production build, raw, with no banner normalisation needed.
+
+**Check emitted code per file, not per bundle.** The minified `main.js` and `sw-primary.js` differ by a few bytes, but only in content-hashed chunk filenames and minifier identifier assignment, and a whole-bundle diff cannot tell those apart from a real change. So each file was compiled both ways: the `HEAD` `.js` through `flow-remove-types` (`all: true`) and esbuild's JS loader, and the new `.ts` through esbuild's TS loader with this `tsconfig.json`. After normalising specifier extensions, 22 of 24 are identical. `featureCheck.ts` and `nativeNotification.ts` differ only in comments that esbuild keeps inside expressions. This also rules out the one TS-loader risk a typecheck cannot see: esbuild drops unused imports from `.ts` but keeps them in `.js`. Reuse the check for Steps 7–8.
+
+**`@babel/eslint-parser` does not count type-only uses, so a mirrored `import type` fails `no-unused-vars`.** This is the `.ts` twin of Step 3's `no-undef` problem, but Step 3's fix does not transfer. That override was justified because `tsc` reports TS2304 in its place, and nothing reports unused locals here (`noUnusedLocals` is off). So each site gets `// eslint-disable-next-line no-unused-vars -- <reason>`: 4 here, and at most 11 more in Steps 7–8, which is every `import type` line left. Step 10's `@typescript-eslint/no-unused-vars` removes them.
+
+**lib.dom gaps get `@ts-expect-error`, as in `isPwa.ts`.** `nativeNotification.ts` runs in both the window and the service worker. `permissions.query`'s `userVisibleOnly`, `typeof WorkerGlobalScope`, `self.clients` and `self.registration` are all absent from the `DOM` lib, and Flow accepted all four without a suppression. **Step 7 has ~17 more:** `self.clients`/`self.registration`/`self.skipWaiting` in `sw-primary.js` and `push.js`, and `WorkerGlobalScope` in `actions/identity.js`. Decide there whether one shared declaration beats per-site suppressions. `self` cannot simply be redeclared, because lib.dom already types it.
+
+**Flow saw every `@chelonia/lib/*` import as `any`, so real declarations can add checking the Flow code never had.** `templates.ts` hit this. `SPMessage#opType()` returns `SPOpType`, which `[OP_ACTION_ENCRYPTED, OP_ACTION_UNENCRYPTED].includes()` rejects, and `decryptedValue()` returns `unknown`. Neither is a defect in the code, so the two bindings are annotated `any`, which is exactly Flow's coverage, rather than suppressed.
+
+**Four more TypeScript-only patterns:**
+
+| Pattern | What TypeScript says | Fix used |
+|---|---|---|
+| `Object.entries(x)` / `Object.values(x)` where `x` is `any` | values are `unknown`; destructuring or indexing with them is TS2339/TS2538 | `([k, v]: [string, any])`, `(k: any)`, or an `any` binding for a `.find()` result. Step 5's idiom, and where most of `state.ts`'s 14 `$FlowFixMe`s sat |
+| `[[fn, n], [fn, n]].forEach(([f, n]) => …)` | the literal is inferred as `(number \| fn)[][]`, not tuples: TS2349/TS2365 | `([f, n]: [any, any])` (`notifications/utils.ts`) |
+| `event.target.result` in a handler on a typed `IDBOpenDBRequest` | `event.target` is `EventTarget`: TS2339 | `(event: any)` (`localforage.ts`) |
+| `new Promise((resolve) => … resolve())` | un-parameterized means `Promise<unknown>`, whose `resolve` needs an argument: TS2794 | `new Promise<void>`. Not `any`, which is no more optional than `unknown`; matches the file's own `LocalforageInstance` type |
+
+**A trailing `...` in a Flow object type is dropped.** Flow 0.154 is not `exact_by_default`, so `{ a: T, ... }` and `{ a: T }` mean the same thing, and both translate to a plain TypeScript object type (`notifications/types.ts`).
+
+The two RULES 3 exemptions are recorded under RULES.
+
 ---
 
 ## Step 9 — Remove Flow
@@ -398,6 +427,7 @@ Deliberately last. Doing it earlier would mean finding an `eslint-plugin-flowtyp
 - Companion bumps ESLint 8 requires, all versions confirmed against `package.json`: `eslint-config-standard` 16.0.2 → 17.1, `eslint-plugin-vue` 7.20.0 → 9, `eslint-plugin-promise` 4.2.1 → 6, `eslint-plugin-import` 2.22.1 → 2.29+, and `eslint-plugin-node` 11.1.0 → `eslint-plugin-n` (renamed).
 - Removing Flow from ESLint is **three** edits to the `package.json` `eslintConfig` block, not one — miss any and the config fails to load once the plugin is uninstalled: the `plugin:flowtype/recommended` entry in `extends`, `"flowtype"` in `plugins`, and the `flowtype/no-types-missing-file-annotation` entry in `rules`. Then drop both packages. `eslint-plugin-flowtype-errors` is a devDependency with **no** config entry — package removal only.
 - **Expect new findings.** `eslint-plugin-vue` 7 → 9 adds rules, and the Step 002 discovery still applies: the removed `}: Object)` cast had been hiding 182 components from `vue/*` rules entirely. Fix what it surfaces or explicitly disable with a reason — don't blanket-disable.
+- **Delete the `no-unused-vars` disables added in Steps 6–8.** Core `no-unused-vars` under `@babel/eslint-parser` does not count type-only uses, so every mirrored `import type` in a `.ts` file carries `// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count` (4 from Step 6, up to 11 more from Steps 7–8). The parser swap is what makes them unnecessary: `plugin:@typescript-eslint/recommended` turns the core rule off and uses `@typescript-eslint/no-unused-vars`, which counts type references. The ESLint upgrade on its own does not. **They will not flag themselves.** `reportUnusedDisableDirectives` is opt-in in 8.57.1, and nothing in this repo sets it (`package.json`, `exec:eslint`, the npm scripts). So after the swap, run the lint once with `--report-unused-disable-directives`, delete what it reports, and grep for the reason text to confirm none remain. Treat the flag as a one-off: it can also report older, unrelated disable comments, so review those individually rather than turning it on permanently by default.
 
 **Done when:** `npm run lint` passes on `.js`, `.ts`, and `.vue`.
 
@@ -439,6 +469,7 @@ These are the orderings that actually matter — everything else is preference.
 ## Deferred — explicitly not this PR
 
 - Tightening `strict`, `noImplicitAny`, `strictNullChecks`; replacing the `any`s that stand in for Flow's `Object`/`Function`; clearing the `@ts-expect-error`s left against `@chelonia/*`
+  - **The `Function` ones carry an intent the `any` does not.** `Function` in Flow 0.154 is a spelling of `any`, not a function type: `const a: Function = 42`, `= 'hello'`, `= { a: 1 }` and `null` into a `Function` parameter all typecheck, and a `Function` value assigns out to `string`. `Function` → `any` is therefore an exact mirror, not a widening — but the authors who wrote `Function` mostly meant "a JS function", and restoring *that* is the deferred work. Use `(...args: any[]) => any`, not TypeScript's `Function`, which carries no call signature (so it rejects assignment to every specific signature) and is banned by `@typescript-eslint/no-unsafe-function-type`. Confirm the intent per site first: at `frontend/model/logServer.ts:5` the `Function` return was simply wrong — every path returns `undefined` and both callers discard it — so `any` stands there.
 - Converting `*.test.js` files, and widening Mocha's spec glob to `*.test.{js,ts}` to allow it
 - Type-aware ESLint rules (`recommended-type-checked`)
 - Typing `.vue` SFCs — belongs to the Vue 3 migration

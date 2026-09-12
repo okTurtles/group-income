@@ -308,7 +308,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
 import VoiceRecorder from './voice-recording/VoiceRecorder.vue'
-import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.ts'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,

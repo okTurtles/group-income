@@ -16,7 +16,7 @@
 import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import { isExpired } from '@model/notifications/utils.js'
+import { isExpired } from '@model/notifications/utils.ts'
 import { checkAndAugmentNames } from './identity-kv.js'
 
 // Prune-expired transform for the notifications slot. Zod is not installed, so
