@@ -77,6 +77,7 @@ import { CAPTURED_LOGS } from '@utils/events.js'
 import { MAX_LOG_ENTRIES } from '@utils/constants.js'
 import safeLinkTag from '@view-utils/safeLinkTag.js'
 import { L, LError } from '@common/common.js'
+import { EXPORT_JSON_INDENT } from '@model/journal/exportSize.js'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -234,7 +235,7 @@ export default ({
           }
         }
 
-        const blob = new Blob([JSON.stringify(payload, undefined, 2)], { type: mimeType })
+        const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: mimeType })
 
         if (isDownload) {
           if (!elLink) { return }
@@ -260,6 +261,10 @@ export default ({
           this.$refs.errBanner.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
+        // Dismissing the native share sheet rejects with `AbortError`. That is a
+        // cancellation, not a failure, so there is nothing to report.
+        if (!isDownload && err?.name === 'AbortError') return
+
         const errorDisplay = isDownload
           ? L('Failed to download the app logs. {reportError}', LError(err))
           : L('Failed to share the app logs. {reportError}', LError(err))

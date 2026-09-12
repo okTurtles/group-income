@@ -1,11 +1,12 @@
 /* eslint-env mocha */
 
 import assert from 'node:assert'
-import { applyRedactions } from '@chelonia/lib/journal'
+import { applyRedactions, defaultDiff } from '@chelonia/lib/journal'
 import {
   JOURNAL_REDACTIONS,
   JOURNAL_REDACTIONS_VERSION,
   REDACTED,
+  emoticonsRedactor,
   hashRedactor,
   messageTextRedactor
 } from './redactions.js'
@@ -24,9 +25,9 @@ describe('journal redactions', () => {
   })
 
   it('hashRedactor avoids the constant multiformat hash prefix', () => {
-    // blake32Hash output begins with a fixed 7-character multiformat prefix, so
-    // a prefix slice is identical for every input. This guards against a
-    // regression to `.slice(0, 6)`.
+    // blake32Hash output begins with 7 constant characters (the multibase `z`
+    // plus the `2Drjgb` multihash prefix), so a prefix slice is identical for
+    // every input. This guards against a regression to `.slice(0, 6)`.
     const hashes = new Set()
     for (let i = 0; i < 1000; i++) hashes.add(hashRedactor(`value-${i}`))
     assert.strictEqual(hashes.size, 1000)
@@ -42,7 +43,7 @@ describe('journal redactions', () => {
     assert.strictEqual(messageTextRedactor('secret'), 'xxxxxxxx')
   })
 
-  it('redacts identity profile fields while preserving stable hashes for high-entropy fields', () => {
+  it('redacts identity profile fields while keeping the avatar manifestCid', () => {
     const original = {
       attributes: {
         username: 'alice',
@@ -63,16 +64,34 @@ describe('journal redactions', () => {
 
     assert.strictEqual(redacted.attributes.username, 'alice')
     assert.strictEqual(redacted.attributes.displayName, 'Alice A')
-    assert.notStrictEqual(redacted.attributes.email, original.attributes.email)
+    assert.strictEqual(redacted.attributes.email, REDACTED)
     assert.strictEqual(redacted.attributes.bio, 'xxxxxxxx')
-    assert.notStrictEqual(redacted.attributes.picture, original.attributes.picture)
-    assert.strictEqual(typeof redacted.attributes.email, 'string')
-    assert.strictEqual(redacted.attributes.email.length, 6)
-    assert.strictEqual(redacted.attributes.picture.length, 6)
-    assert.notStrictEqual(redacted.attributes.email, redacted.attributes.picture)
+    assert.strictEqual(redacted.attributes.picture.manifestCid, 'zAliceAvatar')
+    assert.strictEqual(redacted.attributes.picture.downloadParams, REDACTED)
     assert.strictEqual(redacted.groups.group1.inviteSecretId, REDACTED)
     assert.strictEqual(redacted.fileDeleteTokens, REDACTED)
     assert.deepStrictEqual(original.attributes.picture, { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } })
+    // The assertions that encode the requirement: neither the address nor the
+    // avatar file IKM reach the exported file in any form.
+    const exported = JSON.stringify(redacted)
+    assert.ok(!exported.includes('alice@'))
+    assert.ok(!exported.includes('secret'))
+  })
+
+  it('leaves the string form of an avatar URL unredacted', () => {
+    // `attributes.picture` and `settings.groupPicture` are both
+    // `unionOf(string, objectOf({ manifestCid, downloadParams }))`. The string
+    // form is only ever the public default-avatar URL or a user-entered image
+    // URL, so it must pass through; only `downloadParams` is sensitive.
+    const identity = redact({
+      attributes: { username: 'alice', picture: 'https://example.com/default-avatar.png' }
+    }, 'gi.contracts/identity')
+    const group = redact({
+      settings: { groupPicture: 'https://example.com/default-group-avatar.png' }
+    })
+
+    assert.strictEqual(identity.attributes.picture, 'https://example.com/default-avatar.png')
+    assert.strictEqual(group.settings.groupPicture, 'https://example.com/default-group-avatar.png')
   })
 
   it('redacts group financial and payment memo details', () => {
@@ -98,7 +117,8 @@ describe('journal redactions', () => {
             details: { routingNumber: '123' },
             memo: 'private memo',
             amount: 25,
-            txid: 'external transaction id'
+            txid: 'external transaction id',
+            groupMincome: 1000
           }
         }
       },
@@ -111,6 +131,10 @@ describe('journal redactions', () => {
       },
       thankYousFrom: {
         user1: { user2: 'thanks privately' }
+      },
+      totalPledgeAmount: 12345,
+      invites: {
+        ik1: { inviteKeyId: 'ik1', creatorID: 'zCreator', invitee: 'Secret invitee name' }
       }
     })
 
@@ -128,10 +152,18 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted.payments.payment1.data.memo, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.amount, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.txid, REDACTED)
+    // Pairs with the `settings.mincomeAmount` assertion above: the per-payment
+    // snapshot must not re-leak the value the group setting hides.
+    assert.strictEqual(redacted.payments.payment1.data.groupMincome, REDACTED)
     assert.strictEqual(redacted.paymentsByPeriod['2026-01'].haveNeedsSnapshot, REDACTED)
     assert.strictEqual(redacted.paymentsByPeriod['2026-01'].lastAdjustedDistribution, REDACTED)
     assert.deepStrictEqual(redacted.paymentsByPeriod['2026-01'].paymentsFrom, { user1: { user2: ['payment1'] } })
     assert.strictEqual(redacted.thankYousFrom.user1.user2, REDACTED)
+    assert.strictEqual(redacted.totalPledgeAmount, REDACTED)
+    assert.strictEqual(redacted.invites.ik1.invitee, 'xxxxxxxx')
+    assert.strictEqual(redacted.invites.ik1.inviteKeyId, 'ik1')
+    assert.strictEqual(redacted.invites.ik1.creatorID, 'zCreator')
+    assert.ok(!JSON.stringify(redacted).includes('Secret'))
   })
 
   it('redacts chat message text without removing attachment metadata or mutating input', () => {
@@ -196,6 +228,82 @@ describe('journal redactions', () => {
     assert.strictEqual(original.messages[0].text, 'secret chat')
     assert.deepStrictEqual(original.messages[0].attachments[0].downloadData.downloadParams, { IKM: 'attachment-secret' })
     assert.strictEqual(original.pinnedMessages[0].attachments[0].name, 'pinned.pdf')
+  })
+
+  it('redacts reaction strings, which are object keys a path cannot reach', () => {
+    // `emoticon` is validated as a bare `string` (chatroom.js), so any client
+    // can use a reaction to smuggle free text into `state.messages`. The text
+    // ends up as an object key, which no value-level redaction can rewrite.
+    const smuggled = 'my landlord is evicting me and I need $1200 by Friday'
+    const original = {
+      messages: [
+        {
+          text: 'hi',
+          emoticons: {
+            '👍': ['cid1', 'cid2'],
+            [smuggled]: ['cid3']
+          }
+        },
+        { text: 'no reactions here' }
+      ],
+      pinnedMessages: [
+        { text: 'pinned', emoticons: { 'pinned secret reaction': ['cid4'] } }
+      ]
+    }
+
+    const redacted = redact(original, 'gi.contracts/chatroom')
+    const exported = JSON.stringify(redacted)
+
+    assert.deepStrictEqual(redacted.messages[0].emoticons, {
+      [hashRedactor('👍')]: 2,
+      [hashRedactor(smuggled)]: 1
+    })
+    assert.deepStrictEqual(redacted.pinnedMessages[0].emoticons, {
+      [hashRedactor('pinned secret reaction')]: 1
+    })
+    assert.ok(!exported.includes(smuggled))
+    assert.ok(!exported.includes('pinned secret reaction'))
+    assert.ok(!exported.includes('👍'))
+    // Reactor member IDs go with the strings: only how many reacted survives.
+    assert.ok(!exported.includes('cid1'))
+    // A message with no reactions keeps no `emoticons` key at all, because the
+    // contract deletes it once the map is empty.
+    assert.strictEqual(redacted.messages[1].emoticons, undefined)
+    assert.deepStrictEqual(original.messages[0].emoticons['👍'], ['cid1', 'cid2'])
+  })
+
+  it('emoticonsRedactor tolerates values that are not a reaction map', () => {
+    assert.deepStrictEqual(emoticonsRedactor({ a: ['x'], b: [] }), {
+      [hashRedactor('a')]: 1,
+      [hashRedactor('b')]: 0
+    })
+    assert.deepStrictEqual(emoticonsRedactor({}), {})
+    assert.deepStrictEqual(emoticonsRedactor(null), {})
+    assert.deepStrictEqual(emoticonsRedactor(undefined), {})
+    assert.deepStrictEqual(emoticonsRedactor('👍'), {})
+  })
+
+  it('keeps reaction activity visible in the journal patch', () => {
+    // The reason for rebuilding the map instead of blanking it: the journal
+    // diff must still show that a reaction appeared or gained a reactor.
+    const messages = (emoticons) => ({ messages: [{ hash: 'h1', text: 'secret', emoticons }] })
+    const patch = defaultDiff(
+      redact(messages({ '👍': ['cid1'] }), 'gi.contracts/chatroom'),
+      redact(messages({ '👍': ['cid1', 'cid2'], '🎉': ['cid3'] }), 'gi.contracts/chatroom')
+    )
+
+    assert.strictEqual(patch.length, 2)
+    assert.deepStrictEqual(patch.find(p => p.op === 'replace'), {
+      op: 'replace',
+      path: `/messages/0/emoticons/${hashRedactor('👍')}`,
+      value: 2
+    })
+    assert.deepStrictEqual(patch.find(p => p.op === 'add'), {
+      op: 'add',
+      path: `/messages/0/emoticons/${hashRedactor('🎉')}`,
+      value: 1
+    })
+    assert.ok(!JSON.stringify(patch).includes('cid'))
   })
 
   it('redacts private key and invite material', () => {
@@ -381,13 +489,15 @@ describe('journal redactions', () => {
       'attributes.description',
       'attributes.email',
       'attributes.name',
-      'attributes.picture',
+      'attributes.picture.downloadParams',
       'chatRooms.*.description',
       'chatRooms.*.name',
       'fileDeleteTokens',
       'groups.*.inviteSecretId',
+      'invites.*.invitee',
       'messages.*.attachments.*.downloadData.downloadParams',
       'messages.*.attachments.*.name',
+      'messages.*.emoticons',
       'messages.*.notification.params.channelDescription',
       'messages.*.notification.params.channelName',
       'messages.*.pollData.options.*.value',
@@ -398,12 +508,14 @@ describe('journal redactions', () => {
       'messages.*.text',
       'payments.*.data.amount',
       'payments.*.data.details',
+      'payments.*.data.groupMincome',
       'payments.*.data.memo',
       'payments.*.data.txid',
       'paymentsByPeriod.*.haveNeedsSnapshot',
       'paymentsByPeriod.*.lastAdjustedDistribution',
       'pinnedMessages.*.attachments.*.downloadData.downloadParams',
       'pinnedMessages.*.attachments.*.name',
+      'pinnedMessages.*.emoticons',
       'pinnedMessages.*.notification.params.channelDescription',
       'pinnedMessages.*.notification.params.channelName',
       'pinnedMessages.*.pollData.options.*.value',
@@ -422,7 +534,8 @@ describe('journal redactions', () => {
       'settings.groupPicture.downloadParams',
       'settings.mincomeAmount',
       'settings.sharedValues',
-      'thankYousFrom.*.*'
+      'thankYousFrom.*.*',
+      'totalPledgeAmount'
     ]
 
     const actualPaths = JOURNAL_REDACTIONS.map(r => r.path).sort()

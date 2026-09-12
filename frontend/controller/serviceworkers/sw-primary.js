@@ -14,7 +14,8 @@ import '~/frontend/controller/actions/index.js'
 import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
-import { EMPTY_OBJECT_BYTES, journalEntryBytes } from '~/frontend/model/journal/exportSize.js'
+import { JOURNAL_CONTAINER_OVERHEAD_BYTES, MAX_JOURNAL_EXPORT_BYTES, journalEntryBytes } from '~/frontend/model/journal/exportSize.js'
+import { sanitizeJournal } from '~/frontend/model/journal/sanitize.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
@@ -57,8 +58,6 @@ if (process.env.CI) {
 
 deserializer.register(SPMessage)
 deserializer.register(Secret)
-
-const MAX_JOURNAL_EXPORT_BYTES = 5 * 1024 * 1024
 
 // https://serviceworke.rs/message-relay_service-worker_doc.html
 // https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
@@ -303,7 +302,7 @@ sbp('sbp/selectors/register', {
   'sw/journal/getAll': () => {
     const rootState = sbp('chelonia/rootState')
     const journals = Object.create(null)
-    let exportBytes = EMPTY_OBJECT_BYTES
+    let exportBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES
     let truncated = false
 
     for (const contractID of Object.keys(rootState.contracts || {})) {
@@ -311,9 +310,12 @@ sbp('sbp/selectors/register', {
       if (!journal) continue
       // Contract IDs are opaque hashes, so the export labels each journal with
       // its contract type to tell groups, chatrooms and identities apart.
+      // `sanitizeJournal` mutates the clone returned by `chelonia/journal/get`
+      // and must run before the byte accounting below, so that the budget
+      // measures what is actually written to the file.
       const entry = {
         type: rootState.contracts[contractID]?.type ?? '(unknown)',
-        journal
+        journal: sanitizeJournal(journal)
       }
       const journalBytes = journalEntryBytes(contractID, entry)
       if (exportBytes + journalBytes > MAX_JOURNAL_EXPORT_BYTES) {
