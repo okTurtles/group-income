@@ -70,6 +70,8 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
       const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
       // The state will be augmented from the Chelonia state, which has the journal.
       // We have no use for the `_journal` key in Vuex, and keeping it will just bloat the state.
+      // It's not sufficient to rely on `@chelonia/lib` to exclude this automatically, because this
+      // is a manual copy of the full Chelonia state.
       Object.keys(cheloniaState.contracts || {}).forEach((k) => {
         const c = cheloniaState.contracts[k]
         if (c) delete c._journal
