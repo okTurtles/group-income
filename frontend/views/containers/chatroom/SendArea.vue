@@ -329,6 +329,7 @@ import {
 import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
+import { validateURL } from '@view-utils/misc.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -754,6 +755,14 @@ export default ({
     handlePaste (e) {
       if (e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
+      } else {
+        const pastedText = e.clipboardData.getData('text/plain')
+        const { isValid, isExternalLink, url = null } = validateURL(pastedText)
+
+        if (isValid && isExternalLink) {
+          const urlString = url.toString()
+          console.log('!@# TODO: transform currently selected text to a link markdown syntax. urlString', urlString)
+        }
       }
     },
     onRecordingCompleted (recordingData) {
