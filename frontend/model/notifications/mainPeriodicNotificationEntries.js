@@ -70,7 +70,8 @@ const periodicNotificationEntries: {
 
         return groupIds.every((groupId) => {
           const currentPeriod = rootGetters.groupSettingsForGroup(rootState[groupId]).distributionDate
-          return !!groupedNotifications[groupId]?.every(period => period !== currentPeriod)
+          if (!currentPeriod) return false
+          return !groupedNotifications[groupId] || groupedNotifications[groupId]?.every(period => period !== currentPeriod)
         })
       }
     }
