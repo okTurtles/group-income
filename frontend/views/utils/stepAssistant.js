@@ -14,7 +14,7 @@
 //   ...
 // }
 // </script>
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
+import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.ts'
 
 export default {
   name: 'StepAssistant',

@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import UserProfile from './UserProfile.vue'
 import NotificationSettings from './NotificationSettings.vue'
 import AppearanceSettings from './appearance/AppearanceSettings.vue'

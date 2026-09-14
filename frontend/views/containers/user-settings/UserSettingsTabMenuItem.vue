@@ -12,7 +12,7 @@ settings-menu-tile(
 </template>
 
 <script>
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import SettingsMenuTile from '@components/SettingsMenuTile.vue'
 
 export default {

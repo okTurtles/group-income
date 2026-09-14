@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
 const initSummary = {
   chatRoomID: undefined,

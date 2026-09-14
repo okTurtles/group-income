@@ -1,11 +1,12 @@
 'use strict'
 
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { JSONObject } from '@chelonia/lib/types'
 
 import sbp from '@sbp/sbp'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.ts'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
-import { handleFetchResult } from './utils/misc.js'
+import { handleFetchResult } from './utils/misc.ts'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 
 // Used by 'backend/translations/get'
@@ -72,7 +73,7 @@ export default (sbp('sbp/selectors/register', {
    *
    * @see The 'translations/init' SBP selector in `~view-utils/translations.js`.
    */
-  async 'backend/translations/get' (language: string): Promise<?JSONObject> {
+  async 'backend/translations/get' (language: string): Promise<JSONObject | null | undefined> {
     // The language code is usually the first part of the language tag.
     const [languageCode] = language.toLowerCase().split('-')
     const languageFileName = languageFileMap.get(languageCode) || ''
@@ -82,4 +83,4 @@ export default (sbp('sbp/selectors/register', {
         .then(handleFetchResult('json'))
     }
   }
-}): string[])
+}) as string[])

@@ -11,8 +11,11 @@ import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
-import type { GIRegParams } from './types.js'
-import { encryptedAction, encryptedNotification } from './utils.js'
+/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
+import type { Key } from '@chelonia/crypto'
+import type { GIRegParams } from './types.ts'
+/* eslint-enable no-unused-vars */
+import { encryptedAction, encryptedNotification } from './utils.ts'
 import { makeMentionFromUserID } from '@model/chatroom/utils.ts'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.ts'
 import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
@@ -53,8 +56,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
     const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
 
-    // $FlowFixMe[incompatible-use]
-    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
+    const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]: [string, any]) => {
       const groupState = cheloniaState[groupID]
       const chatroom = groupState?.chatRooms?.[contractID]
       return (
@@ -254,7 +256,6 @@ export default (sbp('sbp/selectors/register', {
 
       // Before creating the contract, put all keys into transient store
       await sbp('chelonia/storeSecretKeys',
-        // $FlowFixMe[incompatible-use]
         new Secret([cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key, transient: true })))
       )
 
@@ -351,7 +352,6 @@ export default (sbp('sbp/selectors/register', {
 
       // After the contract has been created, store pesistent keys
       await sbp('chelonia/storeSecretKeys',
-        // $FlowFixMe[incompatible-use]
         new Secret([cekOpts._rawKey, cskOpts._rawKey].map(key => ({ key })))
       )
 
@@ -375,7 +375,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: any, options: { lastAttempt?: boolean } = {}) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
@@ -469,7 +469,6 @@ export default (sbp('sbp/selectors/register', {
             data: encryptedOutgoingData(contractID, mainCEKid, {
               contractID,
               foreignContractID: pContractID,
-              // $FlowFixMe
               keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
                 id: newId,
                 meta: {
@@ -494,7 +493,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })).then((keys) => [keys.filter(Boolean)])
   },
-  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Object) => {
+  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: any) => {
     const rootGetters = sbp('state/vuex/getters')
     const identityState = rootGetters.currentIdentityState
     if (identityState.chatRooms?.[contractID]) {
@@ -507,8 +506,8 @@ export default (sbp('sbp/selectors/register', {
       // This is a group chatroom. To determine which group the chatroom
       // belongs to, we need to go over each group, since there isn't a
       // chatroom->group relationship stored.
-      const cIDs = Object.entries(identityState.groups || {}).filter(([cID, state]) => {
-        return !((state: any): Object).hasLeft
+      const cIDs = Object.entries(identityState.groups || {}).filter(([cID, state]: [string, any]) => {
+        return !state.hasLeft
       }).map(([cID]) => {
         return cID
       })
@@ -749,4 +748,4 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
   ...encryptedAction('gi.actions/chatroom/changeVoteOnPoll', L('Failed to change vote on a poll.')),
   ...encryptedAction('gi.actions/chatroom/closePoll', L('Failed to close a poll.'))
-}): string[])
+}) as string[])

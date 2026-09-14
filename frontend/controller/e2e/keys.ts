@@ -24,7 +24,7 @@ function genDeviceSecretFromSeed (
 }
 
 function deviceObjToContextStr (
-  dev: Object
+  dev: any
 ): string {
   // TODO: figure out the description
   return `scope:${dev.scope},devType:${dev.devType},description:<encrypted description>,deviceIdx:${dev.deviceIdx},status:${dev.status}`
@@ -32,14 +32,17 @@ function deviceObjToContextStr (
 
 function contextStrToDeviceObj (
   str: string
-): Object {
+): any {
   return str.split(',')
 }
 
-// $FlowFixMe
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
-    { type = '' }: {
+    // `SPKeyType` is a union of three key-type literals, so the `''` default is
+    // not assignable to it. Flow accepted this because `@chelonia/lib` had no
+    // Flow types and `SPKeyType` was `any`; the cast keeps the default's runtime
+    // value untouched while preserving the declared type.
+    { type = '' as SPKeyType }: {
       type: SPKeyType
     }) {
 
@@ -55,7 +58,7 @@ export default sbp('sbp/selectors/register', {
       scope: 'admin'
     })
     return {
-      // $FlowFixMe
+      // @ts-expect-error TS2304: `description`, `status` and `deviceIdx` are not defined; this stub is unfinished.
       description, status, deviceIdx, devType
     }
   }

@@ -20,10 +20,11 @@ import { rawSignedIncomingData } from '@chelonia/lib/signedData'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { findKeyIdByName } from '@chelonia/lib/utils'
 import { blake32Hash } from '@chelonia/lib/functions'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { handleFetchResult } from '../utils/misc.js'
-import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
+import { handleFetchResult } from '../utils/misc.ts'
+import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.ts'
 
 /**
  * Decrypts the old IEK list using the provided contract ID and IEK.
@@ -33,7 +34,7 @@ import { encryptedAction, groupContractsByType, syncContractsInOrder } from './u
  * @param encryptedData - The encrypted data string, or null if not available.
  * @returns The decrypted old IEK list, or an empty array if decryption fails.
  */
-const decryptOldIekList = (contractID: string, IEK: Key, encryptedData: ?string) => {
+const decryptOldIekList = (contractID: string, IEK: Key, encryptedData: string | null | undefined) => {
   // Return an empty array if no encrypted data is provided
   if (!encryptedData) return []
 
@@ -45,7 +46,7 @@ const decryptOldIekList = (contractID: string, IEK: Key, encryptedData: ?string)
     const decryptedData = encryptedIncomingDataWithRawKey(IEK, parsedData, `meta.private.oldKeys;${contractID}`)
 
     // Parse the decrypted data back into a JavaScript object
-    const oldKeysList = JSON.parse(decryptedData.valueOf())
+    const oldKeysList = JSON.parse(decryptedData.valueOf() as any)
 
     return oldKeysList // Return the decrypted old keys
   } catch (error) {
@@ -81,7 +82,7 @@ const processOldIekList = async (identityContractID: string, oldKeysAnchorCid: s
       }
 
       // Normalize the payload as if it were `OP_ATOMIC`
-      const payload = (head.op === SPMessage.OP_KEY_UPDATE)
+      const payload: any = (head.op === SPMessage.OP_KEY_UPDATE)
         ? [[SPMessage.OP_KEY_UPDATE, data.valueOf()]]
         : data.valueOf()
 
@@ -127,7 +128,7 @@ const processOldIekList = async (identityContractID: string, oldKeysAnchorCid: s
  * @returns The updated encrypted data containing the new IEK.
  * @throws {Error} - Throws an error if decryption of old IEK list fails.
  */
-const appendToIekList = (contractID: string, IEK: Object, oldIEK: Object, encryptedData: ?string) => {
+const appendToIekList = (contractID: string, IEK: any, oldIEK: any, encryptedData: string | null | undefined) => {
   // Decrypt the old IEK list
   const oldKeys = decryptOldIekList(contractID, oldIEK, encryptedData)
 
@@ -470,7 +471,6 @@ export default (sbp('sbp/selectors/register', {
 
           // contract sync might've triggered an async call to /remove, so
           // wait before proceeding
-          // $FlowFixMe[incompatible-call]
           await sbp('chelonia/contract/wait', Array.from(new Set([...groupIds, ...Object.values(contractIDs).flat()])))
 
           // Call 'gi.actions/group/join' on all groups which may need re-joining
@@ -508,8 +508,7 @@ export default (sbp('sbp/selectors/register', {
           // update the 'lastLoggedIn' field in user's group profiles
           // note: this is immediate and only done when logging in with a password
           Object.entries(cheloniaState[identityContractID].groups)
-            // $FlowFixMe[incompatible-use]
-            .filter(([, { hasLeft }]) => !hasLeft)
+            .filter(([, { hasLeft }]: [string, any]) => !hasLeft)
             .forEach(([cId]) => {
               // We send this action only for groups we have fully joined (i.e.,
               // accepted an invite and added our profile)
@@ -597,7 +596,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Object, options: Object) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: any, options: any) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
@@ -635,7 +634,6 @@ export default (sbp('sbp/selectors/register', {
           contractName: rootState.contracts[groupID].type,
           data: encryptedOutgoingData(groupID, CEKid, {
             contractID,
-            // $FlowFixMe
             keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
               id: newId,
               meta: {
@@ -697,7 +695,6 @@ export default (sbp('sbp/selectors/register', {
               contractName: rootState.contracts[contractID].type,
               data: encryptedOutgoingDataWithRawKey(newPEK, {
                 contractID,
-                // $FlowFixMe
                 keys: [{
                   id: DMKid,
                   meta: {
@@ -881,7 +878,7 @@ export default (sbp('sbp/selectors/register', {
           const getters = sbp('state/vuex/getters')
           if (getters.isJoinedChatRoom(chatroomID, identityContractID)) {
           // Small delay to account for state propagation delays between the browser
-          // and the SW (see app/chatroom.js)
+          // and the SW (see app/chatroom.ts)
             sbp('okTurtles.events/emit', JOINED_CHATROOM, { identityContractID, groupContractID: currentGroupId, chatRoomID: chatroomID })
           }
         }).catch((e) => {
@@ -914,7 +911,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
-    attachments: Array<Object>, billableContractID: string
+    attachments: Array<any>, billableContractID: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
@@ -952,7 +949,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
-    manifestCids: string[], option: Object
+    manifestCids: string[], option: any
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
@@ -1154,7 +1151,7 @@ export default (sbp('sbp/selectors/register', {
     // If there were key rotations, we need to decrypt keys using the CID of
     // the message where the (last) rotation happened.
     if (oldKeysAnchorCid) {
-      const IEK = transientSecretKeysEntries[0][1]
+      const IEK: any = transientSecretKeysEntries[0][1]
       await processOldIekList(contractID, oldKeysAnchorCid, IEK)
     }
 
@@ -1378,7 +1375,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: any) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {
@@ -1424,7 +1421,6 @@ export default (sbp('sbp/selectors/register', {
       contractName: 'gi.contracts/identity',
       data: encryptedOutgoingData(contractID, PEKid, {
         contractID,
-        // $FlowFixMe
         keys: [{
           id: DMKid,
           meta: {
@@ -1441,4 +1437,4 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/saveFileDeleteToken', L('Failed to save delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/removeFileDeleteToken', L('Failed to remove delete tokens for the attachments.')),
   ...encryptedAction('gi.actions/identity/setGroupAttributes', L('Failed to set group attributes.'))
-}): string[])
+}) as string[])

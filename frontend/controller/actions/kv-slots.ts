@@ -4,8 +4,8 @@
 //
 // This module is the single home for every `defineSlot` declaration in Group
 // Income. It runs in the service-worker / Chelonia context (imported from
-// `frontend/controller/actions/index.js`, which is only loaded by
-// `sw-primary.js`), where `chelonia/kv/*` selectors and `rootState.loggedIn`
+// `frontend/controller/actions/index.ts`, which is only loaded by
+// `sw-primary.ts`), where `chelonia/kv/*` selectors and `rootState.loggedIn`
 // are available.
 //
 // Slots are migrated key-by-key in later phases of the KV revamp; this file
@@ -17,11 +17,11 @@ import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.ts'
-import { checkAndAugmentNames } from './identity-kv.js'
+import { checkAndAugmentNames } from './identity-kv.ts'
 
 // Prune-expired transform for the notifications slot. Zod is not installed, so
 // the slot's `schema` is a plain `{ parse }` object. This is the canonical
-// `applyStorageRules` normalization from `identity-kv.js` (drop entries past
+// `applyStorageRules` normalization from `identity-kv.ts` (drop entries past
 // their max age) modelled as a `schema.transform` so it runs once on every
 // reducer output before the network write and on every load/pubsub value
 // (KV-REVAMPED.md §6). It must:
@@ -32,7 +32,7 @@ import { checkAndAugmentNames } from './identity-kv.js'
 //   - return a plain JSON object (no Date/Map) for the mirror.
 // The stored shape is `{ [hash]: { timestamp, read } }`.
 const notificationStatusSchema = {
-  parse (value: Object): Object {
+  parse (value: any): any {
     if (value == null || typeof value !== 'object' || Array.isArray(value)) {
       throw new TypeError('notifications: expected an object of notification statuses')
     }
@@ -49,11 +49,11 @@ const notificationStatusSchema = {
 // contract. Without this predicate the slot would attach to every identity
 // contract the user has synced (group members, mentions, etc.), over-fetching
 // data we don't own and almost certainly can't decrypt. Mirrors the own-identity
-// `setFilter` gating in `setupChelonia.js`. (KV-REVAMPED.md §4.1 / §7.2)
+// `setFilter` gating in `setupChelonia.ts`. (KV-REVAMPED.md §4.1 / §7.2)
 export const onOwnIdentity = (
   contractID: string,
-  _contractState: Object,
-  rootState: Object
+  _contractState: any,
+  rootState: any
 ): boolean => contractID === rootState.loggedIn?.identityContractID
 
 // Registers every GI KV slot. Idempotent: `chelonia/kv/defineSlot` is
@@ -63,7 +63,7 @@ export const registerKvSlots = (): void => {
   // `lastLoggedIn` — one entry per group contract, mapping each member's
   // identity contract ID to the ISO timestamp of their last login. No `match`:
   // every group the user has synced gets the slot (this replaces the group
-  // branch of the manual `setFilter` switch in `setupChelonia.js`). The
+  // branch of the manual `setFilter` switch in `setupChelonia.ts`). The
   // 30-minute write throttle lives in the reducer at the call site
   // (`gi.actions/group/kv/updateLastLoggedIn`), not here. (KV-REVAMPED.md §7.2)
   //
@@ -135,9 +135,9 @@ export const registerKvSlots = (): void => {
   // change (load / remote write), which reconciles the cache against
   // `namespaceLookups` and re-verifies conflicted names. This single hook
   // replaces both the post-fetch augmentation that lived in `loadCachedNames`
-  // and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT` switch.
+  // and the `NS_CACHE` branch of the `sw-primary.ts` `KV_EVENT` switch.
   // `refreshOnReconnect: false` avoids a double fetch on reconnect: the
-  // `ONLINE` listener in `identity-kv.js` already drives an explicit
+  // `ONLINE` listener in `identity-kv.ts` already drives an explicit
   // `kv/load` → `loadCachedNames` → `chelonia/kv/sync` on both pubsub
   // reconnect and the browser regaining connectivity.
   // (KV-REVAMPED.md §4.1 / §4.8)
@@ -149,7 +149,7 @@ export const registerKvSlots = (): void => {
     autoSubscribe: false,
     autoLoad: 'on-demand',
     // `refreshOnReconnect: false` because the `ONLINE` listener in
-    // `identity-kv.js` already triggers an explicit `kv/load` → `loadCachedNames`
+    // `identity-kv.ts` already triggers an explicit `kv/load` → `loadCachedNames`
     // → `chelonia/kv/sync` on both pubsub reconnect (`reconnection-succeeded`
     // emits `ONLINE`) and the browser regaining connectivity. The lib-side
     // reconnect refetch would duplicate that GET and the `checkAndAugmentNames`
@@ -158,7 +158,7 @@ export const registerKvSlots = (): void => {
     refreshOnReconnect: false,
     onUpdate: (value, ctx) => {
       // Augment on load/remote/reconnect. `saveCachedNames` writes through the
-      // low-level `chelonia/kv/queuedSet` (see identity-kv.js) and so never
+      // low-level `chelonia/kv/queuedSet` (see identity-kv.ts) and so never
       // produces a 'local' mirror update for this slot, but the guard is kept
       // as cheap insurance: re-running `checkAndAugmentNames` after our own
       // write would only schedule a redundant batch of `namespace/lookup`
@@ -178,12 +178,12 @@ export const registerKvSlots = (): void => {
 
 // `registerKvSlots()` is NOT called eagerly here because the `chelonia/kv/*`
 // selectors are registered by `@chelonia/lib`, which is imported from
-// `setupChelonia.js`. That module is an import sibling of this one in
-// `sw-primary.js`, and ES module evaluation order guarantees that a sibling's
+// `setupChelonia.ts`. That module is an import sibling of this one in
+// `sw-primary.ts`, and ES module evaluation order guarantees that a sibling's
 // transitive imports finish before any sibling body runs — but `@chelonia/lib`
 // is the *dependency* of `setupChelonia`, not of `kv-slots`, so its selectors
 // may not be registered yet when this module's body executes. The caller
-// (`sw-primary.js`) invokes `registerKvSlots()` after `setupChelonia()` has
+// (`sw-primary.ts`) invokes `registerKvSlots()` after `setupChelonia()` has
 // resolved, at which point the `chelonia/kv/*` selectors are guaranteed to
 // exist.
 

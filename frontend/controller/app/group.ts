@@ -8,10 +8,12 @@ import {
 } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
-import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
+/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
 import type { ChelKeyRequestParams } from '@chelonia/lib'
-import type { GIActionParams } from '../actions/types.js'
+import type { GIActionParams } from '../actions/types.ts'
+/* eslint-enable no-unused-vars */
 
 sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ identityContractID, groupContractID }) => {
   if (process.env.CI) {
@@ -90,8 +92,7 @@ sbp('okTurtles.events/on', LEFT_GROUP, ({ identityContractID, groupContractID })
   const currentGroupId = rootState.currentGroupId
   if (!currentGroupId || currentGroupId === groupContractID) {
     const groupIdToSwitch = Object.entries(state.groups)
-      // $FlowFixMe[incompatible-use]
-      .map(([cID, { hasLeft }]) => !hasLeft && cID)
+      .map(([cID, { hasLeft }]: [string, any]) => !hasLeft && cID)
       .filter(cID =>
         cID && cID !== groupContractID
       ).sort(cID =>
@@ -117,7 +118,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', SWITCH_GROUP, { contractID: groupId, isNewlyCreated })
     sbp('state/vuex/commit', 'setCurrentGroupId', { contractID: groupId, isNewlyCreated })
   },
-  'gi.app/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams>) {
+  'gi.app/group/joinAndSwitch': async function (params: ChelKeyRequestParams) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     return sbp('gi.app/group/switch', params.contractID, true)
@@ -210,4 +211,4 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   }
-}): string[])
+}) as string[])

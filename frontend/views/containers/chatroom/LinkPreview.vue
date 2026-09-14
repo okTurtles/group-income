@@ -12,7 +12,7 @@
 </template>
 
 <script>
-import { validateURL } from '@view-utils/misc.js'
+import { validateURL } from '@view-utils/misc.ts'
 
 export default {
   name: 'link-preview',

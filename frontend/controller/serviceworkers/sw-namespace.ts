@@ -24,7 +24,7 @@ sbp('sbp/selectors/register', {
         return Promise.resolve(cached)
       }
     }
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${encodeURIComponent(name)}`).then((r: Object) => {
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${encodeURIComponent(name)}`).then((r: any) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {

@@ -6,7 +6,7 @@ import Vue from 'vue'
  * - Use it e.g. to avoid typing URLs.
  * - It has been frozen as an extra safety measure, to prevent any alteration even in case of a bug.
  */
-const ALLOWED_URLS: Object = Object.freeze(Object.fromEntries([
+const ALLOWED_URLS: any = Object.freeze(Object.fromEntries([
   ['OKTURTLES_PAGE', 'https://okturtles.org'],
   ['OKTURTLES_SUPPORT_PAGE', 'https://okturtles.org/donate'],
   ['ISSUE_PAGE', 'https://github.com/okTurtles/group-income/issues'],

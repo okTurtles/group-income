@@ -5,11 +5,11 @@ import VueRouter from 'vue-router'
 import { L } from '@common/common.js'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
-export function logExceptNavigationDuplicated (err: Object) {
+export function logExceptNavigationDuplicated (err: any) {
   err.name !== 'NavigationDuplicated' && console.error(err)
 }
 
-export function ignoreWhenNavigationCancelled (err: Object, path: string) {
+export function ignoreWhenNavigationCancelled (err: any, path: string) {
   const { isNavigationFailure, NavigationFailureType } = VueRouter
   if (isNavigationFailure(err, NavigationFailureType.cancelled)) {
     console.log(`Navigation to ${path} cancelled, and another navigation took place instead`)
@@ -32,7 +32,7 @@ export const showNavMixin = {
 // 'javascript:', but also 'data:', 'blob:', 'file:', 'vbscript:' etc. - is rejected as invalid.
 const ALLOWED_URL_PROTOCOLS = ['http:', 'https:', 'mailto:']
 
-export function validateURL (url: string, acceptPathOnly: boolean = false): Object {
+export function validateURL (url: string, acceptPathOnly: boolean = false): any {
   const response: any = {
     isValid: false,
     isHttpValid: false,
@@ -111,7 +111,7 @@ export function withGroupCurrency (amount: number): string {
   return withCurrency(code, amount)
 }
 
-export async function fetchNews (): Promise<Array<Object>> {
+export async function fetchNews (): Promise<Array<any>> {
   const response = await fetch('https://groupincome.org/news.json')
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)

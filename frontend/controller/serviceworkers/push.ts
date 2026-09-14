@@ -2,11 +2,18 @@ import { L } from '@common/common.js'
 import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { makeNotification } from '@model/notifications/nativeNotification.ts'
 import sbp from '@sbp/sbp'
-import setupChelonia from '~/frontend/setupChelonia.js'
+import setupChelonia from '~/frontend/setupChelonia.ts'
 import { Buffer } from 'buffer'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
 import { getSubscriptionId } from '@chelonia/lib/functions'
 import { DEVICE_SETTINGS } from '@utils/constants.ts'
+
+// This module runs only in the service worker, where `self` is a
+// `ServiceWorkerGlobalScope` rather than the `Window` that lib.dom assumes.
+// The declaration is type-only and erased at emit; it restores the `any` that
+// `self` — and with it every `addEventListener` handler argument — had under
+// Flow.
+declare const self: any
 
 // The application server (public) key could be either an ArrayBuffer (which is
 // what we get from fetching the current subscription), or it could be a
@@ -131,7 +138,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    return async (subscriptionInfo?: Object, applicationServerKey?: ArrayBuffer) => {
+    return async (subscriptionInfo?: any, applicationServerKey?: ArrayBuffer) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 
@@ -177,7 +184,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   })()
-}): string[])
+}) as string[])
 
 if (self.registration?.pushManager) {
   (() => {

@@ -52,7 +52,7 @@ import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import { createInvite } from '@controller/actions/utils.js'
+import { createInvite } from '@controller/actions/utils.ts'
 export default {
   name: 'AddMembers',
   mixins: [validationMixin],

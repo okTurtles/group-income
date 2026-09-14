@@ -10,13 +10,13 @@ import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
-import '~/frontend/controller/actions/index.js'
-import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
+import '~/frontend/controller/actions/index.ts'
+import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.ts'
 import chatroomGetters from '~/frontend/model/chatroom/getters.ts'
 import getters from '~/frontend/model/getters.ts'
 import notificationGetters from '~/frontend/model/notifications/getters.ts'
 import '~/frontend/model/notifications/selectors.ts'
-import setupChelonia from '~/frontend/setupChelonia.js'
+import setupChelonia from '~/frontend/setupChelonia.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
@@ -35,8 +35,15 @@ import {
   OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
-import './push.js'
-import './sw-namespace.js'
+import './push.ts'
+import './sw-namespace.ts'
+
+// This module runs only in the service worker, where `self` is a
+// `ServiceWorkerGlobalScope` rather than the `Window` that lib.dom assumes.
+// The declaration is type-only and erased at emit; it restores the `any` that
+// `self` — and with it every `addEventListener` handler argument — had under
+// Flow.
+declare const self: any
 
 console.info('APP_VERSION:', process.env.APP_VERSION)
 console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
@@ -215,7 +222,7 @@ sbp('sbp/selectors/register', {
     return () => {
       if (!computedGetters) {
         computedGetters = Object.create(null)
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, Function]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, any]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
@@ -231,24 +238,24 @@ sbp('sbp/selectors/register', {
             }
           }]
         })))
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, Function]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, any]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
               // `state.chatroom` represents the `chatroom` module. For the SW,
-              // this is defined in `sw-primary.js`.
+              // this is defined in `sw-primary.ts`.
               // The same idea applies here for the use of `this` instead of
               // `computedGetters` as above.
               return fn(state.chatroom || {}, this, state)
             }
           }]
         })))
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, Function]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, any]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
               // `state.chatroom` represents the `chatroom` module. For the SW,
-              // this is defined in `sw-primary.js`.
+              // this is defined in `sw-primary.ts`.
               // The same idea applies here for the use of `this` instead of
               // `computedGetters` as above.
               return fn(state.notifications || {}, this, state)
@@ -370,7 +377,7 @@ self.addEventListener('message', function (event) {
         const port = event.data.port
         let revokables
 
-        ;(async () => await sbp(...deserializer(event.data.data)))().then((r) => {
+        ;(async () => await sbp(...(deserializer(event.data.data) as [string, ...any[]])))().then((r) => {
           const { data, transferables, revokables: rr } = serializer(r)
           revokables = rr
           port.postMessage([true, data], transferables)
@@ -418,7 +425,7 @@ self.addEventListener('message', function (event) {
         self.skipWaiting()
         break
       case 'event':
-        sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+        sbp('okTurtles.events/emit', event.data.subtype, ...(deserializer(event.data.data) as any[]))
         break
       case 'ready': {
         // The 'ready' message is sent by a client (i.e., a tab or window) to

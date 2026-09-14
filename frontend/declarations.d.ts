@@ -79,6 +79,37 @@ declare function fetchServerTime (fallback?: boolean | null): Promise<string>
 declare var process: any
 
 // =============================================================================
+// Service-worker globals
+// =============================================================================
+
+// Declared only by `lib.webworker`, which `tsconfig.json` does not load, so
+// every reference is TS2304. Loading that lib is not an option: it conflicts
+// with `lib.dom` on ~300 identifiers (TS6200/TS2374), and `skipLibCheck` mutes
+// the report without reconciling them — it just picks an arbitrary winner per
+// global.
+//
+// `any` is scope parity, not a workaround. Flow's libdef never declared
+// `WorkerGlobalScope` at all, so Flow checked nothing here — confirmed by probe:
+// `typeof WorkerGlobalScope` passes under Flow while a control line errors. The
+// three call sites are all `typeof WorkerGlobalScope === 'function'` guards
+// distinguishing the window from the service worker.
+declare const WorkerGlobalScope: any
+
+// `self` is deliberately NOT declared here, and cannot be.
+//
+// `lib.dom` already declares it (`declare var self: Window & typeof globalThis`)
+// and that declaration wins: a global `declare const self: any` in this file is
+// silently ignored rather than rejected, so the 43 service-worker errors it was
+// meant to fix all come back. Verified by removing the per-file declarations
+// with a global one in place.
+//
+// Only module scope shadows `lib.dom`, so the modules that genuinely run as a
+// service worker declare it themselves — `serviceworkers/push.ts`,
+// `serviceworkers/sw-primary.ts` and `model/notifications/nativeNotification.ts`.
+// That is also the narrower change: a working global would strip `Window` typing
+// from browser-context code, which is a coverage change rather than parity.
+
+// =============================================================================
 // Deliberately NOT declared
 // =============================================================================
 //

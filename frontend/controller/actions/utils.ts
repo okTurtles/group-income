@@ -7,10 +7,11 @@ import { encryptedOutgoingData } from '@chelonia/lib/encryptedData'
 import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import type { GIActionParams } from './types.js'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
+import type { GIActionParams } from './types.ts'
 
 const enqueueDeferredPromise = (queue) => {
-  let finished: () => any = Boolean // asssigned to keep Flow happy
+  let finished: (...args: any[]) => any = Boolean // assigned so the binding is always callable
   const onFinishPromise = new Promise<any>((resolve) => {
     finished = resolve
   })
@@ -29,15 +30,18 @@ const enqueueDeferredPromise = (queue) => {
 // or signing keys, and that such keys in params get overridden.
 export const encryptedAction = (
   action: string,
-  humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
+  // `string | any` is the mirror of Flow's `string | Function`, and TypeScript
+  // collapses it to `any`, so this parameter is unchecked. Step 7a replaces the
+  // `Function` arm with `AnyFunction`, which makes the union real again.
+  humanError: string | any,
+  handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+): any => {
+  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
-    const invocation = [
+    const invocation: [string, ...any[]] = [
       'chelonia/out/actionEncrypted',
       {
         ...params,
@@ -166,13 +170,16 @@ export const encryptedAction = (
 
 export const encryptedNotification = (
   action: string,
-  humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
+  // `string | any` is the mirror of Flow's `string | Function`, and TypeScript
+  // collapses it to `any`, so this parameter is unchecked. Step 7a replaces the
+  // `Function` arm with `AnyFunction`, which makes the union real again.
+  humanError: string | any,
+  handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): Object => {
-  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: $Shape<GIActionParams>): any[] | Promise<void> => {
+): any => {
+  const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
 
     const actionReplaced = action.replace('gi.actions', 'gi.contracts')
@@ -335,7 +342,7 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
   }
 }
 
-export function groupContractsByType (contracts?: Object): Object {
+export function groupContractsByType (contracts?: any): any {
   const contractIDs = Object.create(null)
   if (contracts) {
     // Note: `references` holds non-ephemeral references (i.e., explicit
@@ -344,11 +351,9 @@ export function groupContractsByType (contracts?: Object): Object {
     // Apart from non-ephemeral references, `references` may not be set for
     // contracts being 'watched' for foreign keys. The latter are managed
     // directly by Chelonia, so we also don't subscribe to them
-    // $FlowFixMe[incompatible-use]
     Object.entries(contracts)
       .filter(([id, value]) => !!value)
-      // $FlowFixMe[incompatible-use]
-      .forEach(([id, { references, type }]) => {
+      .forEach(([id, { references, type }]: [string, any]) => {
       // If the contract wasn't explicitly retained, skip it
       // NB! Ignoring `references` could result in an exception being thrown, as
       // as `sync` may only be called on contracts for which a reference count
@@ -363,7 +368,7 @@ export function groupContractsByType (contracts?: Object): Object {
   return contractIDs
 }
 
-export async function syncContractsInOrder (groupedContractIDs: Object): Promise<any> {
+export async function syncContractsInOrder (groupedContractIDs: any): Promise<any> {
   // We need to sync contracts in this order to ensure that we have all the
   // corresponding secret keys. Group chatrooms use group keys but there's
   // no OP_KEY_SHARE, which will result in the keys not being available when
@@ -384,10 +389,9 @@ export async function syncContractsInOrder (groupedContractIDs: Object): Promise
     const sortedContractTypes = Object.entries(groupedContractIDs).sort(([a], [b]) => {
       return getContractSyncPriority(a) - getContractSyncPriority(b)
     })
-    for (const [type, contractIDs] of sortedContractTypes) {
+    for (const [type, contractIDs] of sortedContractTypes as any[]) {
       // For each contract of this type, check if it still exists before syncing because
       // e.g. syncing a group contract could have removed one of the chatroom contracts
-      // $FlowFixMe[incompatible-type]
       for (const contractID of contractIDs) {
         const { contracts } = sbp('chelonia/rootState')
         if (contractID in contracts) {

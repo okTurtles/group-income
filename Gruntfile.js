@@ -660,7 +660,7 @@ module.exports = (grunt) => {
       },
       // Native options used when building our service worker(s).
       serviceWorkers: {
-        entryPoints: ['./frontend/controller/serviceworkers/sw-primary.js']
+        entryPoints: ['./frontend/controller/serviceworkers/sw-primary.ts']
       }
     }
     esbuildOptionBags.contracts = {

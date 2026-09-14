@@ -214,11 +214,30 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Everything else is `any`, as Step 4 prescribes**, except `new Promise<void>` where `resolve()` takes no argument (TS2794).
 
+### 013 — Step 7: controller wave (`frontend/controller/**`)
+
+**Status:** DONE
+
+**Changed:** 23 files renamed `.js` → `.ts` — the planned 20, **plus 3 pulled forward from Step 8** — and 79 specifiers across 60 importers, incl. `Gruntfile.js:663` (the SW entry point). `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. 47 → **24** left. Contract bundles, `manifests.json`, `contracts/**` and `chelonia.json` all untouched.
+
+**A `.ts` file importing a still-Flow `.js` one is a hard error, and Step 7 is where that first bites.** `tsconfig.json`'s `include` comment assumed waves stay leaf-first, but controller imports *upward* into Step 8: `app/group` → `@view-utils/{misc,allowedUrls}`, and `push`/`sw-primary` → `setupChelonia`. Those three then parse as TS, and Flow syntax is an unsuppressable **syntax** error (40 of them). Neither an ambient `declare module` nor a `tsconfig` `exclude` entry stops it — both tested, both still resolve to the real file. So the three convert here. Their own closure adds nothing further. **Step 8 should expect the reverse direction to be clean, since its imports are now all `.ts`.**
+
+**SW globals split: `WorkerGlobalScope` is global, `self` can't be.** `WorkerGlobalScope` is declared nowhere (it's `lib.webworker`), so one `declare const WorkerGlobalScope: any` in `declarations.d.ts` covers all three sites. `self` is declared by lib.dom, which wins — a global override is *silently ignored*, not rejected, and all 43 `self` errors return; only module scope shadows it, so `push.ts`/`sw-primary.ts`/`nativeNotification.ts` keep their own. Together **44 errors** cleared with no `@ts-expect-error`, because untyping `self` also untypes every `self.addEventListener` handler argument. Controlled Flow probe confirms parity: `self` was `any`, `WorkerGlobalScope` unchecked, handler args `any` — only the control errored.
+
+**`@chelonia/crypto`'s `Key` was real to Flow; `@chelonia/lib`'s `SPKey` was not.** Flow's own libdef (`declarations.js:83`) declared a loose 3-field `Key` but `module.exports: any`, so values were unchecked. Probe: `const k: Key = 'str'` errors, `const s: SPKey = 12345` does not. Bindings whose real declarations added checking Flow never did are annotated `any` (Step 6's `templates.ts` rule), error-driven rather than swept.
+
+**`sbp(...invocation)` needs a tuple.** `@sbp/sbp` ships `sbp(selector: string, ...data: unknown[])`; Flow saw `any`. Spreading a plain array is TS2556, so the two `invocation` literals are `[string, ...any[]]` and the two `deserializer(...)` spreads are cast.
+
+**Per-file emit: 22 of 23 code-identical**, the rest differing only in deleted `$FlowFixMe` comments esbuild keeps inside expressions. The exception is real: esbuild's TS loader **drops `import scrypt from 'scrypt-async'`** from `e2e/keys.ts` as unused, where the JS loader kept it. Harmless only because nothing imports `frontend/controller/e2e/*` and `gi.e2e/keys` appears nowhere in `dist/` — it is dead code. **Step 8 must check this per file, not assume it.**
+
+**Two harness traps, both of which silently reported success.** `flow-remove-types`' CLI writes nothing for an unrecognised input extension, and esbuild derives the default-export variable name from the input *basename* — so a comparison keyed on basenames collides (`actions/chatroom` vs `app/chatroom`, and 4 more) and reports phantom diffs. Use the Node API and key scratch dirs on the full path.
+
 ---
 
 ## Open items
 
-- 47 Flow-checked `.js` files left to convert (Steps 7–8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
+- **Step 7a — global `AnyFunction`, own commit, not yet done.** `type AnyFunction = (...args: any[]) => any` in `declarations.d.ts` (verified ambient), replacing the `any`s that were Flow `Function` at 13 sites across 9 converted files. A deliberate narrowing, hence separate from the conversion commits. Inventory is recoverable only from git — `git grep -n "Function" 13f1b9c29a -- frontend` — since a `Function`-derived `any` is otherwise indistinguishable from an `Object`-derived one. See the plan for scope, exclusions, and the contract-bundle check.
+- 24 Flow-checked `.js` files left to convert (Step 8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.

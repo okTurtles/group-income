@@ -82,7 +82,7 @@
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
 export default {
   name: 'UserSettingsMain',

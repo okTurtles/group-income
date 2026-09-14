@@ -1,6 +1,5 @@
 'use strict'
 
-import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
@@ -37,11 +36,14 @@ import {
 import { imageUpload } from '@utils/image.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
-import type { ChelKeyRequestParams } from '@chelonia/lib'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '@chelonia/lib/events'
-import type { GIActionParams } from './types.js'
-import { createInvite, encryptedAction } from './utils.js'
+import { createInvite, encryptedAction } from './utils.ts'
+/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
+import type { Key } from '@chelonia/crypto'
+import type { ChelKeyRequestParams } from '@chelonia/lib'
+import type { GIActionParams } from './types.ts'
+/* eslint-enable no-unused-vars */
 import { extractProposalData } from '@model/notifications/utils.ts'
 
 // Function debounced because it might get called too often (on every group
@@ -186,7 +188,7 @@ export default (sbp('sbp/selectors/register', {
       if (!distributionDate) {
         // 3 days after group creation by default. we put this here for a kind of dumb but
         // necessary reason: the Cypress tests do not allow us to import dateToPeriodStamp
-        // or any of these other time.js functions because thte Cypress environment can't
+        // or any of these other time.ts functions because thte Cypress environment can't
         // handle Flowtype annotations, even though our .babelrc should make it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
@@ -402,7 +404,7 @@ export default (sbp('sbp/selectors/register', {
   // secret keys to be shared with us, (b) ready to call the inviteAccept
   // action if we haven't done so yet (because we were previously waiting for
   // the keys), or (c) already a member and ready to interact with the group.
-  'gi.actions/group/join': function (params: $Exact<ChelKeyRequestParams>) {
+  'gi.actions/group/join': function (params: ChelKeyRequestParams) {
     // This wrapper ensures that all join actions for the same contract happen in
     // order. Because join is complex and there are many async steps involved,
     // multiple calls to join for the same contract can result in conflicting with
@@ -734,7 +736,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: any, options: { lastAttempt?: boolean } = {}) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
@@ -781,10 +783,9 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    // $FlowFixMe
     return Promise.all(
       Object.entries(state.profiles)
-        .filter(([_, p]) => (p: any).status === PROFILE_STATUS.ACTIVE)
+        .filter(([_, p]) => (p as any).status === PROFILE_STATUS.ACTIVE)
         .map(async ([pContractID]) => {
           const retained = await sbp('chelonia/contract/retain', pContractID, { ephemeral: true }).then(() => [true], (e) => [false, e])
           if (!retained[0]) {
@@ -816,7 +817,6 @@ export default (sbp('sbp/selectors/register', {
                 data: encryptedOutgoingData(contractID, mainCEKid, {
                   contractID,
                   foreignContractID: pContractID,
-                  // $FlowFixMe
                   keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
                     id: newId,
                     meta: {
@@ -1070,7 +1070,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }),
-  'gi.actions/group/autobanUser': async function (message: SPMessage, error: Object, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
+  'gi.actions/group/autobanUser': async function (message: SPMessage, error: any, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
     try {
       if (attempt === 1) {
         // to decrease likelihood of multiple proposals being created at the same time, wait
@@ -1098,8 +1098,8 @@ export default (sbp('sbp/selectors/register', {
         const username = rootGetters.usernameFromID(memberID)
         console.warn(`autoBanSenderOfMessage: autobanning ${memberID} (username ${username}) from ${groupID}`)
         // find existing proposal if it exists
-        let [proposalHash, proposal]: [string, ?Object] = Object.entries(contractState.proposals)
-          .find(([hash, prop]: [string, Object]) => (
+        let [proposalHash, proposal]: [string, any | null | undefined] = Object.entries(contractState.proposals)
+          .find(([hash, prop]: [string, any]) => (
             prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
             prop.data.proposalData.memberID === memberID
@@ -1152,7 +1152,7 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Object }) {
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: any }) {
     const { generalChatRoomId } = await sbp('chelonia/contract/state', groupID)
     return sbp('gi.actions/chatroom/addMessage', {
       contractID: generalChatRoomId,
@@ -1310,7 +1310,7 @@ export default (sbp('sbp/selectors/register', {
     const response = await sendMessage(params)
     return response
   }),
-  'gi.actions/group/_ondeleted': async (contractID: string, state: Object) => {
+  'gi.actions/group/_ondeleted': async (contractID: string, state: any) => {
     const rootGetters = sbp('state/vuex/getters')
     const identityContractID = rootGetters.ourIdentityContractId
     const currentIdentityState = rootGetters.currentIdentityState
@@ -1334,4 +1334,4 @@ export default (sbp('sbp/selectors/register', {
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })
-}): string[])
+}) as string[])

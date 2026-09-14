@@ -23,7 +23,7 @@ export default (sbp('sbp/selectors/register', {
       // itself, closing the TOCTOU gap the old external throttle had.
       updater: (prev) => {
         if (throttle) {
-          const lastLoggedInRawValue: ?string = prev?.[identityContractID]
+          const lastLoggedInRawValue: string | null | undefined = prev?.[identityContractID]
           if (lastLoggedInRawValue) {
             const lastLoggedIn = new Date(lastLoggedInRawValue).getTime()
             if ((now - lastLoggedIn) < LAST_LOGGED_IN_THROTTLE_WINDOW) return KV_NOOP
@@ -33,4 +33,4 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   }
-}): string[])
+}) as string[])

@@ -54,7 +54,7 @@ import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import { fetchNews } from '@view-utils/misc.js'
+import { fetchNews } from '@view-utils/misc.ts'
 
 export default {
   name: 'GroupsList',

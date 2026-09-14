@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { htmlStringToDomObjectTree } from './chat-mentions-utils.js'
 import RenderMessageText from './RenderMessageText.vue'

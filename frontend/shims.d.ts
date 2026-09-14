@@ -21,8 +21,8 @@
 // this one is permanent for as long as the build has non-JS imports.
 
 // 538 imports across the app, 9 of them from files that Steps 4-8 convert.
-// `utils/lazyLoadedView.ts` is the first of those, converted in Step 4; still
-// `.js` are `controller/router.js`, `views/components/**/index.js`,
+// `utils/lazyLoadedView.ts` and `controller/router.ts` are converted; still
+// `.js` are `views/components/**/index.js`,
 // `views/components/modal/ModalMixins.js`, and
 // `views/containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js`.
 

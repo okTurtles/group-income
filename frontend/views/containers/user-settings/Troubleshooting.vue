@@ -23,7 +23,7 @@ import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
 export default {
   name: 'Troubleshooting',

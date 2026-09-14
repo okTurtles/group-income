@@ -41,7 +41,7 @@ export const checkAndAugmentNames = async (currentNames: string[]): Promise<stri
 // which goes stale on a 409/412 retry and would clobber a concurrent write
 // from another device. Reading `prev` inside the reducer is the only correct
 // way to merge into a nested subkey. (KV-REVAMPED.md §4.1)
-const updateKVPreferences = (updater: Function) => {
+const updateKVPreferences = (updater: any) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
@@ -54,9 +54,9 @@ const updateKVPreferences = (updater: Function) => {
 }
 
 // Shallow-merge `patch` over the current preferences via the slot's
-// `defaultUpdater` (kv-slots.js). Use this for single-shape writes; use
+// `defaultUpdater` (kv-slots.ts). Use this for single-shape writes; use
 // `updateKVPreferences` when the write needs to read `prev` (e.g. nested merges).
-const setKVPreferences = (patch: Object) => {
+const setKVPreferences = (patch: any) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')
@@ -88,7 +88,7 @@ export default (sbp('sbp/selectors/register', {
   // Unread Messages.
   //
   // The `unreadMessages` slot (`gi.contracts/identity::unreadMessages`,
-  // registered in `kv-slots.js`) owns subscription (`autoSubscribe`) and the
+  // registered in `kv-slots.ts`) owns subscription (`autoSubscribe`) and the
   // initial fetch (`autoLoad: 'on-sync'`). The
   // selectors below are thin shims kept for backward compatibility — contract
   // sideEffects call `initChatRoomUnreadMessages` and
@@ -225,7 +225,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
-      updater: (prev = {}) => {
+      updater: (prev: any = {}) => {
         if (!(contractID in prev)) return KV_NOOP
         const { [contractID]: _gone, ...rest } = prev
         return rest
@@ -246,7 +246,7 @@ export default (sbp('sbp/selectors/register', {
     return setKVPreferences({ [key]: value })
   },
   // Notifications
-  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
+  'gi.actions/identity/kv/addNotificationStatus': (notification: any) => {
     const { hash, timestamp } = notification
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
@@ -307,10 +307,10 @@ export default (sbp('sbp/selectors/register', {
   // Namespace lookups
   //
   // The `namespace-cache` slot (`gi.contracts/identity::namespace-cache`,
-  // registered in `kv-slots.js`) owns the on-demand fetch (`autoLoad:
+  // registered in `kv-slots.ts`) owns the on-demand fetch (`autoLoad:
   // 'on-demand'`) and re-runs `checkAndAugmentNames` on every value change via
   // its `onUpdate` hook (replacing the post-fetch augmentation that used to
-  // live here and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT`
+  // live here and the `NS_CACHE` branch of the `sw-primary.ts` `KV_EVENT`
   // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
   // matching the original behavior. (KV-REVAMPED.md §4.8)
   'gi.actions/identity/kv/saveCachedNames': () => {
@@ -330,7 +330,7 @@ export default (sbp('sbp/selectors/register', {
     // + async `onconflict` for this one slot, re-validating the real server
     // value on every retry exactly as the pre-revamp code did, so a valid name
     // another device knows about is never clobbered.
-    const onconflict = async ({ currentData = [], etag } = {}) => {
+    const onconflict = async ({ currentData = [], etag }: any = {}) => {
       if (!Array.isArray(currentData)) currentData = []
       // `checkAndAugmentNames` unions the server value with our local lookups
       // and re-verifies the conflicted names, dropping only those that no
@@ -371,7 +371,7 @@ export default (sbp('sbp/selectors/register', {
       await checkAndAugmentNames([])
     }
   }
-}): string[])
+}) as string[])
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.

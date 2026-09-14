@@ -11,9 +11,9 @@ import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { boxKeyPair, buildRegisterSaltRequest, buildUpdateSaltRequestEc, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '@chelonia/lib/zkpp'
 import { SETTING_CHELONIA_STATE } from '@model/database.ts'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, serializeKey } from '@chelonia/crypto'
-import { handleFetchResult } from '../utils/misc.js'
+import { handleFetchResult } from '../utils/misc.ts'
 
-const loadState = async (identityContractID: string, password: ?string) => {
+const loadState = async (identityContractID: string, password: string | null | undefined) => {
   if (password) {
     const stateKeyEncryptionKeyFn = (stateEncryptionKeyId, salt) => {
       return deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt + stateEncryptionKeyId)
@@ -173,7 +173,7 @@ sbp('okTurtles.events/on', LOGOUT, (a) => {
 */
 
 export default (sbp('sbp/selectors/register', {
-  'gi.app/identity/retrieveSalt': async (identityContractID: string, password: Secret<string>): Promise<[string, ?string]> => {
+  'gi.app/identity/retrieveSalt': async (identityContractID: string, password: Secret<string>): Promise<[string, string | null | undefined]> => {
     const r = randomNonce()
     const b = hash(r)
     const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/auth_hash?b=${encodeURIComponent(b)}`)
@@ -318,7 +318,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.app/identity/login': function ({ username, password: wpassword, identityContractID }: {
-    username: ?string, password: ?Secret<string>, identityContractID: string
+    username: string | null | undefined, password: Secret<string> | null | undefined, identityContractID: string
   }) {
     // This wrapper ensures that there is at most one login flow action executed
     // at any given time. Because of the async work done when logging in and out,
@@ -513,7 +513,7 @@ export default (sbp('sbp/selectors/register', {
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
-  'gi.app/identity/_private/logout': async function (errorState: ?Object, wipeOut?: boolean) {
+  'gi.app/identity/_private/logout': async function (errorState: any | null | undefined, wipeOut?: boolean) {
     try {
       const state = errorState || cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return
@@ -614,4 +614,4 @@ export default (sbp('sbp/selectors/register', {
       oldKeysAnchorCid
     })
   }
-}): string[])
+}) as string[])

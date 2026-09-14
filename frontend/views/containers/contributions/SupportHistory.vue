@@ -24,7 +24,7 @@ import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
 export default {
   name: 'SupportHistory',

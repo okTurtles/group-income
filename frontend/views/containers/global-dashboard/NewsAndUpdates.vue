@@ -31,7 +31,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
 import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
-import { fetchNews } from '@view-utils/misc.js'
+import { fetchNews } from '@view-utils/misc.ts'
 
 export default {
   name: 'NewAndUpdates',

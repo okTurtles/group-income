@@ -4,11 +4,11 @@ import { Buffer } from 'buffer'
 import { throttle } from 'turtledash'
 
 // This module runs in both a browser window and the service worker, so `self` is
-// a `Window` in one context and a `ServiceWorkerGlobalScope` in the other, and
-// `WorkerGlobalScope` is a global only in the second. These declarations are
-// type-only and erased at emit; they restore the `any` these two had under Flow.
+// a `Window` in one context and a `ServiceWorkerGlobalScope` in the other. The
+// declaration is type-only and erased at emit; it restores the `any` `self` had
+// under Flow. It has to be module-scoped — see `WorkerGlobalScope` in
+// `declarations.d.ts` for why `self` cannot be declared globally.
 declare const self: any
-declare const WorkerGlobalScope: any
 
 // NOTE: since these functions don't modify contract state, it should
 //       be safe to modify them without worrying about version conflicts.

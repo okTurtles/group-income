@@ -1,17 +1,18 @@
 import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { SPKey } from '@chelonia/lib/SPMessage'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
-import './kv-slots.js'
+import './kv-slots.ts'
 
-export { default as chatroom } from './chatroom.js'
-export { default as group } from './group.js'
-export { default as groupKV } from './group-kv.js'
-export { default as identity } from './identity.js'
-export { default as identityKV } from './identity-kv.js'
+export { default as chatroom } from './chatroom.ts'
+export { default as group } from './group.ts'
+export { default as groupKV } from './group-kv.ts'
+export { default as identity } from './identity.ts'
+export { default as identityKV } from './identity-kv.ts'
 
 sbp('sbp/selectors/register', {
   // Utility function that covers the common scenario of needing to share some
@@ -53,7 +54,7 @@ sbp('sbp/selectors/register', {
         : keyIds === '*'
           ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
             .filter(([, key]) => {
-              return !!((key: any): SPKey).meta?.private?.content
+              return !!((key as any) as SPKey).meta?.private?.content
             })
             .map(([id]) => id)
           )
@@ -65,7 +66,7 @@ sbp('sbp/selectors/register', {
 
       const payload = {
         contractID: subjectContractID,
-        keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
+        keys: Object.entries(keysToShare).map(([keyId, key]: [string, unknown]) => ({
           id: keyId,
           meta: {
             private: {
@@ -75,7 +76,7 @@ sbp('sbp/selectors/register', {
         }))
       }
 
-      const invocation = ['chelonia/out/keyShare', {
+      const invocation: [string, ...any[]] = ['chelonia/out/keyShare', {
         contractID,
         contractName,
         data: encryptedOutgoingData(contractID, CEKid, payload),
@@ -109,14 +110,12 @@ sbp('sbp/selectors/register', {
 
     let ringLevel = Number.MAX_SAFE_INTEGER
 
-    // $FlowFixMe
     const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, SPKey]) => {
       return !!data.meta?.private?.content && data._notAfterHeight == null && (
         Array.isArray(keysToRotate)
           ? keysToRotate.includes(data.name)
           : keysToRotate === '*'
             ? true
-            // $FlowFixMe
             : state._volatile?.pendingKeyRevocations && has(state._volatile.pendingKeyRevocations, id))
     }).map(([id, data]: [string, SPKey]) => {
       const newKey = keygenOfSameType(data.data)
@@ -128,8 +127,7 @@ sbp('sbp/selectors/register', {
       return
     }
 
-    // $FlowFixMe
-    const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
+    const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]: [any, any, any, any]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
       const isRotatedEncryptionKey = has(newKeys, encryptionKeyName)
       const encryptionKey = isRotatedEncryptionKey ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data

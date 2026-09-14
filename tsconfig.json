@@ -80,11 +80,14 @@
   // 126 Flow-annotated `.js` files here produced thousands of TS8010/TS1005
   // parse errors — nothing to do with type checking, and unsuppressable.
   //
-  // So `.js` files enter the program only when a `.ts` file imports one. The
-  // leaf-first conversion order (plan Steps 4-8) means a converted file's own
-  // imports are already converted, so this stays quiet as the migration walks
-  // up the dependency graph. Today it matches nothing and `tsc` trivially
-  // passes; each wave adds real coverage.
+  // So `.js` files enter the program only when a `.ts` file imports one — and
+  // when the file it imports still has Flow syntax, those parse errors come
+  // back. The leaf-first order (plan Steps 4-8) does not prevent this on its
+  // own: Step 7 imports upward into Step 8 (`controller/app/group` into
+  // `views/utils`, `serviceworkers/*` into `setupChelonia`) and dragged three
+  // files forward to keep `tsc` green. Neither an ambient `declare module` nor
+  // an `exclude` entry suppresses it; converting the imported file is the only
+  // fix. See "What Step 7 turned up" in the plan.
   //
   // `frontend/**/*.ts` also matches `.d.ts`, which is how Step 2's ambient
   // declarations get picked up.

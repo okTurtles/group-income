@@ -1,4 +1,4 @@
-import allowedUrlsByKey from '@view-utils/allowedUrls.js'
+import allowedUrlsByKey from '@view-utils/allowedUrls.ts'
 import { has } from 'turtledash'
 
 export default function safeLinkTag (key: string): string {

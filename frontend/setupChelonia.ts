@@ -5,16 +5,17 @@ import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.ts'
+// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
-import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
+import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.ts'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.ts'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
-const diffContractVersion = (va?: Object, vb?: Object): boolean => {
+const diffContractVersion = (va?: any, vb?: any): boolean => {
   // If the types don't match, a different release has been made
   if (typeof va !== typeof vb) return true
   // Sort contracts by name
@@ -43,8 +44,7 @@ const handleDeletedContract = async (contractID: string) => {
   // have been the files it contained, and therefore we no longer need to
   // hold on to their file deletion tokens.
   if (currentIdentityState.fileDeleteTokens) {
-    // $FlowFixMe[incompatible-use]
-    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billableContractID }]) => {
+    const manifestCids = Object.entries(currentIdentityState.fileDeleteTokens).filter(([, { billableContractID }]: [string, any]) => {
       return billableContractID === contractID
     }).map(([cid]) => cid)
     await sbp('gi.actions/identity/removeFiles', {
@@ -78,7 +78,7 @@ const handleDeletedContract = async (contractID: string) => {
 // worker should call this function. On the other hand, if Chelonia is running
 // in the browsing context, the browsing context is the one that should call this
 // function.
-const setupChelonia = async (): Promise<*> => {
+const setupChelonia = async (): Promise<any> => {
   // Load Chelonia state (this needs to be done in the SW when Chelonia is
   // running there)
   // We only load Chelonia state when SETTING_CURRENT_USER is set because,
@@ -123,7 +123,7 @@ const setupChelonia = async (): Promise<*> => {
   })
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Object) => {
+  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: any) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
@@ -147,13 +147,13 @@ const setupChelonia = async (): Promise<*> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Object, k: string, v: string) => {
+    reactiveSet: (o: any, k: string, v: string) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
       }
     },
-    reactiveDel: (o: Object, k: string) => {
+    reactiveDel: (o: any, k: string) => {
       if (has(o, k)) {
         delete o[k]
         saveCheloniaDebounced()
@@ -470,4 +470,4 @@ export default ((() => {
   })
 
   return singletonFn
-})(): () => Promise<void>)
+})() as () => Promise<void>)

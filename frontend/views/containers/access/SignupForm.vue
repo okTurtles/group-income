@@ -64,7 +64,7 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.ts'
 import { Secret } from '@chelonia/lib/Secret'
-import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
 
 export const usernameValidations = {
   [L('A username is required.')]: required,

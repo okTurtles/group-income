@@ -90,4 +90,4 @@ sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, ({ chatRoomID, se
   })
 })
 
-export default ([]: string[])
+export default ([] as string[])

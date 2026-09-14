@@ -36,7 +36,7 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { L } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.ts'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
 export default {
   name: 'MonthOverview',
