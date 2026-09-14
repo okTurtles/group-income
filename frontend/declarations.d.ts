@@ -64,7 +64,7 @@
 //
 // Ambient because this file has no top-level `import` / `export` and is
 // therefore a script, so the alias needs no import at the use site.
-type AnyFunction = (...args: any[]) => any
+type Fn = (...args: any[]) => any
 
 // =============================================================================
 // Our globals

@@ -232,19 +232,19 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Two harness traps, both of which silently reported success.** `flow-remove-types`' CLI writes nothing for an unrecognised input extension, and esbuild derives the default-export variable name from the input *basename* — so a comparison keyed on basenames collides (`actions/chatroom` vs `app/chatroom`, and 4 more) and reports phantom diffs. Use the Node API and key scratch dirs on the full path.
 
-### 014 — Step 7a: global `AnyFunction`
+### 014 — Step 7a: global `Fn`
 
 **Status:** DONE
 
-**Changed:** `type AnyFunction = (...args: any[]) => any` added to `declarations.d.ts`, applied at **17 sites across 9 files** — the `any`s that were Flow `Function`. `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. Contract bundles and manifests byte-identical; `contracts/**` and `chelonia.json` untouched.
+**Changed:** `type Fn = (...args: any[]) => any` added to `declarations.d.ts`, applied at **17 sites across 9 files** — the `any`s that were Flow `Function`. `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. Contract bundles and manifests byte-identical; `contracts/**` and `chelonia.json` untouched.
 
 **A deliberate narrowing, which is why it is its own commit.** Flow's `Function` is a spelling of `any`, so `Function` → `any` was the exact mirror and this is a RULES 2 departure — taken to recover the intent the original authors encoded. Not TypeScript's `Function`, which has no call signature and is banned by `@typescript-eslint/no-unsafe-function-type`.
 
-**`tsc` surfaced nothing, and that is the expected result, not a skipped check.** With `strict`/`noImplicitAny` off, these values all arrive from `any`, which assigns into `AnyFunction` freely; the narrowing only bites where such a value is *used* as a non-callable. Verified live instead: a throwaway `.ts` resolved `AnyFunction` with no import and rejected `= 'not a function'` (TS2322), control line erroring alongside. The real payoff is the two `string | Function` unions, which had collapsed to `any` and now discriminate.
+**`tsc` surfaced nothing, and that is the expected result, not a skipped check.** With `strict`/`noImplicitAny` off, these values all arrive from `any`, which assigns into `Fn` freely; the narrowing only bites where such a value is *used* as a non-callable. Verified live instead: a throwaway `.ts` resolved `Fn` with no import and rejected `= 'not a function'` (TS2322), control line erroring alongside. The real payoff is the two `string | Function` unions, which had collapsed to `any` and now discriminate.
 
 **The plan's inventory was one site short.** `periodicNotifications.ts:94` is a *cast*, `(any | string[])[]`, not an annotation — which is exactly why the recovery must be `git grep -n "Function" 13f1b9c29a -- frontend` and not a read-through: post-conversion a `Function`-derived `any` is indistinguishable from an `Object`-derived one.
 
-**Only one call site passes the callback arm** of `humanError` — `gi.actions/group/updateAllVotingRules`. The `actions/utils.ts` comment saying the union checked nothing is deleted rather than rewritten: Step 7 added it, the migration base had nothing there, and `string | AnyFunction` now states the same fact.
+**Only one call site passes the callback arm** of `humanError` — `gi.actions/group/updateAllVotingRules`. The `actions/utils.ts` comment saying the union checked nothing is deleted rather than rewritten: Step 7 added it, the migration base had nothing there, and `string | Fn` now states the same fact.
 
 ---
 

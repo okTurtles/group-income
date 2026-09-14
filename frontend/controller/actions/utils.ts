@@ -30,7 +30,7 @@ const enqueueDeferredPromise = (queue) => {
 // or signing keys, and that such keys in params get overridden.
 export const encryptedAction = (
   action: string,
-  humanError: string | AnyFunction,
+  humanError: string | Fn,
   handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
@@ -167,7 +167,7 @@ export const encryptedAction = (
 
 export const encryptedNotification = (
   action: string,
-  humanError: string | AnyFunction,
+  humanError: string | Fn,
   handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,

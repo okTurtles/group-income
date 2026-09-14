@@ -416,15 +416,15 @@ Twenty-three files converted — the planned 20 plus 3 pulled forward from Step 
 **Stale `.js` filenames in prose comments were corrected only inside this wave's files**, and only where they name a file this migration has actually renamed. Runtime log strings that embed a filename (`'[action/chatroom.js] …'`, `'actions/group.js failed …'`) are left alone — changing them would change output. Earlier waves left their equivalents stale, so a repo-wide sweep remains outstanding; it belongs in Step 11, not in a conversion commit.
 
 
-## Step 7a — DONE — A global `AnyFunction`, in its own commit
+## Step 7a — DONE — A global `Fn`, in its own commit
 
-**Requirement, as asked:** "define that global `AnyFunction` and use it wherever `Function` is in the files of this/previous steps."
+**Requirement, as asked:** "define that global `Fn` and use it wherever `Function` is in the files of this/previous steps."
 
 Separate commit deliberately. Steps 4–8 are verified by "the emitted code is identical"; this one is not that kind of change, and mixing it into a conversion commit would spoil that property for both.
 
 **This is a narrowing, and that is the point.** Flow's `Function` is a spelling of `any` (see the Deferred note), so `Function` → `any` was the exact mirror and `any` → `(...args: any[]) => any` is a genuine tightening — a RULES 2 departure, taken knowingly because the intent the original authors encoded in `Function` is worth recovering. It is the one piece of the deferred strictness pass pulled forward; `strict`, `noImplicitAny` and the `Object`-derived `any`s all stay put.
 
-**The declaration.** `type AnyFunction = (...args: any[]) => any` in `frontend/declarations.d.ts`. That file has no top-level `import`/`export`, so it is a script and the alias is ambient — verified: it resolves from a `.ts` file with no import and correctly rejects `const g: AnyFunction = 'not a function'` (TS2322), with a control line erroring alongside. Not TypeScript's own `Function`, which has no call signature and is banned by `@typescript-eslint/no-unsafe-function-type`.
+**The declaration.** `type Fn = (...args: any[]) => any` in `frontend/declarations.d.ts`. That file has no top-level `import`/`export`, so it is a script and the alias is ambient — verified: it resolves from a `.ts` file with no import and correctly rejects `const g: Fn = 'not a function'` (TS2322), with a control line erroring alongside. Not TypeScript's own `Function`, which has no call signature and is banned by `@typescript-eslint/no-unsafe-function-type`.
 
 **The inventory, recovered from git rather than from the current source.** Once `Function` → `any` landed, a `Function`-derived `any` became indistinguishable from an `Object`-derived one — `identity-kv.ts` is a bare `(updater: any)`, `sw-primary.ts` a bare `[string, any]`. Only `actions/utils.ts` says so, because the union forced a comment. Recover the full list with:
 
@@ -456,17 +456,17 @@ Deliberately **out** of scope:
 - **`frontend/declarations.js:24,27`** — the Flow libdef, deleted wholesale in Step 9.
 - Anything still `.js` when this runs; fold those in with Step 8 instead.
 
-**Two things to check that a typecheck will not tell you.** `actions/utils.ts` carries a comment saying `string | any` collapses to `any` and checks nothing — that stops being true the moment the arm becomes `AnyFunction`, so the comment cannot be left standing. It went away entirely: it was a Step 7 addition with nothing matching it at the migration base, and `string | AnyFunction` already says what any replacement would say. And `group.ts` and `shared/functions.ts` are contract source: the change is type-only and must therefore erase to the same bytes, so re-run the Step 5 invariant (all six bundles and `manifests.json` byte-identical, `contracts/**` no git diff) rather than assuming it.
+**Two things to check that a typecheck will not tell you.** `actions/utils.ts` carries a comment saying `string | any` collapses to `any` and checks nothing — that stops being true the moment the arm becomes `Fn`, so the comment cannot be left standing. It went away entirely: it was a Step 7 addition with nothing matching it at the migration base, and `string | Fn` already says what any replacement would say. And `group.ts` and `shared/functions.ts` are contract source: the change is type-only and must therefore erase to the same bytes, so re-run the Step 5 invariant (all six bundles and `manifests.json` byte-identical, `contracts/**` no git diff) rather than assuming it.
 
 **Done when:** `tsc` 0 · eslint 0 · `npm run flow` green · prod `grunt build` 0 · unit tests pass · contract bundles byte-identical. Expect `tsc` to surface real sites — a `Function`-typed value used as anything other than a callable is exactly what this step is meant to find, and each one is a decision, not a mechanical edit.
 
 ### What Step 7a turned up
 
-**`tsc` surfaced nothing, and that is a real result rather than a skipped check.** With `strict` and `noImplicitAny` off, every one of these values arrives from an `any`, and `any` assigns into `AnyFunction` freely — so the narrowing only bites where a `Function`-typed value is *used* as a non-callable, and no site did that. The alias was verified live rather than inferred from the clean run: a throwaway `.ts` file under `frontend/` resolved `AnyFunction` with no import and rejected `const g: AnyFunction = 'not a function'` (TS2322), with a control line erroring alongside. The payoff is at the two union sites, where `string | any` had collapsed to `any` and `string | AnyFunction` does not.
+**`tsc` surfaced nothing, and that is a real result rather than a skipped check.** With `strict` and `noImplicitAny` off, every one of these values arrives from an `any`, and `any` assigns into `Fn` freely — so the narrowing only bites where a `Function`-typed value is *used* as a non-callable, and no site did that. The alias was verified live rather than inferred from the clean run: a throwaway `.ts` file under `frontend/` resolved `Fn` with no import and rejected `const g: Fn = 'not a function'` (TS2322), with a control line erroring alongside. The payoff is at the two union sites, where `string | any` had collapsed to `any` and `string | Fn` does not.
 
 **Only one call site actually passes the callback arm** — `gi.actions/group/updateAllVotingRules` in `controller/actions/group.ts`, `(params, e) => L(…, { codeError: e.message })`. Every other `encryptedAction`/`encryptedNotification` call passes a string.
 
-The `actions/utils.ts` comment saying the union checks nothing is **deleted**, not rewritten. It was added by Step 7 and had no counterpart at the migration base; once the arm is `AnyFunction` the signature states the same fact, so any replacement would only restate the type.
+The `actions/utils.ts` comment saying the union checks nothing is **deleted**, not rewritten. It was added by Step 7 and had no counterpart at the migration base; once the arm is `Fn` the signature states the same fact, so any replacement would only restate the type.
 
 **Both contract-source edits erase to the same bytes**, as required: all six bundles and all three `*.manifest.json` files under `dist/contracts` are byte-identical to a baseline built from the Step 7 commit, and `contracts/**` and `chelonia.json` have no diff. 178 unit tests pass, unchanged from Step 7.
 
