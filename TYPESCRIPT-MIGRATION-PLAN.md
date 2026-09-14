@@ -416,7 +416,7 @@ Twenty-three files converted — the planned 20 plus 3 pulled forward from Step 
 **Stale `.js` filenames in prose comments were corrected only inside this wave's files**, and only where they name a file this migration has actually renamed. Runtime log strings that embed a filename (`'[action/chatroom.js] …'`, `'actions/group.js failed …'`) are left alone — changing them would change output. Earlier waves left their equivalents stale, so a repo-wide sweep remains outstanding; it belongs in Step 11, not in a conversion commit.
 
 
-## Step 7a — A global `AnyFunction`, in its own commit
+## Step 7a — DONE — A global `AnyFunction`, in its own commit
 
 **Requirement, as asked:** "define that global `AnyFunction` and use it wherever `Function` is in the files of this/previous steps."
 
@@ -432,19 +432,21 @@ Separate commit deliberately. Steps 4–8 are verified by "the emitted code is i
 git grep -n "Function" 13f1b9c29a -- frontend
 ```
 
-**21 annotation sites** at the migration base. In scope for this step — 13 sites across 9 converted files:
+**21 annotation sites** at the migration base. In scope for this step — **17 sites across 9 converted files**:
 
 | File (converted path) | Site |
 |---|---|
 | `model/logger.ts:11` | `getItem`, `removeItem`, `setItem` (3) |
-| `model/notifications/periodicNotifications.ts:22` | `clearTimeout?` |
+| `model/notifications/periodicNotifications.ts:22,94` | `clearTimeout?`, and the `(… \| string[])[]` cast (2) |
 | `utils/lazyLoadedView.ts:52` | the return type |
-| `utils/promiseWithResolvers.ts:3,4` | `resolve`, `reject` |
+| `utils/promiseWithResolvers.ts:3,4` | `resolve`, `reject` (2) |
 | `controller/actions/identity-kv.ts:44` | `updater` |
 | `controller/actions/utils.ts:36,176` | `humanError: string \| any` (2) |
-| `controller/serviceworkers/sw-primary.ts:218,234,246` | `[string, any]` (3) |
+| `controller/serviceworkers/sw-primary.ts:225,241,253` | `[string, any]` (3) |
 | `model/contracts/group.ts:361` | `(next: …): …` (2) — **contract source** |
 | `model/contracts/shared/functions.ts:203` | `nameValidationMap` values — **contract source** |
+
+`periodicNotifications.ts:94` is the site this table originally missed, and it is the reason the recovery has to be done from `git grep` at the base rather than by eye: it is a cast, not an annotation, and `(any | string[])[]` collapses to `any[]` exactly the way `string | any` collapses to `any`.
 
 Deliberately **out** of scope:
 
@@ -454,9 +456,19 @@ Deliberately **out** of scope:
 - **`frontend/declarations.js:24,27`** — the Flow libdef, deleted wholesale in Step 9.
 - Anything still `.js` when this runs; fold those in with Step 8 instead.
 
-**Two things to check that a typecheck will not tell you.** `actions/utils.ts` carries a comment saying `string | any` collapses to `any` and checks nothing — that stops being true the moment the arm becomes `AnyFunction`, so the comment must be rewritten, not left. And `group.ts` and `shared/functions.ts` are contract source: the change is type-only and must therefore erase to the same bytes, so re-run the Step 5 invariant (all six bundles and `manifests.json` byte-identical, `contracts/**` no git diff) rather than assuming it.
+**Two things to check that a typecheck will not tell you.** `actions/utils.ts` carries a comment saying `string | any` collapses to `any` and checks nothing — that stops being true the moment the arm becomes `AnyFunction`, so the comment cannot be left standing. It went away entirely: it was a Step 7 addition with nothing matching it at the migration base, and `string | AnyFunction` already says what any replacement would say. And `group.ts` and `shared/functions.ts` are contract source: the change is type-only and must therefore erase to the same bytes, so re-run the Step 5 invariant (all six bundles and `manifests.json` byte-identical, `contracts/**` no git diff) rather than assuming it.
 
 **Done when:** `tsc` 0 · eslint 0 · `npm run flow` green · prod `grunt build` 0 · unit tests pass · contract bundles byte-identical. Expect `tsc` to surface real sites — a `Function`-typed value used as anything other than a callable is exactly what this step is meant to find, and each one is a decision, not a mechanical edit.
+
+### What Step 7a turned up
+
+**`tsc` surfaced nothing, and that is a real result rather than a skipped check.** With `strict` and `noImplicitAny` off, every one of these values arrives from an `any`, and `any` assigns into `AnyFunction` freely — so the narrowing only bites where a `Function`-typed value is *used* as a non-callable, and no site did that. The alias was verified live rather than inferred from the clean run: a throwaway `.ts` file under `frontend/` resolved `AnyFunction` with no import and rejected `const g: AnyFunction = 'not a function'` (TS2322), with a control line erroring alongside. The payoff is at the two union sites, where `string | any` had collapsed to `any` and `string | AnyFunction` does not.
+
+**Only one call site actually passes the callback arm** — `gi.actions/group/updateAllVotingRules` in `controller/actions/group.ts`, `(params, e) => L(…, { codeError: e.message })`. Every other `encryptedAction`/`encryptedNotification` call passes a string.
+
+The `actions/utils.ts` comment saying the union checks nothing is **deleted**, not rewritten. It was added by Step 7 and had no counterpart at the migration base; once the arm is `AnyFunction` the signature states the same fact, so any replacement would only restate the type.
+
+**Both contract-source edits erase to the same bytes**, as required: all six bundles and all three `*.manifest.json` files under `dist/contracts` are byte-identical to a baseline built from the Step 7 commit, and `contracts/**` and `chelonia.json` have no diff. 178 unit tests pass, unchanged from Step 7.
 
 ---
 
@@ -537,7 +549,7 @@ These are the orderings that actually matter — everything else is preference.
 ## Deferred — explicitly not this PR
 
 - Tightening `strict`, `noImplicitAny`, `strictNullChecks`; replacing the `any`s that stand in for Flow's `Object`/`Function`; clearing the `@ts-expect-error`s left against `@chelonia/*`
-  - **The `Function` ones carry an intent the `any` does not.** `Function` in Flow 0.154 is a spelling of `any`, not a function type: `const a: Function = 42`, `= 'hello'`, `= { a: 1 }` and `null` into a `Function` parameter all typecheck, and a `Function` value assigns out to `string`. `Function` → `any` is therefore an exact mirror, not a widening — but the authors who wrote `Function` mostly meant "a JS function", and restoring *that* is **Step 7a**, which is in this PR as its own commit. Use `(...args: any[]) => any`, not TypeScript's `Function`, which carries no call signature (so it rejects assignment to every specific signature) and is banned by `@typescript-eslint/no-unsafe-function-type`. Confirm the intent per site first: at `frontend/model/logServer.ts:5` the `Function` return was simply wrong — every path returns `undefined` and both callers discard it — so `any` stands there.
+  - **The `Function` ones carry an intent the `any` does not.** `Function` in Flow 0.154 is a spelling of `any`, not a function type: `const a: Function = 42`, `= 'hello'`, `= { a: 1 }` and `null` into a `Function` parameter all typecheck, and a `Function` value assigns out to `string`. `Function` → `any` is therefore an exact mirror, not a widening — but the authors who wrote `Function` mostly meant "a JS function", and restoring *that* is **Step 7a**, done in this PR as its own commit. Use `(...args: any[]) => any`, not TypeScript's `Function`, which carries no call signature (so it rejects assignment to every specific signature) and is banned by `@typescript-eslint/no-unsafe-function-type`. Confirm the intent per site first: at `frontend/model/logServer.ts:5` the `Function` return was simply wrong — every path returns `undefined` and both callers discard it — so `any` stands there.
 - Converting `*.test.js` files, and widening Mocha's spec glob to `*.test.{js,ts}` to allow it
 - Type-aware ESLint rules (`recommended-type-checked`)
 - Typing `.vue` SFCs — belongs to the Vue 3 migration

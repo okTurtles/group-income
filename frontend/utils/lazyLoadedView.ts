@@ -49,7 +49,7 @@ handling loading state.
 export function lazyPage (
   lazyImport: LazyImport,
   { loading = LoadingPage, error = ErrorPage }: any = {}
-): any {
+): AnyFunction {
   const handler = asyncHandler(lazyImport, { loading, error })
 
   return () => Promise.resolve({

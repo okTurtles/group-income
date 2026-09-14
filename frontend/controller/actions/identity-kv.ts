@@ -41,7 +41,7 @@ export const checkAndAugmentNames = async (currentNames: string[]): Promise<stri
 // which goes stale on a 409/412 retry and would clobber a concurrent write
 // from another device. Reading `prev` inside the reducer is the only correct
 // way to merge into a nested subkey. (KV-REVAMPED.md §4.1)
-const updateKVPreferences = (updater: any) => {
+const updateKVPreferences = (updater: AnyFunction) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')

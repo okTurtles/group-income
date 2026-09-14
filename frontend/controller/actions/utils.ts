@@ -30,10 +30,7 @@ const enqueueDeferredPromise = (queue) => {
 // or signing keys, and that such keys in params get overridden.
 export const encryptedAction = (
   action: string,
-  // `string | any` is the mirror of Flow's `string | Function`, and TypeScript
-  // collapses it to `any`, so this parameter is unchecked. Step 7a replaces the
-  // `Function` arm with `AnyFunction`, which makes the union real again.
-  humanError: string | any,
+  humanError: string | AnyFunction,
   handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,
@@ -170,10 +167,7 @@ export const encryptedAction = (
 
 export const encryptedNotification = (
   action: string,
-  // `string | any` is the mirror of Flow's `string | Function`, and TypeScript
-  // collapses it to `any`, so this parameter is unchecked. Step 7a replaces the
-  // `Function` arm with `AnyFunction`, which makes the union real again.
-  humanError: string | any,
+  humanError: string | AnyFunction,
   handler?: (sendMessage: (params: Partial<GIActionParams>) => any, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: string | null | undefined) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string,

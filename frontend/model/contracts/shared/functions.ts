@@ -200,7 +200,7 @@ export const validateChatRoomName = (name: string) => {
   //
   // Reference: RegExp match based on unicode character class escape(\p{}) -
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape
-  const nameValidationMap: { [key: string]: any } = {
+  const nameValidationMap: { [key: string]: AnyFunction } = {
     [L('Chatroom name cannot contain white-space')]: (v: string): boolean => /\s/.test(v),
     [L('Chatroom name cannot contain capital letters')]: (v: string): boolean => /\p{Lu}/u.test(v),
     [L('Chatroom name cannot contain punctuation or special characters except hyphens')]: (v: string): boolean => /[^\p{L}\p{M}\p{Nd}-]/u.test(v)

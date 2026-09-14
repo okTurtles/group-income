@@ -358,7 +358,7 @@ const leaveAllChatRoomsUponLeaving = (groupID, state, memberID, actorID) => {
   )
 }
 
-export const actionRequireActiveMember = (next: any): any => (data, props) => {
+export const actionRequireActiveMember = (next: AnyFunction): AnyFunction => (data, props) => {
   const innerSigningContractID = props.message.innerSigningContractID
   if (!innerSigningContractID || innerSigningContractID === props.contractID) {
     throw new Error('Missing inner signature')

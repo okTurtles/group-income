@@ -49,6 +49,24 @@
 // files out of the program is the leaf-first conversion order, not a stub.
 
 // =============================================================================
+// Shared type aliases
+// =============================================================================
+
+// The replacement for Flow's `Function`, which was a spelling of `any` rather
+// than a function type: under Flow, `const a: Function = 42` typechecks and a
+// `Function` value assigns out to `string`. This alias recovers the intent the
+// original authors encoded — "some JS function" — which the mechanical
+// `Function` -> `any` mirror had to throw away.
+//
+// Not TypeScript's own `Function`: that type carries no call signature, so it
+// rejects assignment to every specific signature, and
+// `@typescript-eslint/no-unsafe-function-type` bans it.
+//
+// Ambient because this file has no top-level `import` / `export` and is
+// therefore a script, so the alias needs no import at the use site.
+type AnyFunction = (...args: any[]) => any
+
+// =============================================================================
 // Our globals
 // =============================================================================
 

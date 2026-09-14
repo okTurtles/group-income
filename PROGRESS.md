@@ -232,11 +232,25 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Two harness traps, both of which silently reported success.** `flow-remove-types`' CLI writes nothing for an unrecognised input extension, and esbuild derives the default-export variable name from the input *basename* — so a comparison keyed on basenames collides (`actions/chatroom` vs `app/chatroom`, and 4 more) and reports phantom diffs. Use the Node API and key scratch dirs on the full path.
 
+### 014 — Step 7a: global `AnyFunction`
+
+**Status:** DONE
+
+**Changed:** `type AnyFunction = (...args: any[]) => any` added to `declarations.d.ts`, applied at **17 sites across 9 files** — the `any`s that were Flow `Function`. `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. Contract bundles and manifests byte-identical; `contracts/**` and `chelonia.json` untouched.
+
+**A deliberate narrowing, which is why it is its own commit.** Flow's `Function` is a spelling of `any`, so `Function` → `any` was the exact mirror and this is a RULES 2 departure — taken to recover the intent the original authors encoded. Not TypeScript's `Function`, which has no call signature and is banned by `@typescript-eslint/no-unsafe-function-type`.
+
+**`tsc` surfaced nothing, and that is the expected result, not a skipped check.** With `strict`/`noImplicitAny` off, these values all arrive from `any`, which assigns into `AnyFunction` freely; the narrowing only bites where such a value is *used* as a non-callable. Verified live instead: a throwaway `.ts` resolved `AnyFunction` with no import and rejected `= 'not a function'` (TS2322), control line erroring alongside. The real payoff is the two `string | Function` unions, which had collapsed to `any` and now discriminate.
+
+**The plan's inventory was one site short.** `periodicNotifications.ts:94` is a *cast*, `(any | string[])[]`, not an annotation — which is exactly why the recovery must be `git grep -n "Function" 13f1b9c29a -- frontend` and not a read-through: post-conversion a `Function`-derived `any` is indistinguishable from an `Object`-derived one.
+
+**Only one call site passes the callback arm** of `humanError` — `gi.actions/group/updateAllVotingRules`. The `actions/utils.ts` comment saying the union checked nothing is deleted rather than rewritten: Step 7 added it, the migration base had nothing there, and `string | AnyFunction` now states the same fact.
+
 ---
 
 ## Open items
 
-- **Step 7a — global `AnyFunction`, own commit, not yet done.** `type AnyFunction = (...args: any[]) => any` in `declarations.d.ts` (verified ambient), replacing the `any`s that were Flow `Function` at 13 sites across 9 converted files. A deliberate narrowing, hence separate from the conversion commits. Inventory is recoverable only from git — `git grep -n "Function" 13f1b9c29a -- frontend` — since a `Function`-derived `any` is otherwise indistinguishable from an `Object`-derived one. See the plan for scope, exclusions, and the contract-bundle check.
+- **Deduplicate the plan against this file — docs-only, after every step lands.** Each "What Step N turned up" section repeats its PROGRESS entry almost whole: Step 4 has five findings and all five are in both, and Steps 5-7a are the same. The split that was intended: the plan keeps only what changes a *later* step's execution (the "Step 5 hits this four more times — `chatroom.js:39,40`, `group.js:369,370`" kind of pointer), PROGRESS keeps the full finding and the gate numbers. Doing it at the end rather than per-step avoids rewriting the same sections repeatedly. Its own commit — no source files change.
 - 24 Flow-checked `.js` files left to convert (Step 8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.

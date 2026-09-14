@@ -222,7 +222,7 @@ sbp('sbp/selectors/register', {
     return () => {
       if (!computedGetters) {
         computedGetters = Object.create(null)
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, any]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(getters).map(([getter, fn]: [string, AnyFunction]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
@@ -238,7 +238,7 @@ sbp('sbp/selectors/register', {
             }
           }]
         })))
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, any]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(chatroomGetters).map(([getter, fn]: [string, AnyFunction]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')
@@ -250,7 +250,7 @@ sbp('sbp/selectors/register', {
             }
           }]
         })))
-        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, any]) => {
+        Object.defineProperties(computedGetters, Object.fromEntries(Object.entries(notificationGetters).map(([getter, fn]: [string, AnyFunction]) => {
           return [getter, {
             get: function () {
               const state = sbp('chelonia/rootState')

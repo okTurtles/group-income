@@ -1,7 +1,7 @@
 const promiseWithResolvers: () => {
     promise: Promise<any>,
-    resolve: any,
-    reject: any
+    resolve: AnyFunction,
+    reject: AnyFunction
 } = (() => {
   if (Promise.withResolvers) {
     return () => Promise.withResolvers()
