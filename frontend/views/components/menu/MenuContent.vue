@@ -1,7 +1,10 @@
 <template lang='pug'>
 .c-content(
-  :class='{ "is-active": isActive }'
+  :class='{ "is-active": isActive, "is-height-animating": ephemeral.isHeightAnimating }'
   data-test='menuContent'
+  @transitionstart='onTransitionStart'
+  @transitionend='onTransitionStop'
+  @transitioncancel='onTransitionStop'
 )
   .c-content-wrapper(
     v-on-clickaway='onClickAway'
@@ -18,12 +21,30 @@ export default ({
     clickaway
   ],
   inject: ['Menu'],
+  data () {
+    return {
+      ephemeral: {
+        isHeightAnimating: false
+      }
+    }
+  },
   computed: {
     isActive () {
       return this.Menu.isActive
     }
   },
   methods: {
+    onTransitionStart (e) {
+      // Ignore transitions bubbling up from menu items.
+      if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
+      this.ephemeral.isHeightAnimating = true
+    },
+    onTransitionStop (e) {
+      // Bound to both `transitionend` and `transitioncancel`, so interrupting the animation (e.g.
+      // closing the menu mid-open) can't leave scrolling permanently disabled.
+      if (e.target !== this.$el || e.propertyName !== 'max-height') { return }
+      this.ephemeral.isHeightAnimating = false
+    },
     onClickAway (e) {
       // Prevent closing the menu when clicking inside of the parent element,
       // except if the event was on `.c-content` (.c-responsive-menu)
@@ -76,7 +97,7 @@ export default ({
   }
 
   &.is-active {
-    // Is that enought for every menu?
+    // Is that enough for every menu?
     // Should we use mask transition instead?
     pointer-events: initial;
     max-height: 25rem;
