@@ -124,7 +124,7 @@
     "bottleneck": "2.19.5",
     "buffer": "6.0.3",
     "chalk": "4.1.0",
-    "dompurify": "2.2.7",
+    "dompurify": "3.4.13",
     "emoji-mart-vue-fast": "7.0.7",
     "grunt": "1.5.3",
     "grunt-check-dependencies": "1.0.0",
