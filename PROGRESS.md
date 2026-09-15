@@ -246,12 +246,28 @@ Plan-only change, no code. Re-measured every count, version, and line reference 
 
 **Only one call site passes the callback arm** of `humanError` — `gi.actions/group/updateAllVotingRules`. The `actions/utils.ts` comment saying the union checked nothing is deleted rather than rewritten: Step 7 added it, the migration base had nothing there, and `string | Fn` now states the same fact.
 
+### 015 — Step 8: `frontend/views/**`
+
+**Status:** DONE
+
+**Changed:** 24 files converted and renamed; 79 specifiers across 63 importers, 54 of them `.vue`. `tsc` 0 · eslint 0 · Flow green · prod `grunt build` 0 · 178 passing. Contract bundles and `manifests.json` byte-identical raw; `contracts/**` and `chelonia.json` untouched. No build config changed — nothing in this wave is an entry point or a hardcoded path.
+
+**Steps 4-8 done: 100 Flow-checked files, 24 → 0 left.** What still holds Flow syntax is Step 9's strip-only set — `controller/service-worker.js`, `distribution.test.js` — plus `declarations.js` and the two `.js.flow` stubs.
+
+**Flow class property declarations are not erased, so the plain TS spelling is the emit-identical one.** `flow-remove-types` blanks `index: number;` to a bare class field and esbuild emits `__publicField(this, "index")`; plain `index: number` in `.ts` reproduces that exactly, while `declare index: number` would have erased a field the build has always defined. The opposite of the expectation, settled by compiling `AnimationMixins.ts`'s `Confetti` all three ways rather than reasoning about `useDefineForClassFields`.
+
+**Per-file emit: 24 of 24 code-identical**, one deleted `$FlowFixMe` comment apart. No import elided.
+
+**RULES 3 exemption — `confettiNames`.** Its `Array<"confetii-triangle" | …>` annotation is TS2322 against `Object.keys()`'s `string[]`. Flow accepted it, confirmed by a `const control: string = 42` line in that same file erroring alone — the check that separates "Flow accepted this" from "Flow never looked", where only the first is an exemption. Annotation dropped rather than cast: it gave callers a union, not `any`, and the one consumer's parameter is unannotated, so it checked nothing where it could have.
+
+**`marked` was `declare module.exports: any` to Flow**, so `marked.parse()`'s real `string | Promise<string>` made two `.replace()` calls TS2339; the binding is `any`, restoring Flow's coverage. Last of these — the rest of `declarations.js` goes in Step 9.
+
 ---
 
 ## Open items
 
 - **Deduplicate the plan against this file — docs-only, after every step lands.** Each "What Step N turned up" section repeats its PROGRESS entry almost whole: Step 4 has five findings and all five are in both, and Steps 5-7a are the same. The split that was intended: the plan keeps only what changes a *later* step's execution (the "Step 5 hits this four more times — `chatroom.js:39,40`, `group.js:369,370`" kind of pointer), PROGRESS keeps the full finding and the gate numbers. Doing it at the end rather than per-step avoids rewriting the same sections repeatedly. Its own commit — no source files change.
-- 24 Flow-checked `.js` files left to convert (Step 8), plus 2 Flow-ignored ones needing syntax stripped only (`flowTyper` was handled in Step 5) and 2 `.js.flow` stubs retired (`vueComponentStub`, `tsModuleStub`).
+- Source conversion is done (Steps 4-8, 100 files). Left for Step 9: 2 Flow-ignored files needing syntax stripped only (`controller/service-worker.js`, `distribution.test.js`), `declarations.js` retired, and 2 `.js.flow` stubs deleted (`vueComponentStub`, `tsModuleStub`).
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.

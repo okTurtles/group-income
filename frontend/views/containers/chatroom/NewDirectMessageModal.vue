@@ -94,8 +94,8 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UsersSelector from '@components/UsersSelector.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import DMMixin from './DMMixin.js'
-import { filterByKeyword } from '@view-utils/filters.js'
+import DMMixin from './DMMixin.ts'
+import { filterByKeyword } from '@view-utils/filters.ts'
 import { CLOSE_MODAL } from '@utils/events.js'
 
 export default {

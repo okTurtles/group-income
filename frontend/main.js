@@ -31,7 +31,7 @@ import Navigation from './views/containers/navigation/Navigation.vue'
 import ToastContainer from './views/containers/toast/ToastContainer.vue'
 import './views/utils/avatar.js'
 import './views/utils/i18n.js'
-import './views/utils/ui.js'
+import './views/utils/ui.ts'
 import './views/utils/vError.js'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
@@ -42,7 +42,7 @@ import './model/notifications/periodicNotifications.ts'
 import FaviconBadge from './utils/faviconBadge.ts'
 import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.ts'
-import { getTextSizeAlias } from '@view-utils/textSizes.js'
+import { getTextSizeAlias } from '@view-utils/textSizes.ts'
 import './views/utils/vStyle.js'
 
 console.info('APP_VERSION:', process.env.APP_VERSION)

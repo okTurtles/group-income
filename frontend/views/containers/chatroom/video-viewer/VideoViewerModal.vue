@@ -71,7 +71,7 @@ import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import VideoPlayer from '@containers/chatroom/video-viewer/VideoPlayer.vue'
 import trapFocus from '@utils/trapFocus.ts'
-import { formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
+import { formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.ts'
 
 export default {
   name: 'VideoViewerModal',

@@ -84,7 +84,7 @@ import {
 import { withGroupCurrency } from '@view-utils/misc.ts'
 import { humanDate } from '@model/contracts/shared/time.ts'
 import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.ts'
-import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '@chelonia/lib/constants'

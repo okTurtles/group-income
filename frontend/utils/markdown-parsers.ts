@@ -1,4 +1,4 @@
-// Dependency-free markdown string parsers, kept out of '@view-utils/markdown-utils.js' on purpose.
+// Dependency-free markdown string parsers, kept out of '@view-utils/markdown-utils.ts' on purpose.
 // markdown-utils.js pulls in 'marked' (and 'vue-router' via misc.js), but these two functions are also
 // used by '@model/chatroom/utils.ts', which is part of the service-worker bundle graph. Keeping them
 // here in a neutral layer avoids dragging those view-only dependencies into the service worker.

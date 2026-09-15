@@ -107,14 +107,14 @@ import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import {
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from '@model/contracts/shared/constants.js'
-import { sanitizeChannelName } from '@view-utils/filters.js'
+import { sanitizeChannelName } from '@view-utils/filters.ts'
 
 const privacyLevelToDisplay = {
   [CHATROOM_PRIVACY_LEVEL.GROUP]: {

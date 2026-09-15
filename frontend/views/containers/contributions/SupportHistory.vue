@@ -21,7 +21,7 @@ div(:class='isReady ? "" : "c-ready"')
 <script>
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import { withGroupCurrency } from '@view-utils/misc.ts'

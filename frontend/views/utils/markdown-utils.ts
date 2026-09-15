@@ -81,7 +81,7 @@ export function renderMarkdown (str: string): any {
   str = combineMarkdownSegmentListIntoString(strSplitByCodeMarkdown)
 
   // STEP 2. convert the markdown into html DOM string.
-  let converted = marked.parse(str, { gfm: true })
+  let converted: any = marked.parse(str, { gfm: true })
 
   // STEP 3. Remove the unecessary starting/end line-breaks added in/outside of the converted html tags.
   converted = converted.replace(/<([a-z]+)>\n/g, '<$1>')

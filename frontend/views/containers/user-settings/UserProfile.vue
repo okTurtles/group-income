@@ -73,7 +73,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from 'turtledash'
 import { mapGetters, mapState } from 'vuex'

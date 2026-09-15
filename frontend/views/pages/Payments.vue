@@ -170,7 +170,7 @@ import NextDistributionPill from '@containers/payments/PaymentNextDistributionPi
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.ts'
 import { dateToMonthstamp, dateFromPeriodStamp, humanDate } from '@model/contracts/shared/time.ts'
 import { randomHexString, deepEqualJSONType, omit, uniq } from 'turtledash'

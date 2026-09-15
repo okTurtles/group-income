@@ -50,7 +50,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { L } from '~/frontend/common/translations.ts'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 
 export default {
   name: 'GenericProposal',

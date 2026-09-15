@@ -124,12 +124,12 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import DMMixin from './DMMixin.js'
+import DMMixin from './DMMixin.ts'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import { uniq } from 'turtledash'
-import { filterByKeyword } from '@view-utils/filters.js'
+import { filterByKeyword } from '@view-utils/filters.ts'
 
 export default {
   name: 'ChatMembersAllModal',

@@ -14,7 +14,7 @@ svg.c-svg(
 </template>
 
 <script>
-import animationMixins from './AnimationMixins.js'
+import animationMixins from './AnimationMixins.ts'
 export default {
   mixins: [animationMixins],
   name: 'ConfettiAnimation'

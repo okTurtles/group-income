@@ -33,7 +33,7 @@ import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.ts'
 import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import PollMixin from '@containers/chatroom/PollMixin.js'
+import PollMixin from '@containers/chatroom/PollMixin.ts'
 
 export default {
   name: 'MessagePoll',

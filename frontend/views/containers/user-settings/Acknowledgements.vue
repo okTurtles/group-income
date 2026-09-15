@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import safeLinkTag from '@view-utils/safeLinkTag.js'
+import safeLinkTag from '@view-utils/safeLinkTag.ts'
 import { L } from '@common/common.js'
 
 export default {

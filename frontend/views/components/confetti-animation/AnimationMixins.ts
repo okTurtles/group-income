@@ -1,4 +1,4 @@
-import { confettiComponents, confettiNames } from './confettiComponents/index.js'
+import { confettiComponents, confettiNames } from './confettiComponents/index.ts'
 import { randomIntFromRange, linearScale } from 'turtledash'
 
 const canvas = {
@@ -76,12 +76,12 @@ class Confetti {
   index: number;
   confettiType: string;
   disappeared: boolean;
-  explosion: Object;
-  fadeOut: Object;
-  props: Object;
-  sway: Object;
-  tPassedMaster: ?number;
-  tRefMaster: ?number;
+  explosion: any;
+  fadeOut: any;
+  props: any;
+  sway: any;
+  tPassedMaster: number | null | undefined;
+  tRefMaster: number | null | undefined;
   yVelocity: number;
 
   // Confetti Object constructor
@@ -275,7 +275,7 @@ const animationMixins = {
   components: {
     ...confettiComponents
   },
-  data (): {|animationActive: boolean, confettis: Array<any>, timeout: null|} {
+  data (): { animationActive: boolean, confettis: Array<any>, timeout: null } {
     return {
       confettis: [],
       animationActive: true,

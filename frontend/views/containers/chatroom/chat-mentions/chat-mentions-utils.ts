@@ -1,6 +1,6 @@
 export type DomObject = {
   tagName: string | null,
-  attributes: Object, // can be an empty object too.
+  attributes: any, // can be an empty object too.
   text?: string,
   children?: Array<DomObject>
 }
@@ -27,10 +27,9 @@ function isOnlyNewlines (str: any): boolean {
   return /^[\n]*$/.test(str)
 }
 
-function replaceMultiple (input: string, replacements: Object): string {
+function replaceMultiple (input: string, replacements: any): string {
   return Object.entries(replacements).reduce(
-    // $FlowFixMe[prop-missing]
-    (str, [from, to]) => str.replaceAll(from, to),
+    (str, [from, to]: [string, any]) => str.replaceAll(from, to),
     input
   )
 }

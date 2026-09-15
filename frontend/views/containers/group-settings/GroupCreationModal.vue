@@ -62,7 +62,7 @@ import {
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.ts'
 import { L } from '@common/common.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.ts'
-import StepAssistant from '@view-utils/stepAssistant.js'
+import StepAssistant from '@view-utils/stepAssistant.ts'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import {

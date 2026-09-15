@@ -17,8 +17,8 @@ const initSummary = {
   participants: []
 }
 
-const ChatMixin: Object = {
-  data (): Object {
+const ChatMixin: any = {
+  data (): any {
     return {
       loadedSummary: initSummary
     }
@@ -53,7 +53,7 @@ const ChatMixin: Object = {
       'chatRoomActiveMemberIds'
     ]),
     ...mapState(['currentGroupId']),
-    summary (): Object {
+    summary (): any {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         return Object.assign({}, this.loadedSummary)
       }
@@ -116,7 +116,7 @@ const ChatMixin: Object = {
       if (summarizedAttr) {
         const { creator, name, description, type, privacyLevel, members } = summarizedAttr
         const activeMembers = Object.entries(members)
-          .filter(([, profile]) => (profile: any)?.status === PROFILE_STATUS.ACTIVE)
+          .filter(([, profile]) => (profile as any)?.status === PROFILE_STATUS.ACTIVE)
           .map(([username]) => {
             const { displayName, picture, email } = this.globalProfile(username) || {}
             return [username, { displayName, picture, email }]

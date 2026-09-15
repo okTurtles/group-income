@@ -2,7 +2,7 @@ import { mapGetters } from 'vuex'
 import { POLL_STATUS, POLL_TYPES } from '@model/contracts/shared/constants.js'
 import { humanDate } from '@model/contracts/shared/time.ts'
 
-const PollMixin: Object = {
+const PollMixin: any = {
   computed: {
     ...mapGetters([
       'ourIdentityContractId',

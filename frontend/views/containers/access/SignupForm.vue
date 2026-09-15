@@ -54,7 +54,7 @@ import {
   IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
 } from '@model/contracts/shared/constants.js'
 import { requestNotificationPermission } from '@model/notifications/nativeNotification.ts'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,

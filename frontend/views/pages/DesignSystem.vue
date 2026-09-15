@@ -1539,7 +1539,7 @@ page(
 
 <script>
 import sbp from '@sbp/sbp'
-import '@views/utils/ui.js'
+import '@views/utils/ui.ts'
 import Page from '@components/Page.vue'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'

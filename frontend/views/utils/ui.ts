@@ -23,7 +23,7 @@ type ToastData = {
 }
 
 export default (sbp('sbp/selectors/register', {
-  'gi.ui/prompt' (params: Object): Promise<*> {
+  'gi.ui/prompt' (params: any): Promise<any> {
     sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', null, params)
 
     return new Promise((resolve, reject) => {
@@ -66,4 +66,4 @@ export default (sbp('sbp/selectors/register', {
       L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
     )
   }
-}): Object)
+}) as any)

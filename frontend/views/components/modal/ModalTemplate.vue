@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import modalMixins from './ModalMixins.js'
+import modalMixins from './ModalMixins.ts'
 import trapFocus from '@utils/trapFocus.ts'
 
 export default {

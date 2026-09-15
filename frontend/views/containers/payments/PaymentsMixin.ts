@@ -7,7 +7,7 @@ import { cloneDeep } from 'turtledash'
 
 // NOTE: this mixin combines payment information
 // from both the current in-memory state and the archived payments on disk
-const PaymentsMixin: Object = {
+const PaymentsMixin: any = {
   computed: {
     ...mapState(['currentGroupId']),
     ...mapGetters([

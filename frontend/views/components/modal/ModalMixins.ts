@@ -14,7 +14,7 @@ const modalMixins = {
       // where ModalTemplate is called with `undefined` for a11yTitle
       // see: https://github.com/okTurtles/group-income/issues/2828
       // and: https://github.com/okTurtles/group-income/pull/2820
-      default: (L('Modal Title Missing'): string)
+      default: L('Modal Title Missing') as string
     },
     backOnMobile: {
       type: Boolean,
@@ -30,7 +30,7 @@ const modalMixins = {
     },
     modalName: String
   },
-  data (): {|modalIsActive: boolean|} {
+  data (): { modalIsActive: boolean } {
     return {
       modalIsActive: true
     }
@@ -48,7 +48,7 @@ const modalMixins = {
   methods: {
     ...(mapMutations([
       'setTemporaryReducedMotion'
-    ]): any),
+    ]) as any),
     close (e: any) {
       // If optional modalName prop is provided, explicitly pass it as the targetModal to unload
       // Otherwise, the modal system will unload the latest modal(Last in, First out).

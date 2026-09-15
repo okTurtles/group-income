@@ -63,8 +63,8 @@ export default {
      * Debounce field validations.
      * - You can call it when u want to debounce expensive validations.
      */
-    debounceValidation: (debounce(function (fieldName, value) {
+    debounceValidation: debounce(function (fieldName, value) {
       this.updateField(fieldName, value)
-    }, 1000): any)
+    }, 1000) as any
   }
 }

@@ -64,9 +64,9 @@ export function checkBrowserVideoMimeTypeSupport (mimeType: string = ''): boolea
  * if it's an array of objects, `keys` could be used to specify fields
  */
 export const filterByKeyword = (
-  list: Object,
+  list: any,
   keyword: string,
-  keys: Object = [],
+  keys: any = [],
   caseSensitive: boolean = false
 ): Object => {
   if (!Array.isArray(list) || typeof keyword !== 'string') { return [] }

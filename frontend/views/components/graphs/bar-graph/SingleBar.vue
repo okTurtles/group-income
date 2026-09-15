@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { toPercent } from '@view-utils/filters.js'
+import { toPercent } from '@view-utils/filters.ts'
 
 export default {
   name: 'SingleBar',

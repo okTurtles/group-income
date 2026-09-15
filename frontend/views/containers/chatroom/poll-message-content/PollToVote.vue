@@ -35,7 +35,7 @@ import { cloneDeep } from 'turtledash'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import PollMixin from '@containers/chatroom/PollMixin.js'
+import PollMixin from '@containers/chatroom/PollMixin.ts'
 
 export default {
   name: 'PollToVote',

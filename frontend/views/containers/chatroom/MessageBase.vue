@@ -130,11 +130,11 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import emoticonsMixins from './EmoticonsMixins.js'
+import emoticonsMixins from './EmoticonsMixins.ts'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'
-import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
+import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.ts'
 import SendArea from './SendArea.vue'
 import UploadAnimationFeedback from './UploadAnimationFeedback.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
@@ -147,7 +147,7 @@ import {
 } from '~/frontend/utils/constants.ts'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
-import { getFileType } from '@view-utils/filters.js'
+import { getFileType } from '@view-utils/filters.ts'
 
 export default {
   name: 'MessageBase',

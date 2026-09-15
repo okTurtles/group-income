@@ -130,7 +130,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS, POLL_QUESTION_MAX_CHARS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.ts'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import trapFocus from '@utils/trapFocus.ts'
 
 const createRandomId = () => {

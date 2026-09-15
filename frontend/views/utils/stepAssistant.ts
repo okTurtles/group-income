@@ -21,14 +21,14 @@ export default {
   mounted () {
     this.redirect(this.config.steps[this.currentStep])
   },
-  provide (): {|$assistant: any|} {
+  provide (): { $assistant: any } {
     return {
       '$assistant': this
     }
   },
   methods: {
     redirect (content: any) {
-      let query = { name: content }
+      let query: any = { name: content }
       // Overright for modals
       if (this.$route.query.modal) {
         query = { query: { modal: this.$route.query.modal, step: content } }
@@ -52,7 +52,7 @@ export default {
       this.$emit('done')
     }
   },
-  data (): {|config: {|steps: Array<any>|}, content: string|} {
+  data (): { config: { steps: Array<any> }, content: string } {
     return {
       content: '',
       config: { steps: [] }

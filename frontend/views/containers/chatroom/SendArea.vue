@@ -301,7 +301,7 @@
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
-import emoticonsMixins from './EmoticonsMixins.js'
+import emoticonsMixins from './EmoticonsMixins.ts'
 import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -325,10 +325,10 @@ import {
   injectOrStripLink,
   splitStringByMarkdownCode,
   combineMarkdownSegmentListIntoString
-} from '@view-utils/markdown-utils.js'
-import { getFileType } from '@view-utils/filters.js'
-import { searchEmoji } from './emoji-utils.js'
-import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
+} from '@view-utils/markdown-utils.ts'
+import { getFileType } from '@view-utils/filters.ts'
+import { searchEmoji } from './emoji-utils.ts'
+import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.ts'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {

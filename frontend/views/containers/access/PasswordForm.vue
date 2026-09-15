@@ -26,7 +26,7 @@ label.field
 </template>
 
 <script>
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 
 export default {
   name: 'PasswordForm',

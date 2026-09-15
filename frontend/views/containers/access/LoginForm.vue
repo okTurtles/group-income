@@ -37,7 +37,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/notifications/nativeNotification.ts'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import { usernameValidations } from '@containers/access/SignupForm.vue'
 import { Secret } from '@chelonia/lib/Secret'
 

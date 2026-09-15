@@ -3,7 +3,7 @@ import { mapGetters, mapState } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import { L } from '@common/common.js'
 
-const DMMixin: Object = {
+const DMMixin: any = {
   computed: {
     ...mapGetters([
       'currentChatRoomId',
