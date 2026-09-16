@@ -1,5 +1,5 @@
 import { L } from '@common/common.js'
-import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.ts'
 
 export const toPercent = (decimal: number): number => Math.floor(decimal * 100)
 

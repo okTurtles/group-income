@@ -82,7 +82,7 @@ import Vue from 'vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { PAYMENTS_RECORDED } from '@utils/events.js'
+import { PAYMENTS_RECORDED } from '@utils/events.ts'
 
 export default {
   name: 'RecordPayment',

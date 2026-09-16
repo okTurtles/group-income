@@ -47,7 +47,7 @@
 <script>
 import { unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.ts'
 import { mapGetters } from 'vuex'
-import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
+import { PieChart, GraphLegendItem } from '@components/graphs/index.ts'
 import Tooltip from '@components/Tooltip.vue'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 

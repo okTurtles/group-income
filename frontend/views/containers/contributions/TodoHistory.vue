@@ -16,7 +16,7 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.ts'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'

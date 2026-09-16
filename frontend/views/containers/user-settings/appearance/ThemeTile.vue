@@ -29,7 +29,7 @@ MenuItem(tabId='theme' :isExpandable='true')
 import { mapGetters, mapMutations } from 'vuex'
 import { L } from '@common/common.js'
 import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
-import Themes from '~/frontend/model/settings/colors.js'
+import Themes from '~/frontend/model/settings/colors.ts'
 import ThemeSvg from './ThemeSvg.vue'
 
 export default {

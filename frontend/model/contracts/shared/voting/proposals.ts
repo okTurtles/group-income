@@ -16,7 +16,7 @@ import {
   STATUS_FAILED
   // STATUS_EXPIRED,
   // STATUS_CANCELLED
-} from '../constants.js'
+} from '../constants.ts'
 
 export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contractID, meta, height }: {
   state: any,

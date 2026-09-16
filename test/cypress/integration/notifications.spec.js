@@ -1,6 +1,6 @@
 import { randomUserSuffix } from '../support/lib.js'
 
-import { TABLET } from '../../../frontend/views/utils/breakpoints.js'
+import { TABLET } from '../../../frontend/views/utils/breakpoints.ts'
 
 const WIDTH_MOBILE = TABLET - 10
 

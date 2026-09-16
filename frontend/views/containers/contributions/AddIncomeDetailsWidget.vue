@@ -15,7 +15,7 @@ callout-card(
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.ts'
 import { mapGetters } from 'vuex'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgHello from '@svgs/hello.svg'

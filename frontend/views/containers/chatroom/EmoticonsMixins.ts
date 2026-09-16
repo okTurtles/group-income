@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { OPEN_EMOTICON, SELECT_EMOTICON, CLOSE_EMOTICON } from '@utils/events.js'
+import { OPEN_EMOTICON, SELECT_EMOTICON, CLOSE_EMOTICON } from '@utils/events.ts'
 
 const emoticonsMixins = {
   methods: {

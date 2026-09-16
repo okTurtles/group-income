@@ -96,7 +96,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import DMMixin from './DMMixin.ts'
 import { filterByKeyword } from '@view-utils/filters.ts'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL } from '@utils/events.ts'
 
 export default {
   name: 'NewDirectMessageModal',

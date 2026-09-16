@@ -9,8 +9,8 @@ import sbp from '@sbp/sbp'
 // TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
 import { Picker } from 'emoji-mart-vue-fast'
 import { emojiIndex } from './emoji-utils.ts'
-import { TABLET } from '@view-utils/breakpoints.js'
-import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
+import { TABLET } from '@view-utils/breakpoints.ts'
+import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.ts'
 import { debounce } from 'turtledash'
 
 export default {

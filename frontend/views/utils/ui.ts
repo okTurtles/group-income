@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
-import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
+import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.ts'
 
 // Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
 // sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')

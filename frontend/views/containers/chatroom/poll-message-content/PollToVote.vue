@@ -32,7 +32,7 @@ form(@submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { cloneDeep } from 'turtledash'
-import { POLL_TYPES } from '@model/contracts/shared/constants.js'
+import { POLL_TYPES } from '@model/contracts/shared/constants.ts'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PollMixin from '@containers/chatroom/PollMixin.ts'

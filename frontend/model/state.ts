@@ -5,16 +5,16 @@
 
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED } from '@chelonia/lib/events'
-import { LOGOUT } from '~/frontend/utils/events.js'
+import { LOGOUT } from '~/frontend/utils/events.ts'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.ts'
-import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.ts'
 import getters from './getters.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
-import { PROFILE_STATUS } from './contracts/shared/constants.js'
+import { PROFILE_STATUS } from './contracts/shared/constants.ts'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.ts'

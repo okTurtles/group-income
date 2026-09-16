@@ -159,10 +159,10 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import {
   CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
-} from '@utils/events.js'
+} from '@utils/events.ts'
 import { findMessageIdx } from '@model/contracts/shared/functions.ts'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.ts'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'

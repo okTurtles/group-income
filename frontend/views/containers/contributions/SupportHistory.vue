@@ -23,7 +23,7 @@ import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
-import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.ts'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 
 export default {

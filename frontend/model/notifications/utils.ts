@@ -7,7 +7,7 @@ import {
   MAX_COUNT,
   MAX_COUNT_READ,
   MAX_COUNT_UNREAD
-} from './storageConstants.js'
+} from './storageConstants.ts'
 import { blake32Hash } from '@chelonia/lib/functions'
 import { hashableRepresentation } from 'turtledash'
 

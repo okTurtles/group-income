@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { cloneDeep } from 'turtledash'
-import { GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
+import { GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.ts'
 import getters from './getters.ts'
 import Vue from 'vue'
 

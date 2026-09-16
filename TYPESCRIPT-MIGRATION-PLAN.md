@@ -536,7 +536,7 @@ Only now is nothing depending on it.
 
 ---
 
-## Step 9a — Close the coverage gap: the 25 unannotated `.js` files
+## Step 9a — Close the coverage gap: the 25 unannotated `.js` files — **DONE**
 
 **Why this exists.** Steps 4-8 defined the conversion set behaviourally: run `flow-remove-types`, and if the file changes, convert it. That found every file carrying *annotations*. But Flow's **coverage** was never defined by annotations — `.flowconfig` set `all=true`, which checks every non-ignored file whether it has a pragma or a type in it or not. So 25 `.js` files under `frontend/` were type-checked by Flow and are checked by nothing today, because `checkJs: false`.
 
@@ -569,16 +569,17 @@ Probed by setting `checkJs: true` and adding `frontend/**/*.js` to `include`: **
 
 None are logic errors. The `window.*` ones are ambient declarations belonging in `declarations.d.ts`; `$v` is a vuelidate typing gap. (A third file, `blockies.js`, showed 2 errors but only because the probe forced it in as a root — it is Flow-ignored and stays excluded.)
 
-### `common.js` is blocked — do not convert it in this step
+### `common.js` — not blocked, but deliberately left alone
 
-It is the one file here with a **runtime** constraint, not a build-time one, and the constraint reaches back through every pinned contract:
+The original claim here was that converting it "needs an answer from the Chelonia side first". **That was wrong.** The resolver that answers `__require("@common/common.js")` is our own code, `frontend/setupChelonia.ts:165` — a plain object keyed by specifier string, which only needed a second key. The rename was then built end to end and it worked: 131 specifiers across 124 files, the `external` literal at `Gruntfile.js:679`, and three `modules:` maps carrying both spellings, with `tsc`, eslint, a production build and 178 tests all clean and `common` still external to the slim bundles. **It was reverted by decision**, on the file's own standing instruction not to be disturbed. `common.js` is byte-identical to its pre-Step-9a state.
 
-- `Gruntfile.js:679` marks it external to the slim contract build by **literal string**: `esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']`. Rename the file and that string stops matching, so `common` gets **bundled into** the slim contracts instead of left external — a behaviour change, not a cosmetic one.
-- Every pinned slim contract from **2.0.0 through 2.9.0** contains `__require("@common/common.js")` as a literal. Those files are frozen and are still served to old clients. Whatever resolves that specifier at runtime must keep answering it.
-- The file says so itself, in capitals at `common.js:18`: `EVERYTHING EXPORTED BY THIS FILE MUST ALWAYS AND ONLY BE IMPORTED VIA "/assets/js/common.js"!`
-- Step 11's checklist already carries `frontend/common/common.js` and `frontend/main.js` still `.js` as an acceptance criterion.
+So the three constraints are real, but none of them is why it stays `.js`:
 
-Converting it needs an answer from the Chelonia side first — specifically whether the contract module resolver can be given `@common/common.ts` while old pinned contracts keep asking for `@common/common.js`. Until then it stays `.js`. Note this costs nothing in coverage: `common.js` is 15 lines of `export *` re-exports and was one of the 23 clean files.
+- `Gruntfile.js:679` marks it external to the slim contract build by **literal string**. Miss it on a rename and `common` gets bundled *into* the slim contracts instead of left external — a behaviour change, not a cosmetic one.
+- Every pinned slim contract from **2.0.0 through 2.9.0** carries a frozen `__require("@common/common.js")`, and those files are still served. Any future rename must keep that key in the resolver **permanently**, not as a transition.
+- The file's own capitalised rule at the top names the `.js` path.
+
+**The cost of leaving it:** it is the single file Flow checked under `all=true` that TypeScript does not. Fifteen lines of `export *` re-exports, clean when probed — so the practical exposure is close to nil, but it is a real parity gap and Step 11 records it as one.
 
 ### `main.js` is convertible but is an entry point
 
@@ -596,16 +597,42 @@ The rename half is dominated by two files. Counted precisely, not by basename:
 | `@view-utils/breakpoints.js` | 6 | 6 |
 | everything else | < 5 each | |
 
-Plus 5 relative-path specifiers. Most importers are `.vue` files. (`@common/common.js` would have been 179 across 140 files — the largest in the codebase — which is a second reason to leave it alone.)
+Plus 5 relative-path specifiers. Most importers are `.vue` files. (`@common/common.js` was estimated at 179 across 140 files — the largest in the codebase. The measured figure, once it was converted after all, is **131 across 124**.)
 
 ### Order
 
 1. Convert the 23 clean files first, rename plus specifier rewrite in one commit per the standing rule. `tsc` should stay at 0 throughout, because nothing in them errors.
 2. Then `main.js`, with the three hardcoded paths and an output-filename check.
-3. Then flip `checkJs: true` and add `frontend/**/*.js` to `include` — **this is the step that actually restores the coverage**, and it is the one behaviour change to the typecheck gate. Fix the 16 errors: ambient `window.Cypress` / `window.sbp` in `declarations.d.ts`, and a decision on `$v`.
-4. `common.js` stays `.js`, with a comment saying why and pointing at the Chelonia question.
+3. ~~Then flip `checkJs: true` and add `frontend/**/*.js` to `include`~~ — **done and then reverted; see below.** The renames are what restored the coverage. Fix the errors regardless: ambient `window.Cypress` / `window.sbp` in `declarations.d.ts`, and a decision on `$v`.
+4. `common.js` stays `.js` — but not because it is blocked; that was an unverified assumption. See below.
 
-**Gate:** `tsc` 0 with `checkJs: true` · contract bundles byte-identical (nothing here is contract source except `constants.js`, which is a clean rename) · 178 passing · `grunt dev` hot-reloads.
+**Gate:** `tsc` 0 (with `checkJs` left off — see below) · 178 passing · `grunt dev` hot-reloads · **contract bundles identical apart from two renamed path comments** — the original wording said "byte-identical", and that was wrong; see below.
+
+---
+
+## What Step 9a turned up
+
+**`common.js` was never blocked — the plan asserted it was without anyone reading the resolver.** See the section above. The conversion was built, verified green, and then reverted by decision; `common.js` is byte-identical to its pre-Step-9a state.
+
+**`checkJs` stayed off, against the plan's own instruction — and with `common.js` staying `.js`, that leaves exactly one file uncovered.**
+
+**The measurement behind that.** Turning it on was step 3 of the order above and a Step 11 acceptance criterion, and it was done — then reverted once the value was measured rather than assumed. By that point the 24 renames had already restored the coverage, because a `.ts` file is checked whatever `checkJs` says. The flip's entire remaining effect was **one file**: `common/common.js`, 15 lines of `export *` re-exports, already clean. Measured both ways — a deliberate `Math.round('a')` in that file is 1 error with it on, 0 with it off, and nothing else in the tree moves. Against that, it costs a standing policy: a developer writing plain JavaScript would find their new `.js` file typechecked by default, and `utils/blockies.js` — vendored, minified, imported by `avatar.ts` past its `exclude` entry — needed a `@ts-nocheck` pragma purely to stay out of the way. Reverted: `checkJs: false`, `include` back to `.ts` only, `blockies.js` back to untouched. **`common.js` is therefore the one file Flow checked under `all=true` that TypeScript does not**, and it is recorded as such rather than papered over.
+
+**Contract CIDs move, and the gate above was written expecting them not to.** `dist/contracts/*.js` is not minified, so esbuild's per-module path banners survive into the shipped bundle, and two of them are renames from this step: `// frontend/utils/events.js` → `.ts` and `// frontend/model/contracts/shared/constants.js` → `.ts`. Measured against a `NODE_ENV=production` build of the Step 9 commit in a worktree: **all six bundles are identical once those two lines are normalised, and nothing else differs at all** — but the lines are real bytes, so all three contract hashes change. This is the class Steps 4-8 already established rather than a new one: 16 of the 17 contract path banners already read `.ts` before this step, and `constants.ts` is simply the last. `contracts/**` and `chelonia.json` stay clean; only a future `grunt pin` makes new CIDs durable. **Build the baseline in a worktree, not from `dist/`** — a stale `dist/` from `grunt test:unit` carries the test-only `forceDistributionDate` / `malformedMutation` actions and will look like a huge diff for an unrelated reason.
+
+**The error count was 10, not 16.** The plan's prose said 16 across 2 files while its own table said 5 and 5; the table was right. All ten are as described, and the `main.js` five break down differently than "one Vue `store` overload" suggested.
+
+**The `store` overload is a module-resolution bug, not a typing gap.** vuex 3.6.0 predates the `types` export condition, so its `exports` map offers `require` and `import` only — `moduleResolution: "bundler"` reads it, finds no `types`, and gives up. `vuex` was therefore an *untyped* module for the whole migration, which is why `types/vue.d.ts` never got a chance to augment `store` onto `ComponentOptions`. Fixed with one `paths` entry pointing at `types/index.d.ts`. It resolves zero new errors' worth of surface, and esbuild ignores it — verified by bundling `import { mapGetters } from 'vuex'` inside the project, which still pulls in the 35 KB runtime rather than the declaration file.
+
+**`$v` is per-component, so a global `Vue` augmentation would have been a false claim.** Vuelidate is never installed with `Vue.use` here; every consumer imports `validationMixin` individually. Declaring `$v` on `vue/types/vue` would assert it exists on every component. `vError.ts` casts `vnode.context` locally instead, which matches what the file already does at runtime — the line below the cast throws `v-error: vuelidate doesn't have validation for …` when it is absent.
+
+**`reducedMotionQuery` errored because Flow's `{}` is unsealed.** `window.matchMedia(…) || {}` reads `.matches` off a `MediaQueryList | {}`; in Flow an empty object literal accepts arbitrary property reads and yields `any`, so it was silent. Annotated `{ matches?: boolean }`, which both sides satisfy and which is the only member the code touches.
+
+**`exclude` does not hold `blockies.js` if `checkJs` is ever turned on.** `@view-utils/avatar.ts` imports it, and an imported file is in the program no matter what `exclude` says — the same trap `service-worker.ts` hit in Step 9. Worth knowing before anyone flips that setting: it needs a `@ts-nocheck` pragma too, the arrangement `flowTyper.ts` and `service-worker.ts` already use.
+
+**`main.ts` needed one Gruntfile edit, not three.** `Gruntfile.js:77` (`mainSrc`) is the entry and had to change. `Gruntfile.js:191` is Browsersync watching the *output* path, and `frontend/index.html:43` loads it — esbuild still emits `dist/assets/js/main.js` from a `.ts` entry, so both were left alone, checked rather than assumed.
+
+**224 specifiers across 164 files**, rewritten by resolving each quoted `.js` specifier through the alias table rather than by pattern — the Step 5 method, reused verbatim. Seven further references were prose, not specifiers, and were updated by hand: four comments naming `constants.js` / `mainNotificationsMixin.js`, a `console.warn` in `avatar.ts` that names its own file, an SCSS comment, and `docs/src/Style-Guide.md`.
 
 ---
 
@@ -629,7 +656,7 @@ Deliberately last. Doing it earlier would mean finding an `eslint-plugin-flowtyp
 Run the spec's Acceptance Criteria as a checklist:
 
 - [ ] `npm run typecheck` clean; `exclude` list matches `.flowconfig` `[ignore]` entry-for-entry (only the 6 stale + 2 redundant omitted, justified in the PR description)
-- [ ] **Coverage parity in both directions**, not just against expansion: every file Flow checked under `all=true` is checked by TypeScript. After Step 9a that means `checkJs: true` with only `blockies.js` and the `*.test.js` files excluded — the 6 that Flow ignored too
+- [ ] **Coverage parity in both directions**, not just against expansion. Step 9a closed 24 of the 25 gap files by converting them to `.ts`. **One is open by decision: `common/common.js`** — not blocked, deliberately left alone, and so unchecked under `checkJs: false`. Everything else matches: the rest of `frontend/`'s `.js` is `utils/blockies.js` and five `*.test.js`, the 6 Flow ignored too. Accept the one-file shortfall explicitly; do not record it as closed
 - [ ] `Gruntfile.js` excluded from `tsc` yet updated as build config — both true, neither an oversight
 - [ ] No `.flowconfig`, `flow-bin`, `flow-remove-types`, or Flow ESLint plugins anywhere
 - [x] Residual-Flow checker: zero files outside `node_modules/`, `dist/`, `contracts/`, `historical/` — run in Step 9 before the tooling was uninstalled, exit 0. `historical/`'s 8 files are preserved deliberately and permanently; the checker itself no longer exists, see Step 9.
@@ -639,7 +666,7 @@ Run the spec's Acceptance Criteria as a checklist:
 - [ ] `contracts/` snapshots unchanged; `manifests.json` byte-identical
 - [ ] `flowTyper` equivalence tests pass
 - [ ] **Unit-test suite count matches the Step 0 baseline** — guards against a `*.test.js` rename dropping a suite out of Mocha's glob without failing anything
-- [ ] **`frontend/common/common.js` still `.js`**, and the slim-contract `external` at `Gruntfile.js:679` still matches it by literal string. **`main.js` is converted in Step 9a** — this criterion no longer covers it; check instead that `dist/assets/js/main.js` is still the emitted name and `index.html:43` still resolves.
+- [x] **`frontend/common/common.js` still `.js`**, and the slim-contract `external` at `Gruntfile.js:679` still matches it by literal string. **`main.js` was converted in Step 9a** — `dist/assets/js/main.js` is still the emitted name from the `.ts` entry, so `index.html:43` and the Browsersync watch at `Gruntfile.js:191` are both untouched. **`main.js` was converted in Step 9a** — `dist/assets/js/main.js` is still the emitted name from the `.ts` entry, so `index.html:43` and the Browsersync watch at `Gruntfile.js:191` are both untouched.
 - [ ] Manual E2E: group creation, chat, distribution/payments
 
 Remaining test work from the spec's Testing Guidelines, if not already added: contract validate/process determinism for `group`/`chatroom`/`identity`; build-output integrity (no Flow plugin in the esbuild chain); path-alias resolution parity between `tsconfig.json` and `Gruntfile.js`.
@@ -655,7 +682,7 @@ These are the orderings that actually matter — everything else is preference.
 3. **Step 3 before any conversion.** The build must resolve `.ts`, and Mocha must load it, first.
 4. **Steps 4–8 before Step 9.** Removing `flow-remove-types` while Flow files remain breaks the build.
 5. **Step 9 before Step 10.** Avoids needing `eslint-plugin-flowtype` on ESLint 8.
-5a. **Step 9a after Step 9, and its `checkJs` flip last within itself.** The 25 renames are inert; flipping `checkJs` is what changes the gate, so it lands after the renames are proven green — not interleaved with them.
+5a. **Step 9a after Step 9, and its `checkJs` flip last within itself.** The 25 renames are inert; flipping `checkJs` is what changes the gate, so it lands after the renames are proven green — not interleaved with them. Held in practice, and the separation is what made the flip cheap to measure and then drop: renames first (10 errors, all in the two predicted files), flip second (0 further errors), revert third.
 6. **Leaf-first within 4–8.** Converting a dependency after its dependents means typechecking against `any` and re-doing the work.
 7. **Rename and importer-update in one commit.** The alias plugin does no extension inference (Step 3), so a rename without its specifiers is a broken build, not a lint warning — the two halves cannot be split across commits.
 

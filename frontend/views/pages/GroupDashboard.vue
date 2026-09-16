@@ -40,7 +40,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.js'
+import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.ts'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'

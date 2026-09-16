@@ -58,7 +58,7 @@ import {
   GROUP_NAME_MAX_CHAR,
   GROUP_DESCRIPTION_MAX_CHAR,
   GROUP_MINCOME_MAX
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.ts'
 import { L } from '@common/common.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.ts'
@@ -71,7 +71,7 @@ import {
   GroupMincome,
   GroupRules,
   GroupPrivacy
-} from '@components/group-creation-steps/index.js'
+} from '@components/group-creation-steps/index.ts'
 
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation

@@ -48,9 +48,9 @@ import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
-import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.ts'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.ts'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.ts'
 import { L } from '@common/common.js'
 
 export default {

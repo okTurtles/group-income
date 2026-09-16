@@ -113,7 +113,7 @@ import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import { sanitizeChannelName } from '@view-utils/filters.ts'
 
 const privacyLevelToDisplay = {

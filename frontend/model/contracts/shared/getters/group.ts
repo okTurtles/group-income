@@ -4,7 +4,7 @@ import {
   MAX_SAVED_PERIODS,
   PROFILE_STATUS,
   PROPOSAL_GENERIC
-} from '../constants.js'
+} from '../constants.ts'
 import currencies from '../currencies.ts'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '../functions.ts'
 import { PAYMENT_COMPLETED } from '../payments/index.ts'

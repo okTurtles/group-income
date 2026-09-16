@@ -18,7 +18,7 @@ import {
   STATUS_CANCELLED,
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
-} from './constants.js'
+} from './constants.ts'
 
 // group.js related
 

@@ -38,7 +38,7 @@ import {
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
   CHATROOM_REPLYING_MESSAGE_LIMITS_IN_CHARS
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.ts'
 import { TextObjectType, EMOJI_REGEX } from '@utils/constants.ts'
 import { L } from '@common/common.js'

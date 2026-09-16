@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.ts'
 import { randomUserSuffix } from '../support/lib.js'
 
 const groupName = 'Dreamers'

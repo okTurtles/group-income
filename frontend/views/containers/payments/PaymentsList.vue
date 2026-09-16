@@ -36,7 +36,7 @@ import Tooltip from '@components/Tooltip.vue'
 import PaymentRowTodo from './PaymentRowTodo.vue'
 import PaymentRowSent from './PaymentRowSent.vue'
 import PaymentRowReceived from './PaymentRowReceived.vue'
-import { PAYMENTS_RECORDED } from '@utils/events.js'
+import { PAYMENTS_RECORDED } from '@utils/events.ts'
 
 export default {
   name: 'PaymentsList',

@@ -163,7 +163,7 @@ import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.ts'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import NextDistributionPill from '@containers/payments/PaymentNextDistributionPill.vue'
@@ -179,7 +179,7 @@ import {
   dummyLightningUsers,
   dummyLightningTodoItems,
   dummyLightningPaymentDetails
-} from '@view-utils/lightning-dummy-data.js'
+} from '@view-utils/lightning-dummy-data.ts'
 import { logExceptNavigationDuplicated, withGroupCurrency } from '@view-utils/misc.ts'
 
 export default {

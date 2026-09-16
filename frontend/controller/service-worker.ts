@@ -19,7 +19,7 @@
 import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.ts'
 import isPwa from '@utils/isPwa.ts'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'

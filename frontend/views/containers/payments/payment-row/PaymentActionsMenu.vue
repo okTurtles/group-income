@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.ts'
 
 export default {
   name: 'PaymentNotReceivedTooltip',

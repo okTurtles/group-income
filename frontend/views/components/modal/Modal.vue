@@ -5,7 +5,7 @@
 </template>
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.ts'
 import { omit } from 'turtledash'
 
 export default {

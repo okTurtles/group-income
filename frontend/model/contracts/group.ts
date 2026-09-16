@@ -4,7 +4,7 @@
 
 import { Errors, L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.ts'
 import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
@@ -36,7 +36,7 @@ import {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
   STATUS_CANCELLED, STATUS_EXPIRED, STATUS_OPEN
-} from './shared/constants.js'
+} from './shared/constants.ts'
 import { adjustedDistribution, unadjustedDistribution } from './shared/distribution/distribution.ts'
 import { paymentHashesFromPaymentPeriod, referenceTally, validateChatRoomName } from './shared/functions.ts'
 import groupGetters from './shared/getters/group.ts'

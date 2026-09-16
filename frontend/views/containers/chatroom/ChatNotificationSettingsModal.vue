@@ -79,8 +79,8 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import {
   CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY,
   GLOBAL_MESSAGE_NOTIFY_SETTINGS
-} from '@model/contracts/shared/constants.js'
-import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
+} from '@model/contracts/shared/constants.ts'
+import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.ts'
 
 export default {
   name: 'ChatNotificationSettingsModal',
@@ -111,7 +111,7 @@ export default {
     if (this.chatNotificationSettings[this.currentChatRoomId]) {
       const settings = this.chatNotificationSettings[this.currentChatRoomId]
       const handleLegacySetting = (setting) => {
-        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.js)
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.ts)
         // So need to handle it here for backward compatibility.
         return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
           ? this.isDM ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES : MESSAGE_NOTIFY_SETTINGS.MENTIONS

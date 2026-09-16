@@ -1,4 +1,4 @@
-import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.js'
+import { MAX_AGE_READ, MAX_AGE_UNREAD } from './storageConstants.ts'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 import { age, isNew, isOlder } from './utils.ts'
 

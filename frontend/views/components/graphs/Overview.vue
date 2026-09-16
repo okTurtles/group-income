@@ -38,7 +38,7 @@ div
 
 <script>
 import { mapGetters } from 'vuex'
-import { GraphLegendItem, Bars } from '@components/graphs/index.js'
+import { GraphLegendItem, Bars } from '@components/graphs/index.ts'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 
 export default {

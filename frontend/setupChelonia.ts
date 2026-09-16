@@ -10,10 +10,10 @@ import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.ts'
-import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import { PUBSUB_INSTANCE } from './controller/instance-keys.ts'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.ts'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.ts'
 
 const diffContractVersion = (va?: any, vb?: any): boolean => {
   // If the types don't match, a different release has been made

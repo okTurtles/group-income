@@ -5,9 +5,9 @@ import {
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
   PROFILE_STATUS
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import sbp from '@sbp/sbp'
-import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.ts'
 import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 /* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */

@@ -18,7 +18,7 @@ message-base(
 
 <script>
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.ts'
 
 export default {
   name: 'Message',

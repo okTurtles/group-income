@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from './rules.ts'
-import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.js'
+import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.ts'
 const should = require('should')
 
 const buildState = (groupSize, rule, threshold, opts = {}) => {

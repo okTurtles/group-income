@@ -81,10 +81,10 @@ import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import DMMixin from '@containers/chatroom/DMMixin.ts'
-import { OPEN_MODAL, REPLACE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL } from '@utils/events.ts'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
+import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.ts'
 
 export default {
   name: 'ProfileCardContent',

@@ -39,7 +39,7 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
 
 <script>
 import Toggle from '@components/Toggle.vue'
-import { DESKTOP } from '@view-utils/breakpoints.js'
+import { DESKTOP } from '@view-utils/breakpoints.ts'
 import { debounce } from 'turtledash'
 
 export default {

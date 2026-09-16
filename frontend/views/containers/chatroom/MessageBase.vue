@@ -140,12 +140,12 @@ import UploadAnimationFeedback from './UploadAnimationFeedback.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import { humanDate, humanTimeString } from '@model/contracts/shared/time.ts'
 import { swapMentionIDForDisplayname } from '@model/chatroom/utils.ts'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.ts'
 import {
   CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE,
   CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
 } from '~/frontend/utils/constants.ts'
-import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.ts'
 import { L, LTags } from '@common/common.js'
 import { getFileType } from '@view-utils/filters.ts'
 

@@ -20,7 +20,7 @@ import {
   STATUS_EXPIRING,
   STATUS_EXPIRED,
   STATUS_CANCELLED
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import { debounce, merge, omit, randomIntFromRange } from 'turtledash'
 import { DAYS_MILLIS, addTimeToDate, dateToPeriodStamp } from '@model/contracts/shared/time.ts'
 import proposals, { oneVoteToFail, oneVoteToPass } from '@model/contracts/shared/voting/proposals.ts'
@@ -32,7 +32,7 @@ import {
   JOINED_GROUP,
   LEFT_GROUP,
   LOGOUT
-} from '@utils/events.js'
+} from '@utils/events.ts'
 import { imageUpload } from '@utils/image.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'

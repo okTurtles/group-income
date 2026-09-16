@@ -74,7 +74,7 @@ const distJS = `${distDir}/assets/js`
 const srcDir = 'frontend'
 const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
 const contractsDir = `${srcDir}/model/contracts`
-const mainSrc = path.join(srcDir, 'main.js')
+const mainSrc = path.join(srcDir, 'main.ts')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
 
 const development = NODE_ENV === 'development'

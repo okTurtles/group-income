@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL } from '@utils/events.ts'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
 

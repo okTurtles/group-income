@@ -4,7 +4,7 @@ import { literalOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts
 import {
   PROPOSAL_REMOVE_MEMBER,
   PROFILE_STATUS
-} from '../constants.js'
+} from '../constants.ts'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

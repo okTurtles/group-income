@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
-import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
+import { CAPTURED_LOGS } from '~/frontend/utils/events.ts'
 
 export default (console: any): any => {
   // only log to server if we're in development mode and connected over the

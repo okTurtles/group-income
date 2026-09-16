@@ -1,7 +1,7 @@
 'use strict'
 
 import { deserializer, serializer } from '@chelonia/serdes'
-import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND, PROPOSAL_ARCHIVED, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.ts'
 import periodicNotificationEntries from '@model/notifications/mainPeriodicNotificationEntries.ts'
 import { makeNotification } from '@model/notifications/nativeNotification.ts'
 import '@model/notifications/periodicNotifications.ts'
@@ -34,7 +34,7 @@ import {
   NOTIFICATION_EMITTED, NOTIFICATION_REMOVED,
   OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
-} from '~/frontend/utils/events.js'
+} from '~/frontend/utils/events.ts'
 import './push.ts'
 import './sw-namespace.ts'
 

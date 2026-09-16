@@ -9,7 +9,7 @@ import {
   MESSAGE_RECEIVE,
   MESSAGE_TYPES,
   GLOBAL_NOTIFICATION_SETTINGS_KEY
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import {
   swapMentionIDForDisplayname
 } from '@model/chatroom/utils.ts'
@@ -49,7 +49,7 @@ async function messageReceivePostEffect ({
       // Checking against per-chatroom settings
       return setting === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
         // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES below is a legacy setting which is being used here for backward compatibility.
-        // (refer to 'model/contracts/shared/constants.js' file for more details)
+        // (refer to 'model/contracts/shared/constants.ts' file for more details)
         (isDMOrMention && [MESSAGE_NOTIFY_SETTINGS.MENTIONS, MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES].includes(setting))
     } else {
       // Checking against global settings

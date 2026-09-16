@@ -34,8 +34,8 @@ import {
   STATUS_EXPIRING,
   STATUS_EXPIRED,
   STATUS_CANCELLED
-} from '@model/contracts/shared/constants.js'
-import { OPEN_MODAL } from '@utils/events.js'
+} from '@model/contracts/shared/constants.ts'
+import { OPEN_MODAL } from '@utils/events.ts'
 import { getProposalDetails } from '@model/contracts/shared/functions.ts'
 import MessageBase from './MessageBase.vue'
 import RenderMessageText from './chat-mentions/RenderMessageText.vue'

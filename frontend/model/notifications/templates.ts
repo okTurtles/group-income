@@ -12,7 +12,7 @@ import {
   STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
-} from '@model/contracts/shared/constants.js'
+} from '@model/contracts/shared/constants.ts'
 import { getProposalDetails } from '@model/contracts/shared/functions.ts'
 import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'

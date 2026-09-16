@@ -6,7 +6,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.ts'
 import isPwa from '@utils/isPwa.ts'
 
 export default {

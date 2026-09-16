@@ -85,6 +85,22 @@ type Fn = (...args: any[]) => any
 // argument, and `strictNullChecks` is off.
 declare function fetchServerTime (fallback?: boolean | null): Promise<string>
 
+// Two properties `main.ts` puts on / reads off `window`. Neither is declared by
+// `lib.dom`, and the Flow libdef did not declare them either — Flow's `window`
+// was permissive enough not to care, so these are new declarations rather than
+// mirrored ones.
+//
+// Both optional: `Cypress` is injected by the Cypress runner and is absent in a
+// normal browser, and `sbp` is only ever assigned, behind the same guard.
+interface Window {
+  // The Cypress runner's global. `any` because we never touch its shape: both
+  // uses are truthiness tests (`main.ts:173` and `:432`).
+  Cypress?: any
+  // `main.ts:175` exposes the SBP dispatcher on `window` in development and
+  // under Cypress, so the devtools console and the E2E specs can call it.
+  sbp?: Fn
+}
+
 // =============================================================================
 // Node globals
 // =============================================================================

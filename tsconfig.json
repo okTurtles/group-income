@@ -8,6 +8,18 @@
     // esbuild builds; tsc only checks.
     "noEmit": true,
 
+    // Cypress 13.14.2 bundles `ts-node` and `ts-loader`, and both prefer the
+    // project's TypeScript over their own — which is 6.x here. TS 6 turns their
+    // internal defaults into hard errors (`downlevelIteration` in the spec
+    // preprocessor). This silences them; it changes nothing for our own `tsc`,
+    // which sets none of the deprecated options.
+    "ignoreDeprecations": "6.0",
+    // Same reason. `ts-node` compiles Cypress's own plugin loader, which lives
+    // outside this project, and infers a `rootDir` inside the Cypress app —
+    // TS5011. Inert for us: `rootDir` only shapes output layout, and `noEmit`
+    // is on.
+    "rootDir": "/",
+
     // esbuild is configured with no `target`, so it does not downlevel anything
     // (Gruntfile.js esbuildOptionBags.default), and the main bundle is ESM.
     "target": "ESNext",
@@ -27,10 +39,6 @@
     "strict": false,
     "skipLibCheck": true,
     "allowJs": true,
-    // 33 `.js` files remain under `frontend/` and are staying that way. Flow
-    // never checked them, so neither does TypeScript: parsing them is needed
-    // for resolution, checking them is not, and would be a coverage expansion.
-    // Flip this only as a deliberate, separate decision.
     "checkJs": false,
 
     "allowSyntheticDefaultImports": true,
@@ -69,20 +77,30 @@
       "@utils/*": ["./frontend/utils/*"],
       "@view-utils/*": ["./frontend/views/utils/*"],
       "@views/*": ["./frontend/views/*"],
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+
+      // Not an alias — the one entry here that does not mirror the Gruntfile.
+      // vuex 3.6.0 predates the `types` export condition, so its `exports` map
+      // offers `require` and `import` only and `moduleResolution: "bundler"`
+      // never finds `types/index.d.ts`. Without this, `vuex` is an untyped
+      // module and the `store` option that `types/vue.d.ts` augments onto
+      // `ComponentOptions` does not exist, which is TS2769 on `new Vue({ store })`
+      // in `main.ts`. Pointing at the declaration file costs nothing elsewhere:
+      // it resolves zero new errors' worth of surface, and esbuild ignores it —
+      // verified by bundling `import { mapGetters } from 'vuex'`, which still
+      // pulls in the 35 KB runtime.
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
     }
   },
 
-  // ONLY `.ts` files are program roots — deliberately, and this is the least
-  // obvious line in the file.
-  //
-  // `checkJs: false` suppresses *semantic* errors in `.js`, but NOT *syntactic*
-  // ones. While the Flow-annotated `.js` files were being converted, rooting
-  // them here produced thousands of unsuppressable TS8010/TS1005 parse errors,
-  // because a Flow annotation is a syntax error to TypeScript. Keeping `.js`
-  // out of the roots was the only fix, and the constraint is worth keeping:
-  // the remaining `.js` files enter the program only when a `.ts` file imports
-  // one, which is what holds `checkJs: false` to its stated scope.
+  // ONLY `.ts` files are program roots. `checkJs: false` above suppresses
+  // *semantic* errors in `.js` but not *syntactic* ones, so while the
+  // Flow-annotated `.js` files were being converted, rooting them here produced
+  // thousands of unsuppressable TS8010/TS1005 parse errors — a Flow annotation
+  // is a syntax error to TypeScript. That reason expired when the last of them
+  // was converted, but the line stays: rooting `.js` would pull in the 6 files
+  // Flow ignored along with `common/common.js`. The remaining `.js` files enter
+  // the program when a `.ts` file imports one, and that is all.
   //
   // `frontend/**/*.ts` also matches `.d.ts`, which is how the ambient
   // declarations in `declarations.d.ts` and `shims.d.ts` get picked up.

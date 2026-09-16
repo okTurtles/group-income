@@ -23,10 +23,14 @@ import Vue from 'vue'
 
 Vue.directive('error', {
   inserted (el, binding, vnode) {
+    // `$v` is installed per-component by vuelidate's `validationMixin`, not on
+    // `Vue` itself, so it is not on the `vnode.context` type. Its absence is
+    // already a runtime error below, which is the contract this directive has.
+    const context = vnode.context as any
     if (!binding.arg) {
       throw new Error(`v-error: missing argument on ${el.outerHTML}`)
     }
-    if (!vnode.context.$v.form[binding.arg]) {
+    if (!context.$v.form[binding.arg]) {
       throw new Error(`v-error: vuelidate doesn't have validation for ${binding.arg}`)
     }
     const opts = binding.value || {}
@@ -38,10 +42,14 @@ Vue.directive('error', {
     el.insertAdjacentElement('afterend', pErr)
   },
   update (el, binding, vnode) {
-    if (vnode.context.$v.form[binding.arg].$error) {
-      for (const key in vnode.context.$v.form[binding.arg].$params) {
-        if (!vnode.context.$v.form[binding.arg][key]) {
-          el.nextElementSibling.innerText = key
+    const context = vnode.context as any
+    if (context.$v.form[binding.arg].$error) {
+      for (const key in context.$v.form[binding.arg].$params) {
+        if (!context.$v.form[binding.arg][key]) {
+          // `innerText` is on `HTMLElement`; `nextElementSibling` is typed as
+          // the wider `Element`. The sibling is the `<span>`/`<p>` created in
+          // `inserted` above.
+          (el.nextElementSibling as HTMLElement).innerText = key
           break
         }
       }
