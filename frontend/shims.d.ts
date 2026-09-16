@@ -1,30 +1,22 @@
-// Module shims for the file types esbuild loads through a plugin.
+// Module shims for the file types esbuild loads through a plugin. Without them
+// TypeScript reports TS2307 on every `.vue`, `.svg` and `.scss` specifier,
+// because it has no loader for those extensions and no way to learn one.
 //
-// Counterpart of two `.flowconfig` [options] lines:
-//
-//   module.name_mapper.extension='svg' -> '…/frontend/views/utils/vueComponentStub.js.flow'
-//   module.name_mapper.extension='vue' -> '…/frontend/views/utils/vueComponentStub.js.flow'
-//
-// plus the one-off `declare module '@assets/style/main.scss'` in
-// `frontend/declarations.js`. Flow pointed all three at a single stub whose
-// entire body is `const x: Object = {}; export default x`; these wildcards say
-// the same thing per extension.
-//
-// Kept deliberately loose. An SFC's script block is not typechecked by this
-// migration (Steps 4-8 convert `.js` files only), so a `.vue` module carries no
-// type information to expose — `any` is the honest description, not a shortcut.
-//
-// `vueComponentStub.js.flow` stays until Step 9: Flow still needs it.
+// Kept deliberately loose. An SFC's script block is not typechecked, so a
+// `.vue` module carries no type information to expose — `any` is the honest
+// description, not a shortcut.
 //
 // Separate file from `declarations.d.ts` because the two have different
-// lifetimes. That one shrinks toward empty as Flow's libdef hacks are retired;
-// this one is permanent for as long as the build has non-JS imports.
+// lifetimes. That one holds ambient globals; this one is permanent for as long
+// as the build has non-JS imports.
 
-// 538 imports across the app, 9 of them from files that Steps 4-8 convert.
-// `utils/lazyLoadedView.ts` and `controller/router.ts` are converted; still
-// `.js` are `views/components/**/index.js`,
-// `views/components/modal/ModalMixins.js`, and
-// `views/containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js`.
+// Of the 478 static `.vue` imports in the app, this declaration is reached by
+// the 5 that sit in `.ts` files — `controller/router.ts`,
+// `utils/lazyLoadedView.ts`,
+// `components/confetti-animation/confettiComponents/index.ts`,
+// `components/modal/ModalMixins.ts` and
+// `containers/chatroom/chat-mentions/RenderMessageWithMarkdown.ts`. The rest
+// are `.vue`-to-`.vue`, which `tsc` never looks at.
 
 declare module '*.vue' {
   const component: any
@@ -34,16 +26,15 @@ declare module '*.vue' {
 // Turned into an inline Vue component by
 // `scripts/esbuild-plugins/vue-inline-svg-plugin.js`, hence the same `any`
 // shape as `.vue`. Currently imported only from `.vue` files, so no `.ts` file
-// reaches it yet — carried over for parity with the `.flowconfig` mapper above.
+// reaches it yet — declared anyway so the first one that does needs no edit.
 declare module '*.svg' {
   const component: any
   export default component
 }
 
 // Only `AppStyles.vue` imports SCSS from a script block rather than a style
-// block, which is why `declarations.js` had to name `@assets/style/main.scss`
-// explicitly. A wildcard costs nothing and does not need revisiting if a second
-// one appears.
+// block, and it is the sole reason this declaration exists. A wildcard costs
+// nothing and does not need revisiting if a second one appears.
 declare module '*.scss' {
   const styles: any
   export default styles

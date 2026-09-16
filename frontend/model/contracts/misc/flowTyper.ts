@@ -192,7 +192,6 @@ export const mapOf: any = <K, V>(
       Object.assign(
         acc,
         {
-          // $FlowFixMe
           [keyTypeFn(key, 'Map[_]')]: typeFn(o[key], `Map.${key}`)
         }
       )
@@ -416,7 +415,6 @@ function tupleOf_ (...typeFuncs) {
   return tuple
 }
 
-// $FlowFixMe - $Tuple<(A, B, C, ...)[]>
 // const tupleOf: TupleT = tupleOf_
 export const tupleOf: any = tupleOf_
 
@@ -444,7 +442,6 @@ function unionOf_ (...typeFuncs) {
   union.type = () => `(${typeFuncs.map(fn => getType(fn)).join(' | ')})`
   return union
 }
-// $FlowFixMe
 // const unionOf: UnionT = (unionOf_)
 export const unionOf: any = unionOf_
 

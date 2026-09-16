@@ -213,13 +213,6 @@ module.exports = (grunt) => {
     throwOnWarning: false
   }
 
-  // By default, `flow-remove-types` doesn't process files which don't start with a `@flow` annotation,
-  // so we have to pass the `all` option since we don't use `@flow` annotations.
-  const flowRemoveTypesPluginOptions = {
-    all: true,
-    cache: new Map()
-  }
-
   const puglintOptions = {}
 
   // https://github.com/sass/dart-sass#javascript-api
@@ -298,16 +291,18 @@ module.exports = (grunt) => {
 
     exec: {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,ts,vue}"',
-      flow: '"./node_modules/.bin/flow" --quiet',
       gitconfig: 'git config --local include.path ../.gitconfig',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
+      typecheck: '"./node_modules/.bin/tsc" --noEmit',
       // Test files:
       // - anything in the `/test` folder, e.g. integration tests;
-      // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
+      // - anything that ends with `.test.js` or `.test.ts`, e.g. unit tests for SBP domains kept in the domain folder.
+      // Both extensions are matched: a spec renamed to `.test.ts` would otherwise drop
+      // out of this glob and stop running without anything failing.
       // The `--require` flag ensures custom Babel support in our test files.
       test: {
-        cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
+        cmd: 'node node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.{js,ts}"',
         options: { env: { SKIP_DB_FS_CASE_SENSITIVITY_CHECK: 'true', ...process.env } }
       },
       chelDevDeploy: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy',
@@ -460,7 +455,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      const lintTasks = ['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint']
+      const lintTasks = ['exec:eslint', 'exec:typecheck', 'exec:puglint', 'exec:stylelint']
 
       grunt.task.run([
         ...(this.flags.skiplint ? [] : lintTasks),
@@ -704,12 +699,11 @@ module.exports = (grunt) => {
     const done = this.async()
     const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
     const aliasPlugin = createAliasPlugin(aliasPluginOptions)
-    const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
-    const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
+    const defaultPlugins = [aliasPlugin]
 
     const buildMain = createEsbuildTask({
       ...esbuildOptionBags.default,
@@ -793,9 +787,7 @@ module.exports = (grunt) => {
 
           if (fileEventName === 'change' || fileEventName === 'unlink') {
             // Remove the corresponding plugin cache entry, if any.
-            if (extension === '.js') {
-              flowRemoveTypesPluginOptions.cache.delete(filePath)
-            } else if (extension === '.svg') {
+            if (extension === '.svg') {
               svgInlineVuePluginOptions.cache.delete(filePath)
             } else if (extension === '.vue') {
               vuePluginOptions.cache.delete(filePath)
@@ -870,8 +862,6 @@ module.exports = (grunt) => {
       grunt.log.writeln('Quitting dangling child!')
       child.kill('SIGKILL')
     }
-    // Stops the Flowtype server.
-    exec('./node_modules/.bin/flow stop')
   })
 
   process.on('uncaughtException', (err) => {

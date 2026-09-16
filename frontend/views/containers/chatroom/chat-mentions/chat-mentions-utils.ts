@@ -80,7 +80,6 @@ function createRecursiveDomObjects (element: any): DomObject {
     : {
         tagName: element.tagName,
         text: isNodeCodeElement
-          // $FlowFixMe[prop-missing]
           ? replaceMultiple(element.innerText,
             {
               '<br>': '',

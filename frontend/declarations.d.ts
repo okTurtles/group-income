@@ -1,21 +1,19 @@
 // Ambient globals for the TypeScript build.
 //
-// This is the counterpart of Flow's `[libs]` entry in `.flowconfig`, which
-// points at `frontend/declarations.js`. Both are live during the migration:
-// Flow reads the `.js`, TypeScript reads this file. The `.js` goes away in
-// Step 9 with the rest of Flow.
+// This replaced Flow's `[libs]` entry in `.flowconfig`, which pointed at
+// `frontend/declarations.js`. That file and the whole Flow toolchain were
+// deleted in Step 9; this is now the only source of ambient declarations.
 //
 // Keep this file free of top-level `import` / `export` statements — either one
 // turns it into a module and every declaration below stops being global.
 
 // =============================================================================
-// Why this file is 300 lines shorter than `frontend/declarations.js`
+// Why this file is 300 lines shorter than the Flow libdef it replaced
 // =============================================================================
 //
-// `frontend/declarations.js` carries 88 `declare module 'x' { declare
+// `frontend/declarations.js` carried 88 `declare module 'x' { declare
 // module.exports: any }` stubs whose only job was to silence Flow's "Required
-// module not found". None of them are carried over, for three different
-// reasons.
+// module not found". None were carried over, for three different reasons.
 //
 // **73 are package stubs, and TypeScript resolves those on its own.** Verified
 // rather than assumed: all 42 bare specifiers imported anywhere under
@@ -91,7 +89,7 @@ declare function fetchServerTime (fallback?: boolean | null): Promise<string>
 // Node globals
 // =============================================================================
 
-// Deliberately left `any`, exactly as `frontend/declarations.js` had it.
+// Deliberately left `any`, exactly as the Flow libdef had it.
 //
 // Scope parity governs this migration: TypeScript checks what Flow checked, and no more.
 declare var process: any

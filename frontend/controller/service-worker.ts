@@ -1,3 +1,19 @@
+// @ts-nocheck
+// Flow never typechecked this file (`.flowconfig` [ignore]) and TypeScript does not
+// either: scope parity. It is `.ts` because every file that carried type annotations
+// is `.ts`, not because it is checked.
+//
+// `exclude` in tsconfig.json carries the same intent, but does not enforce it on its
+// own: an excluded file is still checked once something in the program imports it.
+// Today the only importer is `frontend/main.js`, which is `.js` and never a program
+// root — so nothing reaches this file. That would quietly stop being true the moment
+// `main.js` becomes `.ts`, which is why the pragma is here and not left implied.
+//
+// Converting this to real coverage is a measured job, not a mystery: 9 errors, 4 of
+// them the Chromium-only Periodic Background Sync API missing from TypeScript's DOM
+// lib (needs an ambient declaration, not a code change), the rest `MessageEvent.data`
+// being destructured positionally. See PROGRESS.md.
+
 'use strict'
 
 import { deserializer, serializer } from '@chelonia/serdes'
@@ -343,13 +359,13 @@ sbp('sbp/selectors/register', {
   })
 )
 
-sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (obj: Object) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (obj: any) => {
   // Don't send messages from the SW back to the SW to prevent infinite loops
   if (obj.from === 'sw') return
   navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_SCROLL_POSITION, data: [obj] })
 })
 
-sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (obj: Object) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (obj: any) => {
   // Don't send messages from the SW back to the SW to prevent infinite loops
   if (obj.from === 'sw') return
   navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_NOTIFICATION_SETTINGS, data: [obj] })
@@ -359,9 +375,9 @@ const swRpc = (() => {
   if (!navigator.serviceWorker) {
     throw new Error('Missing service worker object')
   }
-  let controller: ?ServiceWorker = navigator.serviceWorker.controller
+  let controller: ServiceWorker | null | undefined = navigator.serviceWorker.controller
   navigator.serviceWorker.addEventListener('controllerchange', (ev: Event) => {
-    controller = (navigator.serviceWorker: any).controller
+    controller = (navigator.serviceWorker as any).controller
   }, false)
 
   const fn = async (maxControllerChanges, ...args) => {
@@ -376,7 +392,6 @@ const swRpc = (() => {
         if (event.data && Array.isArray(event.data)) {
           try {
             const r = deserializer(event.data[1])
-            // $FlowFixMe[incompatible-use]
             if (event.data[0] === true) {
               resolve(r)
             } else {

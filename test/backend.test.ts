@@ -1,3 +1,7 @@
+// @ts-nocheck
+// The pragma is for editors. `**/*.test.ts` is ignored by the project's tsconfig.json,
+// but the editor's language server doesn't honour that exclusion.
+
 /* eslint-env mocha */
 
 import * as Common from '@common/common.js'
@@ -55,7 +59,7 @@ const vuexState = {
   contractSigningKeys: Object.create(null)
 }
 
-// this is to ensure compatibility between frontend and test/backend.test.js
+// this is to ensure compatibility between frontend and test/backend.test.ts
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js
@@ -170,7 +174,7 @@ describe('Full walkthrough', function () {
     })
     return msg
   }
-  function createGroup (name: string, creator: any, hooks: Object = {}): Promise {
+  function createGroup (name: string, creator: any, hooks: any = {}): Promise<any> {
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CSKid = keyId(CSK)
     const CSKp = serializeKey(CSK, false)
@@ -242,7 +246,7 @@ describe('Full walkthrough', function () {
       }
     })
   }
-  function createPaymentTo (from, to, amount, contractID, signingKeyId, currency = 'USD'): Promise {
+  function createPaymentTo (from, to, amount, contractID, signingKeyId, currency = 'USD'): Promise<any> {
     return sbp('chelonia/out/actionUnencrypted', {
       action: 'gi.contracts/group/payment',
       data: {

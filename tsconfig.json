@@ -27,22 +27,23 @@
     "strict": false,
     "skipLibCheck": true,
     "allowJs": true,
-    // Flow-annotated `.js` files are still being converted. Parsing them is
-    // needed for resolution; checking them is not, and would be a coverage
-    // expansion. Flip this only as a deliberate, separate decision.
+    // 33 `.js` files remain under `frontend/` and are staying that way. Flow
+    // never checked them, so neither does TypeScript: parsing them is needed
+    // for resolution, checking them is not, and would be a coverage expansion.
+    // Flip this only as a deliberate, separate decision.
     "checkJs": false,
 
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    // Needed so a converted `.ts` file can still import a not-yet-converted
-    // `.js` one during the transition. Combined with the `include` below, `.js`
-    // files enter the program only when imported, never as roots.
+    // Needed so a `.ts` file can import one of the remaining `.js` ones.
+    // Combined with the `include` below, `.js` files enter the program only
+    // when imported, never as roots.
     "allowImportingTsExtensions": true,
 
     // Flow drew its ambient declarations solely from `[libs]`
-    // (./frontend/declarations.js). TypeScript would instead auto-include every
+    // (./frontend/declarations.js, since deleted). TypeScript would instead auto-include every
     // package under node_modules/@types — 19 of them, all transitive and none
     // declared in package.json, which would leak Node globals into browser code
     // and collide with our own declarations. An empty list restores parity;
@@ -50,9 +51,9 @@
     "types": [],
 
     // --- Path aliases --------------------------------------------------------
-    // Mirrors aliasPluginOptions in Gruntfile.js:168-184. Note `.flowconfig`
-    // maps only 8 of these; esbuild resolves all of them, so the full set is
-    // transcribed here deliberately.
+    // Mirrors aliasPluginOptions in Gruntfile.js. `.flowconfig` mapped only 8
+    // of these; esbuild resolves all of them, so the full set is transcribed
+    // here deliberately.
     //
     // No `baseUrl`: it is deprecated in TypeScript 6 and stops functioning in 7.
     // Since TS 5.0 `paths` resolves relative to this file, which is what we want.
@@ -76,24 +77,19 @@
   // obvious line in the file.
   //
   // `checkJs: false` suppresses *semantic* errors in `.js`, but NOT *syntactic*
-  // ones, and a Flow annotation is a syntax error to TypeScript. Rooting the
-  // 126 Flow-annotated `.js` files here produced thousands of TS8010/TS1005
-  // parse errors — nothing to do with type checking, and unsuppressable.
+  // ones. While the Flow-annotated `.js` files were being converted, rooting
+  // them here produced thousands of unsuppressable TS8010/TS1005 parse errors,
+  // because a Flow annotation is a syntax error to TypeScript. Keeping `.js`
+  // out of the roots was the only fix, and the constraint is worth keeping:
+  // the remaining `.js` files enter the program only when a `.ts` file imports
+  // one, which is what holds `checkJs: false` to its stated scope.
   //
-  // So `.js` files enter the program only when a `.ts` file imports one — and
-  // when the file it imports still has Flow syntax, those parse errors come
-  // back. The leaf-first order (plan Steps 4-8) does not prevent this on its
-  // own: Step 7 imports upward into Step 8 (`controller/app/group` into
-  // `views/utils`, `serviceworkers/*` into `setupChelonia`) and dragged three
-  // files forward to keep `tsc` green. Neither an ambient `declare module` nor
-  // an `exclude` entry suppresses it; converting the imported file is the only
-  // fix. See "What Step 7 turned up" in the plan.
-  //
-  // `frontend/**/*.ts` also matches `.d.ts`, which is how Step 2's ambient
-  // declarations get picked up.
+  // `frontend/**/*.ts` also matches `.d.ts`, which is how the ambient
+  // declarations in `declarations.d.ts` and `shims.d.ts` get picked up.
   "include": ["frontend/**/*.ts"],
 
-  // Each entry maps to a live `.flowconfig` [ignore] line. The 6 stale entries
+  // Each entry maps to a `.flowconfig` [ignore] line from the Flow config this
+  // replaced, kept as the audit trail for that parity. The 6 stale entries
   // (Gruntfile.dashboard.js, backend/dashboard/, shared/multiformats/,
   // shared/blake2bstream.js, frontend/utils/vuexQueue.js, ignored/ — all now
   // missing from the tree) and the 2 redundant ones (test/backend.js,
@@ -109,7 +105,7 @@
     "Gruntfile.js",                                    // .flowconfig: .*/Gruntfile.js
     "cypress.config.js",                               // .flowconfig: .*/cypress.config.js
     "frontend/assets",                                 // .flowconfig: .*/frontend/assets/.*
-    "frontend/controller/service-worker.js",           // .flowconfig: .*/frontend/controller/service-worker.js
+    "frontend/controller/service-worker.ts",           // .flowconfig: .*/frontend/controller/service-worker.js
     "frontend/utils/blockies.js",                      // .flowconfig: .*/frontend/utils/blockies.js
     "frontend/model/contracts/misc/flowTyper.ts",      // .flowconfig: .*/frontend/model/contracts/misc/flowTyper.ts
     "**/*.test.js",                                    // .flowconfig: .*.test.js

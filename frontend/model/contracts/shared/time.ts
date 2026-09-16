@@ -26,7 +26,6 @@ export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength, guess }: { knownSortedStamps: string[], periodLength: number, guess?: boolean }
 ): any {
-  // $FlowFixMe - Pedantic '[method-unbinding]' error
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
     throw new TypeError('must be ISO string or Date object')
   }
@@ -253,7 +252,6 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
 
   if (interval >= DAYS_MILLIS * 2) {
     // Make sure to replace any ordinary space character by a non-breaking one.
-    // $FlowFixMe
     return humanDate(datems).replaceAll(' ', '\xa0')
   }
   if (interval >= DAYS_MILLIS) {

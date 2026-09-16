@@ -82,7 +82,6 @@ function makeCurrency (options): Currency {
   const { code, symbol, decimalsMax, isCrypto = false } = options
   return {
     numberFormat: new Intl.NumberFormat(
-      // $FlowIgnore[incompatible-call]
       typeof navigator === 'object' ? (navigator.languages ?? navigator.language) : 'en-US',
       {
         style: 'currency',

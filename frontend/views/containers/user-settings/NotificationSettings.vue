@@ -123,7 +123,6 @@ export default {
     if (
       !isWebkit &&
       typeof navigator.permissions === 'object' &&
-      // $FlowFixMe[method-unbinding]
       typeof navigator.permissions.query === 'function'
     ) {
       navigator.permissions.query({ name: 'notifications' }).then((status) => {
