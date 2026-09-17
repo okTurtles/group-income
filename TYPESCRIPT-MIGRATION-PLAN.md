@@ -645,7 +645,27 @@ Deliberately last. Doing it earlier would mean finding an `eslint-plugin-flowtyp
 - **Expect new findings.** `eslint-plugin-vue` 7 → 9 adds rules, and the Step 002 discovery still applies: the removed `}: Object)` cast had been hiding 182 components from `vue/*` rules entirely. Fix what it surfaces or explicitly disable with a reason — don't blanket-disable.
 - **Delete the `no-unused-vars` disables added in Steps 6–8.** Core `no-unused-vars` under `@babel/eslint-parser` does not count type-only uses, so every mirrored `import type` in a `.ts` file is covered by a disable carrying the reason text `type-only uses, which @babel/eslint-parser does not count`. **After Step 7 there are 12 directives covering 17 `import type` lines**, and they come in two shapes: 9 are `// eslint-disable-next-line no-unused-vars -- …` (one import each) and **3 are block form** — `/* eslint-disable no-unused-vars -- … */` … `/* eslint-enable no-unused-vars */` — wrapping 2-3 imports in `actions/chatroom.ts`, `actions/group.ts` and `app/group.ts`. Step 8 adds more of both. **Deleting a block one is a two-line removal**: drop the matching `/* eslint-enable no-unused-vars */` too, or it is left orphaned. Grep the reason text, which both shapes carry, rather than the `-next-line` spelling, which only matches 9 of 12. The parser swap is what makes them unnecessary: `plugin:@typescript-eslint/recommended` turns the core rule off and uses `@typescript-eslint/no-unused-vars`, which counts type references. The ESLint upgrade on its own does not. **They will not flag themselves.** `reportUnusedDisableDirectives` is opt-in in 8.57.1, and nothing in this repo sets it (`package.json`, `exec:eslint`, the npm scripts). So after the swap, run the lint once with `--report-unused-disable-directives`, delete what it reports, and grep for the reason text to confirm none remain. Treat the flag as a one-off: it can also report older, unrelated disable comments, so review those individually rather than turning it on permanently by default.
 
-**Done when:** `npm run lint` passes on `.js`, `.ts`, and `.vue`.
+**Done when:** `npm run lint` passes on `.js`, `.ts`, and `.vue`. — **done.** The script is actually `npm run eslint`; see below.
+
+---
+
+## What Step 10 turned up
+
+**The upgrade had an edge the plan did not list: `CLIEngine`.** `scripts/esbuild-plugins/utils.js` builds the lint pass that `grunt dev` runs on each save, through `CLIEngine` — which ESLint 8 removed, so `new CLIEngine()` throws immediately. `createEslinter` is called at `Gruntfile.js:744`, inside the `dev` task, so `grunt dev` would have died at startup; `grunt build` lints through `exec:eslint` and is unaffected. Neither `npm run eslint` nor `tsc` reads that file. Ported to the async `ESLint` class. **Anyone repeating a major ESLint bump should grep for `CLIEngine` and `executeOnText` before trusting a green lint run** — the CLI passing says nothing about the programmatic callers.
+
+**Most of the first run was configuration, not code — 483 of 574.** `plugin:@typescript-eslint/recommended` replaces two core rules with its own versions *at stock defaults*, which silently discards the options `standard` set on them: `no-unused-vars` loses `args: "none"` and `caughtErrors: "none"` (102 false positives, all unused parameters), and `no-unused-expressions` loses `allowShortCircuit` / `allowTernary` / `allowTaggedTemplates` (15). Both were restated with `standard`'s exact options in the `.ts` override. The other 381 were `no-explicit-any`, which is the deferred `Object`/`Function` work by another name, so it is off. Only 16 errors were ever real.
+
+**Three of the four Step 3 override rules turned out to be redundant, and that was measured rather than assumed** — the check the step called for. Deleting `no-undef` (`.ts`) and `no-redeclare` / `no-unused-vars` (`.d.ts`) leaves the lint at 0: `eslint-recommended`, which `recommended` pulls in, turns the first two off for TypeScript, and `@typescript-eslint/no-unused-vars` does not flag ambient declarations the way the core rule did. `no-var` in `**/*.d.ts` fires once in `declarations.d.ts` and stays. The blocks themselves remain, as instructed.
+
+**The dead-directive sweep found 23, not 12.** The 12 `import type` disables from Steps 6-8 came out as described (15 lines, since 3 are block form). The version bumps also killed 11 older, unrelated ones — `camelcase`, `no-new`, `require-await` ×2, `vue/require-prop-types`, two `no-unused-vars` in `Gruntfile.js`, three `cypress/no-unnecessary-waiting`, and a bare `// eslint-disable-line` in `backend.test.ts`. All removed after reading each in context.
+
+**`eslint-plugin-vue` 7 → 9 cost one rule and one fix, not the wave Step 002 suggested.** `vue/multi-word-component-names` (new in v8) flags 25 existing components and is off — renaming them is not this PR. `vue/valid-next-tick` found one genuine confusion in `ChatMain.vue`: `setTimeout(() => this.$nextTick(cb), 100)` reads, to the rule, as awaiting the promise *and* passing a callback, because a concise arrow body counts as awaiting. A block body says what was meant.
+
+**Lint fixes reached `frontend/model/contracts/group.ts` and cost zero contract bytes.** Two `object-shorthand` fixes land in contract source, but the pinned 2.9.0 bundle at `group.js:1900` already reads `paymentType,` — esbuild emits the shorthand form whatever the source says. esbuild also drops comments, so the `eslint-disable` added to `shared/functions.ts` is invisible too.
+
+**`innerSigningContractID?: String` is not a typo to fix here.** `git log -S` traces the capital `S` back to `f8cac6630`; the Flow original said `String`, so RULES 2 keeps it and `@typescript-eslint/no-wrapper-object-types` is silenced at that one line with the reason. The other wrapper-type hit, `filters.ts`'s `): Object`, went the other way — its own two parameters had already been converted to `any` and only the return type was missed, so `any` restores the file's own mirror.
+
+**`npm run lint` does not exist**, here or before this step; the script is `npm run eslint`. `AGENTS.md` documents the wrong name in two places and also still lists `npm run flow`. Left alone — it is the docs fix already logged in PROGRESS's open items.
 
 ---
 
@@ -656,11 +676,11 @@ Run the spec's Acceptance Criteria as a checklist:
 - [ ] `npm run typecheck` clean; `exclude` list matches `.flowconfig` `[ignore]` entry-for-entry (only the 6 stale + 2 redundant omitted, justified in the PR description)
 - [x] **Coverage parity in both directions**, not just against expansion: every file Flow checked under `all=true` is checked by TypeScript. Closed by converting all 25 to `.ts`, `common/common.js` included. `checkJs` stays `false` and costs nothing — the only `.js` left under `frontend/` is `utils/blockies.js` and five `*.test.js`, the 6 Flow ignored too.
 - [ ] `Gruntfile.js` excluded from `tsc` yet updated as build config — both true, neither an oversight
-- [ ] No `.flowconfig`, `flow-bin`, `flow-remove-types`, or Flow ESLint plugins anywhere
+- [x] No `.flowconfig`, `flow-bin`, `flow-remove-types`, or Flow ESLint plugins anywhere — the first three went in Step 9, the two ESLint plugins and their three `eslintConfig` entries in Step 10. `grep` over `.github/`, `package.json` and `Gruntfile.js` is clean.
 - [x] Residual-Flow checker: zero files outside `node_modules/`, `dist/`, `contracts/`, `historical/` — run in Step 9 before the tooling was uninstalled, exit 0. `historical/`'s 8 files are preserved deliberately and permanently; the checker itself no longer exists, see Step 9.
 - [ ] `grunt dev` starts, builds, hot-reloads · `NODE_ENV=production grunt build` works
 - [ ] `grunt test:unit` passes · `grunt test:cypress` has no new failures vs. the Step 0 baseline
-- [ ] `npm run lint` and `npm run stylelint` pass · CI green with typecheck in place of Flow
+- [ ] `npm run lint` and `npm run stylelint` pass · CI green with typecheck in place of Flow — **the script is `npm run eslint`**; it and `stylelint` are both clean as of Step 10. CI still unrun.
 - [ ] `contracts/` snapshots unchanged; `manifests.json` byte-identical
 - [ ] `flowTyper` equivalence tests pass
 - [ ] **Unit-test suite count matches the Step 0 baseline** — guards against a `*.test.js` rename dropping a suite out of Mocha's glob without failing anything

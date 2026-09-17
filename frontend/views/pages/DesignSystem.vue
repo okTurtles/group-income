@@ -1728,7 +1728,7 @@ export default {
       link.setAttribute('href', `#${el.id}`)
       menu.appendChild(link)
       this.articles.push({
-        link: link,
+        link,
         top: el.getBoundingClientRect().top - window.innerHeight
       })
     })

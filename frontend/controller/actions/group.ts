@@ -39,11 +39,9 @@ import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '@chelonia/lib/events'
 import { createInvite, encryptedAction } from './utils.ts'
-/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
 import type { Key } from '@chelonia/crypto'
 import type { ChelKeyRequestParams } from '@chelonia/lib'
 import type { GIActionParams } from './types.ts'
-/* eslint-enable no-unused-vars */
 import { extractProposalData } from '@model/notifications/utils.ts'
 
 // Function debounced because it might get called too often (on every group
@@ -148,7 +146,6 @@ export default (sbp('sbp/selectors/register', {
     }
 
     // Create the necessary keys to initialise the contract
-    // eslint-disable-next-line camelcase
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
     const inviteKey = keygen(EDWARDS25519SHA512BATCH)
@@ -304,7 +301,7 @@ export default (sbp('sbp/selectors/register', {
             groupPicture: finalPicture,
             sharedValues,
             mincomeAmount: +mincomeAmount,
-            mincomeCurrency: mincomeCurrency,
+            mincomeCurrency,
             distributionDate,
             minimizeDistribution: true,
             proposals: {

@@ -223,9 +223,8 @@ async function startApp () {
   // Clear the temporary files cache on app startup
   sbp('gi.db/filesCache/temporary/clear')
 
-  /* eslint-disable no-new */
   new Vue({
-    router: router,
+    router,
     mixins: [notificationsMixin, showNavMixin],
     components: {
       AppStyles,

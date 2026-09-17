@@ -20,7 +20,6 @@ import { rawSignedIncomingData } from '@chelonia/lib/signedData'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { findKeyIdByName } from '@chelonia/lib/utils'
 import { blake32Hash } from '@chelonia/lib/functions'
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.ts'
@@ -691,7 +690,7 @@ export default (sbp('sbp/selectors/register', {
         // us a DM, even if the PEK has been rotated.
         ...(DMK
           ? [['chelonia/out/keyShare', {
-              contractID: contractID,
+              contractID,
               contractName: rootState.contracts[contractID].type,
               data: encryptedOutgoingDataWithRawKey(newPEK, {
                 contractID,
@@ -1417,7 +1416,7 @@ export default (sbp('sbp/selectors/register', {
     }
 
     return await sbp('chelonia/out/keyShare', {
-      contractID: contractID,
+      contractID,
       contractName: 'gi.contracts/identity',
       data: encryptedOutgoingData(contractID, PEKid, {
         contractID,

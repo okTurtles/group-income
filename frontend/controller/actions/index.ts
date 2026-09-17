@@ -1,6 +1,5 @@
 import { has, pick } from 'turtledash'
 import sbp from '@sbp/sbp'
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { SPKey } from '@chelonia/lib/SPMessage'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'

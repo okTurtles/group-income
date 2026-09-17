@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { Notification, NotificationData, NotificationTemplate } from './types.ts'
 import templates from './templates.ts'
 import { makeNotificationHash } from './utils.ts'

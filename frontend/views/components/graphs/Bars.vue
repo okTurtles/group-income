@@ -134,7 +134,7 @@ export default {
         let label = this.withGroupCurrency(Math.abs(scale))
         if (scale < 0) label = '-' + label
         // Add scale label and positition
-        scales.push({ label: label, position: this.calculRatioY(scale) })
+        scales.push({ label, position: this.calculRatioY(scale) })
         scale = scale + roundedTickRange
       }
       return scales

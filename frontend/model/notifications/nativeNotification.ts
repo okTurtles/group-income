@@ -107,7 +107,6 @@ export async function requestNotificationPermission (
 
 // `icon` is `any`, not `string`: callers also pass picture objects, and TypeScript narrows a
 // `string` through the `typeof icon === 'object'` check below to `null` (TS18047).
-// eslint-disable-next-line require-await
 export async function makeNotification ({ title, body, icon, path, groupID, sbpInvocation }: {
   title: string, body: string, icon?: any, path?: string, groupID?: string,
   sbpInvocation?: any[]

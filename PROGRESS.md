@@ -349,14 +349,37 @@ Nothing will drag them in by accident — three independent guards, none of whic
 
 ---
 
+### 019 — Step 10: ESLint stack upgrade
+
+**Status:** DONE
+
+**Changed:** ESLint 7.32.0 → 8.57.1; `@typescript-eslint/parser` + `eslint-plugin` 8.70.0; `eslint-config-standard` 16.0.2 → 17.1.0, `eslint-plugin-vue` 7 → 9.33.0, `-promise` 4 → 6.6.0, `-import` 2.22.1 → 2.32.0, `-node` → `-n` 16.6.2. `eslint-plugin-flowtype` + `-flowtype-errors` removed along with their three `eslintConfig` entries. `.ts` gets `@typescript-eslint/parser` and `plugin:@typescript-eslint/recommended` through an `overrides` block, so `.vue` keeps `@babel/eslint-parser`. eslint 0 · tsc 0 · stylelint 0.
+
+**`scripts/esbuild-plugins/utils.js` used `CLIEngine`, which ESLint 8 deleted.** `new CLIEngine()` on an undefined export throws at once, and `createEslinter` is called at `Gruntfile.js:744` — inside the `dev` task, which would have died at startup. `grunt build` is unaffected: it lints through `exec:eslint`, the CLI. Ported to the async `ESLint` class (`lintText`, `loadFormatter`) and exercised directly on a clean and a dirty `.ts` string.
+
+**574 problems on the first run, and 483 of them were config, not code.** 381 `@typescript-eslint/no-explicit-any` — the `any`s that stand in for Flow's `Object`/`Function`, explicitly deferred — switched off. 102 of the 104 `@typescript-eslint/no-unused-vars` were unused *parameters* and caught errors: `recommended` swaps the core rule for its own at stock defaults, silently dropping `standard`'s `args: "none"` / `caughtErrors: "none"`. Same trap on `no-unused-expressions`. Both restated with `standard`'s exact options; the 2 survivors were real.
+
+**Three of the four Step 3 override rules are now redundant, measured not assumed.** With them deleted the lint is still 0: `eslint-recommended` (inside `recommended`) turns `no-undef` and `no-redeclare` off for TS, and `@typescript-eslint/no-unused-vars` does not flag ambient declarations. `no-var` in `**/*.d.ts` fires once in `declarations.d.ts` and stays.
+
+**`vue/multi-word-component-names` off** — new in `eslint-plugin-vue` 8, 25 existing components, renaming them is not this PR.
+
+**Six real fixes:** `filters.ts` return type `Object` → `any` (its two parameters were already converted, the return was missed); an `eslint-disable` on `functions.ts`'s `innerSigningContractID?: String`, which mirrors the Flow original's capital `S`; a dead `return` in `service-worker.ts`; the extension on `cypress.config.js`'s plugins `require`; a block body for `ChatMain.vue`'s `setTimeout(() => this.$nextTick(cb))`, which `vue/valid-next-tick` reads as awaiting and passing a callback at once; and `state.ts`'s deliberate-dead-code directive renamed to the rule that replaced it. Plus `--fix` for 27 `object-shorthand` and 10 `semi` (TS class fields).
+
+**`object-shorthand` touched `contracts/group.ts` and changes no contract bytes.** The pinned 2.9.0 `group.js:1900` already reads `paymentType,` — esbuild emits shorthand whatever the source says. esbuild drops comments too, so the `functions.ts` directive is likewise invisible.
+
+**23 dead `eslint-disable` directives, not 12.** The 12 `import type` ones from Steps 6-8 went as planned (15 lines — 3 are block form with a trailing `eslint-enable`). The sweep also caught 11 older ones the version bumps killed: `camelcase`, `no-new`, `require-await` ×2, `vue/require-prop-types`, `no-unused-vars` ×2 in `Gruntfile.js`, `cypress/no-unnecessary-waiting` ×3, and a bare one in `backend.test.ts`. All removed; `--report-unused-disable-directives` now reports nothing. It stays a one-off flag, not a config entry.
+
+**`backend.test.ts`'s five `require()`s became `import`s, and the `**/*.test.ts` override went with them.** `recommended` bans `no-require-imports`; the exemption existed for that one file (`distribution.test.ts` has none). `ws`, `should`, `buffer`.File, `fs`, `path` all resolve to the identical objects under `@babel/register`, and `global.WebSocket = WebSocket` keeps its position — preset-env compiles the file to CJS regardless. `mocha --dry-run` enumerates all 10 suites.
+
+---
+
 ## Open items
 
 - **Deduplicate the plan against this file — docs-only, after every step lands.** Each "What Step N turned up" section repeats its PROGRESS entry almost whole: Step 4 has five findings and all five are in both, and Steps 5-7a are the same. The split that was intended: the plan keeps only what changes a *later* step's execution (the "Step 5 hits this four more times — `chatroom.js:39,40`, `group.js:369,370`" kind of pointer), PROGRESS keeps the full finding and the gate numbers. Doing it at the end rather than per-step avoids rewriting the same sections repeatedly. Its own commit — no source files change.
-- Flow is gone (Steps 4-9). Left: Step 10 (ESLint 8 + `@typescript-eslint`, which also removes `eslint-plugin-flowtype`, `eslint-plugin-flowtype-errors` and the peer-installed `flow-bin`) and Step 11 (verification checklist).
+- Flow is gone (Steps 4-10). Left: Step 11 (verification checklist).
 - **Coverage gap fully closed.** All 25 files are `.ts` after entry 018. `checkJs` stays `false` and costs nothing. **Do not delete the `'@common/common.js'` key** from the three `modules:` maps — the frozen pinned snapshots under `contracts/` require that spelling and are still served, and no gate would catch its removal.
 - **`AGENTS.md` still documents Flow, and it is the file agents read first.** Its "Linting & Type Checking" block lists `npm run flow # Run Flow type checker` and its CI section lists `npm run flow` as step 2 — both gone since Step 9, which replaced them with `exec:typecheck`. The same block lists `npm run lint`, which has never existed in this repo; the script is `npm run eslint`. Out of scope for Step 9a's diff, and a one-commit docs fix whenever it is wanted.
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.
 - **Deferred to the Vue 3 migration:** typing the 186 `.vue` SFCs. They stay plain untyped JS for the remainder of this Flow → TypeScript work; `<script lang="ts">` and real `defineComponent` inference are a Vue 3 concern.
-- ESLint 7.32 limits usable `@typescript-eslint` versions; may force a lint-stack upgrade.
 - Mocha's spec glob now matches `*.test.{js,ts}`, done in Step 9 for the 2 renamed specs. The other 5 `*.test.js` files never had Flow syntax, so they stay `.js` under parity; converting them is now unblocked but is its own decision.

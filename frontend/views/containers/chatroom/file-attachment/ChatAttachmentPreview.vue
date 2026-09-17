@@ -138,7 +138,7 @@ export default {
       },
       settledImgURLList: [],
       config: {
-        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+        CHATROOM_ATTACHMENT_TYPES
       },
       ephemeral: {
         downloadInProgress: [] // array of entry ids that are currently being downloaded to user's device

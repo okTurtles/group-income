@@ -194,9 +194,9 @@ export default (sbp('sbp/selectors/register', {
     const [c, hc] = computeCAndHc(r, s, h)
 
     const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/${encodeURIComponent(identityContractID)}/contract_hash?${(new URLSearchParams({
-      'r': r,
-      's': s,
-      'sig': sig,
+      r,
+      s,
+      sig,
       'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
     })).toString()}`).then(handleFetchResult('text'))
 
@@ -224,9 +224,9 @@ export default (sbp('sbp/selectors/register', {
       },
       body:
         `${(new URLSearchParams({
-          'r': r,
-          's': s,
-          'sig': sig,
+          r,
+          s,
+          sig,
           'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, ''),
           'Ea': encryptedArgs
         })).toString()}`
@@ -265,10 +265,10 @@ export default (sbp('sbp/selectors/register', {
         'content-type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
-        'r': r,
-        's': s,
-        'sig': sig,
-        'Eh': Eh
+        r,
+        s,
+        sig,
+        Eh
       })
     })
 

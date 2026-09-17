@@ -73,16 +73,16 @@ function createEase ({
 }
 
 class Confetti {
-  index: number;
-  confettiType: string;
-  disappeared: boolean;
-  explosion: any;
-  fadeOut: any;
-  props: any;
-  sway: any;
-  tPassedMaster: number | null | undefined;
-  tRefMaster: number | null | undefined;
-  yVelocity: number;
+  index: number
+  confettiType: string
+  disappeared: boolean
+  explosion: any
+  fadeOut: any
+  props: any
+  sway: any
+  tPassedMaster: number | null | undefined
+  tRefMaster: number | null | undefined
+  yVelocity: number
 
   // Confetti Object constructor
   constructor (x: number, y: number, index: number, color: string, confettiType: string) {

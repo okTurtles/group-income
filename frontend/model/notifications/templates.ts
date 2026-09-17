@@ -1,6 +1,5 @@
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import type {
-  // eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
   NewProposalType,
   NotificationTemplate
 } from './types.ts'

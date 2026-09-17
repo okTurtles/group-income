@@ -20,16 +20,16 @@ import '@chelonia/lib'
 import { createCID, multicodes } from '@chelonia/lib/functions'
 import { Secret } from '@chelonia/lib/Secret'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
+// Remove this when dropping support for Node versions lower than v20.
+import { File } from 'buffer'
+import fs from 'fs'
+import path from 'path'
+import should from 'should'
+import WebSocket from 'ws'
+// import { PassThrough, Readable } from 'stream'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
-global.WebSocket = require('ws')
-const should = require('should') // eslint-disable-line
-
-// Remove this when dropping support for Node versions lower than v20.
-const File = require('buffer').File
-const fs = require('fs')
-const path = require('path')
-// const { PassThrough, Readable } = require('stream')
+global.WebSocket = WebSocket
 
 chalk.level = 2 // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
@@ -254,8 +254,8 @@ describe('Full walkthrough', function () {
       action: 'gi.contracts/group/payment',
       data: {
         toMemberID: to.contractID(),
-        amount: amount,
-        currency: currency,
+        amount,
+        currency,
         txid: String(parseInt(Math.random() * 10000000)),
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL

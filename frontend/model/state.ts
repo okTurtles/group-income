@@ -25,7 +25,7 @@ import chatroomModule from '~/frontend/model/chatroom/vuexModule.ts'
 // Unused as of https://github.com/okTurtles/group-income/pull/2525. For
 // usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const contractUpdate = (initialState: any, updateFn: (state: any, contractIDHints: string[] | null | undefined) => any, contractType: string | null | undefined) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early

@@ -8,11 +8,6 @@
 // Today the only importer is `frontend/main.js`, which is `.js` and never a program
 // root — so nothing reaches this file. That would quietly stop being true the moment
 // `main.js` becomes `.ts`, which is why the pragma is here and not left implied.
-//
-// Converting this to real coverage is a measured job, not a mystery: 9 errors, 4 of
-// them the Chromium-only Periodic Background Sync API missing from TypeScript's DOM
-// lib (needs an ambient declaration, not a code change), the rest `MessageEvent.data`
-// being destructured positionally. See PROGRESS.md.
 
 'use strict'
 
@@ -334,7 +329,6 @@ sbp('sbp/selectors/register', {
           return newRegistration
         } else {
           console.debug('[sw] No active service-worker was found while checking for the updates.')
-          return
         }
       } catch (err) {
         console.error(`[sw] Failed to update the service-worker! - ${err.message}`)

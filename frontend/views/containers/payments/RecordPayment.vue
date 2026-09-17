@@ -115,7 +115,7 @@ export default {
   created () {
     this.form.paymentsToRecord = this.paymentsList.map((payment, index) => ({
       ...payment,
-      index: index, // A link between original payment and this copy
+      index, // A link between original payment and this copy
       checked: false
     }))
   },

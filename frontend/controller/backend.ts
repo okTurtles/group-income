@@ -1,6 +1,5 @@
 'use strict'
 
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { JSONObject } from '@chelonia/lib/types'
 
 import sbp from '@sbp/sbp'

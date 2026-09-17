@@ -11,10 +11,8 @@ import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
-/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
 import type { Key } from '@chelonia/crypto'
 import type { GIRegParams } from './types.ts'
-/* eslint-enable no-unused-vars */
 import { encryptedAction, encryptedNotification } from './utils.ts'
 import { makeMentionFromUserID } from '@model/chatroom/utils.ts'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.ts'

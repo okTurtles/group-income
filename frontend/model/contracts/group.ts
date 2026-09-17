@@ -506,7 +506,7 @@ sbp('chelonia/defineContract', {
         exchangeRate: numberRange(0, GROUP_MINCOME_MAX),
         txid: stringMax(MAX_HASH_LEN, 'txid'),
         status: paymentStatusType,
-        paymentType: paymentType,
+        paymentType,
         details: optional(object),
         memo: optional(stringMax(MAX_MEMO_LEN, 'memo'))
       })),
@@ -625,7 +625,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/proposal': {
       validate: actionRequireActiveMember((data, { state }) => {
         objectOf({
-          proposalType: proposalType,
+          proposalType,
           proposalData: objectMaybeOf({
             name: stringMax(PROPOSAL_NAME_MAX_CHAR),
             reason: stringMax(PROPOSAL_REASON_MAX_CHAR)
@@ -1743,7 +1743,6 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    // eslint-disable-next-line require-await
     'gi.contracts/group/leaveGroup': async ({ data, meta, contractID, height, getters, innerSigningContractID, proposalHash }) => {
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const memberID = data.memberID || innerSigningContractID

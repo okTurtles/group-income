@@ -68,7 +68,7 @@ export const filterByKeyword = (
   keyword: string,
   keys: any = [],
   caseSensitive: boolean = false
-): Object => {
+): any => {
   if (!Array.isArray(list) || typeof keyword !== 'string') { return [] }
 
   if (!keyword) {

@@ -119,7 +119,7 @@ export default {
       } else {
         // Add new user to the list
         list[id] = {
-          amount: amount,
+          amount,
           total: amount > 0
             ? this.groupProfiles[id].pledgeAmount
             : this.groupProfiles[id].incomeAmount - this.mincome

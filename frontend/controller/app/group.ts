@@ -10,10 +10,8 @@ import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.ts'
 import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
 import { withGroupCurrency } from '@view-utils/misc.ts'
-/* eslint-disable no-unused-vars -- type-only uses, which @babel/eslint-parser does not count */
 import type { ChelKeyRequestParams } from '@chelonia/lib'
 import type { GIActionParams } from '../actions/types.ts'
-/* eslint-enable no-unused-vars */
 
 sbp('okTurtles.events/on', ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ({ identityContractID, groupContractID }) => {
   if (process.env.CI) {

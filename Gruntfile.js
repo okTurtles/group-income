@@ -830,11 +830,9 @@ module.exports = (grunt) => {
     done()
   })
 
-  // eslint-disable-next-line no-unused-vars
   let killKeepAlive = null
   grunt.registerTask('keepalive', function () {
     // This keeps grunt running after other async tasks have completed.
-    // eslint-disable-next-line no-unused-vars
     killKeepAlive = this.async()
   })
 

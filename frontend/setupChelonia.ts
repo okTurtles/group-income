@@ -5,7 +5,6 @@ import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.ts'
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'

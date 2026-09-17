@@ -113,6 +113,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   height: number,
   state?: any,
   pending?: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types -- mirrors the Flow original, which said `String`
   innerSigningContractID?: String
 }): any {
   const { type, text, replyingMessage, attachments } = data

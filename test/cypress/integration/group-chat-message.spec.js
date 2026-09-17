@@ -191,7 +191,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
-      groupName: groupName,
+      groupName,
       shouldLogoutAfter: false,
       bypassUI: true
     })

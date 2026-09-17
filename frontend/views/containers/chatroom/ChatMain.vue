@@ -475,7 +475,7 @@ export default {
       const observeSizeChanges = () => {
         if (!this.resizeObserver) return
         if (!this.$refs.conversation?.$el) {
-          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
+          setTimeout(() => { this.$nextTick(observeSizeChanges) }, 100)
           return
         }
         if (this.mutationObserver) {

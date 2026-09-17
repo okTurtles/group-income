@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { Notification } from './types.ts'
 import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/model/contracts/shared/time.ts'
 import {
