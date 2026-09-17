@@ -957,7 +957,7 @@ export default ({
               this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
             }
           } else if (pendingMessageHash && findMessageIdx(pendingMessageHash, messages) < 0) {
-            console.warn('[ChatMain.vue] send failed; pending message missing from state', e)
+            console.warn('[ChatMain.vue] send failed; pending message missing from state', pendingMessageHash, e)
           }
         })
       }
@@ -1223,9 +1223,13 @@ export default ({
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const index = this.messageState.contract.messages.indexOf(msg)
+      // Look the failed message up by hash: the rendered object may be a stale
+      // reference if `messageState.contract` was re-created (e.g. by an
+      // incoming event) since the failed message was rendered.
+      const messages = this.messageState.contract?.messages || []
+      const index = findMessageIdx(message.hash, messages)
       if (index >= 0) {
-        this.messageState.contract.messages.splice(index, 1)
+        messages.splice(index, 1)
       }
       this.forceRerenderMessages()
 

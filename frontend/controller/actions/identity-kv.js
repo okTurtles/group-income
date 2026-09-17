@@ -350,7 +350,12 @@ export default (sbp('sbp/selectors/register', {
   // live here and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT`
   // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
   // matching the original behavior. (KV-REVAMPED.md §4.8)
-  'gi.actions/identity/kv/saveCachedNames': () => {
+  // Async so that the no-session guard rejects instead of throwing
+  // synchronously: the `NAMESPACE_REGISTRATION` listener attaches `.catch` to
+  // the result, which a sync throw would bypass (it runs inside a debounce
+  // timer and would surface as an uncaught error).
+  // eslint-disable-next-line require-await
+  'gi.actions/identity/kv/saveCachedNames': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
