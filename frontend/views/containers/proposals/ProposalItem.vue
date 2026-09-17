@@ -62,7 +62,7 @@ li.c-item-wrapper(data-test='proposalItem' :data-proposal-hash='proposalHash')
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'

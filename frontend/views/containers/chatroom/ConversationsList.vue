@@ -45,7 +45,7 @@ import { OPEN_MODAL } from '@utils/events.ts'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_TYPES } from '@model/contracts/shared/constants.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export default {
   name: 'ConversationsList',

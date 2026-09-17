@@ -30,7 +30,7 @@ import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.ts'
 import sbp from '@sbp/sbp'
-import { L, LError } from '@common/common.js'
+import { L, LError } from '@common/common.ts'
 import { fetchNews } from '@view-utils/misc.ts'
 
 export default {

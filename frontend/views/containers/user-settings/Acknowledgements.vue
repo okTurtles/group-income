@@ -22,7 +22,7 @@
 
 <script>
 import safeLinkTag from '@view-utils/safeLinkTag.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export default {
   name: 'Acknowledgements',

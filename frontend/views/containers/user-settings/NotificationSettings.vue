@@ -45,7 +45,7 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import {
   requestNotificationPermission,
   makeNotification

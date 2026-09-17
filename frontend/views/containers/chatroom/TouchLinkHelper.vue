@@ -31,7 +31,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 const menuList = [
   { id: 'open', name: L('Open in browser'), icon: 'external-link-alt', enableCheck: () => true },

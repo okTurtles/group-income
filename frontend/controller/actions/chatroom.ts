@@ -2,7 +2,7 @@
 import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { GIErrorUIRuntimeError, L } from '@common/common.js'
+import { GIErrorUIRuntimeError, L } from '@common/common.ts'
 import { CHELONIA_KV_STATUS_CHANGED } from '@chelonia/lib/events'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.ts'
 import { LOGOUT } from '~/frontend/utils/events.ts'

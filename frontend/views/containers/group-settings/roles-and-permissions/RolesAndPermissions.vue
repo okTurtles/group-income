@@ -40,7 +40,7 @@ import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
 import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 const fakeRolesData = [
   // NOTE: This is a fake user data created for development purpose.

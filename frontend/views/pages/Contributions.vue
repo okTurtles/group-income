@@ -142,7 +142,7 @@ import { withGroupCurrency } from '@view-utils/misc.ts'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export default {
   name: 'Contributions',

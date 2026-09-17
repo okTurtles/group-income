@@ -32,7 +32,7 @@ form(data-test='login' @submit.prevent='')
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'

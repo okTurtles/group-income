@@ -9,7 +9,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export default {
   name: 'GroupMembersTooltipPending',

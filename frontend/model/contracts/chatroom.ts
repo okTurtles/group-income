@@ -2,7 +2,7 @@
 
 'use strict'
 
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.ts'
 import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.ts'

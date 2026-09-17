@@ -55,7 +55,7 @@ import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { uniq } from 'turtledash'
 import { humanDate } from '@model/contracts/shared/time.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export default ({
   name: 'ExportPaymentsModal',

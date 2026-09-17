@@ -26,7 +26,7 @@ component.c-wrapper(
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 // https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
 const isMobile = !window.matchMedia('(any-pointer:fine)').matches

@@ -17,7 +17,7 @@
 </template>
 
 <script>
-import { L, LError } from '@common/common.js'
+import { L, LError } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'

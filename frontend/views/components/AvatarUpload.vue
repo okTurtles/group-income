@@ -25,7 +25,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.ts'
-import { L, LError } from '@common/common.js'
+import { L, LError } from '@common/common.ts'
 import { imageUpload } from '@utils/image.ts'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

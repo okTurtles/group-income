@@ -5,7 +5,7 @@ import sbp from '@sbp/sbp'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedOutgoingData } from '@chelonia/lib/encryptedData'
 import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
-import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.js'
+import { GIErrorMissingSigningKeyError, GIErrorUIRuntimeError, LError } from '@common/common.ts'
 import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
 // eslint-disable-next-line no-unused-vars -- type-only uses, which @babel/eslint-parser does not count
 import type { GIActionParams } from './types.ts'

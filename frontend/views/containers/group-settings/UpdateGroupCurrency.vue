@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import currencies from '@model/contracts/shared/currencies.ts'

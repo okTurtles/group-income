@@ -1,7 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import '@model/captureLogs.ts'
 import { setupNativeNotificationsListeners } from '@model/notifications/nativeNotification.ts'
 import '@sbp/okturtles.data'

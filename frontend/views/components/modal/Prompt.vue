@@ -28,7 +28,7 @@ modal-template(ref='modal' class='is-prompt' :a11yTitle='$attrs.heading' :modalF
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import { MODAL_RESPONSE } from '@utils/events.ts'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

@@ -333,11 +333,27 @@ Nothing will drag them in by accident — three independent guards, none of whic
 
 ---
 
+### 018 — `common.js` → `common.ts`
+
+**Status:** DONE
+
+**Changed:** 124 files' specifiers, `Gruntfile.js:679` (`external` → `@common/common.ts`), and three `modules:` resolver maps. `tsc` 0 · eslint 0 · prod build 0 · 178 passing.
+
+**The "blocked" claim in Step 9a was wrong.** The resolver that answers `__require("@common/common.js")` is ours — `frontend/setupChelonia.ts:165`, a plain object keyed by specifier — not Chelonia's. It just needed a second key.
+
+**The `.js` key is permanent, and it will look like dead code.** The specifier stays external (`Gruntfile.js:679`), so the slim bundles ship it verbatim and every pinned snapshot 2.0.0-2.9.0 carries it frozen. Nothing in the build, the linter or the tests would catch its deletion — old contract replay would break at runtime. Commented at all three maps.
+
+**Verified external, not bundled:** `group-slim.js` is 66 bytes smaller than the pinned 2.9.0 snapshot, i.e. banner renames only; inlining would have added ~15 KB. **Not verified at runtime** — nothing replays an old pinned contract.
+
+**Coverage parity is now complete.** All 25 files Flow checked under `all=true` are `.ts`. What is left as `.js` under `frontend/` is `blockies.js` and five `*.test.js` — the 6 Flow ignored too — so `checkJs: false` costs nothing.
+
+---
+
 ## Open items
 
 - **Deduplicate the plan against this file — docs-only, after every step lands.** Each "What Step N turned up" section repeats its PROGRESS entry almost whole: Step 4 has five findings and all five are in both, and Steps 5-7a are the same. The split that was intended: the plan keeps only what changes a *later* step's execution (the "Step 5 hits this four more times — `chatroom.js:39,40`, `group.js:369,370`" kind of pointer), PROGRESS keeps the full finding and the gate numbers. Doing it at the end rather than per-step avoids rewriting the same sections repeatedly. Its own commit — no source files change.
 - Flow is gone (Steps 4-9). Left: Step 10 (ESLint 8 + `@typescript-eslint`, which also removes `eslint-plugin-flowtype`, `eslint-plugin-flowtype-errors` and the peer-installed `flow-bin`) and Step 11 (verification checklist).
-- **Coverage gap 24/25 closed in Step 9a. `common/common.js` is the one still open, by decision, not by blocker.** The conversion was built and proven green, then reverted on the file's own standing instruction. It is therefore the single file Flow checked under `all=true` that TypeScript does not — `checkJs` stays `false`, which costs nothing else, since the rest of `frontend/`'s `.js` is `blockies.js` and five `*.test.js`, the 6 Flow ignored too. **If it is ever renamed:** `Gruntfile.js:679` matches it as a literal string in the slim-contract `external`, and `frontend/setupChelonia.ts` must keep a `'@common/common.js'` key permanently, because the frozen pinned snapshots under `contracts/` require that spelling and are still served.
+- **Coverage gap fully closed.** All 25 files are `.ts` after entry 018. `checkJs` stays `false` and costs nothing. **Do not delete the `'@common/common.js'` key** from the three `modules:` maps — the frozen pinned snapshots under `contracts/` require that spelling and are still served, and no gate would catch its removal.
 - **`AGENTS.md` still documents Flow, and it is the file agents read first.** Its "Linting & Type Checking" block lists `npm run flow # Run Flow type checker` and its CI section lists `npm run flow` as step 2 — both gone since Step 9, which replaced them with `exec:typecheck`. The same block lists `npm run lint`, which has never existed in this repo; the script is `npm run eslint`. Out of scope for Step 9a's diff, and a one-commit docs fix whenever it is wanted.
 - `flowTyper.ts`: converted in Step 5, still `@ts-nocheck` and still in `eslintIgnore` (parity — Flow reported **82** errors on it when un-ignored, 76 in the file itself).
 - **Its line-26 TODO ("remove from eslintIgnore and fix errors") is now cheap — expect it to be asked for.** Measured: 11 eslint errors. 9 are `indent`, auto-fixable and provably free (esbuild reformats; rebuilt with them fixed, all six contract bundles byte-identical). 2 are `no-prototype-builtins`, false positives — both are `o.hasOwnProperty(k)` where `o` is `Object.assign({}, value)`, always plain-prototype — but the fix changes emitted contract bytes, so it belongs in its own PR, not one whose diff is verified by "identical modulo path banners". Note `grunt build` runs eslint as a task, so un-ignoring fails the build until those 2 are fixed. Typechecking it is a separate and bigger question: 8 in-file errors, plus ~12 in contract source once its exports stop being `any`.

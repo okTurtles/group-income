@@ -4,7 +4,7 @@
 
 /* eslint-env mocha */
 
-import * as Common from '@common/common.js'
+import * as Common from '@common/common.ts'
 import '@sbp/okturtles.eventqueue'
 import '@sbp/okturtles.events'
 import sbp from '@sbp/sbp'
@@ -100,7 +100,10 @@ describe('Full walkthrough', function () {
       contracts: {
         ...manifests,
         defaults: {
-          modules: { '@common/common.js': Common },
+          // Both keys, same module. The `.js` one answers the frozen
+          // `__require("@common/common.js")` in the pinned snapshots under
+          // `contracts/`; new contracts ask for `.ts`. See setupChelonia.ts.
+          modules: { '@common/common.js': Common, '@common/common.ts': Common },
           allowedSelectors: [
             'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
             'controller/router',

@@ -43,7 +43,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import { VOICE_RECORDING_MIME_TYPES } from '~/frontend/utils/constants.ts'
 import { getAmplitudeFromTimeDataSamples, getMimeTypeEssence } from './voice-recording-utils.ts'
 import { isFirefox } from '@view-utils/filters.ts'

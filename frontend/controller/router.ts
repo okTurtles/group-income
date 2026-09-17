@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import Router from 'vue-router'
 import store from '~/frontend/model/state.ts'
 import Home from '@pages/Home.vue'

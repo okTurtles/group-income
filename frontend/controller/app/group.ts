@@ -1,6 +1,6 @@
 'use strict'
 
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import {
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,

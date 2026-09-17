@@ -25,7 +25,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.ts'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.ts'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

@@ -569,17 +569,15 @@ Probed by setting `checkJs: true` and adding `frontend/**/*.js` to `include`: **
 
 None are logic errors. The `window.*` ones are ambient declarations belonging in `declarations.d.ts`; `$v` is a vuelidate typing gap. (A third file, `blockies.js`, showed 2 errors but only because the probe forced it in as a root — it is Flow-ignored and stays excluded.)
 
-### `common.js` — not blocked, but deliberately left alone
+### `common.js` — converted (follow-up to Step 9a)
 
-The original claim here was that converting it "needs an answer from the Chelonia side first". **That was wrong.** The resolver that answers `__require("@common/common.js")` is our own code, `frontend/setupChelonia.ts:165` — a plain object keyed by specifier string, which only needed a second key. The rename was then built end to end and it worked: 131 specifiers across 124 files, the `external` literal at `Gruntfile.js:679`, and three `modules:` maps carrying both spellings, with `tsc`, eslint, a production build and 178 tests all clean and `common` still external to the slim bundles. **It was reverted by decision**, on the file's own standing instruction not to be disturbed. `common.js` is byte-identical to its pre-Step-9a state.
+This plan claimed converting it "needs an answer from the Chelonia side first". Wrong — the resolver is our own code, `frontend/setupChelonia.ts:165`, a plain object keyed by specifier, which only needed a second key.
 
-So the three constraints are real, but none of them is why it stays `.js`:
+Converted after Step 9a was committed: 124 files' specifiers, the `external` literal at `Gruntfile.js:679`, and three `modules:` maps.
 
-- `Gruntfile.js:679` marks it external to the slim contract build by **literal string**. Miss it on a rename and `common` gets bundled *into* the slim contracts instead of left external — a behaviour change, not a cosmetic one.
-- Every pinned slim contract from **2.0.0 through 2.9.0** carries a frozen `__require("@common/common.js")`, and those files are still served. Any future rename must keep that key in the resolver **permanently**, not as a transition.
-- The file's own capitalised rule at the top names the `.js` path.
+**The `.js` key in those maps is permanent.** `Gruntfile.js:679` keeps the specifier external, so the slim bundles ship it verbatim and every pinned snapshot from 2.0.0 to 2.9.0 carries a frozen `__require("@common/common.js")`. Those files are still served. No live import uses that key any more, so it reads as dead code — and nothing in the build, the linter or the tests would catch its removal. Old contract replay would break at runtime. Each map says so in a comment.
 
-**The cost of leaving it:** it is the single file Flow checked under `all=true` that TypeScript does not. Fifteen lines of `export *` re-exports, clean when probed — so the practical exposure is close to nil, but it is a real parity gap and Step 11 records it as one.
+Verified `common` is still external rather than bundled in: `group-slim.js` is 66 bytes **smaller** than the pinned 2.9.0 snapshot — banner renames only. Inlining would have added ~15 KB. **Not verified at runtime:** nothing replays an old pinned contract, so the `.js` key is proven structurally only.
 
 ### `main.js` is convertible but is an entry point
 
@@ -656,7 +654,7 @@ Deliberately last. Doing it earlier would mean finding an `eslint-plugin-flowtyp
 Run the spec's Acceptance Criteria as a checklist:
 
 - [ ] `npm run typecheck` clean; `exclude` list matches `.flowconfig` `[ignore]` entry-for-entry (only the 6 stale + 2 redundant omitted, justified in the PR description)
-- [ ] **Coverage parity in both directions**, not just against expansion. Step 9a closed 24 of the 25 gap files by converting them to `.ts`. **One is open by decision: `common/common.js`** — not blocked, deliberately left alone, and so unchecked under `checkJs: false`. Everything else matches: the rest of `frontend/`'s `.js` is `utils/blockies.js` and five `*.test.js`, the 6 Flow ignored too. Accept the one-file shortfall explicitly; do not record it as closed
+- [x] **Coverage parity in both directions**, not just against expansion: every file Flow checked under `all=true` is checked by TypeScript. Closed by converting all 25 to `.ts`, `common/common.js` included. `checkJs` stays `false` and costs nothing — the only `.js` left under `frontend/` is `utils/blockies.js` and five `*.test.js`, the 6 Flow ignored too.
 - [ ] `Gruntfile.js` excluded from `tsc` yet updated as build config — both true, neither an oversight
 - [ ] No `.flowconfig`, `flow-bin`, `flow-remove-types`, or Flow ESLint plugins anywhere
 - [x] Residual-Flow checker: zero files outside `node_modules/`, `dist/`, `contracts/`, `historical/` — run in Step 9 before the tooling was uninstalled, exit 0. `historical/`'s 8 files are preserved deliberately and permanently; the checker itself no longer exists, see Step 9.
@@ -666,7 +664,7 @@ Run the spec's Acceptance Criteria as a checklist:
 - [ ] `contracts/` snapshots unchanged; `manifests.json` byte-identical
 - [ ] `flowTyper` equivalence tests pass
 - [ ] **Unit-test suite count matches the Step 0 baseline** — guards against a `*.test.js` rename dropping a suite out of Mocha's glob without failing anything
-- [x] **`frontend/common/common.js` still `.js`**, and the slim-contract `external` at `Gruntfile.js:679` still matches it by literal string. **`main.js` was converted in Step 9a** — `dist/assets/js/main.js` is still the emitted name from the `.ts` entry, so `index.html:43` and the Browsersync watch at `Gruntfile.js:191` are both untouched. **`main.js` was converted in Step 9a** — `dist/assets/js/main.js` is still the emitted name from the `.ts` entry, so `index.html:43` and the Browsersync watch at `Gruntfile.js:191` are both untouched.
+- [x] ~~**`frontend/common/common.js` still `.js`**~~ — converted. Check instead that `Gruntfile.js:679` reads `@common/common.ts`, so `common` is still external to the slim bundles, and that the three `modules:` maps keep their `@common/common.js` key for the frozen pinned snapshots. **`main.js` was converted in Step 9a** — `dist/assets/js/main.js` is still the emitted name from the `.ts` entry, so `index.html:43` and the Browsersync watch at `Gruntfile.js:191` are both untouched.
 - [ ] Manual E2E: group creation, chat, distribution/payments
 
 Remaining test work from the spec's Testing Guidelines, if not already added: contract validate/process determinism for `group`/`chatroom`/`identity`; build-output integrity (no Flow plugin in the esbuild chain); path-alias resolution parity between `tsconfig.json` and `Gruntfile.js`.

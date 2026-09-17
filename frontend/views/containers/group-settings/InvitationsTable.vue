@@ -128,7 +128,7 @@ import { INVITE_STATUS } from '@chelonia/lib/constants'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.ts'
 import { OPEN_MODAL } from '@utils/events.ts'
 import { mapGetters, mapState } from 'vuex'
-import { L, LTags } from '@common/common.js'
+import { L, LTags } from '@common/common.ts'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'
 import { timeLeft } from '@view-utils/time.ts'
 

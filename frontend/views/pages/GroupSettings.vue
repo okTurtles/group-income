@@ -9,7 +9,7 @@ page.c-page
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import Page from '@components/Page.vue'
 import GroupSettingsMain from '@containers/group-settings/GroupSettingsMain.vue'
 import GroupSettingsTabContainer from '@containers/group-settings/GroupSettingsTabContainer.vue'

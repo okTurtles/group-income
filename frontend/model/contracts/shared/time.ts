@@ -1,6 +1,6 @@
 'use strict'
 
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS

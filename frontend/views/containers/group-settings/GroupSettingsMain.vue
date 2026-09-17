@@ -82,7 +82,7 @@ import GroupSettingsTabMenuItem from './GroupSettingsTabMenuItem.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { getPercentFromDecimal, RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.ts'
 import { OPEN_MODAL } from '@utils/events.ts'
-import { L, LError } from '@common/common.js'
+import { L, LError } from '@common/common.ts'
 
 export default {
   name: 'GroupSettingsMain',

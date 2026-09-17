@@ -1,6 +1,6 @@
 'use strict'
 
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import {
   CHATROOM_PRIVACY_LEVEL,

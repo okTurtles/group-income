@@ -1,7 +1,7 @@
 'use strict'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/crypto'
-import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.ts'
 import {
   CHATROOM_PRIVACY_LEVEL,
   INVITE_INITIAL_CREATOR,

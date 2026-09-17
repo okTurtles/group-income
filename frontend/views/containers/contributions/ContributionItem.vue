@@ -50,7 +50,7 @@
 </template>
 
 <script>
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import ProfileCardContent from '@components/ProfileCardContent.vue'
 import { mixin as clickaway } from 'vue-clickaway'
 

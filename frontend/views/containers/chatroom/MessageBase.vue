@@ -146,7 +146,7 @@ import {
   CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP
 } from '~/frontend/utils/constants.ts'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.ts'
-import { L, LTags } from '@common/common.js'
+import { L, LTags } from '@common/common.ts'
 import { getFileType } from '@view-utils/filters.ts'
 
 export default {

@@ -52,7 +52,7 @@ modal-template(
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgHello from '@svgs/hello.svg'

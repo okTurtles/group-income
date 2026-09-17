@@ -299,7 +299,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { L, LTags } from '@common/common.js'
+import { L, LTags } from '@common/common.ts'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.ts'
 import CreatePoll from './CreatePoll.vue'

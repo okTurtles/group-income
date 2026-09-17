@@ -1,5 +1,5 @@
 'use strict'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 export type SizeOption = {
   value: number,

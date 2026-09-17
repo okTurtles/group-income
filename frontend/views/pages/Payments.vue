@@ -174,7 +174,7 @@ import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import { PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.ts'
 import { dateToMonthstamp, dateFromPeriodStamp, humanDate } from '@model/contracts/shared/time.ts'
 import { randomHexString, deepEqualJSONType, omit, uniq } from 'turtledash'
-import { L, LTags } from '@common/common.js'
+import { L, LTags } from '@common/common.ts'
 import {
   dummyLightningUsers,
   dummyLightningTodoItems,

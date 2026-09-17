@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 
 const DMMixin: any = {
   computed: {

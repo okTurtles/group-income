@@ -51,7 +51,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'

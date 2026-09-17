@@ -1,4 +1,4 @@
-import { L } from '@common/common.js'
+import { L } from '@common/common.ts'
 import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.ts'
 
 export const GROUP_ROLES_DISPLAY_NAME: { [key: string]: string } = {

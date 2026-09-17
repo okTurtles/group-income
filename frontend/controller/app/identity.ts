@@ -1,6 +1,6 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError, LTags } from '@common/common.ts'
 import { cloneDeep } from 'turtledash'
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
