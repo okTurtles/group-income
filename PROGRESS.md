@@ -371,9 +371,27 @@ Nothing will drag them in by accident — three independent guards, none of whic
 
 **`backend.test.ts`'s five `require()`s became `import`s, and the `**/*.test.ts` override went with them.** `recommended` bans `no-require-imports`; the exemption existed for that one file (`distribution.test.ts` has none). `ws`, `should`, `buffer`.File, `fs`, `path` all resolve to the identical objects under `@babel/register`, and `global.WebSocket = WebSocket` keeps its position — preset-env compiles the file to CJS regardless. `mocha --dry-run` enumerates all 10 suites.
 
+### 020 — Step 11: verification and close-out
+
+**Status:** DONE except the manual E2E pass.
+
+**All gates green.** typecheck 0 · eslint 0 (`--report-unused-disable-directives` 0) · stylelint 0 · `NODE_ENV=production grunt build` 0 · unit **178 passing, 0 failing** · Cypress **163 tests, 153 passing, 0 failing, 10 pending, 13 specs** in 26m27s. Unit and Cypress match the 006 baseline figure for figure, and the 10 pending split as they did then (`group-settings` 6, `group-chat` 2, `group-paying` 1, `notifications` 1).
+
+**`grunt dev` is the only thing that runs the ported `createEslinter`.** It starts clean (Browsersync 3000, backend 8000, dashboard 8888); touching a `.ts` logs `eslint: linted … in 1.8s` then rebuilds, and a planted unused variable came back as `@typescript-eslint/no-unused-vars` before being reverted. The `CLIEngine` → `ESLint` port from Step 10 is therefore exercised end to end, not just unit-smoke-tested.
+
+**The `exclude` audit closed by checking the paths, not the count.** 14 of the old `.flowconfig` `[ignore]` entries map 1:1 onto `tsconfig` `exclude`; all 8 omitted ones — 6 stale plus `test/backend.js` and `test/frontend.js`, already covered by `test/` — point at paths that no longer exist on disk.
+
+**`manifests.json` is gitignored, so `git status` proves nothing about it.** Checked by rebuilding and diffing the emitted contract bundles against the pinned 2.9.0 snapshots: they differ, and **every difference is a comment** — esbuild's source-path banners moving `.js`→`.ts`, the removed `$FlowFixMe`/`$FlowIgnore` markers, and one dead `eslint-disable`. No executable byte moved. esbuild is unchanged at 0.27.3 and no bundled dependency moved, so the renames are the whole cause. `contracts/` itself is byte-identical across the PR.
+
+**Typecheck reaches CI without touching the workflow.** `exec:typecheck` sits in `build`'s lint phase (`Gruntfile.js:458`) and `ci-test:unit` calls plain `build`. `.github/workflows/ci.yml` is unchanged by this PR and never ran Flow directly.
+
+**One Cypress run failed before this one and was environmental.** `contract-removal.spec.js` died on `ZKPP token expired` after a 5-minute spec; re-run against a fresh backend it passes in 35s, and the full suite then went green. The spec's only change in the entire PR is `groupName: groupName` → `groupName`.
+
 ---
 
 ## Open items
+
+- **Stale `.js` filenames in prose comments — docs-only, its own commit.** The sweep from the plan's Step 8 note is measured: ~45 comment lines across ~23 files still name a file this migration renamed (`// group.js related`, `see DMMixin.js`, `logged in main.js`, …). Deliberately **not** folded into Step 11, which stays verification-only. Five of the files are contract source (`group.ts`, `shared/{constants,currencies,functions,types}.ts`), so the edits move contract bundle comment bytes again — worth keeping isolated. Leave alone: `dist/contracts/*.js` and `main.js` in `Gruntfile.js` (build outputs), the `__require("@common/common.js")` notes (pinned snapshots), `setupChelonia.ts`'s rename history, and the two self-naming `test/cypress/*/index.js` comments.
 
 - **Deduplicate the plan against this file — docs-only, after every step lands.** Each "What Step N turned up" section repeats its PROGRESS entry almost whole: Step 4 has five findings and all five are in both, and Steps 5-7a are the same. The split that was intended: the plan keeps only what changes a *later* step's execution (the "Step 5 hits this four more times — `chatroom.js:39,40`, `group.js:369,370`" kind of pointer), PROGRESS keeps the full finding and the gate numbers. Doing it at the end rather than per-step avoids rewriting the same sections repeatedly. Its own commit — no source files change.
 - Flow is gone (Steps 4-10). Left: Step 11 (verification checklist).
