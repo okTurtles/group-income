@@ -7,6 +7,14 @@ import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
 import './kv-slots.js'
 
+// Selectors that ask other members to re-share keys we're missing, keyed by the
+// contract type they apply to. Used to recover instead of retrying operations
+// that cannot succeed without those keys.
+const MISSING_KEYS_REQUEST_SELECTORS = {
+  'gi.contracts/chatroom': 'gi.actions/chatroom/findAndRequestMissingChatroomKeys',
+  'gi.contracts/group': 'gi.actions/group/findAndRequestMissingGroupKeys'
+}
+
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
 export { default as groupKV } from './group-kv.js'
@@ -230,6 +238,27 @@ sbp('sbp/selectors/register', {
   ) => {
     if (options?.direct) {
       return await sbp('gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, additionalOperationsSelector, options)
+    }
+    // Rotating keys requires a signing key whose secret we hold. When we don't
+    // have one (typically because we're still missing this contract's keys),
+    // every attempt is doomed: the persistent action would exhaust its retries
+    // and its total-failure invocation would end with
+    // '[chelonia.persistentActions] No suitable signing key found'. Request the
+    // missing keys instead. Another member can rotate in the meantime (which
+    // clears our pending revocations when we process their key update), and
+    // nothing is lost because we couldn't have signed the rotation ourselves.
+    const state = sbp('chelonia/rootState')[contractID]
+    const suitableSigningKeyId = state && sbp(
+      'chelonia/contract/suitableSigningKey',
+      state,
+      [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE],
+      ['sig']
+    )
+    if (!suitableSigningKeyId) {
+      console.warn(`[gi.actions/out/rotateKeys] Deferring key rotation for ${contractID}: no suitable signing key`, { contractName, keysToRotate, hasState: !!state })
+      const requestMissingKeys = MISSING_KEYS_REQUEST_SELECTORS[contractName]
+      if (requestMissingKeys) sbp(requestMissingKeys, contractID)
+      return
     }
     return await sbp('chelonia.persistentActions/enqueue', {
       invocation: ['gi.actions/out/rotateKeysInternal', contractID, contractName, keysToRotate, additionalOperationsSelector, { ...options, lastAttempt: false }],

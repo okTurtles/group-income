@@ -41,6 +41,14 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
     const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek', true)
     const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
     const groupCSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'group-csk', true)
+    // The key request is encrypted with the chatroom's CEK so that only its
+    // members can read (and answer) it. Encrypting only needs the CEK's
+    // _public_ key, which is part of the contract state even when we don't
+    // hold the secret, so this lookup must _not_ require a secret key: not
+    // having the CEK is precisely the situation this recovery path exists for.
+    // (Using `CEKid` here made the request fail with
+    // `TypeError: Invalid invocation` whenever the CEK was the missing key.)
+    const innerEncryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
     // If we have all keys, we don't have anything to request
     if (CEKid && CSKid) return
@@ -51,6 +59,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
 
     const cheloniaState = sbp('chelonia/rootState')
     const identityContractID = cheloniaState.loggedIn?.identityContractID
+    if (!identityContractID) return
     const contractState = cheloniaState[identityContractID]
 
     // $FlowFixMe[incompatible-use]
@@ -70,7 +79,16 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       return
     }
 
-    const reference = cheloniaState[identityContractID].groups[groupID].hash + '/' + contractID
+    const reference = contractState.groups[groupID].hash + '/' + contractID
+    const innerSigningKeyId = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk')
+    const encryptionKeyId = sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek')
+
+    // Without these, 'chelonia/out/keyRequest' throws a bare
+    // `TypeError: Invalid invocation`, so report what is actually missing.
+    if (!innerEncryptionKeyId || !innerSigningKeyId || !encryptionKeyId) {
+      console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Unable to request missing keys for ${contractID}`, { innerEncryptionKeyId, innerSigningKeyId, encryptionKeyId })
+      return
+    }
 
     // TODO: Missing '/disconnect' logic for chatrooms
     // See <https://github.com/okTurtles/group-income/issues/3043>
@@ -81,11 +99,11 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       contractName: 'gi.contracts/chatroom',
       reference,
       signingKeyId: groupCSKid,
-      innerSigningKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'csk'),
-      encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
+      innerSigningKeyId,
+      encryptionKeyId,
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: CEKid,
+      innerEncryptionKeyId,
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
@@ -692,7 +710,26 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
     }
   }),
-  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.'), (sendMessage, params) => {
+    // Accepting a channel is meant to happen once, but the contract rejects a
+    // second `accept` ('Can not accept the chatroom ... has already accepted'),
+    // and that message then fails to process on every client - including ours,
+    // on every re-sync. The `join` side-effect that sends this action re-runs
+    // when a chatroom is re-synced from scratch (which is what happens once
+    // previously-missing keys arrive) and it also races with our other devices,
+    // so skip the write when we have already accepted.
+    const rootState = sbp('chelonia/rootState')
+    // Mirrors how `encryptedAction` resolves the inner signing contract, since
+    // that's the member the contract will record the acceptance for.
+    const memberID = params.innerSigningContractID !== undefined
+      ? params.innerSigningContractID
+      : rootState.loggedIn?.identityContractID
+    // `encryptedAction` has just synced this contract, so the state is current.
+    // Reading it from the root state avoids cloning the whole chatroom.
+    const state = rootState[params.contractID]
+    if (!memberID || state?.members?.[memberID]?.acceptedHeight != null) return Promise.resolve()
+    return sendMessage(params)
+  }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {
