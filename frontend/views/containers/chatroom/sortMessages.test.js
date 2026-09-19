@@ -1,5 +1,10 @@
 /* eslint-env mocha */
-import { sortMessages, resolveFailedMessage } from './sortMessages.js'
+import {
+  sortMessages,
+  resolveFailedMessage,
+  reconcileConfirmedMessage,
+  releaseFailedMessageAttachments
+} from './sortMessages.js'
 const should = require('should')
 
 const msg = (hash, height, extra = {}) => ({ hash, height, ...extra })
@@ -100,5 +105,51 @@ describe('resolveFailedMessage', function () {
     const current = msg('h', 2)
     should(resolveFailedMessage('h', [stale, current])).equal(null)
     should(resolveFailedMessage('h', [current, stale])).equal(stale)
+  })
+})
+
+describe('reconcileConfirmedMessage', function () {
+  it('returns a confirmed matching message', function () {
+    const confirmed = msg('confirmed', 4, { hasFailed: true })
+    should(reconcileConfirmedMessage('confirmed', [confirmed])).equal(confirmed)
+  })
+
+  it('does not reconcile a pending matching message', function () {
+    const pending = msg('pending', 4, { pending: true, hasFailed: true })
+    should(reconcileConfirmedMessage('pending', [pending])).equal(null)
+  })
+
+  it('does not clear an unrelated failed message', function () {
+    const failed = msg('failed', 4, { hasFailed: true })
+    should(reconcileConfirmedMessage('other', [failed])).equal(null)
+  })
+
+  it('is harmless when confirmation is repeated', function () {
+    const confirmed = msg('confirmed', 4)
+    should(reconcileConfirmedMessage('confirmed', [confirmed])).equal(confirmed)
+    should(reconcileConfirmedMessage('confirmed', [confirmed])).equal(confirmed)
+  })
+
+  it('uses the latest matching message', function () {
+    const pending = msg('same', 1, { pending: true })
+    const confirmed = msg('same', 2)
+    should(reconcileConfirmedMessage('same', [pending, confirmed])).equal(confirmed)
+    should(reconcileConfirmedMessage('same', [confirmed, pending])).equal(null)
+  })
+})
+
+describe('releaseFailedMessageAttachments', function () {
+  it('revokes every attachment URL', function () {
+    const revoked = []
+    releaseFailedMessageAttachments([
+      { url: 'blob:first' },
+      { url: 'blob:second' },
+      {}
+    ], url => revoked.push(url))
+    should(revoked).eql(['blob:first', 'blob:second'])
+  })
+
+  it('accepts missing attachments', function () {
+    should(() => releaseFailedMessageAttachments(null, () => {})).not.throw()
   })
 })

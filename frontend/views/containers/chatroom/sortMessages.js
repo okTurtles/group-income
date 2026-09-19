@@ -44,3 +44,21 @@ export function resolveFailedMessage (hash: ?string, messages: ?Array<Object>): 
   }
   return null
 }
+
+export function reconcileConfirmedMessage (hash: ?string, messages: ?Array<Object>): Object | null {
+  if (!hash || !Array.isArray(messages)) return null
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
+    if (message.hash === hash) {
+      return message.pending ? null : message
+    }
+  }
+  return null
+}
+
+export function releaseFailedMessageAttachments (attachments: ?Array<Object>, revokeObjectURL: Function): void {
+  if (!Array.isArray(attachments)) return
+  attachments.forEach(attachment => {
+    if (attachment?.url) revokeObjectURL(attachment.url)
+  })
+}

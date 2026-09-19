@@ -179,7 +179,12 @@ import { swapMentionIDForDisplayname, makeMentionFromUserID } from '@model/chatr
 import ToastContainer from '@containers/toast/ToastContainer.vue'
 import DynamicScroller from '@components/vue-virtual-scroller/DynamicScroller.vue'
 import DynamicScrollerItem from '@components/vue-virtual-scroller/DynamicScrollerItem.vue'
-import { sortMessages, resolveFailedMessage } from './sortMessages.js'
+import {
+  sortMessages,
+  resolveFailedMessage,
+  reconcileConfirmedMessage,
+  releaseFailedMessageAttachments
+} from './sortMessages.js'
 
 const ignorableScrollDistanceInPixel = 500
 
@@ -772,6 +777,12 @@ export default ({
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
         Vue.set(this.messageState, 'contract', state)
 
+        this.latestEvents.slice(currentLatestEventIdx).forEach(event => {
+          if (event.direction() === 'incoming') {
+            this.reconcileConfirmedMessageState(event.hash())
+          }
+        })
+
         if (
           // If there are no messages
           !state.messages.length ||
@@ -929,13 +940,7 @@ export default ({
           }
         }).then(() => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
-          if (attachments?.length > 0) {
-            attachments.forEach(attachment => {
-              if (attachment.url) {
-                URL.revokeObjectURL(attachment.url)
-              }
-            })
-          }
+          releaseFailedMessageAttachments(attachments, url => URL.revokeObjectURL(url))
         }).catch(async (e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -1220,6 +1225,20 @@ export default ({
       this.ephemeral.messagesSource = null
       this.ephemeral.setMessages?.()
       this.ephemeral.setMessages?.flush?.()
+    },
+    reconcileConfirmedMessageState (messageHash) {
+      const messages = this.messageState.contract?.messages || []
+      const confirmedMessage = reconcileConfirmedMessage(messageHash, messages)
+      if (!confirmedMessage) return
+
+      if (confirmedMessage.hasFailed) {
+        Vue.delete(confirmedMessage, 'hasFailed')
+      }
+
+      const attachments = this.ephemeral.failedMessagesAttachments[messageHash]
+      if (!attachments) return
+      releaseFailedMessageAttachments(attachments, url => URL.revokeObjectURL(url))
+      Vue.delete(this.ephemeral.failedMessagesAttachments, messageHash)
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
@@ -1997,11 +2016,7 @@ export default ({
     }, process.env.CI ? 25 : 250),
     cleanupFailedMessagesAttachments () {
       Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
-        attachments.forEach(attachment => {
-          if (attachment.url) {
-            URL.revokeObjectURL(attachment.url)
-          }
-        })
+        releaseFailedMessageAttachments(attachments, url => URL.revokeObjectURL(url))
       })
       this.ephemeral.failedMessagesAttachments = {}
     }
