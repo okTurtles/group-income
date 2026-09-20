@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { DAYS_MILLIS } from '../time.ts'
 import rules, { ruleType, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.ts'
 import {

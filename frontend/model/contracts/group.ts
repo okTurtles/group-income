@@ -5,7 +5,7 @@
 import { Errors, L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, DELETED_CHATROOM, JOINED_GROUP, LEFT_CHATROOM } from '@utils/events.ts'
-import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { actionRequireInnerSignature, arrayOf, boolean, number, numberRange, object, objectMaybeOf, objectOf, optional, string, stringMax, tupleOf, validatorFrom, unionOf } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   MAX_HASH_LEN,

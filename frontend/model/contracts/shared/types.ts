@@ -3,7 +3,7 @@
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf, boolean,
   object, string, stringMax, optional, number, mapOf, literalOf, numberRange
-} from '~/frontend/model/contracts/misc/flowTyper.ts'
+} from '~/frontend/model/contracts/misc/giTyper.ts'
 import {
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,

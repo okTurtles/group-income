@@ -2,7 +2,7 @@
 
 import { L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
-import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.ts'
 import { Secret } from '@chelonia/lib/Secret'
 import {

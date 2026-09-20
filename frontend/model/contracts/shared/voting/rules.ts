@@ -1,6 +1,6 @@
 'use strict'
 
-import { literalOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { literalOf, unionOf } from '~/frontend/model/contracts/misc/giTyper.ts'
 import {
   PROPOSAL_REMOVE_MEMBER,
   PROFILE_STATUS

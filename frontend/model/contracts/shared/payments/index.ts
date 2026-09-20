@@ -1,6 +1,6 @@
 'use strict'
 
-import { unionOf, literalOf } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { unionOf, literalOf } from '~/frontend/model/contracts/misc/giTyper.ts'
 
 export const PAYMENT_PENDING = 'pending'
 export const PAYMENT_CANCELLED = 'cancelled'

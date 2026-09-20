@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { isFunction, objectOf, string } from '@model/contracts/misc/flowTyper.ts'
+import { isFunction, objectOf, string } from '@model/contracts/misc/giTyper.ts'
 import { MINS_MILLIS } from '@model/contracts/shared/time.ts'
 
 // This file is used in both the SW and window contexts.

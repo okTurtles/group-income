@@ -28,7 +28,7 @@ import {
   arrayOf, literalOf, mapOf, maybe, mixed, object, objectOf, objectMaybeOf, optional,
   nil, undef, boolean, number, numberRange, string, stringMax,
   tupleOf, unionOf, validatorFrom, actionRequireInnerSignature
-} from '~/frontend/model/contracts/misc/flowTyper.ts'
+} from '~/frontend/model/contracts/misc/giTyper.ts'
 
 const should = require('should')
 

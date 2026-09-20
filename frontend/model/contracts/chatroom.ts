@@ -5,7 +5,7 @@
 import { L } from '@common/common.ts'
 import sbp from '@sbp/sbp'
 import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.ts'
-import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/flowTyper.ts'
+import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
   CHATROOM_ACTIONS_PER_PAGE,
