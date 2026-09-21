@@ -23,10 +23,6 @@ export function imageDataURItoBlob (dataURI: string): Blob {
   return new Blob([ab], { type: imageType })
 }
 
-// `params?: any | null` mirrors Flow's `?Object` arm by arm per RULES 2 (`Object`
-// -> `any`, `void` -> the `?`), so it too collapses to `any`. Same for the
-// `Promise<Object>` return: the real shape is chelonia's fileUpload `download`
-// descriptor. Both are for the strictness pass.
 export const imageUpload = async (imageFile: File, params?: any | null): Promise<any> => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)

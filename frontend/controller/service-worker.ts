@@ -1,13 +1,7 @@
 // @ts-nocheck
-// Flow never typechecked this file (`.flowconfig` [ignore]) and TypeScript does not
-// either: scope parity. It is `.ts` because every file that carried type annotations
-// is `.ts`, not because it is checked.
-//
-// `exclude` in tsconfig.json carries the same intent, but does not enforce it on its
-// own: an excluded file is still checked once something in the program imports it.
-// Today the only importer is `frontend/main.js`, which is `.js` and never a program
-// root — so nothing reaches this file. That would quietly stop being true the moment
-// `main.js` becomes `.ts`, which is why the pragma is here and not left implied.
+// This file has never been meant to be typechecked, and `tsconfig.json` lists it under
+// `exclude`. But the moment any `.ts` file imports this one, TypeScript pulls it in
+// and checks it anyway. The pragma above is placed to prevent that.
 
 'use strict'
 

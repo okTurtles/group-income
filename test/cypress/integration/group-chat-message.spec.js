@@ -3,7 +3,7 @@ import { randomUserSuffix } from '../support/lib.js'
 
 /**
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.ts'
- * But Cypress doesn't render files using Flowtype annotations
+ * But Cypress doesn't render files using TypeScript annotations
  * So copied that function and use it here
  * TODO: figure out how to import functions with type annotations in Cypress
  */

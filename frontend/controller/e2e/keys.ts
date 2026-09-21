@@ -39,9 +39,8 @@ function contextStrToDeviceObj (
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
     // `SPKeyType` is a union of three key-type literals, so the `''` default is
-    // not assignable to it. Flow accepted this because `@chelonia/lib` had no
-    // Flow types and `SPKeyType` was `any`; the cast keeps the default's runtime
-    // value untouched while preserving the declared type.
+    // not assignable to it. the cast keeps the default's runtime value untouched
+    // while preserving the declared type.
     { type = '' as SPKeyType }: {
       type: SPKeyType
     }) {

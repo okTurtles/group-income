@@ -185,8 +185,8 @@ export default (sbp('sbp/selectors/register', {
       if (!distributionDate) {
         // 3 days after group creation by default. we put this here for a kind of dumb but
         // necessary reason: the Cypress tests do not allow us to import dateToPeriodStamp
-        // or any of these other time.ts functions because thte Cypress environment can't
-        // handle Flowtype annotations, even though our .babelrc should make it work.
+        // or any of these other time.ts functions because the Cypress environment can't
+        // handle TypeScript annotations, even though our .babelrc should make it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
 
@@ -1083,9 +1083,7 @@ export default (sbp('sbp/selectors/register', {
       // If we just joined, we're likely witnessing an old error that was handled
       // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
-      //
-      // NOTE: we cast to 'any' to work around flow errors
-      //       see: https://stackoverflow.com/a/41329247/1781435
+
       const memberID = msgMeta && msgMeta.innerSigningContractID
       const groupID = message.contractID()
       const rootState = sbp('chelonia/rootState')

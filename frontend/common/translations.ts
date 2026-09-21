@@ -106,10 +106,6 @@ export function LTags (...tags: string[]): { br_: string } {
 
 export function L (
   key: string,
-  // Flow: `Array<*> | Object | void`.
-  // `Object` becomes `any`, which swallows the `Array<any>` arm, so the union checks
-  // nothing. The accurate type is the array-or-record `template()` accepts;
-  // that belongs to the later strictness pass, not here.
   args?: Array<any> | any
 ): string {
   return template(currentTranslationTable[key] || key, args)

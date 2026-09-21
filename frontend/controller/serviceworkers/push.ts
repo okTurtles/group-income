@@ -9,10 +9,8 @@ import { getSubscriptionId } from '@chelonia/lib/functions'
 import { DEVICE_SETTINGS } from '@utils/constants.ts'
 
 // This module runs only in the service worker, where `self` is a
-// `ServiceWorkerGlobalScope` rather than the `Window` that lib.dom assumes.
-// The declaration is type-only and erased at emit; it restores the `any` that
-// `self` — and with it every `addEventListener` handler argument — had under
-// Flow.
+// `ServiceWorkerGlobalScope`. But lib.dom of Typescript assumes it to be a `Window`
+// So declaring it as `any` here is to satisfy the type checker.
 declare const self: any
 
 // The application server (public) key could be either an ArrayBuffer (which is

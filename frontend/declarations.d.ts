@@ -11,14 +11,14 @@
 // Shared type aliases
 // =============================================================================
 
-// Flow's `Function` was just a spelling of `any`, not a function type:
-// `const a: Function = 42` typechecks under Flow, and a `Function` value
-// assigns out to `string`. So the mechanical mirror for it in TypeScript is `any`.
+// Flow's `Function` was just a spelling of `any`, not a function type. e.g.:
+// `const a: Function = 42` typechecks under Flow.
+// So the mechanical mirror for it in TypeScript is `any`.
 //
 // TypeScript has no usable 'any function' type to swap in (Its built-in `Function`
 // carries no call signature, so it rejects assignment to every specific signature,
 // and `@typescript-eslint/no-unsafe-function-type` bans it outright).
-// So we declare our own 'any function' type and use it where Flow's `Function` was used:
+// So we declare our own 'any function' type and use it where Flow's `Function` used to be:
 type Fn = (...args: any[]) => any
 
 // =============================================================================

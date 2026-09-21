@@ -1,17 +1,7 @@
 // @ts-nocheck
-// Flow never typechecked this file (`.flowconfig` [ignore]), and TypeScript does not
-// either: scope parity. `exclude` in tsconfig.json is not enough on its own, because
-// the contracts import this file and an excluded file is still checked once imported.
-//
-// Every export is annotated `any` for the same reason. An ignored module's exports are
-// `any` to Flow, so the contracts' call sites into this file were never checked. Left to
-// infer, TypeScript would type them from the implementation and start checking those
-// call sites -- new checking Flow never did, on code that is frozen once pinned. The
-// internal types below are preserved as written, and are what a later pass would use.
-// to make rollup happy, I copied flowTyper-js
-// library into this file (it was refusing to
-// import because of the way functions were being
-// exported).
+// This file has never been meant to be typechecked, and `tsconfig.json` lists it under
+// `exclude`. But the moment any `.ts` file imports this one, TypeScript pulls it in
+// and checks it anyway. The pragma above is placed to prevent that.
 //
 // GI EDIT NOTES:
 //
@@ -79,7 +69,7 @@ export const isType: any = typeFn => (v, _scope = '') => {
 }
 
 // This function will return value based on schema with inferred types. This
-// value can be used to define type in Flow with 'typeof' utility.
+// value can be used to define type in TypeScript with 'typeof' utility.
 export const typeOf: any = schema => schema(EMPTY_VALUE, '')
 export const getType: any = (typeFn, _options) => {
   if (isFunction(typeFn.type)) return typeFn.type(_options)
