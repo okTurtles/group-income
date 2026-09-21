@@ -94,8 +94,8 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { L } from '@common/common.js'
-import { INCOME_DETAILS_UPDATE } from '@utils/events.ts'
-import { GROUP_MAX_PLEDGE_AMOUNT } from '@model/contracts/shared/constants.ts'
+import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
+import { GROUP_MAX_PLEDGE_AMOUNT } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'IncomeDetails',

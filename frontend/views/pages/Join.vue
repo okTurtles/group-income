@@ -57,10 +57,10 @@ import SignupForm from '@containers/access/SignupForm.vue'
 import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import SvgCreateGroup from '@svgs/create-group.svg'
-import { LOGIN } from '@utils/events.ts'
+import { LOGIN } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
-import { PROFILE_STATUS } from '@model/contracts/shared/constants.ts'
+import { PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { keyId } from '@chelonia/crypto'
 
 let syncFinished = false

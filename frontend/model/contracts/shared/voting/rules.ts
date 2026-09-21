@@ -4,7 +4,7 @@ import { literalOf, unionOf } from '~/frontend/model/contracts/misc/giTyper.ts'
 import {
   PROPOSAL_REMOVE_MEMBER,
   PROFILE_STATUS
-} from '../constants.ts'
+} from '../constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

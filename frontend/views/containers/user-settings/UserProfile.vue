@@ -74,7 +74,7 @@
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from 'turtledash'
 import { mapGetters, mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -82,7 +82,7 @@ import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import { L } from '@common/common.js'
-import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.ts'
+import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'UserProfile',

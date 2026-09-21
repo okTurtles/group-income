@@ -25,9 +25,9 @@ proposal-template(
 <script>
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
-import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.ts'
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
-import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.ts'
+import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 

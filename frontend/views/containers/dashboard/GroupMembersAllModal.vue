@@ -120,7 +120,7 @@ modal-base-template.has-background(
 <script>
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
-import { REPLACE_MODAL } from '@utils/events.ts'
+import { REPLACE_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'

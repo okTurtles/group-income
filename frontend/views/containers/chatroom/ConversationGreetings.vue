@@ -23,10 +23,10 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES } from '@model/contracts/shared/constants.ts'
+import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'ConversationGreetings',

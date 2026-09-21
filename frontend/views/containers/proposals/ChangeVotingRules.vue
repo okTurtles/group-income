@@ -28,11 +28,11 @@ proposal-template(
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.ts'
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import { L, LTags } from '@common/common.js'
 import { proposalDefaults } from '@model/contracts/shared/voting/proposals.ts'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.ts'
-import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/shared/constants.ts'
+import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'

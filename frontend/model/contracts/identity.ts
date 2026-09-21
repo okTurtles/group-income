@@ -3,7 +3,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/giTyper.ts'
-import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.ts'
+import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.js'
 import { Secret } from '@chelonia/lib/Secret'
 import {
   IDENTITY_BIO_MAX_CHARS,
@@ -11,7 +11,7 @@ import {
   IDENTITY_USERNAME_MAX_CHARS,
   MAX_HASH_LEN,
   MAX_URL_LEN
-} from './shared/constants.ts'
+} from './shared/constants.js'
 import { referenceTally } from './shared/functions.ts'
 import identityGetters from './shared/getters/identity.ts'
 import { has, merge } from 'turtledash'

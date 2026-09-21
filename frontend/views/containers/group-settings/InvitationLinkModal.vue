@@ -31,7 +31,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { humanDate } from '@model/contracts/shared/time.ts'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'
-import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.ts'
+import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'InvitationLinkModal',

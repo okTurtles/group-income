@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { DELETED_CHATROOM, JOINED_CHATROOM, LEFT_CHATROOM, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.ts'
+import { DELETED_CHATROOM, JOINED_CHATROOM, LEFT_CHATROOM, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
 import { EVENT_HANDLED_READY } from '@chelonia/lib/events'
 
 const switchCurrentChatRoomHandler = ({ identityContractID, groupContractID, chatRoomID }) => {

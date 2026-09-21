@@ -134,7 +134,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'

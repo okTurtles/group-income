@@ -118,15 +118,15 @@ page-section.c-section(:title='L("Invite links")')
 
 <script>
 import sbp from '@sbp/sbp'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.ts'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.ts'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L, LTags } from '@common/common.js'
 import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'

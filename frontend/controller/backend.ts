@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.ts'
 import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import { handleFetchResult } from './utils/misc.ts'
-import { PUBSUB_INSTANCE } from './instance-keys.ts'
+import { PUBSUB_INSTANCE } from './instance-keys.js'
 
 // Used by 'backend/translations/get'
 // Do not include 'english.json' here unless the browser might need to download it.

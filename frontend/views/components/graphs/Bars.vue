@@ -61,7 +61,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { TABLET } from '@view-utils/breakpoints.ts'
+import { TABLET } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 

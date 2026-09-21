@@ -1,7 +1,7 @@
 'use strict'
 
 // NOTE: do not place contract-related events in here!
-//       place those in @model/contracts/shared/constants.ts instead
+//       place those in @model/contracts/shared/constants.js instead
 //
 //       This file is primarily for frontend UI related events.
 

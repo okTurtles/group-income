@@ -6,8 +6,8 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.ts'
-import { JOINED_GROUP } from '../../../frontend/utils/events.ts'
+import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
+import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '@chelonia/lib/events'
 
 const API_URL = Cypress.config('baseUrl')

@@ -1,5 +1,5 @@
 import { L } from '@common/common.js'
-import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.ts'
+import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 
 export const GROUP_ROLES_DISPLAY_NAME: { [key: string]: string } = {
   [GROUP_ROLES.ADMIN]: L('Admin'),

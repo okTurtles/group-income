@@ -43,7 +43,7 @@
 
 <script>
 import { uniq } from 'turtledash'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.ts'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
 import PollMixin from '@containers/chatroom/PollMixin.ts'
 

@@ -70,8 +70,8 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import { linearScale, randomHexString } from 'turtledash'
-import { AVATAR_EDITED } from '@utils/events.ts'
-import { ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX } from './avatar-editor-constants.ts'
+import { AVATAR_EDITED } from '@utils/events.js'
+import { ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX } from './avatar-editor-constants.js'
 
 const zoomCalculator = linearScale([ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX], [IMAGE_SCALE_MIN, IMAGE_SCALE_MAX])
 /*

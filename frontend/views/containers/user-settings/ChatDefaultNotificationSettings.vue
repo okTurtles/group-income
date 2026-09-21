@@ -94,8 +94,8 @@ import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
-import { GLOBAL_MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.ts'
-import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.ts'
+import { GLOBAL_MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY } from '@model/contracts/shared/constants.js'
+import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default {
   name: 'DefaultChatNotificationSettings',

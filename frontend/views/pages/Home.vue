@@ -71,7 +71,7 @@ main.c-splash(data-test='homeLogo' v-if='!currentGroupId')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { ACCEPTED_GROUP, OPEN_MODAL, PWA_INSTALLABLE } from '@utils/events.ts'
+import { ACCEPTED_GROUP, OPEN_MODAL, PWA_INSTALLABLE } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.ts'

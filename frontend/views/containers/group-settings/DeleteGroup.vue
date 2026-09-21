@@ -20,7 +20,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import { mapGetters } from 'vuex'
 

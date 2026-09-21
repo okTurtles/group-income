@@ -9,7 +9,7 @@ import {
   MESSAGE_RECEIVE,
   MESSAGE_TYPES,
   GLOBAL_NOTIFICATION_SETTINGS_KEY
-} from '@model/contracts/shared/constants.ts'
+} from '@model/contracts/shared/constants.js'
 import {
   swapMentionIDForDisplayname
 } from '@model/chatroom/utils.ts'

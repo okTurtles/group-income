@@ -5,7 +5,7 @@ import type { Notification, NotificationData, NotificationTemplate } from './typ
 import templates from './templates.ts'
 import { makeNotificationHash } from './utils.ts'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
-import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.ts'
+import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 
 /*
  * NOTE: do not refactor occurences of `sbp('state/vuex/state')` by defining a shared constant in the

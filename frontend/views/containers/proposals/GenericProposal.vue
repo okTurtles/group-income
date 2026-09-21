@@ -40,7 +40,7 @@ proposal-template(
 </template>
 
 <script>
-import { PROPOSAL_GENERIC, PROPOSAL_NAME_MAX_CHAR } from '@model/contracts/shared/constants.ts'
+import { PROPOSAL_GENERIC, PROPOSAL_NAME_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'

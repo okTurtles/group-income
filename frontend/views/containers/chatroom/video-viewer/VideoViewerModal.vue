@@ -67,7 +67,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
-import { CLOSE_MODAL } from '@utils/events.ts'
+import { CLOSE_MODAL } from '@utils/events.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import VideoPlayer from '@containers/chatroom/video-viewer/VideoPlayer.vue'
 import trapFocus from '@utils/trapFocus.ts'

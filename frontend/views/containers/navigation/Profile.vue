@@ -30,7 +30,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import { mapGetters } from 'vuex'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
-import { CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.ts'
+import { CLOSE_NAVIGATION_SIDEBAR } from '@utils/events.js'
 
 export default {
   name: 'Profile',

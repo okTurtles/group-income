@@ -3,7 +3,7 @@
 import { L, LTags } from '@common/common.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.ts'
+import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags

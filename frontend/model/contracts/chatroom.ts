@@ -4,7 +4,7 @@
 
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.ts'
+import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
 import { actionRequireInnerSignature, arrayOf, nil, number, object, objectOf, optional, string, stringMax } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { ChelErrorGenerator } from '@chelonia/lib/errors'
 import {
@@ -23,7 +23,7 @@ import {
   POLL_STATUS,
   POLL_OPTION_MAX_CHARS,
   POLL_QUESTION_MAX_CHARS
-} from './shared/constants.ts'
+} from './shared/constants.js'
 import {
   createMessage,
   findMessageIdx,

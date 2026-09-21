@@ -48,7 +48,7 @@ modal-template(:class='{ "has-background": background, "is-left-aligned": backOn
 <script>
 import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'DSModalSimple',

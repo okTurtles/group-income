@@ -79,8 +79,8 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import {
   CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, GLOBAL_NOTIFICATION_SETTINGS_KEY,
   GLOBAL_MESSAGE_NOTIFY_SETTINGS
-} from '@model/contracts/shared/constants.ts'
-import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.ts'
+} from '@model/contracts/shared/constants.js'
+import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
 export default {
   name: 'ChatNotificationSettingsModal',

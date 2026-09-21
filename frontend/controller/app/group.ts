@@ -5,9 +5,9 @@ import {
   INVITE_INITIAL_CREATOR,
   MAX_GROUP_MEMBER_COUNT,
   PROFILE_STATUS
-} from '@model/contracts/shared/constants.ts'
+} from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
-import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.ts'
+import { ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM, JOINED_GROUP, LEFT_GROUP, OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
 import { withGroupCurrency } from '@view-utils/misc.ts'
 import type { ChelKeyRequestParams } from '@chelonia/lib'

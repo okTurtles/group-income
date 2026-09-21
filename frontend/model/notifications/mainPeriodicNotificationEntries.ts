@@ -1,4 +1,4 @@
-import { PROPOSAL_GENERIC, STATUS_OPEN } from '@model/contracts/shared/constants.ts'
+import { PROPOSAL_GENERIC, STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS, comparePeriodStamps, dateToPeriodStamp } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.ts'

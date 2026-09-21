@@ -138,9 +138,9 @@ import ChatMain from '@containers/chatroom/ChatMain.vue'
 import ChatMixin from '@containers/chatroom/ChatMixin.ts'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
-import { OPEN_MODAL } from '@utils/events.ts'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.ts'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.ts'
+import { OPEN_MODAL } from '@utils/events.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default {

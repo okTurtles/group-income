@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.ts'
+import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'GroupPurpose',

@@ -80,7 +80,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.ts'
+import { OPEN_MODAL } from '@utils/events.js'
 import UserSettingsTabMenuItem from './UserSettingsTabMenuItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 

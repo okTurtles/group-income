@@ -15,35 +15,35 @@ import 'wicg-inert'
 import { CONTRACT_IS_SYNCING } from '@chelonia/lib/events'
 import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
-import './controller/app/index.ts'
+import './controller/app/index.js'
 import './controller/backend.ts'
 import './controller/namespace.ts'
 import router from './controller/router.ts'
 import './controller/service-worker.ts'
 import { SETTING_CURRENT_USER } from './model/database.ts'
 import store from './model/state.ts'
-import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.ts'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import ToastContainer from './views/containers/toast/ToastContainer.vue'
-import './views/utils/avatar.ts'
-import './views/utils/i18n.ts'
+import './views/utils/avatar.js'
+import './views/utils/i18n.js'
 import './views/utils/ui.ts'
-import './views/utils/vError.ts'
-import './views/utils/vFocus.ts'
-// import './views/utils/vSafeHtml.ts' // this gets imported by translations, which is part of common.js
+import './views/utils/vError.js'
+import './views/utils/vFocus.js'
+// import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import hasAllRequiredFeatures from '@model/featureCheck.ts'
 import Vue from 'vue'
-import notificationsMixin from './model/notifications/mainNotificationsMixin.ts'
+import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import './model/notifications/periodicNotifications.ts'
 import FaviconBadge from './utils/faviconBadge.ts'
-import './utils/init-vue-plugins.ts'
+import './utils/init-vue-plugins.js'
 import { showNavMixin } from './views/utils/misc.ts'
 import { getTextSizeAlias } from '@view-utils/textSizes.ts'
-import './views/utils/vStyle.ts'
+import './views/utils/vStyle.js'
 
 console.info('APP_VERSION:', process.env.APP_VERSION)
 console.info('GI_GIT_VERSION:', process.env.GI_GIT_VERSION)
@@ -253,7 +253,7 @@ async function startApp () {
     },
     mounted () {
       let oldIdentityContractID = null // lets us know if there's a previously logged in user
-      const reducedMotionQuery: { matches?: boolean } = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
+      const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }

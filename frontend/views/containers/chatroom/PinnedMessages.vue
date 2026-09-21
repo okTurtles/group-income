@@ -57,7 +57,7 @@ import {
   MESSAGE_VARIANTS,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
-} from '@model/contracts/shared/constants.ts'
+} from '@model/contracts/shared/constants.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.ts'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.ts'
 

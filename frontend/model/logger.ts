@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS } from '~/frontend/utils/events.ts'
+import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
 import CircularList from '~/frontend/utils/CircularList.ts'
 
 const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']

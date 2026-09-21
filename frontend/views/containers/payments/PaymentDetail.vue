@@ -48,7 +48,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
-import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.ts'
+import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'

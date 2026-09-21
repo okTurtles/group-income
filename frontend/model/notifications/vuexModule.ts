@@ -3,9 +3,9 @@
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { cloneDeep } from 'turtledash'
-import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.ts'
+import { NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 import getters from './getters.ts'
-import * as keys from './mutationKeys.ts'
+import * as keys from './mutationKeys.js'
 import type { Notification } from './types.ts'
 import { compareOnTimestamp } from './utils.ts'
 

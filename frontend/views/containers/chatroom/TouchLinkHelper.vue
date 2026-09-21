@@ -30,7 +30,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.ts'
+import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.js'
 import { L } from '@common/common.js'
 
 const menuList = [

@@ -8,18 +8,6 @@
     // esbuild builds; tsc only checks.
     "noEmit": true,
 
-    // Cypress 13.14.2 bundles `ts-node` and `ts-loader`, and both prefer the
-    // project's TypeScript over their own — which is 6.x here. TS 6 turns their
-    // internal defaults into hard errors (`downlevelIteration` in the spec
-    // preprocessor). This silences them; it changes nothing for our own `tsc`,
-    // which sets none of the deprecated options.
-    "ignoreDeprecations": "6.0",
-    // Same reason. `ts-node` compiles Cypress's own plugin loader, which lives
-    // outside this project, and infers a `rootDir` inside the Cypress app —
-    // TS5011. Inert for us: `rootDir` only shapes output layout, and `noEmit`
-    // is on.
-    "rootDir": "/",
-
     // esbuild is configured with no `target`, so it does not downlevel anything
     // (Gruntfile.js esbuildOptionBags.default), and the main bundle is ESM.
     "target": "ESNext",
@@ -49,13 +37,6 @@
     // Combined with the `include` below, `.js` files enter the program only
     // when imported, never as roots.
     "allowImportingTsExtensions": true,
-
-    // Flow drew its ambient declarations solely from `[libs]`
-    // (./frontend/declarations.js, since deleted). TypeScript would instead auto-include every
-    // package under node_modules/@types — 19 of them, all transitive and none
-    // declared in package.json, which would leak Node globals into browser code
-    // and collide with our own declarations. An empty list restores parity;
-    // ambient types come from our `.d.ts` files only (Step 2).
     "types": [],
 
     // --- Path aliases --------------------------------------------------------
@@ -77,33 +58,21 @@
       "@utils/*": ["./frontend/utils/*"],
       "@view-utils/*": ["./frontend/views/utils/*"],
       "@views/*": ["./frontend/views/*"],
-      "~/*": ["./*"],
+      "~/*": ["./*"]
+    },
 
-      // Not an alias — the one entry here that does not mirror the Gruntfile.
-      // vuex 3.6.0 predates the `types` export condition, so its `exports` map
-      // offers `require` and `import` only and `moduleResolution: "bundler"`
-      // never finds `types/index.d.ts`. Without this, `vuex` is an untyped
-      // module and the `store` option that `types/vue.d.ts` augments onto
-      // `ComponentOptions` does not exist, which is TS2769 on `new Vue({ store })`
-      // in `main.ts`. Pointing at the declaration file costs nothing elsewhere:
-      // it resolves zero new errors' worth of surface, and esbuild ignores it —
-      // verified by bundling `import { mapGetters } from 'vuex'`, which still
-      // pulls in the 35 KB runtime.
-      "vuex": ["./node_modules/vuex/types/index.d.ts"]
-    }
+    // ---------- Cypress related ----------
+    // Both exist only because Cypress loads this file with its own bundled
+    // `ts-node`. Without them, `npx cypress run` dies before a single test starts.
+    // 
+    // Without below, every run fails with TS5107.
+    "ignoreDeprecations": "6.0",
+    // Without below, every run fails with TS5011:
+    // `ts-node` compiles Cypress's own plugin loader straight out of the
+    // Cypress app cache, so the root it infers lands outside this repo.
+    "rootDir": "/",
+    // ------------------------------------
   },
-
-  // ONLY `.ts` files are program roots. `checkJs: false` above suppresses
-  // *semantic* errors in `.js` but not *syntactic* ones, so while the
-  // Flow-annotated `.js` files were being converted, rooting them here produced
-  // thousands of unsuppressable TS8010/TS1005 parse errors — a Flow annotation
-  // is a syntax error to TypeScript. That reason expired when the last of them
-  // was converted, but the line stays: rooting `.js` would pull in the 6 files
-  // Flow ignored along with `common/common.js`. The remaining `.js` files enter
-  // the program when a `.ts` file imports one, and that is all.
-  //
-  // `frontend/**/*.ts` also matches `.d.ts`, which is how the ambient
-  // declarations in `declarations.d.ts` and `shims.d.ts` get picked up.
   "include": ["frontend/**/*.ts"],
 
   // Each entry maps to a `.flowconfig` [ignore] line from the Flow config this

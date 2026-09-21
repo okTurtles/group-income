@@ -11,8 +11,8 @@ import {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
-} from './constants.ts'
-import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.ts'
+} from './constants.js'
+import { NEW_CHATROOM_SCROLL_POSITION } from '@utils/events.js'
 import { humanDate } from './time.ts'
 
 // !!!!!!!!!!!!!!!

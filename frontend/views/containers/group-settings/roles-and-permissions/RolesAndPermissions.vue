@@ -39,7 +39,7 @@ page-section.c-section(
 import PageSection from '@components/PageSection.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PermissionTableRow from './PermissionTableRow.vue'
-import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.ts'
+import { GROUP_ROLES, GROUP_PERMISSIONS_PRESET, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 const fakeRolesData = [

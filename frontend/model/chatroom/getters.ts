@@ -3,7 +3,7 @@
 import { merge, union } from 'turtledash'
 import {
   CHATROOM_PRIVACY_LEVEL, GLOBAL_NOTIFICATION_SETTINGS_KEY, GLOBAL_MESSAGE_NOTIFY_SETTINGS
-} from '@model/contracts/shared/constants.ts'
+} from '@model/contracts/shared/constants.js'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 
 const getters: { [x: string]: (state: any, getters: { [x: string]: any }, rootState: any) => any } = {

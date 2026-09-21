@@ -1,10 +1,10 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Colors from './colors.ts'
-import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.ts'
+import Colors from './colors.js'
+import { LOGOUT, SET_APP_LOGS_FILTER, THEME_CHANGE } from '@utils/events.js'
 import { cloneDeep } from 'turtledash'
-import { THEME_LIGHT, THEME_DARK } from './themes.ts'
+import { THEME_LIGHT, THEME_DARK } from './themes.js'
 import { DEVICE_SETTINGS } from '@utils/constants.ts'
 
 const checkSystemColor = () => {

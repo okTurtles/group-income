@@ -37,7 +37,7 @@ import { withGroupCurrency } from '@view-utils/misc.ts'
 import { L } from '@common/common.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.ts'
+import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'MincomeProposal',

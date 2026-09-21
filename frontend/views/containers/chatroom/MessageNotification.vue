@@ -10,7 +10,7 @@ message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
 import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.ts'
+import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default {
   name: 'MessageNotification',

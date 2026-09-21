@@ -27,7 +27,7 @@
 import Avatar from '@components/Avatar.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.ts'
+import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
   getPermissionDisplayName

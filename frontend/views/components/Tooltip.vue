@@ -39,7 +39,7 @@ span.c-twrapper(
 
 <script>
 import { mapGetters } from 'vuex'
-import { TABLET } from '@view-utils/breakpoints.ts'
+import { TABLET } from '@view-utils/breakpoints.js'
 import trapFocus from '@utils/trapFocus.ts'
 
 export default {

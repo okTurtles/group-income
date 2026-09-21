@@ -1,5 +1,5 @@
 import { L } from '@common/common.js'
-import { PUBSUB_INSTANCE } from '@controller/instance-keys.ts'
+import { PUBSUB_INSTANCE } from '@controller/instance-keys.js'
 import { makeNotification } from '@model/notifications/nativeNotification.ts'
 import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.ts'
