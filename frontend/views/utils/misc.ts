@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import VueRouter from 'vue-router'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
 export function logExceptNavigationDuplicated (err: any) {

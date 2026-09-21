@@ -81,7 +81,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CharLengthIndicator from '@components/CharLengthIndicator.vue'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { IDENTITY_BIO_MAX_CHARS, IDENTITY_USERNAME_MAX_CHARS } from '@model/contracts/shared/constants.ts'
 
 export default {

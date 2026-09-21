@@ -99,7 +99,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import { PROPOSAL_REASON_MAX_CHAR } from '@model/contracts/shared/constants.ts'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.ts'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

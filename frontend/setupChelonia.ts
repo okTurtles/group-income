@@ -1,6 +1,6 @@
 'use strict'
 
-import * as Common from '@common/common.ts'
+import * as Common from '@common/common.js'
 import { debounce, has } from 'turtledash'
 import sbp from '@sbp/sbp'
 import '@chelonia/lib'
@@ -161,13 +161,7 @@ const setupChelonia = async (): Promise<any> => {
     contracts: {
       ...manifests,
       defaults: {
-        modules: {
-          // This file was `common.js` until it was renamed. Both keys stay:
-          // contracts pinned before the rename carry a frozen
-          // `__require("@common/common.js")` and are still served.
-          '@common/common.js': Common,
-          '@common/common.ts': Common
-        },
+        modules: { '@common/common.js': Common },
         allowedSelectors: [
           'namespace/lookup', 'namespace/lookupCached',
           // TODO: [SW] the `state/` selectors should _not_ be used from contracts

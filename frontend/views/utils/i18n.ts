@@ -1,6 +1,6 @@
 'use strict'
 
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
 import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.ts'

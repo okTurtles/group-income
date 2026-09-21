@@ -86,7 +86,7 @@ modal-base-template.has-background(
 
 <script>
 import sbp from '@sbp/sbp'
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import { difference } from 'turtledash'
 import { mapGetters } from 'vuex'
 import { EVENT_HANDLED } from '@chelonia/lib/events'

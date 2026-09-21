@@ -122,7 +122,7 @@
 import Vue from 'vue'
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'

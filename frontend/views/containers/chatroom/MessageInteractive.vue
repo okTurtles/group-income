@@ -20,7 +20,7 @@ message-base(v-bind='$props'
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,

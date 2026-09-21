@@ -27,7 +27,7 @@ import SupportHistory from '@containers/contributions/SupportHistory.vue'
 import TodoHistory from '@containers/contributions/TodoHistory.vue'
 import GroupMembersActivity from '@containers/dashboard/GroupMembersActivity.vue'
 
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 export default {
   name: 'GroupActivity',
   data () {

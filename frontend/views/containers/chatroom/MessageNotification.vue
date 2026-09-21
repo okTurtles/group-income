@@ -7,7 +7,7 @@ message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
 </template>
 
 <script>
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.ts'

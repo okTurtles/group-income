@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { renderMarkdown } from '@view-utils/markdown-utils.ts'
 import { validateURL, logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import { OPEN_TOUCH_LINK_HELPER } from '@utils/events.ts'

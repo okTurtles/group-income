@@ -5,7 +5,7 @@ import type {
 } from './types.ts'
 
 import sbp from '@sbp/sbp'
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.ts'
 import {
   STATUS_PASSED, STATUS_FAILED, STATUS_CANCELLED, STATUS_EXPIRED,

@@ -46,7 +46,7 @@ fieldset(
 
 <script>
 import { mapGetters } from 'vuex'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { maxLength } from 'vuelidate/lib/validators'
 import { GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR } from '@model/contracts/shared/constants.ts'

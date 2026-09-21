@@ -14,7 +14,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 

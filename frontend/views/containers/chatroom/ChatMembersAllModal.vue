@@ -117,7 +117,7 @@ modal-base-template.has-background(
 <script>
 import sbp from '@sbp/sbp'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'

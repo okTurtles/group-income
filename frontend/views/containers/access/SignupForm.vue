@@ -43,7 +43,7 @@ form(data-test='signup' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import PasswordForm from '@containers/access/PasswordForm.vue'

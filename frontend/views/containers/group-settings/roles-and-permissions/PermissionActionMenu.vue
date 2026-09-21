@@ -18,7 +18,7 @@ menu-parent.c-permission-action-menu(
 </template>
 
 <script>
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { MenuParent, MenuContent, MenuTrigger, MenuItem } from '@components/menu'
 
 export default {

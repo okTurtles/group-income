@@ -41,7 +41,7 @@ import {
 } from '@model/contracts/shared/constants.ts'
 import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.ts'
 import { TextObjectType, EMOJI_REGEX } from '@utils/constants.ts'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 
 export default {
   name: 'RenderMessageText',

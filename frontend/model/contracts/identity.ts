@@ -1,6 +1,6 @@
 'use strict'
 
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { arrayOf, boolean, object, objectMaybeOf, objectOf, optional, string, stringMax, unionOf, validatorFrom } from '~/frontend/model/contracts/misc/giTyper.ts'
 import { DELETED_CHATROOM, LEFT_GROUP } from '~/frontend/utils/events.ts'

@@ -70,7 +70,7 @@ import { IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars } from '@model/contract
 import sbp from '@sbp/sbp'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { Secret } from '@chelonia/lib/Secret'
 
 export default {

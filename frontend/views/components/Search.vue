@@ -25,7 +25,7 @@ form.c-search-form(@submit.prevent='')
 </template>
 
 <script>
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 
 export default {
   name: 'Search',

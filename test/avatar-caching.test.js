@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-import * as Common from '@common/common.ts'
+import * as Common from '@common/common.js'
 import sbp from '@sbp/sbp'
 import manifests from '~/frontend/model/contracts/manifests.json'
 import '@chelonia/lib'
@@ -77,10 +77,7 @@ describe('avatar file serving', function () {
             Intl,
             Set
           },
-          // Both keys, same module. The `.js` one answers the frozen
-          // `__require("@common/common.js")` in the pinned snapshots under
-          // `contracts/`; new contracts ask for `.ts`. See setupChelonia.ts.
-          modules: { '@common/common.js': Common, '@common/common.ts': Common },
+          modules: { '@common/common.js': Common },
           preferSlim: true
         }
       }

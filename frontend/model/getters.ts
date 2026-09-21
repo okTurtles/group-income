@@ -1,4 +1,4 @@
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { INVITE_INITIAL_CREATOR, PROFILE_STATUS } from '@model/contracts/shared/constants.ts'
 import { INVITE_STATUS } from '@chelonia/lib/constants'
 import { adjustedDistribution, unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.ts'

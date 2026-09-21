@@ -52,7 +52,7 @@ fieldset(data-test='paymentMethods')
 <script>
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import { maxLength, required } from 'vuelidate/lib/validators'
 import { GROUP_PAYMENT_METHOD_MAX_CHAR } from '@model/contracts/shared/constants.ts'
 import Vue from 'vue'

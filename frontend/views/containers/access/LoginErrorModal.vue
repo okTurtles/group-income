@@ -18,7 +18,7 @@ modal-template.is-prompt(
 
 <script>
 import sbp from '@sbp/sbp'
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 
 export default {

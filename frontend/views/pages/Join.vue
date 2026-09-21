@@ -49,7 +49,7 @@ div
 </template>
 
 <script>
-import { L, LTags } from '@common/common.ts'
+import { L, LTags } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'

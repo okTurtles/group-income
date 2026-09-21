@@ -7,7 +7,7 @@ page.c-page
 </template>
 
 <script>
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import UserSettingsMain from '@containers/user-settings/UserSettingsMain.vue'
 import UserSettingsTabContainer from '@containers/user-settings/UserSettingsTabContainer.vue'

@@ -102,7 +102,7 @@ import { getFileExtension, getFileType, checkBrowserVideoMimeTypeSupport } from 
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.ts'
 import { uniq } from 'turtledash'
-import { L, LError } from '@common/common.ts'
+import { L, LError } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',

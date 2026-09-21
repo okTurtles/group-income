@@ -676,7 +676,7 @@ module.exports = (grunt) => {
     esbuildOptionBags.contracts.define['process.env.APP_VERSION'] = "'x.x.x'"
     esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
     esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-    esbuildOptionBags.contractsSlim.external = ['@common/common.ts', '@sbp/sbp']
+    esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
 
     // Additional options which are not part of the esbuild API.
     const esbuildOtherOptionBags = {

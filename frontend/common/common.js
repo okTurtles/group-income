@@ -16,7 +16,7 @@
 // expects the behavior to be.
 
 // EVERYTHING EXPORTED BY THIS FILE MUST ALWAYS AND ONLY BE IMPORTED
-// VIA "/assets/js/common.ts"!
+// VIA "/assets/js/common.js"!
 // DO NOT CHANGE THE BEHAVIOR OF ANYTHING IMPORTED BY THIS FILE THAT AFFECTS THE
 // BEHAVIOR OF CONTRACTS IN ANY MEANINGFUL WAY!
 // Doing otherwise defeats the purpose of this file and could lead to bugs and conflicts!

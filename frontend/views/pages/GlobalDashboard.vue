@@ -9,7 +9,7 @@ page(
 </template>
 
 <script>
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
 import DirectMessages from '@containers/global-dashboard/DirectMessages.vue'

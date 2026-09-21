@@ -141,7 +141,7 @@ import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.ts'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.ts'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.ts'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 
 export default {
   name: 'GroupChat',

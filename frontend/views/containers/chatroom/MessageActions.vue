@@ -67,7 +67,7 @@
 import Tooltip from '@components/Tooltip.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.ts'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.ts'
-import { L } from '@common/common.ts'
+import { L } from '@common/common.js'
 
 export default {
   name: 'MessageActions',

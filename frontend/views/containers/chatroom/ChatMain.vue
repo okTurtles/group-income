@@ -141,7 +141,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { SPMessage } from '@chelonia/lib/SPMessage'
-import { L, LError } from '@common/common.ts'
+import { L, LError } from '@common/common.js'
 import Vue from 'vue'
 import Avatar from '@components/Avatar.vue'
 import Message from './Message.vue'
