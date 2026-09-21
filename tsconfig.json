@@ -20,6 +20,7 @@
     // subpath import fails. "bundler" also matches how esbuild actually resolves.
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
 
     "strict": false,
     "skipLibCheck": true,
