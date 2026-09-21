@@ -8,139 +8,36 @@
 // turns it into a module and every declaration below stops being global.
 
 // =============================================================================
-// Why this file is 300 lines shorter than the Flow libdef it replaced
-// =============================================================================
-//
-// `frontend/declarations.js` carried 88 `declare module 'x' { declare
-// module.exports: any }` stubs whose only job was to silence Flow's "Required
-// module not found". None were carried over, for three different reasons.
-//
-// **73 are package stubs, and TypeScript resolves those on its own.** Verified
-// rather than assumed: all 42 bare specifiers imported anywhere under
-// `frontend/` (test files excluded) were imported from a throwaway `.ts` file
-// and typechecked — zero resolution errors. Restoring the stubs would actively
-// hurt, because an ambient `declare module` *outranks* a package's real
-// declarations: stubbing `vue`, `vuex`, `vue-router`, `marked`, `turtledash`,
-// `@sbp/*` or `@chelonia/*` would throw away exactly the type information
-// Steps 4-8 are meant to be checked against. Same reasoning as the
-// `@chelonia/*` decision in the plan. Untyped packages (`dompurify`,
-// `vuelidate`, `scrypt-async`, `emoji-mart-vue-fast`, …) degrade to `any` by
-// themselves under `strict: false`, which is what Flow gave them too.
-//
-// **32 of those 73 are dead outright** — `@hapi/*`, `hapi-pino`, `pino`,
-// `chalk`, `form-data`, `ws`, `better-sqlite3`, `node:*`, `favico.js`,
-// `lru-cache`, `uuid`, `bottleneck`, `vue-slider-component`,
-// `@apeleghq/rfc8188/*`, `@chelonia/multiformats/*`, `@chelonia/lib/db`,
-// `@chelonia/lib/presets`, `@chelonia/lib/zkppConstants`,
-// `vuelidate/lib/validators/maxLength`. Those specifiers appear nowhere in the
-// repo except `declarations.js` itself; most are leftovers from when the
-// backend lived here, before it became `chel serve`. Several aren't installed.
-//
-// **The remaining 15 are local-path stubs** (`@utils/blockies.js`,
-// `~/frontend/model/contracts/misc/flowTyper.js`, `@common/common.js`,
-// `@model/contracts/shared/*.js`, `./controller/service-worker.js`, …) and
-// cannot be reproduced in TypeScript even if we wanted them: `paths` resolution
-// wins over an ambient `declare module` with the same specifier, so TypeScript
-// opens the real file regardless. Confirmed by probe — declaring
-// `'~/frontend/model/contracts/misc/flowTyper.ts'` as `any` left all 387 parse
-// errors from that file's Flow syntax in place. The mechanism that keeps those
-// files out of the program is the leaf-first conversion order, not a stub.
-
-// =============================================================================
 // Shared type aliases
 // =============================================================================
 
-// The replacement for Flow's `Function`, which was a spelling of `any` rather
-// than a function type: under Flow, `const a: Function = 42` typechecks and a
-// `Function` value assigns out to `string`. This alias recovers the intent the
-// original authors encoded — "some JS function" — which the mechanical
-// `Function` -> `any` mirror had to throw away.
+// Flow's `Function` was just a spelling of `any`, not a function type:
+// `const a: Function = 42` typechecks under Flow, and a `Function` value
+// assigns out to `string`. So the mechanical mirror for it in TypeScript is `any`.
 //
-// Not TypeScript's own `Function`: that type carries no call signature, so it
-// rejects assignment to every specific signature, and
-// `@typescript-eslint/no-unsafe-function-type` bans it.
-//
-// Ambient because this file has no top-level `import` / `export` and is
-// therefore a script, so the alias needs no import at the use site.
+// TypeScript has no usable 'any function' type to swap in (Its built-in `Function`
+// carries no call signature, so it rejects assignment to every specific signature,
+// and `@typescript-eslint/no-unsafe-function-type` bans it outright).
+// So we declare our own 'any function' type and use it where Flow's `Function` was used:
 type Fn = (...args: any[]) => any
 
 // =============================================================================
 // Our globals
 // =============================================================================
 
-// Injected into the contract sandbox by Chelonia; called from `group.js` and
-// `chatroom.js`, both of which carry a `/* globals fetchServerTime */` comment.
-//
-// Mirrors the Flow libdef exactly: `fallback: ?boolean` is `boolean | null |
-// void`, and the `?` on the parameter supplies the `void` half. Per RULES 2 in
-// TYPESCRIPT-MIGRATION-PLAN.md — mirror Flow, do not fix it.
-//
-// The fix, for whoever tightens this later: `| null` is wrong. The
-// implementation (`@chelonia/lib/dist/esm/internals.mjs:367`) is
-// `async (fallback = true)`, a default parameter, and defaults fire only on
-// `undefined`. Passing `null` is therefore not "unspecified" — it is falsy, so
-// it skips the local-clock fallback and throws
-// `ChelErrorFetchServerTimeFailed`. The accurate signature is
-// `(fallback?: boolean)`. Inert either way today: both call sites pass no
-// argument, and `strictNullChecks` is off.
 declare function fetchServerTime (fallback?: boolean | null): Promise<string>
 
 // =============================================================================
 // Node globals
 // =============================================================================
 
-// Deliberately left `any`, exactly as the Flow libdef had it.
-//
-// Scope parity governs this migration: TypeScript checks what Flow checked, and no more.
 declare var process: any
 
 // =============================================================================
 // Service-worker globals
 // =============================================================================
 
-// Declared only by `lib.webworker`, which `tsconfig.json` does not load, so
-// every reference is TS2304. Loading that lib is not an option: it conflicts
-// with `lib.dom` on ~300 identifiers (TS6200/TS2374), and `skipLibCheck` mutes
-// the report without reconciling them — it just picks an arbitrary winner per
-// global.
-//
-// `any` is scope parity, not a workaround. Flow's libdef never declared
-// `WorkerGlobalScope` at all, so Flow checked nothing here — confirmed by probe:
-// `typeof WorkerGlobalScope` passes under Flow while a control line errors. The
-// three call sites are all `typeof WorkerGlobalScope === 'function'` guards
-// distinguishing the window from the service worker.
+// Some files(e.g. nativeNotification.ts) are used in both the browser and the SW context and
+// using WorkerGlobalScope there leads to  TS2304 "cannot find name" ts error.
+// Declaring it `any` here is what silences them.
 declare const WorkerGlobalScope: any
-
-// `self` is deliberately NOT declared here, and cannot be.
-//
-// `lib.dom` already declares it (`declare var self: Window & typeof globalThis`)
-// and that declaration wins: a global `declare const self: any` in this file is
-// silently ignored rather than rejected, so the 43 service-worker errors it was
-// meant to fix all come back. Verified by removing the per-file declarations
-// with a global one in place.
-//
-// Only module scope shadows `lib.dom`, so the modules that genuinely run as a
-// service worker declare it themselves — `serviceworkers/push.ts`,
-// `serviceworkers/sw-primary.ts` and `model/notifications/nativeNotification.ts`.
-// That is also the narrower change: a working global would strip `Window` typing
-// from browser-context code, which is a coverage change rather than parity.
-
-// =============================================================================
-// Deliberately NOT declared
-// =============================================================================
-//
-//   crypto       `lib.dom.d.ts` already declares it as `Crypto`, which is
-//                strictly better than the Flow shape (`getRandomValues` +
-//                `subtle`) and covers all 11 frontend uses. Redeclaring it
-//                would collide.
-//
-//   logger       Dead. `declare var logger: Object` in the Flow libdef has no
-//                global consumer left: every `logger` in `frontend/` is a local
-//                binding (`model/logger.js`, `model/captureLogs.js`,
-//                `model/swCaptureLogs.js`).
-//
-//   Compartment  Dead. Zero references under `frontend/`. It belongs to the
-//                SES sandbox that now lives inside Chelonia.
-//
-// If any of these turns out to be needed once Steps 4-8 start converting real
-// files, add it back here with the file that needed it named in a comment.
