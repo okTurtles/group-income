@@ -1,15 +1,13 @@
-// Nothing is emitted: esbuild does the compiling and never typechecks, so `tsc`
-// exists purely as the checker Flow used to be.
 {
   "compilerOptions": {
     // Reference: https://www.typescriptlang.org/tsconfig/#compilerOptions
-    //
+
     // --- Output --------------------------------------------------------------
     // esbuild builds; tsc only checks.
     "noEmit": true,
 
-    // esbuild is configured with no `target`, so it does not downlevel anything
-    // (Gruntfile.js esbuildOptionBags.default), and the main bundle is ESM.
+    // esbuild is currently configured with no `target` (Gruntfile.js esbuildOptionBags.default),
+    // so it never rewrites modern syntax into an older equivalent and the main bundle is ESM.
     "target": "ESNext",
     "module": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
@@ -23,29 +21,19 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
 
-    // --- Strictness: permissive to start, tightened in a later pass -----------
     "strict": false,
     "skipLibCheck": true,
     "allowJs": true,
     "checkJs": false,
-
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    // Needed so a `.ts` file can import one of the remaining `.js` ones.
-    // Combined with the `include` below, `.js` files enter the program only
-    // when imported, never as roots.
     "allowImportingTsExtensions": true,
     "types": [],
 
     // --- Path aliases --------------------------------------------------------
-    // Mirrors aliasPluginOptions in Gruntfile.js. `.flowconfig` mapped only 8
-    // of these; esbuild resolves all of them, so the full set is transcribed
-    // here deliberately.
-    //
-    // No `baseUrl`: it is deprecated in TypeScript 6 and stops functioning in 7.
-    // Since TS 5.0 `paths` resolves relative to this file, which is what we want.
+    // Mirrors aliasPluginOptions in Gruntfile.js.
     "paths": {
       "@assets/*": ["./frontend/assets/*"],
       "@common/*": ["./frontend/common/*"],
@@ -61,7 +49,7 @@
       "~/*": ["./*"]
     },
 
-    // ---------- Cypress related ----------
+    // --- Cypress related -----------------------------------------------------
     // Both exist only because Cypress loads this file with its own bundled
     // `ts-node`. Without them, `npx cypress run` dies before a single test starts.
     // 
@@ -71,33 +59,25 @@
     // `ts-node` compiles Cypress's own plugin loader straight out of the
     // Cypress app cache, so the root it infers lands outside this repo.
     "rootDir": "/",
-    // ------------------------------------
+    // ------------------------------------------------------------------------
   },
   "include": ["frontend/**/*.ts"],
 
-  // Each entry maps to a `.flowconfig` [ignore] line from the Flow config this
-  // replaced, kept as the audit trail for that parity. The 6 stale entries
-  // (Gruntfile.dashboard.js, backend/dashboard/, shared/multiformats/,
-  // shared/blake2bstream.js, frontend/utils/vuexQueue.js, ignored/ — all now
-  // missing from the tree) and the 2 redundant ones (test/backend.js,
-  // test/frontend.js, both covered by test/) are deliberately not carried over.
   "exclude": [
-    "node_modules",                                    // .flowconfig: .*/node_modules/.*
-    "dist",                                            // .flowconfig: .*/dist/.*
-    "dist-dashboard",                                  // .flowconfig: .*/dist-dashboard/.*
-    "contracts",                                       // .flowconfig: <PROJECT_ROOT>/contracts/.*
-    "historical",                                      // .flowconfig: .*/historical/.*
-    "scripts",                                         // .flowconfig: .*/scripts/.*
-    "test",                                            // .flowconfig: .*/test/.*
-    "Gruntfile.js",                                    // .flowconfig: .*/Gruntfile.js
-    "cypress.config.js",                               // .flowconfig: .*/cypress.config.js
-    "frontend/assets",                                 // .flowconfig: .*/frontend/assets/.*
-    "frontend/controller/service-worker.ts",           // .flowconfig: .*/frontend/controller/service-worker.js
-    "frontend/utils/blockies.js",                      // .flowconfig: .*/frontend/utils/blockies.js
-    "frontend/model/contracts/misc/giTyper.ts",        // .flowconfig: .*/frontend/model/contracts/misc/flowTyper.ts
-    "**/*.test.js",                                    // .flowconfig: .*.test.js
-    // Not a .flowconfig entry: test files stay `.js` for this migration, but the
-    // pattern is here so a future `.test.ts` inherits the same exemption.
+    "node_modules",
+    "dist",
+    "dist-dashboard",
+    "contracts",
+    "historical",
+    "scripts",
+    "test",
+    "Gruntfile.js",
+    "cypress.config.js",
+    "frontend/assets",
+    "frontend/controller/service-worker.ts",
+    "frontend/utils/blockies.js",
+    "frontend/model/contracts/misc/giTyper.ts",
+    "**/*.test.js",
     "**/*.test.ts"
   ]
 }

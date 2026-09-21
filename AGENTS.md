@@ -44,10 +44,10 @@ npx cypress run -c 'baseUrl=http://localhost:8000' --spec "test/cypress/integrat
 
 ### Linting & Type Checking
 ```bash
-npm run lint                   # Run ESLint
+npm run eslint                 # Run ESLint
 npm run eslintfix              # Auto-fix ESLint issues
 npm run stylelint              # Lint CSS/SCSS
-npm run flow                   # Run Flow type checker
+npm run typecheck              # Run the TypeScript type checker (tsc --noEmit)
 ```
 
 ### Build & Deploy
@@ -77,7 +77,7 @@ Other pin scopes: `grunt pin --none` (version bump only), `grunt pin:chatroom` (
 │   ├── controller/       # Action handlers, navigation, app lifecycle
 │   │   └── actions/      # SBP action implementations
 │   ├── model/            # Vuex state, contracts, SBP domains
-│   │   ├── contracts/    # Contract definitions (group.js, chatroom.js, identity.js)
+│   │   ├── contracts/    # Contract definitions (group.ts, chatroom.ts, identity.ts)
 │   │   └── state.js      # Vuex store setup
 │   ├── utils/            # Utility functions
 │   └── views/            # Vue components, pages, containers
@@ -112,7 +112,7 @@ Configured in Gruntfile.js for imports:
 |------|------------|---------|
 | Folders | kebab-case | `group-chat/`, `user-settings/` |
 | Vue files | PascalCase.vue | `GroupChat.vue`, `UserProfile.vue` |
-| JS files | camelCase.js | `group.js`, `chatroom.js` |
+| Source files | camelCase.ts | `group.ts`, `chatroom.ts` |
 | CSS component classes | Prefix with `c-` | `.c-chat-message`, `.c-button` |
 | CSS global classes | Minimal, in `frontend/assets/style` | - |
 | SBP selectors | Namespace format | `'group/getCurrentMonthInfo'` |
@@ -229,7 +229,7 @@ button(data-test='submit-btn') Submit
 
 ### Mocha Unit Tests
 
-Located in `/test/` or `**/*.test.js`.
+Located in `/test/` or `**/*.test.{js,ts}`.
 
 Requires `./scripts/mocha-helper.js` - uses `should` library.
 
@@ -329,8 +329,11 @@ When changing contracts:
 
 - **GitHub Actions**: `.github/workflows/ci.yml` (Node 22)
 
-CI runs:
-1. `npm install`
-2. `npm run flow`
-3. `grunt test:unit`
-4. `grunt test:cypress`
+Two jobs, each starting from `npm ci`:
+1. `grunt ci-test:unit`
+2. `grunt ci-test:cypress`
+
+There is no separate lint or typecheck step. `ci-test:unit` runs `build`, whose
+lint phase is `exec:eslint`, `exec:typecheck`, `exec:puglint`, `exec:stylelint`
+(`Gruntfile.js:458`) — so ESLint and `tsc` are enforced there. `ci-test:cypress`
+uses `build:skiplint` and deliberately skips them.
