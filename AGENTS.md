@@ -78,7 +78,7 @@ Other pin scopes: `grunt pin --none` (version bump only), `grunt pin:chatroom` (
 │   │   └── actions/      # SBP action implementations
 │   ├── model/            # Vuex state, contracts, SBP domains
 │   │   ├── contracts/    # Contract definitions (group.ts, chatroom.ts, identity.ts)
-│   │   └── state.js      # Vuex store setup
+│   │   └── state.ts      # Vuex store setup
 │   ├── utils/            # Utility functions
 │   └── views/            # Vue components, pages, containers
 ├── contracts/            # Version-pinned contract snapshots (generated)
@@ -327,7 +327,7 @@ When changing contracts:
 
 ## CI/CD
 
-- **GitHub Actions**: `.github/workflows/ci.yml` (Node 22)
+- **GitHub Actions**: `.github/workflows/ci.yml` (Node 24)
 
 Two jobs, each starting from `npm ci`:
 1. `grunt ci-test:unit`
