@@ -231,7 +231,7 @@ validations: {
 }
 ```
 
-- Use `v-error` to automatically show the error message on the correct place. Read `vError.ts` for more examples.
+- Use `v-error` to automatically show the error message on the correct place. Read `vError.js` for more examples.
 - With `debounceField`, the error message (ex: _'Please enter a valid email.'_) is only shown when the user stopped typing. `updateField` shows the error when the user changed the focus no another input (on blur).
 
 Using the "debounce approach" isn't needed in all inputs. Usually it's recommended when a message error doesn't make sense while the user is still typing their answer, such as an email.
