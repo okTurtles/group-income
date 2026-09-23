@@ -106,7 +106,7 @@ export function LTags (...tags: string[]): { br_: string } {
 
 export function L (
   key: string,
-  args?: Array<any> | any
+  args?: Array<any> | Record<string, any>
 ): string {
   return template(currentTranslationTable[key] || key, args)
     // Avoid inopportune linebreaks before certain punctuations.

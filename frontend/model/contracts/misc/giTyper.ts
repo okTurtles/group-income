@@ -145,7 +145,7 @@ const validatorError = <T>(
 }
 
 export const arrayOf: any =
-  <T>(typeFn: TypeValidator<T>, _scope?: string = 'Array'): TypeArrayValidator<T> => {
+  <T>(typeFn: TypeValidator<T>, _scope: string = 'Array'): TypeArrayValidator<T> => {
     function array (value) {
       if (isEmpty(value)) return [typeFn(value)]
       if (Array.isArray(value)) {
@@ -171,10 +171,10 @@ export const literalOf: any =
     return literal
   }
 
-export const mapOf: any = <K, V>(
+export const mapOf: any = <K extends string, V>(
   keyTypeFn: TypeValidator<K>,
   typeFn: TypeValidator<V>
-): TypeValidator<{ [K]: V }> => {
+): TypeValidator<Record<K, V>> => {
   function mapOf (value) {
     if (isEmpty(value)) return {}
     const o = object(value)
@@ -220,7 +220,7 @@ export const object: any = (
 )
 
 export const objectOf: any = <O extends TypeValidatorRecord<any>>
-  (typeObj: O, _scope: string = 'Object'): TypeValidator<$ObjMap<O, <V>(v: TypeValidator<V>) => V>> => {
+  (typeObj: O, _scope: string = 'Object'): TypeValidator<{ [K in keyof O]: ReturnType<O[K]> }> => {
   function object2 (value) {
     const o = object(value)
     const typeAttrs = Object.keys(typeObj)

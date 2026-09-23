@@ -27,6 +27,11 @@ type Fn = (...args: any[]) => any
 
 declare function fetchServerTime (fallback?: boolean | null): Promise<string>
 
+interface Window {
+  Cypress?: any
+  sbp?: Fn
+}
+
 // =============================================================================
 // Node globals
 // =============================================================================

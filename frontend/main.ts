@@ -32,7 +32,7 @@ import ToastContainer from './views/containers/toast/ToastContainer.vue'
 import './views/utils/avatar.js'
 import './views/utils/i18n.js'
 import './views/utils/ui.ts'
-import './views/utils/vError.js'
+import './views/utils/vError.ts'
 import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import hasAllRequiredFeatures from '@model/featureCheck.ts'
@@ -253,7 +253,9 @@ async function startApp () {
     },
     mounted () {
       let oldIdentityContractID = null // lets us know if there's a previously logged in user
-      const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
+      // The `|| {}` fallback is for browsers without `matchMedia`, so `matches`
+      // is genuinely optional here — annotating it keeps the guard on line below honest.
+      const reducedMotionQuery: { matches?: boolean } = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }

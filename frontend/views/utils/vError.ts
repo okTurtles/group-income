@@ -22,7 +22,7 @@ import Vue from 'vue'
 //         )
 
 Vue.directive('error', {
-  inserted (el, binding, vnode) {
+  inserted (el, binding, vnode: any) {
     if (!binding.arg) {
       throw new Error(`v-error: missing argument on ${el.outerHTML}`)
     }
@@ -37,11 +37,11 @@ Vue.directive('error', {
     pErr.classList.add('error', 'is-hidden')
     el.insertAdjacentElement('afterend', pErr)
   },
-  update (el, binding, vnode) {
+  update (el, binding, vnode: any) {
     if (vnode.context.$v.form[binding.arg].$error) {
       for (const key in vnode.context.$v.form[binding.arg].$params) {
         if (!vnode.context.$v.form[binding.arg][key]) {
-          el.nextElementSibling.innerText = key
+          (el.nextElementSibling as HTMLElement).innerText = key
           break
         }
       }

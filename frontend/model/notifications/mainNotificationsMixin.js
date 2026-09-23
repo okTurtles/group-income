@@ -15,7 +15,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
 
 /*
 
- *** NOTE: This mixin is imported into the root Vue instance in 'main.js'. feel free to extend the notification entry lists
+ *** NOTE: This mixin is imported into the root Vue instance in 'main.ts'. feel free to extend the notification entry lists
            for defining more notifications.
 
   There is two types of notifications that can be defined here.

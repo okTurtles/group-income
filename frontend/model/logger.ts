@@ -115,6 +115,6 @@ function captureLogEntry (logger: any, type: string, source: string, ...args) {
   // To avoid infinite loop because we log all selector calls, we run sbp calls
   // here in a roundabout way by getting the function to which they're mapped.
   // The reason this works is because the entire `sbp` domain is blacklisted
-  // from being logged in main.js.
+  // from being logged in main.ts.
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
 }

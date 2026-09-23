@@ -25,7 +25,7 @@
     "strict": false,
     "skipLibCheck": true,
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -47,7 +47,13 @@
       "@utils/*": ["./frontend/utils/*"],
       "@view-utils/*": ["./frontend/views/utils/*"],
       "@views/*": ["./frontend/views/*"],
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      // vuex 3.6.0's `exports` map predates the `types` condition, so
+      // "bundler" resolution finds `dist/vuex.mjs`, no declarations beside it,
+      // and silently types the whole module `any` — which also means its
+      // `ComponentOptions` augmentation never loads and the `store` option is
+      // rejected. Pointing at the declarations directly restores both.
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
     },
 
     // --- Cypress related -----------------------------------------------------
