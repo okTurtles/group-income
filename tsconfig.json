@@ -69,6 +69,6 @@
     // ------------------------------------------------------------------------
   },
   "include": ["frontend/**/*.ts"],
-
+  // All test.js files were excluded in the past, so keeping it that way.
   "exclude": ["**/*.test.ts"]
 }
