@@ -44,7 +44,7 @@ export type NotificationTemplate = {
   readonly icon: string;
   readonly level: NotificationLevel;
   readonly linkTo?: string;
-  readonly sbpInvocation?: Array<string | any>;
+  readonly sbpInvocation?: [string, ...any[]];
   readonly scope: NotificationScope;
   readonly creator?: string;
   readonly subtype?: string;

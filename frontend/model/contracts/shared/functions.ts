@@ -113,8 +113,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   height: number,
   state?: any,
   pending?: boolean,
-  // eslint-disable-next-line @typescript-eslint/no-wrapper-object-types
-  innerSigningContractID?: String
+  innerSigningContractID?: string
 }): any {
   const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta

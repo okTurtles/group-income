@@ -4,7 +4,7 @@
 // such that the least number of payments are made.
 export default function minimizeTotalPaymentsCount (
   distribution: Array<any>
-): Array<any | { fromMemberID: string, toMemberID: string, amount: number }> {
+): Array<{ fromMemberID: string, toMemberID: string, amount: number }> {
   const neederTotalReceived = {}
   const haverTotalHave = {}
   const haversSorted = []

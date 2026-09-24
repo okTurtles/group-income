@@ -342,7 +342,7 @@ sbp('sbp/selectors/register', {
       })
     })()
   },
-  'state/vuex/save': (encrypted: boolean | null | undefined, state: any | null | undefined) => {
+  'state/vuex/save': (encrypted: boolean | null | undefined, state: any) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
       state = state || store.state
       // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!

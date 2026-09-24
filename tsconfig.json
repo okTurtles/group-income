@@ -70,21 +70,5 @@
   },
   "include": ["frontend/**/*.ts"],
 
-  "exclude": [
-    "node_modules",
-    "dist",
-    "dist-dashboard",
-    "contracts",
-    "historical",
-    "scripts",
-    "test",
-    "Gruntfile.js",
-    "cypress.config.js",
-    "frontend/assets",
-    "frontend/controller/service-worker.ts",
-    "frontend/utils/blockies.js",
-    "frontend/model/contracts/misc/giTyper.ts",
-    "**/*.test.js",
-    "**/*.test.ts"
-  ]
+  "exclude": ["**/*.test.ts"]
 }

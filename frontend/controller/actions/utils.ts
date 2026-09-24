@@ -59,7 +59,7 @@ export const encryptedAction = (
       }
       const rootState = sbp('chelonia/rootState')
       if (rootState.contracts[contractID] === null) {
-        console.warn(`[${action}] Contract is marked as permamently deleted, aborting`, contractID)
+        console.warn(`[${action}] Contract is marked as permanently deleted, aborting`, contractID)
         throw new Error('Contract permanently deleted: ' + contractID)
       }
 
@@ -194,7 +194,7 @@ export const encryptedNotification = (
       }
       const rootState = sbp('chelonia/rootState')
       if (rootState.contracts[contractID] === null) {
-        console.warn(`[${action}] Contract is marked as permamently deleted, aborting`, contractID)
+        console.warn(`[${action}] Contract is marked as permanently deleted, aborting`, contractID)
         throw new Error('Contract permanently deleted: ' + contractID)
       }
 

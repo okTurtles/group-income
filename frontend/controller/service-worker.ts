@@ -1,7 +1,7 @@
 // @ts-nocheck
-// This file has never been meant to be typechecked, and `tsconfig.json` lists it under
-// `exclude`. But the moment any `.ts` file imports this one, TypeScript pulls it in
-// and checks it anyway. The pragma above is placed to prevent that.
+// This file has never been meant to be typechecked. But since other `.ts` files
+// import it, TypeScript pulls it in and checks it anyway. The pragma above is
+// placed to prevent that.
 
 'use strict'
 

@@ -6,3 +6,7 @@ item 2:
 
 item 4:
 - According to Greg's confirmation re re-pinning the contracts.
+
+item 10:
+- There is an ongoing PR that is related to the 'roles and permissions'. The fix should be made there instead of here.
+

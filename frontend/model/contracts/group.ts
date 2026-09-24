@@ -194,7 +194,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   })
 }
 
-function isActionNewerThanUserJoinedDate (height: number, userProfile: any | null | undefined): boolean {
+function isActionNewerThanUserJoinedDate (height: number, userProfile: any): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive

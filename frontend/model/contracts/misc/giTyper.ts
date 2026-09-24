@@ -1,7 +1,7 @@
 // @ts-nocheck
-// This file has never been meant to be typechecked, and `tsconfig.json` lists it under
-// `exclude`. But the moment any `.ts` file imports this one, TypeScript pulls it in
-// and checks it anyway. The pragma above is placed to prevent that.
+// This file has never been meant to be typechecked. But since other `.ts` files
+// import it, TypeScript pulls it in and checks it anyway. The pragma above is
+// placed to prevent that.
 //
 // GI EDIT NOTES:
 //
@@ -109,6 +109,8 @@ export class TypeValidatorError extends Error {
 
   getSourceFile (): string {
     const fileNames = this.stack.match(/(\/[\w_\-.]+)+(\.\w+:\d+:\d+)/g) || []
+    // NOTE: flowTyper-js in below string is the name of the upstream library, not our file and
+    // '/flowTyper-js/dist/' was a path inside the npm package. So keeping it as is.
     return fileNames.find(fileName => fileName.indexOf('/flowTyper-js/dist/') === -1) || ''
   }
 
@@ -277,7 +279,7 @@ export const objectOf: any = <O extends TypeValidatorRecord<any>>
   return object2
 }
 
-// TODO: add flow type annotations and make it use validatorError etc.
+// TODO: add type annotations and make it use validatorError etc.
 export function objectMaybeOf (validations: any, _scope: string = 'Object'): any {
   return function (data: any) {
     object(data)

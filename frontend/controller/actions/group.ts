@@ -1093,7 +1093,7 @@ export default (sbp('sbp/selectors/register', {
         const username = rootGetters.usernameFromID(memberID)
         console.warn(`autoBanSenderOfMessage: autobanning ${memberID} (username ${username}) from ${groupID}`)
         // find existing proposal if it exists
-        let [proposalHash, proposal]: [string, any | null | undefined] = Object.entries(contractState.proposals)
+        let [proposalHash, proposal]: [string, any] = Object.entries(contractState.proposals)
           .find(([hash, prop]: [string, any]) => (
             prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
