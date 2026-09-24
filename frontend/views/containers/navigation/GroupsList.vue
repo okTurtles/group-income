@@ -11,7 +11,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
           alt='Global dashboard logo'
         )
       badge(
-        v-if='hasNewNews'
+        v-if='hasNewNews || hasNewDirectMessages'
         type='compact'
         data-test='globalDashboardBadge'
       )
@@ -25,7 +25,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
       direction='right'
       :text='group.groupName'
     )
-      button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
+      button.c-group-picture.is-unstyled(@click='handleGroupSelect(group.contractID)')
         avatar.c-avatar(:src='groupPictureForContract(group.contractID)')
       badge(
         v-if='badgeVisiblePerGroup[group.contractID]'
@@ -54,7 +54,6 @@ import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import { fetchNews } from '@view-utils/misc.js'
 
 export default ({
   name: 'GroupsList',
@@ -63,15 +62,11 @@ export default ({
     Badge,
     Tooltip
   },
-  data () {
-    return {
-      ephemeral: {
-        latestNewsDate: null
-      }
+  props: {
+    hasNewNews: {
+      type: Boolean,
+      default: false
     }
-  },
-  created () {
-    this.checkForNewNews()
   },
   computed: {
     ...mapState([
@@ -81,7 +76,9 @@ export default ({
       'groupsByName',
       'groupUnreadMessages',
       'unreadGroupNotificationCountFor',
-      'ourPreferences'
+      'ourPreferences',
+      'hasNewDirectMessages',
+      'isInGlobalDashboard'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
@@ -90,27 +87,13 @@ export default ({
           this.groupUnreadMessages(group.contractID) + this.unreadGroupNotificationCountFor(group.contractID) > 0
         ]))
       )
-    },
-    isInGlobalDashboard () {
-      return this.$route.path.startsWith('/global-dashboard')
-    },
-    hasNewNews () {
-      // Don't show badge if we're currently on the news page
-      if (this.$route.path === '/global-dashboard/news-and-updates' ||
-        !this.ourPreferences?.lastSeenNewsDate ||
-        !this.ephemeral.latestNewsDate
-      ) {
-        return false
-      }
-
-      return new Date(this.ephemeral.latestNewsDate) > new Date(this.ourPreferences.lastSeenNewsDate)
     }
   },
   methods: {
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
-    handleMenuSelect (id) {
+    handleGroupSelect (id) {
       id && this.changeGroup(id)
 
       if (this.isInGlobalDashboard) {
@@ -118,7 +101,7 @@ export default ({
       }
     },
     onGlobalDashboardClick () {
-      this.$router.push(({ path: '/global-dashboard' }))
+      this.$emit('global-dashboard-click')
     },
     changeGroup (hash) {
       const path = this.$route.path
@@ -134,16 +117,6 @@ export default ({
     },
     groupPictureForContract (contractID) {
       return this.$store.state[contractID]?.settings?.groupPicture || ''
-    },
-    async checkForNewNews () {
-      try {
-        const data = await fetchNews()
-        if (data.length > 0) {
-          this.ephemeral.latestNewsDate = data[0].createdAt
-        }
-      } catch (error) {
-        console.error('Failed to check for new news:', error)
-      }
     }
   }
 }: Object)

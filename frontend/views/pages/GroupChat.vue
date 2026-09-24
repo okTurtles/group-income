@@ -8,11 +8,11 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
           alt='Partner Picture'
           size='sm'
         )
-      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      h1.is-title-2.p-title {{summary.title}}
+      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } header-group-icon`')
+      h1.is-title-2.p-title {{ summary.title }}
       menu-parent.c-menu-parent
         menu-trigger.c-menu-trigger.is-icon-small
-          i.icon-angle-down.c-menu-i
+          i.icon-angle-down.menu-arrow-icon
 
         menu-content.c-responsive-menu
           menu-header
@@ -45,7 +45,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
                 i18n(@click='showPinnedMessages($event)') Pinned Messages
 
               menu-item(
-                :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
+                :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "menu-separator" : ""}`'
                 @click='openModal("ChatNotificationSettingsModal")'
                 data-test='notificationsSettings'
               )
@@ -67,7 +67,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
 
   template(#description='')
     .c-channel-header-description
-      span.c-pin-wrapper(
+      span.header-pin-wrapper(
         data-test='numberOfPinnedMessages'
         v-if='pinnedMessages.length'
         @click='showPinnedMessages($event)'
@@ -111,8 +111,7 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
         @redirect='toggle'
       )
 
-      chat-members(
-        action='addDirectMessage'
+      chat-members.c-dm-list(
         @new='toggle'
         @redirect='toggle'
       )
@@ -291,6 +290,7 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+@import "@assets/style/components/_chat_mixins.scss";
 
 .c-card {
   padding: 0;
@@ -305,86 +305,27 @@ export default ({
   }
 }
 
-::v-deep {
+::v-deep .p-main {
+  @include p-main-custom-styles;
+
   .c-logo {
     @include touch {
       display: none;
     }
   }
-
-  .p-main {
-    height: auto !important;
-    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
-    max-width: unset !important;
-
-    @include touch {
-      padding-top: 0 !important;
-    }
-  }
 }
 
 .c-channel-header {
-  display: flex;
-  align-items: center;
-  position: relative;
+  @include chat-header-styles;
+}
 
-  @include touch {
-    width: 100%;
-    justify-content: center;
-  }
+.c-menuItem ::v-deep .c-item-link {
+  @extend %floating-panel-item;
+}
 
-  .p-title {
-    display: block;
-    width: fit-content;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .c-group-i {
-    margin-right: 0.5rem;
-    color: $text_1;
-    font-size: 1rem;
-  }
-
-  .c-menu {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
-
-  .c-header {
-    font-size: $size_5;
-    font-weight: 400;
-    color: $text_1;
-    padding-bottom: 0;
-
-    @include tablet {
-      padding-top: 0;
-    }
-  }
-
-  .c-content {
-    min-width: 17.5rem;
-    font-size: $size_4;
-    font-weight: 400;
-
-    @include desktop {
-      left: -6.8rem;
-    }
-  }
-
-  .c-menu-i {
-    font-size: 1.2rem;
-    transform-origin: 50% 48%;
-  }
-
-  .c-separator {
-    border-bottom: 2px solid $general_2;
-  }
-
-  .c-menuItem ::v-deep .c-item-link {
-    @extend %floating-panel-item;
-  }
+.c-dm-list {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
 }
 
 .has-text-danger ::v-deep .c-item-slot {
@@ -414,38 +355,11 @@ export default ({
 }
 
 .c-channel-header-description {
-  display: none;
-
-  @include desktop {
-    display: flex;
-    margin-bottom: 0.5rem;
-  }
+  @include header-description-styles;
 
   .is-unstyled {
     margin: 0 0.2rem;
   }
-
-  .c-pin-wrapper {
-    cursor: pointer;
-
-    span {
-      margin-left: 0.25rem;
-      margin-right: 0.2rem;
-    }
-  }
-}
-
-.c-menu-trigger.is-active {
-  pointer-events: none;
-
-  .c-menu-i {
-    transform: rotate(180deg);
-  }
-}
-
-.avatar-wrapper {
-  margin-right: 0.5rem;
-  flex: 0 0 2.5rem;
 }
 
 .c-menu-parent.c-menu {
