@@ -10,13 +10,9 @@
 // lifetimes. That one holds ambient globals; this one is permanent for as long
 // as the build has non-JS imports.
 
-// Of the 478 static `.vue` imports in the app, this declaration is reached by
-// the 5 that sit in `.ts` files — `controller/router.ts`,
-// `utils/lazyLoadedView.ts`,
-// `components/confetti-animation/confettiComponents/index.ts`,
-// `components/modal/ModalMixins.ts` and
-// `containers/chatroom/chat-mentions/RenderMessageWithMarkdown.ts`. The rest
-// are `.vue`-to-`.vue`, which `tsc` never looks at.
+// Only `.vue` imports made from `.ts` files reach this declaration (e.g.
+// `controller/router.ts`, `utils/lazyLoadedView.ts`). `.vue`-to-`.vue` imports
+// are never looked at by `tsc`.
 
 declare module '*.vue' {
   const component: any

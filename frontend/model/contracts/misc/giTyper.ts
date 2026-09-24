@@ -437,7 +437,7 @@ function unionOf_ (...typeFuncs) {
 // const unionOf: UnionT = (unionOf_)
 export const unionOf: any = unionOf_
 
-export const actionRequireInnerSignature: any = (next: Function): Function => (data, props) => {
+export const actionRequireInnerSignature: any = (next: Fn): Fn => (data, props) => {
   const innerSigningContractID = props.message.innerSigningContractID
   if (!innerSigningContractID || innerSigningContractID === props.contractID) {
     throw new Error('Missing inner signature')

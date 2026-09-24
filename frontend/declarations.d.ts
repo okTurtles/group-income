@@ -2,7 +2,7 @@
 //
 // This replaced Flow's `[libs]` entry in `.flowconfig`, which pointed at
 // `frontend/declarations.js`. That file and the whole Flow toolchain were
-// deleted in Step 9; this is now the only source of ambient declarations.
+// removed in the TypeScript migration; this is now the only source of ambient declarations.
 //
 // Keep this file free of top-level `import` / `export` statements — either one
 // turns it into a module and every declaration below stops being global.

@@ -111,7 +111,7 @@ export default {
     if (this.chatNotificationSettings[this.currentChatRoomId]) {
       const settings = this.chatNotificationSettings[this.currentChatRoomId]
       const handleLegacySetting = (setting) => {
-        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.ts)
+        // MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES legacy setting has been replaced with MESSAGE_NOTIFY_SETTINGS.MENTIONS (details in model/contracts/shared/constants.js)
         // So need to handle it here for backward compatibility.
         return setting === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
           ? this.isDM ? MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES : MESSAGE_NOTIFY_SETTINGS.MENTIONS

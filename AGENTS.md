@@ -285,7 +285,7 @@ Chelonia runs in a service worker to prevent multiple instances and to handle pu
 
 As contract events come in, it broadcasts state changes to any open tabs or windows.
 
-Similarly, to send `SPMessage` objects, tabs and windows send some actions through the service worker via an SBP RPC interface defined in `frontend/controller/service-worker.js`. The following is an example of some of the SBP domains that are captured and routed through the service worker via RPC when they're called by the frontend (note: it may be outdated):
+Similarly, to send `SPMessage` objects, tabs and windows send some actions through the service worker via an SBP RPC interface defined in `frontend/controller/service-worker.ts`. The following is an example of some of the SBP domains that are captured and routed through the service worker via RPC when they're called by the frontend (note: it may be outdated):
 
 ```
 sbp('sbp/selectors/register', {
