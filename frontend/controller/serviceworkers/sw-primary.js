@@ -14,6 +14,8 @@ import '~/frontend/controller/actions/index.js'
 import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.js'
 import chatroomGetters from '~/frontend/model/chatroom/getters.js'
 import getters from '~/frontend/model/getters.js'
+import { JOURNAL_CONTAINER_OVERHEAD_BYTES, MAX_JOURNAL_EXPORT_BYTES, journalEntryBytes } from '~/frontend/model/journal/exportSize.js'
+import { sanitizeJournal } from '~/frontend/model/journal/sanitize.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
 import setupChelonia from '~/frontend/setupChelonia.js'
@@ -296,6 +298,35 @@ sbp('sbp/selectors/register', {
   },
   'sw/deviceSettings/get': (key) => {
     return sbp('chelonia/rootState').deviceSettings[key]
+  },
+  'sw/journal/getAll': () => {
+    const rootState = sbp('chelonia/rootState')
+    const journals = Object.create(null)
+    let exportBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES
+    let truncated = false
+
+    for (const contractID of Object.keys(rootState.contracts || {})) {
+      const journal = sbp('chelonia/journal/get', contractID)
+      if (!journal) continue
+      // Contract IDs are opaque hashes, so the export labels each journal with
+      // its contract type to tell groups, chatrooms and identities apart.
+      // `sanitizeJournal` mutates the clone returned by `chelonia/journal/get`
+      // and must run before the byte accounting below, so that the budget
+      // measures what is actually written to the file.
+      const entry = {
+        type: rootState.contracts[contractID]?.type ?? '(unknown)',
+        journal: sanitizeJournal(journal)
+      }
+      const journalBytes = journalEntryBytes(contractID, entry)
+      if (exportBytes + journalBytes > MAX_JOURNAL_EXPORT_BYTES) {
+        truncated = true
+        continue
+      }
+      journals[contractID] = entry
+      exportBytes += journalBytes
+    }
+
+    return { journals, truncated }
   }
 })
 
