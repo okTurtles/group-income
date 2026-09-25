@@ -375,4 +375,14 @@ export default (sbp('sbp/selectors/register', {
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.
-sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => sbp('gi.actions/identity/kv/saveCachedNames'), 300))
+sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => {
+  // Names also get looked up outside of a session: the signup and login forms
+  // resolve the username being typed, and in-flight lookups can settle after a
+  // logout. There's no identity key-value store to write to then, so skip the
+  // write instead of letting `saveCachedNames` throw into the event emitter
+  // (nothing handles it here, so it surfaces as an uncaught error).
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
+  sbp('gi.actions/identity/kv/saveCachedNames').catch(e => {
+    console.error('[NAMESPACE_REGISTRATION] Error saving cached names:', e)
+  })
+}, 300))

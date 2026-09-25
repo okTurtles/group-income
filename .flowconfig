@@ -6,6 +6,7 @@
 # - https://flowtype.org/docs/quick-reference.html
 # - https://flowtype.org/docs/objects.html
 # - https://flowtype.org/docs/functions.html
+<PROJECT_ROOT>/.agents/**
 .*/Gruntfile.js
 .*/cypress.config.js
 .*/Gruntfile.dashboard.js
