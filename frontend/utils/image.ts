@@ -23,7 +23,7 @@ export function imageDataURItoBlob (dataURI: string): Blob {
   return new Blob([ab], { type: imageType })
 }
 
-export const imageUpload = async (imageFile: File, params?: any): Promise<any> => {
+export const imageUpload = async (imageFile: File, params?: Record<string, any>): Promise<any> => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   const { download } = await sbp('chelonia/fileUpload', imageFile, { type: file.type, cipher: 'aes256gcm' }, params)

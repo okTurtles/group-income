@@ -373,7 +373,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: any, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Record<string, any>, options: { lastAttempt?: boolean } = {}) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
@@ -491,7 +491,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })).then((keys) => [keys.filter(Boolean)])
   },
-  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: any) => {
+  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Record<string, any>) => {
     const rootGetters = sbp('state/vuex/getters')
     const identityState = rootGetters.currentIdentityState
     if (identityState.chatRooms?.[contractID]) {

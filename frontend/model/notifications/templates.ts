@@ -17,7 +17,7 @@ import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
 export default ({
-  CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: any }) {
+  CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Record<string, any> }) {
     const { activity, error, message, msgMeta } = data
     const contractID = message.contractID()
     // `any`: `SPMessage` declares these as `SPOpType` and `unknown`, which the `.includes()`
@@ -297,7 +297,7 @@ export default ({
       }]
     }
   },
-  PROPOSAL_EXPIRING (data: { groupID: string, proposalId: string, proposal: any }) {
+  PROPOSAL_EXPIRING (data: { groupID: string, proposalId: string, proposal: Record<string, any> }) {
     const rootState = sbp('state/vuex/state')
     const { proposalData, proposalType } = data.proposal.data
     const typeToTitleMap = {
@@ -331,7 +331,7 @@ export default ({
       }]
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, proposal: any, proposalHash: string }) {
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: Record<string, any>, proposalHash: string }) {
     const rootState = sbp('state/vuex/state')
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
     const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
@@ -579,4 +579,4 @@ export default ({
       groupID: data.groupID
     }
   }
-} as { [key: string]: ((data: any) => NotificationTemplate) })
+} as { [key: string]: ((data: Record<string, any>) => NotificationTemplate) })

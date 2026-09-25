@@ -19,7 +19,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
 }
 
 const ephemeralNotificationState: {
-  notifications: any[], partition: any, clearTimeout?: Fn
+  notifications: any[], partition: Record<string, any>, clearTimeout?: Fn
 } = {
   notifications: [], partition: Object.create(null)
 }

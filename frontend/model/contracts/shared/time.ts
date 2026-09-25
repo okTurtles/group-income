@@ -25,7 +25,7 @@ export const minusOnePeriodLength = (timestamp: string, periodLength: number): s
 export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength, guess }: { knownSortedStamps: string[], periodLength: number, guess?: boolean }
-): any {
+): Record<string, any> {
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
     throw new TypeError('must be ISO string or Date object')
   }

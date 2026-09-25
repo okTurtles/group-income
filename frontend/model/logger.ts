@@ -8,7 +8,7 @@ const noop = (...args: any) => undefined
 
 // `Promise<any>`, not `any`: TypeScript requires an async function's return type to be
 // `Promise<T>` (TS1064). Callers still get `any` after `await`.
-export async function createLogger (config: any, { getItem, removeItem, setItem }: { getItem: Fn, removeItem: Fn, setItem: Fn }): Promise<any> {
+export async function createLogger (config: Record<string, any>, { getItem, removeItem, setItem }: { getItem: Fn, removeItem: Fn, setItem: Fn }): Promise<any> {
   const entries = new CircularList(config.maxEntries)
   const methods = Object.fromEntries(loggingLevels.map((name) =>
     [name, (...args) => {
@@ -77,7 +77,7 @@ export async function createLogger (config: any, { getItem, removeItem, setItem 
   return logger
 }
 
-function captureLogEntry (logger: any, type: string, source: string, ...args) {
+function captureLogEntry (logger: Record<string, any>, type: string, source: string, ...args) {
   const entry = {
     timestamp: new Date().toISOString(),
     source,

@@ -26,11 +26,11 @@ import chatroomModule from '~/frontend/model/chatroom/vuexModule.ts'
 // usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const contractUpdate = (initialState: any, updateFn: (state: any, contractIDHints: string[] | null | undefined) => any, contractType: string | null | undefined) => {
+const contractUpdate = (initialState: Record<string, any>, updateFn: (state: Record<string, any>, contractIDHints: string[] | null | undefined) => any, contractType: string | null | undefined) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early
   const wrappedUpdateFn = contractType
-    ? (state: any, contractIDHints: string[] | null | undefined) => {
+    ? (state: Record<string, any>, contractIDHints: string[] | null | undefined) => {
         if (Array.isArray(contractIDHints)) {
           if (!contractIDHints.some(contractID => state.contracts[contractID]?.type === contractType)) {
             return
@@ -124,7 +124,7 @@ sbp('sbp/selectors/register', {
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
   'state/vuex/settings': () => store.state.settings,
-  'state/vuex/postUpgradeVerification': function (state: any) {
+  'state/vuex/postUpgradeVerification': function (state: Record<string, any>) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
     if (state.periodicNotificationAlreadyFiredMap) {
@@ -342,7 +342,7 @@ sbp('sbp/selectors/register', {
       })
     })()
   },
-  'state/vuex/save': (encrypted: boolean | null | undefined, state: any) => {
+  'state/vuex/save': (encrypted: boolean | null | undefined, state: Record<string, any> | null | undefined) => {
     return sbp('okTurtles.eventQueue/queueEvent', 'state/vuex/save', async function () {
       state = state || store.state
       // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!

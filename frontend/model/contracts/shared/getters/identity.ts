@@ -5,4 +5,4 @@ export default ({
   ourDirectMessages (state, getters) {
     return getters.currentIdentityState.chatRooms || {}
   }
-} as any)
+} as Record<string, any>)

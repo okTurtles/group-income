@@ -5,10 +5,10 @@ import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'
 import LoadingModalFullScreen from '@views/containers/loading-error/LoadingBaseModal.vue'
 import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
 
-type LazyImport = () => Promise<any>;
+type LazyImport = () => Promise<Record<string, any>>;
 
 // See https://v2.vuejs.org/v2/guide/components-dynamic-async.html#Async-Components
-function asyncHandler (lazyImport, { loading, error }: any = {}) {
+function asyncHandler (lazyImport, { loading, error }: Record<string, any> = {}) {
   return () => ({
     // HACK: sometimes a bundler bug makes it necessary to use
     // `.then(m => m.default ?? m)` when importing a module with `import()`.
@@ -48,7 +48,7 @@ handling loading state.
 */
 export function lazyPage (
   lazyImport: LazyImport,
-  { loading = LoadingPage, error = ErrorPage }: any = {}
+  { loading = LoadingPage, error = ErrorPage }: Record<string, any> = {}
 ): Fn {
   const handler = asyncHandler(lazyImport, { loading, error })
 

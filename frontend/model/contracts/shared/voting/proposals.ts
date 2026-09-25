@@ -19,11 +19,11 @@ import {
 } from '../constants.js'
 
 export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contractID, meta, height }: {
-  state: any,
+  state: Record<string, any>,
   proposalHash: string,
   proposal: any,
   contractID: string,
-  meta: any,
+  meta: Record<string, any>,
   height: number
 }) {
   delete state.proposals[proposalHash]
@@ -49,7 +49,7 @@ export const proposalSettingsType: any = objectOf({
   })
 })
 
-export function oneVoteToCloseWith (state: any, proposalHash: string, expectedResult: string): boolean {
+export function oneVoteToCloseWith (state: Record<string, any>, proposalHash: string, expectedResult: string): boolean {
   const proposal = state.proposals[proposalHash]
   const votes = Object.assign({}, proposal.votes)
   const currentResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
@@ -64,12 +64,12 @@ export function oneVoteToCloseWith (state: any, proposalHash: string, expectedRe
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (state: any, proposalHash: string): boolean {
+export function oneVoteToPass (state: Record<string, any>, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_FOR)
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToFail (state: any, proposalHash: string): boolean {
+export function oneVoteToFail (state: Record<string, any>, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_AGAINST)
 }
 
@@ -92,7 +92,7 @@ export const proposalDefaults = {
   } as { disagreement: { threshold: number }, percentage: { threshold: number } })
 }
 
-const proposals: any = {
+const proposals: Record<string, any> = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: async function (state, message) {

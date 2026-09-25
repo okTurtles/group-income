@@ -136,7 +136,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    return async (subscriptionInfo?: any, applicationServerKey?: ArrayBuffer) => {
+    return async (subscriptionInfo?: Record<string, any>, applicationServerKey?: ArrayBuffer) => {
       const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
       if (!pubsub) throw new Error('Missing pubsub instance')
 

@@ -30,7 +30,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
       }
     },
     methods: {
-      onPointerDown (e: any) {
+      onPointerDown (e: PointerEvent) {
         const { pointerId, clientX, clientY } = e
         this.pointer.evts.push({
           id: pointerId,
@@ -38,7 +38,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
           current: { x: clientX, y: clientY }
         })
       },
-      onPointerCancel (e: any) {
+      onPointerCancel (e: PointerEvent) {
         this.pointer.evts = []
         this.pointer.prevDistance = null
         this.pointer.prevPinchCenter = null
@@ -47,7 +47,7 @@ const pointerEventsMixinFactory = (opts: any = mixinGeneratorDefaultOpts): any =
 
         this.postPointerCancel && this.postPointerCancel()
       },
-      onPointerMove (e: any) {
+      onPointerMove (e: PointerEvent) {
         // reponsible for translation of the image on the canvas
         if (!this.pointer.evts.length) return
 

@@ -24,7 +24,7 @@ function genDeviceSecretFromSeed (
 }
 
 function deviceObjToContextStr (
-  dev: any
+  dev: Record<string, any>
 ): string {
   // TODO: figure out the description
   return `scope:${dev.scope},devType:${dev.devType},description:<encrypted description>,deviceIdx:${dev.deviceIdx},status:${dev.status}`
@@ -32,7 +32,7 @@ function deviceObjToContextStr (
 
 function contextStrToDeviceObj (
   str: string
-): any {
+): string[] {
   return str.split(',')
 }
 

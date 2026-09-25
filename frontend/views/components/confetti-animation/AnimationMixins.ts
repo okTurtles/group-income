@@ -76,10 +76,10 @@ class Confetti {
   index: number
   confettiType: string
   disappeared: boolean
-  explosion: any
-  fadeOut: any
-  props: any
-  sway: any
+  explosion: Record<string, any>
+  fadeOut: Record<string, any>
+  props: Record<string, any>
+  sway: Record<string, any>
   tPassedMaster: number | null | undefined
   tRefMaster: number | null | undefined
   yVelocity: number

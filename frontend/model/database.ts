@@ -70,7 +70,7 @@ sbp('sbp/selectors/register', {
   'gi.db/settings/load': function (key: string): Promise<any> {
     return appSettings.getItem('u' + key)
   },
-  'gi.db/settings/delete': function (key: string): Promise<any> {
+  'gi.db/settings/delete': function (key: string): Promise<void> {
     return appSettings.removeItem('u' + key)
   },
   'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<any> {
@@ -155,10 +155,10 @@ sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<any> {
+  'gi.db/settings/deleteStateEncryptionKey': function ({ stateEncryptionKeyId }): Promise<void> {
     return appSettings.removeItem('k' + stateEncryptionKeyId)
   },
-  'gi.db/settings/deleteEncrypted': function (key: string): Promise<any> {
+  'gi.db/settings/deleteEncrypted': function (key: string): Promise<void> {
     return appSettings.removeItem('e' + key)
   },
   // Chatroom drafts related selectors
@@ -318,7 +318,7 @@ sbp('sbp/selectors/register', {
   'gi.db/archive/load': function (key: string): Promise<any> {
     return archive.getItem(key)
   },
-  'gi.db/archive/delete': function (key: string): Promise<any> {
+  'gi.db/archive/delete': function (key: string): Promise<void> {
     return archive.removeItem(key)
   },
   'gi.db/archive/clear': function (): Promise<any> {
@@ -342,7 +342,7 @@ sbp('sbp/selectors/register', {
   'gi.db/logs/load': function (key: string): Promise<any> {
     return logs.getItem(key)
   },
-  'gi.db/logs/delete': function (key: string): Promise<any> {
+  'gi.db/logs/delete': function (key: string): Promise<void> {
     return logs.removeItem(key)
   },
   'gi.db/logs/clear': function (): Promise<any> {

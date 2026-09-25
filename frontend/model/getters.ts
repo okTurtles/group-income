@@ -8,7 +8,7 @@ import chatroomGetters from './contracts/shared/getters/chatroom.ts'
 import groupGetters from './contracts/shared/getters/group.ts'
 import identityGetters from './contracts/shared/getters/identity.ts'
 
-const checkedUsername = (state: any, username: string, userID: string) => {
+const checkedUsername = (state: Record<string, any>, username: string, userID: string) => {
   if (username && state.namespaceLookups?.[username] === userID) {
     return username
   }
@@ -16,7 +16,7 @@ const checkedUsername = (state: any, username: string, userID: string) => {
 
 // Find the 'anyone can join' invite ID. Since there could be multiple, and some
 // of those could have exipred, we need a for loop
-const anyoneCanJoinInviteId = (invites: any, getters: any): string | null | undefined =>
+const anyoneCanJoinInviteId = (invites: Record<string, any>, getters: Record<string, any>): string | null | undefined =>
   Object.keys(invites).find(invite =>
     // First, we want 'anyone can join' invites
     invites[invite].creatorID === INVITE_INITIAL_CREATOR &&
@@ -31,7 +31,7 @@ const anyoneCanJoinInviteId = (invites: any, getters: any): string | null | unde
 
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
-const getters: { [x: string]: (state: any, getters: { [x: string]: any }) => any } = {
+const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string]: any }) => any } = {
   // !!  IMPORTANT  !!
   //
   // We register pure Vuex getters here, but later on at the bottom of this file,

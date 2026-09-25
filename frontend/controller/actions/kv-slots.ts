@@ -32,7 +32,7 @@ import { checkAndAugmentNames } from './identity-kv.ts'
 //   - return a plain JSON object (no Date/Map) for the mirror.
 // The stored shape is `{ [hash]: { timestamp, read } }`.
 const notificationStatusSchema = {
-  parse (value: any): any {
+  parse (value: any): Record<string, any> {
     if (value == null || typeof value !== 'object' || Array.isArray(value)) {
       throw new TypeError('notifications: expected an object of notification statuses')
     }
@@ -52,8 +52,8 @@ const notificationStatusSchema = {
 // `setFilter` gating in `setupChelonia.ts`. (KV-REVAMPED.md §4.1 / §7.2)
 export const onOwnIdentity = (
   contractID: string,
-  _contractState: any,
-  rootState: any
+  _contractState: Record<string, any>,
+  rootState: Record<string, any>
 ): boolean => contractID === rootState.loggedIn?.identityContractID
 
 // Registers every GI KV slot. Idempotent: `chelonia/kv/defineSlot` is

@@ -733,7 +733,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: any, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Record<string, any>, options: { lastAttempt?: boolean } = {}) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
@@ -1067,7 +1067,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }),
-  'gi.actions/group/autobanUser': async function (message: SPMessage, error: any, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
+  'gi.actions/group/autobanUser': async function (message: SPMessage, error: Error, msgMeta: { signingKeyId: string, signingContractID: string, innerSigningKeyId: string, innerSigningContractID: string }, attempt = 1) {
     try {
       if (attempt === 1) {
         // to decrease likelihood of multiple proposals being created at the same time, wait
@@ -1147,7 +1147,7 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: any }) {
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Record<string, any> }) {
     const { generalChatRoomId } = await sbp('chelonia/contract/state', groupID)
     return sbp('gi.actions/chatroom/addMessage', {
       contractID: generalChatRoomId,
@@ -1305,7 +1305,7 @@ export default (sbp('sbp/selectors/register', {
     const response = await sendMessage(params)
     return response
   }),
-  'gi.actions/group/_ondeleted': async (contractID: string, state: any) => {
+  'gi.actions/group/_ondeleted': async (contractID: string, state: Record<string, any>) => {
     const rootGetters = sbp('state/vuex/getters')
     const identityContractID = rootGetters.ourIdentityContractId
     const currentIdentityState = rootGetters.currentIdentityState

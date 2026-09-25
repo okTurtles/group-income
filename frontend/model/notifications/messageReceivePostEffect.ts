@@ -15,7 +15,7 @@ import {
 } from '@model/chatroom/utils.ts'
 import { makeNotification } from './nativeNotification.ts'
 
-function isMessageDeleted (chatRoomState: any, messageHash: string): boolean {
+function isMessageDeleted (chatRoomState: Record<string, any> | null | undefined, messageHash: string): boolean {
   return chatRoomState?.deletedMessageHashes?.includes(messageHash) || false
 }
 

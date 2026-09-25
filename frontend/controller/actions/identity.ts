@@ -595,7 +595,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: any, options: any) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Record<string, any>, options: Record<string, any>) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
@@ -910,7 +910,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
-    attachments: Array<any>, billableContractID: string
+    attachments: Array<Record<string, any>>, billableContractID: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {
@@ -948,7 +948,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
-    manifestCids: string[], option: any
+    manifestCids: string[], option: Record<string, any>
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
@@ -1143,14 +1143,14 @@ export default (sbp('sbp/selectors/register', {
     }
 
     const transientSecretKeysEntries = transientSecretKeys.valueOf().map(
-      k => ([keyId(k), deserializeKey(k)])
+      (k): [string, Key] => [keyId(k), deserializeKey(k)]
     )
     const encryptedDeletionToken = state.attributes.encryptedDeletionToken
 
     // If there were key rotations, we need to decrypt keys using the CID of
     // the message where the (last) rotation happened.
     if (oldKeysAnchorCid) {
-      const IEK: any = transientSecretKeysEntries[0][1]
+      const IEK = transientSecretKeysEntries[0][1]
       await processOldIekList(contractID, oldKeysAnchorCid, IEK)
     }
 
@@ -1374,7 +1374,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/identity/_ondeleted': async (contractID: string, state: any) => {
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Record<string, any>) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {

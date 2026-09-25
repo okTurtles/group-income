@@ -66,9 +66,9 @@ export function checkBrowserVideoMimeTypeSupport (mimeType: string = ''): boolea
 export const filterByKeyword = (
   list: any,
   keyword: string,
-  keys: any = [],
+  keys: string[] = [],
   caseSensitive: boolean = false
-): any => {
+): any[] => {
   if (!Array.isArray(list) || typeof keyword !== 'string') { return [] }
 
   if (!keyword) {

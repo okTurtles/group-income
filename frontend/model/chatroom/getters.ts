@@ -6,7 +6,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { KV_KEYS } from '~/frontend/utils/constants.ts'
 
-const getters: { [x: string]: (state: any, getters: { [x: string]: any }, rootState: any) => any } = {
+const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string]: any }, rootState: Record<string, any>) => any } = {
   currentChatRoomId (state, getters, rootState) {
     return state.currentChatRoomIDs[rootState.currentGroupId] || null
   },

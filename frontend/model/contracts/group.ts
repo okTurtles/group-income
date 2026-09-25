@@ -47,7 +47,7 @@ import { chatRoomAttributesType, inviteType } from './shared/types.ts'
 import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.ts'
 import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType, voteType } from './shared/voting/rules.ts'
 
-function fetchInitKV (obj: any, key: string, initialValue: any): any {
+function fetchInitKV (obj: Record<string, any>, key: string, initialValue: any): any {
   let value = obj[key]
   if (!value) {
     obj[key] = initialValue
@@ -194,7 +194,7 @@ function memberLeaves ({ memberID, dateLeft, heightLeft, ourselvesLeaving }, { c
   })
 }
 
-function isActionNewerThanUserJoinedDate (height: number, userProfile: any): boolean {
+function isActionNewerThanUserJoinedDate (height: number, userProfile: Record<string, any> | null | undefined): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
@@ -835,7 +835,7 @@ sbp('chelonia/defineContract', {
         const memberID = data.memberID || innerSigningContractID
         const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
         if (memberID === identityContractID) {
-          const ourChatrooms = Object.entries(state?.chatRooms || {}).filter(([, state]: [string, any]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+          const ourChatrooms = Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Record<string, any>]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
           if (ourChatrooms.length) {
             sbp('gi.contracts/group/pushSideEffect', contractID,
               ['gi.contracts/group/referenceTally', contractID, ourChatrooms, 'release'])
@@ -1507,8 +1507,8 @@ sbp('chelonia/defineContract', {
       // unsubscribe from other group members identity contract
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const dependentContractIDs = [
-        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, any]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
-        ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, any]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
+        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, Record<string, any>]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
+        ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Record<string, any>]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
       ]
       if (dependentContractIDs.length) {
         sbp('chelonia/contract/release', dependentContractIDs).catch(e => {

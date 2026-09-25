@@ -14,7 +14,7 @@ import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.ts'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
-const diffContractVersion = (va?: any, vb?: any): boolean => {
+const diffContractVersion = (va?: Record<string, any>, vb?: Record<string, any>): boolean => {
   // If the types don't match, a different release has been made
   if (typeof va !== typeof vb) return true
   // Sort contracts by name
@@ -122,7 +122,7 @@ const setupChelonia = async (): Promise<any> => {
   })
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: any) => {
+  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Record<string, any>) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
@@ -146,13 +146,13 @@ const setupChelonia = async (): Promise<any> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: any, k: string, v: string) => {
+    reactiveSet: (o: Record<string, any>, k: string, v: string) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
       }
     },
-    reactiveDel: (o: any, k: string) => {
+    reactiveDel: (o: Record<string, any>, k: string) => {
       if (has(o, k)) {
         delete o[k]
         saveCheloniaDebounced()

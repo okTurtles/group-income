@@ -63,4 +63,4 @@ export default ({
   state: () => cloneDeep(defaultState),
   getters,
   mutations
-} as any)
+} as Record<string, any>)

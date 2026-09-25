@@ -30,7 +30,7 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
 
 const getPopulation = (state) => Object.keys(state.profiles).filter(p => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length
 
-const rules: any = {
+const rules: Record<string, any> = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
     let population = getPopulation(state)

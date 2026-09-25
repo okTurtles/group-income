@@ -125,4 +125,4 @@ export default ({
   state: () => cloneDeep(defaultSettings),
   getters,
   mutations
-} as any)
+} as Record<string, any>)

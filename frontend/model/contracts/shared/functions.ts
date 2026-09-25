@@ -32,7 +32,7 @@ import { humanDate } from './time.ts'
 
 // group.js related
 
-export function paymentHashesFromPaymentPeriod (periodPayments: any): string[] {
+export function paymentHashesFromPaymentPeriod (periodPayments: Record<string, any>): string[] {
   let hashes = []
   if (periodPayments) {
     const { paymentsFrom } = periodPayments
@@ -46,7 +46,7 @@ export function paymentHashesFromPaymentPeriod (periodPayments: any): string[] {
   return hashes
 }
 
-export function createPaymentInfo (paymentHash: string, payment: any): {
+export function createPaymentInfo (paymentHash: string, payment: Record<string, any>): {
   fromMemberID: string, toMemberID: string, hash: string, amount: number, isLate: boolean, when: string
 } {
   return {
@@ -59,7 +59,7 @@ export function createPaymentInfo (paymentHash: string, payment: any): {
   }
 }
 
-export function getProposalDetails (proposal: any): any {
+export function getProposalDetails (proposal: Record<string, any>): Record<string, any> {
   const { creatorID, status } = proposal
   const { proposalType, proposalData } = proposal.data
 
@@ -107,14 +107,14 @@ export function getProposalDetails (proposal: any): any {
 // chatroom.js related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
-  meta: any,
-  data: any,
+  meta: Record<string, any>,
+  data: Record<string, any>,
   hash: string,
   height: number,
-  state?: any,
+  state?: Record<string, any>,
   pending?: boolean,
   innerSigningContractID?: string
-}): any {
+}): Record<string, any> {
   const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
@@ -160,7 +160,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function postLeaveChatRoomCleanup (contractID: string, state: any) {
+export async function postLeaveChatRoomCleanup (contractID: string, state: Record<string, any>) {
   if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
   }
@@ -174,7 +174,7 @@ export async function postLeaveChatRoomCleanup (contractID: string, state: any) 
   // contract (for DMs).
 }
 
-export function findMessageIdx (hash: string, messages: Array<any> = []): number {
+export function findMessageIdx (hash: string, messages: Array<Record<string, any>> = []): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].hash === hash) {
       return i
@@ -283,7 +283,7 @@ export const validateChatRoomName = (name: string) => {
 //                             function into the queue.
 //   queue slot 5: [referenceTally]: Function pushed onto the queue by event 3.
 //                              Since the temp count is -1, release is called.
-export const referenceTally = (selector: string): any => {
+export const referenceTally = (selector: string): Record<string, any> => {
   const delta = {
     'retain': 1,
     'release': -1

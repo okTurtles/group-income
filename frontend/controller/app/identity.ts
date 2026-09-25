@@ -521,7 +521,7 @@ export default (sbp('sbp/selectors/register', {
   // Unlike the login function, the wrapper for logging out is used using a
   // dedicated selector to allow it to be called from the login selector (if
   // error occurs)
-  'gi.app/identity/_private/logout': async function (errorState: any, wipeOut?: boolean) {
+  'gi.app/identity/_private/logout': async function (errorState: Record<string, any> | null | undefined, wipeOut?: boolean) {
     try {
       const state = errorState || cloneDeep(sbp('state/vuex/state'))
       if (!state.loggedIn) return

@@ -3,14 +3,15 @@
 import { cloneDeep } from 'turtledash'
 import { DECIMALS_MAX, saferFloat } from '../currencies.ts'
 import mincomeProportional from './mincome-proportional.ts'
+import type { HaveNeedObject } from './mincome-proportional.ts'
 import minimizeTotalPaymentsCount from './payments-minimizer.ts'
 
-type Distribution = Array<any>;
+type Distribution = Array<Record<string, any>>;
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
 export function unadjustedDistribution ({ haveNeeds = [], minimize = true }: {
-  haveNeeds: Array<any>, minimize?: boolean
+  haveNeeds: Array<HaveNeedObject>, minimize?: boolean
 }): Distribution {
   const distribution = mincomeProportional(haveNeeds)
   return minimize ? minimizeTotalPaymentsCount(distribution) : distribution

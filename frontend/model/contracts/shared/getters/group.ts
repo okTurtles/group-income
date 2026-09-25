@@ -185,7 +185,7 @@ export default ({
     }
   },
   periodBeforePeriodForGroup (state, getters) {
-    return (groupState: any, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: Record<string, any>, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -196,7 +196,7 @@ export default ({
     return (periodStamp: string, periods?: string[]) => getters.periodBeforePeriodForGroup(getters.currentGroupState, periodStamp, periods)
   },
   periodAfterPeriodForGroup (state, getters) {
-    return (groupState: any, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: Record<string, any>, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -281,19 +281,19 @@ export default ({
   groupMincomeSymbolWithCode (state, getters) {
     return getters.groupCurrency?.symbolWithCode
   },
-  groupPeriodPaymentsForGroup (state, getters): any {
+  groupPeriodPaymentsForGroup (state, getters): Record<string, any> {
     // note: a lot of code expects this to return an object, so keep the || {} below
     return (state) => {
       return state.paymentsByPeriod || {}
     }
   },
-  groupPeriodPayments (state, getters): any {
+  groupPeriodPayments (state, getters): Record<string, any> {
     return getters.groupPeriodPaymentsForGroup(getters.currentGroupState)
   },
-  groupThankYousFrom (state, getters): any {
+  groupThankYousFrom (state, getters): Record<string, any> {
     return getters.currentGroupState.thankYousFrom || {}
   },
-  groupStreaks (state, getters): any {
+  groupStreaks (state, getters): Record<string, any> {
     return getters.currentGroupState.streaks || {}
   },
   groupTotalPledgeAmount (state, getters): number {
@@ -370,4 +370,4 @@ export default ({
   //     return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
   //   }
   // }
-} as any)
+} as Record<string, any>)

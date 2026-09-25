@@ -1,6 +1,6 @@
 export type DomObject = {
   tagName: string | null,
-  attributes: any, // can be an empty object too.
+  attributes: Record<string, string>, // can be an empty object too.
   text?: string,
   children?: Array<DomObject>
 }
@@ -27,7 +27,7 @@ function isOnlyNewlines (str: any): boolean {
   return /^[\n]*$/.test(str)
 }
 
-function replaceMultiple (input: string, replacements: any): string {
+function replaceMultiple (input: string, replacements: Record<string, string>): string {
   return Object.entries(replacements).reduce(
     (str, [from, to]: [string, any]) => str.replaceAll(from, to),
     input

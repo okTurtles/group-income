@@ -34,7 +34,7 @@ export const encryptedAction = (
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): any => {
+): Record<string, any> => {
   const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
     const invocation: [string, ...any[]] = [
@@ -171,7 +171,7 @@ export const encryptedNotification = (
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): any => {
+): Record<string, any> => {
   const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
 
@@ -335,7 +335,7 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
   }
 }
 
-export function groupContractsByType (contracts?: any): any {
+export function groupContractsByType (contracts?: Record<string, any>): Record<string, any> {
   const contractIDs = Object.create(null)
   if (contracts) {
     // Note: `references` holds non-ephemeral references (i.e., explicit
@@ -361,7 +361,7 @@ export function groupContractsByType (contracts?: any): any {
   return contractIDs
 }
 
-export async function syncContractsInOrder (groupedContractIDs: any): Promise<any> {
+export async function syncContractsInOrder (groupedContractIDs: Record<string, any>): Promise<any> {
   // We need to sync contracts in this order to ensure that we have all the
   // corresponding secret keys. Group chatrooms use group keys but there's
   // no OP_KEY_SHARE, which will result in the keys not being available when
