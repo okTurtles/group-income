@@ -21,7 +21,7 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
   the whole "state" being passed as argument to rules[rule]() is overwhelmed.
   It would be simpler with just 2 simple args: "threshold" and "population".
   Advantages:
-  - population: No need to do the logic to get it (and avoid import PROFILE_STATUS.ACTIVE from group.js).
+  - population: No need to do the logic to get it (and avoid import PROFILE_STATUS.ACTIVE from group.ts).
   - threshold: The selector to get the selector is huge.
   - tests: Avoid the need to mock a complex state.
   My suggestion: 1 parameter (object) with 4 explicit keys.

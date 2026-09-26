@@ -293,7 +293,7 @@ sbp('sbp/selectors/register', {
             }),
             primaryButton: L('Close')
           })
-          // NOTE: we do not need to setup an ONLINE event listener here because one is already setup in main.js
+          // NOTE: we do not need to setup an ONLINE event listener here because one is already setup in main.ts
           throw e // give up
         }
         // this outer promise is a way to wait on this sub-call to finish without getting the eventQueue stuck

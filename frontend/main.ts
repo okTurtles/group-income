@@ -254,7 +254,7 @@ async function startApp () {
     mounted () {
       let oldIdentityContractID = null // lets us know if there's a previously logged in user
       // The `|| {}` fallback is for browsers without `matchMedia`, so `matches`
-      // is genuinely optional here — annotating it keeps the guard on line below honest.
+      // is genuinely optional here — annotating it keeps the guard on the line below honest.
       const reducedMotionQuery: { matches?: boolean } = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -309,7 +309,7 @@ async function startApp () {
       // last resort. Event handlers that don't need access to anything defined
       // in this context should be placed in a more appropriate location that is
       // closer semantically to the event (for example, things related to user
-      // sessions should go into `app/identity.js` or be an import there).
+      // sessions should go into `app/identity.ts` or be an import there).
       sbp('okTurtles.events/on', LOGOUT, () => {
         const state = sbp('state/vuex/state')
         if (!state.loggedIn) return

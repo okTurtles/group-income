@@ -89,7 +89,7 @@ Process functions are only allowed to update the state for their corresponding c
 
 Anything that triggers other app behavior belongs in the `sideEffect` function. These functions are allowed to do anything **except** update contract state (they're like the inverse of the `process` function).
 
-You can create side effects by implementing the `sideEffect` function, or by calling the special selector `<contractName>/pushSideEffect`. See `group.js` for examples of both patterns.
+You can create side effects by implementing the `sideEffect` function, or by calling the special selector `<contractName>/pushSideEffect`. See `group.ts` for examples of both patterns.
 
 It's **very important** when writing side effects to understand that unlike contract methods (see next section) any events or selectors that they call that get propagated to the app are not version-controlled! This means that the implementation of those selectors in the app cannot change (or at the very least, must handle the same parameters forever). See [**Calls From Contracts**](./Calls-From-Contracts.md) for more details.
 
@@ -99,7 +99,7 @@ In addition to an `actions` section, contracts can have `methods`. These are ver
 
 Contract method selectors have this structure: `<contractName>/<methodName>`.
 
-Here's an example from `group.js` of a contract method being queued up to be called by a process function:
+Here's an example from `group.ts` of a contract method being queued up to be called by a process function:
 
 ```js
 sbp('gi.contracts/group/pushSideEffect', contractID,
@@ -232,4 +232,4 @@ That's all for now! Feel free to dive even more deeply in the files mentioned so
 
 Some advanced situations can happen when one contract is responsible for deciding whether or not to sync another contract.
 
-A member could, for example, join and leave a chatroom multiple times. We wouldn't want to actually have them join and leave that chatroom multiple times every time they log in on a new computer when syncing the contract from scratch, so until contract snapshots are implemented, we have a utility function called `referenceTally` that is used by contracts like `group.js` and `chatroom.js` that can be called instead and it decides whether to eventually sync the contract or not based on how many `join`/`leave` pairs there are.
+A member could, for example, join and leave a chatroom multiple times. We wouldn't want to actually have them join and leave that chatroom multiple times every time they log in on a new computer when syncing the contract from scratch, so until contract snapshots are implemented, we have a utility function called `referenceTally` that is used by contracts like `group.ts` and `chatroom.ts` that can be called instead and it decides whether to eventually sync the contract or not based on how many `join`/`leave` pairs there are.

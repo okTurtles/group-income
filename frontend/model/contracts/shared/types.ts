@@ -20,7 +20,7 @@ import {
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
 } from './constants.js'
 
-// group.js related
+// group.ts related
 
 export const inviteType: any = objectOf({
   inviteKeyId: string,
@@ -28,7 +28,7 @@ export const inviteType: any = objectOf({
   invitee: optional(string)
 })
 
-// chatroom.js related
+// chatroom.ts related
 
 export const chatRoomAttributesType: any = objectOf({
   name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS),

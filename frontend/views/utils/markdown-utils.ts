@@ -5,7 +5,7 @@ import { splitStringByMarkdownCode, combineMarkdownSegmentListIntoString } from 
 const HREF_ESCAPE_MAP = { '"': '%22', "'": '%27', '<': '%3C', '>': '%3E', '`': '%60' }
 
 // The href below is interpolated into a double-quoted HTML attribute, and the resulting string is
-// re-parsed by DOMParser in chat-mentions-utils.js, which hands every attribute it finds straight to
+// re-parsed by DOMParser in chat-mentions-utils.ts, which hands every attribute it finds straight to
 // Vue. Percent-encode the characters that could otherwise close the attribute and inject a new one.
 // (eg. [x](/a"onclick="alert(1)) )
 function escapeHref (href: any): string {

@@ -70,7 +70,7 @@ export default (sbp('sbp/selectors/register', {
    *
    * @param language - A BPC-47 language tag like the value of `navigator.language`.
    *
-   * @see The 'translations/init' SBP selector in `~view-utils/translations.js`.
+   * @see The 'translations/init' SBP selector in `@common/translations.ts`.
    */
   async 'backend/translations/get' (language: string): Promise<JSONObject | null | undefined> {
     // The language code is usually the first part of the language tag.

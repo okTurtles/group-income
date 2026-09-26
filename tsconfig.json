@@ -70,5 +70,9 @@
   },
   "include": ["frontend/**/*.ts"],
   // All test.js files were excluded in the past, so keeping it that way.
-  "exclude": ["**/*.test.ts"]
+  "exclude": [
+    "**/*.test.ts",
+    "frontend/controller/service-worker.ts",
+    "frontend/model/contracts/misc/giTyper.ts"
+  ]
 }

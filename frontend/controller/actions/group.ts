@@ -140,7 +140,7 @@ export default (sbp('sbp/selectors/register', {
       try {
         finalPicture = await imageUpload(picture, { billableContractID: userID })
       } catch (e) {
-        console.error('actions/group.js failed to upload the group picture', e)
+        console.error('actions/group.ts failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }
@@ -184,9 +184,9 @@ export default (sbp('sbp/selectors/register', {
       }
       if (!distributionDate) {
         // 3 days after group creation by default. we put this here for a kind of dumb but
-        // necessary reason: the Cypress tests do not allow us to import dateToPeriodStamp
-        // or any of these other time.ts functions because the Cypress environment can't
-        // handle TypeScript annotations, even though our .babelrc should make it work.
+        // necessary reason: the Cypress tests could not import dateToPeriodStamp or any of
+        // the other time.ts functions back when they carried Flow annotations, even though
+        // our .babelrc should have made it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
 

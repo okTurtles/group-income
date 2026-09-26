@@ -136,7 +136,7 @@ function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, 
     memberID: innerSigningContractID,
     chatRoomName: state.attributes?.name
   }).catch(e => {
-    console.error('[action/chatroom.js] Error on messageReceivePostEffect', e)
+    console.error('[action/chatroom.ts] Error on messageReceivePostEffect', e)
   })
 }
 

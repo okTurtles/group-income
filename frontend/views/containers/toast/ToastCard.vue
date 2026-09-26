@@ -37,7 +37,7 @@ export default {
   name: 'ToastCard',
   props: {
     data: {
-      // type ToastData from '@utils/ui.js'
+      // type ToastData from '@view-utils/ui.ts'
       type: Object,
       required: true
     }

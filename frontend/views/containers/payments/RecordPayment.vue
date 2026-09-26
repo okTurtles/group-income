@@ -199,7 +199,7 @@ export default {
             txid: '' + Math.random(),
             status: PAYMENT_PENDING,
             paymentType: PAYMENT_TYPE_MANUAL,
-            ...(memo ? { memo } : {}) // TODO/BUG with flowTyper validation. Empty string '' fails.
+            ...(memo ? { memo } : {}) // TODO/BUG with giTyper validation. Empty string '' fails.
           }
 
           if (isStatusNotReceived) {

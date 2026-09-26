@@ -50,11 +50,11 @@ const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string
   //
   // For getters that get data from only contract state, write them
   // under the 'getters' key of the object passed to 'chelonia/defineContract'.
-  // See for example: frontend/model/contracts/group.js
+  // See for example: frontend/model/contracts/group.ts
   //
   // Again, for convenience, we've defined the same getter, `currentGroupState`,
   // twice, so that we can reuse the same getter definitions both here with Vuex,
-  // and inside of the contracts (e.g. in group.js).
+  // and inside of the contracts (e.g. in group.ts).
   //
   // The 'currentGroupState' here is based off the value of `state.currentGroupId`,
   // a user preference that does not exist in the group contract state.
@@ -111,7 +111,7 @@ const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string
   },
   // NOTE: since this getter is written using `getters.ourUsername`, which is based
   //       on vuexState.loggedIn (a user preference), we cannot use this getter
-  //       into group.js
+  //       into group.ts
   ourContributionSummary (state, getters) {
     const groupProfiles = getters.groupProfiles
     const ourIdentityContractId = getters.ourIdentityContractId

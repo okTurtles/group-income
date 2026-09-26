@@ -43,7 +43,7 @@ const DMMixin: any = {
 
         return dmChatRoomId
       } catch (err) {
-        console.error('[DMMixin.js] Failed to create a new chatroom', err)
+        console.error('[DMMixin.ts] Failed to create a new chatroom', err)
         await sbp('gi.ui/prompt', {
           heading: L('Failed to create a new chatroom'),
           question: err.message,

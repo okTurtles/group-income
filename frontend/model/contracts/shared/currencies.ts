@@ -63,7 +63,7 @@ export function mincomePositive (value: string): boolean {
 const XTS = 'XTS'
 
 /**
- * @param {string} code A currency code defined in currencies.js.
+ * @param {string} code A currency code defined in currencies.ts.
  * @param {number} amount
  * @returns A monetary string formatted according to the user locale.
  */

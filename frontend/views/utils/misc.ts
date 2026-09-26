@@ -45,7 +45,7 @@ export function validateURL (url: string, acceptPathOnly: boolean = false): any 
     // These patterns only accept the characters that may legally appear unencoded in the path,
     // query or fragment of a URL (RFC 3986). Quotes, angle brackets, backticks and whitespace are
     // deliberately excluded: they can never be part of a real URL, and accepting them is what lets
-    // a message break out of the href="..." attribute that markdown-utils.js builds.
+    // a message break out of the href="..." attribute that markdown-utils.ts builds.
     const regExpMap = {
       pathOnly: /^\/(?![/\\])[\w.~%!$&()*+,;=:@/?#[\]-]*$/, // eg. /app/chatroom/chatID, /to-a-path
       slugPiece: /^[a-zA-Z0-9_-]+$/, // eg. contributions, payments, dashboard, abc_123

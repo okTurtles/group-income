@@ -128,7 +128,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.app/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const chatRoomID = await sbp('gi.actions/group/addAndJoinChatRoom', params)
-    // For an explanation about 'setPendingChatRoomId', see DMMixin.js
+    // For an explanation about 'setPendingChatRoomId', see DMMixin.ts
     // TL;DR: This is an intermediary state to avoid untimely navigation before
     // the contract state is available.
     sbp('state/vuex/commit', 'setPendingChatRoomId', { chatRoomID, groupID: params.contractID })

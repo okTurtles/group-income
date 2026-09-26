@@ -30,7 +30,7 @@ import { humanDate } from './time.ts'
 // DIRECTLY IN YOUR CONTRACT DEFINITION FILE. THEN YOU CAN MODIFY
 // THEM AS MUCH AS YOU LIKE (and generate new contract versions out of them).
 
-// group.js related
+// group.ts related
 
 export function paymentHashesFromPaymentPeriod (periodPayments: Record<string, any>): string[] {
   let hashes = []
@@ -85,7 +85,7 @@ export function getProposalDetails (proposal: Record<string, any>): Record<strin
   } else if (proposalType === PROPOSAL_REMOVE_MEMBER) {
     options['memberID'] = proposalData.memberID
     // options['member'] is not set as it's part of external state. The code
-    // responsible for notifications (`frontend/model/notifications/templates.js`)
+    // responsible for notifications (`frontend/model/notifications/templates.ts`)
     // will set it
   }
 
@@ -104,7 +104,7 @@ export function getProposalDetails (proposal: Record<string, any>): Record<strin
   return { creatorID, status, type: proposalType, options }
 }
 
-// chatroom.js related
+// chatroom.ts related
 
 export function createMessage ({ meta, data, hash, height, state, pending, innerSigningContractID }: {
   meta: Record<string, any>,

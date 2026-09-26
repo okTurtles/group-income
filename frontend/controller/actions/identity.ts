@@ -363,7 +363,7 @@ export default (sbp('sbp/selectors/register', {
                 try {
                   finalPicture = await imageUpload(picture, { billableContractID: userID })
                 } catch (e) {
-                  console.error('actions/identity.js picture upload error:', e)
+                  console.error('actions/identity.ts picture upload error:', e)
                   throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }), { cause: e })
                 }
               }
