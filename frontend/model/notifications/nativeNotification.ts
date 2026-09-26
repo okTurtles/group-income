@@ -5,7 +5,7 @@ import { throttle } from 'turtledash'
 
 // This module runs in both a browser window and the service worker, so `self` is
 // a `Window` in one context and a `ServiceWorkerGlobalScope` in the other.
-// declaring it as `any` here is to satisfy the type checker.
+// Declaring it as `any` here is to satisfy the type checker.
 declare const self: any
 
 // NOTE: since these functions don't modify contract state, it should

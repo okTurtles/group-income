@@ -121,7 +121,7 @@ const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string
         if (shouldFindDMToMyself) return chatRoomSettings.isDMToMyself
         else {
           const cPartners = chatRoomSettings.partners.map(partner => partner.contractID)
-          return cPartners.length === partners.length && union(cPartners, ((partners as any) as string[])).length === partners.length
+          return cPartners.length === partners.length && union(cPartners, partners as string[]).length === partners.length
         }
       })
     }

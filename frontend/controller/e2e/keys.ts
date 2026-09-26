@@ -39,7 +39,7 @@ function contextStrToDeviceObj (
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
     // `SPKeyType` is a union of three key-type literals, so the `''` default is
-    // not assignable to it. the cast keeps the default's runtime value untouched
+    // not assignable to it. The cast keeps the default's runtime value untouched
     // while preserving the declared type.
     { type = '' as SPKeyType }: {
       type: SPKeyType

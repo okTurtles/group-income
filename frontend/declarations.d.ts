@@ -42,7 +42,7 @@ declare var process: any
 // Service-worker globals
 // =============================================================================
 
-// Some files(e.g. nativeNotification.ts) are used in both the browser and the SW context and
-// using WorkerGlobalScope there leads to  TS2304 "cannot find name" ts error.
+// Some files (e.g. nativeNotification.ts) are used in both the browser and the SW context and
+// using WorkerGlobalScope there leads to a TS2304 "cannot find name" error.
 // Declaring it `any` here is what silences them.
 declare const WorkerGlobalScope: any

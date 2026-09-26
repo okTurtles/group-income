@@ -59,7 +59,7 @@
     // --- Cypress related -----------------------------------------------------
     // Both exist only because Cypress loads this file with its own bundled
     // `ts-node`. Without them, `npx cypress run` dies before a single test starts.
-    // 
+    //
     // Without below, every run fails with TS5107.
     "ignoreDeprecations": "6.0",
     // Without below, every run fails with TS5011:
