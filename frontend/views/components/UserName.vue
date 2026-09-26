@@ -10,7 +10,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-export default ({
+export default {
   name: 'UserName',
   props: {
     contractID: String
@@ -27,7 +27,7 @@ export default ({
       return this.globalProfile(this.contractID).displayName
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

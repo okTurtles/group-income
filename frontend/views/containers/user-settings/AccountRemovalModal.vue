@@ -80,11 +80,11 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import { normalizeString } from 'turtledash'
 import { Secret } from '@chelonia/lib/Secret'
 
-export default ({
+export default {
   name: 'AccountRemovalModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -162,7 +162,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

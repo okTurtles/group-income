@@ -272,7 +272,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // This is put here to fix a frequent heisenbug happening after cy.giSwitchChannel() below, which never happens when running test locally.
     // The intention is to give it a bit of extra time for async operations to complete in relatively unstable environment like CI.
-    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    cy.wait(3 * 1000)
 
     cy.log('Users can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('channel1') && !c.description)[0]
@@ -497,7 +497,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // TODO: this is a temporary hack, but not sure why this fixes the Cypress error
     //       https://cloud.cypress.io/projects/q6whky/runs/2663/test-results
-    cy.wait(3 * 1000) // eslint-disable-line cypress/no-unnecessary-waiting
+    cy.wait(3 * 1000)
     cy.giLogout({ bypassUI: true })
   })
 

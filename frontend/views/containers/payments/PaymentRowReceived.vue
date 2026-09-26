@@ -51,20 +51,20 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import { MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { L } from '@common/common.js'
 
 // TODO: handle showing PAYMENT_CANCELLED ?
 
-export default ({
+export default {
   name: 'PaymentRowReceived',
   components: {
     MenuItem,
@@ -112,7 +112,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

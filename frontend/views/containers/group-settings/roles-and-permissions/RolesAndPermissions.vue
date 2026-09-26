@@ -74,7 +74,7 @@ const fakeRolesData = [
   }
 ]
 
-export default ({
+export default {
   name: 'RolesAndPermissions',
   components: {
     PageSection,
@@ -127,7 +127,7 @@ export default ({
   beforeDestroy () {
     this.matchMediaMobile.onchange = null
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

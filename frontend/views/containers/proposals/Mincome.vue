@@ -32,14 +32,14 @@ import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 import { L } from '@common/common.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'MincomeProposal',
   components: {
     ProposalTemplate,
@@ -160,7 +160,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

@@ -26,11 +26,11 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
-import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.js'
+import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.ts'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default ({
+export default {
   name: 'Vote',
   props: {
     proposalHash: String
@@ -142,7 +142,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

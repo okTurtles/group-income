@@ -22,7 +22,7 @@ import sbp from '@sbp/sbp'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 
-export default ({
+export default {
   name: 'ErrorTesting',
   components: {
     Page,
@@ -52,5 +52,5 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>

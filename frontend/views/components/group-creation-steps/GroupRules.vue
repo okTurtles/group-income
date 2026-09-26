@@ -15,7 +15,7 @@
 import TransitionExpand from '@components/TransitionExpand.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
 
-export default ({
+export default {
   name: 'GroupRules',
   props: {
     group: { type: Object },
@@ -35,7 +35,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

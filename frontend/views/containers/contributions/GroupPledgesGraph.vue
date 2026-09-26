@@ -45,13 +45,13 @@
 </template>
 
 <script>
-import { unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
+import { unadjustedDistribution } from '@model/contracts/shared/distribution/distribution.ts'
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'GroupPledgesGraph',
   components: {
     PieChart,
@@ -185,7 +185,7 @@ export default ({
       return Math.min(Math.max(0, perc), 1)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -35,7 +35,7 @@ import { mapState, mapGetters } from 'vuex'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'
 import NotificationList from './NotificationList.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
 export default {
   name: 'NotificationCard',

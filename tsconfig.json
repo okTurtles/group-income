@@ -1,0 +1,78 @@
+{
+  "compilerOptions": {
+    // Reference: https://www.typescriptlang.org/tsconfig/#compilerOptions
+
+    // --- Output --------------------------------------------------------------
+    // esbuild builds; tsc only checks.
+    "noEmit": true,
+
+    // esbuild is currently configured with no `target` (Gruntfile.js esbuildOptionBags.default),
+    // so it never rewrites modern syntax into an older equivalent and the main bundle is ESM.
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    // --- Module resolution ---------------------------------------------------
+    // REQUIRED, not a preference. Most `@chelonia/*` imports are subpaths
+    // (`@chelonia/lib/events`, `@chelonia/lib/Secret`, …) whose declarations are
+    // reachable only through each package's `exports` map `types` condition.
+    // Classic "node" resolution reads only the top-level `types` field and every
+    // subpath import fails. "bundler" also matches how esbuild actually resolves.
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+
+    "strict": false,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "checkJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "types": [],
+
+    // --- Path aliases --------------------------------------------------------
+    // Mirrors aliasPluginOptions in Gruntfile.js.
+    "paths": {
+      "@assets/*": ["./frontend/assets/*"],
+      "@common/*": ["./frontend/common/*"],
+      "@components/*": ["./frontend/views/components/*"],
+      "@containers/*": ["./frontend/views/containers/*"],
+      "@controller/*": ["./frontend/controller/*"],
+      "@model/*": ["./frontend/model/*"],
+      "@pages/*": ["./frontend/views/pages/*"],
+      "@svgs/*": ["./frontend/assets/svgs/*"],
+      "@utils/*": ["./frontend/utils/*"],
+      "@view-utils/*": ["./frontend/views/utils/*"],
+      "@views/*": ["./frontend/views/*"],
+      "~/*": ["./*"],
+      // vuex 3.6.0's `exports` map predates the `types` condition, so
+      // "bundler" resolution finds `dist/vuex.mjs`, no declarations beside it,
+      // and silently types the whole module `any` — which also means its
+      // `ComponentOptions` augmentation never loads and the `store` option is
+      // rejected. Pointing at the declarations directly restores both.
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
+    },
+
+    // --- Cypress related -----------------------------------------------------
+    // Both exist only because Cypress loads this file with its own bundled
+    // `ts-node`. Without them, `npx cypress run` dies before a single test starts.
+    //
+    // Without below, every run fails with TS5107.
+    "ignoreDeprecations": "6.0",
+    // Without below, every run fails with TS5011:
+    // `ts-node` compiles Cypress's own plugin loader straight out of the
+    // Cypress app cache, so the root it infers lands outside this repo.
+    "rootDir": "/",
+    // ------------------------------------------------------------------------
+  },
+  "include": ["frontend/**/*.ts"],
+  // All test.js files were excluded in the past, so keeping it that way.
+  "exclude": [
+    "**/*.test.ts",
+    "frontend/controller/service-worker.ts",
+    "frontend/model/contracts/misc/giTyper.ts"
+  ]
+}

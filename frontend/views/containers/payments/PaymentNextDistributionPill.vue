@@ -6,7 +6,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 
 export default ({
   name: 'PaymentNextDistributionPill',

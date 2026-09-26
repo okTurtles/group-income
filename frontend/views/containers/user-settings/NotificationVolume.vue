@@ -25,7 +25,7 @@ import { mapMutations } from 'vuex'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'NotificationVolume',
   components: {
     SliderContinuous
@@ -78,7 +78,7 @@ export default ({
     // Init the volume of the example sound to the value in the store.
     this.$refs.exampleAudio.volume = this.volumeFromStore
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

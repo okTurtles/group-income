@@ -11,7 +11,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 
-export default ({
+export default {
   name: 'AvatarUser',
   components: { Avatar },
   props: {
@@ -57,5 +57,5 @@ export default ({
       return this.profilePicture || this.ephemeral.url
     }
   }
-}: Object)
+}
 </script>

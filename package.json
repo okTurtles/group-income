@@ -9,11 +9,10 @@
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "CYPRESS_BASE_URL=http://localhost:8000 cypress open",
     "test": "grunt test",
-    "eslint": "eslint \"**/*.{js,vue}\"",
-    "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
+    "eslint": "eslint \"**/*.{js,ts,vue}\"",
+    "eslintfix": "eslint \"**/*.{js,ts,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
-    "flow": "flow",
-    "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
+    "typecheck": "tsc --noEmit",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
@@ -25,31 +24,74 @@
     },
     "extends": [
       "plugin:cypress/recommended",
-      "plugin:flowtype/recommended",
       "plugin:vue/essential",
       "standard"
     ],
     "plugins": [
       "cypress",
-      "flowtype",
       "import"
     ],
     "rules": {
       "require-await": "error",
       "vue/max-attributes-per-line": "off",
       "vue/html-indent": "off",
-      "flowtype/no-types-missing-file-annotation": "off",
+      "vue/multi-word-component-names": "off",
       "quote-props": "off",
       "dot-notation": "off",
       "import/extensions": [
         2,
         "ignorePackages"
       ]
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "**/*.ts"
+        ],
+        "parser": "@typescript-eslint/parser",
+        "extends": [
+          "plugin:@typescript-eslint/recommended"
+        ],
+        "rules": {
+          "@typescript-eslint/no-explicit-any": "off",
+          "@typescript-eslint/ban-ts-comment": [
+            "error",
+            {
+              "ts-nocheck": false
+            }
+          ],
+          "@typescript-eslint/no-unused-vars": [
+            "error",
+            {
+              "args": "none",
+              "caughtErrors": "none",
+              "ignoreRestSiblings": true,
+              "vars": "all"
+            }
+          ],
+          "@typescript-eslint/no-unused-expressions": [
+            "error",
+            {
+              "allowShortCircuit": true,
+              "allowTernary": true,
+              "allowTaggedTemplates": true
+            }
+          ]
+        }
+      },
+      {
+        "files": [
+          "**/*.d.ts"
+        ],
+        "rules": {
+          "no-var": "off"
+        }
+      }
+    ]
   },
   "eslintIgnore": [
     "frontend/assets/*",
-    "frontend/model/contracts/misc/flowTyper.js",
+    "frontend/model/contracts/misc/giTyper.ts",
     "historical/*",
     "shared/types.js",
     "dist/*",
@@ -107,7 +149,7 @@
     "@babel/plugin-transform-object-rest-spread": "7.23.4",
     "@babel/plugin-transform-runtime": "7.12.1",
     "@babel/preset-env": "7.23.8",
-    "@babel/preset-flow": "7.12.1",
+    "@babel/preset-typescript": "7.23.3",
     "@babel/register": "7.23.7",
     "@babel/runtime": "7.23.8",
     "@chelonia/cli": "3.4.0",
@@ -155,6 +197,8 @@
     "ws": "8.19.0"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "8.70.0",
+    "@typescript-eslint/parser": "8.70.0",
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",
     "browser-sync": "2.29.3",
@@ -163,17 +207,13 @@
     "cypress-pipe": "2.0.0",
     "esbuild": "0.27.3",
     "esbuild-sass-plugin": "3.7.0",
-    "eslint": "7.32.0",
-    "eslint-config-standard": "16.0.2",
+    "eslint": "8.57.1",
+    "eslint-config-standard": "17.1.0",
     "eslint-plugin-cypress": "2.11.3",
-    "eslint-plugin-flowtype": "5.7.2",
-    "eslint-plugin-flowtype-errors": "4.4.0",
-    "eslint-plugin-import": "2.22.1",
-    "eslint-plugin-node": "11.1.0",
-    "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-vue": "7.20.0",
-    "flow-bin": "0.154.0",
-    "flow-remove-types": "2.181.0",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-n": "16.6.2",
+    "eslint-plugin-promise": "6.6.0",
+    "eslint-plugin-vue": "9.33.0",
     "mocha": "11.7.5",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
     "sass": "1.71.1",
@@ -182,6 +222,7 @@
     "sinon": "9.2.1",
     "stylelint": "13.8.0",
     "stylelint-config-standard": "20.0.0",
+    "typescript": "6.0.3",
     "vue-cli-plugin-pug": "2.0.0",
     "vue-template-compiler": "2.6.12",
     "vue-template-es2015-compiler": "1.9.1"

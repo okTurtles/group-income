@@ -54,7 +54,7 @@ import { L } from '@common/common.js'
 import ProfileCardContent from '@components/ProfileCardContent.vue'
 import { mixin as clickaway } from 'vue-clickaway'
 
-export default ({
+export default {
   name: 'ContributionItem',
   components: {
     ProfileCardContent
@@ -203,7 +203,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

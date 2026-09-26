@@ -22,7 +22,7 @@ import SvgInvitation from '@svgs/invitation.svg'
 import { mapGetters, mapState } from 'vuex'
 import { CHELONIA_RESET } from '@chelonia/lib/events'
 
-export default ({
+export default {
   name: 'PendingApproval',
   components: {
     SvgInvitation,
@@ -135,7 +135,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

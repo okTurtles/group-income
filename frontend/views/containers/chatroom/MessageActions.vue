@@ -69,7 +69,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import { MESSAGE_TYPES, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'MessageActions',
   inject: ['chatMainConfig'],
   components: {
@@ -277,7 +277,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

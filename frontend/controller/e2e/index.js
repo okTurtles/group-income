@@ -1,3 +1,3 @@
 'use strict'
 
-import './keys.js'
+import './keys.ts'

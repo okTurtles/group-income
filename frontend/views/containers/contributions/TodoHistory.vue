@@ -17,12 +17,12 @@ div(:class='isReady ? "" : "c-ready"')
 <script>
 import { mapGetters } from 'vuex'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'TodoHistory',
   data () {
     return {
@@ -77,5 +77,5 @@ export default ({
       this.updateHistory()
     }
   }
-}: Object)
+}
 </script>

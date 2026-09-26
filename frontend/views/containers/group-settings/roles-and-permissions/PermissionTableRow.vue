@@ -31,7 +31,7 @@ import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
 import {
   getRoleDisplayName,
   getPermissionDisplayName
-} from './permissions-utils.js'
+} from './permissions-utils.ts'
 
 export default {
   name: 'PermissionTableRow',
