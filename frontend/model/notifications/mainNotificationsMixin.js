@@ -1,6 +1,6 @@
 'use strict'
 
-import { compareISOTimestamps, dateToPeriodStamp, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, dateToPeriodStamp, MINS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 
@@ -66,6 +66,11 @@ const oneTimeNotificationEntries = [
   }
 ]
 
+// At most one 'username-fetch' attempt per name in this interval. Kept here
+// because periodic notification state is reset on every login and group switch.
+const USERNAME_FETCH_INTERVAL = 30 * MINS_MILLIS
+const lastUsernameFetch: Map<string, number> = new Map()
+
 const periodicNotificationEntries = [
   // The following fixes a rare issue that we're not sure exactly why it happens.
   // Sometimes, the `namespace/lookup` call made as a side-effect in the identity
@@ -81,16 +86,28 @@ const periodicNotificationEntries = [
       emitCondition: () => true,
       emit ({ rootState, rootGetters }) {
         Object.values(rootGetters.ourContactProfilesById)
-          // Only get users that are missing the cached lookup entry (!username)
-          // and that have a username defined (!!rootState[contractID]?.attributes?.username)
+          // Only get users that are missing the cached lookup entry (!username),
+          // that have a username defined and whose username isn't cached at
+          // all (if it's cached for a different contract, that's already the
+          // server's answer and looking it up again won't change it)
           .filter(
             // $FlowFixMe[incompatible-use]
-            ({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username)
+            ({ username, contractID }) => {
+              const claimed = rootState[contractID]?.attributes?.username
+              return !username && !!claimed && !rootState.namespaceLookups?.[claimed]
+            })
           // $FlowFixMe[incompatible-use]
           .forEach(({ contractID }) => {
             const username = rootState[contractID].attributes.username
+            // Periodic notification state is reset on every login and group
+            // switch, so limit attempts per name here as well
+            const now = Date.now()
+            if (now - (lastUsernameFetch.get(username) || 0) < USERNAME_FETCH_INTERVAL) return
+            lastUsernameFetch.set(username, now)
             // Do a manual lookup. This will populate the cache if successful.
-            sbp('namespace/lookup', username, { skipCache: true }).then((cID) => {
+            // (The service worker may already know the name, so this doesn't
+            // skip its cache.)
+            sbp('namespace/lookup', username).then((cID) => {
               if (cID !== contractID) {
                 console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
               }
