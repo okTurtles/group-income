@@ -17,7 +17,7 @@ import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
-import { checkAndAugmentNames } from './identity-kv.js'
+import { checkAndAugmentNames, recordNsCacheServerState, scheduleSaveCachedNames } from './identity-kv.js'
 
 // Prune-expired transform for the notifications slot. Zod is not installed, so
 // the slot's `schema` is a plain `{ parse }` object. This is the canonical
@@ -131,11 +131,9 @@ export const registerKvSlots = (): void => {
   // the other identity slots this one is `autoSubscribe: false` (it was never
   // in the pubsub `setFilter`) and `autoLoad: 'on-demand'` (fetched explicitly
   // by `gi.actions/identity/kv/loadCachedNames` → `chelonia/kv/sync`, not on
-  // every sync). `onUpdate` re-runs `checkAndAugmentNames` on every value
-  // change (load / remote write), which reconciles the cache against
-  // `namespaceLookups` and re-verifies conflicted names. This single hook
-  // replaces both the post-fetch augmentation that lived in `loadCachedNames`
-  // and the `NS_CACHE` branch of the `sw-primary.js` `KV_EVENT` switch.
+  // every sync). `onUpdate` records the loaded list (and its version tag) as
+  // the base for later writes, and looks up the names this device doesn't know
+  // yet (see `namespaceCacheList.js`).
   // `refreshOnReconnect: false` avoids a double fetch on reconnect: the
   // `ONLINE` listener in `identity-kv.js` already drives an explicit
   // `kv/load` → `loadCachedNames` → `chelonia/kv/sync` on both pubsub
@@ -157,19 +155,19 @@ export const registerKvSlots = (): void => {
     // not by reconnect. (KV-REVAMPED.md §4.1)
     refreshOnReconnect: false,
     onUpdate: (value, ctx) => {
-      // Augment on load/remote/reconnect. `saveCachedNames` writes through the
-      // low-level `chelonia/kv/queuedSet` (see identity-kv.js) and so never
-      // produces a 'local' mirror update for this slot, but the guard is kept
-      // as cheap insurance: re-running `checkAndAugmentNames` after our own
-      // write would only schedule a redundant batch of `namespace/lookup`
-      // calls. (KV-REVAMPED.md §4.1)
+      // `saveCachedNames` writes through the low-level `chelonia/kv/set` (see
+      // identity-kv.js) and so never produces a 'local' mirror update for this
+      // slot; the guard is kept as cheap insurance. (KV-REVAMPED.md §4.1)
       if (ctx.reason === 'local') return
-      // Fire-and-forget: `checkAndAugmentNames` performs batched network
+      recordNsCacheServerState(ctx.contractID, value || [], ctx.etag)
+      // Fire-and-forget: `checkAndAugmentNames` may perform batched network
       // lookups that can take seconds, and the lib awaits `onUpdate` inside
       // the identity contract's queue lane. Awaiting here would stall
       // identity event processing and (via chatroom sideEffects that await
       // identity KV writes) chatroom event processing too. (KV-REVAMPED.md §4.1)
-      checkAndAugmentNames(value || []).catch((e) => {
+      checkAndAugmentNames(value || []).then(() => {
+        scheduleSaveCachedNames()
+      }).catch((e) => {
         console.error('[kv-slots] namespace-cache onUpdate error:', e)
       })
     }

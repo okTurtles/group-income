@@ -17,7 +17,7 @@ import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
-import './controller/namespace.js'
+import { applyNamespaceUpdate } from './controller/namespace.js'
 import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
@@ -115,17 +115,7 @@ async function startApp () {
   // between the SW and each tab. It is not needed if everything is running in
   // the same context
   sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value, deletedValue }) => {
-    const cache = sbp('state/vuex/state').namespaceLookups
-    const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
-    if (deletedValue) {
-      Vue.delete(cache, name)
-      if (reverseCache[deletedValue] === name) {
-        Vue.delete(reverseCache, deletedValue)
-      }
-    } else {
-      Vue.set(cache, name, value)
-      Vue.set(reverseCache, value, name)
-    }
+    applyNamespaceUpdate(sbp('state/vuex/state'), { name, value, deletedValue })
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {

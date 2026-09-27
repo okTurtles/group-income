@@ -341,8 +341,9 @@ export default (sbp('sbp/selectors/register', {
       if (username) {
         // We expect that in development mode the same browser may be used and
         // server data cleared often, so we skip the cache lookup for dev
-        // convenience.
-        const nsIdentityContractID = await sbp('namespace/lookup', username, { skipCache: process.env.CI || process.env.NODE_ENV !== 'production' })
+        // convenience (and also any recently remembered server answer).
+        const fresh = !!(process.env.CI || process.env.NODE_ENV !== 'production')
+        const nsIdentityContractID = await sbp('namespace/lookup', username, { skipCache: fresh, forceRefresh: fresh })
         // If we've only been given a username, set `identityContractID` to the
         // contract ID we've just looked up
         if (!identityContractID) {

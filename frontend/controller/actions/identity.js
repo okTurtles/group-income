@@ -24,6 +24,7 @@ import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.js'
+import { forgetDeletedAccountNames } from './identity-kv.js'
 
 /**
  * Decrypts the old IEK list using the provided contract ID and IEK.
@@ -354,6 +355,11 @@ export default (sbp('sbp/selectors/register', {
         ],
         hooks: {
           postpublishContract: async (message) => {
+            // The name was registered with this message. Forget a remembered
+            // 'not registered' answer (e.g., from the signup form) before the
+            // first action is published, because its side effect checks the
+            // name.
+            sbp('namespace/invalidate', username)
             // We need to get the contract state
             await sbp('chelonia/contract/retain', message.contractID(), { ephemeral: true })
 
@@ -395,6 +401,9 @@ export default (sbp('sbp/selectors/register', {
     } finally {
       // And remove transient keys, which require a user password
       await sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
+      // Whether or not registering succeeded, a remembered answer for this
+      // name (e.g., 'not registered', from the signup form) is now outdated
+      sbp('namespace/invalidate', username)
     }
     return userID
   },
@@ -1388,6 +1397,10 @@ export default (sbp('sbp/selectors/register', {
       // used, as we're no longer able to keep our identity meaningfully in sync
       // with things happening on the server.
       await sbp('gi.actions/identity/logout')
+    } else {
+      // Someone else's account: keep its name on this device (e.g., for chat
+      // history), but stop sharing it with devices that never saw it
+      forgetDeletedAccountNames(contractID)
     }
   },
   // Called from migrations to share the DMK with the PEK if it hasn't been
