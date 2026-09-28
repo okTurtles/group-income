@@ -1,11 +1,4 @@
 // Ambient globals for the TypeScript build.
-//
-// This replaced Flow's `[libs]` entry in `.flowconfig`, which pointed at
-// `frontend/declarations.js`. That file and the whole Flow toolchain were
-// removed in the TypeScript migration; this is now the only source of ambient declarations.
-//
-// Keep this file free of top-level `import` / `export` statements — either one
-// turns it into a module and every declaration below stops being global.
 
 // =============================================================================
 // Shared type aliases
