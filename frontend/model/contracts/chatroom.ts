@@ -36,8 +36,6 @@ import chatroomGetters from './shared/getters/chatroom.ts'
 import { cloneDeep, merge } from 'turtledash'
 import { chatRoomAttributesType, messageType } from './shared/types.ts'
 
-// These two used to carry a `typeof Error` annotation. TypeScript infers the
-// constructor type from `ChelErrorGenerator`, so it is no longer needed.
 export const GIChatroomAlreadyMemberError = ChelErrorGenerator('GIChatroomAlreadyMemberError')
 export const GIChatroomNotMemberError = ChelErrorGenerator('GIChatroomNotMemberError')
 

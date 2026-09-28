@@ -366,8 +366,6 @@ export const actionRequireActiveMember = (next: Fn): Fn => (data, props) => {
   return next(data, props)
 }
 
-// These two used to carry a `typeof Error` annotation. TypeScript infers the
-// constructor type from `ChelErrorGenerator`, so it is no longer needed.
 export const GIGroupAlreadyJoinedError = ChelErrorGenerator('GIGroupAlreadyJoinedError')
 export const GIGroupNotJoinedError = ChelErrorGenerator('GIGroupNotJoinedError')
 

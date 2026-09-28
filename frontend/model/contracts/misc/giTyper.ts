@@ -1,7 +1,7 @@
 // @ts-nocheck
-// This file has never been meant to be typechecked. But since other `.ts` files
-// import it, TypeScript pulls it in and checks it anyway. The pragma above is
-// placed to prevent that.
+// Vendored copy of the `flowTyper-js` library (originally inlined to satisfy rollup),
+// with GI-specific edits noted below. It was never meant to be typechecked; the
+// pragma above keeps tsc from checking it.
 //
 // GI EDIT NOTES:
 //

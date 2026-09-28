@@ -39,7 +39,7 @@ import './push.ts'
 import './sw-namespace.ts'
 
 // This module runs only in the service worker, where `self` is a
-// `ServiceWorkerGlobalScope`. But lib.dom of Typescript assumes it to be a `Window`
+// `ServiceWorkerGlobalScope`. But TypeScript's lib.dom assumes it is a `Window`,
 // So declaring it as `any` here is to satisfy the type checker.
 declare const self: any
 

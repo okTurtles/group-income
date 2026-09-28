@@ -170,7 +170,7 @@ export function firstDayOfMonth (date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-export function getLocale (): string {
+export function getLocale (): Intl.LocalesArgument {
   const fallback = 'en-US-POSIX'
 
   return typeof navigator === 'undefined'

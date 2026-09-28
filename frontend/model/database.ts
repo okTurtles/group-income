@@ -257,7 +257,7 @@ sbp('sbp/selectors/register', {
         console.error('[gi.db/filesCache/load] Error updating keys')
       })
     }
-    return ((file as any) as Blob)
+    return file as Blob
   },
   'gi.db/filesCache/delete': async function (cacheKey: string): Promise<void> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
