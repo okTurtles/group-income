@@ -436,6 +436,30 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
   })
 
+  it('user1 keeps an unsent draft after editing a message in the same channel', () => {
+    const draft = 'This draft must survive editing another message'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+    cy.giSendMessage(me, 'A message that is about to be edited')
+
+    cy.get(composerTextarea).type(draft)
+    // Wait until the debounced draft-save has been written.
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessage(Number(length), 'A message that has been edited')
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
   it('user1 checks how the infinite scroll works', () => {
     cy.giSwitchChannel(additionalChannelName)
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
