@@ -351,6 +351,7 @@ const functionalKeyCodes = {
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
 const whitespaceRegex = /\s/ // RegEx Metacharacter \s
 const nonWhitespaceRegex = /\S/
+const normalizeForMentionSearch = (str) => str.normalize().toUpperCase()
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
@@ -519,6 +520,31 @@ export default ({
           }
         })
     },
+    memberMentionCandidates () {
+      const availableMentions = Array.from(this.activeMembers)
+      // NOTE: '@all' mention should only be needed when the members are more than 3
+      if (availableMentions.length > 2) {
+        const all = makeMentionFromUsername('').all
+        availableMentions.push({
+          memberID: all,
+          displayName: all.slice(1),
+          picture: '/assets/images/horn.png'
+        })
+      }
+
+      return availableMentions.map(user => ({
+        item: user,
+        searchKeys: [user.username, user.displayName]
+          .filter(str => typeof str === 'string')
+          .map(normalizeForMentionSearch)
+      }))
+    },
+    channelMentionCandidates () {
+      return this.mentionableChatroomsInDetails.map(channel => ({
+        item: channel,
+        searchKeys: typeof channel.name === 'string' ? [normalizeForMentionSearch(channel.name)] : []
+      }))
+    },
     isActive () {
       return !this.ephemeral.voiceRecording.isOpen &&
         (this.hasAttachments || this.ephemeral.hasText)
@@ -617,7 +643,8 @@ export default ({
           let foundEmoji = null
 
           if (searchResult?.length > 0) {
-            foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
+            const lowerCaseColonKeyword = queryEmojiColonKeyword.toLowerCase()
+            foundEmoji = searchResult.find(emoji => emoji.colons === lowerCaseColonKeyword)
 
             if (foundEmoji) {
               this.ephemeral.segmentInsertion.options = [mapEmojiItem(foundEmoji)]
@@ -1214,34 +1241,18 @@ export default ({
       }
     },
     startMention (keyword, position, mentionType = 'member') {
-      const normalKeyword = keyword.normalize().toUpperCase()
-      const checkIfContainsKeyword = str => {
-        if (typeof str !== 'string') { return false }
-
-        return str.normalize().toUpperCase().includes(normalKeyword)
-      }
+      const normalKeyword = normalizeForMentionSearch(keyword)
+      const filterByKeyword = candidates => candidates
+        .filter(({ searchKeys }) => searchKeys.some(key => key.includes(normalKeyword)))
+        .map(({ item }) => item)
 
       switch (mentionType) {
         case 'member': {
-          const all = makeMentionFromUsername('').all
-          const availableMentions = Array.from(this.activeMembers)
-          // NOTE: '@all' mention should only be needed when the members are more than 3
-          if (availableMentions.length > 2) {
-            availableMentions.push({
-              memberID: all,
-              displayName: all.slice(1),
-              picture: '/assets/images/horn.png'
-            })
-          }
-
-          this.ephemeral.segmentInsertion.options = availableMentions.filter(
-            user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
-          )
-
+          this.ephemeral.segmentInsertion.options = filterByKeyword(this.memberMentionCandidates)
           break
         }
         case 'channel': {
-          this.ephemeral.segmentInsertion.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
+          this.ephemeral.segmentInsertion.options = filterByKeyword(this.channelMentionCandidates)
         }
       }
 
