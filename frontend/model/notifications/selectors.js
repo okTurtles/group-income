@@ -24,8 +24,13 @@ sbp('sbp/selectors/register', {
    */
   'gi.notifications/emit' (type: string, data: NotificationData) {
     const template: NotificationTemplate = templates[type](data)
+    // Templates can either receive `groupID` from the caller (most cases,
+    // the caller already knows the group) or compute it themselves when the
+    // caller doesn't have that context readily available (e.g. CHELONIA_ERROR
+    // derives it from the contract that errored).
+    const groupID = data.groupID ?? template.groupID
 
-    if (template.scope === 'group' && !data.groupID) {
+    if (template.scope === 'group' && !groupID) {
       throw new TypeError('Incomplete notification data: `data.groupID` is required.')
     }
 
@@ -35,7 +40,7 @@ sbp('sbp/selectors/register', {
       hash: makeNotificationHash({ ...data, type }),
       avatarUserID: template.avatarUserID || sbp('state/vuex/getters').ourIdentityContractId,
       // Sets 'groupID' if this notification only pertains to a certain group.
-      ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
+      ...(template.scope === 'group' ? { groupID } : {}),
       // Store integer timestamps rather than ISO strings here to make age comparisons easier.
       timestamp: new Date(data.createdDate ? data.createdDate : sbp('chelonia/time')).getTime(),
       type
