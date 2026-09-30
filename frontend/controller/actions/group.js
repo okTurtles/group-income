@@ -89,7 +89,7 @@ const findAndRequestMissingGroupKeys = debounce(() => {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: CEKid,
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/group/findAndRequestMissingGroupKeys] Failed for ${contractID}`, e)

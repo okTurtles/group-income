@@ -53,6 +53,8 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
     const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
 
+    if (!state.members[identityContractID] || state.members[identityContractID].hasLeft) return
+
     // $FlowFixMe[incompatible-use]
     const groupID = Object.entries(contractState?.groups || {}).find(([groupID, { hasLeft }]) => {
       const groupState = cheloniaState[groupID]
@@ -85,7 +87,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: CEKid,
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
@@ -692,7 +694,13 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
     }
   }),
-  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.'), async (sendMessage, params) => {
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+    const state = sbp('chelonia/contract/state', params.contractID)
+    if (state?.members?.[identityContractID]?.acceptedHeight != null) return
+
+    return await sendMessage({ ...omit(params, ['options', 'action']) })
+  }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {
