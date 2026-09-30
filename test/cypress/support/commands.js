@@ -188,6 +188,22 @@ cySbpCheckCommand('giAssertKeyRotation', (sbp, contractID, height, keyName) => {
   )
 })
 
+// Checks that a chatroom's current CEK is different from `previousCEKid`
+// (i.e., that the chatroom keys have been rotated)
+cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
+  const authorizedKeys = sbp('state/vuex/state')[chatRoomID]?._vm?.authorizedKeys
+  const currentCEK = authorizedKeys && Object.values(authorizedKeys).find((key) => {
+    return key.name === 'cek' && key._notAfterHeight == null
+  })
+  console.info('giChatRoomKeysRotated', chatRoomID, previousCEKid, currentCEK?.id)
+  return !!currentCEK && currentCEK.id !== previousCEKid
+})
+
+cySbpCheckCommand('giChatRoomHasMessage', (sbp, chatRoomID, text) => {
+  const messages = sbp('state/vuex/state')[chatRoomID]?.messages || []
+  return messages.some((message) => message.text === text)
+})
+
 Cypress.Commands.add('giSignup', (username, {
   password = defaultPassword,
   isInvitation = false,

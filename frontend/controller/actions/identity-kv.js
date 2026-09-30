@@ -375,4 +375,9 @@ export default (sbp('sbp/selectors/register', {
 
 // Debounced so that `checkAndAugmentNames` (which may affect the names
 // being stored) doesn't result in too many calls to saveCachedNames.
-sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => sbp('gi.actions/identity/kv/saveCachedNames'), 300))
+sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
+  sbp('gi.actions/identity/kv/saveCachedNames').catch((e) => {
+    console.error('[gi.actions/identity/kv/saveCachedNames] Error saving cached names', e)
+  })
+}, 300))

@@ -170,7 +170,8 @@ sbp('sbp/selectors/register', {
     const signingKeyId = findSuitableSecretKeyId(state, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
-      throw new Error('No suitable signing key found')
+      console.info('[gi.actions/out/rotateKeys] Skipping key rotation: no suitable signing key found', { contractID, contractName, keysToRotate })
+      return
     }
 
     // Additional operations to be done along with key rotation.
