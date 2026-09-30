@@ -319,7 +319,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
+import { throttle, cloneDeep, debounce } from 'turtledash'
 import {
   injectOrStripSpecialChar,
   injectOrStripLink,
@@ -349,6 +349,8 @@ const functionalKeyCodes = {
   Enter: 13
 }
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
+const whitespaceRegex = /\s/ // RegEx Metacharacter \s
+const nonWhitespaceRegex = /\S/
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
@@ -387,6 +389,8 @@ export default ({
       ephemeral: {
         actionsWidth: '',
         textWithLines: '',
+        hasText: false,
+        lastDraftText: null,
         maskHeight: '',
         showButtons: true,
         isPhone: false,
@@ -517,7 +521,7 @@ export default ({
     },
     isActive () {
       return !this.ephemeral.voiceRecording.isOpen &&
-        (this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0)
+        (this.hasAttachments || this.ephemeral.hasText)
     },
     textareaStyles () {
       return {
@@ -588,7 +592,6 @@ export default ({
     updateSegmentSelectionKeyword () {
       const textAreaValue = this.$refs.textarea.value
       const cursorPosition = this.$refs.textarea.selectionStart
-      const whitespaceRegex = /\s/ // RegEx Metacharacter \s
       const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
@@ -747,7 +750,7 @@ export default ({
         this.updateSegmentSelectionKeyword()
       }
 
-      if (!this.isEditing) {
+      if (!this.isEditing && this.ephemeral.textWithLines !== this.ephemeral.lastDraftText) {
         this.saveOrDeleteMessageDraft()
       }
     },
@@ -833,6 +836,7 @@ export default ({
       }
 
       this.ephemeral.textWithLines = newValue
+      this.ephemeral.hasText = nonWhitespaceRegex.test(newValue)
       return true
     },
     updateTextArea () {
@@ -948,6 +952,7 @@ export default ({
         clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
       }
       this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
     },
     async initializeTextArea () {
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
@@ -955,6 +960,7 @@ export default ({
       this.clearAllAttachments()
       this.closeVoiceRecorder()
       this.ephemeral.chatroomHasDraftSaved = false
+      this.ephemeral.lastDraftText = null
 
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
@@ -994,6 +1000,7 @@ export default ({
       // so those actions don't be above the textarea's value
       this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
       this.updateTextArea()
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
       // The following causes inconsistent focusing on iOS depending on whether
       // iOS determines the action to be a result of user interaction.
       // Commenting this out will result on focus being triggered the 'normal'
@@ -1023,6 +1030,7 @@ export default ({
       const attachments = this.ephemeral.attachments
       const hasContent = textContent.length > 0 || attachments.length > 0
       const hasDraftSaved = this.ephemeral.chatroomHasDraftSaved
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
 
       if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
         clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
@@ -1206,10 +1214,10 @@ export default ({
       }
     },
     startMention (keyword, position, mentionType = 'member') {
+      const normalKeyword = keyword.normalize().toUpperCase()
       const checkIfContainsKeyword = str => {
         if (typeof str !== 'string') { return false }
 
-        const normalKeyword = keyword.normalize().toUpperCase()
         return str.normalize().toUpperCase().includes(normalKeyword)
       }
 
@@ -1244,7 +1252,9 @@ export default ({
     endSegmentSelection () {
       this.ephemeral.segmentInsertion.position = -1
       this.ephemeral.segmentInsertion.index = -1
-      this.ephemeral.segmentInsertion.options = []
+      if (this.ephemeral.segmentInsertion.options.length) {
+        this.ephemeral.segmentInsertion.options = []
+      }
     },
     onWindowMouseClicked (e) {
       if (!this.$refs.segmentInsertionWrapper) {
@@ -1290,11 +1300,10 @@ export default ({
       const typingUser = data.innerSigningContractID
 
       if (typingUser && typingUser !== this.ourIdentityContractId) {
-        const addToList = username => {
-          this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
+        if (!this.ephemeral.typingUsers.includes(typingUser)) {
+          this.ephemeral.typingUsers = [...this.ephemeral.typingUsers, typingUser]
         }
 
-        addToList(typingUser)
         clearTimeout(this.typingUserTimeoutIds[typingUser])
         this.typingUserTimeoutIds[typingUser] = setTimeout(() => this.removeFromTypingUsersArray(typingUser), 30 * 1000)
       }
@@ -1308,7 +1317,9 @@ export default ({
       }
     },
     removeFromTypingUsersArray (memberID) {
-      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== memberID)
+      if (this.ephemeral.typingUsers.includes(memberID)) {
+        this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== memberID)
+      }
 
       if (this.typingUserTimeoutIds[memberID]) {
         clearTimeout(this.typingUserTimeoutIds[memberID])
