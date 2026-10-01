@@ -24,7 +24,7 @@ component(
 <script>
 import Tooltip from '@components/Tooltip.vue'
 
-export default ({
+export default {
   name: 'SentenceWithMemberTooltip',
   components: {
     Tooltip
@@ -36,7 +36,7 @@ export default ({
       default: false
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

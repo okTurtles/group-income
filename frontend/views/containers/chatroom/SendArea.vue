@@ -301,14 +301,14 @@
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
-import emoticonsMixins from './EmoticonsMixins.js'
+import emoticonsMixins from './EmoticonsMixins.ts'
 import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import EmojiShortcutItemDisplay from './EmojiShortcutItemDisplay.vue'
 import VoiceRecorder from './voice-recording/VoiceRecorder.vue'
-import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.js'
+import { makeMentionFromUsername, makeMentionFromUserID, makeChannelMention, swapMentionIDForDisplayname } from '@model/chatroom/utils.ts'
 import {
   CHATROOM_PRIVACY_LEVEL,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
@@ -317,7 +317,7 @@ import {
   CHATROOM_MAX_MESSAGE_LEN,
   CHATROOM_ATTACHMENT_TYPES
 } from '@model/contracts/shared/constants.js'
-import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
+import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.ts'
 import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
 import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
 import {
@@ -325,10 +325,10 @@ import {
   injectOrStripLink,
   splitStringByMarkdownCode,
   combineMarkdownSegmentListIntoString
-} from '@view-utils/markdown-utils.js'
-import { getFileType } from '@view-utils/filters.js'
-import { searchEmoji } from './emoji-utils.js'
-import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
+} from '@view-utils/markdown-utils.ts'
+import { getFileType } from '@view-utils/filters.ts'
+import { searchEmoji } from './emoji-utils.ts'
+import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.ts'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 const caretKeyCodes = {
@@ -352,7 +352,7 @@ const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCo
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
-export default ({
+export default {
   name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
@@ -1350,7 +1350,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

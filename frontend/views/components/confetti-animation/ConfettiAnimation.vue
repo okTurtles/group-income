@@ -14,11 +14,11 @@ svg.c-svg(
 </template>
 
 <script>
-import animationMixins from './AnimationMixins.js'
-export default ({
+import animationMixins from './AnimationMixins.ts'
+export default {
   mixins: [animationMixins],
   name: 'ConfettiAnimation'
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -49,15 +49,15 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuItem } from '@components/menu/index.js'
-import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
+import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.ts'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'PaymentRowSent',
   components: {
     AvatarUser,
@@ -109,7 +109,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

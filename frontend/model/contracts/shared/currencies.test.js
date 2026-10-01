@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-import { withCurrency } from './currencies.js'
+import { withCurrency } from './currencies.ts'
 const should = require('should')
 
 describe('withCurrency', function () {

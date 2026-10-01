@@ -52,8 +52,8 @@ import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import { createInvite } from '@controller/actions/utils.js'
-export default ({
+import { createInvite } from '@controller/actions/utils.ts'
+export default {
   name: 'AddMembers',
   mixins: [validationMixin],
   components: {
@@ -175,7 +175,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

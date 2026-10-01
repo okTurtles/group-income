@@ -37,7 +37,7 @@
 
 <script>
 import AudioPlayerCard from '@containers/chatroom/audio-player/AudioPlayerCard.vue'
-import { getFileType } from '@view-utils/filters.js'
+import { getFileType } from '@view-utils/filters.ts'
 
 export default {
   name: 'MediaPreviewInTextArea',

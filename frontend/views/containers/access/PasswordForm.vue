@@ -26,9 +26,9 @@ label.field
 </template>
 
 <script>
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 
-export default ({
+export default {
   name: 'PasswordForm',
   data () {
     return {
@@ -70,7 +70,7 @@ export default ({
   created () {
     this.isLock = !this.showPassword
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -10,7 +10,7 @@
 <script>
 import SingleBar from './SingleBar.vue'
 
-export default ({
+export default {
   name: 'BarGraph',
   components: {
     SingleBar
@@ -29,7 +29,7 @@ export default ({
   mounted () {
     setTimeout(() => { this.isReady = true }, 0)
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

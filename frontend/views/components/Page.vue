@@ -42,7 +42,7 @@ import Toggle from '@components/Toggle.vue'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'Page',
   components: {
     Toggle
@@ -125,7 +125,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

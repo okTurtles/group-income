@@ -22,7 +22,7 @@ import {
   MenuParent, MenuContent, MenuTrigger, MenuItem, MenuHeader
 } from '@components/menu'
 
-export default ({
+export default {
   name: 'ButtonDropdownMenu',
   components: {
     MenuParent,
@@ -82,7 +82,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

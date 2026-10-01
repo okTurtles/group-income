@@ -25,7 +25,7 @@
 <script>
 import Tooltip from '@components/Tooltip.vue'
 
-export default ({
+export default {
   name: 'CopyableInput',
   components: {
     Tooltip
@@ -72,7 +72,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

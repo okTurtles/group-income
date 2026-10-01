@@ -28,12 +28,12 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import SvgBrokenLink from '@svgs/broken-link.svg'
-import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'
 import { MAX_GROUP_MEMBER_COUNT } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'InvitationLinkModal',
   components: {
     ModalTemplate,
@@ -58,6 +58,7 @@ export default ({
       if (key) {
         return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, key)
       }
+      return undefined
     },
     expireDate () {
       return humanDate(this.currentWelcomeInvite.expires, { month: 'long', day: 'numeric' })
@@ -80,7 +81,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

@@ -47,7 +47,7 @@ import Avatar from '@components/Avatar.vue'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ConversationsList',
   components: {
     ListItem,
@@ -178,7 +178,7 @@ export default ({
       immediate: true
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

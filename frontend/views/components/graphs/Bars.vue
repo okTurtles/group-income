@@ -63,9 +63,9 @@
 import { mapGetters } from 'vuex'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { debounce } from 'turtledash'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'Bars',
   props: {
     totals: Array,
@@ -134,7 +134,7 @@ export default ({
         let label = this.withGroupCurrency(Math.abs(scale))
         if (scale < 0) label = '-' + label
         // Add scale label and positition
-        scales.push({ label: label, position: this.calculRatioY(scale) })
+        scales.push({ label, position: this.calculRatioY(scale) })
         scale = scale + roundedTickRange
       }
       return scales
@@ -252,7 +252,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
