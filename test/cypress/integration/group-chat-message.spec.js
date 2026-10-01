@@ -460,6 +460,38 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
   })
 
+  it('user1 pastes a file while editing a message, and it is ignored', () => {
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      cy.getByDT('conversationWrapper').find(`[data-index="${Number(length) - 1}"] > .c-message`).within(() => {
+        cy.get('.c-message-menu').within(() => {
+          cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+          cy.get('.c-actions button[aria-label="Edit"]').click()
+        })
+        cy.getByDT('messageInputWrapper').within(() => {
+          cy.get('textarea').then($textarea => {
+            const win = $textarea[0].ownerDocument.defaultView
+            const clipboardData = new win.DataTransfer()
+            clipboardData.items.add(new win.File(['file content'], 'pasted.txt', { type: 'text/plain' }))
+            // Errors thrown by the paste handler are reported synchronously, while the event is dispatched.
+            const consoleError = cy.spy(win.console, 'error')
+            $textarea[0].dispatchEvent(new win.ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }))
+            consoleError.restore()
+            expect(consoleError.callCount, 'console.error calls while handling the paste').to.equal(0)
+            // Let Vue re-render before checking that no attachment preview appeared.
+            return new Cypress.Promise(resolve => win.requestAnimationFrame(resolve))
+          })
+          // Edited messages can't gain attachments, so no attachment preview may appear.
+          cy.get('.c-attachment-container').should('not.exist')
+          cy.getByDT('cancelEditing').click()
+        })
+      })
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
   it('user1 checks how the infinite scroll works', () => {
     cy.giSwitchChannel(additionalChannelName)
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)

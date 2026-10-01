@@ -424,12 +424,15 @@ export default ({
         //       various functional requirements. But 'paste' action on mobile is not detected by them because they are done via touching the menu on the screen instead, not by pressing keyboard keys.
         //       We can detect this pasted content by running this.updateTextWithLines() for 'input' event. But this does not need to be done for every key stroke, hence the debounce.
         debouncedHandleInput: debounce(this.updateTextArea, 250),
-        maskResizeObserver: null
+        maskResizeObserver: null,
+        // Debounced draft writes that haven't started yet: { [draftKey]: { write, timeoutId } }
+        pendingDraftWrites: {},
+        // The most recently queued draft write per draftKey (writes for the same key run one at a time, in order).
+        draftWrites: {}
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
-      mediaIsPhone: null,
-      draftDebounceTimeoutIds: {}
+      mediaIsPhone: null
     }
   },
   watch: {
@@ -481,26 +484,16 @@ export default ({
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
 
-    // Revoke all object URLs to avoid memory leaks.
-    // 1. Stale ones
-    this.ephemeral.staleObjectURLs.forEach(url => {
-      URL.revokeObjectURL(url)
+    // Revoke all object URLs to avoid memory leaks. Draft writes read attachments through these URLs,
+    // so start any pending writes now, and revoke the URLs only once every draft write has finished.
+    const objectURLs = [
+      ...this.ephemeral.staleObjectURLs,
+      ...this.ephemeral.attachments.map(attachment => attachment.url)
+    ]
+    Object.keys(this.config.pendingDraftWrites).forEach(draftKey => this.flushPendingDraftWrite(draftKey))
+    Promise.all(Object.values(this.config.draftWrites)).then(() => {
+      objectURLs.forEach(url => URL.revokeObjectURL(url))
     })
-
-    // 2. Current ones
-    if (this.ephemeral.attachments.length) {
-      const urls = this.ephemeral.attachments.map(attachment => attachment.url)
-      const revokeObjectURLs = () => {
-        urls.forEach(url => URL.revokeObjectURL(url))
-      }
-
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        // if it's waiting for the draft-save debounce delay, revoke the object URLs after the delay. (So that no null values are saved in the draft)
-        setTimeout(revokeObjectURLs, DRAFT_SAVE_DEBOUNCE_DELAY)
-      } else {
-        revokeObjectURLs()
-      }
-    }
   },
   computed: {
     ...mapGetters([
@@ -785,7 +778,8 @@ export default ({
       }
     },
     handlePaste (e) {
-      if (e.clipboardData.files.length > 0) {
+      // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
+      if (!this.isEditing && e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
@@ -988,11 +982,11 @@ export default ({
       if (this.hasAttachments) { this.clearAllAttachments() }
       if (this.isEditing) return
 
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        // If there is a pending draft-save, discard it, as the message is being sent now.
-        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
-      }
-      this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
+      // The message is being sent, so replace any pending draft-save with a delete.
+      // It is queued behind any in-flight write, so that write can't bring the draft back afterwards.
+      const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
+      this.cancelPendingDraftWrite(draftKey)
+      this.queueDraftWrite(draftKey, () => this.clearMessageDraft(draftKey))
       this.ephemeral.lastDraftText = this.ephemeral.textWithLines
     },
     async initializeTextArea () {
@@ -1063,26 +1057,47 @@ export default ({
     saveOrDeleteMessageDraft () {
       if (this.isEditing) return
 
-      // manually implementing debounce here by clearing the timeout and setting a new one to avoid the issue where
-      // draftKey/text/attachments can become stale when user switches chatrooms quickly.
-      // (eg. user has switched to chatroom B before the debounce delay times out, so the draft of chatroom A is saved for chatroom B)
-      // This way, draftKey/draft are captured at call time, not at the execution time.
+      // draftKey/text/attachments are captured at call time rather than when the debounced write runs,
+      // so that a quick chatroom switch can't save one chatroom's draft under another chatroom's key.
       const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
       const textContent = this.ephemeral.textWithLines.trim()
       const attachments = this.ephemeral.attachments
       const hasContent = textContent.length > 0 || attachments.length > 0
       this.ephemeral.lastDraftText = this.ephemeral.textWithLines
 
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      this.cancelPendingDraftWrite(draftKey)
+      this.config.pendingDraftWrites[draftKey] = {
+        write: hasContent
+          ? () => this.saveMessageDraft(draftKey, textContent, attachments)
+          : () => this.clearMessageDraft(draftKey),
+        timeoutId: setTimeout(() => this.flushPendingDraftWrite(draftKey), DRAFT_SAVE_DEBOUNCE_DELAY)
       }
-      this.draftDebounceTimeoutIds[this.currentChatRoomId] = setTimeout(() => {
-        if (hasContent) {
-          this.saveMessageDraft(draftKey, textContent, attachments)
-        } else {
-          this.clearMessageDraft(draftKey)
-        }
-      }, DRAFT_SAVE_DEBOUNCE_DELAY)
+    },
+    cancelPendingDraftWrite (draftKey) {
+      const pending = this.config.pendingDraftWrites[draftKey]
+      if (pending) {
+        clearTimeout(pending.timeoutId)
+        delete this.config.pendingDraftWrites[draftKey]
+      }
+      return pending
+    },
+    flushPendingDraftWrite (draftKey) {
+      // Starts the pending write for draftKey (if any) without waiting for the debounce delay.
+      // Returns a promise that resolves once every queued write for draftKey has finished.
+      const pending = this.cancelPendingDraftWrite(draftKey)
+      if (pending) {
+        this.queueDraftWrite(draftKey, pending.write)
+      }
+      return this.config.draftWrites[draftKey]
+    },
+    queueDraftWrite (draftKey, write) {
+      // Writes for the same key run one at a time, so an older write can never finish after a newer one.
+      const previousWrite = this.config.draftWrites[draftKey] || Promise.resolve()
+      const currentWrite = previousWrite.then(write).catch(e => {
+        console.error('SendArea.vue: Error writing message draft - ', e)
+      })
+      this.config.draftWrites[draftKey] = currentWrite
+      return currentWrite
     },
     async saveMessageDraft (draftKey, textContent, attachments) {
       try {
@@ -1114,6 +1129,8 @@ export default ({
     },
     async loadMessageDraft (draftKey) {
       try {
+        // Wait for pending and in-flight writes first, so that a quickly revisited chatroom loads its latest draft.
+        await this.flushPendingDraftWrite(draftKey)
         return await sbp('gi.db/chatDrafts/load', draftKey)
       } catch (e) {
         // Silently ignore errors and return an empty string if any error occurs while loading the message draft
@@ -1122,7 +1139,7 @@ export default ({
       }
     },
     clearMessageDraft (draftKey) {
-      sbp('gi.db/chatDrafts/delete', draftKey).catch((e) => {
+      return sbp('gi.db/chatDrafts/delete', draftKey).catch((e) => {
         console.error('SendArea.vue: Error clearing message draft - ', e)
       })
     },
