@@ -331,6 +331,7 @@ import { searchEmoji } from './emoji-utils.js'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
+// The mention popup intentionally caps results for performance (each one renders an avatar component).
 const MAX_MENTION_RESULTS = 30
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -424,11 +425,7 @@ export default ({
         //       various functional requirements. But 'paste' action on mobile is not detected by them because they are done via touching the menu on the screen instead, not by pressing keyboard keys.
         //       We can detect this pasted content by running this.updateTextWithLines() for 'input' event. But this does not need to be done for every key stroke, hence the debounce.
         debouncedHandleInput: debounce(this.updateTextArea, 250),
-        maskResizeObserver: null,
-        // Debounced draft writes that haven't started yet: { [draftKey]: { write, timeoutId } }
-        pendingDraftWrites: {},
-        // The most recently queued draft write per draftKey (writes for the same key run one at a time, in order).
-        draftWrites: {}
+        maskResizeObserver: null
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
@@ -461,6 +458,13 @@ export default ({
     }
   },
   created () {
+    // The two draft-write queues below are plain instance fields instead of config entries:
+    // they are mutable work queues that nothing renders, so they intentionally stay non-reactive.
+    // Debounced draft writes that haven't started yet: { [draftKey]: { write, timeoutId } }
+    this.pendingDraftWrites = {}
+    // The most recently queued draft write per draftKey (writes for the same key run one at a time, in order).
+    this.draftWrites = {}
+
     // TODO #492 create a global Vue Responsive just for media queries.
     this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = this.mediaIsPhone.matches
@@ -490,8 +494,8 @@ export default ({
       ...this.ephemeral.staleObjectURLs,
       ...this.ephemeral.attachments.map(attachment => attachment.url)
     ]
-    Object.keys(this.config.pendingDraftWrites).forEach(draftKey => this.flushPendingDraftWrite(draftKey))
-    Promise.all(Object.values(this.config.draftWrites)).then(() => {
+    Object.keys(this.pendingDraftWrites).forEach(draftKey => this.flushPendingDraftWrite(draftKey))
+    Promise.all(Object.values(this.draftWrites)).then(() => {
       objectURLs.forEach(url => URL.revokeObjectURL(url))
     })
   },
@@ -1066,7 +1070,7 @@ export default ({
       this.ephemeral.lastDraftText = this.ephemeral.textWithLines
 
       this.cancelPendingDraftWrite(draftKey)
-      this.config.pendingDraftWrites[draftKey] = {
+      this.pendingDraftWrites[draftKey] = {
         write: hasContent
           ? () => this.saveMessageDraft(draftKey, textContent, attachments)
           : () => this.clearMessageDraft(draftKey),
@@ -1074,10 +1078,10 @@ export default ({
       }
     },
     cancelPendingDraftWrite (draftKey) {
-      const pending = this.config.pendingDraftWrites[draftKey]
+      const pending = this.pendingDraftWrites[draftKey]
       if (pending) {
         clearTimeout(pending.timeoutId)
-        delete this.config.pendingDraftWrites[draftKey]
+        delete this.pendingDraftWrites[draftKey]
       }
       return pending
     },
@@ -1088,15 +1092,15 @@ export default ({
       if (pending) {
         this.queueDraftWrite(draftKey, pending.write)
       }
-      return this.config.draftWrites[draftKey]
+      return this.draftWrites[draftKey]
     },
     queueDraftWrite (draftKey, write) {
       // Writes for the same key run one at a time, so an older write can never finish after a newer one.
-      const previousWrite = this.config.draftWrites[draftKey] || Promise.resolve()
+      const previousWrite = this.draftWrites[draftKey] || Promise.resolve()
       const currentWrite = previousWrite.then(write).catch(e => {
         console.error('SendArea.vue: Error writing message draft - ', e)
       })
-      this.config.draftWrites[draftKey] = currentWrite
+      this.draftWrites[draftKey] = currentWrite
       return currentWrite
     },
     allowDraftSaveRetry (draftKey) {
@@ -1276,14 +1280,15 @@ export default ({
       const candidates = mentionType === 'member' ? this.memberMentionCandidates : this.channelMentionCandidates
       const options = []
 
-      for (const candidate of candidates) {
-        if (options.length === MAX_MENTION_RESULTS) break
-        if (matchesKeyword(candidate)) options.push(candidate.item)
-      }
-
+      // '@all' is inserted first so that the cap below can never drop it.
       const allCandidate = mentionType === 'member' && this.allMentionCandidate
       if (allCandidate && matchesKeyword(allCandidate)) {
         options.push(allCandidate.item)
+      }
+
+      for (const candidate of candidates) {
+        if (options.length === MAX_MENTION_RESULTS) break
+        if (matchesKeyword(candidate)) options.push(candidate.item)
       }
 
       const prevOptions = this.ephemeral.segmentInsertion.options
