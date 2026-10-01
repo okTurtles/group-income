@@ -57,7 +57,7 @@ const periodicNotificationEntries: {
           })
         })
       },
-      shouldClearStateKey ({ rootGetters }) {
+      shouldClearStateKey ({ rootState, rootGetters }) {
         const groupIds = rootGetters.ourGroups
 
         const groupedNotifications = rootGetters.notifications.filter(item => item.type === 'NEAR_DISTRIBUTION_END').reduce((acc, item) => {
@@ -69,8 +69,9 @@ const periodicNotificationEntries: {
         }, Object.create(null))
 
         return groupIds.every((groupId) => {
-          const currentPeriod = rootGetters.groupSettingsForGroup(groupId).distributionDate
-          return !!groupedNotifications[groupId]?.every(period => period !== currentPeriod)
+          const currentPeriod = rootGetters.groupSettingsForGroup(rootState[groupId]).distributionDate
+          if (!currentPeriod) return false
+          return !groupedNotifications[groupId] || groupedNotifications[groupId]?.every(period => period !== currentPeriod)
         })
       }
     }

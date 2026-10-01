@@ -13,6 +13,18 @@ jobs:
       (github.event.comment.author_association == 'MEMBER' ||
       github.event.comment.author_association == 'OWNER' ||
       github.event.comment.author_association == 'COLLABORATOR')
+    # WARNING: the "Run agentic review" sandbox assumes a throwaway
+    # GitHub-hosted VM. On a self-hosted runner, whose disk outlives the job:
+    #   a. Stop binding .git/objects read-write: swapped objects would reach
+    #      later checkouts. Use a pre-created private GIT_OBJECT_DIRECTORY
+    #      plus GIT_ALTERNATE_OBJECT_DIRECTORIES=.git/objects (if that dir is
+    #      missing, git finds no repo and the pre-flight silently passes).
+    #   b. Replace `--ro-bind / /`: it shows the networked agent every file
+    #      the runner user can read (SSH keys, cloud credentials).
+    #   c. Empty ~/.local/share/crush (crush loads its crush.json as config)
+    #      and .git/code-review before each run.
+    #   d. Provision bwrap and crush on the host instead of the install
+    #      step's apt/npm/sysctl changes.
     runs-on: ubuntu-latest
     concurrency:
       group: pr-review-crush-${{ github.event.issue.number }}
@@ -28,6 +40,10 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # File the code-review skill writes its review to. "Build review
+      # prompt" names it in the prompt, and "Run agentic review" binds its
+      # directory read-write into the review sandbox and reads it back.
+      REVIEW_OUTPUT_FILE: /tmp/review-output/REVIEW.md
       # ── Provider configuration ─────────────────────────────
       # Set via Settings → Secrets and variables → Actions → Variables:
       #   REVIEW_PROVIDER: openrouter | zai-coding-plan
@@ -175,57 +191,32 @@ jobs:
           # persist-credentials).
           persist-credentials: false
 
+      # Outputs the base ref the code-review skill reviews against. After a
+      # clean merge that is origin/$BASE_REF, so the skill's own virtual
+      # merge is a no-op. On a conflict the PR branch is reviewed as-is
+      # against its merge base, because the skill stops on conflicts.
       - name: Merge master into PR branch
+        id: merge
         env:
           BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin "$BASE_REF"
-          git merge "origin/$BASE_REF" --no-edit -m "Merge $BASE_REF for review" || {
-            echo "::warning::Merge conflict detected, reviewing PR branch as-is"
+          if git merge "origin/$BASE_REF" --no-edit -m "Merge $BASE_REF for review"; then
+            REVIEW_BASE="origin/$BASE_REF"
+            CONFLICT=false
+          else
+            echo "::warning::Merge conflict detected, reviewing PR branch as-is against its merge base"
             git merge --abort
             git reset --hard HEAD
-          }
-
-      - name: Generate diff
-        env:
-          BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
-        run: |
-          git diff "origin/$BASE_REF" -U10 \
-            -- . \
-            ':!package-lock.json' ':!**/package-lock.json' \
-            ':!pnpm-lock.yaml' ':!**/pnpm-lock.yaml' \
-            ':!yarn.lock' ':!**/yarn.lock' \
-            ':!go.sum' ':!**/go.sum' \
-            ':!*.min.js' ':!*.min.css' \
-            ':!node_modules/**' ':!**/node_modules/**' \
-            ':!vendor/**' ':!**/vendor/**' \
-            ':!dist/**' ':!**/dist/**' \
-            ':!build/**' ':!**/build/**' \
-            ':!*.svg' ':!**/*.svg' \
-            ':!*.png' ':!**/*.png' \
-            ':!*.jpg' ':!**/*.jpg' ':!*.jpeg' ':!**/*.jpeg' \
-            ':!*.gif' ':!**/*.gif' \
-            ':!*.ico' ':!**/*.ico' \
-            ':!*.webp' ':!**/*.webp' \
-            ':!*.woff' ':!**/*.woff' ':!*.woff2' ':!**/*.woff2' \
-            ':!*.ttf' ':!**/*.ttf' ':!*.eot' ':!**/*.eot' \
-            > /tmp/pr_diff.txt
-
-          MAX_CHARS=100000
-          DIFF_SIZE=$(wc -c < /tmp/pr_diff.txt)
-          if [ "$DIFF_SIZE" -gt "$MAX_CHARS" ]; then
-            head -c "$MAX_CHARS" /tmp/pr_diff.txt > /tmp/pr_diff_truncated.txt
-            printf '\n\n... [diff truncated — %s bytes total, showing first %s]\n' "$DIFF_SIZE" "$MAX_CHARS" >> /tmp/pr_diff_truncated.txt
-            mv /tmp/pr_diff_truncated.txt /tmp/pr_diff.txt
+            REVIEW_BASE=$(git merge-base HEAD "origin/$BASE_REF")
+            CONFLICT=true
           fi
-
-          echo "Diff size: $DIFF_SIZE bytes"
-
-          echo "::group::PR diff"
-          cat /tmp/pr_diff.txt
-          echo "::endgroup::"
+          {
+            echo "review_base=$REVIEW_BASE"
+            echo "conflict=$CONFLICT"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Generate helpful context
         env:
@@ -310,95 +301,55 @@ jobs:
           cat /tmp/helpful_context.txt
           echo "::endgroup::"
 
+      # The prompt invokes the installed code-review skill by name and passes
+      # only run context. The review procedure and output format live in the
+      # skill, which also generates the diff itself from the checkout.
       - name: Build review prompt
         env:
           PROJECT_CTX: ${{ vars.PROJECT_CTX }}
+          BASE_REF: ${{ steps.pr-details.outputs.base_ref }}
+          REVIEW_BASE: ${{ steps.merge.outputs.review_base }}
+          MERGE_CONFLICT: ${{ steps.merge.outputs.conflict }}
         run: |
-          PROJECT_CTX="${PROJECT_CTX:-Attached are a set of changes to a software project.}"
-
-          printf '%s\n\n' "$PROJECT_CTX" > /tmp/agentic_prompt.txt
-          cat >> /tmp/agentic_prompt.txt << 'PROMPT_END'
-          Please have a look at these changes and thoroughly check them for:
-
-          - Highest priority: any bugs, security issues, DRY violations, and improvements that can be made through code simplification
-          - spelling or grammar mistakes in user-facing strings or log messages
-          - poorly named identifiers like variables, selectors, functions/methods, types or classes
-
-          When providing feedback, be specific and quote the concrete lines that are problematic, and then give your code improvement suggestions complete with actual code. When replying, always use Markdown and Markdown code fences to quote any lines. Avoid commenting on code that has no issues (no "you did a good job here!" fluff).
-
-          When referencing sections of code, always mention the specific lines being referenced in the following manner to make it easy for developers to know where to look:
-
-          - `file.js:841`
-          - `file.vue:50-70`
-
-          For each issue you identify, give it a rating of 🔴 for high importance & high confidence, 🟡 for medium importance & high confidence, and ⚪️ for issues of either lower confidence or lower importance. Prioritize finding 🔴 and 🟡 issues. Give your feedback in order of importance from most to least and number the issues sequentially in their headings.
-
-          Also, for each issue, immediately after the issue heading please add these two checkboxes:
-
-          - [ ] Addressed
-          - [ ] Dismissed
-
-          You have full access to all of the source code. You can query different parts of the project if you need additional context to help with your review. If you have access to a subagent tool please make use of it when investigating specific questions about the codebase (e.g. "where are all the locations where this function is called?", etc.) to help conserve on tokens. Pay attention to any parts of the project that might break or conflict because of the changes, or any bits that are no longer relevant and should be removed as a result of the changes.
-
-          DO NOT make any edits or modifications to the code! DO NOT modify any files! Just output your review. If no problems are found, state that and do nothing else.
-
-          ### Helpful Context
-
-          PROMPT_END
+          PROJECT_CTX="${PROJECT_CTX:-You are reviewing a pull request to a software project.}"
 
           {
+            printf '%s\n\n' "$PROJECT_CTX"
+            printf 'Run the `code-review` skill to review this pull request.\n\n'
+            printf 'This is an unattended CI run. Run parameters:\n\n'
+            printf -- '- Nobody can answer questions. If the skill needs user input or hits an error, report the problem in your final response and stop.\n'
+            printf -- '- Base ref: `%s` (pass it as `--base`). This checkout has no local `main` or `master` branch.\n' "$REVIEW_BASE"
+            if [ "$MERGE_CONFLICT" = "true" ]; then
+              printf -- '- The PR branch conflicts with `%s` and was not merged. The base ref above is its merge base with `origin/%s`, so the PR is reviewed as-is against that. Do not pass `origin/%s` as `--base`: the skill would stop on the conflict.\n' "$BASE_REF" "$BASE_REF" "$BASE_REF"
+            fi
+            printf -- '- Output file: write the review to `%s`, not to `REVIEW.md` in the project root (the checkout is read-only).\n' "$REVIEW_OUTPUT_FILE"
+            printf -- '- Model for the review header: `%s`.\n' "$REVIEW_MODEL"
+            printf -- '- The PR title, PR description and linked-issue summaries are under Helpful Context below.\n'
+            printf '\n### Helpful Context\n\n'
             cat /tmp/helpful_context.txt
-            cat << 'SECTION_END'
+          } > /tmp/agentic_prompt.txt
 
-          ### Changes to Review
-
-          ```diff
-          SECTION_END
-            cat /tmp/pr_diff.txt
-            printf '\n```\n'
-          } >> /tmp/agentic_prompt.txt
-
-      - name: Check prompt size
-        id: size-check
-        run: |
-          MAX_TOKEN_CHARS=260000
-          PROMPT_SIZE=$(wc -c < /tmp/agentic_prompt.txt)
-          echo "Prompt size: $PROMPT_SIZE chars (~$((PROMPT_SIZE / 4)) tokens)"
-          if [ "$PROMPT_SIZE" -gt "$MAX_TOKEN_CHARS" ]; then
-            echo "too_large=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "too_large=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Post size limit comment
-        if: steps.size-check.outputs.too_large == 'true'
-        run: |
-          PROMPT_SIZE=$(wc -c < /tmp/agentic_prompt.txt)
-          TOKEN_EST=$((PROMPT_SIZE / 4))
-          gh pr comment "${{ steps.pr-info.outputs.number }}" \
-            --repo "${{ github.repository }}" \
-            --body "**Automated Review Notice**
-
-          This PR exceeds the 260k character limit (~${TOKEN_EST} tokens estimated). The review cannot be performed automatically.
-
-          Please break the PR into smaller pieces, or request a manual review.
-
-          _[🔧 Workflow Run](${RUN_URL})_"
+          echo "::group::Review prompt"
+          cat /tmp/agentic_prompt.txt
+          echo "::endgroup::"
 
       # Tool access: `crush run` (non-interactive) auto-approves all permission
       # requests for its session, so `permissions.allowed_tools` alone can neither
       # grant nor restrict anything reliably. Enforcement is done via
       # `options.disabled_tools`, which removes tools from the agent entirely:
-      # mutation tools (edit/multiedit/write) are disabled to keep the review
-      # read-only, LSP/MCP tools are disabled because no LSPs or MCP servers
-      # are configured here, and crush introspection tools (crush_info,
-      # crush_logs) are disabled as irrelevant to reviewing. Everything else
-      # (bash, download, sourcegraph, etc.) stays available to improve review
-      # quality. The allowlist mirrors the enabled set as a belt-and-braces
-      # measure in case a future crush release stops auto-approving in
-      # non-interactive mode.
+      # edit/multiedit are disabled because a review never edits code,
+      # LSP/MCP tools are disabled because no LSPs or MCP servers are
+      # configured here, and crush_logs is disabled as irrelevant to
+      # reviewing. `write` stays enabled because the code-review skill writes
+      # its review to a file, and `crush_info` because the skill reads the
+      # configured models from it before launching crush workers for large
+      # diffs. The bwrap sandbox in "Run agentic review", not this list,
+      # keeps the checkout read-only: only a few dedicated paths are writable
+      # there. Everything else (bash, download, sourcegraph, etc.) stays
+      # available to improve review quality. The allowlist mirrors the
+      # enabled set as a belt-and-braces measure in case a future crush
+      # release stops auto-approving in non-interactive mode.
       - name: Install crush and bubblewrap
-        if: steps.size-check.outputs.too_large == 'false'
         run: |
           # bubblewrap (bwrap) sandboxes the crush invocation in "Run
           # agentic review" so a prompt-injected agent cannot read
@@ -429,16 +380,52 @@ jobs:
             "options": {
               "context_paths": ["AGENTS.md", "CRUSH.md", "CLAUDE.md", "README.md"],
               "disable_metrics": true,
-              "disabled_tools": ["edit", "multiedit", "write", "lsp_diagnostics", "lsp_references", "lsp_restart", "list_mcp_resources", "read_mcp_resource", "crush_info", "crush_logs"]
+              "disabled_tools": ["edit", "multiedit", "lsp_diagnostics", "lsp_references", "lsp_restart", "list_mcp_resources", "read_mcp_resource", "crush_logs"]
             },
             "permissions": {
-              "allowed_tools": ["agent", "agentic_fetch", "bash", "download", "fetch", "glob", "grep", "job_kill", "job_output", "ls", "sourcegraph", "todos", "view"]
+              "allowed_tools": ["agent", "agentic_fetch", "bash", "crush_info", "download", "fetch", "glob", "grep", "job_kill", "job_output", "ls", "sourcegraph", "todos", "view", "write"]
             }
           }
           EOF
 
+      # Installs the latest taoeffect/code-review skill on every run, so skill
+      # updates reach reviews without workflow changes (unpinned by design,
+      # like crush itself). `-g -a crush --copy` writes one plain copy to
+      # ~/.config/crush/skills, which the sandboxed crush scans. It runs from
+      # $HOME so the checkout stays untouched.
+      #
+      # The skills CLI is a third-party npx package that needs no secrets (the
+      # skill repo is public, so an anonymous clone works). `env -i` passes it
+      # only PATH, HOME and DISABLE_TELEMETRY, so no job env reaches it. The
+      # step env also blanks the secrets in this step's own shell, because a
+      # child process can read its parent's environment from /proc. This
+      # stops packages that harvest environment variables, but it is not a
+      # sandbox: the package still runs unsandboxed as the runner user.
+      - name: Install code-review skill
+        env:
+          GH_TOKEN: ''
+          OPENROUTER_API_KEY: ''
+          ZAI_API_KEY: ''
+          PROVIDER_API_KEY: ''
+        run: |
+          cd "$HOME"
+          env -i PATH="$PATH" HOME="$HOME" DISABLE_TELEMETRY=1 \
+            npx --yes skills add taoeffect/code-review --skill code-review -g -a crush --copy -y
+
+          SKILL_FILE="$HOME/.config/crush/skills/code-review/SKILL.md"
+          if [ ! -f "$SKILL_FILE" ]; then
+            echo "::error::code-review skill install failed: $SKILL_FILE is missing"
+            exit 1
+          fi
+
+          # Log which skill version this run uses. skillFolderHash is the
+          # upstream commit SHA when the CLI's anonymous GitHub API lookup
+          # succeeds, else a content hash of the skill folder. `env -i` clears
+          # XDG_STATE_HOME, so the CLI keeps its lock file under $HOME/.agents.
+          SKILL_HASH=$(jq -r '.skills["code-review"].skillFolderHash // empty' "$HOME/.agents/.skill-lock.json" 2>/dev/null) || true
+          echo "Installed code-review skill (skillFolderHash: ${SKILL_HASH:-unknown})"
+
       - name: Run agentic review
-        if: steps.size-check.outputs.too_large == 'false'
         run: |
           # crush runs with the `bash` tool enabled, so a malicious PR
           # could prompt-inject it into exfiltrating secrets. bwrap gives
@@ -447,7 +434,23 @@ jobs:
           #     below: GH_TOKEN and the rest of the runner env never
           #     enter the sandbox (--clearenv);
           #   - a read-only view of the filesystem, except the crush data
-          #     dir, a `.crush` dir in the workspace, and a private /tmp;
+          #     dir, a `.crush` dir in the workspace, a private /tmp, and
+          #     the paths the code-review skill writes to:
+          #       - `.git/objects`: its virtual merge (`git merge-tree
+          #         --write-tree`) stores objects there;
+          #       - `.git/code-review`: its run folders (diff, source
+          #         snapshot, working dir of its crush workers);
+          #       - the review output dir (the dir of REVIEW_OUTPUT_FILE).
+          #     The rest of `.git` stays read-only: a writable `.git/config`
+          #     or hooks dir would let the agent plant commands that git
+          #     later runs outside the sandbox (e.g. in the checkout
+          #     action's post-job cleanup) with GH_TOKEN in its env. Git
+          #     never executes object data, and swapped objects are discarded
+          #     with the runner VM (see the self-hosted runner warning above
+          #     `runs-on`). Code outside the sandbox (the result selection
+          #     below and later steps) must treat files in these writable
+          #     paths as untrusted and never follow symlinks out of them (a
+          #     REVIEW.md symlink to /proc/self/environ would leak GH_TOKEN);
           #   - a tmpfs over the runner temp dir, hiding step scripts and
           #     runner-internal files such as GITHUB_ENV;
           #   - a tmpfs over the runner agent install dir (best-effort),
@@ -466,7 +469,27 @@ jobs:
           # arrive as plain command arguments, and the stdio redirections
           # are also performed outside the sandbox, so neither requires
           # env vars inside it.
+
+          # `.crush` comes from the PR checkout, and bwrap follows symlinks
+          # in bind paths: a committed symlink such as `.crush -> ../../..`
+          # would make its bind below a writable bind of $HOME that also
+          # covers the $RUNNER_TEMP and runner-dir masks.
+          if [ -L .crush ]; then
+            echo "::error::.crush in the PR checkout is a symlink; refusing to bind it into the sandbox"
+            exit 1
+          fi
           mkdir -p "$HOME/.local/share/crush" .crush
+
+          # bwrap needs every bind source to exist, and `.git` itself is
+          # read-only inside the sandbox, so create the skill's run root
+          # here. The output dir starts empty so that only this run's
+          # review can be picked up; it lives under /tmp, so its bind must
+          # come after `--tmpfs /tmp`.
+          GIT_COMMON_DIR=$(git rev-parse --path-format=absolute --git-common-dir)
+          mkdir -p "$GIT_COMMON_DIR/code-review"
+          REVIEW_OUTPUT_DIR=$(dirname "$REVIEW_OUTPUT_FILE")
+          rm -rf "$REVIEW_OUTPUT_DIR"
+          mkdir -p "$REVIEW_OUTPUT_DIR"
 
           # Mask any runner agent install dirs that exist, probing known
           # locations instead of hardcoding one path (the layout differs
@@ -499,6 +522,9 @@ jobs:
           BWRAP+=(
             --bind "$HOME/.local/share/crush" "$HOME/.local/share/crush"
             --bind "$PWD/.crush" "$PWD/.crush"
+            --bind "$GIT_COMMON_DIR/objects" "$GIT_COMMON_DIR/objects"
+            --bind "$GIT_COMMON_DIR/code-review" "$GIT_COMMON_DIR/code-review"
+            --bind "$REVIEW_OUTPUT_DIR" "$REVIEW_OUTPUT_DIR"
             --clearenv
             --setenv PATH "$PATH"
             --setenv HOME "$HOME"
@@ -526,56 +552,54 @@ jobs:
             exit "$fail"
           ' sh "${RUNNER_AGENT_DIRS[@]}" || { echo "::error::Sandbox pre-flight failed — refusing to run the review unsandboxed"; exit 1; }
 
-          "${BWRAP[@]}" crush run -q -m "$CRUSH_MODEL" --small-model "$SMALL_MODEL" < /tmp/agentic_prompt.txt > /tmp/agentic_review.txt 2>/tmp/crush_stderr.txt || {
-            echo "::warning::Agentic review via crush failed"
-            cat /tmp/crush_stderr.txt >&2
-            echo "Agentic review unavailable (crush encountered an error)." > /tmp/agentic_review.txt
-          }
+          CRUSH_STATUS=0
+          "${BWRAP[@]}" crush run -q -m "$CRUSH_MODEL" --small-model "$SMALL_MODEL" < /tmp/agentic_prompt.txt > /tmp/crush_output.txt 2>/tmp/crush_stderr.txt || CRUSH_STATUS=$?
+
+          echo "::group::crush output (stdout)"
+          cat /tmp/crush_output.txt
+          echo "::endgroup::"
+          echo "::group::crush stderr"
+          cat /tmp/crush_stderr.txt
+          echo "::endgroup::"
+          if [ "$CRUSH_STATUS" -ne 0 ]; then
+            echo "::warning::crush exited with code $CRUSH_STATUS"
+          fi
+
+          # The skill writes the review to REVIEW_OUTPUT_FILE and only prints
+          # a summary, and crush stdout may also contain thought-process text
+          # (https://github.com/charmbracelet/crush/issues/2265), so prefer
+          # the file. The sandboxed agent wrote it: accept only a regular
+          # file, never a symlink. bwrap's PID namespace ends every sandbox
+          # process when crush exits, so the file cannot change after this
+          # check. Without a review file, a successful run's stdout likely
+          # holds the skill's error report or a misdirected review.
+          if [ -f "$REVIEW_OUTPUT_FILE" ] && [ ! -L "$REVIEW_OUTPUT_FILE" ] && [ -s "$REVIEW_OUTPUT_FILE" ]; then
+            echo "Using the review from $REVIEW_OUTPUT_FILE"
+            cp "$REVIEW_OUTPUT_FILE" /tmp/agentic_review.txt
+          elif [ "$CRUSH_STATUS" -eq 0 ] && [ -s /tmp/crush_output.txt ]; then
+            echo "::warning::No review found in $REVIEW_OUTPUT_FILE; using crush output instead"
+            cp /tmp/crush_output.txt /tmp/agentic_review.txt
+          else
+            echo "::warning::Agentic review via crush produced no review"
+            echo "Agentic review unavailable (crush produced no review)." > /tmp/agentic_review.txt
+          fi
 
           echo "Agentic review complete ($(wc -c < /tmp/agentic_review.txt) bytes)"
 
-          echo "::group::Agentic (crush) review"
+          # Log the review: it otherwise reaches only "Post review comment",
+          # and a failed post would lose it.
+          echo "::group::Selected review"
           cat /tmp/agentic_review.txt
           echo "::endgroup::"
-
-      # This step can be removed if crush ever closes this issue: https://github.com/charmbracelet/crush/issues/2265
-      - name: Extract review from agentic output
-        if: false && steps.size-check.outputs.too_large == 'false'
-        run: |
-          jq -n \
-            --arg model "$REVIEW_MODEL" \
-            --rawfile text /tmp/agentic_review.txt \
-            '{
-              model: $model,
-              messages: [{role: "user", content: ("The following text is the full output of an AI coding assistant that was asked to review a pull request. The output contains the assistant'\''s entire thought process, but the actual review with the found issues (if any) is only at the very end.\n\nExtract ONLY the final review portion and output it verbatim. Do not summarize, rephrase, or add anything. If there is no review in the text (e.g. the assistant failed or produced no review), output exactly: \"No review found in agentic output.\"\n\n---\n\n" + $text)}]
-            }' > /tmp/extract_payload.json
-
-          HTTP_CODE=$(curl -s -w '%{http_code}' \
-            "$PROVIDER_API_URL" \
-            -H "Authorization: Bearer $PROVIDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d @/tmp/extract_payload.json \
-            -o /tmp/extract_response.json)
-
-          if [ "$HTTP_CODE" -eq 200 ] && jq -e '.choices[0].message.content' /tmp/extract_response.json > /dev/null 2>&1; then
-            jq -r '.choices[0].message.content' /tmp/extract_response.json > /tmp/agentic_review.txt
-            echo "Extracted review ($(wc -c < /tmp/agentic_review.txt) bytes)"
-          else
-            echo "::warning::Review extraction failed (HTTP $HTTP_CODE), using full agentic output"
-          fi
-
-          echo "::group::Extracted agentic review"
-          cat /tmp/agentic_review.txt
-          echo "::endgroup::"
-
-      - name: Use agentic review as final
-        if: steps.size-check.outputs.too_large == 'false'
-        run: |
-          cp /tmp/agentic_review.txt /tmp/final_review.txt
 
       - name: Post review comment
-        if: steps.size-check.outputs.too_large == 'false'
         run: |
+          # GitHub rejects comment bodies over 65,536 characters, and
+          # split-mode reviews of large PRs can exceed that. Post at most
+          # REVIEW_LIMIT bytes of the review (bytes >= characters; the rest
+          # of the comment fits in the difference). "Run agentic review"
+          # logs the full review.
+          REVIEW_LIMIT=60000
           {
             echo "## Advanced AI Review"
             echo ""
@@ -585,7 +609,27 @@ jobs:
             echo "<details>"
             echo "<summary>Click to expand review</summary>"
             echo ""
-            cat /tmp/final_review.txt
+            if [ "$(wc -c < /tmp/agentic_review.txt)" -le "$REVIEW_LIMIT" ]; then
+              cat /tmp/agentic_review.txt
+            else
+              # Cut at a line boundary so no UTF-8 sequence or markdown line
+              # is split, and close a code fence the cut left open, else the
+              # note, </details> and footer below would render as code.
+              head -c "$REVIEW_LIMIT" /tmp/agentic_review.txt | sed '$d' | awk '
+                { print }
+                /^ ? ? ?(```|~~~)/ {
+                  line = $0; sub(/^ */, "", line)
+                  mark = substr(line, 1, 1); n = 1
+                  while (substr(line, n + 1, 1) == mark) n++
+                  if (fence == "") fence = substr(line, 1, n)
+                  else if (mark == substr(fence, 1, 1) && n >= length(fence) &&
+                           substr(line, n + 1) ~ /^[ \t]*$/) fence = ""
+                }
+                END { if (fence != "") print fence }
+              '
+              echo ""
+              echo "_Review truncated to fit GitHub's comment size limit. The full review is in the \"Run agentic review\" step log of the [workflow run](${RUN_URL})._"
+            fi
             echo ""
             echo "</details>"
             echo ""
