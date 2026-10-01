@@ -8,7 +8,7 @@ export const GROUP_ROLES_DISPLAY_NAME: { [key: string]: string } = {
   [GROUP_ROLES.CUSTOM]: L('Custom')
 }
 
-export const GROUP_PERIMSSIONS_DISPLAY_NAME: { [key: string]: string } = {
+export const GROUP_PERMISSIONS_DISPLAY_NAME: { [key: string]: string } = {
   [GROUP_PERMISSIONS.VIEW_PERMISSIONS]: L('View permissions'),
   [GROUP_PERMISSIONS.ASSIGN_DELEGATOR]: L('Assign delegator'),
   [GROUP_PERMISSIONS.DELEGATE_PERMISSIONS]: L('Delegate permissions'),
@@ -18,7 +18,7 @@ export const GROUP_PERIMSSIONS_DISPLAY_NAME: { [key: string]: string } = {
 }
 
 export function getPermissionDisplayName (permissionId: string): string {
-  return GROUP_PERIMSSIONS_DISPLAY_NAME[permissionId]
+  return GROUP_PERMISSIONS_DISPLAY_NAME[permissionId]
 }
 
 export function getRoleDisplayName (roleId: string): string {
