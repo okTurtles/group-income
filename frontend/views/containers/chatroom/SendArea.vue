@@ -1099,6 +1099,13 @@ export default ({
       this.config.draftWrites[draftKey] = currentWrite
       return currentWrite
     },
+    allowDraftSaveRetry (draftKey) {
+      // A failed write must not leave the draft considered caught-up: forgetting lastDraftText for
+      // the current chatroom lets the next keyup (even a non-editing one) re-attempt the write.
+      if (draftKey === this.getMessageDraftKey(this.currentChatRoomId)) {
+        this.ephemeral.lastDraftText = null
+      }
+    },
     async saveMessageDraft (draftKey, textContent, attachments) {
       try {
         const draftData = { text: textContent || '' }
@@ -1125,6 +1132,7 @@ export default ({
         await sbp('gi.db/chatDrafts/save', draftKey, draftData)
       } catch (e) {
         console.error('SendArea.vue: Error saving message draft - ', e)
+        this.allowDraftSaveRetry(draftKey)
       }
     },
     async loadMessageDraft (draftKey) {
@@ -1141,6 +1149,7 @@ export default ({
     clearMessageDraft (draftKey) {
       return sbp('gi.db/chatDrafts/delete', draftKey).catch((e) => {
         console.error('SendArea.vue: Error clearing message draft - ', e)
+        this.allowDraftSaveRetry(draftKey)
       })
     },
     openCreatePollModal () {

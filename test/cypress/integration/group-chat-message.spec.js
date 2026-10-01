@@ -460,6 +460,72 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
   })
 
+  it('user1 keeps an unsent draft after pressing only non-editing keys', () => {
+    const draft = 'This draft must survive keys that do not edit anything'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.get(composerTextarea).type(draft)
+    // Wait until the debounced draft-save has been written.
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+    // These keyups leave the text unchanged, which is exactly the case where the
+    // draft-save guard skips saveOrDeleteMessageDraft(), so the saved draft must survive them.
+    cy.get(composerTextarea).type('{leftarrow}{uparrow}')
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 keeps an unsent draft when switching channels before the debounced save runs', () => {
+    const draft = 'This draft must survive an instant channel switch'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    // No cy.wait() here: switch channels before DRAFT_SAVE_DEBOUNCE_DELAY (450ms) elapses,
+    // so returning to the channel relies on flushing the still-pending draft write.
+    cy.get(composerTextarea).type(draft)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 sends a drafted message and no stale draft reappears afterwards', () => {
+    const draft = 'This draft gets sent and must not reappear in the composer'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.get(composerTextarea).type(draft)
+    // Wait until the debounced draft-save has been written.
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+
+    cy.get('.c-footer [data-test="messageInputWrapper"]').within(() => {
+      cy.getByDT('sendMessageButton').click()
+    })
+    cy.get(composerTextarea).should('be.empty')
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', '')
+    // Wait past DRAFT_SAVE_DEBOUNCE_DELAY (450ms) and check again: no stale draft may reappear.
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
+    cy.get(composerTextarea).should('have.value', '')
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
   it('user1 pastes a file while editing a message, and it is ignored', () => {
     cy.giSwitchChannel(additionalChannelName)
 
