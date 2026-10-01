@@ -2,47 +2,50 @@
   tr.c-permission-table-row(:class='{ "is-mobile": isMobile }')
     td.td-user
       .c-user-wrapper
-        // TODO: Use 'AvatarUser.vue' instead and also wrap these with 'ProfileCard.vue'
-        //       when implementing it with real data.
-        avatar.c-avatar(src='/assets/images/user-avatar-default.png' size='xs')
+        avatar-user.c-avatar(:contractID='data.memberID' size='xs')
 
         .c-name-and-role-mobile(v-if='isMobile')
-          strong.c-name.has-ellipsis {{ data.username }}
+          strong.c-name.has-ellipsis {{ userDisplayName }}
           .c-pill-container
-            span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
-        strong.c-name.has-ellipsis(v-else) {{ data.username }}
+            role-pill(:role='data.roleName')
+        strong.c-name.has-ellipsis(v-else) {{ userDisplayName }}
 
     td.td-role(v-if='!isMobile')
-      span.pill.c-role-pill(:class='pillClasses') {{ getRoleDisplayName(data.role ) }}
+      role-pill(:role='data.roleName')
 
     td.td-permissions
       view-permissions(:permissions='data.permissions')
 
-    td.td-action
+    td.td-action(v-if='!isAdmin && !isMe && canDelegatePermissions')
       .c-action-wrapper
-        permission-action-menu
+        permission-action-menu(
+          @remove='onActionMenuSelect("remove")'
+          @edit='onActionMenuSelect("edit")'
+        )
 </template>
 
 <script>
-import Avatar from '@components/Avatar.vue'
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
+import AvatarUser from '@components/AvatarUser.vue'
 import PermissionActionMenu from './PermissionActionMenu.vue'
 import ViewPermissions from './ViewPermissions.vue'
-import { GROUP_ROLES } from '@model/contracts/shared/constants.js'
-import {
-  getRoleDisplayName,
-  getPermissionDisplayName
-} from './permissions-utils.js'
+import RolePill from './RolePill.vue'
+import { OPEN_MODAL } from '@utils/events.js'
+import { GROUP_ROLES, GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default {
   name: 'PermissionTableRow',
   components: {
-    Avatar,
+    AvatarUser,
     ViewPermissions,
-    PermissionActionMenu
+    PermissionActionMenu,
+    RolePill
   },
   props: {
     data: {
-      type: Object
+      type: Object // { roleName: string, permissions: string[], memberID: string }
     },
     isMobile: {
       type: Boolean,
@@ -50,20 +53,49 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'userDisplayNameFromID',
+      'ourIdentityContractId',
+      'ourGroupPermissionsHas'
+    ]),
+    canDelegatePermissions () {
+      return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
+    },
+    isMe () {
+      return this.data.memberID === this.ourIdentityContractId
+    },
+    isAdmin () {
+      return this.data.roleName === GROUP_ROLES.ADMIN
+    },
+    userDisplayName () {
+      const displayName = this.userDisplayNameFromID(this.data.memberID)
+      return this.isMe ? `${displayName} (${L('you')})` : displayName
+    },
     pillClasses () {
-      if (!this.data?.role) { return '' }
+      if (!this.data?.roleName) { return '' }
 
       return ({
         [GROUP_ROLES.ADMIN]: 'is-success',
         [GROUP_ROLES.MODERATOR_DELEGATOR]: 'is-primary',
         [GROUP_ROLES.MODERATOR]: 'is-neutral',
         [GROUP_ROLES.CUSTOM]: 'is-warning'
-      })[this.data.role]
+      })[this.data.roleName]
     }
   },
   methods: {
-    getRoleDisplayName,
-    getPermissionDisplayName
+    onActionMenuSelect (actionName) {
+      const modalName = {
+        'edit': 'EditPermissionsModal',
+        'remove': 'RemoveRoleModal'
+      }
+
+      sbp('okTurtles.events/emit',
+        OPEN_MODAL,
+        modalName[actionName],
+        undefined,
+        { data: this.data }
+      )
+    }
   }
 }
 </script>
@@ -115,11 +147,6 @@ td.td-action {
 
 .c-pill-container {
   display: inline-block;
-}
-
-.c-role-pill {
-  display: inline;
-  white-space: initial;
 }
 
 .c-action-wrapper {
