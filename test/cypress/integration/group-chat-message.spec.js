@@ -444,9 +444,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSendMessage(me, 'A message that is about to be edited')
 
     cy.get(composerTextarea).type(draft)
-    // Wait until the debounced draft-save has been written.
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+    cy.giWaitForDraftSaved(draft)
 
     cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
       editMessage(Number(length), 'A message that has been edited')
@@ -467,9 +465,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(additionalChannelName)
 
     cy.get(composerTextarea).type(draft)
-    // Wait until the debounced draft-save has been written.
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+    cy.giWaitForDraftSaved(draft)
     // These keyups leave the text unchanged, which is exactly the case where the
     // draft-save guard skips saveOrDeleteMessageDraft(), so the saved draft must survive them.
     cy.get(composerTextarea).type('{leftarrow}{uparrow}')
@@ -506,22 +502,21 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(additionalChannelName)
 
     cy.get(composerTextarea).type(draft)
-    // Wait until the debounced draft-save has been written.
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
+    cy.giWaitForDraftSaved(draft)
 
     cy.get('.c-footer [data-test="messageInputWrapper"]').within(() => {
       cy.getByDT('sendMessageButton').click()
     })
     cy.get(composerTextarea).should('be.empty')
+    // Sending queues a draft deletion behind any in-flight write; wait until it has landed.
+    cy.giWaitForDraftDeleted()
 
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
     cy.giSwitchChannel(additionalChannelName)
     cy.get(composerTextarea).should('have.value', '')
-    // Wait past DRAFT_SAVE_DEBOUNCE_DELAY (450ms) and check again: no stale draft may reappear.
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(1000)
-    cy.get(composerTextarea).should('have.value', '')
+    // Keep watching the draft storage past DRAFT_SAVE_DEBOUNCE_DELAY (450ms):
+    // no stale debounced write may bring the sent draft back.
+    cy.giWaitForDraftDeleted({ forAtLeast: 1000 })
 
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
   })
