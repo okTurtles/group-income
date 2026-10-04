@@ -30,8 +30,10 @@ export function createNamespaceResolver ({
   requestTimeout?: number
 }): Object {
   const entries: Map<string, Object> = new Map()
-  // Incremented by `reset()`. Answers requested before a reset are still
-  // returned to their callers but aren't written into the (new) cache.
+  // Incremented by `reset()`. A lookup started before a reset still returns its
+  // answer but doesn't write it into the (new) cache. Server answers aren't tied
+  // to a session: lookups started after a reset may reuse a remembered answer
+  // (pending or settled, for up to `ttl`), and those do write it into the cache.
   let generation = 0
 
   const isFresh = (entry: Object) => !entry.settled || now() - entry.at < ttl

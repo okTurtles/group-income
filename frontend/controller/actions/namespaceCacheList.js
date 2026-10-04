@@ -13,7 +13,12 @@
 // without any lookups.
 //
 // The outbox is kept in Chelonia state so that it survives service worker
-// restarts, logouts and logins on the same device.
+// restarts, logouts and logins on the same device. Its maps (like
+// `namespaceLookups`) are keyed by username and may have lost their null
+// prototype when restored, so they're only read through `has` / `ownValue`.
+
+import { has } from 'turtledash'
+import { ownValue } from '~/frontend/utils/namespaceCache.js'
 
 export const NS_CACHE_OUTBOX = 'namespaceCacheOutbox'
 
@@ -52,7 +57,7 @@ export function createNamespaceCacheList ({
   lookup: (name: string) => Promise<?string>,
   isDeletedAccount: (contractID: string) => Promise<boolean>,
   // Runs `fn` in the identity contract's queue
-  queue: (identityContractID: string, fn: () => Promise<mixed>) => Promise<mixed>,
+  queue: (identityContractID: string, fn: () => mixed) => Promise<mixed>,
   write: (identityContractID: string, data: string[], options: { ifMatch?: string, onconflict: Function }) => Promise<?{ etag: ?string }>,
   onError?: (name: string, e: Error) => void,
   batchSize?: number
@@ -61,6 +66,9 @@ export function createNamespaceCacheList ({
   let lastKnown: ?ListState = null
   // Incremented on reset; work started before a reset doesn't change state
   let generation = 0
+
+  const lastKnownFor = (identityContractID: string): ?ListState =>
+    lastKnown?.identityContractID === identityContractID ? lastKnown : null
 
   const localNames = (): string[] => Object.keys(getState().namespaceLookups || {})
 
@@ -79,22 +87,23 @@ export function createNamespaceCacheList ({
   const markAdded = (name: string) => {
     const { add, drop } = outbox()
     // Deleted accounts can't be registered again, so they're never re-added
-    if (drop[name] === 'deleted') return
+    if (ownValue(drop, name) === 'deleted') return
     const { reactiveSet, reactiveDel } = getConfig()
-    if (drop[name]) reactiveDel(drop, name)
-    if (!add[name]) reactiveSet(add, name, true)
+    if (has(drop, name)) reactiveDel(drop, name)
+    if (!has(add, name)) reactiveSet(add, name, true)
   }
 
   const markDropped = (name: string, reason: DropReason) => {
     const { add, drop } = outbox()
     const { reactiveSet, reactiveDel } = getConfig()
-    if (add[name]) reactiveDel(add, name)
-    if (drop[name] !== 'deleted' && drop[name] !== reason) reactiveSet(drop, name, reason)
+    if (has(add, name)) reactiveDel(add, name)
+    const current = ownValue(drop, name)
+    if (current !== 'deleted' && current !== reason) reactiveSet(drop, name, reason)
   }
 
   const applyOutbox = (serverNames: string[]): string[] => {
     const { add, drop } = outbox()
-    return normalize([...serverNames, ...Object.keys(add)]).filter(name => !drop[name])
+    return normalize([...serverNames, ...Object.keys(add)]).filter(name => !has(drop, name))
   }
 
   // Forget edits that the server copy now reflects. 'deleted' drops are kept:
@@ -120,14 +129,16 @@ export function createNamespaceCacheList ({
   // of deleted accounts are not added to the local cache.
   const verifyUnknownNames = async (serverNames: mixed): Promise<void> => {
     const startGeneration = generation
-    const known = getState().namespaceLookups || {}
+    const known = getState().namespaceLookups
     const { drop } = outbox()
-    const unknown = normalize(serverNames).filter(name => !known[name] && !drop[name])
+    const unknown = normalize(serverNames).filter(name => !ownValue(known, name) && !has(drop, name))
     const active = () => startGeneration === generation
+    // Checking `active()` here only skips the remaining batches after a reset;
+    // each name is checked as well
     for (let i = 0; i < unknown.length && active(); i += batchSize) {
       await Promise.all(unknown.slice(i, i + batchSize).map(async (name) => {
         try {
-          if (!active() || getState().namespaceLookups?.[name]) return
+          if (!active() || ownValue(getState().namespaceLookups, name)) return
           const value = await resolve(name)
           if (!active()) return
           if (!value) {
@@ -152,8 +163,8 @@ export function createNamespaceCacheList ({
   // Applies the outbox to the last known server copy and writes the result if
   // it differs. Does nothing until the list has been loaded in this session.
   const save = (identityContractID: string): Promise<mixed> => queue(identityContractID, async () => {
-    const known = lastKnown
-    if (!known || known.identityContractID !== identityContractID) return false
+    const known = lastKnownFor(identityContractID)
+    if (!known) return false
     const startGeneration = generation
     let written = applyOutbox(known.names)
     let etag = known.etag
@@ -188,11 +199,9 @@ export function createNamespaceCacheList ({
       // A list cleared on the server (stored as `null`) still has a version
       // tag, which the load recorded. Keep it so that the write isn't sent as
       // "create only".
-      const known = lastKnown
-      const etag = known && known.identityContractID === identityContractID ? known.etag : null
+      const etag = lastKnownFor(identityContractID)?.etag ?? null
       recordServerState(identityContractID, [], etag)
       for (const name of localNames()) markAdded(name)
-      return Promise.resolve()
     })
     return save(identityContractID)
   }

@@ -2,6 +2,8 @@
 
 import { compareISOTimestamps, dateToPeriodStamp, MINS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
+import { LOGOUT } from '@utils/events.js'
+import { ownValue } from '@utils/namespaceCache.js'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 
 // util functions
@@ -68,8 +70,10 @@ const oneTimeNotificationEntries = [
 
 // At most one 'username-fetch' attempt per name in this interval. Kept here
 // because periodic notification state is reset on every login and group switch.
+// Cleared on logout, so that one account's attempts don't delay another's.
 const USERNAME_FETCH_INTERVAL = 30 * MINS_MILLIS
 const lastUsernameFetch: Map<string, number> = new Map()
+sbp('okTurtles.events/on', LOGOUT, () => lastUsernameFetch.clear())
 
 const periodicNotificationEntries = [
   // The following fixes a rare issue that we're not sure exactly why it happens.
@@ -94,7 +98,7 @@ const periodicNotificationEntries = [
             // $FlowFixMe[incompatible-use]
             ({ username, contractID }) => {
               const claimed = rootState[contractID]?.attributes?.username
-              return !username && !!claimed && !rootState.namespaceLookups?.[claimed]
+              return !username && !!claimed && !ownValue(rootState.namespaceLookups, claimed)
             })
           // $FlowFixMe[incompatible-use]
           .forEach(({ contractID }) => {

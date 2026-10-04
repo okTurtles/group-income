@@ -17,7 +17,7 @@ import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
-import { checkAndAugmentNames, recordNsCacheServerState, scheduleSaveCachedNames } from './identity-kv.js'
+import { recordNsCacheServerState, scheduleSaveCachedNames, verifyUnknownServerNames } from './identity-kv.js'
 
 // Prune-expired transform for the notifications slot. Zod is not installed, so
 // the slot's `schema` is a plain `{ parse }` object. This is the canonical
@@ -150,7 +150,7 @@ export const registerKvSlots = (): void => {
     // `identity-kv.js` already triggers an explicit `kv/load` → `loadCachedNames`
     // → `chelonia/kv/sync` on both pubsub reconnect (`reconnection-succeeded`
     // emits `ONLINE`) and the browser regaining connectivity. The lib-side
-    // reconnect refetch would duplicate that GET and the `checkAndAugmentNames`
+    // reconnect refetch would duplicate that GET and the `verifyUnknownServerNames`
     // pass. The initial login load is driven by `LOGIN_COMPLETE` → `kv/load`,
     // not by reconnect. (KV-REVAMPED.md §4.1)
     refreshOnReconnect: false,
@@ -160,12 +160,12 @@ export const registerKvSlots = (): void => {
       // slot; the guard is kept as cheap insurance. (KV-REVAMPED.md §4.1)
       if (ctx.reason === 'local') return
       recordNsCacheServerState(ctx.contractID, value || [], ctx.etag)
-      // Fire-and-forget: `checkAndAugmentNames` may perform batched network
+      // Fire-and-forget: `verifyUnknownServerNames` may perform batched network
       // lookups that can take seconds, and the lib awaits `onUpdate` inside
       // the identity contract's queue lane. Awaiting here would stall
       // identity event processing and (via chatroom sideEffects that await
       // identity KV writes) chatroom event processing too. (KV-REVAMPED.md §4.1)
-      checkAndAugmentNames(value || []).then(() => {
+      verifyUnknownServerNames(value || []).then(() => {
         scheduleSaveCachedNames()
       }).catch((e) => {
         console.error('[kv-slots] namespace-cache onUpdate error:', e)

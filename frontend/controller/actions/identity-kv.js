@@ -42,14 +42,14 @@ const namespaceCacheList = createNamespaceCacheList({
     onconflict
   }),
   onError: (name, e) => {
-    console.warn(`[checkAndAugmentNames] Failed to look up name ${name}; will retry on the next load:`, e)
+    console.warn(`[namespace-cache] Failed to verify name ${name}; will retry on the next load:`, e)
   }
 })
 
 // Looks up the names on the server list that this device doesn't know yet.
 // Names already in the local cache are trusted and never re-checked; names of
 // deleted accounts aren't added to the local cache.
-export const checkAndAugmentNames = (serverNames: string[]): Promise<void> => {
+export const verifyUnknownServerNames = (serverNames: string[]): Promise<void> => {
   return namespaceCacheList.verifyUnknownNames(serverNames)
 }
 

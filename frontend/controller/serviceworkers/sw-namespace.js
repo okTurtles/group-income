@@ -3,6 +3,7 @@
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET } from '@chelonia/lib/events'
 import { NAMESPACE_REGISTRATION } from '~/frontend/utils/events.js'
+import { applyNamespaceUpdate, ownValue } from '~/frontend/utils/namespaceCache.js'
 import { createNamespaceResolver } from './namespaceResolver.js'
 
 const fetchName = (name: string, signal: AbortSignal): Promise<?string> => {
@@ -19,34 +20,23 @@ const fetchName = (name: string, signal: AbortSignal): Promise<?string> => {
 }
 
 // Writes an answer into the cache. NAMESPACE_REGISTRATION is only emitted when
-// the cache actually changes.
+// the cache actually changes; tabs apply the same update to their copy (see
+// `applyNamespaceUpdate` in `controller/namespace.js`).
 const project = (name: string, value: ?string) => {
   const { reactiveSet, reactiveDel } = sbp('chelonia/config')
   const rootState = sbp('chelonia/rootState')
-  if (!rootState.namespaceLookups) reactiveSet(rootState, 'namespaceLookups', Object.create(null))
-  if (!rootState.reverseNamespaceLookups) reactiveSet(rootState, 'reverseNamespaceLookups', Object.create(null))
-  const cache = rootState.namespaceLookups
-  const reverseCache = rootState.reverseNamespaceLookups
-  const currentValue = cache[name]
-  if (value === null || value === undefined) {
-    if (!currentValue) return
-    reactiveDel(cache, name)
-    if (reverseCache[currentValue] === name) {
-      reactiveDel(reverseCache, currentValue)
-    }
-    sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, { name, deletedValue: currentValue })
-    return
+  const update = value
+    ? { name, value }
+    : { name, deletedValue: ownValue(rootState.namespaceLookups, name) }
+  if (applyNamespaceUpdate(rootState, update, { set: reactiveSet, del: reactiveDel })) {
+    sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, update)
   }
-  if (currentValue === value && reverseCache[value] === name) return
-  reactiveSet(cache, name, value)
-  reactiveSet(reverseCache, value, name)
-  sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, { name, value })
 }
 
 const resolver = createNamespaceResolver({
   fetchName,
   // 'namespaceLookups' may be undefined when starting up or after calling chelonia/reset
-  readCache: (name) => sbp('chelonia/rootState').namespaceLookups?.[name] ?? null,
+  readCache: (name) => ownValue(sbp('chelonia/rootState').namespaceLookups, name) ?? null,
   project
 })
 
@@ -55,13 +45,11 @@ sbp('okTurtles.events/on', CHELONIA_RESET, () => resolver.reset())
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
   'namespace/lookupCached': (name: string) => {
-    const cache = sbp('chelonia/rootState').namespaceLookups
-    // 'cache' may be undefined when starting up or after calling chelonia/reset
-    return cache?.[name] ?? null
+    // 'namespaceLookups' may be undefined when starting up or after calling chelonia/reset
+    return ownValue(sbp('chelonia/rootState').namespaceLookups, name) ?? null
   },
   'namespace/lookupReverseCached': (id: string) => {
-    const cache = sbp('chelonia/rootState').reverseNamespaceLookups
-    return cache?.[id] ?? null
+    return ownValue(sbp('chelonia/rootState').reverseNamespaceLookups, id) ?? null
   },
   // Called from contracts (including pinned versions), so the arguments and
   // the result (contract ID, `null` if not registered, or a rejection on
