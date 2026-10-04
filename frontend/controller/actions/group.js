@@ -934,6 +934,30 @@ export default (sbp('sbp/selectors/register', {
     const chatRoomID = params.data.chatRoomID
     const groupContractID = params.contractID
 
+    // Joining a channel we're already an active member of publishes a message
+    // that every client (ours included, on every re-sync) fails to process with
+    // `GIGroupAlreadyJoinedError`. It happens when a join is re-attempted:
+    // contract side-effects re-run when a contract is re-synced from scratch
+    // (which is what happens once previously-missing keys arrive) and they
+    // decide whether to send based on the historical state they were handed.
+    // Skip the write and finish the chatroom half of the join instead, which is
+    // what the `alreadyJoined` handler below does after the fact.
+    if (
+      memberID === identityContractID &&
+      rootState[groupContractID]?.chatRooms?.[chatRoomID]?.members?.[memberID]?.status === PROFILE_STATUS.ACTIVE
+    ) {
+      // No share volatile keys here since we're the ones joining
+      return sbp('gi.actions/chatroom/join', {
+        contractID: chatRoomID,
+        data: {}
+      }).catch(e => {
+        // Already being a member of the chatroom contract as well is the
+        // desired end state, not an error.
+        if (e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIChatroomAlreadyMemberError') return
+        throw e
+      })
+    }
+
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
     if (memberID !== identityContractID && rootState[chatRoomID].attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
@@ -1180,7 +1204,20 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
     const memberID = params.data.memberID || sbp('state/vuex/state').loggedIn.identityContractID
-    const joinedHeight = state.chatRooms[params.data.chatRoomID].members[memberID].joinedHeight
+    const member = state?.chatRooms?.[params.data.chatRoomID]?.members?.[memberID]
+
+    // Leaving a channel we're not an active member of (a duplicated
+    // submission, or a leave re-attempted after our state caught up with one
+    // sent from another device) publishes a message that every client rejects
+    // with 'Cannot leave a chatroom that you're not part of', and which is then
+    // re-processed - and re-logged - on every re-sync. There's nothing to leave
+    // in that case, so don't send anything.
+    if (member?.status !== PROFILE_STATUS.ACTIVE) {
+      console.warn(`[gi.actions/group/leaveChatRoom] Not sending leave for ${memberID} in ${params.data.chatRoomID}: not an active member`, { status: member?.status })
+      return
+    }
+
+    const joinedHeight = member.joinedHeight
 
     // For more efficient and correct processing, augment the leaveChatRoom
     // action with the height of the join action. This helps prevent reduce
