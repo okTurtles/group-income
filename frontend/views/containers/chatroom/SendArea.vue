@@ -319,7 +319,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { CHAT_ATTACHMENT_SIZE_LIMIT, IMAGE_ATTACHMENT_MAX_SIZE } from '~/frontend/utils/constants.js'
 import { CHATROOM_USER_TYPING, CHATROOM_USER_STOP_TYPING } from '@utils/events.js'
-import { uniq, throttle, cloneDeep, debounce } from 'turtledash'
+import { throttle, cloneDeep, debounce } from 'turtledash'
 import {
   injectOrStripSpecialChar,
   injectOrStripLink,
@@ -331,6 +331,8 @@ import { searchEmoji } from './emoji-utils.js'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
+// The mention popup intentionally caps results for performance (each one renders an avatar component).
+const MAX_MENTION_RESULTS = 30
 const caretKeyCodes = {
   ArrowLeft: 37,
   ArrowUp: 38,
@@ -349,6 +351,13 @@ const functionalKeyCodes = {
   Enter: 13
 }
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
+const whitespaceRegex = /\s/ // RegEx Metacharacter \s
+const nonWhitespaceRegex = /\S/
+const normalizeForMentionSearch = (str) => str.normalize().toUpperCase()
+const toMentionCandidate = (item, names) => ({
+  item,
+  searchKeys: names.filter(name => typeof name === 'string').map(normalizeForMentionSearch)
+})
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
@@ -387,7 +396,11 @@ export default ({
       ephemeral: {
         actionsWidth: '',
         textWithLines: '',
+        // Stored rather than computed from textWithLines, so that typing doesn't re-render the component.
+        hasText: false,
+        lastDraftText: null,
         maskHeight: '',
+        maskCappedText: null,
         showButtons: true,
         isPhone: false,
         segmentInsertion: {
@@ -400,7 +413,6 @@ export default ({
         attachments: [], // [ { url: instace of URL.createObjectURL , name: string }, ... ]
         staleObjectURLs: [],
         typingUsers: [],
-        chatroomHasDraftSaved: false, // flag to indicate if the chatroom has a draft saved
         voiceRecording: {
           supported: false,
           isOpen: false
@@ -412,12 +424,12 @@ export default ({
         //       <textarea /> in this component handles two-way binding of the entered text using 'keydown' and 'keyup' events instead of the traditional v-model due to
         //       various functional requirements. But 'paste' action on mobile is not detected by them because they are done via touching the menu on the screen instead, not by pressing keyboard keys.
         //       We can detect this pasted content by running this.updateTextWithLines() for 'input' event. But this does not need to be done for every key stroke, hence the debounce.
-        debouncedHandleInput: debounce(this.updateTextArea, 250)
+        debouncedHandleInput: debounce(this.updateTextArea, 250),
+        maskResizeObserver: null
       },
       typingUserTimeoutIds: {},
       throttledEmitUserTypingEvent: throttle(this.emitUserTypingEvent, 500),
-      mediaIsPhone: null,
-      draftDebounceTimeoutIds: {}
+      mediaIsPhone: null
     }
   },
   watch: {
@@ -446,6 +458,13 @@ export default ({
     }
   },
   created () {
+    // The two draft-write queues below are plain instance fields instead of config entries:
+    // they are mutable work queues that nothing renders, so they intentionally stay non-reactive.
+    // Debounced draft writes that haven't started yet: { [draftKey]: { write, timeoutId } }
+    this.pendingDraftWrites = {}
+    // The most recently queued draft write per draftKey (writes for the same key run one at a time, in order).
+    this.draftWrites = {}
+
     // TODO #492 create a global Vue Responsive just for media queries.
     this.mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = this.mediaIsPhone.matches
@@ -454,6 +473,8 @@ export default ({
   },
   mounted () {
     this.initializeTextArea()
+    this.config.maskResizeObserver = new ResizeObserver(() => { this.ephemeral.maskCappedText = null })
+    this.config.maskResizeObserver.observe(this.$refs.mask)
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -461,31 +482,22 @@ export default ({
   },
   beforeDestroy () {
     window.removeEventListener('click', this.onWindowMouseClicked)
+    this.config.maskResizeObserver?.disconnect()
     sbp('okTurtles.events/off', CHATROOM_USER_TYPING, this.onUserTyping)
     sbp('okTurtles.events/off', CHATROOM_USER_STOP_TYPING, this.onUserStopTyping)
 
     this.mediaIsPhone.onchange = null // change handler needs to be destoryed to prevent memory leak.
 
-    // Revoke all object URLs to avoid memory leaks.
-    // 1. Stale ones
-    this.ephemeral.staleObjectURLs.forEach(url => {
-      URL.revokeObjectURL(url)
+    // Revoke all object URLs to avoid memory leaks. Draft writes read attachments through these URLs,
+    // so start any pending writes now, and revoke the URLs only once every draft write has finished.
+    const objectURLs = [
+      ...this.ephemeral.staleObjectURLs,
+      ...this.ephemeral.attachments.map(attachment => attachment.url)
+    ]
+    Object.keys(this.pendingDraftWrites).forEach(draftKey => this.flushPendingDraftWrite(draftKey))
+    Promise.all(Object.values(this.draftWrites)).then(() => {
+      objectURLs.forEach(url => URL.revokeObjectURL(url))
     })
-
-    // 2. Current ones
-    if (this.ephemeral.attachments.length) {
-      const urls = this.ephemeral.attachments.map(attachment => attachment.url)
-      const revokeObjectURLs = () => {
-        urls.forEach(url => URL.revokeObjectURL(url))
-      }
-
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        // if it's waiting for the draft-save debounce delay, revoke the object URLs after the delay. (So that no null values are saved in the draft)
-        setTimeout(revokeObjectURLs, DRAFT_SAVE_DEBOUNCE_DELAY)
-      } else {
-        revokeObjectURLs()
-      }
-    }
   },
   computed: {
     ...mapGetters([
@@ -516,9 +528,27 @@ export default ({
           }
         })
     },
+    memberMentionCandidates () {
+      return this.activeMembers.map(user => toMentionCandidate(user, [user.username, user.displayName]))
+    },
+    allMentionCandidate () {
+      // NOTE: '@all' mention should only be needed when the members are more than 3
+      if (this.activeMembers.length <= 2) return null
+
+      const all = makeMentionFromUsername('').all
+      const item = {
+        memberID: all,
+        displayName: all.slice(1),
+        picture: '/assets/images/horn.png'
+      }
+      return toMentionCandidate(item, [item.displayName])
+    },
+    channelMentionCandidates () {
+      return this.mentionableChatroomsInDetails.map(channel => toMentionCandidate(channel, [channel.name]))
+    },
     isActive () {
       return !this.ephemeral.voiceRecording.isOpen &&
-        (this.hasAttachments || this.ephemeral.textWithLines.trim().length > 0)
+        (this.hasAttachments || this.ephemeral.hasText)
     },
     textareaStyles () {
       return {
@@ -589,7 +619,6 @@ export default ({
     updateSegmentSelectionKeyword () {
       const textAreaValue = this.$refs.textarea.value
       const cursorPosition = this.$refs.textarea.selectionStart
-      const whitespaceRegex = /\s/ // RegEx Metacharacter \s
       const textBeforeCursor = textAreaValue.slice(0, cursorPosition) // captures the text before the cursor
 
       // Check if the string before the cursor ends with emoji insertion shortcut e.g) ':sm' or ':smi' for 'smile'
@@ -615,7 +644,8 @@ export default ({
           let foundEmoji = null
 
           if (searchResult?.length > 0) {
-            foundEmoji = searchResult.find(emoji => emoji.colons === queryEmojiColonKeyword.toLowerCase())
+            const lowerCaseColonKeyword = queryEmojiColonKeyword.toLowerCase()
+            foundEmoji = searchResult.find(emoji => emoji.colons === lowerCaseColonKeyword)
 
             if (foundEmoji) {
               this.ephemeral.segmentInsertion.options = [mapEmojiItem(foundEmoji)]
@@ -748,12 +778,13 @@ export default ({
         this.updateSegmentSelectionKeyword()
       }
 
-      if (!this.isEditing) {
+      if (this.ephemeral.textWithLines !== this.ephemeral.lastDraftText) {
         this.saveOrDeleteMessageDraft()
       }
     },
     handlePaste (e) {
-      if (e.clipboardData.files.length > 0) {
+      // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
+      if (!this.isEditing && e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
       }
     },
@@ -834,6 +865,7 @@ export default ({
       }
 
       this.ephemeral.textWithLines = newValue
+      this.ephemeral.hasText = nonWhitespaceRegex.test(newValue)
       return true
     },
     updateTextArea () {
@@ -842,13 +874,23 @@ export default ({
         return false
       }
 
-      const isLastLineEmpty = this.ephemeral.textWithLines.endsWith('\n')
+      const text = this.ephemeral.textWithLines
+      const cappedText = this.ephemeral.maskCappedText
+      // Appending to text that already overflows the height-capped mask cannot change its height.
+      // (The overflow check below allows 1px for sub-pixel rounding.)
+      if (cappedText !== null && text.startsWith(cappedText)) {
+        return
+      }
+
+      const isLastLineEmpty = text.endsWith('\n')
+      const maskEl = this.$refs.mask
 
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
-      this.$refs.mask.textContent = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
+      maskEl.textContent = text + (isLastLineEmpty ? '.' : '')
       // ...and apply the maks's height to the textarea so it dynamically grows as the user types
-      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
+      this.ephemeral.maskHeight = maskEl.offsetHeight - 2
+      this.ephemeral.maskCappedText = maskEl.scrollHeight - maskEl.clientHeight > 1 ? text : null
     },
     createNewLine () {
       this.$refs.textarea.value += '\n'
@@ -943,19 +985,21 @@ export default ({
       this.updateTextArea()
       this.endSegmentSelection()
       if (this.hasAttachments) { this.clearAllAttachments() }
+      if (this.isEditing) return
 
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        // If there is a pending draft-save, discard it, as the message is being sent now.
-        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
-      }
-      this.clearMessageDraft(this.getMessageDraftKey(this.currentChatRoomId))
+      // The message is being sent, so replace any pending draft-save with a delete.
+      // It is queued behind any in-flight write, so that write can't bring the draft back afterwards.
+      const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
+      this.cancelPendingDraftWrite(draftKey)
+      this.queueDraftWrite(draftKey, () => this.clearMessageDraft(draftKey))
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
     },
     async initializeTextArea () {
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
       // clear them and revoke all object URLs first to avoid memory leaks.
       this.clearAllAttachments()
       this.closeVoiceRecorder()
-      this.ephemeral.chatroomHasDraftSaved = false
+      this.ephemeral.lastDraftText = null
 
       if (this.defaultText) {
         this.$refs.textarea.value = this.defaultText
@@ -995,6 +1039,7 @@ export default ({
       // so those actions don't be above the textarea's value
       this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
       this.updateTextArea()
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
       // The following causes inconsistent focusing on iOS depending on whether
       // iOS determines the action to be a result of user interaction.
       // Commenting this out will result on focus being triggered the 'normal'
@@ -1015,26 +1060,56 @@ export default ({
       return `${chatroomType}:${this.ourIdentityContractId}:${chatroomId}`
     },
     saveOrDeleteMessageDraft () {
-      // manually implementing debounce here by clearing the timeout and setting a new one to avoid the issue where
-      // draftKey/text/attachments can become stale when user switches chatrooms quickly.
-      // (eg. user has switched to chatroom B before the debounce delay times out, so the draft of chatroom A is saved for chatroom B)
-      // This way, draftKey/draft are captured at call time, not at the execution time.
+      if (this.isEditing) return
+
+      // draftKey/text/attachments are captured at call time rather than when the debounced write runs,
+      // so that a quick chatroom switch can't save one chatroom's draft under another chatroom's key.
       const draftKey = this.getMessageDraftKey(this.currentChatRoomId)
       const textContent = this.ephemeral.textWithLines.trim()
       const attachments = this.ephemeral.attachments
       const hasContent = textContent.length > 0 || attachments.length > 0
-      const hasDraftSaved = this.ephemeral.chatroomHasDraftSaved
+      this.ephemeral.lastDraftText = this.ephemeral.textWithLines
 
-      if (this.draftDebounceTimeoutIds[this.currentChatRoomId]) {
-        clearTimeout(this.draftDebounceTimeoutIds[this.currentChatRoomId])
+      this.cancelPendingDraftWrite(draftKey)
+      this.pendingDraftWrites[draftKey] = {
+        write: hasContent
+          ? () => this.saveMessageDraft(draftKey, textContent, attachments)
+          : () => this.clearMessageDraft(draftKey),
+        timeoutId: setTimeout(() => this.flushPendingDraftWrite(draftKey), DRAFT_SAVE_DEBOUNCE_DELAY)
       }
-      this.draftDebounceTimeoutIds[this.currentChatRoomId] = setTimeout(() => {
-        if (hasContent) {
-          this.saveMessageDraft(draftKey, textContent, attachments)
-        } else if (hasDraftSaved) {
-          this.clearMessageDraft(draftKey)
-        }
-      }, DRAFT_SAVE_DEBOUNCE_DELAY)
+    },
+    cancelPendingDraftWrite (draftKey) {
+      const pending = this.pendingDraftWrites[draftKey]
+      if (pending) {
+        clearTimeout(pending.timeoutId)
+        delete this.pendingDraftWrites[draftKey]
+      }
+      return pending
+    },
+    flushPendingDraftWrite (draftKey) {
+      // Starts the pending write for draftKey (if any) without waiting for the debounce delay.
+      // Returns a promise that resolves once every queued write for draftKey has finished.
+      const pending = this.cancelPendingDraftWrite(draftKey)
+      if (pending) {
+        this.queueDraftWrite(draftKey, pending.write)
+      }
+      return this.draftWrites[draftKey]
+    },
+    queueDraftWrite (draftKey, write) {
+      // Writes for the same key run one at a time, so an older write can never finish after a newer one.
+      const previousWrite = this.draftWrites[draftKey] || Promise.resolve()
+      const currentWrite = previousWrite.then(write).catch(e => {
+        console.error('SendArea.vue: Error writing message draft - ', e)
+      })
+      this.draftWrites[draftKey] = currentWrite
+      return currentWrite
+    },
+    allowDraftSaveRetry (draftKey) {
+      // A failed write must not leave the draft considered caught-up: forgetting lastDraftText for
+      // the current chatroom lets the next keyup (even a non-editing one) re-attempt the write.
+      if (draftKey === this.getMessageDraftKey(this.currentChatRoomId)) {
+        this.ephemeral.lastDraftText = null
+      }
     },
     async saveMessageDraft (draftKey, textContent, attachments) {
       try {
@@ -1060,19 +1135,16 @@ export default ({
         }
 
         await sbp('gi.db/chatDrafts/save', draftKey, draftData)
-
-        if (!this.ephemeral.chatroomHasDraftSaved) {
-          this.ephemeral.chatroomHasDraftSaved = true
-        }
       } catch (e) {
         console.error('SendArea.vue: Error saving message draft - ', e)
+        this.allowDraftSaveRetry(draftKey)
       }
     },
     async loadMessageDraft (draftKey) {
       try {
-        const draft = await sbp('gi.db/chatDrafts/load', draftKey)
-        this.ephemeral.chatroomHasDraftSaved = !!draft
-        return draft
+        // Wait for pending and in-flight writes first, so that a quickly revisited chatroom loads its latest draft.
+        await this.flushPendingDraftWrite(draftKey)
+        return await sbp('gi.db/chatDrafts/load', draftKey)
       } catch (e) {
         // Silently ignore errors and return an empty string if any error occurs while loading the message draft
         console.error('SendArea.vue: Error loading message draft - ', e)
@@ -1080,10 +1152,9 @@ export default ({
       }
     },
     clearMessageDraft (draftKey) {
-      sbp('gi.db/chatDrafts/delete', draftKey).then(() => {
-        this.ephemeral.chatroomHasDraftSaved = false
-      }).catch((e) => {
+      return sbp('gi.db/chatDrafts/delete', draftKey).catch((e) => {
         console.error('SendArea.vue: Error clearing message draft - ', e)
+        this.allowDraftSaveRetry(draftKey)
       })
     },
     openCreatePollModal () {
@@ -1201,45 +1272,33 @@ export default ({
       inputEl.value = valuePrev + emoticon.native + valueAfter
 
       this.closeEmoticon()
-      this.updateTextWithLines()
-      if (!this.isEditing) {
-        this.saveOrDeleteMessageDraft()
-      }
+      this.updateTextArea()
+      this.saveOrDeleteMessageDraft()
     },
     startMention (keyword, position, mentionType = 'member') {
-      const checkIfContainsKeyword = str => {
-        if (typeof str !== 'string') { return false }
+      // Mentioning a group channel does not make sense in the global dm context. So don't respond to it.
+      if (mentionType === 'channel' && this.isInGlobalDashboard) { return }
 
-        const normalKeyword = keyword.normalize().toUpperCase()
-        return str.normalize().toUpperCase().includes(normalKeyword)
+      const normalKeyword = normalizeForMentionSearch(keyword)
+      const matchesKeyword = ({ searchKeys }) => searchKeys.some(key => key.includes(normalKeyword))
+      const candidates = mentionType === 'member' ? this.memberMentionCandidates : this.channelMentionCandidates
+      const options = []
+
+      // '@all' is inserted first so that the cap below can never drop it.
+      const allCandidate = mentionType === 'member' && this.allMentionCandidate
+      if (allCandidate && matchesKeyword(allCandidate)) {
+        options.push(allCandidate.item)
       }
 
-      switch (mentionType) {
-        case 'member': {
-          const all = makeMentionFromUsername('').all
-          const availableMentions = Array.from(this.activeMembers)
-          // NOTE: '@all' mention should only be needed when the members are more than 3
-          if (availableMentions.length > 2) {
-            availableMentions.push({
-              memberID: all,
-              displayName: all.slice(1),
-              picture: '/assets/images/horn.png'
-            })
-          }
-
-          this.ephemeral.segmentInsertion.options = availableMentions.filter(
-            user => checkIfContainsKeyword(user.username) || checkIfContainsKeyword(user.displayName)
-          )
-
-          break
-        }
-        case 'channel': {
-          // Mentioning a group channel does not make sense in the global dm context. So don't respond to it.
-          if (this.isInGlobalDashboard) { return }
-          this.ephemeral.segmentInsertion.options = this.mentionableChatroomsInDetails.filter(channel => checkIfContainsKeyword(channel.name))
-        }
+      for (const candidate of candidates) {
+        if (options.length === MAX_MENTION_RESULTS) break
+        if (matchesKeyword(candidate)) options.push(candidate.item)
       }
 
+      const prevOptions = this.ephemeral.segmentInsertion.options
+      if (options.length !== prevOptions.length || options.some((item, i) => item !== prevOptions[i])) {
+        this.ephemeral.segmentInsertion.options = options
+      }
       this.ephemeral.segmentInsertion.type = mentionType
       this.ephemeral.segmentInsertion.position = position
       this.ephemeral.segmentInsertion.index = 0
@@ -1247,7 +1306,10 @@ export default ({
     endSegmentSelection () {
       this.ephemeral.segmentInsertion.position = -1
       this.ephemeral.segmentInsertion.index = -1
-      this.ephemeral.segmentInsertion.options = []
+      // Assigning a new empty array re-renders the component even when the list is already empty.
+      if (this.ephemeral.segmentInsertion.options.length) {
+        this.ephemeral.segmentInsertion.options = []
+      }
     },
     onWindowMouseClicked (e) {
       if (!this.$refs.segmentInsertionWrapper) {
@@ -1293,11 +1355,10 @@ export default ({
       const typingUser = data.innerSigningContractID
 
       if (typingUser && typingUser !== this.ourIdentityContractId) {
-        const addToList = username => {
-          this.ephemeral.typingUsers = uniq([...this.ephemeral.typingUsers, username])
+        if (!this.ephemeral.typingUsers.includes(typingUser)) {
+          this.ephemeral.typingUsers = [...this.ephemeral.typingUsers, typingUser]
         }
 
-        addToList(typingUser)
         clearTimeout(this.typingUserTimeoutIds[typingUser])
         this.typingUserTimeoutIds[typingUser] = setTimeout(() => this.removeFromTypingUsersArray(typingUser), 30 * 1000)
       }
@@ -1311,7 +1372,9 @@ export default ({
       }
     },
     removeFromTypingUsersArray (memberID) {
-      this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== memberID)
+      if (this.ephemeral.typingUsers.includes(memberID)) {
+        this.ephemeral.typingUsers = this.ephemeral.typingUsers.filter(u => u !== memberID)
+      }
 
       if (this.typingUserTimeoutIds[memberID]) {
         clearTimeout(this.typingUserTimeoutIds[memberID])
