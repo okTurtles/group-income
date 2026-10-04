@@ -888,6 +888,68 @@ Cypress.Commands.add('giSendMessage', (sender, message, {
   })
 })
 
+// Chatroom drafts are written to storage only after DRAFT_SAVE_DEBOUNCE_DELAY (450ms,
+// see SendArea.vue) plus an asynchronous IndexedDB write. Instead of sleeping for a fixed
+// amount of time, the following commands watch the draft storage itself (through the
+// app's exposed `window.sbp`), so they resolve as soon as the write is observed and can
+// never be too short on a slow machine.
+
+const getChatDraftKey = (sbp) => {
+  // Keep this key format in sync with getMessageDraftKey() in SendArea.vue.
+  const getters = sbp('state/vuex/getters')
+  const chatroomId = getters.currentChatRoomId
+  const chatroomType = getters.isDirectMessage(chatroomId) ? 'dm' : 'channel'
+  return `${chatroomType}:${getters.ourIdentityContractId}:${chatroomId}`
+}
+
+const waitForChatDraft = (sbp, expectedText, { forAtLeast = 0, timeout = 10000 } = {}) => {
+  // expectedText === null means "no draft stored". When forAtLeast > 0, the promise only
+  // resolves after the expected state has been observed continuously for that long, and
+  // rejects if a (stale) write changes the stored draft in the meantime.
+  const draftKey = getChatDraftKey(sbp)
+  const deadline = Date.now() + Math.max(timeout, forAtLeast + 2000)
+  let matchedAt = null
+  let timer = null
+
+  return new Cypress.Promise((resolve, reject) => {
+    const finish = (fn, arg) => {
+      clearTimeout(timer)
+      fn(arg)
+    }
+    const poll = () => {
+      sbp('gi.db/chatDrafts/load', draftKey).then((draft) => {
+        const isMatch = expectedText == null ? draft == null : draft?.text === expectedText
+        if (isMatch) {
+          if (matchedAt === null) matchedAt = Date.now()
+          if (forAtLeast === 0 || Date.now() - matchedAt >= forAtLeast) {
+            return finish(resolve)
+          }
+        } else {
+          matchedAt = null
+        }
+        if (Date.now() >= deadline) {
+          return finish(reject, new Error(
+            `Timed out waiting for the draft of "${draftKey}" to be ` +
+            (expectedText == null ? 'deleted' : `saved as "${expectedText}"`) +
+            `${forAtLeast ? ` (for at least ${forAtLeast}ms)` : ''}. ` +
+            `Last stored draft: ${draft == null ? 'none' : JSON.stringify(draft)}`
+          ))
+        }
+        timer = setTimeout(poll, 100)
+      }).catch((e) => finish(reject, e))
+    }
+    timer = setTimeout(poll, 0)
+  })
+}
+
+Cypress.Commands.add('giWaitForDraftSaved', (expectedText) => {
+  cy.window().its('sbp').then(sbp => waitForChatDraft(sbp, expectedText))
+})
+
+Cypress.Commands.add('giWaitForDraftDeleted', ({ forAtLeast = 0 } = {}) => {
+  cy.window().its('sbp').then(sbp => waitForChatDraft(sbp, null, { forAtLeast }))
+})
+
 Cypress.Commands.add('giSwitchChannel', (channelName) => {
   cy.getByDT('channelsList').within(() => {
     cy.get('ul > li').each(($el, index, $list) => {
