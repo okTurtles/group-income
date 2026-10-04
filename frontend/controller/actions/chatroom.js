@@ -217,7 +217,11 @@ const runSecureChatRoom = async (identityContractID: string, groupID: string, ch
       const rotateNow = run.rotate
       run.again = false
       run.rotate = false
-      await secureChatRoom(identityContractID, groupID, chatRoomID, rotateNow)
+      try {
+        await secureChatRoom(identityContractID, groupID, chatRoomID, rotateNow)
+      } catch (e) {
+        console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error', { groupID, chatRoomID }, e)
+      }
     }
   } finally {
     secureChatRoomRuns.delete(chatRoomID)
@@ -245,9 +249,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   if (!toRemove.length) return
   membershipCheckTimers.set(contractID, setTimeout(() => {
     membershipCheckTimers.delete(contractID)
-    runSecureChatRoom(identityContractID, groupID, contractID, false).catch((e) => {
-      console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error checking chatroom membership', { groupID, chatRoomID: contractID }, e)
-    })
+    runSecureChatRoom(identityContractID, groupID, contractID, false)
   }, 1000))
 })
 
@@ -769,9 +771,7 @@ export default (sbp('sbp/selectors/register', {
       ))
 
     await Promise.all(chatRooms.map(({ groupID, chatRoomID }) => {
-      return runSecureChatRoom(identityContractID, groupID, chatRoomID, true).catch((e) => {
-        console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error', { groupID, chatRoomID }, e)
-      })
+      return runSecureChatRoom(identityContractID, groupID, chatRoomID, true)
     }))
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
