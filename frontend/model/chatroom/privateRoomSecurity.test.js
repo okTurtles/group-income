@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, privateGroupChatRoomsToCheck } from './privateRoomSecurity.js'
+import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, privateGroupChatRoomsToCheck } from './privateRoomSecurity.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 const should = require('should')
 
@@ -108,6 +108,31 @@ describe('membersMissingFromGroup', () => {
   it('does nothing without a synced chatroom or a group record', () => {
     should(membersMissingFromGroup(undefined, { members: {} })).eql([])
     should(membersMissingFromGroup({ members: { a: {} } }, undefined)).eql([])
+  })
+})
+
+describe('chatRoomMembersToRemove', () => {
+  it('includes members missing from the group, except ourselves', () => {
+    should(chatRoomMembersToRemove(
+      { members: { me: {}, a: {}, b: {} } },
+      { members: { a: { status: PROFILE_STATUS.ACTIVE }, b: { status: PROFILE_STATUS.REMOVED } } },
+      'me'
+    )).eql(['b'])
+  })
+})
+
+describe('currentKeysHeight', () => {
+  const keys = (cekHeight, cskHeight) => ({
+    _vm: { authorizedKeys: { cek: { _notBeforeHeight: cekHeight }, csk: { _notBeforeHeight: cskHeight } } }
+  })
+
+  it('is the earliest height of the CEK and the CSK', () => {
+    should(currentKeysHeight(keys(12, 15), 'cek', 'csk')).equal(12)
+    should(currentKeysHeight(keys(15, 12), 'cek', 'csk')).equal(12)
+  })
+
+  it('is 0 when a height is missing', () => {
+    should(currentKeysHeight(keys(undefined, 12), 'cek', 'csk')).equal(0)
   })
 })
 

@@ -7,21 +7,34 @@ import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/fronte
 // chatrooms. These functions only read contract state, so that they can be
 // used with both the Chelonia and the Vuex state, as well as in unit tests.
 
+// IDs of the members who have left the chatroom
+const formerMemberIDs = (state: Object): string[] => {
+  const members = state?.members || {}
+  return Object.keys(members).filter((memberID) => members[memberID].hasLeft === true)
+}
+
+// Whether `key` is the key that `memberID` added to the chatroom when joining
+const isKeyOfMember = (key: Object, memberID: string): boolean =>
+  !!key.foreignKey && typeof key.name === 'string' && key.name.startsWith(`${memberID}/`)
+
+// The height at which the current chatroom keys became valid: the earliest of
+// the CEK's and the CSK's, as they're rotated together. The `|| 0` is for
+// robustness, in case `Math.min` returns `NaN`.
+export function currentKeysHeight (state: Object, CEKid: string, CSKid: string): number {
+  const keys = state._vm.authorizedKeys
+  return Math.min(keys[CEKid]._notBeforeHeight, keys[CSKid]._notBeforeHeight) || 0
+}
+
 // Former members of a chatroom whose keys are still current, meaning that the
 // chatroom keys must be rotated. `height` is the height at which the current
 // chatroom CEK and CSK became valid. A former member's key is still current if
 // it hasn't been removed yet, or if it was removed at or after `height`.
 export function formerMembersWithCurrentKeys (state: Object, height: number): string[] {
-  const members = state?.members || {}
   const keys: Object[] = (Object.values(state?._vm?.authorizedKeys || {}): any)
-  return Object.keys(members)
-    .filter((memberID) => members[memberID].hasLeft === true)
-    .filter((memberID) => keys.some((key) =>
-      !!key.foreignKey &&
-      typeof key.name === 'string' &&
-      key.name.startsWith(`${memberID}/`) &&
-      (key._notAfterHeight == null || key._notAfterHeight >= height)
-    ))
+  return formerMemberIDs(state).filter((memberID) => keys.some((key) =>
+    isKeyOfMember(key, memberID) &&
+    (key._notAfterHeight == null || key._notAfterHeight >= height)
+  ))
 }
 
 // IDs of former members' keys that haven't been removed from the chatroom.
@@ -29,15 +42,12 @@ export function formerMembersWithCurrentKeys (state: Object, height: number): st
 // former owners would still be considered to hold the current keys after the
 // rotation, and the keys would be rotated again.
 export function formerMemberKeyIdsToRemove (state: Object): string[] {
-  const members = state?.members || {}
   const authorizedKeys = state?._vm?.authorizedKeys || {}
-  const formerMemberIDs = Object.keys(members).filter((memberID) => members[memberID].hasLeft === true)
+  const formerMembers = formerMemberIDs(state)
   return Object.keys(authorizedKeys).filter((keyId) => {
     const key = authorizedKeys[keyId]
-    return !!key.foreignKey &&
-      key._notAfterHeight == null &&
-      typeof key.name === 'string' &&
-      formerMemberIDs.some((memberID) => key.name.startsWith(`${memberID}/`))
+    return key._notAfterHeight == null &&
+      formerMembers.some((memberID) => isKeyOfMember(key, memberID))
   })
 }
 
@@ -53,6 +63,13 @@ export function membersMissingFromGroup (chatRoomState: ?Object, groupChatRoomRe
     !members[memberID].hasLeft &&
     groupMembers[memberID]?.status !== PROFILE_STATUS.ACTIVE
   )
+}
+
+// The members to remove from a chatroom: those that it lists but its group
+// doesn't (see `membersMissingFromGroup`), except ourselves
+export function chatRoomMembersToRemove (chatRoomState: ?Object, groupChatRoomRecord: ?Object, ourIdentityContractID: string): string[] {
+  return membersMissingFromGroup(chatRoomState, groupChatRoomRecord)
+    .filter((memberID) => memberID !== ourIdentityContractID)
 }
 
 // Whether `chatRoomID` is a private chatroom of `groupID` (i.e., not a DM),

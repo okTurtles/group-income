@@ -1203,18 +1203,40 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
     const state = await sbp('chelonia/contract/state', params.contractID)
-    const memberID = params.data.memberID || sbp('state/vuex/state').loggedIn.identityContractID
-    const member = state?.chatRooms?.[params.data.chatRoomID]?.members?.[memberID]
+    const { identityContractID } = sbp('state/vuex/state').loggedIn
+    const memberID = params.data.memberID || identityContractID
+    const chatRoomID = params.data.chatRoomID
+    const member = state?.chatRooms?.[chatRoomID]?.members?.[memberID]
 
-    // Leaving a channel we're not an active member of (a duplicated
-    // submission, or a leave re-attempted after our state caught up with one
-    // sent from another device) publishes a message that every client rejects
-    // with 'Cannot leave a chatroom that you're not part of', and which is then
-    // re-processed - and re-logged - on every re-sync. There's nothing to leave
-    // in that case, so don't send anything.
+    // The group no longer lists this member in the channel: a duplicated
+    // submission, our state catching up with a leave sent from another device,
+    // or an earlier leave whose chatroom half didn't go through. Another group
+    // leave would only fail with 'Cannot leave a chatroom that you're not part
+    // of' (or, while our view of the group can't be trusted, be published and
+    // then rejected on every re-sync). Finish the chatroom half instead, if it's
+    // still pending.
     if (member?.status !== PROFILE_STATUS.ACTIVE) {
-      console.warn(`[gi.actions/group/leaveChatRoom] Not sending leave for ${memberID} in ${params.data.chatRoomID}: not an active member`, { status: member?.status })
-      return
+      // Let any operations already queued for these contracts (for example,
+      // processing the earlier leave) finish first
+      await sbp('chelonia/contract/wait', [params.contractID, chatRoomID])
+      const chatRoomState = sbp('chelonia/contract/state', chatRoomID)
+      if (!sbp('state/vuex/getters').isJoinedChatRoomForChatRoom(chatRoomState, memberID)) {
+        console.info(`[gi.actions/group/leaveChatRoom] Not sending leave for ${memberID} in ${chatRoomID}: already left`, { status: member?.status })
+        return
+      }
+
+      console.info(`[gi.actions/group/leaveChatRoom] Finishing an incomplete leave for ${memberID} in ${chatRoomID}`, { status: member?.status })
+      // Same as the chatroom leave sent by the group's `leaveChatRoom` side
+      // effect (see `leaveChatRoomAction` in the group contract)
+      return sbp('gi.actions/chatroom/leave', {
+        contractID: chatRoomID,
+        data: memberID === identityContractID ? {} : { memberID }
+      }).catch((e) => {
+        // Someone else (for example, the group's side effect for the earlier
+        // leave) finished the leave first
+        if (e?.cause?.name === 'GIChatroomNotMemberError') return
+        throw e
+      })
     }
 
     const joinedHeight = member.joinedHeight
