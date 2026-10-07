@@ -436,6 +436,123 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     })
   })
 
+  it('user1 keeps an unsent draft after editing a message in the same channel', () => {
+    const draft = 'This draft must survive editing another message'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+    cy.giSendMessage(me, 'A message that is about to be edited')
+
+    cy.get(composerTextarea).type(draft)
+    cy.giWaitForDraftSaved(draft)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessage(Number(length), 'A message that has been edited')
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 keeps an unsent draft after pressing only non-editing keys', () => {
+    const draft = 'This draft must survive keys that do not edit anything'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.get(composerTextarea).type(draft)
+    cy.giWaitForDraftSaved(draft)
+    // These keyups leave the text unchanged, which is exactly the case where the
+    // draft-save guard skips saveOrDeleteMessageDraft(), so the saved draft must survive them.
+    cy.get(composerTextarea).type('{leftarrow}{uparrow}')
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 keeps an unsent draft when switching channels before the debounced save runs', () => {
+    const draft = 'This draft must survive an instant channel switch'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    // No cy.wait() here: switch channels before DRAFT_SAVE_DEBOUNCE_DELAY (450ms) elapses,
+    // so returning to the channel relies on flushing the still-pending draft write.
+    cy.get(composerTextarea).type(draft)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', draft)
+
+    cy.get(composerTextarea).type('{selectall}{del}')
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 sends a drafted message and no stale draft reappears afterwards', () => {
+    const draft = 'This draft gets sent and must not reappear in the composer'
+    const composerTextarea = '.c-footer [data-test="messageInputWrapper"] textarea'
+
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.get(composerTextarea).type(draft)
+    cy.giWaitForDraftSaved(draft)
+
+    cy.get('.c-footer [data-test="messageInputWrapper"]').within(() => {
+      cy.getByDT('sendMessageButton').click()
+    })
+    cy.get(composerTextarea).should('be.empty')
+    // Sending queues a draft deletion behind any in-flight write; wait until it has landed.
+    cy.giWaitForDraftDeleted()
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+    cy.giSwitchChannel(additionalChannelName)
+    cy.get(composerTextarea).should('have.value', '')
+    // Keep watching the draft storage past DRAFT_SAVE_DEBOUNCE_DELAY (450ms):
+    // no stale debounced write may bring the sent draft back.
+    cy.giWaitForDraftDeleted({ forAtLeast: 1000 })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 pastes a file while editing a message, and it is ignored', () => {
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      cy.getByDT('conversationWrapper').find(`[data-index="${Number(length) - 1}"] > .c-message`).within(() => {
+        cy.get('.c-message-menu').within(() => {
+          cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+          cy.get('.c-actions button[aria-label="Edit"]').click()
+        })
+        cy.getByDT('messageInputWrapper').within(() => {
+          cy.get('textarea').then($textarea => {
+            const win = $textarea[0].ownerDocument.defaultView
+            const clipboardData = new win.DataTransfer()
+            clipboardData.items.add(new win.File(['file content'], 'pasted.txt', { type: 'text/plain' }))
+            // Errors thrown by the paste handler are reported synchronously, while the event is dispatched.
+            const consoleError = cy.spy(win.console, 'error')
+            $textarea[0].dispatchEvent(new win.ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }))
+            consoleError.restore()
+            expect(consoleError.callCount, 'console.error calls while handling the paste').to.equal(0)
+            // Let Vue re-render before checking that no attachment preview appeared.
+            return new Cypress.Promise(resolve => win.requestAnimationFrame(resolve))
+          })
+          // Edited messages can't gain attachments, so no attachment preview may appear.
+          cy.get('.c-attachment-container').should('not.exist')
+          cy.getByDT('cancelEditing').click()
+        })
+      })
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
   it('user1 checks how the infinite scroll works', () => {
     cy.giSwitchChannel(additionalChannelName)
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
