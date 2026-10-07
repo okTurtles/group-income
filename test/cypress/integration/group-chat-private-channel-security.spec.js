@@ -215,6 +215,11 @@ describe('Private channels - former members lose access', () => {
     cy.giSwitchUser(user3)
 
     cy.giChatRoomHasMessage(ids.channel, secretMessage)
+    // Contracts are loaded into the tab one at a time after logging in, so
+    // the DM may not be there yet when the channel is
+    cy.window().its('sbp').should(sbp => {
+      expect(sbp('state/vuex/state')[ids.dm]?.members, 'the DM is loaded').to.be.an('object')
+    })
     cy.window().its('sbp').then(sbp => {
       expect(dmSnapshot(sbp)).to.deep.equal(dmBefore)
     })
