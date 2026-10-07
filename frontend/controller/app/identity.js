@@ -343,7 +343,13 @@ export default (sbp('sbp/selectors/register', {
         // server data cleared often, so we skip the cache lookup for dev
         // convenience (and also any recently remembered server answer).
         const fresh = !!(process.env.CI || process.env.NODE_ENV !== 'production')
-        const nsIdentityContractID = await sbp('namespace/lookup', username, { skipCache: fresh, forceRefresh: fresh })
+        let nsIdentityContractID = await sbp('namespace/lookup', username, { forceRefresh: fresh })
+        if (!nsIdentityContractID && !fresh) {
+          // A remembered 'not registered' answer (e.g., from the signup form)
+          // is outdated if the name has since been registered on another
+          // device, so ask the server before failing
+          nsIdentityContractID = await sbp('namespace/lookup', username, { forceRefresh: true })
+        }
         // If we've only been given a username, set `identityContractID` to the
         // contract ID we've just looked up
         if (!identityContractID) {

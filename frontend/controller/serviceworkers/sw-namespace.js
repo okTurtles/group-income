@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { CHELONIA_RESET } from '@chelonia/lib/events'
 import { NAMESPACE_REGISTRATION } from '~/frontend/utils/events.js'
-import { applyNamespaceUpdate, ownValue } from '~/frontend/utils/namespaceCache.js'
+import { answerToUpdate, applyNamespaceUpdate, ownValue } from '~/frontend/utils/namespaceCache.js'
 import { createNamespaceResolver } from './namespaceResolver.js'
 
 const fetchName = (name: string, signal: AbortSignal): Promise<?string> => {
@@ -15,19 +15,18 @@ const fetchName = (name: string, signal: AbortSignal): Promise<?string> => {
       }
       return null
     }
-    return r['text']()
+    // An empty answer isn't a contract ID
+    return r['text']().then((text: string) => text || null)
   })
 }
 
 // Writes an answer into the cache. NAMESPACE_REGISTRATION is only emitted when
 // the cache actually changes; tabs apply the same update to their copy (see
-// `applyNamespaceUpdate` in `controller/namespace.js`).
+// `applyNamespaceUpdateToVuex` in `controller/namespace.js`).
 const project = (name: string, value: ?string) => {
   const { reactiveSet, reactiveDel } = sbp('chelonia/config')
   const rootState = sbp('chelonia/rootState')
-  const update = value
-    ? { name, value }
-    : { name, deletedValue: ownValue(rootState.namespaceLookups, name) }
+  const update = answerToUpdate(rootState.namespaceLookups, name, value)
   if (applyNamespaceUpdate(rootState, update, { set: reactiveSet, del: reactiveDel })) {
     sbp('okTurtles.events/emit', NAMESPACE_REGISTRATION, update)
   }
@@ -35,8 +34,7 @@ const project = (name: string, value: ?string) => {
 
 const resolver = createNamespaceResolver({
   fetchName,
-  // 'namespaceLookups' may be undefined when starting up or after calling chelonia/reset
-  readCache: (name) => ownValue(sbp('chelonia/rootState').namespaceLookups, name) ?? null,
+  readCache: (name) => sbp('namespace/lookupCached', name),
   project
 })
 
@@ -54,14 +52,16 @@ sbp('sbp/selectors/register', {
   // Called from contracts (including pinned versions), so the arguments and
   // the result (contract ID, `null` if not registered, or a rejection on
   // errors) must stay the same. Server answers are reused for a short time
-  // (see `namespaceResolver.js`), also for `skipCache` callers.
+  // (5 minutes for registered names, 15 seconds for 'not registered'; see
+  // `namespaceResolver.js`), also for `skipCache` callers. `forceRefresh`
+  // always makes a new request.
   'namespace/lookup': (name: string, options?: { skipCache?: boolean, forceRefresh?: boolean }): Promise<?string> => {
     const { skipCache = false, forceRefresh = false } = options || {}
     return resolver.lookup(name, { skipCache: !!skipCache, forceRefresh: !!forceRefresh })
   },
   // The server's answer for a name, without writing it into the cache.
-  'namespace/resolve': (name: string, options?: { forceRefresh?: boolean }): Promise<?string> => {
-    return resolver.resolve(name, { forceRefresh: !!options?.forceRefresh })
+  'namespace/resolve': (name: string): Promise<?string> => {
+    return resolver.resolve(name)
   },
   // Forget the last server answer for a name (e.g., after registering it).
   'namespace/invalidate': (name: string) => {

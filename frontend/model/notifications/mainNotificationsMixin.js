@@ -80,8 +80,8 @@ const periodicNotificationEntries = [
   // Sometimes, the `namespace/lookup` call made as a side-effect in the identity
   // contract seems to fail. The result of this is that the corresponding cached
   // namespace lookup entry isn't populated and the username is missing from the
-  // UI. To fix this, we check for users that are missing a username and
-  // do this lookup manually.
+  // UI. To fix this, we look up the usernames claimed by contacts that aren't
+  // in the cache at all, at most once per name every USERNAME_FETCH_INTERVAL.
   // See: <https://github.com/okTurtles/group-income/pull/2306#pullrequestreview-2305605028>
   {
     type: PERIODIC_NOTIFICATION_TYPE.MIN30,
@@ -98,8 +98,6 @@ const periodicNotificationEntries = [
           // change it)
           .filter(({ claimed }) => !!claimed && !ownValue(rootState.namespaceLookups, claimed))
           .forEach(({ contractID, claimed }) => {
-            // Periodic notification state is reset on every login and group
-            // switch, so limit attempts per name here as well
             const now = Date.now()
             if (now - (lastUsernameFetch.get(claimed) || 0) < USERNAME_FETCH_INTERVAL) return
             lastUsernameFetch.set(claimed, now)

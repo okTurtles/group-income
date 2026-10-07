@@ -17,7 +17,7 @@ import sbp from '@sbp/sbp'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { isExpired } from '@model/notifications/utils.js'
-import { recordNsCacheServerState, scheduleSaveCachedNames, verifyUnknownServerNames } from './identity-kv.js'
+import { namespaceCacheList, scheduleSaveCachedNames } from './identity-kv.js'
 
 // Prune-expired transform for the notifications slot. Zod is not installed, so
 // the slot's `schema` is a plain `{ parse }` object. This is the canonical
@@ -130,14 +130,14 @@ export const registerKvSlots = (): void => {
   // knows, stored as a sorted `string[]` on the own identity contract. Unlike
   // the other identity slots this one is `autoSubscribe: false` (it was never
   // in the pubsub `setFilter`) and `autoLoad: 'on-demand'` (fetched explicitly
-  // by `gi.actions/identity/kv/loadCachedNames` → `chelonia/kv/sync`, not on
-  // every sync). `onUpdate` records the loaded list (and its version tag) as
-  // the base for later writes, and looks up the names this device doesn't know
-  // yet (see `namespaceCacheList.js`).
-  // `refreshOnReconnect: false` avoids a double fetch on reconnect: the
-  // `ONLINE` listener in `identity-kv.js` already drives an explicit
-  // `kv/load` → `loadCachedNames` → `chelonia/kv/sync` on both pubsub
-  // reconnect and the browser regaining connectivity.
+  // by `gi.actions/identity/kv/loadCachedNames` → `chelonia/kv/sync` when a
+  // tab logs in, not on every sync). Like the other identity slots, it's
+  // fetched again after each pubsub reconnect (`refreshOnReconnect`, on by
+  // default), once the identity contract has re-synced, to pick up changes
+  // other devices made in the meantime. Losing the network closes the socket,
+  // so regaining it also leads to a reconnect. `onUpdate` records the loaded
+  // list (and its version tag) as the base for later writes, and looks up the
+  // names this device doesn't know yet (see `namespaceCacheList.js`).
   // (KV-REVAMPED.md §4.1 / §4.8)
   sbp('chelonia/kv/defineSlot', {
     contractType: 'gi.contracts/identity',
@@ -146,27 +146,19 @@ export const registerKvSlots = (): void => {
     match: onOwnIdentity,
     autoSubscribe: false,
     autoLoad: 'on-demand',
-    // `refreshOnReconnect: false` because the `ONLINE` listener in
-    // `identity-kv.js` already triggers an explicit `kv/load` → `loadCachedNames`
-    // → `chelonia/kv/sync` on both pubsub reconnect (`reconnection-succeeded`
-    // emits `ONLINE`) and the browser regaining connectivity. The lib-side
-    // reconnect refetch would duplicate that GET and the `verifyUnknownServerNames`
-    // pass. The initial login load is driven by `LOGIN_COMPLETE` → `kv/load`,
-    // not by reconnect. (KV-REVAMPED.md §4.1)
-    refreshOnReconnect: false,
     onUpdate: (value, ctx) => {
       // `saveCachedNames` writes through the low-level `chelonia/kv/set` (see
       // identity-kv.js) and so never produces a 'local' mirror update for this
       // slot; the guard is kept as cheap insurance. (KV-REVAMPED.md §4.1)
       if (ctx.reason === 'local') return
       const names = value || []
-      recordNsCacheServerState(ctx.contractID, names, ctx.etag)
-      // Fire-and-forget: `verifyUnknownServerNames` may perform batched network
+      namespaceCacheList.recordServerState(ctx.contractID, names, ctx.etag)
+      // Fire-and-forget: `verifyUnknownNames` may perform batched network
       // lookups that can take seconds, and the lib awaits `onUpdate` inside
       // the identity contract's queue lane. Awaiting here would stall
       // identity event processing and (via chatroom sideEffects that await
       // identity KV writes) chatroom event processing too. (KV-REVAMPED.md §4.1)
-      verifyUnknownServerNames(names).then(() => {
+      namespaceCacheList.verifyUnknownNames(names).then(() => {
         scheduleSaveCachedNames()
       }).catch((e) => {
         console.error('[kv-slots] namespace-cache onUpdate error:', e)

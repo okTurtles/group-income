@@ -13,6 +13,11 @@ export const ownValue = (obj: ?Object, key: string): any => obj && has(obj, key)
 
 export type NamespaceUpdate = { name: string, value?: ?string, deletedValue?: ?string }
 
+// The update that records `value` (a contract ID, or `null` if the name isn't
+// registered) as the current answer for `name` in `cache`.
+export const answerToUpdate = (cache: ?Object, name: string, value: ?string): NamespaceUpdate =>
+  value ? { name, value } : { name, deletedValue: ownValue(cache, name) }
+
 // Applies an update to the username cache (`namespaceLookups`, name to
 // contract ID) and its reverse (`reverseNamespaceLookups`). The service worker
 // uses it for its cache and broadcasts the updates that changed something

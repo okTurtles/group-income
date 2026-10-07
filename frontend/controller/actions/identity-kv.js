@@ -4,8 +4,9 @@ import { KV_NOOP } from '@chelonia/lib'
 import { CHELONIA_RESET } from '@chelonia/lib/events'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce } from 'turtledash'
-import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
+import { NAMESPACE_REGISTRATION } from '~/frontend/utils/events.js'
 import { createNamespaceCacheList, isContractDeletedError } from './namespaceCacheList.js'
+import type { NamespaceCacheList } from './namespaceCacheList.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
@@ -28,7 +29,7 @@ const isDeletedAccount = async (contractID: string): Promise<boolean> => {
 
 // The `namespace-cache` KV list: the usernames known to this user's devices,
 // so that a new device can show them. See `namespaceCacheList.js`.
-const namespaceCacheList = createNamespaceCacheList({
+export const namespaceCacheList: NamespaceCacheList = createNamespaceCacheList({
   getState: () => sbp('chelonia/rootState'),
   getConfig: () => sbp('chelonia/config'),
   resolve: (name) => sbp('namespace/resolve', name),
@@ -46,18 +47,6 @@ const namespaceCacheList = createNamespaceCacheList({
   }
 })
 
-// Looks up the names on the server list that this device doesn't know yet.
-// Names already in the local cache are trusted and never re-checked; names of
-// deleted accounts aren't added to the local cache.
-export const verifyUnknownServerNames = (serverNames: string[]): Promise<void> => {
-  return namespaceCacheList.verifyUnknownNames(serverNames)
-}
-
-// Records the server copy of the list (after loading it)
-export const recordNsCacheServerState = (identityContractID: string, names: string[], etag: ?string) => {
-  namespaceCacheList.recordServerState(identityContractID, names, etag)
-}
-
 export const scheduleSaveCachedNames: Function = debounce(() => {
   if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
   Promise.resolve().then(() => sbp('gi.actions/identity/kv/saveCachedNames')).catch((e) => {
@@ -70,6 +59,7 @@ export const scheduleSaveCachedNames: Function = debounce(() => {
 // showing them) but are removed from the shared list, so that devices that
 // never saw the account don't learn them.
 export const forgetDeletedAccountNames = (contractID: string) => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
   if (namespaceCacheList.markDeletedAccount(contractID).length) {
     scheduleSaveCachedNames()
   }
@@ -125,15 +115,6 @@ const setKVPreferences = (patch: Object) => {
     value: patch
   })
 }
-
-sbp('okTurtles.events/on', ONLINE, () => {
-  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
-    return
-  }
-  sbp('gi.actions/identity/kv/load').catch(e => {
-    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
-  })
-})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {

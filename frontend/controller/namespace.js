@@ -2,15 +2,15 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { applyNamespaceUpdate as applyUpdate, ownValue } from '~/frontend/utils/namespaceCache.js'
+import { answerToUpdate, applyNamespaceUpdate, ownValue } from '~/frontend/utils/namespaceCache.js'
 import type { NamespaceUpdate } from '~/frontend/utils/namespaceCache.js'
 
 const vueSetters = { set: Vue.set, del: Vue.delete }
 
 // Applies a namespace cache update (as broadcast by the service worker with
 // NAMESPACE_REGISTRATION) to this tab's Vuex state. Does nothing if unchanged.
-export const applyNamespaceUpdate = (state: Object, update: NamespaceUpdate) => {
-  applyUpdate(state, update, vueSetters)
+export const applyNamespaceUpdateToVuex = (state: Object, update: NamespaceUpdate) => {
+  applyNamespaceUpdate(state, update, vueSetters)
 }
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
@@ -32,13 +32,20 @@ sbp('sbp/selectors/register', {
         return Promise.resolve(cached)
       }
     }
-    return sbp('sw-namespace/lookup', name, { skipCache: !!skipCache, forceRefresh: !!forceRefresh }).then((value) => {
+    return sbp('sw-namespace/lookup', name, { skipCache: !!skipCache, forceRefresh: !!forceRefresh }).then(async (value) => {
       // The service worker only broadcasts changes, so keep this tab's cache in
-      // sync with the answer in case it missed a broadcast
-      const state = sbp('state/vuex/state')
-      applyNamespaceUpdate(state, value
-        ? { name, value }
-        : { name, deletedValue: ownValue(state.namespaceLookups, name) })
+      // sync in case it missed a broadcast. Copy what the service worker's
+      // cache holds now rather than the answer: answers made outdated by a
+      // reset (e.g., logging out), a forced refresh or an invalidation aren't
+      // written into it.
+      try {
+        const cached = await sbp('sw-namespace/lookupCached', name)
+        const state = sbp('state/vuex/state')
+        applyNamespaceUpdateToVuex(state, answerToUpdate(state.namespaceLookups, name, cached))
+      } catch (e) {
+        // The answer is still valid; the broadcasts keep the cache up to date
+        console.warn(`namespace/lookup: unable to update this tab's cache for ${name}`, e)
+      }
       return value
     })
   }

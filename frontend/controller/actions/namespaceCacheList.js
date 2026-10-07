@@ -86,6 +86,11 @@ export function createNamespaceCacheList ({
   let lastKnown: ?ListState = null
   // Incremented on reset; work started before a reset doesn't change state
   let generation = 0
+  // Names being checked by `verifyUnknownNames` calls that haven't finished,
+  // so that overlapping calls (e.g., from several tabs opening at once) don't
+  // check them again. Replaced on reset, so that a new session doesn't skip
+  // names that older work won't finish.
+  let verifying: Set<string> = new Set()
 
   const lastKnownFor = (identityContractID: string): ?ListState =>
     lastKnown?.identityContractID === identityContractID ? lastKnown : null
@@ -145,38 +150,46 @@ export function createNamespaceCacheList ({
   }
 
   // Looks up the names on the server list that this device doesn't know.
-  // Names already in the local cache are trusted and never re-checked. Names
-  // of deleted accounts are not added to the local cache.
+  // Names already in the local cache are trusted and never re-checked, and
+  // names that another call is still checking are skipped. Names of deleted
+  // accounts are not added to the local cache.
   const verifyUnknownNames = async (serverNames: mixed): Promise<void> => {
     const startGeneration = generation
+    const inFlight = verifying
     const known = getState().namespaceLookups
     const { drop } = outbox()
-    const unknown = normalize(serverNames).filter(name => !ownValue(known, name) && !has(drop, name))
+    const unknown = normalize(serverNames).filter(name =>
+      !ownValue(known, name) && !has(drop, name) && !inFlight.has(name))
+    unknown.forEach(name => inFlight.add(name))
     const active = () => startGeneration === generation
-    // Checking `active()` here only skips the remaining batches after a reset;
-    // each name is checked as well
-    for (let i = 0; i < unknown.length && active(); i += batchSize) {
-      await Promise.all(unknown.slice(i, i + batchSize).map(async (name) => {
-        try {
-          if (!active() || ownValue(getState().namespaceLookups, name)) return
-          const value = await resolve(name)
-          if (!active()) return
-          if (!value) {
-            markDropped(name, 'unregistered')
-            return
+    try {
+      // Checking `active()` here only skips the remaining batches after a
+      // reset; each name is checked as well
+      for (let i = 0; i < unknown.length && active(); i += batchSize) {
+        await Promise.all(unknown.slice(i, i + batchSize).map(async (name) => {
+          try {
+            if (!active() || ownValue(getState().namespaceLookups, name)) return
+            const value = await resolve(name)
+            if (!active()) return
+            if (!value) {
+              markDropped(name, 'unregistered')
+              return
+            }
+            const deleted = await isDeletedAccount(value)
+            if (!active()) return
+            if (deleted) {
+              markDropped(name, 'deleted')
+              return
+            }
+            await lookup(name)
+          } catch (e) {
+            // The name is kept and retried on the next load
+            onError(name, e)
           }
-          const deleted = await isDeletedAccount(value)
-          if (!active()) return
-          if (deleted) {
-            markDropped(name, 'deleted')
-            return
-          }
-          await lookup(name)
-        } catch (e) {
-          // The name is kept and retried on the next load
-          onError(name, e)
-        }
-      }))
+        }))
+      }
+    } finally {
+      unknown.forEach(name => inFlight.delete(name))
     }
   }
 
@@ -247,6 +260,7 @@ export function createNamespaceCacheList ({
     createMissingList,
     reset () {
       lastKnown = null
+      verifying = new Set()
       generation++
     }
   }

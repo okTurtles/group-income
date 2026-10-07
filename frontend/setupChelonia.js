@@ -9,6 +9,7 @@ import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
+import { isContractDeletedError } from './controller/actions/namespaceCacheList.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
@@ -29,7 +30,10 @@ const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   return false
 }
 
-const handleDeletedContract = async (contractID: string) => {
+// `confirmed` tells whether the server confirmed the deletion (a deletion
+// notification or a 410). Otherwise (a 404), the contract may still exist, so
+// `_ondeleted` handlers should avoid changes that other devices would pick up.
+const handleDeletedContract = async (contractID: string, { confirmed }: { confirmed: boolean }) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
 
@@ -65,7 +69,7 @@ const handleDeletedContract = async (contractID: string) => {
   // removed, this is at worst redudant, but still safe, since removal of the
   // identity contract also deletes the same information.
   if (typeof handler === 'function') {
-    await handler(contractID, contractState).catch(e => {
+    await handler(contractID, contractState, { confirmed }).catch(e => {
       console.error('[handleDeletedContract] Error handling deletion of contract', contractID, e)
     })
   } else {
@@ -288,7 +292,7 @@ const initialize = async (): Promise<void> => {
         if (!e) return
         if (e.name === 'ChelErrorResourceGone') {
           console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
-          handleDeletedContract(contractID).catch(e => {
+          handleDeletedContract(contractID, { confirmed: isContractDeletedError(e) }).catch(e => {
             console.error('[syncContractError] Error handling contract deletion', e)
           })
         }
@@ -415,7 +419,7 @@ const connectAndSync = () => {
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
         console.info('[messageHandler] Contract ID ' + contractID + ' has been deleted')
-        handleDeletedContract(contractID).catch(e => {
+        handleDeletedContract(contractID, { confirmed: true }).catch(e => {
           console.error('[messageHandler] Error handling contract deletion', e)
         })
       }

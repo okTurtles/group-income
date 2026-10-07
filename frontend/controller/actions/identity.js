@@ -1389,7 +1389,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object) => {
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Object, { confirmed = false }: { confirmed?: boolean } = {}) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {
@@ -1399,9 +1399,11 @@ export default (sbp('sbp/selectors/register', {
       // used, as we're no longer able to keep our identity meaningfully in sync
       // with things happening on the server.
       await sbp('gi.actions/identity/logout')
-    } else {
+    } else if (confirmed) {
       // Someone else's account: keep its name on this device (e.g., for chat
-      // history), but stop sharing it with devices that never saw it
+      // history), but stop sharing it with devices that never saw it. Only
+      // done when the server confirmed the deletion, because names removed
+      // this way are never added back.
       forgetDeletedAccountNames(contractID)
     }
   },

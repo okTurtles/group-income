@@ -132,6 +132,28 @@ describe('namespace-cache list', () => {
     assert.equal(t.state.namespaceLookups.eve, 'id-e')
   })
 
+  it('overlapping verifications look up each unknown name once', async () => {
+    const t = harness({ answers: { bob: 'id-b', carol: 'id-c' } })
+    await Promise.all([
+      t.list.verifyUnknownNames(['bob']),
+      t.list.verifyUnknownNames(['bob', 'carol'])
+    ])
+    assert.deepEqual(t.calls.resolve, ['bob', 'carol'])
+    assert.deepEqual(t.calls.isDeleted, ['id-b', 'id-c'])
+    assert.deepEqual(t.calls.lookup, ['bob', 'carol'])
+  })
+
+  it('a verification started after a reset is not blocked by older ones', async () => {
+    const t = harness({ answers: { bob: 'id-b' } })
+    const older = t.list.verifyUnknownNames(['bob'])
+    t.list.reset()
+    await Promise.all([older, t.list.verifyUnknownNames(['bob'])])
+    assert.deepEqual(t.calls.resolve, ['bob', 'bob'])
+    // Only the newer verification changes state
+    assert.deepEqual(t.calls.lookup, ['bob'])
+    assert.equal(t.state.namespaceLookups.bob, 'id-b')
+  })
+
   it('does not write before the list has been loaded, or when nothing changed', async () => {
     const t = harness({ server: ['alice'], local: { alice: 'id-a' } })
     t.list.markAdded('alice')

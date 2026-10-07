@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { createNamespaceResolver, NAMESPACE_VERIFY_TTL } from './namespaceResolver.js'
+import { createNamespaceResolver, NAMESPACE_UNREGISTERED_TTL, NAMESPACE_VERIFY_TTL } from './namespaceResolver.js'
 
 const deferred = () => {
   let fulfill, fail
@@ -75,7 +75,7 @@ describe('namespace resolver', () => {
     assert.equal(t.requests.length, 0)
   })
 
-  it('reuses "not registered" answers', async () => {
+  it('reuses "not registered" answers only briefly', async () => {
     const t = harness()
     const first = t.resolver.lookup('ghost')
     await t.flush()
@@ -83,6 +83,28 @@ describe('namespace resolver', () => {
     assert.equal(await first, null)
     assert.equal(await t.resolver.lookup('ghost'), null)
     assert.equal(await t.resolver.lookup('ghost', { skipCache: true }), null)
+    assert.equal(t.requests.length, 1)
+    t.tick(NAMESPACE_UNREGISTERED_TTL - 1)
+    assert.equal(await t.resolver.resolve('ghost'), null)
+    assert.equal(t.requests.length, 1)
+    // The name may have been registered since (e.g., on another device)
+    t.tick(1)
+    const after = t.resolver.lookup('ghost', { skipCache: true })
+    await t.flush()
+    assert.equal(t.requests.length, 2)
+    t.requests[1].resolve('id-ghost')
+    assert.equal(await after, 'id-ghost')
+    assert.equal(t.cache.ghost, 'id-ghost')
+  })
+
+  it('keeps reusing registered answers after "not registered" ones expire', async () => {
+    const t = harness()
+    const first = t.resolver.resolve('alice')
+    await t.flush()
+    t.requests[0].resolve('id-alice')
+    await first
+    t.tick(NAMESPACE_UNREGISTERED_TTL)
+    assert.equal(await t.resolver.resolve('alice'), 'id-alice')
     assert.equal(t.requests.length, 1)
   })
 

@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { applyNamespaceUpdate, ownValue } from './namespaceCache.js'
+import { answerToUpdate, applyNamespaceUpdate, ownValue } from './namespaceCache.js'
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k)
 const setters = {
@@ -21,6 +21,20 @@ describe('namespace cache', () => {
       assert.equal(ownValue(Object.create(null), 'constructor'), undefined)
       assert.equal(ownValue(undefined, 'alice'), undefined)
       assert.equal(ownValue(null, 'alice'), undefined)
+    })
+  })
+
+  describe('answerToUpdate', () => {
+    it('records registered names', () => {
+      assert.deepEqual(answerToUpdate({ alice: 'id-1' }, 'alice', 'id-2'), { name: 'alice', value: 'id-2' })
+      assert.deepEqual(answerToUpdate(undefined, 'alice', 'id-a'), { name: 'alice', value: 'id-a' })
+    })
+
+    it('removes the cached value of names that are not registered', () => {
+      assert.deepEqual(answerToUpdate({ alice: 'id-a' }, 'alice', null), { name: 'alice', deletedValue: 'id-a' })
+      assert.deepEqual(answerToUpdate({ alice: 'id-a' }, 'alice', ''), { name: 'alice', deletedValue: 'id-a' })
+      assert.deepEqual(answerToUpdate({}, 'constructor', null), { name: 'constructor', deletedValue: undefined })
+      assert.deepEqual(answerToUpdate(undefined, 'alice', null), { name: 'alice', deletedValue: undefined })
     })
   })
 
@@ -98,8 +112,8 @@ describe('namespace cache', () => {
 
     it('keeps a tab in sync with the service worker, even if it misses broadcasts', () => {
       // The service worker writes every answer and broadcasts the changes; a
-      // tab applies the broadcasts it gets, and applies the answers to its
-      // own lookups (see `controller/namespace.js`).
+      // tab applies the broadcasts it gets, and after its own lookups copies
+      // what the service worker's cache holds (see `controller/namespace.js`).
       let seed = 42
       const random = (n) => {
         seed = (seed * 1103515245 + 12345) & 0x7fffffff
@@ -114,12 +128,12 @@ describe('namespace cache', () => {
           const name = names[random(names.length)]
           const value = values[random(values.length)]
           // Service worker (`project` in sw-namespace.js)
-          const update = value ? { name, value } : { name, deletedValue: ownValue(sw.namespaceLookups, name) }
+          const update = answerToUpdate(sw.namespaceLookups, name, value)
           const changed = apply(sw, update)
           // Broadcast, sometimes missed
           if (changed && random(4) !== 0) apply(tab, update)
           // The tab's own lookup
-          apply(tab, value ? { name, value } : { name, deletedValue: ownValue(tab.namespaceLookups, name) })
+          apply(tab, answerToUpdate(tab.namespaceLookups, name, ownValue(sw.namespaceLookups, name)))
           assert.deepEqual(plain(tab), plain(sw), `run ${run}, step ${step}`)
         }
       }

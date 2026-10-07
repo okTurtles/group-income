@@ -1,7 +1,12 @@
 'use strict'
 
-// How long a server answer for a name (registered or not) is reused.
+// How long the server's answer for a registered name is reused.
 export const NAMESPACE_VERIFY_TTL = 5 * 60 * 1000
+// How long a 'not registered' answer is reused. It goes stale as soon as the
+// name is registered (possibly on another device), so it's only reused long
+// enough to collapse a burst of lookups (e.g., while replaying a contract's
+// history).
+export const NAMESPACE_UNREGISTERED_TTL = 15 * 1000
 // How long to wait for the server's answer before giving up.
 export const NAMESPACE_REQUEST_TIMEOUT = 30 * 1000
 
@@ -20,6 +25,7 @@ export function createNamespaceResolver ({
   project,
   now = () => Date.now(),
   ttl = NAMESPACE_VERIFY_TTL,
+  unregisteredTtl = NAMESPACE_UNREGISTERED_TTL,
   requestTimeout = NAMESPACE_REQUEST_TIMEOUT
 }: {
   fetchName: (name: string, signal: AbortSignal) => Promise<?string>,
@@ -27,16 +33,19 @@ export function createNamespaceResolver ({
   project: (name: string, value: ?string) => void,
   now?: () => number,
   ttl?: number,
+  unregisteredTtl?: number,
   requestTimeout?: number
 }): Object {
   const entries: Map<string, Object> = new Map()
   // Incremented by `reset()`. A lookup started before a reset still returns its
   // answer but doesn't write it into the (new) cache. Server answers aren't tied
   // to a session: lookups started after a reset may reuse a remembered answer
-  // (pending or settled, for up to `ttl`), and those do write it into the cache.
+  // (pending, or settled for up to `ttl` / `unregisteredTtl`), and those do
+  // write it into the cache.
   let generation = 0
 
-  const isFresh = (entry: Object) => !entry.settled || now() - entry.at < ttl
+  const isFresh = (entry: Object) => !entry.settled ||
+    now() - entry.at < (entry.value ? ttl : unregisteredTtl)
 
   // `fetchName`, limited to `requestTimeout`. On timeout the request is
   // aborted and the returned promise rejects.
