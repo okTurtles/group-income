@@ -14,7 +14,7 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@cheloni
 import type { GIRegParams } from './types.js'
 import { encryptedAction, encryptedNotification } from './utils.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
-import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, privateGroupChatRoomsToCheck } from '@model/chatroom/privateRoomSecurity.js'
+import { currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck } from '@model/chatroom/privateRoomSecurity.js'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
 
@@ -121,16 +121,16 @@ const groupChatRoomLeaveSigningKeyId = (contractIDOrState: string | Object): ?st
 // example, a former member who re-joined the chatroom directly, using keys that
 // hadn't been rotated yet) and, if `rotate` is set and there's nobody to
 // remove, rotates the chatroom keys if a former member still holds them.
-const secureChatRoom = async (identityContractID: string, groupID: string, chatRoomID: string, rotate: boolean) => {
+const enforceChatRoomMembership = async (identityContractID: string, groupID: string, chatRoomID: string, rotate: boolean) => {
   const isApplicable = () => {
     const rootState = sbp('chelonia/rootState')
     return rootState.loggedIn?.identityContractID === identityContractID &&
       isOurPrivateGroupChatRoom(rootState, identityContractID, groupID, chatRoomID)
   }
   const membersToRemove = () => {
-    if (!isApplicable()) return []
     const rootState = sbp('chelonia/rootState')
-    return chatRoomMembersToRemove(rootState[chatRoomID], rootState[groupID].chatRooms[chatRoomID], identityContractID)
+    if (rootState.loggedIn?.identityContractID !== identityContractID) return []
+    return ourPrivateGroupChatRoomMembersToRemove(rootState, identityContractID, groupID, chatRoomID)
   }
 
   // Act on the latest state, after any events being processed (e.g., by a
@@ -161,22 +161,21 @@ const secureChatRoom = async (identityContractID: string, groupID: string, chatR
     // member leaves the group. Their key is removed in the same message, and
     // processing the leave action rotates the chatroom keys.
     await Promise.all(toRemove.map((memberID) => {
-      console.warn('[gi.actions/chatroom/secureFormerMemberAccess] Removing a chatroom member that the group does not list as a member', { groupID, chatRoomID, memberID })
+      console.warn('[enforceChatRoomMembership] Removing a chatroom member that the group does not list as a member', { groupID, chatRoomID, memberID })
       return sbp('gi.actions/chatroom/leave', {
         contractID: chatRoomID,
         data: { memberID },
         signingKeyId,
         innerSigningContractID: null,
         hooks: {
-          preSendCheck: (_, state) => {
-            const groupState = sbp('chelonia/contract/state', groupID)
-            return membersMissingFromGroup(state, groupState?.chatRooms?.[chatRoomID]).includes(memberID)
+          preSendCheck: () => {
+            return ourPrivateGroupChatRoomMembersToRemove(sbp('chelonia/rootState'), identityContractID, groupID, chatRoomID).includes(memberID)
           }
         }
       }).catch((e) => {
         // Another member removed them first
         if (e?.cause?.name === 'GIChatroomNotMemberError') return
-        console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error removing chatroom member', { groupID, chatRoomID, memberID }, e)
+        console.error('[enforceChatRoomMembership] Error removing chatroom member', { groupID, chatRoomID, memberID }, e)
       })
     }))
     return
@@ -195,7 +194,7 @@ const secureChatRoom = async (identityContractID: string, groupID: string, chatR
   // removal always happens before the rotation.
   const staleKeyIds = formerMemberKeyIdsToRemove(state)
   if (staleKeyIds.length) {
-    console.warn('[gi.actions/chatroom/secureFormerMemberAccess] Removing keys of former chatroom members', { groupID, chatRoomID, staleKeyIds })
+    console.warn('[enforceChatRoomMembership] Removing keys of former chatroom members', { groupID, chatRoomID, staleKeyIds })
     await sbp('chelonia/out/keyDel', {
       contractID: chatRoomID,
       contractName: 'gi.contracts/chatroom',
@@ -205,43 +204,44 @@ const secureChatRoom = async (identityContractID: string, groupID: string, chatR
         preSendCheck: (_, state) => formerMemberKeyIdsToRemove(state).some((keyId) => staleKeyIds.includes(keyId))
       }
     }).catch((e) => {
-      console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error removing keys of former chatroom members', { groupID, chatRoomID }, e)
+      console.error('[enforceChatRoomMembership] Error removing keys of former chatroom members', { groupID, chatRoomID }, e)
     })
   }
   // This is also the case for a short while after a member leaves, until the
   // rotation triggered by processing the leave action is done. Rotating here
   // as well is harmless, as only one rotation of the same keys gets sent.
-  console.info('[gi.actions/chatroom/secureFormerMemberAccess] Rotating chatroom keys: former members still hold the current keys', { groupID, chatRoomID })
-  await sbp('chelonia/contract/setPendingKeyRevocation', chatRoomID, ['cek', 'csk'])
+  console.info('[enforceChatRoomMembership] Rotating chatroom keys: former members still hold the current keys', { groupID, chatRoomID })
+  await sbp('chelonia/contract/setPendingKeyRevocation', chatRoomID, ['cek', 'csk'], [CEKid, CSKid])
   await sbp('gi.actions/out/rotateKeys', chatRoomID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
 }
 
-// Runs `secureChatRoom` at most once at a time per chatroom. Requests made
-// while it's running result in it being run again afterwards, so that changes
-// that happened in the meantime aren't missed.
-const secureChatRoomRuns: Map<string, { again: boolean, rotate: boolean }> = new Map()
-const runSecureChatRoom = async (identityContractID: string, groupID: string, chatRoomID: string, rotate: boolean) => {
-  const running = secureChatRoomRuns.get(chatRoomID)
+// Runs `enforceChatRoomMembership` at most once at a time per account and
+// chatroom. Requests made while it's running result in it being run again
+// afterwards, so that changes that happened in the meantime aren't missed.
+const membershipEnforcementRuns: Map<string, { again: boolean, rotate: boolean }> = new Map()
+const runEnforceChatRoomMembership = async (identityContractID: string, groupID: string, chatRoomID: string, rotate: boolean) => {
+  const runKey = `${identityContractID}|${chatRoomID}`
+  const running = membershipEnforcementRuns.get(runKey)
   if (running) {
     running.again = true
     running.rotate = running.rotate || rotate
     return
   }
   const run = { again: true, rotate }
-  secureChatRoomRuns.set(chatRoomID, run)
+  membershipEnforcementRuns.set(runKey, run)
   try {
     while (run.again) {
       const rotateNow = run.rotate
       run.again = false
       run.rotate = false
       try {
-        await secureChatRoom(identityContractID, groupID, chatRoomID, rotateNow)
+        await enforceChatRoomMembership(identityContractID, groupID, chatRoomID, rotateNow)
       } catch (e) {
-        console.error('[gi.actions/chatroom/secureFormerMemberAccess] Error', { groupID, chatRoomID }, e)
+        console.error('[enforceChatRoomMembership] Error', { groupID, chatRoomID }, e)
       }
     }
   } finally {
-    secureChatRoomRuns.delete(chatRoomID)
+    membershipEnforcementRuns.delete(runKey)
   }
 }
 
@@ -253,7 +253,9 @@ const runSecureChatRoom = async (identityContractID: string, groupID: string, ch
 // in-progress operations (like a member leaving) finish first.
 // A check that didn't remove anyone (for example, because publishing failed)
 // isn't repeated for the same members for `MEMBERSHIP_RECHECK_MS`, so that it
-// isn't retried (and logged) on every chatroom event. Checks are also skipped
+// isn't retried (and logged) on every chatroom event. That record is cleared by
+// the first event that shows nobody to remove, even while a check is pending,
+// so that a member who re-joins later is checked again. Checks are also skipped
 // while we don't have a key to sign removals with; the first event after the
 // key arrives triggers one.
 const MEMBERSHIP_RECHECK_MS = 5 * 60_000
@@ -261,19 +263,20 @@ const membershipCheckTimers: Map<string, TimeoutID> = new Map()
 // chatRoomID -> the members that were last checked for removal, and when
 const lastMembershipChecks: Map<string, { members: string, at: number }> = new Map()
 sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
-  if (membershipCheckTimers.has(contractID)) return
   const rootState = sbp('chelonia/rootState')
   if (rootState.contracts?.[contractID]?.type !== 'gi.contracts/chatroom') return
   const identityContractID = rootState.loggedIn?.identityContractID
   if (!identityContractID) return
   const groupID = Object.keys(rootState[identityContractID]?.groups || {})
     .find((groupID) => !!rootState[groupID]?.chatRooms?.[contractID])
-  if (!groupID || !isOurPrivateGroupChatRoom(rootState, identityContractID, groupID, contractID)) return
-  const toRemove = chatRoomMembersToRemove(rootState[contractID], rootState[groupID].chatRooms[contractID], identityContractID)
+  if (!groupID) return
+  const toRemove = ourPrivateGroupChatRoomMembersToRemove(rootState, identityContractID, groupID, contractID)
   if (!toRemove.length) {
     lastMembershipChecks.delete(contractID)
     return
   }
+  // A check is already scheduled; it will use the state at the time it runs
+  if (membershipCheckTimers.has(contractID)) return
   if (!groupChatRoomLeaveSigningKeyId(rootState[contractID])) return
   const members = [...toRemove].sort().join(',')
   const lastCheck = lastMembershipChecks.get(contractID)
@@ -281,7 +284,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   lastMembershipChecks.set(contractID, { members, at: Date.now() })
   membershipCheckTimers.set(contractID, setTimeout(() => {
     membershipCheckTimers.delete(contractID)
-    runSecureChatRoom(identityContractID, groupID, contractID, false)
+    runEnforceChatRoomMembership(identityContractID, groupID, contractID, false)
   }, 1000))
 })
 
@@ -789,7 +792,7 @@ export default (sbp('sbp/selectors/register', {
   // rotated), and rotates the chatroom keys if former members still hold them.
   // `contractIDHints`, if given, limits this to the chatrooms listed and to
   // the chatrooms of the groups listed.
-  'gi.actions/chatroom/secureFormerMemberAccess': async (contractIDHints?: ?string[]) => {
+  'gi.actions/chatroom/revokeFormerMemberAccess': async (contractIDHints?: ?string[]) => {
     const rootState = sbp('chelonia/rootState')
     const identityContractID = rootState.loggedIn?.identityContractID
     if (!identityContractID) return
@@ -802,7 +805,7 @@ export default (sbp('sbp/selectors/register', {
       ))
 
     await Promise.all(chatRooms.map(({ groupID, chatRoomID }) => {
-      return runSecureChatRoom(identityContractID, groupID, chatRoomID, true)
+      return runEnforceChatRoomMembership(identityContractID, groupID, chatRoomID, true)
     }))
   },
   ...encryptedNotification('gi.actions/chatroom/user-typing-event', L('Failed to send typing notification')),
@@ -894,6 +897,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.'), async (sendMessage, params) => {
     const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
     const state = sbp('chelonia/contract/state', params.contractID)
+    // Already accepted (e.g., a side effect re-running after a re-sync); sending
+    // it again would only fail validation
     if (state?.members?.[identityContractID]?.acceptedHeight != null) return
 
     return await sendMessage({ ...omit(params, ['options', 'action']) })

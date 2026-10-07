@@ -52,6 +52,8 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
     sbp('chelonia/contract/wait', added).then(() => {
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, added)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error', e)
     })
   }
 
@@ -74,6 +76,8 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
     sbp('chelonia/contract/wait', existingContracts).then(() => {
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, existingContracts)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error', e)
     })
   }, 0)
 }
@@ -305,9 +309,13 @@ sbp('sbp/selectors/register', {
     // and rotate the chatroom keys if former members still hold them.
     // `contractUpdate` runs this for existing contracts as well as for
     // contracts synced later on (for example, when logging in on a new device).
-    contractUpdate(state, (_, contractIDHints) => {
-      sbp('gi.actions/chatroom/secureFormerMemberAccess', contractIDHints).catch(e => {
-        console.error('[chatroom/secureFormerMemberAccess] Error', e)
+    contractUpdate(state, (currentState, contractIDHints) => {
+      if (
+        Array.isArray(contractIDHints) &&
+        !contractIDHints.some((contractID) => ['gi.contracts/group', 'gi.contracts/chatroom'].includes(currentState.contracts[contractID]?.type))
+      ) return
+      sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDHints).catch(e => {
+        console.error('[chatroom/revokeFormerMemberAccess] Error', e)
       })
     })
 

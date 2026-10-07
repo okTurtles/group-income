@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, privateGroupChatRoomsToCheck } from './privateRoomSecurity.js'
+import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck } from './privateRoomSecurity.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 const should = require('should')
 
@@ -182,5 +182,56 @@ describe('privateGroupChatRoomsToCheck', () => {
 
   it('handles missing state', () => {
     should(privateGroupChatRoomsToCheck({}, me)).eql([])
+  })
+
+  it('skips a chatroom while its group, or the chatroom itself, has events we could not decrypt', () => {
+    for (const contractID of ['g1', 'priv']) {
+      const incomplete = { ...state, contracts: { [contractID]: { missingDecryptionKeyIds: ['k'] } } }
+      should(isOurPrivateGroupChatRoom(incomplete, me, 'g1', 'priv')).be.false()
+      should(privateGroupChatRoomsToCheck(incomplete, me)).eql([])
+    }
+    const complete = { ...state, contracts: { g1: { missingDecryptionKeyIds: [] }, priv: {} } }
+    should(privateGroupChatRoomsToCheck(complete, me)).eql([{ groupID: 'g1', chatRoomID: 'priv' }])
+  })
+})
+
+describe('ourPrivateGroupChatRoomMembersToRemove', () => {
+  const me = 'me'
+  const state = (contracts = {}) => ({
+    contracts,
+    [me]: { groups: { g1: {} } },
+    g1: {
+      chatRooms: {
+        priv: {
+          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+          deletedDate: null,
+          members: { [me]: { status: PROFILE_STATUS.ACTIVE }, a: { status: PROFILE_STATUS.ACTIVE }, b: { status: PROFILE_STATUS.REMOVED } }
+        },
+        pub: {
+          privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
+          deletedDate: null,
+          members: { [me]: { status: PROFILE_STATUS.ACTIVE }, b: { status: PROFILE_STATUS.REMOVED } }
+        }
+      }
+    },
+    priv: { _vm: {}, attributes: { type: CHATROOM_TYPES.GROUP, privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE }, members: { [me]: {}, a: {}, b: {} } },
+    pub: { _vm: {}, attributes: { type: CHATROOM_TYPES.GROUP, privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP }, members: { [me]: {}, b: {} } }
+  })
+
+  it('is the same as chatRoomMembersToRemove for one of our private group chatrooms', () => {
+    const s = state()
+    should(ourPrivateGroupChatRoomMembersToRemove(s, me, 'g1', 'priv')).eql(['b'])
+    should(ourPrivateGroupChatRoomMembersToRemove(s, me, 'g1', 'priv')).eql(chatRoomMembersToRemove(s.priv, s.g1.chatRooms.priv, me))
+  })
+
+  it('is empty for chatrooms that are not our private group chatrooms', () => {
+    should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g1', 'pub')).eql([])
+    should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g1', 'unknown')).eql([])
+    should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g2', 'priv')).eql([])
+  })
+
+  it('is empty while the group, or the chatroom, has events we could not decrypt', () => {
+    should(ourPrivateGroupChatRoomMembersToRemove(state({ g1: { missingDecryptionKeyIds: ['k'] } }), me, 'g1', 'priv')).eql([])
+    should(ourPrivateGroupChatRoomMembersToRemove(state({ priv: { missingDecryptionKeyIds: ['k'] } }), me, 'g1', 'priv')).eql([])
   })
 })

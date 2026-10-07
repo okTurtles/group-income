@@ -1,5 +1,5 @@
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, MESSAGE_TYPES, PROFILE_STATUS } from '../../../frontend/model/contracts/shared/constants.js'
-import { randomUserSuffix } from '../support/lib.js'
+import { currentKeyByName, randomUserSuffix, readChatRoom } from '../support/lib.js'
 
 // Former members of a private channel must not keep access to it:
 //  - the channel keys must be rotated when a member leaves
@@ -21,13 +21,14 @@ const ids = {}
 let invitationLinkAnyone
 let initialKeys, rotatedKeys, dmBefore
 
-const currentKeys = (state) => {
-  const current = (name) => Object.values(state._vm.authorizedKeys)
-    .find((key) => key.name === name && key._notAfterHeight == null)?.id
-  return { cek: current('cek'), csk: current('csk') }
-}
+const AE_INNER = 'ae#inner' // SPMessage.OP_ACTION_ENCRYPTED + '#inner'
 
-const currentKeysHeight = (state) => {
+const currentKeys = (state) => ({
+  cek: currentKeyByName(state, 'cek')?.id,
+  csk: currentKeyByName(state, 'csk')?.id
+})
+
+const currentKeysValidFrom = (state) => {
   const { cek, csk } = currentKeys(state)
   return Math.min(
     state._vm.authorizedKeys[cek]._notBeforeHeight,
@@ -40,15 +41,24 @@ const dmSnapshot = (sbp) => {
   return { members: Object.keys(state.members).sort(), keys: currentKeys(state) }
 }
 
-// Reads a chatroom that we're not subscribed to (e.g., after leaving it)
-const readChatRoom = async (sbp, chatRoomID, readFn) => {
-  await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
-  try {
-    await sbp('chelonia/contract/sync', chatRoomID)
-    return await readFn(await sbp('chelonia/contract/state', chatRoomID))
-  } finally {
-    await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
-  }
+const addMemberKey = (sbp, chatRoomID, memberID, signingKeyId) => {
+  const identityState = sbp('state/vuex/state')[memberID]
+  const CSKid = currentKeys(identityState).csk
+  return sbp('chelonia/out/keyAdd', {
+    contractID: chatRoomID,
+    contractName: 'gi.contracts/chatroom',
+    data: [{
+      foreignKey: `shelter:${memberID}?keyName=csk`,
+      id: CSKid,
+      data: identityState._vm.authorizedKeys[CSKid].data,
+      permissions: [AE_INNER],
+      allowedActions: '*',
+      purpose: ['sig'],
+      ringLevel: Number.MAX_SAFE_INTEGER,
+      name: `${memberID}/${CSKid}`
+    }],
+    signingKeyId
+  })
 }
 
 describe('Private channels - former members lose access', () => {
@@ -136,6 +146,11 @@ describe('Private channels - former members lose access', () => {
       })
     })
     cy.giEmptyInvocationQueue()
+    cy.giChatRoomCheck(ids.channel, (state, sbp) => {
+      const ownCSKid = currentKeyByName(sbp('state/vuex/state')[ids.user2], 'csk')?.id
+      return state?.members?.[ids.user2]?.hasLeft === true &&
+        typeof state._vm.authorizedKeys[ownCSKid]?._notAfterHeight === 'number'
+    })
 
     // Nobody else is online, so the channel keys haven't been rotated yet.
     // A modified client can use them to re-add its own key and re-join.
@@ -146,24 +161,9 @@ describe('Private channels - former members lose access', () => {
       expect(currentKeys(state)).to.deep.equal(initialKeys)
     }))
     cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, async (state) => {
-      const identityState = sbp('state/vuex/state')[ids.user2]
-      const ownCSKid = currentKeys(identityState).csk
+      const ownCSKid = currentKeys(sbp('state/vuex/state')[ids.user2]).csk
       const { csk, cek } = currentKeys(state)
-      await sbp('chelonia/out/keyAdd', {
-        contractID: ids.channel,
-        contractName: 'gi.contracts/chatroom',
-        data: [{
-          foreignKey: `shelter:${ids.user2}?keyName=csk`,
-          id: ownCSKid,
-          data: identityState._vm.authorizedKeys[ownCSKid].data,
-          permissions: ['ae#inner'],
-          allowedActions: '*',
-          purpose: ['sig'],
-          ringLevel: Number.MAX_SAFE_INTEGER,
-          name: `${ids.user2}/${ownCSKid}`
-        }],
-        signingKeyId: csk
-      })
+      await addMemberKey(sbp, ids.channel, ids.user2, csk)
       await sbp('chelonia/contract/sync', ids.channel)
       await sbp('chelonia/out/actionEncrypted', {
         contractID: ids.channel,
@@ -240,24 +240,8 @@ describe('Private channels - former members lose access', () => {
     // Simulate a channel where a former member's key was never removed, by
     // adding user3's key back
     cy.window().its('sbp').then(sbp => {
-      const state = sbp('state/vuex/state')
-      const user3CSKid = currentKeys(state[ids.user3]).csk
-      ids.user3CSK = user3CSKid
-      return sbp('chelonia/out/keyAdd', {
-        contractID: ids.channel,
-        contractName: 'gi.contracts/chatroom',
-        data: [{
-          foreignKey: `shelter:${ids.user3}?keyName=csk`,
-          id: user3CSKid,
-          data: state[ids.user3]._vm.authorizedKeys[user3CSKid].data,
-          permissions: ['ae#inner'],
-          allowedActions: '*',
-          purpose: ['sig'],
-          ringLevel: Number.MAX_SAFE_INTEGER,
-          name: `${ids.user3}/${user3CSKid}`
-        }],
-        signingKeyId: rotatedKeys.csk
-      })
+      ids.user3CSK = currentKeys(sbp('state/vuex/state')[ids.user3]).csk
+      return addMemberKey(sbp, ids.channel, ids.user3, rotatedKeys.csk)
     })
     cy.window().its('sbp').should(sbp => {
       const key = sbp('state/vuex/state')[ids.channel]._vm.authorizedKeys[ids.user3CSK]
@@ -273,9 +257,18 @@ describe('Private channels - former members lose access', () => {
       expect(key._notAfterHeight, 'user3\'s key was removed').to.be.a('number')
       // Removed before the rotation, so the former member doesn't hold the
       // new keys and no further rotations are needed
-      expect(key._notAfterHeight, 'user3\'s key was removed before the rotation').to.be.below(currentKeysHeight(state))
+      expect(key._notAfterHeight, 'user3\'s key was removed before the rotation').to.be.below(currentKeysValidFrom(state))
     })
     cy.giEmptyInvocationQueue()
+    // A one-time check is enough once the keys have been rotated:
+    //  - The same keys can't be rotated twice. The rotation's `preSendCheck`
+    //    drops a rotation whose keys are no longer current, and Chelonia runs it
+    //    before every publish attempt, including after the 409 conflict that a
+    //    concurrent publish of the same rotation gets.
+    //  - Nothing in this step can start a rotation of the new keys. Nobody
+    //    leaves, and the second assertion below confirms that no former member
+    //    holds the current keys, which is the only thing that makes the
+    //    migration rotate them.
     cy.window().its('sbp').then(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
       const keys = Object.values(state._vm.authorizedKeys)
@@ -285,7 +278,7 @@ describe('Private channels - former members lose access', () => {
         'the keys were rotated once'
       ).to.have.length(1)
       const formerMembers = Object.keys(state.members).filter((id) => state.members[id].hasLeft)
-      const height = currentKeysHeight(state)
+      const height = currentKeysValidFrom(state)
       expect(
         keys.filter((key) => formerMembers.some((id) => key.name.startsWith(`${id}/`)) &&
           (key._notAfterHeight == null || key._notAfterHeight >= height)),

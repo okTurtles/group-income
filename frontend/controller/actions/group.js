@@ -126,7 +126,7 @@ const finishChatRoomJoin = async (chatRoomID: string, memberID: string): Promise
   try {
     if (isJoined()) return
     try {
-      // No share volatile keys here since we're the ones joining
+      // No need to share volatile keys here, since we're the ones joining
       await sbp('gi.actions/chatroom/join', { contractID: chatRoomID, data: {} })
     } catch (e) {
       // Already being a member of the chatroom contract as well is the
@@ -957,14 +957,11 @@ export default (sbp('sbp/selectors/register', {
     const chatRoomID = params.data.chatRoomID
     const groupContractID = params.contractID
 
-    // Joining a channel we're already an active member of publishes a message
-    // that every client (ours included, on every re-sync) fails to process with
-    // `GIGroupAlreadyJoinedError`. It happens when a join is re-attempted:
-    // contract side-effects re-run when a contract is re-synced from scratch
-    // (which is what happens once previously-missing keys arrive) and they
-    // decide whether to send based on the historical state they were handed.
-    // Skip the write and finish the chatroom half of the join instead, which is
-    // what the `alreadyJoined` handler below does after the fact.
+    // Joining a channel we're already an active member of fails Chelonia's
+    // pre-publish validation with `GIGroupAlreadyJoinedError` (and logs an error).
+    // This happens when a join is re-attempted, e.g., by side effects re-running
+    // after a re-sync. Skip the write and finish the chatroom half of the join
+    // instead, which is what the `alreadyJoined` handler below does after the fact.
     if (
       memberID === identityContractID &&
       rootState[groupContractID]?.chatRooms?.[chatRoomID]?.members?.[memberID]?.status === PROFILE_STATUS.ACTIVE
@@ -1212,41 +1209,50 @@ export default (sbp('sbp/selectors/register', {
     }
   }),
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.'), async (sendMessage, params) => {
-    const state = await sbp('chelonia/contract/state', params.contractID)
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const memberID = params.data.memberID || identityContractID
     const chatRoomID = params.data.chatRoomID
-    const member = state?.chatRooms?.[chatRoomID]?.members?.[memberID]
+    const groupMember = () => sbp('chelonia/contract/state', params.contractID)?.chatRooms?.[chatRoomID]?.members?.[memberID]
+    let member = groupMember()
 
     // The group no longer lists this member in the channel: a duplicated
     // submission, our state catching up with a leave sent from another device,
     // or an earlier leave whose chatroom half didn't go through. Another group
-    // leave would only fail with 'Cannot leave a chatroom that you're not part
-    // of' (or, while our view of the group can't be trusted, be published and
-    // then rejected on every re-sync). Finish the chatroom half instead, if it's
-    // still pending.
+    // leave would only fail Chelonia's pre-publish validation ('Cannot leave a
+    // chatroom that you're not part of'). Finish the chatroom half instead, if
+    // it's still pending.
     if (member?.status !== PROFILE_STATUS.ACTIVE) {
-      // Let any operations already queued for these contracts (for example,
-      // processing the earlier leave) finish first
-      await sbp('chelonia/contract/wait', [params.contractID, chatRoomID])
-      const chatRoomState = sbp('chelonia/contract/state', chatRoomID)
-      if (!sbp('state/vuex/getters').isJoinedChatRoomForChatRoom(chatRoomState, memberID)) {
-        console.info(`[gi.actions/group/leaveChatRoom] Not sending leave for ${memberID} in ${chatRoomID}: already left`, { status: member?.status })
-        return
-      }
+      // Keeps the chatroom state available, and up to date, for the checks
+      // below. For our own leave, the group's side effect has usually released it.
+      await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
+      try {
+        // Let any operations already queued for these contracts (for example,
+        // processing the earlier leave) finish first
+        await sbp('chelonia/contract/wait', [params.contractID, chatRoomID])
+        member = groupMember()
+        if (member?.status !== PROFILE_STATUS.ACTIVE) {
+          if (!sbp('state/vuex/getters').isJoinedChatRoomForChatRoom(sbp('chelonia/contract/state', chatRoomID), memberID)) {
+            console.info(`[gi.actions/group/leaveChatRoom] Not sending leave for ${memberID} in ${chatRoomID}: already left`, { status: member?.status })
+            return
+          }
 
-      console.info(`[gi.actions/group/leaveChatRoom] Finishing an incomplete leave for ${memberID} in ${chatRoomID}`, { status: member?.status })
-      // Same as the chatroom leave sent by the group's `leaveChatRoom` side
-      // effect (see `leaveChatRoomAction` in the group contract)
-      return sbp('gi.actions/chatroom/leave', {
-        contractID: chatRoomID,
-        data: memberID === identityContractID ? {} : { memberID }
-      }).catch((e) => {
-        // Someone else (for example, the group's side effect for the earlier
-        // leave) finished the leave first
-        if (e?.cause?.name === 'GIChatroomNotMemberError') return
-        throw e
-      })
+          console.info(`[gi.actions/group/leaveChatRoom] Finishing an incomplete leave for ${memberID} in ${chatRoomID}`, { status: member?.status })
+          // Same as the chatroom leave sent by the group's `leaveChatRoom` side
+          // effect (see `leaveChatRoomAction` in the group contract)
+          return await sbp('gi.actions/chatroom/leave', {
+            contractID: chatRoomID,
+            data: memberID === identityContractID ? {} : { memberID }
+          }).catch((e) => {
+            // Someone else (for example, the group's side effect for the earlier
+            // leave) finished the leave first
+            if (e?.cause?.name === 'GIChatroomNotMemberError') return
+            throw e
+          })
+        }
+        // Re-joined in the meantime: send a regular leave below
+      } finally {
+        await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+      }
     }
 
     const joinedHeight = member.joinedHeight

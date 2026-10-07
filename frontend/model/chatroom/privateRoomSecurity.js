@@ -72,14 +72,20 @@ export function chatRoomMembersToRemove (chatRoomState: ?Object, groupChatRoomRe
     .filter((memberID) => memberID !== ourIdentityContractID)
 }
 
+// Events that we couldn't decrypt are skipped, so our view of a contract is
+// incomplete until we receive the missing keys (which re-syncs it)
+const hasCompleteState = (state: Object, contractID: string): boolean =>
+  !state?.contracts?.[contractID]?.missingDecryptionKeyIds?.length
+
 // Whether `chatRoomID` is a private chatroom of `groupID` (i.e., not a DM),
-// which we have synced and which we're a member of according to both the group
-// and the chatroom
+// which we have completely synced (as has its group) and which we're a member
+// of according to both the group and the chatroom
 export function isOurPrivateGroupChatRoom (state: Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): boolean {
   const ourGroup = state?.[ourIdentityContractID]?.groups?.[groupID]
   const record = state?.[groupID]?.chatRooms?.[chatRoomID]
   const chatRoomState = state?.[chatRoomID]
-  return !!ourGroup && !ourGroup.hasLeft &&
+  return hasCompleteState(state, groupID) && hasCompleteState(state, chatRoomID) &&
+    !!ourGroup && !ourGroup.hasLeft &&
     !!record && !record.deletedDate &&
     record.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE &&
     record.members?.[ourIdentityContractID]?.status === PROFILE_STATUS.ACTIVE &&
@@ -88,6 +94,13 @@ export function isOurPrivateGroupChatRoom (state: Object, ourIdentityContractID:
     chatRoomState.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE &&
     !!chatRoomState.members?.[ourIdentityContractID] &&
     !chatRoomState.members[ourIdentityContractID].hasLeft
+}
+
+// The members to remove from one of our private group chatrooms, or none if
+// `chatRoomID` isn't one of those (see `isOurPrivateGroupChatRoom`)
+export function ourPrivateGroupChatRoomMembersToRemove (state: Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): string[] {
+  if (!isOurPrivateGroupChatRoom(state, ourIdentityContractID, groupID, chatRoomID)) return []
+  return chatRoomMembersToRemove(state[chatRoomID], state[groupID].chatRooms[chatRoomID], ourIdentityContractID)
 }
 
 // All of the chatrooms for which `isOurPrivateGroupChatRoom` is true
