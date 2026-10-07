@@ -117,6 +117,29 @@ sbp('okTurtles.events/on', CHELONIA_RESET, () => {
   sbp('okTurtles.data/delete', JOINED_FAILED_KEY)
 })
 
+const finishChatRoomJoin = async (chatRoomID: string, memberID: string): Promise<void> => {
+  const isJoined = () => sbp('state/vuex/getters').isJoinedChatRoomForChatRoom(sbp('chelonia/contract/state', chatRoomID), memberID)
+  // Keeps the chatroom state available, and up to date, for the checks below.
+  // We may not hold a reference to it yet; e.g., while syncing the group from
+  // scratch, its chatrooms are only retained once the sync has finished.
+  await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
+  try {
+    if (isJoined()) return
+    try {
+      // No share volatile keys here since we're the ones joining
+      await sbp('gi.actions/chatroom/join', { contractID: chatRoomID, data: {} })
+    } catch (e) {
+      // Already being a member of the chatroom contract as well is the
+      // desired end state, not an error.
+      await sbp('chelonia/contract/wait', chatRoomID)
+      if (isJoined()) return
+      throw e
+    }
+  } finally {
+    await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+  }
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -946,16 +969,7 @@ export default (sbp('sbp/selectors/register', {
       memberID === identityContractID &&
       rootState[groupContractID]?.chatRooms?.[chatRoomID]?.members?.[memberID]?.status === PROFILE_STATUS.ACTIVE
     ) {
-      // No share volatile keys here since we're the ones joining
-      return sbp('gi.actions/chatroom/join', {
-        contractID: chatRoomID,
-        data: {}
-      }).catch(e => {
-        // Already being a member of the chatroom contract as well is the
-        // desired end state, not an error.
-        if (e?.name === 'GIErrorUIRuntimeError' && e?.cause?.name === 'GIChatroomAlreadyMemberError') return
-        throw e
-      })
+      return finishChatRoomJoin(chatRoomID, identityContractID)
     }
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
@@ -998,11 +1012,7 @@ export default (sbp('sbp/selectors/register', {
       if (memberID !== identityContractID || !alreadyJoined) throw e
 
       // Attempt to complete incomplete join processes
-      // No share volatile keys here since we're the ones joining
-      return sbp('gi.actions/chatroom/join', {
-        contractID: chatRoomID,
-        data: {}
-      })
+      return finishChatRoomJoin(chatRoomID, identityContractID)
     })
   }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {

@@ -178,12 +178,15 @@ sbp('sbp/selectors/register', {
     const signingKeyId = findSuitableSecretKeyId(state, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
+      const requestMissingKeys = MISSING_KEYS_REQUEST_SELECTORS[contractName]
+      if (!requestMissingKeys) {
+        throw new Error('No suitable signing key found')
+      }
       console.info('[gi.actions/out/rotateKeys] Skipping key rotation: no suitable signing key found', { contractID, contractName, keysToRotate })
       // We're typically missing this contract's keys. Another member can
       // rotate in the meantime, which clears our pending revocations when we
       // process their key update.
-      const requestMissingKeys = MISSING_KEYS_REQUEST_SELECTORS[contractName]
-      if (requestMissingKeys) sbp(requestMissingKeys, contractID)
+      sbp(requestMissingKeys, contractID)
       return
     }
 

@@ -1,4 +1,4 @@
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, MESSAGE_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, MESSAGE_TYPES, PROFILE_STATUS } from '../../../frontend/model/contracts/shared/constants.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 // Former members of a private channel must not keep access to it:
@@ -25,6 +25,14 @@ const currentKeys = (state) => {
   const current = (name) => Object.values(state._vm.authorizedKeys)
     .find((key) => key.name === name && key._notAfterHeight == null)?.id
   return { cek: current('cek'), csk: current('csk') }
+}
+
+const currentKeysHeight = (state) => {
+  const { cek, csk } = currentKeys(state)
+  return Math.min(
+    state._vm.authorizedKeys[cek]._notBeforeHeight,
+    state._vm.authorizedKeys[csk]._notBeforeHeight
+  )
 }
 
 const dmSnapshot = (sbp) => {
@@ -170,7 +178,7 @@ describe('Private channels - former members lose access', () => {
     cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, (state) => {
       const groupRecord = sbp('state/vuex/state')[ids.group].chatRooms[ids.channel]
       expect(state.members[ids.user2].hasLeft, 'user2 is a member of the channel again').to.equal(undefined)
-      expect(groupRecord.members[ids.user2].status, 'the group lists user2 as removed').to.equal('removed')
+      expect(groupRecord.members[ids.user2].status, 'the group lists user2 as removed').to.equal(PROFILE_STATUS.REMOVED)
     }))
   })
 
@@ -262,15 +270,27 @@ describe('Private channels - former members lose access', () => {
     cy.window().its('sbp').should(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
       const key = state._vm.authorizedKeys[ids.user3CSK]
-      const newKeys = currentKeys(state)
-      const newKeysHeight = Math.min(
-        state._vm.authorizedKeys[newKeys.cek]._notBeforeHeight,
-        state._vm.authorizedKeys[newKeys.csk]._notBeforeHeight
-      )
       expect(key._notAfterHeight, 'user3\'s key was removed').to.be.a('number')
       // Removed before the rotation, so the former member doesn't hold the
       // new keys and no further rotations are needed
-      expect(key._notAfterHeight, 'user3\'s key was removed before the rotation').to.be.below(newKeysHeight)
+      expect(key._notAfterHeight, 'user3\'s key was removed before the rotation').to.be.below(currentKeysHeight(state))
+    })
+    cy.giEmptyInvocationQueue()
+    cy.window().its('sbp').then(sbp => {
+      const state = sbp('state/vuex/state')[ids.channel]
+      const keys = Object.values(state._vm.authorizedKeys)
+      const previousHeight = state._vm.authorizedKeys[rotatedKeys.cek]._notBeforeHeight
+      expect(
+        keys.filter((key) => key.name === 'cek' && key._notBeforeHeight > previousHeight),
+        'the keys were rotated once'
+      ).to.have.length(1)
+      const formerMembers = Object.keys(state.members).filter((id) => state.members[id].hasLeft)
+      const height = currentKeysHeight(state)
+      expect(
+        keys.filter((key) => formerMembers.some((id) => key.name.startsWith(`${id}/`)) &&
+          (key._notAfterHeight == null || key._notAfterHeight >= height)),
+        'no former member holds the current keys'
+      ).to.have.length(0)
     })
     cy.giLogout({ bypassUI: true })
   })
