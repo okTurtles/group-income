@@ -5,7 +5,7 @@ import { CHELONIA_RESET } from '@chelonia/lib/events'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
 import { debounce } from 'turtledash'
 import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
-import { createNamespaceCacheList } from './namespaceCacheList.js'
+import { createNamespaceCacheList, isContractDeletedError } from './namespaceCacheList.js'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
 
@@ -20,8 +20,8 @@ const isDeletedAccount = async (contractID: string): Promise<boolean> => {
     await sbp('chelonia/out/latestHEADInfo', contractID)
     return false
   } catch (e) {
-    // 410 (deleted) or 404 (unknown contract)
-    if (e?.name === 'ChelErrorResourceGone') return true
+    if (isContractDeletedError(e)) return true
+    // Including 404: the name is checked again on the next load
     throw e
   }
 }

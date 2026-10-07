@@ -114,8 +114,8 @@ async function startApp () {
   // [SW] The following is be needed to keep namespace registrations in sync
   // between the SW and each tab. It is not needed if everything is running in
   // the same context
-  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value, deletedValue }) => {
-    applyNamespaceUpdate(sbp('state/vuex/state'), { name, value, deletedValue })
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, (update) => {
+    applyNamespaceUpdate(sbp('state/vuex/state'), update)
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {

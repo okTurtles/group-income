@@ -142,6 +142,24 @@ describe('namespace resolver', () => {
     assert.equal(t.requests.length, 1)
   })
 
+  it('resolve with forceRefresh starts a new request, whose answer is then reused', async () => {
+    const t = harness()
+    const first = t.resolver.resolve('hank')
+    await t.flush()
+    t.requests[0].resolve('id-old')
+    assert.equal(await first, 'id-old')
+    assert.equal(await t.resolver.resolve('hank'), 'id-old')
+    assert.equal(t.requests.length, 1)
+    const fresh = t.resolver.resolve('hank', { forceRefresh: true })
+    await t.flush()
+    assert.equal(t.requests.length, 2)
+    t.requests[1].resolve('id-new')
+    assert.equal(await fresh, 'id-new')
+    assert.equal(await t.resolver.lookup('hank', { skipCache: true }), 'id-new')
+    assert.equal(t.cache.hank, 'id-new')
+    assert.equal(t.requests.length, 2)
+  })
+
   it('invalidate forces a new request and stops a pending answer from being cached', async () => {
     const t = harness()
     const pending = t.resolver.lookup('gina', { skipCache: true })

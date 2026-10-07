@@ -159,13 +159,14 @@ export const registerKvSlots = (): void => {
       // identity-kv.js) and so never produces a 'local' mirror update for this
       // slot; the guard is kept as cheap insurance. (KV-REVAMPED.md §4.1)
       if (ctx.reason === 'local') return
-      recordNsCacheServerState(ctx.contractID, value || [], ctx.etag)
+      const names = value || []
+      recordNsCacheServerState(ctx.contractID, names, ctx.etag)
       // Fire-and-forget: `verifyUnknownServerNames` may perform batched network
       // lookups that can take seconds, and the lib awaits `onUpdate` inside
       // the identity contract's queue lane. Awaiting here would stall
       // identity event processing and (via chatroom sideEffects that await
       // identity KV writes) chatroom event processing too. (KV-REVAMPED.md §4.1)
-      verifyUnknownServerNames(value || []).then(() => {
+      verifyUnknownServerNames(names).then(() => {
         scheduleSaveCachedNames()
       }).catch((e) => {
         console.error('[kv-slots] namespace-cache onUpdate error:', e)

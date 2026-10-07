@@ -1,17 +1,18 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { createNamespaceCacheList, NS_CACHE_OUTBOX } from './namespaceCacheList.js'
+import { createNamespaceCacheList, isContractDeletedError, NS_CACHE_OUTBOX } from './namespaceCacheList.js'
 
 const ID = 'identity-own'
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k)
 
-const harness = ({ local = {}, server = null, answers = {}, deleted = [], failing = [], batchSize } = {}) => {
+const harness = ({ local = {}, server = null, answers = {}, deleted = [], failing = [], deletedFailing = [], batchSize } = {}) => {
   let state = { namespaceLookups: { ...local } }
   const calls = { resolve: [], lookup: [], isDeleted: [], writes: [], errors: [] }
   // Test hooks: `failConflict` is thrown when reading the server's copy on a
-  // conflict (e.g., it can't be decrypted); `onResolve` is called on lookups
-  const hooks = { failConflict: null, onResolve: null }
+  // conflict (e.g., it can't be decrypted); `onResolve` is called on lookups;
+  // `onWrite` is called on every write attempt
+  const hooks = { failConflict: null, onResolve: null, onWrite: null }
   // Fake KV server enforcing version tags like the real backend does. A
   // cleared value (`cleared`) has a version tag but no list.
   const kv = { names: server ? [...server] : null, version: server ? 1 : 0, cleared: false }
@@ -37,6 +38,7 @@ const harness = ({ local = {}, server = null, answers = {}, deleted = [], failin
     },
     isDeletedAccount: (contractID) => {
       calls.isDeleted.push(contractID)
+      if (deletedFailing.includes(contractID)) return Promise.reject(new Error('503: Service Unavailable'))
       return Promise.resolve(deleted.includes(contractID))
     },
     queue: (_, fn) => {
@@ -47,6 +49,7 @@ const harness = ({ local = {}, server = null, answers = {}, deleted = [], failin
     write: async (_, data, { ifMatch, onconflict }) => {
       for (let attempt = 0; attempt < 3; attempt++) {
         calls.writes.push({ data: [...data], ifMatch })
+        hooks.onWrite?.()
         if ((ifMatch || '""') === etagOf()) {
           kv.names = [...data]
           kv.cleared = false
@@ -68,7 +71,7 @@ const harness = ({ local = {}, server = null, answers = {}, deleted = [], failin
       }
       throw new Error('max attempts')
     },
-    onError: (name, e) => calls.errors.push(name),
+    onError: (name, e) => calls.errors.push({ name, message: e.message }),
     ...(batchSize ? { batchSize } : {})
   })
   // What the slot's `onUpdate` records after a load
@@ -83,7 +86,14 @@ const harness = ({ local = {}, server = null, answers = {}, deleted = [], failin
     outbox: () => state[NS_CACHE_OUTBOX],
     // Saving and restoring state (IndexedDB, JSON, `postMessage`) doesn't keep
     // null prototypes
-    persist: () => { state = structuredClone(state) }
+    persist: () => { state = structuredClone(state) },
+    // Holds back work queued from now on until the returned function is called
+    hold: () => {
+      let release
+      const gate = new Promise(resolve => { release = resolve })
+      chain = chain.then(() => gate)
+      return release
+    }
   }
 }
 
@@ -105,7 +115,21 @@ describe('namespace-cache list', () => {
     assert.equal(t.outbox().drop.dora, 'deleted')
     // A failed lookup keeps the name (it is retried on the next load)
     assert.equal(t.outbox().drop.flaky, undefined)
-    assert.deepEqual(t.calls.errors, ['flaky'])
+    assert.deepEqual(t.calls.errors, [{ name: 'flaky', message: '503: Service Unavailable' }])
+  })
+
+  it('a name whose account check fails is kept, reported and checked again on the next load', async () => {
+    const deletedFailing = ['id-e']
+    const t = harness({ answers: { eve: 'id-e' }, deletedFailing })
+    await t.list.verifyUnknownNames(['eve'])
+    assert.equal(has(t.outbox().drop, 'eve'), false)
+    assert.deepEqual(t.calls.lookup, [])
+    assert.deepEqual(t.calls.errors, [{ name: 'eve', message: '503: Service Unavailable' }])
+    // The server recovers
+    deletedFailing.length = 0
+    await t.list.verifyUnknownNames(['eve'])
+    assert.deepEqual(t.calls.lookup, ['eve'])
+    assert.equal(t.state.namespaceLookups.eve, 'id-e')
   })
 
   it('does not write before the list has been loaded, or when nothing changed', async () => {
@@ -196,6 +220,31 @@ describe('namespace-cache list', () => {
     assert.deepEqual(t.kv.names, ['alice', 'bob'])
   })
 
+  it('does not recreate a missing list with names of deleted accounts', async () => {
+    const t = harness({ local: { alice: 'id-a', dora: 'id-d' } })
+    t.state[NS_CACHE_OUTBOX] = { add: {}, drop: { dora: 'deleted' } }
+    await t.list.createMissingList(ID)
+    assert.deepEqual(t.kv.names, ['alice'])
+  })
+
+  it('creating a missing list does nothing if the session is reset first', async () => {
+    const t = harness({ local: { alice: 'id-a', bob: 'id-b' } })
+    // The load found no list, but creating it waits behind other queued work
+    const release = t.hold()
+    const creating = t.list.createMissingList(ID)
+    // Meanwhile, the user logs out and in again (the new session's state
+    // already has an outbox) and another device creates the list without bob
+    t.list.reset()
+    t.state[NS_CACHE_OUTBOX] = { add: {}, drop: {} }
+    t.kv.names = ['alice']
+    t.kv.version++
+    release()
+    assert.equal(await creating, false)
+    assert.equal(t.calls.writes.length, 0)
+    assert.deepEqual(t.kv.names, ['alice'])
+    assert.deepEqual(Object.keys(t.outbox().add), [])
+  })
+
   it('seeds the outbox with every known name on first use', () => {
     const t = harness({ local: { alice: 'id-a', bob: 'id-b' } })
     t.list.markAdded('carol')
@@ -237,6 +286,39 @@ describe('namespace-cache list', () => {
     await verifying
     assert.equal(t.state.namespaceLookups.bob, undefined)
     assert.equal(await t.list.save(ID), false)
+  })
+
+  it('a reset before a write conflict is resolved abandons the write and keeps the edits', async () => {
+    const t = harness({ server: ['alice'], local: { alice: 'id-a' } })
+    t.state[NS_CACHE_OUTBOX] = { add: {}, drop: {} }
+    t.load()
+    t.list.markAdded('bob')
+    // Another device writes, and the session is reset during the first attempt
+    t.kv.names = ['alice', 'zed']
+    t.kv.version++
+    t.hooks.onWrite = () => t.list.reset()
+    assert.equal(await t.list.save(ID), false)
+    assert.equal(t.calls.writes.length, 1)
+    assert.deepEqual(t.kv.names, ['alice', 'zed'])
+    assert.equal(t.outbox().add.bob, true)
+  })
+
+  it('a write that completes after a reset does not settle the edits', async () => {
+    const t = harness({ server: ['alice'], local: { alice: 'id-a' } })
+    t.state[NS_CACHE_OUTBOX] = { add: {}, drop: {} }
+    t.load()
+    t.list.markAdded('bob')
+    t.hooks.onWrite = () => t.list.reset()
+    assert.equal(await t.list.save(ID), false)
+    assert.deepEqual(t.kv.names, ['alice', 'bob'])
+    assert.equal(t.outbox().add.bob, true)
+    // The new session settles the edit once it loads the list, without
+    // writing again
+    t.hooks.onWrite = null
+    t.load()
+    assert.equal(await t.list.save(ID), true)
+    assert.equal(t.calls.writes.length, 1)
+    assert.equal(t.outbox().add.bob, undefined)
   })
 
   it('recreates a list that vanished from the server from every local name, not only the outbox', async () => {
@@ -336,5 +418,19 @@ describe('namespace-cache list', () => {
       assert.equal(Object.prototype.hasOwnProperty.call(t.outbox().drop, 'constructor'), false)
       assert.equal(t.outbox().add.constructor, true)
     })
+  })
+})
+
+describe('isContractDeletedError', () => {
+  // Shaped like the errors thrown by `handleFetchResult` in @chelonia/lib
+  const fetchError = (name, status) => Object.assign(new Error(`${status}: x`, { cause: status }), { name })
+
+  it('only a 410 means that the contract was deleted', () => {
+    assert.equal(isContractDeletedError(fetchError('ChelErrorResourceGone', 410)), true)
+    // The server doesn't have the contract: not authoritative
+    assert.equal(isContractDeletedError(fetchError('ChelErrorResourceGone', 404)), false)
+    assert.equal(isContractDeletedError(fetchError('ChelErrorUnexpectedHttpResponseCode', 503)), false)
+    assert.equal(isContractDeletedError(new TypeError('Failed to fetch')), false)
+    assert.equal(isContractDeletedError(undefined), false)
   })
 })

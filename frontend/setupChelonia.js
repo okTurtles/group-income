@@ -466,6 +466,8 @@ const connectAndSync = () => {
     }).catch(e => {
       console.error('[setupChelonia] Error syncing identity contract and groups', e)
     })
+  }).catch(e => {
+    console.error('[setupChelonia] Error loading the current user to sync their contracts', e)
   })
 }
 

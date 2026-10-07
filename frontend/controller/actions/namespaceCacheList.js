@@ -22,9 +22,29 @@ import { ownValue } from '~/frontend/utils/namespaceCache.js'
 
 export const NS_CACHE_OUTBOX = 'namespaceCacheOutbox'
 
-type DropReason = 'unregistered' | 'deleted'
+export type DropReason = 'unregistered' | 'deleted'
+
+export type NamespaceCacheList = {
+  recordServerState: (identityContractID: string, names: mixed, etag: ?string) => void,
+  verifyUnknownNames: (serverNames: mixed) => Promise<void>,
+  markAdded: (name: string) => void,
+  markDropped: (name: string, reason: DropReason) => void,
+  markDeletedAccount: (contractID: string) => string[],
+  save: (identityContractID: string) => Promise<mixed>,
+  createMissingList: (identityContractID: string) => Promise<mixed>,
+  reset: () => void
+}
 
 type ListState = { identityContractID: string, names: string[], etag: ?string }
+
+// Whether an error from fetching a contract's latest state means that the
+// contract was deleted. Only 410 is authoritative: the server keeps a marker
+// for deleted contracts. A 404 means the server doesn't have the contract,
+// which shouldn't happen for a registered name, so it's handled like any
+// other error (the name is checked again later).
+export const isContractDeletedError = (e: any): boolean => {
+  return e?.name === 'ChelErrorResourceGone' && e.cause === 410
+}
 
 const normalize = (names: mixed): string[] => {
   if (!Array.isArray(names)) return []
@@ -61,7 +81,7 @@ export function createNamespaceCacheList ({
   write: (identityContractID: string, data: string[], options: { ifMatch?: string, onconflict: Function }) => Promise<?{ etag: ?string }>,
   onError?: (name: string, e: Error) => void,
   batchSize?: number
-}): Object {
+}): NamespaceCacheList {
   // Last server copy of the list seen in this session
   let lastKnown: ?ListState = null
   // Incremented on reset; work started before a reset doesn't change state
@@ -195,7 +215,9 @@ export function createNamespaceCacheList ({
   // The list doesn't exist on the server: create it from every name this
   // device knows.
   const createMissingList = async (identityContractID: string): Promise<mixed> => {
+    const startGeneration = generation
     await queue(identityContractID, () => {
+      if (startGeneration !== generation) return
       // A list cleared on the server (stored as `null`) still has a version
       // tag, which the load recorded. Keep it so that the write isn't sent as
       // "create only".

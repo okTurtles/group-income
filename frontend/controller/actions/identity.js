@@ -397,13 +397,15 @@ export default (sbp('sbp/selectors/register', {
       )
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
+      // The name may have been registered anyway (e.g., if the failure came
+      // later), so a remembered answer for it (e.g., 'not registered', from
+      // the signup form) may be outdated. (On success, `postpublishContract`
+      // has already done this.)
+      sbp('namespace/invalidate', username)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)), { cause: e })
     } finally {
       // And remove transient keys, which require a user password
       await sbp('chelonia/clearTransientSecretKeys', [IEKid, IPKid])
-      // Whether or not registering succeeded, a remembered answer for this
-      // name (e.g., 'not registered', from the signup form) is now outdated
-      sbp('namespace/invalidate', username)
     }
     return userID
   },

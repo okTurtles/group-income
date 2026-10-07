@@ -90,33 +90,28 @@ const periodicNotificationEntries = [
       emitCondition: () => true,
       emit ({ rootState, rootGetters }) {
         Object.values(rootGetters.ourContactProfilesById)
-          // Only get users that are missing the cached lookup entry (!username),
-          // that have a username defined and whose username isn't cached at
-          // all (if it's cached for a different contract, that's already the
-          // server's answer and looking it up again won't change it)
-          .filter(
-            // $FlowFixMe[incompatible-use]
-            ({ username, contractID }) => {
-              const claimed = rootState[contractID]?.attributes?.username
-              return !username && !!claimed && !ownValue(rootState.namespaceLookups, claimed)
-            })
           // $FlowFixMe[incompatible-use]
-          .forEach(({ contractID }) => {
-            const username = rootState[contractID].attributes.username
+          .map(({ contractID }) => ({ contractID, claimed: rootState[contractID]?.attributes?.username }))
+          // Only get users that have a username defined and whose username
+          // isn't cached at all (if it's cached for a different contract,
+          // that's already the server's answer and looking it up again won't
+          // change it)
+          .filter(({ claimed }) => !!claimed && !ownValue(rootState.namespaceLookups, claimed))
+          .forEach(({ contractID, claimed }) => {
             // Periodic notification state is reset on every login and group
             // switch, so limit attempts per name here as well
             const now = Date.now()
-            if (now - (lastUsernameFetch.get(username) || 0) < USERNAME_FETCH_INTERVAL) return
-            lastUsernameFetch.set(username, now)
+            if (now - (lastUsernameFetch.get(claimed) || 0) < USERNAME_FETCH_INTERVAL) return
+            lastUsernameFetch.set(claimed, now)
             // Do a manual lookup. This will populate the cache if successful.
             // (The service worker may already know the name, so this doesn't
             // skip its cache.)
-            sbp('namespace/lookup', username).then((cID) => {
+            sbp('namespace/lookup', claimed).then((cID) => {
               if (cID !== contractID) {
                 console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
               }
             }).catch((e) => {
-              console.error('[periodic notification] Error looking up username', username, 'for', contractID, e)
+              console.error('[periodic notification] Error looking up username', claimed, 'for', contractID, e)
             })
           })
       },
