@@ -48,11 +48,15 @@ sbp('sbp/selectors/register', {
     const index = rootState.notifications.items.findLastIndex(item => item.timestamp < notification.timestamp)
     rootState.notifications.items.splice(Math.max(0, index), 0, notification)
     sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
-    sbp('gi.actions/identity/kv/addNotificationStatus', notification)
+    sbp('gi.actions/identity/kv/addNotificationStatus', notification).catch(e => {
+      console.error("Error from 'gi.actions/identity/kv/addNotificationStatus':", e)
+    })
     sbp('okTurtles.events/emit', NOTIFICATION_EMITTED, notification)
   },
   'gi.notifications/markAsRead' (notification: Notification) {
-    sbp('gi.actions/identity/kv/markNotificationStatusRead', notification.hash)
+    sbp('gi.actions/identity/kv/markNotificationStatusRead', notification.hash).catch(e => {
+      console.error("Error from 'gi.actions/identity/kv/markNotificationStatusRead':", e)
+    })
   },
   'gi.notifications/markAllAsRead' (groupID: string) {
     const rootState = sbp('chelonia/rootState')
@@ -62,7 +66,9 @@ sbp('sbp/selectors/register', {
     const hashes = rootState.notifications.items.filter(item => {
       return !(status[item.hash]?.read ?? item.read) && (!groupID || !item.groupID || item.groupID === groupID)
     }).map(item => item.hash)
-    sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes)
+    sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes).catch(e => {
+      console.error("Error from 'gi.actions/identity/kv/markNotificationStatusRead':", e)
+    })
   },
   'gi.notifications/remove' (hashes: string | string[]) {
     if (!Array.isArray(hashes)) hashes = [hashes]
