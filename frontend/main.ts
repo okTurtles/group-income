@@ -17,7 +17,7 @@ import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.ts'
-import './controller/namespace.ts'
+import { applyNamespaceUpdateToVuex } from './controller/namespace.ts'
 import router from './controller/router.ts'
 import './controller/service-worker.ts'
 import { SETTING_CURRENT_USER } from './model/database.ts'
@@ -114,18 +114,8 @@ async function startApp () {
   // [SW] The following is be needed to keep namespace registrations in sync
   // between the SW and each tab. It is not needed if everything is running in
   // the same context
-  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value, deletedValue }) => {
-    const cache = sbp('state/vuex/state').namespaceLookups
-    const reverseCache = sbp('state/vuex/state').reverseNamespaceLookups
-    if (deletedValue) {
-      Vue.delete(cache, name)
-      if (reverseCache[deletedValue] === name) {
-        Vue.delete(reverseCache, deletedValue)
-      }
-    } else {
-      Vue.set(cache, name, value)
-      Vue.set(reverseCache, value, name)
-    }
+  sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, (update) => {
+    applyNamespaceUpdateToVuex(sbp('state/vuex/state'), update)
   })
 
   sbp('okTurtles.events/on', SERIOUS_ERROR, (error, { contractID }) => {

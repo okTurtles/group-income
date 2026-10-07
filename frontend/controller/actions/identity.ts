@@ -24,6 +24,7 @@ import type { Key } from '@chelonia/crypto'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.ts'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.ts'
+import { forgetDeletedAccountNames } from './identity-kv.ts'
 
 /**
  * Decrypts the old IEK list using the provided contract ID and IEK.
@@ -354,6 +355,11 @@ export default (sbp('sbp/selectors/register', {
         ],
         hooks: {
           postpublishContract: async (message) => {
+            // The name was registered with this message. Forget a remembered
+            // 'not registered' answer (e.g., from the signup form) before the
+            // first action is published, because its side effect checks the
+            // name.
+            sbp('namespace/invalidate', username)
             // We need to get the contract state
             await sbp('chelonia/contract/retain', message.contractID(), { ephemeral: true })
 
@@ -391,6 +397,11 @@ export default (sbp('sbp/selectors/register', {
       )
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
+      // The name may have been registered anyway (e.g., if the failure came
+      // later), so a remembered answer for it (e.g., 'not registered', from
+      // the signup form) may be outdated. (On success, `postpublishContract`
+      // has already done this.)
+      sbp('namespace/invalidate', username)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)), { cause: e })
     } finally {
       // And remove transient keys, which require a user password
@@ -1374,7 +1385,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/identity/_ondeleted': async (contractID: string, state: Record<string, any>) => {
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Record<string, any>, { confirmed = false }: { confirmed?: boolean } = {}) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {
@@ -1384,6 +1395,12 @@ export default (sbp('sbp/selectors/register', {
       // used, as we're no longer able to keep our identity meaningfully in sync
       // with things happening on the server.
       await sbp('gi.actions/identity/logout')
+    } else if (confirmed) {
+      // Someone else's account: keep its name on this device (e.g., for chat
+      // history), but stop sharing it with devices that never saw it. Only
+      // done when the server confirmed the deletion, because names removed
+      // this way are never added back.
+      forgetDeletedAccountNames(contractID)
     }
   },
   // Called from migrations to share the DMK with the PEK if it hasn't been

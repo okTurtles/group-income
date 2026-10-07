@@ -1,37 +1,85 @@
 'use strict'
 import sbp from '@sbp/sbp'
 import { KV_NOOP } from '@chelonia/lib'
+import { CHELONIA_RESET } from '@chelonia/lib/events'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.ts'
-import { debounce, difference, intersection, union } from 'turtledash'
-import { NAMESPACE_REGISTRATION, ONLINE } from '~/frontend/utils/events.js'
+import { debounce } from 'turtledash'
+import { NAMESPACE_REGISTRATION } from '~/frontend/utils/events.js'
+import { createNamespaceCacheList, isContractDeletedError } from './namespaceCacheList.ts'
+import type { NamespaceCacheList } from './namespaceCacheList.ts'
 
 const initNotificationStatus = (data = {}) => ({ ...data, read: false })
-// Name discrepancies between the KV store and `namespaceLookups` may occur
-// due to being unsubcribed from an identity contract (e.g., someone has left
-// a group) or due to the username being deleted. This function attempts to
-// determine which case it is, and determine all of the names that are currently
-// valid.
-export const checkAndAugmentNames = async (currentNames: string[]): Promise<string[]> => {
-  const ourNames = Object.keys(sbp('state/vuex/state').namespaceLookups || {})
-  const unconflictedNames = intersection(currentNames, ourNames)
-  // Batch the lookups to avoid too many concurrent requests
-  const BATCH_SIZE = 10
-  const namesToCheck = difference(union(currentNames, ourNames), unconflictedNames)
-  const recheckedNames = []
 
-  for (let i = 0; i < namesToCheck.length; i += BATCH_SIZE) {
-    const batch = namesToCheck.slice(i, i + BATCH_SIZE)
-    const results = await Promise.all(batch.map(async (name) => {
-      const value = await sbp('namespace/lookup', name, { skipCache: true }).catch(e => {
-        console.warn(`[checkAndAugmentNames] Failed to lookup name ${name}:`, e)
-      })
-      return value ? name : null
-    }))
-    recheckedNames.push(...results.filter(v => !!v))
+// Whether an identity contract has been deleted. Contracts this device has
+// synced are checked locally; others are checked with the server.
+const isDeletedAccount = async (contractID: string): Promise<boolean> => {
+  const meta = sbp('chelonia/rootState').contracts?.[contractID]
+  // Tombstone: this device saw the contract being deleted
+  if (meta === null) return true
+  if (meta?.type) return false
+  try {
+    await sbp('chelonia/out/latestHEADInfo', contractID)
+    return false
+  } catch (e) {
+    if (isContractDeletedError(e)) return true
+    // Including 404: the name is checked again on the next load
+    throw e
   }
-
-  return union(unconflictedNames, recheckedNames)
 }
+
+// The `namespace-cache` KV list: the usernames known to this user's devices,
+// so that a new device can show them. See `namespaceCacheList.ts`.
+export const namespaceCacheList: NamespaceCacheList = createNamespaceCacheList({
+  getState: () => sbp('chelonia/rootState'),
+  getConfig: () => sbp('chelonia/config'),
+  resolve: (name) => sbp('namespace/resolve', name),
+  lookup: (name) => sbp('namespace/lookup', name, { skipCache: true }),
+  isDeletedAccount,
+  queue: (contractID, fn) => sbp('chelonia/queueInvocation', contractID, fn),
+  write: (contractID, data, { ifMatch, onconflict }) => sbp('chelonia/kv/set', contractID, KV_KEYS.NS_CACHE, data, {
+    ifMatch,
+    encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'cek'),
+    signingKeyId: sbp('chelonia/contract/currentKeyIdByName', contractID, 'csk'),
+    onconflict
+  }),
+  onError: (name, e) => {
+    console.warn(`[namespace-cache] Failed to verify name ${name}; will retry on the next load:`, e)
+  }
+})
+
+export const scheduleSaveCachedNames = debounce(() => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
+  Promise.resolve().then(() => sbp('gi.actions/identity/kv/saveCachedNames')).catch((e) => {
+    console.error('[saveCachedNames] Error saving cached names', e)
+  })
+}, 300)
+
+// Called when an identity contract we're subscribed to has been deleted. Its
+// names stay in this device's cache (so that, e.g., chat history keeps
+// showing them) but are removed from the shared list, so that devices that
+// never saw the account don't learn them.
+export const forgetDeletedAccountNames = (contractID: string) => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
+  if (namespaceCacheList.markDeletedAccount(contractID).length) {
+    scheduleSaveCachedNames()
+  }
+}
+
+sbp('okTurtles.events/on', CHELONIA_RESET, () => {
+  scheduleSaveCachedNames.clear()
+  namespaceCacheList.reset()
+})
+
+// Only emitted when the cache actually changes
+sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, ({ name, value, deletedValue }) => {
+  if (!sbp('state/vuex/state').loggedIn?.identityContractID) return
+  if (value) {
+    namespaceCacheList.markAdded(name)
+  } else if (deletedValue) {
+    namespaceCacheList.markDropped(name, 'unregistered')
+  }
+  scheduleSaveCachedNames()
+})
 
 // Uses the explicit `updater` form (not the slot's `defaultUpdater` via
 // `value`) because callers like `updateDistributionBannerVisibility` merge into
@@ -67,15 +115,6 @@ const setKVPreferences = (patch: Record<string, any>) => {
     value: patch
   })
 }
-
-sbp('okTurtles.events/on', ONLINE, () => {
-  if (!sbp('state/vuex/state').loggedIn?.identityContractID) {
-    return
-  }
-  sbp('gi.actions/identity/kv/load').catch(e => {
-    console.error("Error from 'gi.actions/identity/kv/load' after reestablished connection:", e)
-  })
-})
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/kv/load': async () => {
@@ -308,48 +347,23 @@ export default (sbp('sbp/selectors/register', {
   //
   // The `namespace-cache` slot (`gi.contracts/identity::namespace-cache`,
   // registered in `kv-slots.ts`) owns the on-demand fetch (`autoLoad:
-  // 'on-demand'`) and re-runs `checkAndAugmentNames` on every value change via
-  // its `onUpdate` hook (replacing the post-fetch augmentation that used to
-  // live here and the `NS_CACHE` branch of the `sw-primary.ts` `KV_EVENT`
-  // switch). The slot is `autoSubscribe: false` (never in the pubsub filter),
-  // matching the original behavior. (KV-REVAMPED.md §4.8)
+  // 'on-demand'`); its `onUpdate` hook records the server copy of the list and
+  // looks up the names this device doesn't know yet. The slot is
+  // `autoSubscribe: false` (never in the pubsub filter), matching the original
+  // behavior. (KV-REVAMPED.md §4.8)
+  //
+  // Writes use the low-level `chelonia/kv/set` (see `namespaceCacheList.ts`):
+  // they apply this device's pending edits to the last known server copy, send
+  // its version tag, skip unchanged writes and merge conflicts without
+  // lookups. The declarative `chelonia/kv/update` can't be used because
+  // looking up unknown names is async (and §3.3 forbids network calls in the
+  // reducer).
   'gi.actions/identity/kv/saveCachedNames': () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update cached names without an active session')
     }
-    // Prune-on-write MUST validate the value the write actually races against:
-    // the *server* value seen on each conflict retry. The declarative
-    // `chelonia/kv/update` reducer cannot express this — it is synchronous and
-    // re-runs against the server `prev` on a 409/412, but `checkAndAugmentNames`
-    // is async and §3.3 forbids network calls in the reducer. A reducer that
-    // pre-computes a validated set from the (possibly stale) local mirror would
-    // silently drop valid server names another device added (this slot is
-    // `autoSubscribe: false` + `autoLoad: 'on-demand'`, so the mirror is
-    // routinely stale). We therefore keep the low-level `chelonia/kv/queuedSet`
-    // + async `onconflict` for this one slot, re-validating the real server
-    // value on every retry exactly as the pre-revamp code did, so a valid name
-    // another device knows about is never clobbered.
-    const onconflict = async ({ currentData = [], etag }: any = {}) => {
-      if (!Array.isArray(currentData)) currentData = []
-      // `checkAndAugmentNames` unions the server value with our local lookups
-      // and re-verifies the conflicted names, dropping only those that no
-      // longer resolve (left group / deleted username).
-      const data = await checkAndAugmentNames(currentData)
-      data.sort()
-      const sortedCurrent = [...currentData].sort()
-      // Skip the write when nothing changed.
-      if (data.length === sortedCurrent.length && data.every((n, i) => n === sortedCurrent[i])) {
-        return null
-      }
-      return [data, etag]
-    }
-    return sbp('chelonia/kv/queuedSet', {
-      contractID: identityContractID,
-      key: KV_KEYS.NS_CACHE,
-      data: Object.keys(sbp('state/vuex/state').namespaceLookups || {}).sort(),
-      onconflict
-    })
+    return namespaceCacheList.save(identityContractID)
   },
   'gi.actions/identity/kv/loadCachedNames': async () => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
@@ -357,22 +371,14 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Unable to load cached names without an active session')
     }
     // Force a fetch of the on-demand slot; a successful load fires the slot's
-    // `onUpdate` (reason 'load'), which runs `checkAndAugmentNames`.
+    // `onUpdate` (reason 'load'), which handles the loaded list.
     await sbp('chelonia/kv/sync', identityContractID, KV_KEYS.NS_CACHE)
     // On a 404 (key never written or deleted server-side) the slot settles to
-    // 'non-init' without firing `onUpdate` (the lib only invokes `onUpdate` on
-    // a 404 when the slot previously held a value). The pre-revamp
-    // `loadCachedNames` ran `checkAndAugmentNames` unconditionally, which for
-    // users with cached `namespaceLookups` but no server-side NS_CACHE key
-    // re-verified their local names and (via `NAMESPACE_REGISTRATION` ->
-    // `saveCachedNames`) created the key. Preserve that behavior explicitly
-    // here.
-    if (sbp('chelonia/kv/status', identityContractID, KV_KEYS.NS_CACHE) !== KV_LOAD_STATUS.LOADED) {
-      await checkAndAugmentNames([])
+    // 'non-init' (the lib only invokes `onUpdate` on a 404 when the slot
+    // previously held a value). Create the list from every name this device
+    // knows.
+    if (sbp('chelonia/kv/status', identityContractID, KV_KEYS.NS_CACHE) === KV_LOAD_STATUS.NON_INIT) {
+      await namespaceCacheList.createMissingList(identityContractID)
     }
   }
 }) as string[])
-
-// Debounced so that `checkAndAugmentNames` (which may affect the names
-// being stored) doesn't result in too many calls to saveCachedNames.
-sbp('okTurtles.events/on', NAMESPACE_REGISTRATION, debounce(() => sbp('gi.actions/identity/kv/saveCachedNames'), 300))

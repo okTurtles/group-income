@@ -1,7 +1,9 @@
 'use strict'
 
-import { compareISOTimestamps, dateToPeriodStamp, MONTHS_MILLIS } from '@model/contracts/shared/time.ts'
+import { compareISOTimestamps, dateToPeriodStamp, MINS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
+import { LOGOUT } from '@utils/events.js'
+import { ownValue } from '@utils/namespaceCache.ts'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.ts'
 
 // util functions
@@ -66,13 +68,20 @@ const oneTimeNotificationEntries = [
   }
 ]
 
+// At most one 'username-fetch' attempt per name in this interval. Kept here
+// because periodic notification state is reset on every login and group switch.
+// Cleared on logout, so that one account's attempts don't delay another's.
+const USERNAME_FETCH_INTERVAL = 30 * MINS_MILLIS
+const lastUsernameFetch = new Map()
+sbp('okTurtles.events/on', LOGOUT, () => lastUsernameFetch.clear())
+
 const periodicNotificationEntries = [
   // The following fixes a rare issue that we're not sure exactly why it happens.
   // Sometimes, the `namespace/lookup` call made as a side-effect in the identity
   // contract seems to fail. The result of this is that the corresponding cached
   // namespace lookup entry isn't populated and the username is missing from the
-  // UI. To fix this, we check for users that are missing a username and
-  // do this lookup manually.
+  // UI. To fix this, we look up the usernames claimed by contacts that aren't
+  // in the cache at all, at most once per name every USERNAME_FETCH_INTERVAL.
   // See: <https://github.com/okTurtles/group-income/pull/2306#pullrequestreview-2305605028>
   {
     type: PERIODIC_NOTIFICATION_TYPE.MIN30,
@@ -81,19 +90,25 @@ const periodicNotificationEntries = [
       emitCondition: () => true,
       emit ({ rootState, rootGetters }) {
         Object.values(rootGetters.ourContactProfilesById)
-          // Only get users that are missing the cached lookup entry (!username)
-          // and that have a username defined (!!rootState[contractID]?.attributes?.username)
-          .filter(
-            ({ username, contractID }) => !username && !!rootState[contractID]?.attributes?.username)
-          .forEach(({ contractID }) => {
-            const username = rootState[contractID].attributes.username
+          .map(({ contractID }) => ({ contractID, claimed: rootState[contractID]?.attributes?.username }))
+          // Only get users that have a username defined and whose username
+          // isn't cached at all (if it's cached for a different contract,
+          // that's already the server's answer and looking it up again won't
+          // change it)
+          .filter(({ claimed }) => !!claimed && !ownValue(rootState.namespaceLookups, claimed))
+          .forEach(({ contractID, claimed }) => {
+            const now = Date.now()
+            if (now - (lastUsernameFetch.get(claimed) || 0) < USERNAME_FETCH_INTERVAL) return
+            lastUsernameFetch.set(claimed, now)
             // Do a manual lookup. This will populate the cache if successful.
-            sbp('namespace/lookup', username, { skipCache: true }).then((cID) => {
+            // (The service worker may already know the name, so this doesn't
+            // skip its cache.)
+            sbp('namespace/lookup', claimed).then((cID) => {
               if (cID !== contractID) {
                 console.error(`[periodic notification] Mismatched username. The lookup result was ${cID} instead of ${contractID}`)
               }
             }).catch((e) => {
-              console.error('[periodic notification] Error looking up username', username, 'for', contractID, e)
+              console.error('[periodic notification] Error looking up username', claimed, 'for', contractID, e)
             })
           })
       },

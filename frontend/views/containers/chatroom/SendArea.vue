@@ -328,6 +328,7 @@ import {
 } from '@view-utils/markdown-utils.ts'
 import { getFileType } from '@view-utils/filters.ts'
 import { searchEmoji } from './emoji-utils.ts'
+import { selectMentionOptions, toMentionCandidate } from './mention-utils.ts'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.ts'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
@@ -353,11 +354,6 @@ const functionalKeyCodes = {
 const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
 const whitespaceRegex = /\s/ // RegEx Metacharacter \s
 const nonWhitespaceRegex = /\S/
-const normalizeForMentionSearch = (str) => str.normalize().toUpperCase()
-const toMentionCandidate = (item, names) => ({
-  item,
-  searchKeys: names.filter(name => typeof name === 'string').map(normalizeForMentionSearch)
-})
 // ensures that the emoji shortcode is not preceded by any characters (i.e. at the start of the string or after a space).
 const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}[a-zA-Z0-9_+-]{2,}${CHATROOM_EMOJI_INSERTION_SPECIAL_CHAR}?$`)
 
@@ -534,7 +530,7 @@ export default {
       // NOTE: '@all' mention should only be needed when the members are more than 3
       if (this.activeMembers.length <= 2) return null
 
-      const all = makeMentionFromUsername('').all
+      const all = makeMentionFromUserID('').all
       const item = {
         memberID: all,
         displayName: all.slice(1),
@@ -1275,21 +1271,9 @@ export default {
       this.saveOrDeleteMessageDraft()
     },
     startMention (keyword, position, mentionType = 'member') {
-      const normalKeyword = normalizeForMentionSearch(keyword)
-      const matchesKeyword = ({ searchKeys }) => searchKeys.some(key => key.includes(normalKeyword))
-      const candidates = mentionType === 'member' ? this.memberMentionCandidates : this.channelMentionCandidates
-      const options = []
-
-      // '@all' is inserted first so that the cap below can never drop it.
-      const allCandidate = mentionType === 'member' && this.allMentionCandidate
-      if (allCandidate && matchesKeyword(allCandidate)) {
-        options.push(allCandidate.item)
-      }
-
-      for (const candidate of candidates) {
-        if (options.length === MAX_MENTION_RESULTS) break
-        if (matchesKeyword(candidate)) options.push(candidate.item)
-      }
+      const options = mentionType === 'member'
+        ? selectMentionOptions(this.memberMentionCandidates, this.allMentionCandidate, keyword, MAX_MENTION_RESULTS)
+        : selectMentionOptions(this.channelMentionCandidates, null, keyword, MAX_MENTION_RESULTS)
 
       const prevOptions = this.ephemeral.segmentInsertion.options
       if (options.length !== prevOptions.length || options.some((item, i) => item !== prevOptions[i])) {

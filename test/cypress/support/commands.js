@@ -925,6 +925,13 @@ const waitForChatDraft = (sbp, expectedText, { forAtLeast = 0, timeout = 10000 }
             return finish(resolve)
           }
         } else {
+          if (forAtLeast > 0 && matchedAt !== null) {
+            return finish(reject, new Error(
+              `The draft of "${draftKey}" changed while it was expected to stay ` +
+              (expectedText == null ? 'deleted' : 'saved') +
+              `: ${draft == null ? 'none' : JSON.stringify(draft)}`
+            ))
+          }
           matchedAt = null
         }
         if (Date.now() >= deadline) {
