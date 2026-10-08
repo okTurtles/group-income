@@ -7,6 +7,7 @@ import sbp from '@sbp/sbp'
 import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
+import { ownValue } from '~/frontend/utils/namespaceCache.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { cloneDeep, debounce } from 'turtledash'
@@ -178,12 +179,12 @@ sbp('sbp/selectors/register', {
     // consistent again
     ;(() => {
       Object.entries(state.namespaceLookups)
-        .filter(([, value]) => !state.reverseNamespaceLookups[value])
+        .filter(([, value]: [string, any]) => !ownValue(state.reverseNamespaceLookups, value))
         .forEach(([name, value]) => {
           state.reverseNamespaceLookups[value] = name
         })
       Object.entries(state.reverseNamespaceLookups)
-        .filter(([, name]) => !state.namespaceLookups[name])
+        .filter(([, name]: [string, any]) => !ownValue(state.namespaceLookups, name))
         .forEach(([value, name]) => {
           state.namespaceLookups[name] = value
         })
