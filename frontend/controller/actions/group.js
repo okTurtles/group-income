@@ -1221,9 +1221,8 @@ export default (sbp('sbp/selectors/register', {
     // The group no longer lists this member in the channel: a duplicated
     // submission, our state catching up with a leave sent from another device,
     // or an earlier leave whose chatroom half didn't go through. Another group
-    // leave would only fail Chelonia's pre-publish validation ('Cannot leave a
-    // chatroom that you're not part of'). Finish the chatroom half instead, if
-    // it's still pending.
+    // leave would be dropped by the pre-send check below; finish the chatroom
+    // half instead, if it's still pending.
     if (member?.status !== PROFILE_STATUS.ACTIVE) {
       // Keeps the chatroom state available, and up to date, for the checks
       // below. For our own leave, the group's side effect has usually released it.
@@ -1270,6 +1269,20 @@ export default (sbp('sbp/selectors/register', {
       data: {
         ...params.data,
         joinedHeight
+      },
+      hooks: {
+        ...params.hooks,
+        // Chelonia calls this before each send attempt with the latest group
+        // state, including after a re-sync when the server rejected an attempt
+        // (409) because the group moved on. Same condition as the contract's
+        // `leaveChatRoom` `process`. If the leave is no longer valid, Chelonia
+        // drops it instead of failing validation: another device or tab already
+        // sent it (the side effect of that leave takes care of the chatroom), or
+        // the member also joined again since, and that newer join is kept.
+        preSendCheck: (_, state) => {
+          const current = state?.chatRooms?.[chatRoomID]?.members?.[memberID]
+          return current?.status === PROFILE_STATUS.ACTIVE && current.joinedHeight === joinedHeight
+        }
       }
     })
   }),
