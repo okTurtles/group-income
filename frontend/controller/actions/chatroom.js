@@ -45,19 +45,13 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
 
     // If we have all keys, we don't have anything to request
     if (CEKid && CSKid) return
-
-    const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn?.identityContractID
-
-    // Only members can request keys (see `_responseOptionsForKeyRequest`), and
-    // former members are expected to be missing them
-    if (!state.members[identityContractID] || state.members[identityContractID].hasLeft) return
-
     if (!groupCSKid) {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
       return
     }
 
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
 
     // $FlowFixMe[incompatible-use]
@@ -92,7 +86,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
+      innerEncryptionKeyId: CEKid,
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
@@ -905,15 +899,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
     }
   }),
-  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.'), async (sendMessage, params) => {
-    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
-    const state = sbp('chelonia/contract/state', params.contractID)
-    // Already accepted (e.g., a side effect re-running after a re-sync); sending
-    // it again would only fail validation
-    if (state?.members?.[identityContractID]?.acceptedHeight != null) return
-
-    return await sendMessage({ ...omit(params, ['options', 'action']) })
-  }),
+  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.')),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {

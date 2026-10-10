@@ -19,14 +19,6 @@ const enqueueDeferredPromise = (queue) => {
   return finished
 }
 
-const userFacingActionError = (humanError: string | Function, params: GIActionParams, e: any): Error => {
-  const cause = e?.name === 'GIErrorUIRuntimeError' && e.cause ? e.cause : e
-  const userFacingErrStr = typeof humanError === 'string'
-    ? `${humanError} ${LError(cause).reportError}`
-    : humanError(params, cause)
-  return new GIErrorUIRuntimeError(userFacingErrStr, { cause })
-}
-
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
 // This function covers the common case of sending an encrypted action that is
 // both encrypted with that same contract's CEK and signed with that contract's
@@ -158,7 +150,10 @@ export const encryptedAction = (
           return await sm()
         }
       } catch (e) {
-        throw userFacingActionError(humanError, params, e)
+        const userFacingErrStr = typeof humanError === 'string'
+          ? `${humanError} ${LError(e).reportError}`
+          : humanError(params, e)
+        throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
         finished()
         if (!retainFailed) {
@@ -275,7 +270,10 @@ export const encryptedNotification = (
           return await sm()
         }
       } catch (e) {
-        throw userFacingActionError(humanError, params, e)
+        const userFacingErrStr = typeof humanError === 'string'
+          ? `${humanError} ${LError(e).reportError}`
+          : humanError(params, e)
+        throw new GIErrorUIRuntimeError(userFacingErrStr, { cause: e })
       } finally {
         await sbp('chelonia/contract/release', contractID, { ephemeral: true })
       }
