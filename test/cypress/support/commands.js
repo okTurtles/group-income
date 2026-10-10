@@ -9,6 +9,7 @@ import 'cypress-file-upload'
 import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
 import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '@chelonia/lib/events'
+import { currentKeyByName, readChatRoom } from './lib.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -60,35 +61,61 @@ const getRandomNonMonetary = () => {
 // The function takes a name (to register it as a Cypress command) and custom
 // check function that takes SBP as its first parameter. It registers event
 // handlers for various events that may change the Chelonia state and returns
-// a Promise that resolves once the check passes.
+// a Promise that resolves once the check passes. The check function may return
+// a Promise; while one is pending, the check isn't run again, and such checks
+// are only run once a second rather than on every event. They're expensive
+// (e.g., they sync a contract), and their own work can emit those events
+// (retaining and releasing a contract emits `CONTRACTS_MODIFIED`), which would
+// otherwise re-run them back to back.
 const cySbpCheckCommand = (name, customCheckFn) => {
   Cypress.Commands.add(name, (...params) => {
     cy.window().its('sbp').then(sbp => {
       return new Promise((resolve) => {
         let resolved = false
+        let pending = false
+        let isAsync = false
 
-        const check = () => {
+        const done = (passed) => {
           if (resolved) return
-          if (!customCheckFn(sbp, ...params)) {
+          if (!passed) {
             console.warn(`[cypress] SBP Check ${name} failed!`)
             return
           }
           resolved = true
           resolve()
           // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED_READY, check)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, onEvent)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHED, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, onEvent)
           clearInterval(x)
+        }
+
+        const check = () => {
+          if (resolved || pending) return
+          const result = customCheckFn(sbp, ...params)
+          if (typeof result?.then !== 'function') {
+            done(result)
+            return
+          }
+          isAsync = true
+          pending = true
+          result.then(done, (e) => {
+            console.warn(`[cypress] SBP Check ${name} failed with an error`, e)
+          }).finally(() => {
+            pending = false
+          })
+        }
+        const onEvent = () => {
+          if (!isAsync) check()
         }
 
         // Register event listeners. The following events could change the
         // state and affect the result of customCheckFn
-        sbp('okTurtles.events/on', EVENT_HANDLED_READY, check)
-        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
+        sbp('okTurtles.events/on', EVENT_HANDLED_READY, onEvent)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHED, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, onEvent)
 
         // We also run the test manually in case there are no events
         const x = setInterval(check, 1000)
@@ -186,6 +213,21 @@ cySbpCheckCommand('giAssertKeyRotation', (sbp, contractID, height, keyName) => {
       return key.nbf > height
     })
   )
+})
+
+// Checks that a chatroom's current CEK is different from `previousCEKid`
+// (i.e., that the chatroom keys have been rotated)
+cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
+  const currentCEK = currentKeyByName(sbp('state/vuex/state')[chatRoomID], 'cek')
+  console.info('giChatRoomKeysRotated', chatRoomID, previousCEKid, currentCEK?.id)
+  return !!currentCEK && currentCEK.id !== previousCEKid
+})
+
+cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => readChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
+
+cySbpCheckCommand('giChatRoomHasMessage', (sbp, chatRoomID, text) => {
+  const messages = sbp('state/vuex/state')[chatRoomID]?.messages || []
+  return messages.some((message) => message.text === text)
 })
 
 Cypress.Commands.add('giSignup', (username, {
