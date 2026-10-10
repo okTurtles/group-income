@@ -903,7 +903,15 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/contract/release', userIDs, { ephemeral: true })
     }
   }),
-  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/accept', L('Failed to accept chat channel.'), async (sendMessage, params) => {
+    const identityContractID = sbp('state/vuex/state').loggedIn.identityContractID
+    const state = sbp('chelonia/contract/state', params.contractID)
+    // Already accepted (e.g., a side effect re-running after a re-sync); sending
+    // it again would only fail validation
+    if (state?.members?.[identityContractID]?.acceptedHeight != null) return
+
+    return await sendMessage({ ...omit(params, ['options', 'action']) })
+  }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.'), async (sendMessage, params) => {
