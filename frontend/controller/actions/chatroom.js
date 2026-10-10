@@ -140,7 +140,10 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
     // Without a key to sign the removal with, there's nothing we can do (and
     // no point in syncing the group). Another member can do it, or we can
     // once we receive the key.
-    if (!groupChatRoomLeaveSigningKeyId(chatRoomID)) return
+    if (!groupChatRoomLeaveSigningKeyId(chatRoomID)) {
+      console.info('[enforceChatRoomMembership] Skipping removal of chatroom members the group does not list: no suitable signing key found', { groupID, chatRoomID })
+      return
+    }
     // Membership is decided by the group, so we make sure that our view of the
     // group is up to date before removing anyone
     await sbp('chelonia/contract/retain', groupID, { ephemeral: true })
@@ -155,7 +158,10 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
   const toRemove = membersToRemove()
   if (toRemove.length) {
     const signingKeyId = groupChatRoomLeaveSigningKeyId(chatRoomID)
-    if (!signingKeyId) return
+    if (!signingKeyId) {
+      console.info('[enforceChatRoomMembership] Skipping removal of chatroom members the group does not list: no suitable signing key found', { groupID, chatRoomID, membersToRemove: toRemove })
+      return
+    }
     // Members are removed without an inner signature and signed with the
     // chatroom's `group-csk` (or its CSK), which is also what's done when a
     // member leaves the group. Their key is removed in the same message, and
@@ -185,7 +191,10 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
   const state = sbp('chelonia/contract/state', chatRoomID)
   const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
   const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
-  if (!CEKid || !CSKid) return
+  if (!CEKid || !CSKid) {
+    console.info('[enforceChatRoomMembership] Skipping chatroom key rotation: no suitable keys found', { groupID, chatRoomID, hasCEK: !!CEKid, hasCSK: !!CSKid })
+    return
+  }
   const height = currentKeysHeight(state, CEKid, CSKid)
   if (!formerMembersWithCurrentKeys(state, height).length) return
   // Former members' keys that were never removed would make them count as

@@ -962,6 +962,9 @@ export default (sbp('sbp/selectors/register', {
     // This happens when a join is re-attempted, e.g., by side effects re-running
     // after a re-sync. Skip the write and finish the chatroom half of the join
     // instead, which is what the `alreadyJoined` handler below does after the fact.
+    // No `JOINED_CHATROOM` is emitted here, in either of those two cases: the
+    // callers that want a channel switch (channel and DM creation) can't reach
+    // them, and switching from a background re-sync would be unwanted.
     if (
       memberID === identityContractID &&
       rootState[groupContractID]?.chatRooms?.[chatRoomID]?.members?.[memberID]?.status === PROFILE_STATUS.ACTIVE
