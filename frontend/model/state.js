@@ -54,7 +54,7 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, added)
     }).catch((e) => {
-      console.error('[contractUpdate] Error', e)
+      console.error('[contractUpdate] Error updating newly added contracts', e)
     })
   }
 
@@ -78,7 +78,7 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, existingContracts)
     }).catch((e) => {
-      console.error('[contractUpdate] Error', e)
+      console.error('[contractUpdate] Error updating existing contracts', e)
     })
   }, 0)
 }
