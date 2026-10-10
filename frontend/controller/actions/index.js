@@ -7,14 +7,6 @@ import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
 import './kv-slots.js'
 
-// Selectors that ask other members to re-share keys we're missing, keyed by the
-// contract type they apply to. Used to recover instead of retrying operations
-// that cannot succeed without those keys.
-const MISSING_KEYS_REQUEST_SELECTORS = {
-  'gi.contracts/chatroom': 'gi.actions/chatroom/findAndRequestMissingChatroomKeys',
-  'gi.contracts/group': 'gi.actions/group/findAndRequestMissingGroupKeys'
-}
-
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
 export { default as groupKV } from './group-kv.js'
@@ -178,16 +170,7 @@ sbp('sbp/selectors/register', {
     const signingKeyId = findSuitableSecretKeyId(state, [SPMessage.OP_ATOMIC, SPMessage.OP_KEY_SHARE, SPMessage.OP_KEY_UPDATE], ['sig'], ringLevel)
 
     if (!signingKeyId) {
-      const requestMissingKeys = MISSING_KEYS_REQUEST_SELECTORS[contractName]
-      if (!requestMissingKeys) {
-        throw new Error('No suitable signing key found')
-      }
-      console.info('[gi.actions/out/rotateKeys] Skipping key rotation: no suitable signing key found', { contractID, contractName, keysToRotate })
-      // We're typically missing this contract's keys. Another member can
-      // rotate in the meantime, which clears our pending revocations when we
-      // process their key update.
-      sbp(requestMissingKeys, contractID)
-      return
+      throw new Error('No suitable signing key found')
     }
 
     // Additional operations to be done along with key rotation.

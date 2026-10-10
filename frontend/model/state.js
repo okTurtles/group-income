@@ -23,10 +23,10 @@ import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
 
 // Wrapper function for performing contract upgrades and migrations
-// The update function is called for the contracts in `initialState` and again
-// whenever new contracts are synced, until the next Chelonia reset (i.e., for
-// the current session).
+// Unused as of https://github.com/okTurtles/group-income/pull/2525. For
+// usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
+// eslint-disable-next-line no-unused-vars
 const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early
@@ -303,22 +303,6 @@ sbp('sbp/selectors/register', {
         console.error('[chatroom/upgradeCekPermissions] Error', e)
       })
     })()
-
-    // Migration to secure private group chatrooms (not DMs): remove members
-    // that a chatroom lists but its group doesn't (e.g., former members who
-    // re-joined the chatroom directly, using keys that hadn't been rotated),
-    // and rotate the chatroom keys if former members still hold them.
-    // `contractUpdate` runs this for existing contracts as well as for
-    // contracts synced later on (for example, when logging in on a new device).
-    contractUpdate(state, (currentState, contractIDHints) => {
-      if (
-        Array.isArray(contractIDHints) &&
-        !contractIDHints.some((contractID) => ['gi.contracts/group', 'gi.contracts/chatroom'].includes(currentState.contracts[contractID]?.type))
-      ) return
-      sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDHints).catch(e => {
-        console.error('[chatroom/revokeFormerMemberAccess] Error', e)
-      })
-    })
 
     // Send an 'accept' action to any DMs that we have not yet accepted
     ;(() => {
