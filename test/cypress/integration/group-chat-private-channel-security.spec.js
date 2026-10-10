@@ -203,11 +203,11 @@ describe('Private channels - former members lose access', () => {
     cy.giSwitchUser(user2)
 
     cy.window().its('sbp').then(async sbp => {
-      expect(await sbp('chelonia/haveSecretKey', rotatedKeys.cek), 'user2 has the new channel key').to.equal(false)
+      expect(await sbp('chelonia/haveSecretKey', rotatedKeys.cek), 'user2 does not have the new channel key').to.equal(false)
       const canRead = await readChatRoom(sbp, ids.channel, (state) => {
         return (state.messages || []).some((message) => message.text === secretMessage)
       })
-      expect(canRead, 'user2 can read the new message').to.equal(false)
+      expect(canRead, 'user2 cannot read the new message').to.equal(false)
     })
   })
 

@@ -27,15 +27,17 @@ import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
 // whenever new contracts are synced, until the next Chelonia reset (i.e., for
 // the current session).
 // TODO: Consider moving this function into a different file
-const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
+const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?(string | string[])) => {
   // Wrapper for the update function. This performs a common check, namely that
-  // the contract is of a certain type, which helps return early
-  const wrappedUpdateFn = contractType
+  // at least one of the contracts is of one of the given types, which helps
+  // return early (in a tab, this also saves a call to the service worker)
+  const contractTypes = typeof contractType === 'string' ? [contractType] : contractType
+  const wrappedUpdateFn = contractTypes
   // The following disable is because eslint gets confused with 'Object'
   // eslint-disable-next-line no-use-before-define
     ? (state: Object, contractIDHints: ?string[]) => {
         if (Array.isArray(contractIDHints)) {
-          if (!contractIDHints.some(contractID => state.contracts[contractID]?.type === contractType)) {
+          if (!contractIDHints.some(contractID => contractTypes.includes(state.contracts[contractID]?.type))) {
             return
           }
         }
@@ -310,15 +312,11 @@ sbp('sbp/selectors/register', {
     // and rotate the chatroom keys if former members still hold them.
     // `contractUpdate` runs this for existing contracts as well as for
     // contracts synced later on (for example, when logging in on a new device).
-    contractUpdate(state, (currentState, contractIDHints) => {
-      if (
-        Array.isArray(contractIDHints) &&
-        !contractIDHints.some((contractID) => ['gi.contracts/group', 'gi.contracts/chatroom'].includes(currentState.contracts[contractID]?.type))
-      ) return
+    contractUpdate(state, (_, contractIDHints) => {
       sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDHints).catch(e => {
         console.error('[chatroom/revokeFormerMemberAccess] Error', e)
       })
-    })
+    }, ['gi.contracts/group', 'gi.contracts/chatroom'])
 
     // Send an 'accept' action to any DMs that we have not yet accepted
     ;(() => {

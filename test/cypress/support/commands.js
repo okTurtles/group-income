@@ -62,13 +62,18 @@ const getRandomNonMonetary = () => {
 // check function that takes SBP as its first parameter. It registers event
 // handlers for various events that may change the Chelonia state and returns
 // a Promise that resolves once the check passes. The check function may return
-// a Promise; while one is pending, the check isn't run again.
+// a Promise; while one is pending, the check isn't run again, and such checks
+// are only run once a second rather than on every event. They're expensive
+// (e.g., they sync a contract), and their own work can emit those events
+// (retaining and releasing a contract emits `CONTRACTS_MODIFIED`), which would
+// otherwise re-run them back to back.
 const cySbpCheckCommand = (name, customCheckFn) => {
   Cypress.Commands.add(name, (...params) => {
     cy.window().its('sbp').then(sbp => {
       return new Promise((resolve) => {
         let resolved = false
         let pending = false
+        let isAsync = false
 
         const done = (passed) => {
           if (resolved) return
@@ -79,10 +84,10 @@ const cySbpCheckCommand = (name, customCheckFn) => {
           resolved = true
           resolve()
           // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED_READY, check)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, onEvent)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHED, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, onEvent)
           clearInterval(x)
         }
 
@@ -93,6 +98,7 @@ const cySbpCheckCommand = (name, customCheckFn) => {
             done(result)
             return
           }
+          isAsync = true
           pending = true
           result.then(done, (e) => {
             console.warn(`[cypress] SBP Check ${name} failed with an error`, e)
@@ -100,13 +106,16 @@ const cySbpCheckCommand = (name, customCheckFn) => {
             pending = false
           })
         }
+        const onEvent = () => {
+          if (!isAsync) check()
+        }
 
         // Register event listeners. The following events could change the
         // state and affect the result of customCheckFn
-        sbp('okTurtles.events/on', EVENT_HANDLED_READY, check)
-        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
+        sbp('okTurtles.events/on', EVENT_HANDLED_READY, onEvent)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHED, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, onEvent)
 
         // We also run the test manually in case there are no events
         const x = setInterval(check, 1000)

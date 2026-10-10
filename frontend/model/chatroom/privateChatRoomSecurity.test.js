@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck } from './privateRoomSecurity.js'
+import { chatRoomMembersToRemove, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, isOurPrivateGroupChatRoom, membersMissingFromGroup, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck } from './privateChatRoomSecurity.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 const should = require('should')
 
@@ -131,8 +131,11 @@ describe('currentKeysHeight', () => {
     should(currentKeysHeight(keys(15, 12), 'cek', 'csk')).equal(12)
   })
 
-  it('is 0 when a height is missing', () => {
+  it('is 0 when a height, a key or the state is missing', () => {
     should(currentKeysHeight(keys(undefined, 12), 'cek', 'csk')).equal(0)
+    should(currentKeysHeight(keys(12, 15), 'cek', 'missing')).equal(0)
+    should(currentKeysHeight({}, 'cek', 'csk')).equal(0)
+    should(currentKeysHeight(undefined, 'cek', 'csk')).equal(0)
   })
 })
 

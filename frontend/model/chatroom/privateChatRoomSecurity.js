@@ -18,11 +18,13 @@ const isKeyOfMember = (key: Object, memberID: string): boolean =>
   !!key.foreignKey && typeof key.name === 'string' && key.name.startsWith(`${memberID}/`)
 
 // The height at which the current chatroom keys became valid: the earliest of
-// the CEK's and the CSK's, as they're rotated together. The `|| 0` is for
-// robustness, in case `Math.min` returns `NaN`.
-export function currentKeysHeight (state: Object, CEKid: string, CSKid: string): number {
-  const keys = state._vm.authorizedKeys
-  return Math.min(keys[CEKid]._notBeforeHeight, keys[CSKid]._notBeforeHeight) || 0
+// the CEK's and the CSK's, as they're rotated together. It's 0 if a key or its
+// height is missing (`Math.min` then returns `NaN`). That errs on the side of
+// rotating, as every former member who ever had a key then counts as holding
+// the current keys (see `formerMembersWithCurrentKeys`).
+export function currentKeysHeight (state: ?Object, CEKid: string, CSKid: string): number {
+  const keys = state?._vm?.authorizedKeys || {}
+  return Math.min(keys[CEKid]?._notBeforeHeight, keys[CSKid]?._notBeforeHeight) || 0
 }
 
 // Former members of a chatroom whose keys are still current, meaning that the
