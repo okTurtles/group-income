@@ -132,18 +132,23 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
     if (rootState.loggedIn?.identityContractID !== identityContractID) return []
     return ourPrivateGroupChatRoomMembersToRemove(rootState, identityContractID, groupID, chatRoomID)
   }
+  // Without a key to sign the removal with, there's nothing we can do (and
+  // no point in syncing the group). Another member can do it, or we can
+  // once we receive the key.
+  const removalSigningKeyId = (toRemove: string[]): ?string => {
+    const signingKeyId = groupChatRoomLeaveSigningKeyId(chatRoomID)
+    if (!signingKeyId) {
+      console.info('[enforceChatRoomMembership] Skipping removal of chatroom members the group does not list: no suitable signing key found', { groupID, chatRoomID, membersToRemove: toRemove })
+    }
+    return signingKeyId
+  }
 
   // Act on the latest state, after any events being processed (e.g., by a
   // sync) have been processed
   await sbp('chelonia/contract/wait', [groupID, chatRoomID])
-  if (membersToRemove().length) {
-    // Without a key to sign the removal with, there's nothing we can do (and
-    // no point in syncing the group). Another member can do it, or we can
-    // once we receive the key.
-    if (!groupChatRoomLeaveSigningKeyId(chatRoomID)) {
-      console.info('[enforceChatRoomMembership] Skipping removal of chatroom members the group does not list: no suitable signing key found', { groupID, chatRoomID })
-      return
-    }
+  const initialMembersToRemove = membersToRemove()
+  if (initialMembersToRemove.length) {
+    if (!removalSigningKeyId(initialMembersToRemove)) return
     // Membership is decided by the group, so we make sure that our view of the
     // group is up to date before removing anyone
     await sbp('chelonia/contract/retain', groupID, { ephemeral: true })
@@ -157,11 +162,8 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
 
   const toRemove = membersToRemove()
   if (toRemove.length) {
-    const signingKeyId = groupChatRoomLeaveSigningKeyId(chatRoomID)
-    if (!signingKeyId) {
-      console.info('[enforceChatRoomMembership] Skipping removal of chatroom members the group does not list: no suitable signing key found', { groupID, chatRoomID, membersToRemove: toRemove })
-      return
-    }
+    const signingKeyId = removalSigningKeyId(toRemove)
+    if (!signingKeyId) return
     // Members are removed without an inner signature and signed with the
     // chatroom's `group-csk` (or its CSK), which is also what's done when a
     // member leaves the group. Their key is removed in the same message, and
