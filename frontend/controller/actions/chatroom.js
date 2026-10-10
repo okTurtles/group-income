@@ -45,13 +45,19 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
 
     // If we have all keys, we don't have anything to request
     if (CEKid && CSKid) return
+
+    const cheloniaState = sbp('chelonia/rootState')
+    const identityContractID = cheloniaState.loggedIn?.identityContractID
+
+    // Only members can request keys (see `_responseOptionsForKeyRequest`), and
+    // former members are expected to be missing them
+    if (!state.members[identityContractID] || state.members[identityContractID].hasLeft) return
+
     if (!groupCSKid) {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Missing CSK and CEK, but group CSK is missing in ${contractID}`)
       return
     }
 
-    const cheloniaState = sbp('chelonia/rootState')
-    const identityContractID = cheloniaState.loggedIn?.identityContractID
     const contractState = cheloniaState[identityContractID]
 
     // $FlowFixMe[incompatible-use]
@@ -86,7 +92,7 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
       encryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', identityContractID, 'cek'),
       request: 'missing',
       skipInviteAccounting: true,
-      innerEncryptionKeyId: CEKid,
+      innerEncryptionKeyId: sbp('chelonia/contract/currentKeyIdByName', state, 'cek'),
       encryptKeyRequestMetadata: true
     }).catch((e) => {
       console.error(`[gi.actions/chatroom/findAndRequestMissingChatroomKeys] Failed for ${contractID}`, e)
