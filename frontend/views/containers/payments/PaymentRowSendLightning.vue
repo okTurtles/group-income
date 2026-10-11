@@ -36,7 +36,7 @@ import { mapGetters } from 'vuex'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
-export default ({
+export default {
   name: 'PaymentRowSendLightning',
   components: {
     PaymentRow,
@@ -88,7 +88,7 @@ export default ({
       this.form.amount = this.config.initialAmount
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -4,7 +4,7 @@ import {
   HOURS_MILLIS,
   MINS_MILLIS,
   timeSince
-} from './time.js'
+} from './time.ts'
 const should = require('should')
 
 describe('timeSince', function () {

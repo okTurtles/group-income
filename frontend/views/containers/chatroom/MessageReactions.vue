@@ -29,7 +29,7 @@ import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'MessageReactions',
   components: {
     Tooltip
@@ -73,7 +73,7 @@ export default ({
       return L('{userList} reacted with {emotiName}', data)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

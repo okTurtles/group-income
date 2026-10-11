@@ -20,7 +20,7 @@ message-base(
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'Message',
   components: {
     MessageBase
@@ -85,7 +85,7 @@ export default ({
       this.$emit('add-emoticon', emoticon)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

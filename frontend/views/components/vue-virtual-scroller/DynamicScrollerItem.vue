@@ -7,7 +7,6 @@ div
 export default {
   name: 'DynamicScrollerItem',
   props: {
-    // eslint-disable-next-line vue/require-prop-types
     item: {
       required: true
     },

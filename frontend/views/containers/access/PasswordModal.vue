@@ -73,7 +73,7 @@ import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import { L } from '@common/common.js'
 import { Secret } from '@chelonia/lib/Secret'
 
-export default ({
+export default {
   name: 'PasswordModal',
   mixins: [validationMixin],
   data () {
@@ -132,5 +132,5 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>

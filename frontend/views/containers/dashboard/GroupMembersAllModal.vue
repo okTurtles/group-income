@@ -127,9 +127,9 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { filterByKeyword } from '@view-utils/filters.js'
+import { filterByKeyword } from '@view-utils/filters.ts'
 
-export default ({
+export default {
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
@@ -186,7 +186,7 @@ export default ({
       console.log('TODO addToChannel')
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

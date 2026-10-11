@@ -51,18 +51,18 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import { RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
-import proposals from '@model/contracts/shared/voting/proposals.js'
+import { RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.ts'
+import proposals from '@model/contracts/shared/voting/proposals.ts'
 import {
   PROPOSAL_GENERIC,
   GROUP_NAME_MAX_CHAR,
   GROUP_DESCRIPTION_MAX_CHAR,
   GROUP_MINCOME_MAX
 } from '@model/contracts/shared/constants.js'
-import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.ts'
 import { L } from '@common/common.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import StepAssistant from '@view-utils/stepAssistant.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.ts'
+import StepAssistant from '@view-utils/stepAssistant.ts'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import {
@@ -78,7 +78,7 @@ import {
 // but then the browser complains about "require is not defined"
 import { required, between, maxLength, maxValue } from 'vuelidate/lib/validators'
 
-export default ({
+export default {
   name: 'GroupCreationModal',
   mixins: [
     StepAssistant,
@@ -221,7 +221,7 @@ export default ({
       ]
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

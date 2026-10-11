@@ -72,10 +72,10 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/shared/payments/index.ts'
 import { validationMixin } from 'vuelidate'
 import SvgSuccess from '@svgs/success.svg'
-import { dateToMonthstamp } from '@model/contracts/shared/time.js'
+import { dateToMonthstamp } from '@model/contracts/shared/time.ts'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import Vue from 'vue'
@@ -84,7 +84,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { PAYMENTS_RECORDED } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'RecordPayment',
   mixins: [validationMixin],
   components: {
@@ -115,7 +115,7 @@ export default ({
   created () {
     this.form.paymentsToRecord = this.paymentsList.map((payment, index) => ({
       ...payment,
-      index: index, // A link between original payment and this copy
+      index, // A link between original payment and this copy
       checked: false
     }))
   },
@@ -199,7 +199,7 @@ export default ({
             txid: '' + Math.random(),
             status: PAYMENT_PENDING,
             paymentType: PAYMENT_TYPE_MANUAL,
-            ...(memo ? { memo } : {}) // TODO/BUG with flowTyper validation. Empty string '' fails.
+            ...(memo ? { memo } : {}) // TODO/BUG with giTyper validation. Empty string '' fails.
           }
 
           if (isStatusNotReceived) {
@@ -246,7 +246,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

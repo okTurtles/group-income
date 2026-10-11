@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { createNamespaceResolver, NAMESPACE_UNREGISTERED_TTL, NAMESPACE_VERIFY_TTL } from './namespaceResolver.js'
+import { createNamespaceResolver, NAMESPACE_UNREGISTERED_TTL, NAMESPACE_VERIFY_TTL } from './namespaceResolver.ts'
 
 const deferred = () => {
   let fulfill, fail

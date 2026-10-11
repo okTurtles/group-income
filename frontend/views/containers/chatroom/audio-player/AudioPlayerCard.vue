@@ -37,7 +37,7 @@
 <script>
 import AudioPlayer from '@components/AudioPlayer.vue'
 import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
-import { getMimeTypeEssence } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
+import { getMimeTypeEssence } from '@containers/chatroom/voice-recording/voice-recording-utils.ts'
 
 export default {
   name: 'AudioPlayerCard',

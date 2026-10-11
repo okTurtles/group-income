@@ -12,7 +12,7 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'CalloutCard',
   props: {
     title: String,
@@ -20,7 +20,7 @@ export default ({
     isCard: Boolean,
     anchor: String
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
