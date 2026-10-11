@@ -149,7 +149,8 @@ export function injectOrStripSpecialChar (
 export function injectOrStripLink (
   str: string, // A target string.
   startIndex: number, // start position of the target segment.
-  endIndex: number // end position of the target segment.
+  endIndex: number, // end position of the target segment.
+  url: string | undefined // The url to inject or strip. If null, it will strip the link out.
 ): any {
   let segment = str.slice(startIndex, endIndex)
   let before = str.slice(0, startIndex)
@@ -173,7 +174,7 @@ export function injectOrStripLink (
     }
   } else {
     // Otherwise, inject the link
-    segment = `[${segment}](url)`
+    segment = `[${segment}](${url ?? 'url'})`
     focusIndex = {
       start: (before + segment).length - 4,
       end: (before + segment).length - 1

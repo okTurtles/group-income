@@ -788,7 +788,8 @@ export default ({
 
         if (isValid && isExternalLink) {
           const urlString = url.toString()
-          console.log('!@# TODO: transform currently selected text to a link markdown syntax. urlString', urlString)
+          this.transformTextSelectionToMarkdown('link', urlString)
+          e.preventDefault()
         }
       }
     },
@@ -1309,7 +1310,7 @@ export default ({
         this.endSegmentSelection()
       }
     },
-    transformTextSelectionToMarkdown (type) {
+    transformTextSelectionToMarkdown (type, linkUrl) {
       // NOTE: should call preventDefault() for 'mousedown' event
       //       to prevents the button from being focused upon click
 
@@ -1331,7 +1332,7 @@ export default ({
             break
           }
           case 'link': {
-            result = injectOrStripLink(inputValue, selStart, selEnd)
+            result = injectOrStripLink(inputValue, selStart, selEnd, linkUrl)
           }
         }
 
