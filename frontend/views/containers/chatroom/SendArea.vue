@@ -779,17 +779,27 @@ export default ({
       }
     },
     handlePaste (e) {
+      const isExternalLink = text => {
+        const { isValid, isExternalLink } = validateURL(text)
+        return isValid && isExternalLink
+      }
+      const pastedText = e.clipboardData.getData('text/plain').trim()
+
       // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
       if (!this.isEditing && e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
-      } else {
-        const pastedText = e.clipboardData.getData('text/plain')
-        const { isValid, isExternalLink, url = null } = validateURL(pastedText)
+      } else if (isExternalLink(pastedText)) {
+        // Pasting an external link while a text segment is selected turns the segment into
+        // a markdown link: [segment](url). Every other case is left to the browser's default paste.
+        const inputEl = this.$refs.textarea
+        const selectedText = inputEl.value.slice(inputEl.selectionStart, inputEl.selectionEnd)
 
-        if (isValid && isExternalLink) {
-          const urlString = url.toString()
-          this.transformTextSelectionToMarkdown('link', urlString)
+        // A selected link is meant to be replaced by the pasted one rather than wrapped by it.
+        if (selectedText && !isExternalLink(selectedText.trim())) {
           e.preventDefault()
+          // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
+          document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
+          this.updateTextArea()
         }
       }
     },
@@ -1310,7 +1320,7 @@ export default ({
         this.endSegmentSelection()
       }
     },
-    transformTextSelectionToMarkdown (type, linkUrl) {
+    transformTextSelectionToMarkdown (type) {
       // NOTE: should call preventDefault() for 'mousedown' event
       //       to prevents the button from being focused upon click
 
@@ -1332,7 +1342,7 @@ export default ({
             break
           }
           case 'link': {
-            result = injectOrStripLink(inputValue, selStart, selEnd, linkUrl)
+            result = injectOrStripLink(inputValue, selStart, selEnd)
           }
         }
 
