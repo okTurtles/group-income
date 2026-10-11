@@ -1,0 +1,102 @@
+@use "../variables" as v;
+
+@mixin chat-header-styles {
+  display: flex;
+  align-items: center;
+  position: relative;
+
+  .avatar-wrapper {
+    margin-right: 0.5rem;
+    flex: 0 0 2.5rem;
+  }
+
+  .p-title {
+    display: block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-group-icon {
+    margin-right: 0.5rem;
+    color: v.$text_1;
+    font-size: 1rem;
+  }
+
+  .c-menu {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .c-header {
+    font-size: v.$size_5;
+    font-weight: 400;
+    color: v.$text_1;
+    padding-bottom: 0;
+
+    @include v.tablet {
+      padding-top: 0;
+    }
+  }
+
+  .c-content {
+    min-width: 17.5rem;
+    font-size: v.$size_4;
+    font-weight: 400;
+
+    @include v.desktop {
+      left: -6.8rem;
+    }
+  }
+
+  .menu-arrow-icon {
+    font-size: 1.2rem;
+    transform-origin: 50% 48%;
+  }
+
+  .c-menu-trigger.is-active {
+    pointer-events: none;
+
+    .menu-arrow-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  .menu-separator {
+    border-bottom: 2px solid v.$general_2;
+  }
+
+  @include touch {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@mixin header-description-styles {
+  display: none;
+
+  .header-pin-wrapper {
+    cursor: pointer;
+
+    span {
+      margin-left: 0.25rem;
+      margin-right: 0.2rem;
+    }
+  }
+
+  @include v.desktop {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@mixin p-main-custom-styles {
+  height: auto !important;
+  // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+  max-width: unset !important;
+
+  @include v.touch {
+    padding-top: 0 !important;
+  }
+}

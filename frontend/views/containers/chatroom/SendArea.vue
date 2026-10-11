@@ -505,14 +505,15 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'ourIdentityContractId',
-      'mentionableChatroomsInDetails'
+      'mentionableChatroomsInDetails',
+      'isInGlobalDashboard'
     ]),
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
       const isInDM = this.isDirectMessage(this.currentChatRoomId)
 
       return Object.keys(this.chatRoomMembers)
-        .filter(memberID => isInDM || activeGroupMemberIds.includes(memberID))
+        .filter(memberID => this.isInGlobalDashboard || isInDM || activeGroupMemberIds.includes(memberID))
         .map(memberID => {
           const { username, displayName, picture } = this.ourContactProfilesById[memberID] || {}
           return {
@@ -1271,6 +1272,9 @@ export default ({
       this.saveOrDeleteMessageDraft()
     },
     startMention (keyword, position, mentionType = 'member') {
+      // Mentioning a group channel does not make sense in the global dm context. So don't respond to it.
+      if (mentionType === 'channel' && this.isInGlobalDashboard) { return }
+
       const options = mentionType === 'member'
         ? selectMentionOptions(this.memberMentionCandidates, this.allMentionCandidate, keyword, MAX_MENTION_RESULTS)
         : selectMentionOptions(this.channelMentionCandidates, null, keyword, MAX_MENTION_RESULTS)
