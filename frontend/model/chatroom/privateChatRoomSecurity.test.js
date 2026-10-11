@@ -81,6 +81,11 @@ describe('formerMemberKeyIdsToRemove', () => {
     should(formerMemberKeyIdsToRemove(state)).eql([])
     should(formerMembersWithCurrentKeys(state, 12)).eql([])
   })
+
+  it('handles a missing state', () => {
+    should(formerMemberKeyIdsToRemove(undefined)).eql([])
+    should(formerMemberKeyIdsToRemove({})).eql([])
+  })
 })
 
 describe('membersMissingFromGroup', () => {
@@ -185,6 +190,8 @@ describe('privateGroupChatRoomsToCheck', () => {
 
   it('handles missing state', () => {
     should(privateGroupChatRoomsToCheck({}, me)).eql([])
+    should(privateGroupChatRoomsToCheck(undefined, me)).eql([])
+    should(isOurPrivateGroupChatRoom(undefined, me, 'g1', 'priv')).be.false()
   })
 
   it('skips a chatroom while its group, or the chatroom itself, has events we could not decrypt', () => {
@@ -231,6 +238,7 @@ describe('ourPrivateGroupChatRoomMembersToRemove', () => {
     should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g1', 'pub')).eql([])
     should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g1', 'unknown')).eql([])
     should(ourPrivateGroupChatRoomMembersToRemove(state(), me, 'g2', 'priv')).eql([])
+    should(ourPrivateGroupChatRoomMembersToRemove(undefined, me, 'g1', 'priv')).eql([])
   })
 
   it('is empty while the group, or the chatroom, has events we could not decrypt', () => {

@@ -8,7 +8,7 @@ import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/fronte
 // used with both the Chelonia and the Vuex state, as well as in unit tests.
 
 // IDs of the members who have left the chatroom
-const formerMemberIDs = (state: Object): string[] => {
+const formerMemberIDs = (state: ?Object): string[] => {
   const members = state?.members || {}
   return Object.keys(members).filter((memberID) => members[memberID].hasLeft === true)
 }
@@ -31,7 +31,7 @@ export function currentKeysHeight (state: ?Object, CEKid: string, CSKid: string)
 // chatroom keys must be rotated. `height` is the height at which the current
 // chatroom CEK and CSK became valid. A former member's key is still current if
 // it hasn't been removed yet, or if it was removed at or after `height`.
-export function formerMembersWithCurrentKeys (state: Object, height: number): string[] {
+export function formerMembersWithCurrentKeys (state: ?Object, height: number): string[] {
   const keys: Object[] = (Object.values(state?._vm?.authorizedKeys || {}): any)
   return formerMemberIDs(state).filter((memberID) => keys.some((key) =>
     isKeyOfMember(key, memberID) &&
@@ -43,7 +43,7 @@ export function formerMembersWithCurrentKeys (state: Object, height: number): st
 // These must be removed before rotating the chatroom keys; otherwise, their
 // former owners would still be considered to hold the current keys after the
 // rotation, and the keys would be rotated again.
-export function formerMemberKeyIdsToRemove (state: Object): string[] {
+export function formerMemberKeyIdsToRemove (state: ?Object): string[] {
   const authorizedKeys = state?._vm?.authorizedKeys || {}
   const formerMembers = formerMemberIDs(state)
   return Object.keys(authorizedKeys).filter((keyId) => {
@@ -76,13 +76,13 @@ export function chatRoomMembersToRemove (chatRoomState: ?Object, groupChatRoomRe
 
 // Events that we couldn't decrypt are skipped, so our view of a contract is
 // incomplete until we receive the missing keys (which re-syncs it)
-const hasCompleteState = (state: Object, contractID: string): boolean =>
+const hasCompleteState = (state: ?Object, contractID: string): boolean =>
   !state?.contracts?.[contractID]?.missingDecryptionKeyIds?.length
 
 // Whether `chatRoomID` is a private chatroom of `groupID` (i.e., not a DM),
 // which we have completely synced (as has its group) and which we're a member
 // of according to both the group and the chatroom
-export function isOurPrivateGroupChatRoom (state: Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): boolean {
+export function isOurPrivateGroupChatRoom (state: ?Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): boolean {
   const ourGroup = state?.[ourIdentityContractID]?.groups?.[groupID]
   const record = state?.[groupID]?.chatRooms?.[chatRoomID]
   const chatRoomState = state?.[chatRoomID]
@@ -100,13 +100,13 @@ export function isOurPrivateGroupChatRoom (state: Object, ourIdentityContractID:
 
 // The members to remove from one of our private group chatrooms, or none if
 // `chatRoomID` isn't one of those (see `isOurPrivateGroupChatRoom`)
-export function ourPrivateGroupChatRoomMembersToRemove (state: Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): string[] {
-  if (!isOurPrivateGroupChatRoom(state, ourIdentityContractID, groupID, chatRoomID)) return []
+export function ourPrivateGroupChatRoomMembersToRemove (state: ?Object, ourIdentityContractID: string, groupID: string, chatRoomID: string): string[] {
+  if (!state || !isOurPrivateGroupChatRoom(state, ourIdentityContractID, groupID, chatRoomID)) return []
   return chatRoomMembersToRemove(state[chatRoomID], state[groupID].chatRooms[chatRoomID], ourIdentityContractID)
 }
 
 // All of the chatrooms for which `isOurPrivateGroupChatRoom` is true
-export function privateGroupChatRoomsToCheck (state: Object, ourIdentityContractID: string): Array<{ groupID: string, chatRoomID: string }> {
+export function privateGroupChatRoomsToCheck (state: ?Object, ourIdentityContractID: string): Array<{ groupID: string, chatRoomID: string }> {
   const groups = state?.[ourIdentityContractID]?.groups || {}
   return Object.keys(groups).flatMap((groupID) =>
     Object.keys(state?.[groupID]?.chatRooms || {})

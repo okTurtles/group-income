@@ -13,5 +13,6 @@ export const readChatRoom = async (sbp, chatRoomID, readFn) => {
     return await readFn(await sbp('chelonia/contract/state', chatRoomID))
   } finally {
     await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
+      .catch((e) => console.warn('[readChatRoom] Error releasing', chatRoomID, e))
   }
 }
