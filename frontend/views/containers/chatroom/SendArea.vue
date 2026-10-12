@@ -796,7 +796,8 @@ export default ({
 
         // If the selected text itself is also an external link, then
         // keep the default paste behavior instead of transforming it into a markdown link.
-        if (selectedText && !isExternalLink(selectedText.trim())) {
+        const trimmedSelection = selectedText.trim()
+        if (trimmedSelection && !isExternalLink(trimmedSelection)) {
           // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
           // MDN doc mentions document.execCommand() is deprecated but it is supported in all modern browsers
           // and there is no alternative to it which preserves undo/redo history like it does. Hence, it is used here.
