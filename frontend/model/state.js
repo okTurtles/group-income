@@ -29,17 +29,20 @@ import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
 // TODO: Consider moving this function into a different file
 const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractTypes: ?(string | string[])) => {
   // Wrapper for the update function. This performs a common check, namely that
-  // at least one of the contracts is of one of the given types, which helps
-  // return early (in a tab, this also saves a call to the service worker)
+  // the contracts could be of one of the given types, which helps return early
+  // (in a tab, this also saves a call to the service worker). Contracts whose
+  // type isn't known yet pass the check: a newly synced contract can reach
+  // this tab after `chelonia/contract/wait` resolves.
   const normalizedTypes = typeof contractTypes === 'string' ? [contractTypes] : contractTypes
   const wrappedUpdateFn = normalizedTypes
   // The following disable is because eslint gets confused with 'Object'
   // eslint-disable-next-line no-use-before-define
     ? (state: Object, contractIDHints: ?string[]) => {
-        if (Array.isArray(contractIDHints)) {
-          if (!contractIDHints.some(contractID => normalizedTypes.includes(state.contracts[contractID]?.type))) {
-            return
-          }
+        if (Array.isArray(contractIDHints) && contractIDHints.every((contractID) => {
+          const type = state.contracts[contractID]?.type
+          return type != null && !normalizedTypes.includes(type)
+        })) {
+          return
         }
         updateFn(state, contractIDHints)
       }

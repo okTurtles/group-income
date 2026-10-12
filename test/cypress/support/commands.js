@@ -67,13 +67,25 @@ const getRandomNonMonetary = () => {
 // (e.g., they sync a contract), and their own work can emit those events
 // (retaining and releasing a contract emits `CONTRACTS_MODIFIED`), which would
 // otherwise re-run them back to back.
+// The check stops once Cypress gives up on the command (after
+// `defaultCommandTimeout`), so that it doesn't keep running in the background.
 const cySbpCheckCommand = (name, customCheckFn) => {
   Cypress.Commands.add(name, (...params) => {
     cy.window().its('sbp').then(sbp => {
       return new Promise((resolve) => {
+        const deadline = Date.now() + Cypress.config('defaultCommandTimeout')
         let resolved = false
         let pending = false
         let isAsync = false
+
+        // Un-register event listeners once the check has succeeded or timed out
+        const cleanup = () => {
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, onEvent)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHED, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, onEvent)
+          clearInterval(x)
+        }
 
         const done = (passed) => {
           if (resolved) return
@@ -83,16 +95,17 @@ const cySbpCheckCommand = (name, customCheckFn) => {
           }
           resolved = true
           resolve()
-          // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED_READY, onEvent)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, onEvent)
-          sbp('okTurtles.events/off', EVENT_PUBLISHED, onEvent)
-          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, onEvent)
-          clearInterval(x)
+          cleanup()
         }
 
         const check = () => {
           if (resolved || pending) return
+          if (Date.now() > deadline) {
+            console.warn(`[cypress] SBP Check ${name} timed out`)
+            resolved = true
+            cleanup()
+            return
+          }
           const result = customCheckFn(sbp, ...params)
           if (typeof result?.then !== 'function') {
             done(result)

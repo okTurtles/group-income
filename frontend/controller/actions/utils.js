@@ -27,6 +27,18 @@ const userFacingActionError = (humanError: string | Function, params: GIActionPa
   return new GIErrorUIRuntimeError(userFacingErrStr, { cause })
 }
 
+// The contract whose key gives the inner signature of an action sent to
+// `contractID`: `params.innerSigningContractID` if set (`null` meaning no inner
+// signature), and otherwise the logged in identity contract, unless the action
+// is sent to it
+export const actionInnerSigningContractID = (params: Object, contractID: string, rootState: Object): ?string => {
+  return params.innerSigningContractID !== undefined
+    ? params.innerSigningContractID
+    : contractID === rootState.loggedIn.identityContractID
+      ? null
+      : rootState.loggedIn.identityContractID
+}
+
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
 // This function covers the common case of sending an encrypted action that is
 // both encrypted with that same contract's CEK and signed with that contract's
@@ -104,11 +116,7 @@ export const encryptedAction = (
         // contract ID, unless we are signing for the current identity contract
         // If params.innerSigningContractID is explicitly set to null, then
         // no default value will be used.
-        const innerSigningContractID = params.innerSigningContractID !== undefined
-          ? params.innerSigningContractID
-          : contractID === rootState.loggedIn.identityContractID
-            ? null
-            : rootState.loggedIn.identityContractID
+        const innerSigningContractID = actionInnerSigningContractID(params, contractID, rootState)
 
         if (innerSigningContractID && !state[innerSigningContractID]) {
           state[innerSigningContractID] = await sbp('chelonia/latestContractState', innerSigningContractID)
@@ -221,11 +229,7 @@ export const encryptedNotification = (
         // contract ID, unless we are signing for the current identity contract
         // If params.innerSigningContractID is explicitly set to null, then
         // no default value will be used.
-        const innerSigningContractID = params.innerSigningContractID !== undefined
-          ? params.innerSigningContractID
-          : contractID === rootState.loggedIn.identityContractID
-            ? null
-            : rootState.loggedIn.identityContractID
+        const innerSigningContractID = actionInnerSigningContractID(params, contractID, rootState)
 
         if (innerSigningContractID && !state[innerSigningContractID]) {
           state[innerSigningContractID] = await sbp('chelonia/latestContractState', innerSigningContractID)
