@@ -794,10 +794,14 @@ export default ({
         const inputEl = this.$refs.textarea
         const selectedText = inputEl.value.slice(inputEl.selectionStart, inputEl.selectionEnd)
 
-        // A selected link is meant to be replaced by the pasted one rather than wrapped by it.
+        // If the selected text itself is also an external link, then
+        // keep the default paste behavior instead of transforming it into a markdown link.
         if (selectedText && !isExternalLink(selectedText.trim())) {
           e.preventDefault()
+
           // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
+          // MDN doc mentions document.execCommand() is deprecated but it is supported in all modern browsers
+          // and there is no alternative to it which preserves undo/redo history like it does. Hence, it is used here.
           document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
           this.updateTextArea()
         }
