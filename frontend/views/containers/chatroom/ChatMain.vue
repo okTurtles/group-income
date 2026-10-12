@@ -54,6 +54,7 @@
           :active='active'
           :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
+          :data-height='message.height'
         )
           .c-divider(
             v-if='changeDay(message, ephemeral.messages[index - 1]) || isNew(message.hash)'
@@ -164,6 +165,7 @@ import {
   CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
+import { isUnsentMessage, sortMessages } from './sortMessages.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -385,6 +387,9 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
 
+    this.ephemeral.switchController.abort(new Error('ChatMain destroyed'))
+    this.ephemeral.chatroomIdToSwitchTo = null
+
     this.cleanupFailedMessagesAttachments()
   },
   computed: {
@@ -510,7 +515,7 @@ export default ({
       }
     },
     setMessages: debounce(function () {
-      if (!this.ephemeral.renderingChatRoomId) return
+      if (!this.ephemeral.renderingChatRoomId || this.hasChatroomSwitchedSince()) return
       const newMessages = this.messageState.contract?.messages || []
       if (this.ephemeral.messages === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
@@ -717,6 +722,7 @@ export default ({
           state = await sbp('chelonia/in/processMessage', event.serialize(), state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (hasChatroomSwitchedSince()) return
+          this.clearFailureOfDeliveredMessage(state, event.hash())
         }
 
         if (this.messageState.fetched) {
@@ -726,7 +732,7 @@ export default ({
 
         const previousLength = this.messageState.contract.messages.length
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
-        Vue.set(this.messageState, 'contract', state)
+        this.setContractState(state)
 
         if (
           // If there are no messages
@@ -804,6 +810,16 @@ export default ({
       if (timeBetween > MINS_MILLIS * 10) { return false }
       return msg.from === prevMsg.from
     },
+    setContractState (state) {
+      state.messages = sortMessages(state.messages)
+      Vue.set(this.messageState, 'contract', state)
+    },
+    clearFailureOfDeliveredMessage (state, messageHash) {
+      const message = state.messages[findMessageIdx(messageHash, state.messages)]
+      if (!message?.hasFailed || message.pending) return
+      Vue.delete(message, 'hasFailed')
+      this.releaseFailedMessageAttachments(messageHash)
+    },
     stopReplying () {
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
@@ -822,6 +838,7 @@ export default ({
         let pendingMessageHash = null
         const beforeRequest = (message, oldMessage) => {
           if (hasChatroomSwitchedSince()) return
+          pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
             beforePrePublish?.()
 
@@ -839,17 +856,18 @@ export default ({
                 }
                 this.jumpToLatest()
               }
-              Vue.set(this.messageState, 'contract', newContractState)
+              this.setContractState(newContractState)
               this.stopReplying()
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
-              pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
               //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
               this.onChatScroll()
             }
+          }).catch((e) => {
+            console.error('[ChatMain.vue] Error in the beforeRequest hook', e)
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -878,16 +896,20 @@ export default ({
             alert(L("Can't send message when offline, please connect to the Internet"))
           }
 
-          const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
-            const failedMsg = this.messageState.contract.messages[msgIndex]
+          enqueue.call(this, () => {
+            if (hasChatroomSwitchedSince()) return
+            const messages = this.messageState.contract.messages
+            const msgIndex = findMessageIdx(pendingMessageHash, messages)
+            if (msgIndex < 0 || !isUnsentMessage(messages[msgIndex])) return
+
+            const failedMsg = messages[msgIndex]
             Vue.set(failedMsg, 'hasFailed', true)
 
             if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
               // Attachments are kept so that they can be used again for the next re-attempt.
               this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
             }
-          }
+          })
         })
       }
       const uploadAttachments = async () => {
@@ -928,7 +950,7 @@ export default ({
                   this.jumpToLatest()
                 }
 
-                Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+                this.setContractState(await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
                 if (temporaryMessage) {
                   Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
@@ -1030,11 +1052,13 @@ export default ({
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
+        if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
+        if (index < 0) return
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince()) return
+            if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
             this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
@@ -1137,8 +1161,9 @@ export default ({
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const index = this.ephemeral.messages.indexOf(msg)
-      if (index >= 0) this.ephemeral.messages.splice(index, 1)
+      const messages = this.messageState.contract.messages
+      const index = findMessageIdx(message.hash, messages)
+      if (index >= 0) messages.splice(index, 1)
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1177,6 +1202,9 @@ export default ({
     editMessage (message, newMessage) {
       this.triggerEditMessage(message.hash, false)
       message.text = newMessage
+      if (!message.pending) {
+        message.pendingEdit = true
+      }
       message.pending = true
       const contractID = this.ephemeral.renderingChatRoomId
       sbp('gi.actions/chatroom/editMessage', {
@@ -1488,7 +1516,9 @@ export default ({
             // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
             scrollingToSpecificMessage,
             0 // don't need the delay here
-          )
+          )?.catch((e) => {
+            console.error('[ChatMain.vue] Error scrolling to the initial position', e)
+          })
           // NOTE: delete mhash in the query after scroll and highlight the message with mhash
           if (scrollingToSpecificMessage) {
             const newQuery = { ...this.$route.query }
@@ -1748,6 +1778,8 @@ export default ({
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
               createdHeight: value.data.height
+            }).catch((e) => {
+              console.error(`[ChatMain.vue] Error from 'gi.actions/identity/kv/${action}'`, e)
             })
           }
         })()
@@ -1897,6 +1929,16 @@ export default ({
         })
       })
       this.ephemeral.failedMessagesAttachments = {}
+    },
+    releaseFailedMessageAttachments (messageHash) {
+      const attachments = this.ephemeral.failedMessagesAttachments[messageHash]
+      if (!attachments) return
+      attachments.forEach(attachment => {
+        if (attachment.url) {
+          URL.revokeObjectURL(attachment.url)
+        }
+      })
+      delete this.ephemeral.failedMessagesAttachments[messageHash]
     }
   },
   provide () {
@@ -1915,6 +1957,7 @@ export default ({
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
         if (toChatRoomId !== this.summary.chatRoomID) return
+        if (!this.ephemeral.chatroomIdToSwitchTo) return
         this.processChatroomSwitch()
       }
 

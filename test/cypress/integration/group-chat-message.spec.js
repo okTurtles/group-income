@@ -578,3 +578,91 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giLogout()
   })
 })
+
+describe('Chatroom messages are rendered in chain order with unsent messages at the bottom', () => {
+  const orderingGroupName = 'Ordering'
+  const orderingSuffix = randomUserSuffix()
+  const orderingUser1 = `order1${orderingSuffix}`
+  const orderingUser2 = `order2${orderingSuffix}`
+  let orderingInvitationLink
+
+  function assertRenderedInOrder () {
+    cy.getByDT('conversationWrapper').find('[data-index]').should('have.length.at.least', 2).then($items => {
+      const items = [...$items]
+        .map(el => ({
+          index: Number(el.getAttribute('data-index')),
+          height: Number(el.getAttribute('data-height')),
+          unsent: !!el.querySelector('.c-message.pending, .c-message.failed')
+        }))
+        .sort((a, b) => a.index - b.index)
+      expect(items.every(item => Number.isFinite(item.height)), 'every rendered message has a height').to.equal(true)
+      const firstUnsent = items.findIndex(item => item.unsent)
+      const sent = firstUnsent < 0 ? items : items.slice(0, firstUnsent)
+      const unsent = firstUnsent < 0 ? [] : items.slice(firstUnsent)
+      expect(unsent.every(item => item.unsent), 'unsent messages are only at the bottom').to.equal(true)
+      const heights = sent.map(item => item.height)
+      expect(heights, 'sent messages are ordered by height').to.deep.equal([...heights].sort((a, b) => a - b))
+    })
+  }
+
+  function assertNothingPendingOrFailed () {
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message.pending').should('not.exist')
+      cy.get('.c-message.failed').should('not.exist')
+    })
+  }
+
+  it(`${orderingUser1} creates '${orderingGroupName}' and sends several messages back to back`, () => {
+    cy.visit('/')
+    cy.giSignup(orderingUser1, { bypassUI: true })
+    cy.giCreateGroup(orderingGroupName, { bypassUI: true })
+
+    cy.giRedirectToGroupChat()
+    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, orderingUser1)
+
+    for (let i = 1; i <= 4; i++) {
+      cy.giSendMessage(orderingUser1, `Rapid message ${i}`, { instantInput: true })
+      assertRenderedInOrder()
+    }
+    assertNothingPendingOrFailed()
+
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      orderingInvitationLink = url
+    })
+    cy.giLogout()
+  })
+
+  it(`${orderingUser2} joins and both members' messages stay in order`, () => {
+    cy.giAcceptGroupInvite(orderingInvitationLink, {
+      username: orderingUser2,
+      existingMemberUsername: orderingUser1,
+      groupName: orderingGroupName,
+      shouldLogoutAfter: false,
+      bypassUI: true
+    })
+
+    cy.giRedirectToGroupChat()
+    assertRenderedInOrder()
+
+    for (let i = 1; i <= 3; i++) {
+      cy.giSendMessage(orderingUser2, `Reply from ${orderingUser2} ${i}`, { instantInput: true })
+      assertRenderedInOrder()
+    }
+    assertNothingPendingOrFailed()
+  })
+
+  it(`${orderingUser1} sees the interleaved conversation in order`, () => {
+    cy.giSwitchUser(orderingUser1)
+    cy.giRedirectToGroupChat()
+
+    assertRenderedInOrder()
+    assertNothingPendingOrFailed()
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').last().find('.c-text').should('contain', `Reply from ${orderingUser2} 3`)
+    })
+
+    cy.giLogout()
+  })
+})
