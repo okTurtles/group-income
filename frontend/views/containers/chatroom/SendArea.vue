@@ -780,8 +780,8 @@ export default ({
     },
     handlePaste (e) {
       const isExternalLink = text => {
-        const { isValid, isExternalLink } = validateURL(text)
-        return isValid && isExternalLink
+        const { isValid, isExternalLink: isExternal } = validateURL(text)
+        return isValid && isExternal
       }
       const pastedText = e.clipboardData.getData('text/plain').trim()
 
@@ -797,13 +797,14 @@ export default ({
         // If the selected text itself is also an external link, then
         // keep the default paste behavior instead of transforming it into a markdown link.
         if (selectedText && !isExternalLink(selectedText.trim())) {
-          e.preventDefault()
-
           // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
           // MDN doc mentions document.execCommand() is deprecated but it is supported in all modern browsers
           // and there is no alternative to it which preserves undo/redo history like it does. Hence, it is used here.
-          document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
-          this.updateTextArea()
+          const inserted = document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
+          if (inserted) {
+            e.preventDefault()
+            this.updateTextArea()
+          }
         }
       }
     },
