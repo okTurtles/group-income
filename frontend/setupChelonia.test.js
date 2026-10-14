@@ -140,8 +140,12 @@ const registerFrontendModules = () => {
         alias: {
           '@assets': path.join(ROOT, 'frontend/assets'),
           '@common': path.join(ROOT, 'frontend/common'),
+          '@components': path.join(ROOT, 'frontend/views/components'),
+          '@containers': path.join(ROOT, 'frontend/views/containers'),
           '@controller': path.join(ROOT, 'frontend/controller'),
           '@model': path.join(ROOT, 'frontend/model'),
+          '@pages': path.join(ROOT, 'frontend/views/pages'),
+          '@svgs': path.join(ROOT, 'frontend/assets/svgs'),
           '@utils': path.join(ROOT, 'frontend/utils'),
           '@view-utils': path.join(ROOT, 'frontend/views/utils'),
           '@views': path.join(ROOT, 'frontend/views')
@@ -203,19 +207,19 @@ const loadSbp = () => {
   return sbp
 }
 
-// A session in which a notification is due: Alice pledges in a group whose
-// 30-day distribution period ends in 3 days and Bob needs income, so Alice has
-// payments to make.
-const seed = async () => {
+// A session in which Alice pledges in a group with a 30-day distribution period
+// and Bob needs income, so Alice has payments to make. By default, the period
+// ends in 3 days, so the "Less than 1 week left" notification is due.
+const seed = async ({ daysIntoPeriod = 27 } = {}) => {
   const sbp = loadSbp()
   const { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } = require(path.join(ROOT, 'frontend/model/database.js'))
   const { makeNotificationHash } = require(path.join(ROOT, 'frontend/model/notifications/utils.js'))
   const { dateToPeriodStamp, addTimeToDate } = require(path.join(ROOT, 'frontend/model/contracts/shared/time.js'))
 
   const now = new Date()
-  const currentPeriod = dateToPeriodStamp(addTimeToDate(now, -27 * DAY))
+  const currentPeriod = dateToPeriodStamp(addTimeToDate(now, -daysIntoPeriod * DAY))
   const joinedDate = addTimeToDate(now, -90 * DAY).toISOString()
-  // Already shown, so that only one notification is due
+  // Already shown, so that it isn't due
   const newPeriodNotification = {
     title: 'Group',
     body: 'A new distribution period has started. Please check Payment TODOs.',
@@ -305,7 +309,7 @@ const lifetime = async ({ wake, messageListeners, shown, stateWrites }) => {
   return { setup, shown, stateWrites }
 }
 
-const runJob = ({ job, idbDir, wake }) => {
+const runJob = ({ job, idbDir, wake, seedOptions }) => {
   const messageListeners = []
   const shown = []
   const stateWrites = []
@@ -319,7 +323,7 @@ const runJob = ({ job, idbDir, wake }) => {
     }
   })
   registerFrontendModules()
-  if (job === 'seed') return seed()
+  if (job === 'seed') return seed(seedOptions)
   if (job === 'read') return readSavedState()
   return lifetime({ wake, messageListeners, shown, stateWrites })
 }
@@ -354,7 +358,7 @@ if (!isMainThread) {
     this.timeout(120e3)
 
     let idbDir
-    const seedSession = () => runInWorker({ job: 'seed', idbDir })
+    const seedSession = (seedOptions) => runInWorker({ job: 'seed', idbDir, seedOptions })
     const loadSavedState = () => runInWorker({ job: 'read', idbDir })
     const startServiceWorker = async (wake) => {
       const result = await runInWorker({ job: 'lifetime', idbDir, wake })
@@ -363,9 +367,8 @@ if (!isMainThread) {
     }
     const isNearDistributionEnd = (n) => /Less than 1 week left/.test(n.body)
 
-    beforeEach(async function () {
+    beforeEach(function () {
       idbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gi-sw-restarts-'))
-      await seedSession()
     })
 
     afterEach(function () {
@@ -373,6 +376,7 @@ if (!isMainThread) {
     })
 
     it('saves notifications emitted while the SW starts up, so that restarting it does not show them again (#3158)', async function () {
+      await seedSession()
       const first = await startServiceWorker('ping')
       assert.equal(first.shown.filter(isNearDistributionEnd).length, 1, 'the due notification is shown')
 
@@ -384,8 +388,11 @@ if (!isMainThread) {
     })
 
     it('never overwrites the saved state before restoring it, even if a tab event wakes up the SW', async function () {
+      await seedSession({ daysIntoPeriod: 10 })
       const before = await loadSavedState()
-      const { stateWrites } = await startServiceWorker('scroll')
+      const { shown, stateWrites } = await startServiceWorker('scroll')
+      assert.deepEqual(shown, [], 'no notification is due, so only the tab event can save the state')
+      assert.ok(stateWrites.length > 0, 'the tab event caused the SW to save the Chelonia state')
       const session = { loggedIn: before.loggedIn, contractIDs: Object.keys(before.contracts).sort() }
       stateWrites.forEach((written, i) => {
         assert.deepEqual(written, session, `state save #${i + 1} contains the restored session`)
