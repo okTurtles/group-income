@@ -47,6 +47,66 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message.sent`).should('exist')
   }
 
+  function editMessageWithFailedFirstSave (nth, message, { fromMoreOptionsMenu = false } = {}) {
+    const messageSelector = `[data-index="${nth - 1}"] > .c-message`
+    let pendingSave = null
+
+    cy.window().its('sbp').then(sbp => {
+      sbp('sbp/selectors/unsafe', ['gi.actions/chatroom/editMessage'])
+      sbp('sbp/selectors/register', {
+        'gi.actions/chatroom/editMessage': () => new Promise((resolve, reject) => {
+          pendingSave = { resolve, reject }
+        })
+      })
+    })
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      cy.get('.c-message-menu').within(() => {
+        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+        if (fromMoreOptionsMenu) {
+          cy.getByDT('menuTrigger').click({ force: true })
+          cy.getByDT('editMessage').click({ force: true })
+        } else {
+          cy.get('.c-actions button[aria-label="Edit"]').click()
+        }
+      })
+      cy.getByDT('messageInputWrapper').within(() => {
+        cy.get('textarea').type(`{selectall}{del}${message}`)
+        cy.getByDT('saveEditing').click()
+        cy.get('textarea').should('be.disabled').and('have.value', message)
+        cy.getByDT('cancelEditing').should('be.disabled')
+        cy.getByDT('saveEditing').should('be.disabled').and('have.attr', 'data-loading', 'true')
+      })
+    })
+
+    cy.wrap(null)
+      .should(() => { expect(pendingSave, 'edit request').to.not.equal(null) })
+      .then(() => pendingSave.reject(new Error('Simulated failure while saving an edited message')))
+
+    cy.get('.c-toast-container[data-area="chat-main"] .c-toast-message')
+      .should('contain', "Couldn't save your changes. Please try again.")
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      cy.getByDT('messageInputWrapper').within(() => {
+        cy.get('textarea').should('not.be.disabled').and('have.value', message)
+        cy.getByDT('cancelEditing').should('not.be.disabled')
+        cy.getByDT('saveEditing').should('not.be.disabled').and('not.have.attr', 'data-loading')
+      })
+    })
+
+    cy.window().its('sbp').then(sbp => {
+      sbp('sbp/selectors/unregister', ['gi.actions/chatroom/editMessage'])
+    })
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      cy.getByDT('saveEditing').click()
+      cy.getByDT('messageInputWrapper').should('not.exist')
+      cy.get('.c-text').should('contain', message)
+      cy.get('.c-edited').should('contain', '(edited)')
+    })
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message.sent`).should('exist')
+  }
+
   function deleteMessage (nth, countAfter) {
     cy.getByDT('conversationWrapper').within(() => {
       // cy.get(`[data-index="${nth - 1}"]:visible > .c-message .c-message-menu .c-actions`).invoke('attr', 'style', 'display: flex').invoke('show')
@@ -550,6 +610,28 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       })
     })
 
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 edits a message and the editor stays open while saving, then recovers from a failed save', () => {
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessageWithFailedFirstSave(Number(length), 'Saved after a failed attempt')
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 edits a message from the "More options" menu on a phone, and the editor recovers from a failed save', () => {
+    cy.giSwitchChannel(additionalChannelName)
+    cy.viewport(375, 812)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessageWithFailedFirstSave(Number(length), 'Saved on a phone after a failed attempt', { fromMoreOptionsMenu: true })
+    })
+
+    cy.viewport(1201, 900)
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
   })
 

@@ -1,7 +1,7 @@
 'use strict'
 
 export const isUnsentMessage = (message: Object): boolean =>
-  !!message.hasFailed || (!!message.pending && !message.pendingEdit)
+  !!message.hasFailed || !!message.pending
 
 const heightRank = (message: Object): number =>
   Number.isFinite(message.height) ? message.height : Infinity

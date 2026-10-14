@@ -41,24 +41,9 @@ describe('sortMessages', () => {
     assert.deepEqual(ids(sortMessages(messages)), ['a', 'b', 'c', 'p1', 'f1', 'p2'])
   })
 
-  it('keeps messages with an in-flight edit in height order', () => {
-    const messages = [
-      msg('a', 1),
-      msg('e', 2, { pending: true, pendingEdit: true }),
-      msg('p', 4, { pending: true }),
-      msg('b', 3)
-    ]
-    assert.deepEqual(ids(sortMessages(messages)), ['a', 'e', 'b', 'p'])
-  })
-
   it('keeps a failed message at the bottom even if it is no longer pending', () => {
     const messages = [msg('a', 1), msg('f', 2, { hasFailed: true }), msg('b', 3)]
     assert.deepEqual(ids(sortMessages(messages)), ['a', 'b', 'f'])
-  })
-
-  it('places a message by height once it is confirmed', () => {
-    const messages = [msg('a', 1), msg('e', 2, { pendingEdit: true }), msg('b', 3)]
-    assert.deepEqual(ids(sortMessages(messages)), ['a', 'e', 'b'])
   })
 
   it('keeps chain order when a message is received while ours is being sent (#3132)', () => {
@@ -98,9 +83,7 @@ describe('isUnsentMessage', () => {
     assert.equal(isUnsentMessage(msg('g', 1, { hasFailed: true })), true)
   })
 
-  it('is false for confirmed messages, including edits in flight', () => {
+  it('is false for confirmed messages', () => {
     assert.equal(isUnsentMessage(msg('a', 1)), false)
-    assert.equal(isUnsentMessage(msg('e', 1, { pending: true, pendingEdit: true })), false)
-    assert.equal(isUnsentMessage(msg('d', 1, { pendingEdit: true })), false)
   })
 })

@@ -93,6 +93,7 @@
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
             :isEditing='ephemeral.isEditing[message.hash]'
+            :isSavingEdit='!!ephemeral.savingEdits[message.hash]'
             :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
             @message-is-editing='status => triggerEditMessage(message.hash, status)'
@@ -183,6 +184,12 @@ const enqueue = function (fn) {
     if (hasChatroomSwitchedSince()) return
 
     return fn()
+  })
+}
+
+const revokeAttachmentURLs = (attachments) => {
+  attachments?.forEach((attachment) => {
+    if (attachment.url) URL.revokeObjectURL(attachment.url)
   })
 }
 
@@ -333,6 +340,7 @@ export default ({
         loadingUp: undefined,
         messages: [],
         isEditing: {},
+        savingEdits: {},
         uploadingAttachments: {},
         scrollActionId: null,
         focusedEffect: null,
@@ -824,6 +832,27 @@ export default ({
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
     },
+    updateRenderedMessage (hasChatroomSwitchedSince, messageHash, description, update) {
+      return enqueue.call(this, () => {
+        if (hasChatroomSwitchedSince()) return
+        const messages = this.messageState.contract.messages
+        const message = messages[findMessageIdx(messageHash, messages)]
+        if (message) update(message)
+      }).catch((e) => {
+        console.error(`[ChatMain.vue] Error while ${description}`, messageHash, e)
+      })
+    },
+    markMessageAsFailed (hasChatroomSwitchedSince, messageHash, attachments) {
+      return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'marking a message as failed', (message) => {
+        if (!isUnsentMessage(message)) return
+        Vue.set(message, 'hasFailed', true)
+
+        if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[message.hash]) {
+          // Attachments are kept so that they can be used again for the next re-attempt.
+          this.ephemeral.failedMessagesAttachments[message.hash] = attachments
+        }
+      })
+    },
     handleSendMessage (text, attachments, replyingMessage) {
       const hasAttachments = attachments?.length > 0
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
@@ -884,32 +913,13 @@ export default ({
           }
         }).then(() => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
-          if (attachments?.length > 0) {
-            attachments.forEach(attachment => {
-              if (attachment.url) {
-                URL.revokeObjectURL(attachment.url)
-              }
-            })
-          }
+          revokeAttachmentURLs(attachments)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
           }
 
-          enqueue.call(this, () => {
-            if (hasChatroomSwitchedSince()) return
-            const messages = this.messageState.contract.messages
-            const msgIndex = findMessageIdx(pendingMessageHash, messages)
-            if (msgIndex < 0 || !isUnsentMessage(messages[msgIndex])) return
-
-            const failedMsg = messages[msgIndex]
-            Vue.set(failedMsg, 'hasFailed', true)
-
-            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
-              // Attachments are kept so that they can be used again for the next re-attempt.
-              this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
-            }
-          })
+          this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
         })
       }
       const uploadAttachments = async () => {
@@ -982,15 +992,11 @@ export default ({
           }
 
           if (temporaryMessage) {
-            Vue.set(temporaryMessage, 'hasFailed', true)
+            const messageHash = temporaryMessage.hash
+            this.markMessageAsFailed(hasChatroomSwitchedSince, messageHash, attachments)
 
-            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[temporaryMessage.hash]) {
-              // Attachments are kept so that they can be used again for the next re-attempt.
-              this.ephemeral.failedMessagesAttachments[temporaryMessage.hash] = attachments
-            }
-
-            if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
-              Vue.delete(this.ephemeral.uploadingAttachments, temporaryMessage.hash)
+            if (this.ephemeral.uploadingAttachments[messageHash]) {
+              Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
             }
           }
           console.error('[ChatMain.vue] Error sending message', e)
@@ -1200,22 +1206,38 @@ export default ({
       this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
     },
     editMessage (message, newMessage) {
-      this.triggerEditMessage(message.hash, false)
-      message.text = newMessage
-      if (!message.pending) {
-        message.pendingEdit = true
-      }
-      message.pending = true
+      const messageHash = message.hash
+      if (this.ephemeral.savingEdits[messageHash]) return
       const contractID = this.ephemeral.renderingChatRoomId
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
+      const previousText = message.text
+      Vue.set(this.ephemeral.savingEdits, messageHash, true)
+
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
-          hash: message.hash,
+          hash: messageHash,
           createdHeight: message.height,
           text: newMessage
         }
-      }).catch((e) => {
-        console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
+      }).then(() => {
+        return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (rendered) => {
+          if (rendered.text === previousText) rendered.text = newMessage
+        }).then(() => {
+          if (!hasChatroomSwitchedSince()) this.triggerEditMessage(messageHash, false)
+        })
+      }, (e) => {
+        console.error(`Error while editing message(${messageHash}) in chatroom(${contractID})`, e)
+        if (hasChatroomSwitchedSince()) return
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L("Couldn't save your changes. Please try again."),
+          variant: 'error',
+          position: 'bottom-center',
+          duration: 5000,
+          closeable: true
+        })
+      }).finally(() => {
+        if (!hasChatroomSwitchedSince()) Vue.delete(this.ephemeral.savingEdits, messageHash)
       })
     },
     pinToChannel (message) {
@@ -1411,6 +1433,7 @@ export default ({
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}
+      this.ephemeral.savingEdits = {}
       this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
@@ -1921,23 +1944,14 @@ export default ({
       }
     }, process.env.CI ? 25 : 250),
     cleanupFailedMessagesAttachments () {
-      Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
-        attachments.forEach(attachment => {
-          if (attachment.url) {
-            URL.revokeObjectURL(attachment.url)
-          }
-        })
+      Object.keys(this.ephemeral.failedMessagesAttachments).forEach((hash) => {
+        this.releaseFailedMessageAttachments(hash)
       })
-      this.ephemeral.failedMessagesAttachments = {}
     },
     releaseFailedMessageAttachments (messageHash) {
       const attachments = this.ephemeral.failedMessagesAttachments[messageHash]
       if (!attachments) return
-      attachments.forEach(attachment => {
-        if (attachment.url) {
-          URL.revokeObjectURL(attachment.url)
-        }
-      })
+      revokeAttachmentURLs(attachments)
       delete this.ephemeral.failedMessagesAttachments[messageHash]
     }
   },

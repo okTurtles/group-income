@@ -10,7 +10,7 @@
 
   fieldset.c-send.inputgroup(
     :class='{"is-editing": isEditing}'
-    :disabled='loading'
+    :disabled='loading || isSavingEdit'
     data-test='messageInputWrapper'
   )
     .c-segment-selection(
@@ -168,8 +168,10 @@
           @click='cancelEditing'
         ) Cancel
 
-        i18n.button.is-small(
+        i18n.button.is-small.is-loader(
           tag='button'
+          data-test='saveEditing'
+          :data-loading='isSavingEdit'
           @click='sendMessage'
         ) Save changes
 
@@ -385,6 +387,10 @@ export default ({
     isEditing: {
       type: Boolean,
       default: false
+    },
+    isSavingEdit: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -433,6 +439,13 @@ export default ({
       this.focusOnTextArea()
     },
     loading (newValue, oldValue) {
+      if (!newValue) {
+        this.$nextTick(() => {
+          this.focusOnTextArea()
+        })
+      }
+    },
+    isSavingEdit (newValue) {
       if (!newValue) {
         this.$nextTick(() => {
           this.focusOnTextArea()
@@ -973,7 +986,12 @@ export default ({
         this.replyingMessage
       ) // TODO remove first / last empty lines
 
-      this.clearTextArea()
+      if (this.isEditing) {
+        this.endSegmentSelection()
+        this.emitUserStopTypingEvent()
+      } else {
+        this.clearTextArea()
+      }
     },
     clearTextArea () {
       this.$refs.textarea.value = ''
@@ -1515,6 +1533,17 @@ export default ({
 
     .is-outlined {
       margin-right: 0.5rem;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+
+      .c-send-textarea,
+      .addons-editing,
+      .c-edit-actions .is-outlined {
+        opacity: 0.5;
+        pointer-events: none;
+      }
     }
   }
 }
