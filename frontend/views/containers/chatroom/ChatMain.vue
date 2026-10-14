@@ -835,7 +835,7 @@ export default ({
     updateRenderedMessage (hasChatroomSwitchedSince, messageHash, description, update) {
       return enqueue.call(this, () => {
         if (hasChatroomSwitchedSince()) return
-        const messages = this.messageState.contract.messages
+        const messages = this.messageState.contract.messages || []
         const message = messages[findMessageIdx(messageHash, messages)]
         if (message) update(message)
       }).catch((e) => {
@@ -851,6 +851,10 @@ export default ({
           // Attachments are kept so that they can be used again for the next re-attempt.
           this.ephemeral.failedMessagesAttachments[message.hash] = attachments
         }
+      }).then(() => {
+        if (this.ephemeral.failedMessagesAttachments[messageHash] !== attachments) {
+          revokeAttachmentURLs(attachments)
+        }
       })
     },
     handleSendMessage (text, attachments, replyingMessage) {
@@ -863,8 +867,8 @@ export default ({
         data.replyingMessage = replyingMessage
       }
 
-      const sendMessage = (beforePrePublish) => {
-        let pendingMessageHash = null
+      const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
+        let pendingMessageHash = temporaryMessageHash
         const beforeRequest = (message, oldMessage) => {
           if (hasChatroomSwitchedSince()) return
           pendingMessageHash = message.hash()
@@ -920,6 +924,10 @@ export default ({
           }
 
           this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
+
+          if (this.ephemeral.uploadingAttachments[pendingMessageHash]) {
+            Vue.delete(this.ephemeral.uploadingAttachments, pendingMessageHash)
+          }
         })
       }
       const uploadAttachments = async () => {
@@ -985,7 +993,7 @@ export default ({
               messages.splice(msgIndex, 1)
             }
           }
-          sendMessage(removeTemporaryMessage)
+          sendMessage(removeTemporaryMessage, temporaryMessage?.hash)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -1221,8 +1229,11 @@ export default ({
           text: newMessage
         }
       }).then(() => {
-        return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (rendered) => {
-          if (rendered.text === previousText) rendered.text = newMessage
+        return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
+          if (latest.text === previousText) latest.text = newMessage
+          const shownMessages = this.ephemeral.messages
+          const shownMessage = shownMessages[findMessageIdx(messageHash, shownMessages)]
+          if (shownMessage && shownMessage !== latest) shownMessage.text = latest.text
         }).then(() => {
           if (!hasChatroomSwitchedSince()) this.triggerEditMessage(messageHash, false)
         })

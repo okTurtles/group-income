@@ -52,8 +52,10 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     let pendingSave = null
 
     cy.window().its('sbp').then(sbp => {
-      sbp('sbp/selectors/unsafe', ['gi.actions/chatroom/editMessage'])
-      sbp('sbp/selectors/register', {
+      if (!sbp('sbp/selectors/fn', 'gi.actions/chatroom/editMessage')) {
+        sbp('sbp/selectors/unsafe', ['gi.actions/chatroom/editMessage'])
+      }
+      sbp('sbp/selectors/overwrite', {
         'gi.actions/chatroom/editMessage': () => new Promise((resolve, reject) => {
           pendingSave = { resolve, reject }
         })
