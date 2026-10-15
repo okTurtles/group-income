@@ -86,8 +86,9 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       .should(() => { expect(pendingSave, 'edit request').to.not.equal(null) })
       .then(() => pendingSave.reject(new Error('Simulated failure while saving an edited message')))
 
-    cy.get('.c-toast-container[data-area="chat-main"] .c-toast-message')
-      .should('contain', "Couldn't save your changes. Please try again.")
+    const failedSaveToast = ['.c-toast-container[data-area="chat-main"] .c-toast-card', "Couldn't save your changes. Please try again."]
+    cy.contains(...failedSaveToast).find('.c-toast-close').click()
+    cy.contains(...failedSaveToast).should('not.exist')
 
     cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
       cy.getByDT('messageInputWrapper').within(() => {
