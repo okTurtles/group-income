@@ -53,6 +53,8 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
     sbp('chelonia/contract/wait', added).then(() => {
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, added)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error updating newly added contracts', e)
     })
   }
 
@@ -75,6 +77,8 @@ const contractUpdate = (initialState: Object, updateFn: (state: Object, contract
     sbp('chelonia/contract/wait', existingContracts).then(() => {
       const state = sbp('state/vuex/state')
       wrappedUpdateFn(state, existingContracts)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error updating existing contracts', e)
     })
   }, 0)
 }
