@@ -1272,7 +1272,9 @@ export default ({
       this.saveOrDeleteMessageDraft()
     },
     startMention (keyword, position, mentionType = 'member') {
-      // Mentioning a group channel does not make sense in the global dm context. So don't respond to it.
+      // Mentioning a group channel does not make sense in the global dm context.
+      // e.g.: A user is part of two groups and those two groups can have channels with the same name.
+      // So we don't show the channel mention options in the global dm.
       if (mentionType === 'channel' && this.isInGlobalDashboard) { return }
 
       const options = mentionType === 'member'
