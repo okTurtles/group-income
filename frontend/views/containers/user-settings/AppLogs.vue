@@ -70,15 +70,15 @@
 import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
-import { MAX_LOG_ENTRIES } from '@utils/constants.js'
-import safeLinkTag from '@view-utils/safeLinkTag.js'
+import { MAX_LOG_ENTRIES } from '@utils/constants.ts'
+import safeLinkTag from '@view-utils/safeLinkTag.ts'
 import { L, LError } from '@common/common.js'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'AppLogs',
   components: {
     BannerScoped,
@@ -167,7 +167,7 @@ export default ({
         }
       }
     },
-    addLog (entry: Object) {
+    addLog (entry) {
       if (entry) {
         if (this.form.source === 'browser' && entry.source !== 'browser') return
         if (this.form.source === 'serviceworker' && entry.source !== 'sw') return
@@ -289,7 +289,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

@@ -52,9 +52,9 @@ import GroupMincome from '@containers/dashboard/GroupMincome.vue'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
-import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
+import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.ts'
 
-export default ({
+export default {
   name: 'GroupDashboard',
   components: {
     Page,
@@ -133,7 +133,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

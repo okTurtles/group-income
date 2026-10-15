@@ -82,7 +82,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { NEW_CHATROOM_NOTIFICATION_SETTINGS } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'ChatNotificationSettingsModal',
   mixins: [validationMixin],
   components: {
@@ -158,7 +158,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

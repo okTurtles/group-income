@@ -215,7 +215,7 @@ label.field
 
 ```js
 import { validationMixin } from 'vuelidate'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 
 mixins: [
   validationMixin,
@@ -231,7 +231,7 @@ validations: {
 }
 ```
 
-- Use `v-error` to automatically show the error message on the correct place. Read `vError.js` for more examples.
+- Use `v-error` to automatically show the error message on the correct place. Read `vError.ts` for more examples.
 - With `debounceField`, the error message (ex: _'Please enter a valid email.'_) is only shown when the user stopped typing. `updateField` shows the error when the user changed the focus no another input (on blur).
 
 Using the "debounce approach" isn't needed in all inputs. Usually it's recommended when a message error doesn't make sense while the user is still typing their answer, such as an email.
@@ -268,7 +268,7 @@ This banner informs the user that there's something going on with the app itself
 ```
 
 ```js
-// main.js
+// main.ts
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 
 this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
@@ -281,13 +281,13 @@ NOTE: this type of banner is under construction and will change soon.
 ### Naming Conventions
 - The folders are `kebab-case`
 - Vue files are `PascalCase.vue` - follow [Vue Style Guide](https://vuejs.org/v2/style-guide/#Order-of-words-in-component-names-strongly-recommended)
-- JS files are `camelCase.js`
+- JS files are `camelCase.js` (or `camelCase.ts` for TS files)
 
 ### Structure
 
 ```bash
 frontend/
-└─ main.js # App entry point.
+└─ main.ts # App entry point.
 └─ assets/ # Any static file including Styles.
 └─ controller/
 └─ model/

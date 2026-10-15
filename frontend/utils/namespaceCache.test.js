@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { answerToUpdate, applyNamespaceUpdate, ownValue } from './namespaceCache.js'
+import { answerToUpdate, applyNamespaceUpdate, ownValue } from './namespaceCache.ts'
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k)
 const setters = {

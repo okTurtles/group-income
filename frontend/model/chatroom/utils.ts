@@ -1,0 +1,108 @@
+'use strict'
+import sbp from '@sbp/sbp'
+import { makeMentionFromUserID } from '@model/contracts/shared/functions.ts'
+import {
+  CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR,
+  CHATROOM_MEMBER_MENTION_SPECIAL_CHAR
+} from '@model/contracts/shared/constants.js'
+import { combineMarkdownSegmentListIntoString, splitStringByMarkdownCode } from '@utils/markdown-parsers.ts'
+
+export function makeChannelMention (str: string, withId: boolean = false): string {
+  return `${CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR}${withId ? ':chatID:' : ''}${str}`
+}
+
+export function getIdFromChannelMention (str: string): string {
+  return str.includes(':chatID:')
+    ? str.split(':chatID:')[1]
+    : ''
+}
+
+export function swapMentionIDForDisplayname (
+  text: string,
+  options: Record<string, any> = {
+    escaped: true, // this indicates that the text contains escaped characters
+    forChat: true // this indicates that the function is being used for messages inside chatroom
+  }
+): string {
+  const {
+    getChatroomNameById,
+    usernameFromID,
+    userDisplayNameFromID
+  } = sbp('state/vuex/getters')
+  const { reverseNamespaceLookups } = sbp('state/vuex/state')
+  const possibleMentions = [
+    ...Object.keys(reverseNamespaceLookups).map(u => makeMentionFromUserID(u).me).filter(v => !!v),
+    makeChannelMention('[a-zA-Z0-9]+', true) // chat-mention as contractID has a format of `#:chatID:...`. So target them as a pattern instead of the exact strings.
+  ]
+  const { escaped, forChat } = options
+  const regEx = escaped
+    ? new RegExp(`(?<=\\s|^)(${possibleMentions.join('|')})(?=[^\\w\\d]|$)`)
+    : new RegExp(`(${possibleMentions.join('|')})`)
+
+  const swap = (t) => {
+    if (t.startsWith(CHATROOM_MEMBER_MENTION_SPECIAL_CHAR)) {
+      // swap member mention
+      const userID = t.slice(1)
+      const prefix = forChat ? CHATROOM_MEMBER_MENTION_SPECIAL_CHAR : ''
+      const body = forChat ? usernameFromID(userID) : userDisplayNameFromID(userID)
+      return prefix + body
+    } else if (t.startsWith(CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR)) {
+      // swap channel mention
+      const channelID = getIdFromChannelMention(t)
+      const channelName = getChatroomNameById(channelID)
+      const prefix = forChat ? CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR : ''
+      return channelName ? prefix + channelName : t
+    }
+    return t
+  }
+
+  // Only perform the mention swap for plain text segments.
+  // The content of code fences and inline code is not supposed to be transformed.
+  const msgSplitByCodeMarkdown = splitStringByMarkdownCode(text)
+  msgSplitByCodeMarkdown.forEach((entry) => {
+    if (entry.type === 'plain') {
+      entry.text = entry.text.split(regEx)
+        .map(t => regEx.test(t) ? swap(t) : t)
+        .join('')
+    }
+  })
+
+  return combineMarkdownSegmentListIntoString(msgSplitByCodeMarkdown)
+}
+
+// This function serves two purposes, depending on the forceUsername parameter
+// If forceUsername is true, mentions will be like @username, @all, for display
+// purposes.
+// If forceUsername is false (default), mentions like @username will be converted
+// to @<userID>, for internal representation purposes.
+// forceUsername is used for display purposes in the UI, so that we can show
+// a mention like @username instead of @userID in SendArea
+export function makeMentionFromUsername (username: string, forceUsername: boolean | null | undefined): {
+    me: string, all: string
+  } {
+  const rootGetters = sbp('state/vuex/getters')
+  // Even if forceUsername is true, we want to look up the contract ID to ensure
+  // that it exists, so that we know it'll later succeed.
+  const userID = rootGetters.ourContactProfilesByUsername[username]?.contractID
+  return makeMentionFromUserID(forceUsername && userID ? username : userID)
+}
+
+// This function used to be in use in the codebase, but it's not used anymore. Keeping it here just in case it will be used again in the future.
+export function stripMarkdownSyntax (markdownString: string, truncateTo: number = -1): string {
+  markdownString = swapMentionIDForDisplayname(markdownString) // eg. '@identityContractID' -> '@user1'
+
+  const sanitized = markdownString
+    .replace(/\*\*(.*?)\*\*/g, '$1') // 'bold'
+    .replace(/_(.*?)_/g, '$1') // 'italic'
+    .replace(/~(.*?)~/g, '$1') // 'strike-through'
+    .replace(/```/g, '') // 'code block'
+    .replace(/`(.*?)`/g, '$1') // 'inline code'
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // links ([text](url) -> text)
+    .replace(/^>\s*/gm, '') // block-quote
+    .replace(/\s+/g, ' ') // Normalize spaces
+    .trim()
+
+  return truncateTo > 0 ? sanitized.slice(0, truncateTo) : sanitized
+}
+
+export { makeMentionFromUserID }

@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 import UpdateGroupProfile from './UpdateGroupProfile.vue'
 import UpdateGroupCurrency from './UpdateGroupCurrency.vue'
 import InvitationsTable from './InvitationsTable.vue'

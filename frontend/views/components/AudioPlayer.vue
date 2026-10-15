@@ -6,8 +6,8 @@
 
 <script>
 import Plyr from 'plyr'
-import { measureAudioDuration } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
-import { isFirefox } from '@view-utils/filters.js'
+import { measureAudioDuration } from '@containers/chatroom/voice-recording/voice-recording-utils.ts'
+import { isFirefox } from '@view-utils/filters.ts'
 
 export default {
   name: 'AudioPlayer',

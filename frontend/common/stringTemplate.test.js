@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-import template from './stringTemplate.js'
+import template from './stringTemplate.ts'
 const should = require('should')
 describe('Test string-template', function () {
   it('Named arguments are replaced', function () {

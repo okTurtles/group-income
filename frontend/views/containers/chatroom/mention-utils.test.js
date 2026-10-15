@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { selectMentionOptions, toMentionCandidate } from './mention-utils.js'
+import { selectMentionOptions, toMentionCandidate } from './mention-utils.ts'
 
 const member = (username, displayName = username) =>
   toMentionCandidate({ memberID: `id-${username}`, username, displayName }, [username, displayName])

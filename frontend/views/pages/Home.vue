@@ -74,12 +74,12 @@ import { mapGetters, mapState } from 'vuex'
 import { ACCEPTED_GROUP, OPEN_MODAL, PWA_INSTALLABLE } from '@utils/events.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.js'
+import RenderMessageWithMarkdown from '@containers/chatroom/chat-mentions/RenderMessageWithMarkdown.ts'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
-import { ignoreWhenNavigationCancelled } from '~/frontend/views/utils/misc.js'
+import { ignoreWhenNavigationCancelled } from '~/frontend/views/utils/misc.ts'
 
-export default ({
+export default {
   name: 'Home',
   components: {
     SvgJoinGroup,
@@ -175,7 +175,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style scoped lang="scss">

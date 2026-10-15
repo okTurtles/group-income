@@ -546,7 +546,7 @@ describe('Check basic markdown features - one feature per message', () => {
   })
 
   it('10. Verify path-only urls passed to link markdown work as expected', () => {
-    // validateURL() in frontend/views/utils/misc.js is called with 'acceptPathOnly: true' for every link
+    // validateURL() in frontend/views/utils/misc.ts is called with 'acceptPathOnly: true' for every link
     // markdown. Verifying that the logic there works correctly.
 
     cy.log('10-1. A path starting with \'/app\' is turned into an in-app router link')
