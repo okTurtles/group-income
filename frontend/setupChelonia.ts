@@ -197,7 +197,8 @@ const initialize = async (): Promise<void> => {
   //      copies are to be considered a cache and are not authoritative.
   //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
   //      in a single direction: Chelonia -> Vuex)
-  await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
+  registerListeners()
+  await sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
@@ -206,7 +207,7 @@ const initialize = async (): Promise<void> => {
     if (typeof WorkerGlobalScope === 'function') {
       await sbp('swLogs/startCapture', identityContractID)
     }
-  })
+  }))
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Record<string, any>) => {
@@ -338,8 +339,6 @@ const initialize = async (): Promise<void> => {
       snapshotInterval: 75
     }
   })
-
-  registerListeners()
 
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
