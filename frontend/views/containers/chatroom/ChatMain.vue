@@ -843,6 +843,7 @@ export default ({
       })
     },
     markMessageAsFailed (hasChatroomSwitchedSince, messageHash, attachments) {
+      Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
       return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'marking a message as failed', (message) => {
         if (!isUnsentMessage(message)) return
         Vue.set(message, 'hasFailed', true)
@@ -924,10 +925,6 @@ export default ({
           }
 
           this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
-
-          if (this.ephemeral.uploadingAttachments[pendingMessageHash]) {
-            Vue.delete(this.ephemeral.uploadingAttachments, pendingMessageHash)
-          }
         })
       }
       const uploadAttachments = async () => {
@@ -984,9 +981,7 @@ export default ({
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
-              if (this.ephemeral.uploadingAttachments[messageHash]) {
-                Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
-              }
+              Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
@@ -1000,12 +995,7 @@ export default ({
           }
 
           if (temporaryMessage) {
-            const messageHash = temporaryMessage.hash
-            this.markMessageAsFailed(hasChatroomSwitchedSince, messageHash, attachments)
-
-            if (this.ephemeral.uploadingAttachments[messageHash]) {
-              Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
-            }
+            this.markMessageAsFailed(hasChatroomSwitchedSince, temporaryMessage.hash, attachments)
           }
           console.error('[ChatMain.vue] Error sending message', e)
         })
@@ -1175,9 +1165,18 @@ export default ({
     },
     retryMessage (msg) {
       const message = cloneDeep(msg)
-      const messages = this.messageState.contract.messages
-      const index = findMessageIdx(message.hash, messages)
-      if (index >= 0) messages.splice(index, 1)
+      const removeFailedMessage = () => {
+        const messages = this.messageState.contract.messages
+        const index = findMessageIdx(message.hash, messages)
+        if (index >= 0) messages.splice(index, 1)
+      }
+      // Removed now so that Retry can't be clicked twice, and again after any
+      // chat event already being processed, which works on a copy that still
+      // has it.
+      removeFailedMessage()
+      enqueue.call(this, removeFailedMessage).catch((e) => {
+        console.error('[ChatMain.vue] Error removing a failed message before retrying', e)
+      })
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1982,6 +1981,8 @@ export default ({
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
         if (toChatRoomId !== this.summary.chatRoomID) return
+        // Not redundant with the check in processChatroomSwitch: that method is debounced and shared by every
+        // ChatMain instance, so calling it from a destroyed instance would replace the pending call of the live one.
         if (!this.ephemeral.chatroomIdToSwitchTo) return
         this.processChatroomSwitch()
       }

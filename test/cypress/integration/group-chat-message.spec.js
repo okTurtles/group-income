@@ -1,6 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { randomUserSuffix } from '../support/lib.js'
 
+const API_URL = Cypress.config('baseUrl')
 /**
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
  * But Cypress doesn't render files using Flowtype annotations
@@ -696,6 +697,91 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     })
   }
 
+  // The virtual scroller doesn't keep the DOM in render order, so messages are
+  // looked up through their `data-index`.
+  function renderedItems ($items) {
+    return [...$items].sort((a, b) => Number(a.getAttribute('data-index')) - Number(b.getAttribute('data-index')))
+  }
+
+  function itemWithText (items, text) {
+    return items.find(item => item.querySelector('.c-text')?.textContent.includes(text))
+  }
+
+  function assertLastMessage (text, { pending }) {
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const last = renderedItems($items).pop()
+      expect(last.querySelector('.c-text')?.textContent, 'last message').to.contain(text)
+      expect(!!last.querySelector('.c-message.pending'), 'last message is still being sent').to.equal(pending)
+    })
+  }
+
+  function sendWithoutWaiting (text) {
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').invoke('val', text).trigger('input').trigger('keyup')
+      cy.getByDT('sendMessageButton').click()
+    })
+  }
+
+  // Selectors registered in the tab take priority over the `gi.actions/*`
+  // route to the service worker, so these wrappers see every message sent
+  // from the chat and can delay or stop its publication. The `beforeRequest`
+  // hook runs right before the event is POSTed to the server, and the
+  // service worker waits for the promise it returns.
+  const ADD_MESSAGE = 'gi.actions/chatroom/addMessage'
+
+  function wrapAddMessage (wrapBeforeRequest) {
+    cy.window().its('sbp').then(sbp => {
+      if (!sbp('sbp/selectors/fn', ADD_MESSAGE)) {
+        sbp('sbp/selectors/unsafe', [ADD_MESSAGE])
+      }
+      sbp('sbp/selectors/overwrite', {
+        [ADD_MESSAGE]: (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+          ...params,
+          hooks: { ...params.hooks, beforeRequest: wrapBeforeRequest(params.hooks.beforeRequest) }
+        })
+      })
+    })
+  }
+
+  function unwrapAddMessage () {
+    cy.window().its('sbp').then(sbp => {
+      if (sbp('sbp/selectors/fn', ADD_MESSAGE)) {
+        sbp('sbp/selectors/unregister', [ADD_MESSAGE])
+      }
+    })
+  }
+
+  // Sends `text` but stops it right before it reaches the server, and yields
+  // the signed event so that the test can publish it later.
+  function prepareUnsentMessage (text) {
+    let preparedEvent = null
+    wrapAddMessage(() => (message) => {
+      preparedEvent = message.serialize()
+      throw new Error('Not sent: the test publishes this message later')
+    })
+    sendWithoutWaiting(text)
+    cy.wrap(null).should(() => { expect(preparedEvent, 'prepared message').to.be.a('string') })
+    unwrapAddMessage()
+    return cy.wrap(null).then(() => preparedEvent)
+  }
+
+  // Shows the next message sent as pending, but holds its publication until
+  // `release()` is called. Later attempts (e.g., after a conflict) go through.
+  function holdNextPublish () {
+    const hold = { isHolding: false, release: null }
+    const held = new Promise(resolve => { hold.release = resolve })
+    let isFirstAttempt = true
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      await beforeRequest?.(...args)
+      if (isFirstAttempt) {
+        isFirstAttempt = false
+        hold.isHolding = true
+        await held
+      }
+    })
+    return cy.wrap(hold)
+  }
+
   it(`${orderingUser1} creates '${orderingGroupName}' and sends several messages back to back`, () => {
     cy.visit('/')
     cy.giSignup(orderingUser1, { bypassUI: true })
@@ -736,17 +822,51 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     assertNothingPendingOrFailed()
   })
 
-  it(`${orderingUser1} sees the interleaved conversation in order`, () => {
+  it(`${orderingUser2}'s message arrives while ${orderingUser1}'s is still being sent`, () => {
+    const otherDeviceText = `Sent from another device by ${orderingUser2}`
+    const desktopText = `Sent from desktop by ${orderingUser1}`
+    let preparedEvent
+    let hold
+
+    // Signed by orderingUser2 now, published later while orderingUser1's
+    // message is pending, so that both are written for the same height.
+    prepareUnsentMessage(otherDeviceText).then(event => { preparedEvent = event })
+
     cy.giSwitchUser(orderingUser1)
     cy.giRedirectToGroupChat()
-
     assertRenderedInOrder()
     assertNothingPendingOrFailed()
+    assertLastMessage(`Reply from ${orderingUser2} 3`, { pending: false })
 
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.c-message').last().find('.c-text').should('contain', `Reply from ${orderingUser2} 3`)
+    holdNextPublish().then(h => { hold = h })
+    sendWithoutWaiting(desktopText)
+    assertLastMessage(desktopText, { pending: true })
+    cy.wrap(null).should(() => { expect(hold.isHolding, 'publication held').to.equal(true) })
+
+    cy.wrap(null).then(() => cy.request({
+      method: 'POST',
+      url: `${API_URL}/event`,
+      headers: { 'Content-Type': 'application/json' },
+      body: preparedEvent
+    }))
+    cy.getByDT('conversationWrapper').find('.c-text').should('contain', otherDeviceText)
+    assertRenderedInOrder()
+    assertLastMessage(desktopText, { pending: true })
+
+    // The server rejects the held event because its height is taken; it is
+    // signed again for the next height and sent.
+    cy.wrap(null).then(() => hold.release())
+    cy.getByDT('conversationWrapper').find('.c-message.pending').should('not.exist')
+    assertRenderedInOrder()
+    assertNothingPendingOrFailed()
+    assertLastMessage(desktopText, { pending: false })
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const items = renderedItems($items)
+      const heightOf = (text) => Number(itemWithText(items, text)?.getAttribute('data-height'))
+      expect(heightOf(desktopText), 'height of the message sent from desktop').to.be.greaterThan(heightOf(otherDeviceText))
     })
 
+    unwrapAddMessage()
     cy.giLogout()
   })
 })
