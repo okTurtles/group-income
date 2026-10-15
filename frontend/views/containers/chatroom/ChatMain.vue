@@ -1164,15 +1164,21 @@ export default ({
       })
     },
     retryMessage (msg) {
+      // Only a failed message can be resent. Clearing the flag on the rendered copy
+      // ignores a repeated click that arrives before the list re-renders.
+      if (!msg.hasFailed) return
+      Vue.delete(msg, 'hasFailed')
       const message = cloneDeep(msg)
       const removeFailedMessage = () => {
-        const messages = this.messageState.contract.messages
-        const index = findMessageIdx(message.hash, messages)
-        if (index >= 0) messages.splice(index, 1)
+        // While setMessages is debounced, the rendered list can still be an older
+        // array than the contract list, so remove the message from both.
+        for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
+          const index = findMessageIdx(message.hash, messages)
+          if (index >= 0) messages.splice(index, 1)
+        }
       }
-      // Removed now so that Retry can't be clicked twice, and again after any
-      // chat event already being processed, which works on a copy that still
-      // has it.
+      // Removed now, and again after any chat event already being processed, which
+      // works on a copy that still has it.
       removeFailedMessage()
       enqueue.call(this, removeFailedMessage).catch((e) => {
         console.error('[ChatMain.vue] Error removing a failed message before retrying', e)

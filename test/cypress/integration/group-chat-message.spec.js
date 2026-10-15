@@ -15,6 +15,21 @@ function makeMentionFromUsername (username) {
   }
 }
 
+// Replaces a selector in the tab. `gi.actions/*` calls normally go to the
+// service worker; a selector registered in the tab takes priority.
+function overrideSelector (selector, makeStub) {
+  cy.window().its('sbp').then(sbp => {
+    if (!sbp('sbp/selectors/fn', selector)) sbp('sbp/selectors/unsafe', [selector])
+    sbp('sbp/selectors/overwrite', { [selector]: makeStub(sbp) })
+  })
+}
+
+function restoreSelector (selector) {
+  cy.window().its('sbp').then(sbp => {
+    if (sbp('sbp/selectors/fn', selector)) sbp('sbp/selectors/unregister', [selector])
+  })
+}
+
 const groupName = 'Dreamers'
 const additionalChannelName = 'bulgaria-hackathon'
 const userId = randomUserSuffix()
@@ -33,12 +48,21 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     me = username
   }
 
+  function openMessageEditor ({ fromMoreOptionsMenu = false } = {}) {
+    cy.get('.c-message-menu').within(() => {
+      cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+      if (fromMoreOptionsMenu) {
+        cy.getByDT('menuTrigger').click({ force: true })
+        cy.getByDT('editMessage').click({ force: true })
+      } else {
+        cy.get('.c-actions button[aria-label="Edit"]').click()
+      }
+    })
+  }
+
   function editMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
-        cy.get('.c-actions button[aria-label="Edit"]').click()
-      })
+      openMessageEditor()
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').type(`{selectall}{del}${message}{enter}`)
       })
@@ -52,27 +76,12 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     const messageSelector = `[data-index="${nth - 1}"] > .c-message`
     let pendingSave = null
 
-    cy.window().its('sbp').then(sbp => {
-      if (!sbp('sbp/selectors/fn', 'gi.actions/chatroom/editMessage')) {
-        sbp('sbp/selectors/unsafe', ['gi.actions/chatroom/editMessage'])
-      }
-      sbp('sbp/selectors/overwrite', {
-        'gi.actions/chatroom/editMessage': () => new Promise((resolve, reject) => {
-          pendingSave = { resolve, reject }
-        })
-      })
-    })
+    overrideSelector('gi.actions/chatroom/editMessage', () => () => new Promise((resolve, reject) => {
+      pendingSave = { resolve, reject }
+    }))
 
     cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
-        if (fromMoreOptionsMenu) {
-          cy.getByDT('menuTrigger').click({ force: true })
-          cy.getByDT('editMessage').click({ force: true })
-        } else {
-          cy.get('.c-actions button[aria-label="Edit"]').click()
-        }
-      })
+      openMessageEditor({ fromMoreOptionsMenu })
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').type(`{selectall}{del}${message}`)
         cy.getByDT('saveEditing').click()
@@ -98,9 +107,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       })
     })
 
-    cy.window().its('sbp').then(sbp => {
-      sbp('sbp/selectors/unregister', ['gi.actions/chatroom/editMessage'])
-    })
+    restoreSelector('gi.actions/chatroom/editMessage')
 
     cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
       cy.getByDT('saveEditing').click()
@@ -731,25 +738,14 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
   const ADD_MESSAGE = 'gi.actions/chatroom/addMessage'
 
   function wrapAddMessage (wrapBeforeRequest) {
-    cy.window().its('sbp').then(sbp => {
-      if (!sbp('sbp/selectors/fn', ADD_MESSAGE)) {
-        sbp('sbp/selectors/unsafe', [ADD_MESSAGE])
-      }
-      sbp('sbp/selectors/overwrite', {
-        [ADD_MESSAGE]: (params) => sbp('gi.actions/*', ADD_MESSAGE, {
-          ...params,
-          hooks: { ...params.hooks, beforeRequest: wrapBeforeRequest(params.hooks.beforeRequest) }
-        })
-      })
-    })
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      hooks: { ...params.hooks, beforeRequest: wrapBeforeRequest(params.hooks.beforeRequest) }
+    }))
   }
 
   function unwrapAddMessage () {
-    cy.window().its('sbp').then(sbp => {
-      if (sbp('sbp/selectors/fn', ADD_MESSAGE)) {
-        sbp('sbp/selectors/unregister', [ADD_MESSAGE])
-      }
-    })
+    restoreSelector(ADD_MESSAGE)
   }
 
   // Sends `text` but stops it right before it reaches the server, and yields
@@ -868,6 +864,49 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     })
 
     unwrapAddMessage()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} resends a failed message once, even if Resend fires twice`, () => {
+    const text = `Resent once by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    // Shown as pending by ChatMain's own hook, then the publication fails
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      await beforeRequest?.(...args)
+      throw new Error('Simulated send failure')
+    })
+    sendWithoutWaiting(text)
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    unwrapAddMessage()
+
+    // A text message is handed to `addMessage` from within the click handler,
+    // so the number of calls is final as soon as both clicks have run. The
+    // resent copy itself can be confirmed before the next render, so it isn't
+    // always shown as pending.
+    let sends = 0
+    wrapAddMessage((beforeRequest) => {
+      sends++
+      return beforeRequest
+    })
+    // Both clicks are handled before Vue re-renders, like a fast double click
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').then(([link]) => {
+      link.click()
+      link.click()
+    })
+    cy.wrap(null).then(() => {
+      expect(sends, 'messages sent by Resend').to.equal(1)
+    })
+    unwrapAddMessage()
+
+    assertLastMessage(text, { pending: false })
+    assertNothingPendingOrFailed()
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const withText = renderedItems($items).filter(item => item.querySelector('.c-text')?.textContent.includes(text))
+      expect(withText, 'copies of the resent message').to.have.length(1)
+    })
+    assertRenderedInOrder()
     cy.giLogout()
   })
 })
