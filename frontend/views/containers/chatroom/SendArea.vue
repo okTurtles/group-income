@@ -998,7 +998,6 @@ export default ({
       this.updateTextArea()
       this.endSegmentSelection()
       if (this.hasAttachments) { this.clearAllAttachments() }
-      if (this.isEditing) return
 
       // The message is being sent, so replace any pending draft-save with a delete.
       // It is queued behind any in-flight write, so that write can't bring the draft back afterwards.

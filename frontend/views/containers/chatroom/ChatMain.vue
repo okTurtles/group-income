@@ -858,7 +858,7 @@ export default ({
         }
       })
     },
-    handleSendMessage (text, attachments, replyingMessage) {
+    handleSendMessage (text, attachments, replyingMessage, retriedMessageHash = null) {
       const hasAttachments = attachments?.length > 0
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
@@ -866,6 +866,18 @@ export default ({
       const data = { type: MESSAGE_TYPES.TEXT, text }
       if (replyingMessage) {
         data.replyingMessage = replyingMessage
+      }
+
+      // When resending, the failed message stays until its new copy is shown,
+      // so that it can be marked as failed again if the resend fails before that.
+      const removeRetriedMessage = () => {
+        if (!retriedMessageHash) return
+        // While setMessages is debounced, the rendered list can still be an older
+        // array than the contract list, so remove the message from both.
+        for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
+          const index = findMessageIdx(retriedMessageHash, messages)
+          if (index >= 0) messages.splice(index, 1)
+        }
       }
 
       const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
@@ -944,7 +956,7 @@ export default ({
       }
 
       if (!hasAttachments) {
-        sendMessage()
+        sendMessage(removeRetriedMessage, retriedMessageHash)
       } else {
         let temporaryMessage = null
         sbp('gi.actions/chatroom/addMessage', {
@@ -969,6 +981,7 @@ export default ({
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
                 if (temporaryMessage) {
                   Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
+                  removeRetriedMessage()
                 }
               })
 
@@ -978,6 +991,7 @@ export default ({
         }).then(async () => {
           await uploadAttachments()
           const removeTemporaryMessage = () => {
+            removeRetriedMessage()
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
@@ -988,7 +1002,7 @@ export default ({
               messages.splice(msgIndex, 1)
             }
           }
-          sendMessage(removeTemporaryMessage, temporaryMessage?.hash)
+          sendMessage(removeTemporaryMessage, temporaryMessage?.hash || retriedMessageHash)
         }).catch((e) => {
           if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
             alert(L("Can't send message when offline, please connect to the Internet"))
@@ -996,6 +1010,8 @@ export default ({
 
           if (temporaryMessage) {
             this.markMessageAsFailed(hasChatroomSwitchedSince, temporaryMessage.hash, attachments)
+          } else if (retriedMessageHash) {
+            this.markMessageAsFailed(hasChatroomSwitchedSince, retriedMessageHash, attachments)
           }
           console.error('[ChatMain.vue] Error sending message', e)
         })
@@ -1164,24 +1180,28 @@ export default ({
       })
     },
     retryMessage (msg) {
-      // Only a failed message can be resent. Clearing the flag on the rendered copy
-      // ignores a repeated click that arrives before the list re-renders.
+      // Only a failed message can be resent. Showing the rendered copy as being
+      // resent ignores a repeated click that arrives before the list re-renders.
       if (!msg.hasFailed) return
-      Vue.delete(msg, 'hasFailed')
       const message = cloneDeep(msg)
-      const removeFailedMessage = () => {
-        // While setMessages is debounced, the rendered list can still be an older
-        // array than the contract list, so remove the message from both.
+      const showAsResending = (copy) => {
+        if (!copy) return
+        Vue.delete(copy, 'hasFailed')
+        // Also for a failed message that was edited, which is no longer pending,
+        // so that it can be marked as failed again
+        Vue.set(copy, 'pending', true)
+      }
+      const showCopiesAsResending = () => {
         for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
-          const index = findMessageIdx(message.hash, messages)
-          if (index >= 0) messages.splice(index, 1)
+          showAsResending(messages[findMessageIdx(message.hash, messages)])
         }
       }
-      // Removed now, and again after any chat event already being processed, which
-      // works on a copy that still has it.
-      removeFailedMessage()
-      enqueue.call(this, removeFailedMessage).catch((e) => {
-        console.error('[ChatMain.vue] Error removing a failed message before retrying', e)
+      // Done now, and again after any chat event already being processed, which
+      // works on a copy that is still marked as failed.
+      showAsResending(msg)
+      showCopiesAsResending()
+      enqueue.call(this, showCopiesAsResending).catch((e) => {
+        console.error('[ChatMain.vue] Error preparing a failed message for resending', e)
       })
 
       // Check if there were attachments from the failed previous attempt and include them.
@@ -1191,7 +1211,7 @@ export default ({
         delete this.ephemeral.failedMessagesAttachments[message.hash]
       }
 
-      this.handleSendMessage(message.text, attachments, message.replyingMessage)
+      this.handleSendMessage(message.text, attachments, message.replyingMessage, message.hash)
     },
     replyToMessage (message) {
       const { text, hash, type, attachments } = message

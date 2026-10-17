@@ -120,21 +120,19 @@ export default ({
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       }
     },
-    hideBanner () {
+    setBannerHidden (hidden) {
       sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
         contractID: this.currentGroupId,
-        hidden: true
+        hidden
       }).catch((e) => {
         console.error("Error from 'gi.actions/identity/kv/updateDistributionBannerVisibility':", e)
       })
     },
+    hideBanner () {
+      this.setBannerHidden(true)
+    },
     showBanner () {
-      sbp('gi.actions/identity/kv/updateDistributionBannerVisibility', {
-        contractID: this.currentGroupId,
-        hidden: false
-      }).catch((e) => {
-        console.error("Error from 'gi.actions/identity/kv/updateDistributionBannerVisibility':", e)
-      })
+      this.setBannerHidden(false)
     }
   }
 }: Object)

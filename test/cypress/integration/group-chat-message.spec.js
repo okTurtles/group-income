@@ -723,6 +723,13 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     })
   }
 
+  function assertCopies (text, count) {
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const withText = renderedItems($items).filter(item => item.querySelector('.c-text')?.textContent.includes(text))
+      expect(withText, `copies of "${text}"`).to.have.length(count)
+    })
+  }
+
   function sendWithoutWaiting (text) {
     cy.getByDT('messageInputWrapper').within(() => {
       cy.get('textarea').invoke('val', text).trigger('input').trigger('keyup')
@@ -777,6 +784,18 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
       }
     })
     return cy.wrap(hold)
+  }
+
+  // Sends `text`, which ChatMain's own hook shows as pending, then fails its
+  // publication, so that it's shown with "Resend message"
+  function sendAndFail (text) {
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      await beforeRequest?.(...args)
+      throw new Error('Simulated send failure')
+    })
+    sendWithoutWaiting(text)
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    unwrapAddMessage()
   }
 
   it(`${orderingUser1} creates '${orderingGroupName}' and sends several messages back to back`, () => {
@@ -872,14 +891,7 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     cy.giLogin(orderingUser1, { bypassUI: true })
     cy.giRedirectToGroupChat()
 
-    // Shown as pending by ChatMain's own hook, then the publication fails
-    wrapAddMessage((beforeRequest) => async (...args) => {
-      await beforeRequest?.(...args)
-      throw new Error('Simulated send failure')
-    })
-    sendWithoutWaiting(text)
-    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
-    unwrapAddMessage()
+    sendAndFail(text)
 
     // A text message is handed to `addMessage` from within the click handler,
     // so the number of calls is final as soon as both clicks have run. The
@@ -902,10 +914,42 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
 
     assertLastMessage(text, { pending: false })
     assertNothingPendingOrFailed()
-    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
-      const withText = renderedItems($items).filter(item => item.querySelector('.c-text')?.textContent.includes(text))
-      expect(withText, 'copies of the resent message').to.have.length(1)
+    assertCopies(text, 1)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} keeps a failed message if resending it is refused before it is sent`, () => {
+    const text = `Kept after a refused resend by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    sendAndFail(text)
+
+    // No key has this ID, so the service worker refuses to sign the resent
+    // message. That happens before ChatMain's hook could show the new copy.
+    let refusal = null
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      signingKeyId: 'no-such-key'
+    }).catch((e) => {
+      refusal = e
+      throw e
+    }))
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    cy.wrap(null).should(() => {
+      expect(refusal?.cause?.name, 'resend refused').to.equal('GIErrorMissingSigningKeyError')
     })
+    unwrapAddMessage()
+
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    assertCopies(text, 1)
+
+    // The message can still be resent
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    assertLastMessage(text, { pending: false })
+    assertNothingPendingOrFailed()
+    assertCopies(text, 1)
     assertRenderedInOrder()
     cy.giLogout()
   })
