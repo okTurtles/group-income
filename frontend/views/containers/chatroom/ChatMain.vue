@@ -225,7 +225,7 @@ const onChatScroll = function (ev) {
 
   for (let i = lastMesageIndex; i >= firstMessageIndex; i--) {
     const msg = this.ephemeral.messages[i]
-    if (msg.pending || msg.hasFailed || !this.$refs[msg.hash]?.$el) continue
+    if (isUnsentMessage(msg) || !this.$refs[msg.hash]?.$el) continue
     if (this.isMessageVisible(msg.hash)) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
@@ -248,7 +248,7 @@ const onChatScroll = function (ev) {
     // Save the current scroll position per each chatroom
     const iterator = this.visibleMessageIterator()
     for (const msg of iterator) {
-      if (msg.pending || msg.hasFailed) continue
+      if (isUnsentMessage(msg)) continue
 
       if (msg.hash !== this.currentChatRoomScrollPosition) {
         sbp('okTurtles.events/emit', NEW_CHATROOM_SCROLL_POSITION, {
@@ -828,11 +828,18 @@ export default ({
       Vue.delete(message, 'hasFailed')
       this.releaseFailedMessageAttachments(messageHash)
     },
+    // While setMessages is debounced, the rendered list can still be an older
+    // array than the contract list.
+    forEachMessageList (fn) {
+      for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
+        if (messages) fn(messages)
+      }
+    },
     stopReplying () {
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
     },
-    updateRenderedMessage (hasChatroomSwitchedSince, messageHash, description, update) {
+    updateContractMessage (hasChatroomSwitchedSince, messageHash, description, update) {
       return enqueue.call(this, () => {
         if (hasChatroomSwitchedSince()) return
         const messages = this.messageState.contract.messages || []
@@ -844,7 +851,7 @@ export default ({
     },
     markMessageAsFailed (hasChatroomSwitchedSince, messageHash, attachments) {
       Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
-      return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'marking a message as failed', (message) => {
+      return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'marking a message as failed', (message) => {
         if (!isUnsentMessage(message)) return
         Vue.set(message, 'hasFailed', true)
 
@@ -868,16 +875,30 @@ export default ({
         data.replyingMessage = replyingMessage
       }
 
+      // For a new message refused before it was shown: there is no failed copy to
+      // resend, so the user is told, and the message goes back into the message
+      // box. Returns whether the message box took it, with its attachments.
+      const putBackUnsentMessage = () => {
+        if (hasChatroomSwitchedSince()) return false
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L("Your message couldn't be sent. Please try again."),
+          variant: 'error',
+          position: 'bottom-center',
+          duration: 5000,
+          closeable: true
+        })
+        return !!this.$refs.sendArea?.restoreUnsentMessage(swapMentionIDForDisplayname(text), attachments)
+      }
+
       // When resending, the failed message stays until its new copy is shown,
       // so that it can be marked as failed again if the resend fails before that.
       const removeRetriedMessage = () => {
         if (!retriedMessageHash) return
-        // While setMessages is debounced, the rendered list can still be an older
-        // array than the contract list, so remove the message from both.
-        for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
+        this.forEachMessageList((messages) => {
           const index = findMessageIdx(retriedMessageHash, messages)
-          if (index >= 0) messages.splice(index, 1)
-        }
+          // A copy that was delivered in the meantime stays
+          if (index >= 0 && isUnsentMessage(messages[index])) messages.splice(index, 1)
+        })
       }
 
       const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
@@ -932,10 +953,8 @@ export default ({
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
           revokeAttachmentURLs(attachments)
         }).catch((e) => {
-          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert(L("Can't send message when offline, please connect to the Internet"))
-          }
-
+          console.error('[ChatMain.vue] Error publishing a message', e)
+          if (!pendingMessageHash && putBackUnsentMessage()) return
           this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
         })
       }
@@ -1004,16 +1023,14 @@ export default ({
           }
           sendMessage(removeTemporaryMessage, temporaryMessage?.hash || retriedMessageHash)
         }).catch((e) => {
-          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert(L("Can't send message when offline, please connect to the Internet"))
-          }
-
+          console.error('[ChatMain.vue] Error preparing a message with attachments', e)
           if (temporaryMessage) {
             this.markMessageAsFailed(hasChatroomSwitchedSince, temporaryMessage.hash, attachments)
           } else if (retriedMessageHash) {
             this.markMessageAsFailed(hasChatroomSwitchedSince, retriedMessageHash, attachments)
+          } else if (!putBackUnsentMessage()) {
+            revokeAttachmentURLs(attachments)
           }
-          console.error('[ChatMain.vue] Error sending message', e)
         })
       }
     },
@@ -1185,16 +1202,15 @@ export default ({
       if (!msg.hasFailed) return
       const message = cloneDeep(msg)
       const showAsResending = (copy) => {
-        if (!copy) return
+        // A copy that isn't failed anymore was delivered in the meantime
+        if (!copy?.hasFailed) return
         Vue.delete(copy, 'hasFailed')
         // Also for a failed message that was edited, which is no longer pending,
         // so that it can be marked as failed again
         Vue.set(copy, 'pending', true)
       }
       const showCopiesAsResending = () => {
-        for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
-          showAsResending(messages[findMessageIdx(message.hash, messages)])
-        }
+        this.forEachMessageList((messages) => showAsResending(messages[findMessageIdx(message.hash, messages)]))
       }
       // Done now, and again after any chat event already being processed, which
       // works on a copy that is still marked as failed.
@@ -1254,11 +1270,12 @@ export default ({
           text: newMessage
         }
       }).then(() => {
-        return this.updateRenderedMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
+        return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
           if (latest.text === previousText) latest.text = newMessage
-          const shownMessages = this.ephemeral.messages
-          const shownMessage = shownMessages[findMessageIdx(messageHash, shownMessages)]
-          if (shownMessage && shownMessage !== latest) shownMessage.text = latest.text
+          this.forEachMessageList((messages) => {
+            const copy = messages[findMessageIdx(messageHash, messages)]
+            if (copy) copy.text = latest.text
+          })
         }).then(() => {
           if (!hasChatroomSwitchedSince()) this.triggerEditMessage(messageHash, false)
         })
@@ -1799,7 +1816,7 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            const latestValidMessage = this.messageState.contract.messages.filter(m => !isUnsentMessage(m)).pop()
 
             if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
               const isScrollable = this.$refs.conversation &&

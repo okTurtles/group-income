@@ -1006,6 +1006,16 @@ export default ({
       this.queueDraftWrite(draftKey, () => this.clearMessageDraft(draftKey))
       this.ephemeral.lastDraftText = this.ephemeral.textWithLines
     },
+    // Puts back a message whose send was refused before it was shown, unless
+    // something has been typed or attached since.
+    restoreUnsentMessage (text, attachments) {
+      if (!this.$refs.textarea || this.$refs.textarea.value || this.ephemeral.attachments.length) return false
+      this.$refs.textarea.value = text
+      this.updateTextArea()
+      if (attachments?.length) this.ephemeral.attachments = attachments
+      this.saveOrDeleteMessageDraft()
+      return true
+    },
     async initializeTextArea () {
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
       // clear them and revoke all object URLs first to avoid memory leaks.

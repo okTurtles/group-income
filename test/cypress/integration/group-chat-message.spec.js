@@ -953,4 +953,102 @@ describe('Chatroom messages are rendered in chain order with unsent messages at 
     assertRenderedInOrder()
     cy.giLogout()
   })
+
+  it(`${orderingUser1} gets a new message back in the message box if sending it is refused`, () => {
+    const marker = `Put back after a refused send by ${orderingUser1}`
+    const text = `${marker} for ${makeMentionFromUsername(orderingUser2).me} today`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    // No key has this ID, so the service worker refuses to sign the message.
+    // That happens before ChatMain's hook could show it.
+    let refusal = null
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      signingKeyId: 'no-such-key'
+    }).catch((e) => {
+      refusal = e
+      throw e
+    }))
+    sendWithoutWaiting(text)
+    cy.wrap(null).should(() => {
+      expect(refusal?.cause?.name, 'send refused').to.equal('GIErrorMissingSigningKeyError')
+    })
+    unwrapAddMessage()
+
+    // The user is told, and the message is back as it was typed
+    cy.contains('.c-toast-container[data-area="chat-main"] .c-toast-card', "Your message couldn't be sent. Please try again.")
+      .find('.c-toast-close').click()
+    cy.getByDT('messageInputWrapper').find('textarea').should('have.value', text)
+    assertCopies(marker, 0)
+
+    // It can be sent again
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.getByDT('sendMessageButton').click()
+    })
+    cy.getByDT('messageInputWrapper').find('textarea').should('have.value', '')
+    assertLastMessage(marker, { pending: false })
+    assertNothingPendingOrFailed()
+    assertCopies(marker, 1)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} resends a failed message that reached the server after all, and both copies stay`, () => {
+    const text = `Delivered after all by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    // Shown, then failed, as if the response to its POST had been lost. Its
+    // signed event is kept, so that it can reach the server later.
+    let lostEvent = null
+    wrapAddMessage((beforeRequest) => async (message, ...args) => {
+      lostEvent = message.serialize()
+      await beforeRequest?.(message, ...args)
+      throw new Error('Simulated: the response to the POST was lost')
+    })
+    sendWithoutWaiting(text)
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    unwrapAddMessage()
+
+    // The resend waits before ChatMain's hook, which is where the failed
+    // message is replaced by its new copy
+    const hold = { isHolding: false, release: null }
+    const held = new Promise(resolve => { hold.release = resolve })
+    let isFirstAttempt = true
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      if (isFirstAttempt) {
+        isFirstAttempt = false
+        hold.isHolding = true
+        await held
+      }
+      return beforeRequest?.(...args)
+    })
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    cy.wrap(null).should(() => { expect(hold.isHolding, 'resend held').to.equal(true) })
+
+    // Meanwhile, the first attempt reaches the server
+    cy.wrap(null).then(() => cy.request({
+      method: 'POST',
+      url: `${API_URL}/event`,
+      headers: { 'Content-Type': 'application/json' },
+      body: lostEvent
+    }))
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const delivered = renderedItems($items).filter(item =>
+        item.querySelector('.c-text')?.textContent.includes(text) &&
+        !item.querySelector('.c-message.pending, .c-message.failed'))
+      expect(delivered, 'the delivered copy, shown as sent').to.have.length(1)
+    })
+
+    // The resend goes through as well (signed again after a conflict), and
+    // both copies stay on screen, as on the server
+    cy.wrap(null).then(() => hold.release())
+    cy.getByDT('conversationWrapper').find('.c-message.pending').should('not.exist')
+    unwrapAddMessage()
+    assertNothingPendingOrFailed()
+    assertCopies(text, 2)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
 })
