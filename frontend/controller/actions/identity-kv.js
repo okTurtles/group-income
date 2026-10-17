@@ -285,13 +285,13 @@ export default (sbp('sbp/selectors/register', {
     return setKVPreferences({ [key]: value })
   },
   // Notifications
-  'gi.actions/identity/kv/addNotificationStatus': (notification: Object) => {
+  'gi.actions/identity/kv/addNotificationStatus': async (notification: Object) => {
     const { hash, timestamp } = notification
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {
       throw new Error('Unable to update notification status without an active session')
     }
-    return sbp('chelonia/kv/update', {
+    return await sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       // Add this notification's status only if it isn't already tracked; the
@@ -303,7 +303,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'gi.actions/identity/kv/markNotificationStatusRead': (hashes: string | string[]) => {
+  'gi.actions/identity/kv/markNotificationStatusRead': async (hashes: string | string[]) => {
     if (typeof hashes === 'string') {
       hashes = [hashes]
     }
@@ -314,7 +314,7 @@ export default (sbp('sbp/selectors/register', {
     // Capture the client-side notification list once outside the reducer so
     // conflict-retry invocations read a stable snapshot (KV-REVAMPED.md §3.3).
     const notifications = sbp('chelonia/rootState').notifications.items
-    return sbp('chelonia/kv/update', {
+    return await sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.NOTIFICATIONS,
       updater: (currentData = {}) => {
