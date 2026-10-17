@@ -14,3 +14,17 @@ require('@babel/register')({
     }]
   ]
 })
+
+// Fix for locale-dependant tests
+// ------------------------------
+// Tests involving localization may depend on the user locale being 'en-US'.
+// For example, currencies.test.js.
+// In such tests, this code must run *before* the relevant locale-dependent module
+// (e.g. currencies.js), but loading mocha-helper.js using require() from within the test file
+// could silently break that ordering because of import hoisting. so rely rather on Mocha's `--require` flag.
+// https://github.com/okTurtles/group-income/issues/3164
+// See also 'window:before:load' in ~/test/cypress/support/index.js.
+if (typeof globalThis.navigator === 'object') {
+  Object.defineProperty(globalThis.navigator, 'language', { value: 'en-US', configurable: true })
+  Object.defineProperty(globalThis.navigator, 'languages', { value: ['en-US', 'en'], configurable: true })
+}
