@@ -1,13 +1,13 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { CHELONIA_RESET, CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 
 // Whether some of the contracts listed in `contractIDHints` could be of one of
 // `contractTypes`, according to `state.contracts`. Without hints, every
-// contract counts. Contracts whose type isn't known yet count as well: a newly
-// synced contract can reach a tab after `chelonia/contract/wait` resolves.
-export const mayIncludeContractTypes = (state: Object, contractIDHints: ?string[], contractTypes: string[]): boolean => {
+// contract counts. This lets `contractUpdate` skip an update (and, in a tab, a
+// call to the service worker) when none of the existing contracts is of a type
+// that the update is for. Contracts whose type isn't known count, to be safe.
+export const mayIncludeContractTypes = (state: ?Object, contractIDHints: ?string[], contractTypes: string[]): boolean => {
   if (!Array.isArray(contractIDHints)) return true
   return contractIDHints.some((contractID) => {
     const type = state?.contracts?.[contractID]?.type
@@ -15,15 +15,15 @@ export const mayIncludeContractTypes = (state: Object, contractIDHints: ?string[
   })
 }
 
-// Wrapper function for performing contract upgrades and migrations
-// The update function is called for the contracts in `initialState` and, if
-// `watch` is set (the default), again whenever new contracts are synced, until
-// the next Chelonia reset (i.e., for the current session).
+// Wrapper function for performing contract upgrades and migrations over the
+// contracts in `initialState`, once they're ready. Contracts synced later on
+// are watched elsewhere (e.g., the `CONTRACTS_MODIFIED` handler in
+// `frontend/controller/actions/chatroom.js`, in the service worker, rather
+// than once per open tab).
 export const contractUpdate = (
   initialState: Object,
   updateFn: (state: Object, contractIDHints: ?string[]) => any,
-  contractTypes: ?(string | string[]),
-  { watch = true }: { watch?: boolean } = {}
+  contractTypes: ?(string | string[])
 ) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contracts could be of one of the given types, which helps return early
@@ -38,37 +38,10 @@ export const contractUpdate = (
       }
     : updateFn
 
-  if (watch) {
-    const resetHandler = () => {
-      sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandler)
-    }
-    // This function is called when the set of subscribed contracts is modified
-    const modifiedHandler = (_, { added }) => {
-      // Wait for the added contracts to be ready, then call the update function
-      if (!added.length) return
-      sbp('chelonia/contract/wait', added).then(() => {
-        const state = sbp('state/vuex/state')
-        wrappedUpdateFn(state, added)
-      }).catch((e) => {
-        console.error('[contractUpdate] Error updating newly added contracts', e)
-      })
-    }
-
-    // Add event listeners for `CONTRACTS_MODIFIED` and `CHELONIA_RESET` events
-    // `CONTRACTS_MODIFIED` is the important event. This is what allows updating
-    // contracts that are newly synced (for example, when logging in for the
-    // first time or joining an existing group or chatroom)
-    sbp('okTurtles.events/on', CONTRACTS_MODIFIED, modifiedHandler)
-    // Receiving `CHELONIA_RESET` means that a new session has started. To prevent
-    // memory leaks and duplicate handlers, this event will remove the
-    // `CONTRACTS_MODIFIED` handler.
-    sbp('okTurtles.events/once', CHELONIA_RESET, resetHandler)
-  }
-
   // Call the update function in the next tick
-  // We want this (in addition to `CONTRACTS_MODIFIED`) because this way we
-  // can update contracts that already exist, e.g., upon login with a saved
-  // state
+  // We want this (in addition to any `CONTRACTS_MODIFIED` handlers) because
+  // this way we can update contracts that already exist, e.g., upon login
+  // with a saved state
   const existingContracts = Object.keys(initialState.contracts)
   setTimeout(() => {
     sbp('chelonia/contract/wait', existingContracts).then(() => {

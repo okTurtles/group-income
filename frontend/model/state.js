@@ -249,14 +249,15 @@ sbp('sbp/selectors/register', {
     // re-joined the chatroom directly, using keys that hadn't been rotated),
     // and rotate the chatroom keys if former members still hold them.
     // This runs for existing contracts. Contracts synced later on (for
-    // example, when logging in on a new device) are checked by the service
-    // worker (see 'gi.actions/chatroom/revokeFormerMemberAccess'), once rather
-    // than once per open tab, and for the whole session.
+    // example, when logging in on a new device) are checked by the
+    // `CONTRACTS_MODIFIED` handler in 'frontend/controller/actions/chatroom.js'
+    // (in the service worker, once rather than once per open tab, and for the
+    // whole session).
     contractUpdate(state, (_, contractIDHints) => {
       sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDHints).catch(e => {
         console.error('[chatroom/revokeFormerMemberAccess] Error', e)
       })
-    }, ['gi.contracts/group', 'gi.contracts/chatroom'], { watch: false })
+    }, ['gi.contracts/group', 'gi.contracts/chatroom'])
 
     // Send an 'accept' action to any DMs that we have not yet accepted
     ;(() => {

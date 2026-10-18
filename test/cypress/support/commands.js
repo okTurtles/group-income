@@ -241,19 +241,34 @@ cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
 
 cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => readChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
 
-// Waits for the service worker to be done with a chatroom: the membership
-// check that runs 1 s after the chatroom's last event (see
-// `frontend/controller/actions/chatroom.js`), and what it publishes or queues.
-// Use it before checking that something did *not* happen. Unlike
+// Whether no membership check of a chatroom (see
+// `frontend/controller/actions/chatroom.js`) is scheduled or running in the
+// service worker
+cySbpCheckCommand('giChatRoomMembershipChecksDone', async (sbp, chatRoomID) => {
+  return !(await sbp('gi.actions/chatroom/membershipCheckPending', chatRoomID))
+})
+
+// Waits for the service worker to be done with a chatroom: the events that
+// reached it, the membership check that they may schedule (1 s after the
+// first chatroom event that calls for one), and what that check publishes or
+// queues. Use it before checking that something did *not* happen. Unlike
 // `giEmptyInvocationQueue`, which only sees the tab's queues, this waits for
-// Chelonia's queues, which are in the service worker.
-Cypress.Commands.add('giChatRoomSettled', (chatRoomID) => {
-  // eslint-disable-next-line cypress/no-unnecessary-waiting
-  cy.wait(2000)
-  cy.window().its('sbp').then(async sbp => {
+// Chelonia's queues and the membership checks, which are in the service
+// worker. It's done twice, as the events that a check publishes can schedule
+// another check. `quietMs` gives events that were just published (by us or by
+// others) time to reach the service worker.
+Cypress.Commands.add('giChatRoomSettled', (chatRoomID, { quietMs = 1000 } = {}) => {
+  const waitForQueues = () => cy.window().its('sbp').then(async sbp => {
     await sbp('chelonia/contract/waitPublish', chatRoomID)
     await sbp('chelonia/contract/wait', chatRoomID)
   })
+  for (let round = 0; round < 2; round++) {
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(quietMs)
+    waitForQueues()
+    cy.giChatRoomMembershipChecksDone(chatRoomID)
+    waitForQueues()
+  }
 })
 
 cySbpCheckCommand('giChatRoomHasMessage', (sbp, chatRoomID, text) => {

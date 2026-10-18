@@ -1,11 +1,14 @@
 /* eslint-env mocha */
 
+import { CURVE25519XSALSA20POLY1305, keygen, serializeKey } from '@chelonia/crypto'
+import { encryptedOutgoingData } from '@chelonia/lib/encryptedData'
 import { SPMessage } from '@chelonia/lib/SPMessage'
-import { chatRoomKeysNeedRotation, classifyChatRoomKeys, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, groupIDForChatRoom, isKeyRequestFromRemovedMember, isOurPrivateGroupChatRoom, isRemovableKey, keysBlockingRotation, membersMissingFromGroup, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck, unexpectedKeysRemovedSince } from './privateChatRoomSecurity.js'
+import { chatRoomGroupID, chatRoomKeysNeedRotation, chatRoomRotationReasons, classifyChatRoomKeys, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, groupIDForChatRoom, isKeyRequestFromRemovedMember, isOurPrivateGroupChatRoom, isRemovableKey, keyRemovalEntries, keysBlockingRotation, lookupsReturnKeptKeys, membersMissingFromGroup, membershipCheckSubject, nonMemberKeysRemovedSince, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck, removableForeignKeysOf } from './privateChatRoomSecurity.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 const should = require('should')
 
 const MAX = Number.MAX_SAFE_INTEGER
+const me = 'me'
 const byId = (...keys) => Object.fromEntries(keys.map((key) => [key.id, key]))
 // A member's CSK, as added to a chatroom when they join
 const memberCSK = (memberID, overrides = {}) => ({
@@ -98,7 +101,8 @@ describe('formerMembersWithCurrentKeys', () => {
   // Rotating can't remove them, so counting them would rotate the keys again
   // and again
   it('ignores keys that cannot be removed', () => {
-    for (const foreignKey of ['shelter:b', 'not a URL']) {
+    // Both point to `b`, so that only `isRemovableKey` leaves them out
+    for (const foreignKey of ['shelter:b', 'shelter:b?keyName=']) {
       const state = chatRoom({ b: { hasLeft: true } }, byId(memberCSK('b', { id: 'x', name: 'b/x', foreignKey })))
       should(formerMembersWithCurrentKeys(state, 10)).eql([])
       should(formerMemberKeyIdsToRemove(state)).eql([])
@@ -216,7 +220,6 @@ describe('currentKeysHeight', () => {
 })
 
 describe('privateGroupChatRoomsToCheck', () => {
-  const me = 'me'
   const record = (privacyLevel, { status = PROFILE_STATUS.ACTIVE, deletedDate = null } = {}) => ({
     privacyLevel, deletedDate, members: { [me]: { status } }
   })
@@ -283,7 +286,6 @@ describe('privateGroupChatRoomsToCheck', () => {
 })
 
 describe('ourPrivateGroupChatRoomMembersToRemove', () => {
-  const me = 'me'
   const state = (contracts = {}) => ({
     contracts,
     [me]: { groups: { g1: {} } },
@@ -325,7 +327,6 @@ describe('ourPrivateGroupChatRoomMembersToRemove', () => {
 })
 
 describe('groupIDForChatRoom and isKeyRequestFromRemovedMember', () => {
-  const me = 'me'
   const state = {
     [me]: { groups: { g1: {}, g2: {} } },
     g1: { chatRooms: { pub: { privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP, members: { b: { status: PROFILE_STATUS.REMOVED } } } } },
@@ -346,6 +347,14 @@ describe('groupIDForChatRoom and isKeyRequestFromRemovedMember', () => {
     should(groupIDForChatRoom(undefined, me, 'priv')).be.undefined()
   })
 
+  // Without the chatroom's keys to tell which group it belongs to (see the
+  // tests with keys below), there's no way to choose
+  it('finds none if several of our groups list a chatroom without keys', () => {
+    const listedTwice = { ...state, g1: { chatRooms: { ...state.g1.chatRooms, priv: state.g2.chatRooms.priv } } }
+    should(groupIDForChatRoom(listedTwice, me, 'priv')).be.undefined()
+    should(isKeyRequestFromRemovedMember(listedTwice, me, 'priv', 'b')).be.false()
+  })
+
   it('is true only for someone the group lists as removed from a private chatroom', () => {
     should(isKeyRequestFromRemovedMember(state, me, 'priv', 'b')).be.true()
     should(isKeyRequestFromRemovedMember(state, me, 'priv', 'a')).be.false()
@@ -358,7 +367,6 @@ describe('groupIDForChatRoom and isKeyRequestFromRemovedMember', () => {
 })
 
 describe('chatroom key checks', () => {
-  const me = 'me'
   // The key of a member's identity contract that the chatroom key mirrors
   const identity = (memberID) => ({
     _vm: { authorizedKeys: { [`${memberID}-csk`]: { id: `${memberID}-csk`, name: 'csk', data: `${memberID}-data` } } }
@@ -383,9 +391,24 @@ describe('chatroom key checks', () => {
     ...overrides
   })
   const groupKeys = [groupKey('gcsk', 'group-csk'), groupKey('gcek', 'group-cek')]
+  // The keys that `classifyChatRoomKeys` keeps in the chatroom below
+  const KEPT = { csk: 'csk1', cek: 'cek1', '#sak': 'sak1', 'group-csk': 'gcsk', 'group-cek': 'gcek' }
+  // A `#joinKey-<id>` key with the shape that the versions from 2023 gave it:
+  // it can only request keys
+  const legacyJoinKey = (overrides = {}) => ({
+    id: 'jk',
+    name: '#joinKey-jk',
+    ringLevel: Number.MAX_SAFE_INTEGER,
+    purpose: ['sig'],
+    permissions: [SPMessage.OP_KEY_REQUEST],
+    data: 'jk-data',
+    _notBeforeHeight: 11,
+    ...overrides
+  })
   // One of our private group chatrooms, with the keys that it's created with,
   // the keys of its members (us and `a`), and `extraKeys` added last.
   // `firstKeys` are added first, and replace the keys with the same IDs.
+  // Keys are copied, so that tests can change them.
   const state = ({ firstKeys = [], extraKeys = [], privacyLevel = CHATROOM_PRIVACY_LEVEL.PRIVATE } = {}) => ({
     [me]: { groups: { g1: {} }, ...identity(me) },
     a: identity('a'),
@@ -408,9 +431,11 @@ describe('chatroom key checks', () => {
     priv: {
       _vm: {
         authorizedKeys: byId(
-          ...firstKeys,
-          ...[...ownKeys, ...groupKeys, memberCSK(me), memberCSK('a')].filter((key) => !firstKeys.some(({ id }) => id === key.id)),
-          ...extraKeys
+          ...[
+            ...firstKeys,
+            ...[...ownKeys, ...groupKeys, memberCSK(me), memberCSK('a')].filter((key) => !firstKeys.some(({ id }) => id === key.id)),
+            ...extraKeys
+          ].map((key) => ({ ...key }))
         )
       },
       attributes: { type: CHATROOM_TYPES.GROUP, privacyLevel },
@@ -425,11 +450,7 @@ describe('chatroom key checks', () => {
 
   describe('classifyChatRoomKeys', () => {
     it('accepts the keys that a private group chatroom is created with, and its members\' keys', () => {
-      should(classify(state())).eql({
-        kept: { csk: 'csk1', cek: 'cek1', '#sak': 'sak1', 'group-csk': 'gcsk', 'group-cek': 'gcek' },
-        unexpected: [],
-        unknown: []
-      })
+      should(classify(state())).eql({ kept: KEPT, unexpected: [], unknown: [] })
     })
 
     it('flags a key that a member added with the chatroom CSK under another name', () => {
@@ -461,11 +482,7 @@ describe('chatroom key checks', () => {
     it('accepts the chatroom\'s own keys at ring level 1, as created before April 2024', () => {
       const ring1 = ownKeys.slice(0, 2).map((key) => ({ ...key, ringLevel: 1 }))
       const s = state({ firstKeys: ring1 })
-      should(classify(s)).eql({
-        kept: { csk: 'csk1', cek: 'cek1', '#sak': 'sak1', 'group-csk': 'gcsk', 'group-cek': 'gcek' },
-        unexpected: [],
-        unknown: []
-      })
+      should(classify(s)).eql({ kept: KEPT, unexpected: [], unknown: [] })
       should(chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always)).be.false()
     })
 
@@ -538,11 +555,30 @@ describe('chatroom key checks', () => {
     })
 
     it('reports keys from older versions without flagging them', () => {
-      const joinKey = backdoor({ id: 'jk', name: '#joinKey-jk' })
-      const groupKeyOfOldVersions = groupKey('gk', 'groupKey')
-      const result = classify(state({ extraKeys: [joinKey, groupKeyOfOldVersions] }))
+      // `groupKey` mirrors the group's CSK, with the shape of that time
+      const groupKeyOfOldVersions = {
+        id: 'gcsk',
+        name: 'groupKey',
+        foreignKey: 'shelter:g1?keyName=csk',
+        ringLevel: 2,
+        purpose: ['sig'],
+        permissions: [SPMessage.OP_ACTION_ENCRYPTED],
+        allowedActions: ['gi.contracts/chatroom/leave'],
+        data: 'gcsk-data',
+        _notBeforeHeight: 1
+      }
+      const result = classify(state({ extraKeys: [legacyJoinKey(), groupKeyOfOldVersions] }))
       should(result.unexpected).eql([])
-      should(result.unknown).eql(['jk', 'gk'])
+      should(result.unknown).eql(['jk'])
+      should(result.kept['groupKey']).equal('gcsk')
+    })
+
+    it('flags keys with the names of older versions\' keys but other powers', () => {
+      // Anyone holding the chatroom CSK can add a key with such a name; only
+      // the recorded shapes are accepted as those keys
+      const joinKey = backdoor({ id: 'jk', name: '#joinKey-jk', ringLevel: Number.MAX_SAFE_INTEGER, permissions: [SPMessage.OP_KEY_REQUEST] })
+      const groupKeyOfOldVersions = backdoor({ id: 'gk', name: 'groupKey', ringLevel: 2 })
+      should(classify(state({ extraKeys: [joinKey, groupKeyOfOldVersions] })).unexpected).eql(['jk', 'gk'])
     })
 
     it('reports foreign keys missing from the contract that they point to without flagging them, unless they are duplicates', () => {
@@ -553,7 +589,7 @@ describe('chatroom key checks', () => {
         extraKeys: [groupKey('gcsk2', 'group-csk'), memberCSK('a', { id: 'a-csk2' })]
       })
       should(classify(rotated)).eql({
-        kept: { csk: 'csk1', cek: 'cek1', '#sak': 'sak1', 'group-csk': 'gcsk2', 'group-cek': 'gcek' },
+        kept: { ...KEPT, 'group-csk': 'gcsk2' },
         unexpected: [],
         unknown: ['gcsk2', 'a-csk2']
       })
@@ -578,7 +614,7 @@ describe('chatroom key checks', () => {
       ]
       const s = state({ extraKeys: unremovable })
       const result = classify(s)
-      should(result.kept).eql({ csk: 'csk1', cek: 'cek1', '#sak': 'sak1', 'group-csk': 'gcsk', 'group-cek': 'gcek' })
+      should(result.kept).eql(KEPT)
       should(result.unexpected).eql([])
       should(result.unknown).eql(['nokn', 'nourl', 'nocid', 'csk2', 'a-x'])
       // Those that can be removed are still flagged
@@ -591,22 +627,91 @@ describe('chatroom key checks', () => {
     })
   })
 
-  describe('unexpectedKeysRemovedSince', () => {
+  // What a rotation does to the chatroom keys at `height`: the CEK and CSK
+  // kept are removed, and new ones are added last
+  const rotate = (s, height) => {
+    const keys = s.priv._vm.authorizedKeys
+    const { cek, csk } = classify(s).kept
+    for (const keyId of [cek, csk]) {
+      const newId = `${keyId}-${height}`
+      keys[newId] = { ...keys[keyId], id: newId, _notBeforeHeight: height }
+      keys[keyId]._notAfterHeight = height
+    }
+  }
+
+  // Any member of another group of ours can list our chatroom in that group,
+  // and add us to it there, without holding any of the chatroom's keys
+  describe('the group that a chatroom belongs to', () => {
+    const listedByAnotherGroup = (s) => ({
+      ...s,
+      [me]: { ...s[me], groups: { g0: {}, ...s[me].groups } },
+      g0: {
+        _vm: { authorizedKeys: { g0csk: { id: 'g0csk', name: 'csk', data: 'g0csk-data', _notBeforeHeight: 1 } } },
+        chatRooms: {
+          priv: { privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE, deletedDate: null, members: { [me]: { status: PROFILE_STATUS.ACTIVE } } }
+        }
+      }
+    })
+
+    it('is the group that the chatroom\'s earliest group key points to, not the first group listing it', () => {
+      // `b` re-joined directly, and the group that the chatroom belongs to
+      // lists them as removed
+      const s = listedByAnotherGroup(state({ extraKeys: [memberCSK('b')] }))
+      s.priv.members.b = {}
+      s.g1.chatRooms.priv.members.b = { status: PROFILE_STATUS.REMOVED }
+      should(Object.keys(s[me].groups)[0]).equal('g0')
+      should(chatRoomGroupID(s, me, 'priv')).equal('g1')
+      should(groupIDForChatRoom(s, me, 'priv')).equal('g1')
+      should(privateGroupChatRoomsToCheck(s, me)).eql([{ groupID: 'g1', chatRoomID: 'priv' }])
+      should(ourPrivateGroupChatRoomMembersToRemove(s, me, 'g1', 'priv')).eql(['b'])
+      should(isKeyRequestFromRemovedMember(s, me, 'priv', 'b')).be.true()
+    })
+
+    // Otherwise, every member that the other group doesn't list would be
+    // removed, and the chatroom's group keys would be flagged
+    it('does not check the chatroom against another group\'s members or keys', () => {
+      const s = listedByAnotherGroup(state())
+      should(isOurPrivateGroupChatRoom(s, me, 'g0', 'priv')).be.false()
+      should(ourPrivateGroupChatRoomMembersToRemove(s, me, 'g0', 'priv')).eql([])
+      should(classifyChatRoomKeys(s, me, 'g0', 'priv', always)).eql({ kept: {}, unexpected: [], unknown: [] })
+      should(chatRoomKeysNeedRotation(s, me, 'g0', 'priv', always)).be.false()
+    })
+
+    it('is not changed by group keys added later, even after the group keys are replaced', () => {
+      // Someone holding the chatroom CSK adds the other group's CSK
+      const planted = groupKey('g0csk', 'group-csk', { foreignKey: 'shelter:g0?keyName=csk', data: 'g0csk-data', _notBeforeHeight: 11 })
+      const s = listedByAnotherGroup(state({
+        firstKeys: [groupKey('gcsk', 'group-csk', { _notAfterHeight: 12 })],
+        extraKeys: [planted, groupKey('gcsk2', 'group-csk', { _notBeforeHeight: 12 })]
+      }))
+      should(chatRoomGroupID(s, me, 'priv')).equal('g1')
+      should(classify(s).unexpected).containEql('g0csk')
+    })
+
+    it('is none if the group that the chatroom belongs to is not one of ours', () => {
+      const s = listedByAnotherGroup(state())
+      delete s[me].groups.g1
+      should(chatRoomGroupID(s, me, 'priv')).be.undefined()
+      should(privateGroupChatRoomsToCheck(s, me)).eql([])
+    })
+  })
+
+  describe('nonMemberKeysRemovedSince', () => {
     it('includes unexpected keys removed after the current keys became valid', () => {
-      should(unexpectedKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql(['bd'])
+      should(nonMemberKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql(['bd'])
     })
 
     it('excludes keys removed before, or in the message that rotated the keys', () => {
-      should(unexpectedKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 9 })] }), 'g1', 'priv', 10)).eql([])
-      should(unexpectedKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 10 })] }), 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 9 })] }), 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(state({ extraKeys: [backdoor({ _notAfterHeight: 10 })] }), 'g1', 'priv', 10)).eql([])
     })
 
     it('excludes keys replaced in the same message, and member keys', () => {
       const rotated = { ...ownKeys[0], id: 'csk0', _notBeforeHeight: 1, _notAfterHeight: 12 }
       const replacement = { ...ownKeys[0], id: 'csk2', _notBeforeHeight: 12 }
-      should(unexpectedKeysRemovedSince(state({ firstKeys: [rotated], extraKeys: [replacement] }), 'g1', 'priv', 10)).eql([])
-      should(unexpectedKeysRemovedSince(state({ extraKeys: [memberCSK('b', { _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql([])
-      should(unexpectedKeysRemovedSince(undefined, 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(state({ firstKeys: [rotated], extraKeys: [replacement] }), 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(state({ extraKeys: [memberCSK('b', { _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(undefined, 'g1', 'priv', 10)).eql([])
     })
 
     it('excludes a group key replaced by an update', () => {
@@ -614,16 +719,29 @@ describe('chatroom key checks', () => {
         firstKeys: [groupKey('gcsk', 'group-csk', { _notAfterHeight: 12 })],
         extraKeys: [groupKey('gcsk2', 'group-csk', { _notBeforeHeight: 12 })]
       })
-      should(unexpectedKeysRemovedSince(s, 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(s, 'g1', 'priv', 10)).eql([])
     })
 
     // A key's name and height are up to whoever adds it, so the exception for
     // replaced keys mustn't hide the replacement
     it('still requires a rotation when an unexpected key is replaced by another one with the same name', () => {
       const s = state({ extraKeys: [backdoor({ _notAfterHeight: 12 }), backdoor({ id: 'bd2', _notBeforeHeight: 12 })] })
-      should(unexpectedKeysRemovedSince(s, 'g1', 'priv', 10)).eql([])
+      should(nonMemberKeysRemovedSince(s, 'g1', 'priv', 10)).eql([])
       should(classify(s).unexpected).eql(['bd2'])
       should(chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always)).be.true()
+    })
+
+    // Otherwise, it would count as the replacement of any key with its name
+    // removed in that message, including itself
+    it('does not count a key added and removed in the same message as a replacement', () => {
+      const s = state({ extraKeys: [backdoor({ _notAfterHeight: 12 }), backdoor({ id: 'bd2', _notBeforeHeight: 12, _notAfterHeight: 12 })] })
+      should(nonMemberKeysRemovedSince(s, 'g1', 'priv', 10)).eql(['bd', 'bd2'])
+      should(chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always)).be.true()
+    })
+
+    it('includes legitimate keys removed without being replaced, which only costs a rotation', () => {
+      should(nonMemberKeysRemovedSince(state({ extraKeys: [legacyJoinKey({ _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql(['jk'])
+      should(nonMemberKeysRemovedSince(state({ firstKeys: [groupKey('gcek', 'group-cek', { _notAfterHeight: 12 })] }), 'g1', 'priv', 10)).eql(['gcek'])
     })
   })
 
@@ -646,10 +764,16 @@ describe('chatroom key checks', () => {
         ]
       })
       should(keysBlockingRotation(s, 'priv', classify(s))).eql([])
-      // The only key with a name is kept, even if it can't be removed
-      const onlyCSK = state({ firstKeys: [{ ...ownKeys[0], foreignKey: 'shelter:a' }] })
+    })
+
+    // A rotation keeps the `foreignKey` of the key that it replaces (see
+    // `keysBlockingRotation`), so that rule applies even to a `foreignKey`
+    // that can be removed
+    it('includes the key kept if it has a foreign key', () => {
+      const onlyCSK = state({ firstKeys: [{ ...ownKeys[0], foreignKey: 'shelter:a?keyName=csk' }] })
+      should(isRemovableKey(onlyCSK.priv._vm.authorizedKeys.csk1)).be.true()
       should(classify(onlyCSK).kept.csk).equal('csk1')
-      should(keysBlockingRotation(onlyCSK, 'priv', classify(onlyCSK))).eql([])
+      should(keysBlockingRotation(onlyCSK, 'priv', classify(onlyCSK))).eql(['csk1'])
     })
   })
 
@@ -672,8 +796,20 @@ describe('chatroom key checks', () => {
       should(needsRotation(s)).be.true()
     })
 
+    // Otherwise, the keys would be rotated on every event after a member left
+    it('is false once a former member\'s key was removed before the current keys', () => {
+      const s = state({ extraKeys: [memberCSK('b', { _notAfterHeight: 8 })] })
+      s.priv.members.b = { hasLeft: true }
+      should(needsRotation(s)).be.false()
+      s.priv._vm.authorizedKeys['b-csk']._notAfterHeight = 12
+      should(needsRotation(s)).be.true()
+    })
+
     it('is false for keys from older versions, which are only reported', () => {
-      should(needsRotation(state({ extraKeys: [backdoor({ id: 'jk', name: '#joinKey-jk' })] }))).be.false()
+      should(needsRotation(state({ extraKeys: [legacyJoinKey()] }))).be.false()
+      // A key with such a name but other powers is flagged (see
+      // `classifyChatRoomKeys`)
+      should(needsRotation(state({ extraKeys: [backdoor({ id: 'jk', name: '#joinKey-jk' })] }))).be.true()
     })
 
     it('is false for keys that cannot be removed, which are only reported', () => {
@@ -688,6 +824,21 @@ describe('chatroom key checks', () => {
       should(needsRotation(s)).be.true()
     })
 
+    // Such members must be removed instead. If that fails, e.g., because
+    // someone weakened the `group-csk` that removals are signed with (which
+    // still counts as the group's key), the keys must be rotated without them,
+    // which this doesn't call for (see `enforceChatRoomMembership`)
+    it('is false for members that the group lists as removed but who are still in the chatroom', () => {
+      const weakened = groupKey('gcsk', 'group-csk', { permissions: [SPMessage.OP_ACTION_ENCRYPTED, SPMessage.OP_KEY_REQUEST] })
+      const s = state({ firstKeys: [weakened], extraKeys: [memberCSK('b')] })
+      s.priv.members.b = {}
+      s.g1.chatRooms.priv.members.b = { status: PROFILE_STATUS.REMOVED }
+      should(ourPrivateGroupChatRoomMembersToRemove(s, me, 'g1', 'priv')).eql(['b'])
+      should(classify(s).kept['group-csk']).equal('gcsk')
+      should(needsRotation(s)).be.false()
+      should(keysBlockingRotation(s, 'priv', classify(s))).eql([])
+    })
+
     it('uses the classification given, if any', () => {
       const s = state({ extraKeys: [backdoor()] })
       should(chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always, { kept: classify(s).kept, unexpected: [], unknown: [] })).be.false()
@@ -698,5 +849,170 @@ describe('chatroom key checks', () => {
       should(needsRotation(state({ extraKeys: [backdoor()], privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP }))).be.false()
       should(needsRotation(undefined)).be.false()
     })
+  })
+
+  describe('chatRoomRotationReasons', () => {
+    const reasons = (s) => chatRoomRotationReasons(s, me, 'g1', 'priv', always)
+
+    it('is nothing when the keys need no rotating', () => {
+      should(reasons(state())).be.undefined()
+      should(reasons(undefined)).be.undefined()
+    })
+
+    it('lists why the keys need rotating, sorted', () => {
+      const s = state({
+        extraKeys: [
+          backdoor({ id: 'z' }),
+          backdoor({ id: 'y', name: 'other' }),
+          memberCSK('c'),
+          memberCSK('b'),
+          backdoor({ id: 'x', name: 'removed', _notAfterHeight: 12 })
+        ]
+      })
+      s.priv.members.b = { hasLeft: true }
+      s.priv.members.c = { hasLeft: true }
+      should(reasons(s)).eql({ unexpected: ['y', 'z'], formerMembers: ['b', 'c'], removedSince: ['x'] })
+    })
+
+    // A rotation that doesn't change why the keys need rotating didn't help,
+    // and the check that requests rotations isn't repeated for the same
+    // reasons for a while. The CEK's ID, which was used instead, changes with
+    // every rotation, so nothing stopped the keys from being rotated over and
+    // over.
+    it('stays the same across a rotation that does not change why the keys need rotating', () => {
+      for (const s of [state({ extraKeys: [backdoor()] }), state({ extraKeys: [memberCSK('b')] })]) {
+        if (s.priv._vm.authorizedKeys['b-csk']) s.priv.members.b = { hasLeft: true }
+        const before = membershipCheckSubject([], reasons(s))
+        rotate(s, 12)
+        should(classify(s).kept.cek).equal('cek1-12')
+        should(reasons(s)).not.be.undefined()
+        should(membershipCheckSubject([], reasons(s))).equal(before)
+      }
+    })
+
+    it('is not the subject of a check while there are members to remove', () => {
+      const s = state({ extraKeys: [backdoor()] })
+      should(membershipCheckSubject(['c', 'b'], reasons(s))).equal('b,c')
+      should(membershipCheckSubject([], reasons(s))).not.equal(membershipCheckSubject([], undefined))
+    })
+  })
+
+  describe('lookupsReturnKeptKeys', () => {
+    it('is true when the first current CEK and CSK are the ones kept', () => {
+      const s = state()
+      should(lookupsReturnKeptKeys(s.priv, classify(s))).be.true()
+    })
+
+    // Rotating adds the new keys last, so another CEK added before a rotation
+    // comes before the new one
+    it('is false when another key with the same name comes first', () => {
+      const s = state({ extraKeys: [{ ...ownKeys[1], id: 'dup', _notBeforeHeight: 11 }] })
+      rotate(s, 12)
+      const classified = classify(s, (id) => id !== 'dup')
+      should(classified.kept.cek).equal('cek1-12')
+      should(lookupsReturnKeptKeys(s.priv, classified)).be.false()
+      should(lookupsReturnKeptKeys(undefined, classified)).be.false()
+    })
+  })
+
+  describe('removableForeignKeysOf', () => {
+    const withKeys = (...keys) => ({ _vm: { authorizedKeys: byId(...keys) } })
+    const foreignKey = (id, fk, overrides = {}) => ({
+      id, name: 'x', foreignKey: fk, ringLevel: 5, purpose: ['sig'], permissions: '*', allowedActions: '*', _notBeforeHeight: 1, ...overrides
+    })
+
+    it('returns the current string foreign keys that point to the member and that the signing ring can remove', () => {
+      const chatRoomState = withKeys(
+        foreignKey('k1', 'shelter:b?keyName=csk', { name: 'b/k1' }),
+        foreignKey('k2', 'shelter:b?keyName=csk', { name: 'b/k2', _notAfterHeight: 9 }),
+        foreignKey('k3', 'shelter:c?keyName=csk', { name: 'c/k3' }),
+        foreignKey('k4', 'shelter:b', { name: 'b/k4' }),
+        foreignKey('k5', 'not a URL', { name: 'b/k5' }),
+        foreignKey('k6', 123, { name: 'b/k6' }),
+        { id: 'k7', name: 'b/k7', ringLevel: 5, purpose: ['sig'], permissions: '*', allowedActions: '*', _notBeforeHeight: 1 },
+        foreignKey('k8', 'shelter:b?keyName=csk', { name: 'b/k8', ringLevel: 4 }),
+        foreignKey('k9', 'shelter:b?keyName=csk', { name: 'b/k9', ringLevel: 3.5 }),
+        foreignKey('k10', 'shelter:b?keyName=csk', { name: 'b/k10', ringLevel: 3 }),
+        // Matches Chelonia's `foreignKey.includes(memberID)`, but isn't a URL
+        foreignKey('k11', 'b', { name: 'b/k11' })
+      )
+      should(removableForeignKeysOf(chatRoomState, 'b', 4)).eql(['k1', 'k8'])
+      should(removableForeignKeysOf(chatRoomState, 'b', 3)).eql(['k1', 'k8', 'k10'])
+      should(removableForeignKeysOf(undefined, 'b', 0)).eql([])
+      should(removableForeignKeysOf(withKeys(), 'b', 0)).eql([])
+    })
+  })
+
+  describe('parsing foreign keys', () => {
+    // These checks run for every chatroom event
+    it('parses each key\'s foreign key at most once, however many checks look at it', () => {
+      const s = state({ extraKeys: [memberCSK('b'), memberCSK('c'), backdoor()] })
+      s.priv.members.b = { hasLeft: true }
+      const foreignKeys = Object.values(s.priv._vm.authorizedKeys).filter((key) => key.foreignKey).length
+      const RealURL = global.URL
+      let parses = 0
+      global.URL = class extends RealURL {
+        constructor (...args) {
+          super(...args)
+          parses++
+        }
+      }
+      try {
+        should(chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always)).be.true()
+        should(parses).be.belowOrEqual(foreignKeys)
+        const afterFirst = parses
+        chatRoomKeysNeedRotation(s, me, 'g1', 'priv', always)
+        formerMemberKeyIdsToRemove(s.priv)
+        should(parses).equal(afterFirst)
+      } finally {
+        global.URL = RealURL
+      }
+    })
+
+    it('parses a foreign key again if it changes', () => {
+      const key = { id: 'k', foreignKey: 'shelter:a' }
+      should(isRemovableKey(key)).be.false()
+      key.foreignKey = 'shelter:a?keyName=csk'
+      should(isRemovableKey(key)).be.true()
+    })
+  })
+})
+
+describe('keyRemovalEntries', () => {
+  const encryptionKey = () => serializeKey(keygen(CURVE25519XSALSA20POLY1305), false)
+  // A chatroom in which `K` was added encrypted with `tmp`, which was then
+  // removed without another key taking its name. Anyone holding the chatroom
+  // CSK can do that, e.g., to keep `K` from being removed.
+  const chatRoomState = () => ({
+    _vm: {
+      authorizedKeys: byId(
+        { id: 'cek1', name: 'cek', purpose: ['enc'], data: encryptionKey(), _notBeforeHeight: 10 },
+        { id: 'tmp', name: 'tmp', purpose: ['enc'], data: encryptionKey(), _notBeforeHeight: 11, _notAfterHeight: 12 },
+        { id: 'K', name: 'x', purpose: ['sig'], _private: 'tmp', _notBeforeHeight: 11 },
+        { id: 'plain', name: 'y', purpose: ['sig'], _notBeforeHeight: 11 }
+      )
+    }
+  })
+
+  it('keeps the IDs of keys that were not added encrypted', () => {
+    const s = chatRoomState()
+    should(keyRemovalEntries(s, s, ['plain', 'missing'], 'cek1')).eql(['plain', 'missing'])
+  })
+
+  it('encrypts the removal of keys that were added encrypted with the key given, which works after the key they were added with is removed', () => {
+    const s = chatRoomState()
+    // What `chelonia/out/keyDel` does for such keys, which fails
+    should(() => encryptedOutgoingData(s, s._vm.authorizedKeys.K._private, 'K').serialize()).throw(/has been revoked and no new key exists by the same name/)
+    const [entry, plain] = keyRemovalEntries(s, s, ['K', 'plain'], 'cek1')
+    should(plain).equal('plain')
+    should(entry.encryptionKeyId).equal('cek1')
+    should(entry.valueOf()).equal('K')
+    should(() => entry.serialize()).not.throw()
+  })
+
+  it('leaves the ID as is without a key to encrypt with', () => {
+    const s = chatRoomState()
+    should(keyRemovalEntries(s, s, ['K'], undefined)).eql(['K'])
+    should(keyRemovalEntries(s, undefined, ['K'], 'cek1')).eql(['K'])
   })
 })
