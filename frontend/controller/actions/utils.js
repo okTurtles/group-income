@@ -29,9 +29,9 @@ const userFacingActionError = (humanError: string | Function, params: GIActionPa
 
 // The contract whose key gives the inner signature of an action sent to
 // `contractID`: `params.innerSigningContractID` if set (`null` meaning no inner
-// signature), and otherwise the logged in identity contract, unless the action
-// is sent to it
-export const actionInnerSigningContractID = (params: Object, contractID: string, rootState: Object): ?string => {
+// signature), and otherwise the logged-in identity contract, unless the action
+// is sent to it.
+export const actionInnerSigningContractID = (params: GIActionParams, contractID: string, rootState: Object): ?string => {
   return params.innerSigningContractID !== undefined
     ? params.innerSigningContractID
     : contractID === rootState.loggedIn.identityContractID
@@ -112,10 +112,6 @@ export const encryptedAction = (
           state[signingContractID] = await sbp('chelonia/latestContractState', signingContractID)
         }
 
-        // Default innerSigningContractID is the current logged in identity
-        // contract ID, unless we are signing for the current identity contract
-        // If params.innerSigningContractID is explicitly set to null, then
-        // no default value will be used.
         const innerSigningContractID = actionInnerSigningContractID(params, contractID, rootState)
 
         if (innerSigningContractID && !state[innerSigningContractID]) {
@@ -225,10 +221,6 @@ export const encryptedNotification = (
           state[signingContractID] = await sbp('chelonia/latestContractState', signingContractID)
         }
 
-        // Default innerSigningContractID is the current logged in identity
-        // contract ID, unless we are signing for the current identity contract
-        // If params.innerSigningContractID is explicitly set to null, then
-        // no default value will be used.
         const innerSigningContractID = actionInnerSigningContractID(params, contractID, rootState)
 
         if (innerSigningContractID && !state[innerSigningContractID]) {

@@ -1,5 +1,5 @@
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, MESSAGE_TYPES, PROFILE_STATUS } from '../../../frontend/model/contracts/shared/constants.js'
-import { currentKeyByName, randomUserSuffix, readChatRoom } from '../support/lib.js'
+import { currentKeyByName, pendingKeyRequestsFrom, randomUserSuffix, readChatRoom } from '../support/lib.js'
 
 // Former members of a private channel must not keep access to it:
 //  - the channel keys must be rotated when a member leaves
@@ -8,7 +8,10 @@ import { currentKeyByName, randomUserSuffix, readChatRoom } from '../support/lib
 //    rotated) must be removed by the other members. For existing state, this
 //    is done by a migration when logging in.
 //  - keys that no legitimate operation adds (which a member could add while
-//    holding the channel keys) must be removed, and the keys rotated
+//    holding the channel keys) must be removed, and the keys rotated, unless
+//    Chelonia can't remove them, in which case they mustn't stop rotations
+//  - group members who aren't channel members mustn't get the channel keys
+//    by asking for them
 // DMs must not be affected.
 
 const userId = randomUserSuffix()
@@ -18,10 +21,12 @@ const user2 = `user2-${userId}`
 const user3 = `user3-${userId}`
 const channelName = 'private-channel'
 const secretMessage = `Posted after user2 was removed ${userId}`
+const secretMessage2 = `Posted after user2 asked for all the keys ${userId}`
 
 const ids = {}
 let invitationLinkAnyone
-let initialKeys, rotatedKeys, dmBefore
+// `channelKeys` are the channel keys as of the last time they were looked at
+let initialKeys, channelKeys, dmBefore
 
 // SPMessage.OP_ACTION_ENCRYPTED + '#inner' (importing `SPMessage` here breaks
 // the Cypress bundle, as its dependencies can't be resolved)
@@ -45,25 +50,42 @@ const dmSnapshot = (sbp) => {
   return { members: Object.keys(state.members).sort(), keys: currentKeys(state) }
 }
 
-const addMemberKey = (sbp, chatRoomID, memberID, signingKeyId) => {
+// The key that a member adds to a chatroom when joining
+const memberKey = (sbp, memberID) => {
   const identityState = sbp('state/vuex/state')[memberID]
   const CSKid = currentKeys(identityState).csk
+  return {
+    foreignKey: `shelter:${memberID}?keyName=csk`,
+    id: CSKid,
+    data: identityState._vm.authorizedKeys[CSKid].data,
+    permissions: [AE_INNER],
+    allowedActions: '*',
+    purpose: ['sig'],
+    ringLevel: Number.MAX_SAFE_INTEGER,
+    name: `${memberID}/${CSKid}`
+  }
+}
+
+const addMemberKey = (sbp, chatRoomID, memberID, signingKeyId) => {
   return sbp('chelonia/out/keyAdd', {
     contractID: chatRoomID,
     contractName: 'gi.contracts/chatroom',
-    data: [{
-      foreignKey: `shelter:${memberID}?keyName=csk`,
-      id: CSKid,
-      data: identityState._vm.authorizedKeys[CSKid].data,
-      permissions: [AE_INNER],
-      allowedActions: '*',
-      purpose: ['sig'],
-      ringLevel: Number.MAX_SAFE_INTEGER,
-      name: `${memberID}/${CSKid}`
-    }],
+    data: [memberKey(sbp, memberID)],
     signingKeyId
   })
 }
+
+// The public part of a key of another contract, to add to the channel a key
+// whose secret nobody in the channel holds
+const publicKeyOf = (sbp, contractID, name) => {
+  const { id, data } = currentKeyByName(sbp('state/vuex/state')[contractID], name)
+  return { id, data }
+}
+
+const sendMessage = (sbp, text) => sbp('gi.actions/chatroom/addMessage', {
+  contractID: ids.channel,
+  data: { type: MESSAGE_TYPES.TEXT, text }
+})
 
 describe('Private channels - former members lose access', () => {
   it('user1 creates a group', () => {
@@ -207,29 +229,72 @@ describe('Private channels - former members lose access', () => {
     cy.giSwitchUser(user1)
 
     cy.giChatRoomKeysRotated(ids.channel, initialKeys.cek)
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
     cy.window().its('sbp').then(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
       expect(state.members[ids.user2].hasLeft, 'user2 was removed from the channel').to.equal(true)
-      const keyRequests = Object.values(state._vm.pendingKeyshares || {}).filter((entry) => entry[3]?.[0] === ids.user2)
-      expect(keyRequests, 'user2\'s key request was not answered').to.have.length(1)
-      rotatedKeys = currentKeys(state)
-      expect(rotatedKeys.csk).not.to.equal(initialKeys.csk)
-      return sbp('gi.actions/chatroom/addMessage', {
-        contractID: ids.channel,
-        data: { type: MESSAGE_TYPES.TEXT, text: secretMessage }
-      })
+      expect(pendingKeyRequestsFrom(state, ids.user2), 'user2\'s key request was not answered').to.have.length(1)
+      channelKeys = currentKeys(state)
+      expect(channelKeys.csk).not.to.equal(initialKeys.csk)
+      return sendMessage(sbp, secretMessage)
     })
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
   })
 
   it('user2 cannot read new messages in the channel', () => {
     cy.giSwitchUser(user2)
 
     cy.window().its('sbp').then(async sbp => {
-      expect(await sbp('chelonia/haveSecretKey', rotatedKeys.cek), 'user2 does not have the new channel key').to.equal(false)
+      expect(await sbp('chelonia/haveSecretKey', channelKeys.cek), 'user2 does not have the new channel key').to.equal(false)
       const canRead = await readChatRoom(sbp, ids.channel, (state) => {
         return (state.messages || []).some((message) => message.text === secretMessage)
+      })
+      expect(canRead, 'user2 cannot read the new message').to.equal(false)
+    })
+  })
+
+  it('user2 cannot get the channel keys by asking for all keys', () => {
+    // Chelonia answers key requests that aren't of a specific kind ('*', the
+    // default) with every key it can share, without asking the contract.
+    // user2 can sign one with the channel's `group-csk`, as a group member.
+    // `skipInviteAccounting` isn't set, as Chelonia would then fail to answer
+    // anyway. The reference differs from the earlier request's, as Chelonia
+    // doesn't send a request while one with the same reference is pending.
+    cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, async (state) => {
+      const identityState = sbp('state/vuex/state')[ids.user2]
+      const sent = await sbp('chelonia/out/keyRequest', {
+        originatingContractID: ids.user2,
+        originatingContractName: 'gi.contracts/identity',
+        contractID: ids.channel,
+        contractName: 'gi.contracts/chatroom',
+        reference: `${ids.channel}/all-keys`,
+        signingKeyId: currentKeyByName(state, 'group-csk').id,
+        innerSigningKeyId: currentKeys(identityState).csk,
+        encryptionKeyId: currentKeys(identityState).cek,
+        innerEncryptionKeyId: currentKeys(state).cek,
+        encryptKeyRequestMetadata: true
+      })
+      expect(sent, 'the key request was sent').not.to.equal(undefined)
+    }))
+
+    // user1 receives the request when logging in, as the channel is synced.
+    // It must stay pending, along with user2's earlier request.
+    cy.giSwitchUser(user1)
+    cy.giChatRoomSettled(ids.channel)
+    cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, (state) => {
+      expect(pendingKeyRequestsFrom(state, ids.user2), 'user2\'s key requests were not answered').to.have.length(2)
+      channelKeys = currentKeys(state)
+      return sendMessage(sbp, secretMessage2)
+    }))
+    cy.giChatRoomSettled(ids.channel)
+
+    cy.giSwitchUser(user2)
+    cy.window().its('sbp').then(async sbp => {
+      // Answers would be shared with user2's identity contract
+      await sbp('chelonia/contract/sync', ids.user2)
+      expect(await sbp('chelonia/haveSecretKey', channelKeys.cek), 'user2 does not have the channel key').to.equal(false)
+      const canRead = await readChatRoom(sbp, ids.channel, (state) => {
+        return (state.messages || []).some((message) => message.text === secretMessage2)
       })
       expect(canRead, 'user2 cannot read the new message').to.equal(false)
     })
@@ -256,14 +321,14 @@ describe('Private channels - former members lose access', () => {
         data: { chatRoomID: ids.channel }
       })
     })
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
     // Make sure that the leave was published before logging out
     cy.giChatRoomCheck(ids.channel, (state) => state?.members?.[ids.user3]?.hasLeft === true)
 
     cy.giSwitchUser(user1)
-    cy.giChatRoomKeysRotated(ids.channel, rotatedKeys.cek)
+    cy.giChatRoomKeysRotated(ids.channel, channelKeys.cek)
     cy.window().its('sbp').then(sbp => {
-      rotatedKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
+      channelKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
     })
   })
 
@@ -272,16 +337,12 @@ describe('Private channels - former members lose access', () => {
     // adding user3's key back
     cy.window().its('sbp').then(sbp => {
       ids.user3CSK = currentKeys(sbp('state/vuex/state')[ids.user3]).csk
-      return addMemberKey(sbp, ids.channel, ids.user3, rotatedKeys.csk)
-    })
-    cy.window().its('sbp').should(sbp => {
-      const key = sbp('state/vuex/state')[ids.channel]._vm.authorizedKeys[ids.user3CSK]
-      expect(key._notAfterHeight, 'user3\'s key is current again').to.equal(undefined)
+      return addMemberKey(sbp, ids.channel, ids.user3, channelKeys.csk)
     })
 
     // The check that runs when the channel's events are processed handles it,
     // without logging in again
-    cy.giChatRoomKeysRotated(ids.channel, rotatedKeys.cek)
+    cy.giChatRoomKeysRotated(ids.channel, channelKeys.cek)
     cy.window().its('sbp').should(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
       const key = state._vm.authorizedKeys[ids.user3CSK]
@@ -290,8 +351,7 @@ describe('Private channels - former members lose access', () => {
       // new keys and no further rotations are needed
       expect(key._notAfterHeight, 'user3\'s key was removed before the rotation').to.be.below(currentKeysValidFrom(state))
     })
-    cy.giEmptyInvocationQueue()
-    // A one-time check is enough once the keys have been rotated:
+    // Once the check and whatever it started are done, there's nothing else:
     //  - The same keys can't be rotated twice. The rotation's `preSendCheck`
     //    drops a rotation whose keys are no longer current, and Chelonia runs it
     //    before every publish attempt, including after the 409 conflict that a
@@ -299,10 +359,10 @@ describe('Private channels - former members lose access', () => {
     //  - Nothing in this step can start a rotation of the new keys. Nobody
     //    leaves, nobody adds keys, and the second assertion below confirms that
     //    no former member holds the current keys.
-    cy.window().its('sbp').then(sbp => {
-      const state = sbp('state/vuex/state')[ids.channel]
+    cy.giChatRoomSettled(ids.channel)
+    cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, (state) => {
       const keys = Object.values(state._vm.authorizedKeys)
-      const previousHeight = state._vm.authorizedKeys[rotatedKeys.cek]._notBeforeHeight
+      const previousHeight = state._vm.authorizedKeys[channelKeys.cek]._notBeforeHeight
       expect(
         keys.filter((key) => key.name === 'cek' && key._notBeforeHeight > previousHeight),
         'the keys were rotated once'
@@ -314,8 +374,8 @@ describe('Private channels - former members lose access', () => {
           (key._notAfterHeight == null || key._notAfterHeight >= height)),
         'no former member holds the current keys'
       ).to.have.length(0)
-      rotatedKeys = currentKeys(state)
-    })
+      channelKeys = currentKeys(state)
+    }))
   })
 
   it('a key that no legitimate operation adds is removed by a rotation, without logging in again', () => {
@@ -337,19 +397,52 @@ describe('Private channels - former members lose access', () => {
           purpose: ['sig'],
           ringLevel: 0
         }],
-        signingKeyId: rotatedKeys.csk
+        signingKeyId: channelKeys.csk
       })
     })
     cy.giChatRoomCheck(ids.channel, (state) => {
       const key = state._vm.authorizedKeys[ids.unexpectedKey]
       // Removed in the same message as the rotation
-      return currentKeys(state).cek !== rotatedKeys.cek &&
+      return currentKeys(state).cek !== channelKeys.cek &&
         key?._notAfterHeight != null && key._notAfterHeight === currentKeysValidFrom(state)
     })
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
     cy.window().its('sbp').then(sbp => {
-      rotatedKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
+      channelKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
     })
+  })
+
+  it('a second channel CSK is removed and the keys are rotated, and messages can still be sent', () => {
+    // Chelonia's lookups by name return the first current key with a name,
+    // and rotating puts the new key after the others. A member holding the
+    // channel CSK can add another key named `csk` whose secret nobody else
+    // holds; it must be removed, and the keys that we hold must be used.
+    // (The worst case, where the other key comes first, needs a modified
+    // client to publish a rotation that adds it. That was verified by
+    // emulating such a client in the service worker, which isn't done here.)
+    cy.window().its('sbp').then(sbp => {
+      const { id, data } = publicKeyOf(sbp, ids.user3, 'cek')
+      ids.duplicateCSK = id
+      return sbp('chelonia/out/keyAdd', {
+        contractID: ids.channel,
+        contractName: 'gi.contracts/chatroom',
+        data: [{ id, name: 'csk', data, permissions: '*', allowedActions: '*', purpose: ['sig'], ringLevel: 0 }],
+        signingKeyId: channelKeys.csk
+      })
+    })
+    cy.giChatRoomCheck(ids.channel, (state) => {
+      const key = state._vm.authorizedKeys[ids.duplicateCSK]
+      return currentKeys(state).cek !== channelKeys.cek &&
+        key?._notAfterHeight != null && key._notAfterHeight <= currentKeysValidFrom(state)
+    })
+    cy.giChatRoomSettled(ids.channel)
+    cy.window().its('sbp').then(async sbp => {
+      channelKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
+      expect(channelKeys.csk).not.to.equal(ids.duplicateCSK)
+      expect(await sbp('chelonia/haveSecretKey', channelKeys.csk), 'we hold the current channel CSK').to.equal(true)
+      return sendMessage(sbp, `After removing the second CSK ${userId}`)
+    })
+    cy.giChatRoomHasMessage(ids.channel, `After removing the second CSK ${userId}`)
   })
 
   it('a leave that does not remove the member\'s key still rotates the keys, without logging in again', () => {
@@ -365,14 +458,14 @@ describe('Private channels - former members lose access', () => {
     cy.window().its('sbp').then(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
       ids.user2CSK = currentKeys(sbp('state/vuex/state')[ids.user2]).csk
-      rotatedKeys = currentKeys(state)
+      channelKeys = currentKeys(state)
       return sbp('chelonia/out/actionEncrypted', {
         contractID: ids.channel,
         contractName: 'gi.contracts/chatroom',
         action: 'gi.contracts/chatroom/leave',
         data: { memberID: ids.user2 },
-        signingKeyId: rotatedKeys.csk,
-        encryptionKeyId: currentKeyByName(state, 'group-cek')?.id || rotatedKeys.cek
+        signingKeyId: channelKeys.csk,
+        encryptionKeyId: currentKeyByName(state, 'group-cek')?.id || channelKeys.cek
       })
     })
     // The keys are rotated, and user2's key is removed (before the last
@@ -380,21 +473,18 @@ describe('Private channels - former members lose access', () => {
     cy.giChatRoomCheck(ids.channel, (state) => {
       const key = state._vm.authorizedKeys[ids.user2CSK]
       return state.members[ids.user2]?.hasLeft === true &&
-        currentKeys(state).cek !== rotatedKeys.cek &&
+        currentKeys(state).cek !== channelKeys.cek &&
         key?._notAfterHeight != null && key._notAfterHeight < currentKeysValidFrom(state)
     })
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
   })
 
   it('a member re-added directly is removed while we are online, and the keys are rotated', () => {
     // user2 is removed through the group, so that it doesn't list them
-    cy.window().its('sbp').then(sbp => {
-      const record = sbp('state/vuex/state')[ids.group].chatRooms[ids.channel].members[ids.user2]
-      return sbp('gi.actions/group/leaveChatRoom', {
-        contractID: ids.group,
-        data: { chatRoomID: ids.channel, memberID: ids.user2, joinedHeight: record.joinedHeight }
-      })
-    })
+    cy.window().its('sbp').then(sbp => sbp('gi.actions/group/leaveChatRoom', {
+      contractID: ids.group,
+      data: { chatRoomID: ids.channel, memberID: ids.user2 }
+    }))
     cy.giEmptyInvocationQueue()
     cy.window().its('sbp').should(sbp => {
       const record = sbp('state/vuex/state')[ids.group].chatRooms[ids.channel]
@@ -407,42 +497,31 @@ describe('Private channels - former members lose access', () => {
     // channel state.
     cy.window().its('sbp').then(sbp => {
       const state = sbp('state/vuex/state')
-      rotatedKeys = currentKeys(state[ids.channel])
+      channelKeys = currentKeys(state[ids.channel])
       return sbp('chelonia/out/atomic', {
         contractID: ids.channel,
         contractName: 'gi.contracts/chatroom',
-        signingKeyId: rotatedKeys.csk,
+        signingKeyId: channelKeys.csk,
         data: [
-          ['chelonia/out/keyAdd', {
-            data: [{
-              foreignKey: `shelter:${ids.user2}?keyName=csk`,
-              id: ids.user2CSK,
-              data: state[ids.user2]._vm.authorizedKeys[ids.user2CSK].data,
-              permissions: [AE_INNER],
-              allowedActions: '*',
-              purpose: ['sig'],
-              ringLevel: Number.MAX_SAFE_INTEGER,
-              name: `${ids.user2}/${ids.user2CSK}`
-            }]
-          }],
+          ['chelonia/out/keyAdd', { data: [memberKey(sbp, ids.user2)] }],
           ['chelonia/out/actionEncrypted', {
             action: 'gi.contracts/chatroom/join',
             data: { memberID: ids.user2 },
-            signingKeyId: rotatedKeys.csk,
+            signingKeyId: channelKeys.csk,
             innerSigningKeyId: currentKeys(state[ids.user1]).csk,
-            encryptionKeyId: rotatedKeys.cek
+            encryptionKeyId: channelKeys.cek
           }]
         ]
       })
     })
 
     cy.giChatRoomCheck(ids.channel, (state) => {
-      return state.members[ids.user2]?.hasLeft === true && currentKeys(state).cek !== rotatedKeys.cek
+      return state.members[ids.user2]?.hasLeft === true && currentKeys(state).cek !== channelKeys.cek
     })
-    cy.giEmptyInvocationQueue()
+    cy.giChatRoomSettled(ids.channel)
     cy.window().its('sbp').then(sbp => {
       const state = sbp('state/vuex/state')[ids.channel]
-      rotatedKeys = currentKeys(state)
+      channelKeys = currentKeys(state)
       // Only the keys that the channel was created with and the keys of its
       // members remain
       const keyNames = Object.values(state._vm.authorizedKeys)
@@ -453,11 +532,80 @@ describe('Private channels - former members lose access', () => {
     })
   })
 
+  it('a key that Chelonia cannot remove does not stop the keys from being rotated when a member leaves', () => {
+    // user2 is added back through the group
+    cy.window().its('sbp').then(sbp => sbp('gi.actions/group/joinChatRoom', {
+      contractID: ids.group,
+      data: { chatRoomID: ids.channel, memberID: ids.user2 }
+    }))
+    cy.giChatRoomCheck(ids.channel, (state) => state?.members?.[ids.user2] && !state.members[ids.user2].hasLeft)
+
+    // A member holding the channel CSK can add a foreign key that doesn't name
+    // a key. Chelonia accepts it, but rejects messages that remove it, so a
+    // rotation (or a leave) that removed it could never be sent. This one
+    // points to user2, so that it's among the keys of user2's that a leave
+    // would remove.
+    cy.window().its('sbp').then(sbp => {
+      const { id, data } = publicKeyOf(sbp, ids.user2, 'pek')
+      ids.unremovableKey = id
+      channelKeys = currentKeys(sbp('state/vuex/state')[ids.channel])
+      return sbp('chelonia/out/keyAdd', {
+        contractID: ids.channel,
+        contractName: 'gi.contracts/chatroom',
+        data: [{
+          id,
+          name: 'x-unremovable',
+          foreignKey: `shelter:${ids.user2}`,
+          data,
+          permissions: [AE_INNER],
+          allowedActions: '*',
+          purpose: ['sig'],
+          ringLevel: Number.MAX_SAFE_INTEGER
+        }],
+        signingKeyId: channelKeys.csk
+      })
+    })
+    cy.giChatRoomCheck(ids.channel, (state) => {
+      const key = state._vm.authorizedKeys[ids.unremovableKey]
+      return !!key && key._notAfterHeight == null
+    })
+    // Rotating can't remove it, so it's only reported
+    cy.giChatRoomSettled(ids.channel)
+    cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, (state) => {
+      expect(currentKeys(state), 'the keys were not rotated').to.deep.equal(channelKeys)
+    }))
+
+    // user2 is removed through the group
+    cy.window().its('sbp').then(sbp => sbp('gi.actions/group/leaveChatRoom', {
+      contractID: ids.group,
+      data: { chatRoomID: ids.channel, memberID: ids.user2 }
+    }))
+    cy.giChatRoomCheck(ids.channel, (state) => {
+      return state.members[ids.user2]?.hasLeft === true &&
+        state._vm.authorizedKeys[ids.user2CSK]?._notAfterHeight != null &&
+        currentKeys(state).cek !== channelKeys.cek
+    })
+    cy.giChatRoomSettled(ids.channel)
+    cy.window().its('sbp').then(sbp => readChatRoom(sbp, ids.channel, (state) => {
+      expect(state._vm.authorizedKeys[ids.unremovableKey]._notAfterHeight, 'the key that cannot be removed is kept').to.equal(undefined)
+      // Rotated once: the key that can't be removed doesn't make the keys
+      // need rotating again
+      const previousHeight = state._vm.authorizedKeys[channelKeys.cek]._notBeforeHeight
+      expect(
+        Object.values(state._vm.authorizedKeys).filter((key) => key.name === 'cek' && key._notBeforeHeight > previousHeight),
+        'the keys were rotated once'
+      ).to.have.length(1)
+      channelKeys = currentKeys(state)
+      return sendMessage(sbp, `After removing user2 again ${userId}`)
+    }))
+    cy.giChatRoomHasMessage(ids.channel, `After removing user2 again ${userId}`)
+  })
+
   it('user2 does not have the new channel keys', () => {
     cy.giSwitchUser(user2)
 
     cy.window().its('sbp').then(async sbp => {
-      expect(await sbp('chelonia/haveSecretKey', rotatedKeys.cek), 'user2 does not have the new channel key').to.equal(false)
+      expect(await sbp('chelonia/haveSecretKey', channelKeys.cek), 'user2 does not have the new channel key').to.equal(false)
     })
     cy.giLogout({ bypassUI: true })
   })

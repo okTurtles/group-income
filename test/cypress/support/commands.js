@@ -99,13 +99,16 @@ const cySbpCheckCommand = (name, customCheckFn) => {
         }
 
         const check = () => {
-          if (resolved || pending) return
+          if (resolved) return
+          // Checked before the pending guard, so that a check that never
+          // settles doesn't keep the listeners and the interval alive
           if (Date.now() > deadline) {
             console.warn(`[cypress] SBP Check ${name} timed out`)
             resolved = true
             cleanup()
             return
           }
+          if (pending) return
           const result = customCheckFn(sbp, ...params)
           if (typeof result?.then !== 'function') {
             done(result)
@@ -237,6 +240,21 @@ cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
 })
 
 cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => readChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
+
+// Waits for the service worker to be done with a chatroom: the membership
+// check that runs 1 s after the chatroom's last event (see
+// `frontend/controller/actions/chatroom.js`), and what it publishes or queues.
+// Use it before checking that something did *not* happen. Unlike
+// `giEmptyInvocationQueue`, which only sees the tab's queues, this waits for
+// Chelonia's queues, which are in the service worker.
+Cypress.Commands.add('giChatRoomSettled', (chatRoomID) => {
+  // eslint-disable-next-line cypress/no-unnecessary-waiting
+  cy.wait(2000)
+  cy.window().its('sbp').then(async sbp => {
+    await sbp('chelonia/contract/waitPublish', chatRoomID)
+    await sbp('chelonia/contract/wait', chatRoomID)
+  })
+})
 
 cySbpCheckCommand('giChatRoomHasMessage', (sbp, chatRoomID, text) => {
   const messages = sbp('state/vuex/state')[chatRoomID]?.messages || []

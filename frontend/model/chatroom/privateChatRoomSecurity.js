@@ -19,6 +19,21 @@ const parseForeignKey = (key: Object): ?{ contractID: string, keyName: ?string }
   }
 }
 
+// Whether Chelonia can remove `key` with `OP_KEY_DEL`. Removing a foreign key
+// that doesn't name both a contract and a key throws while the removal is
+// processed, which makes the whole message invalid (including a key rotation
+// that the removal is part of). `OP_KEY_ADD` doesn't check this, so a member
+// holding the chatroom CSK can add such a key. This mirrors Chelonia's checks.
+export const isRemovableKey = (key: ?Object): boolean => {
+  if (!key?.foreignKey) return true
+  try {
+    const url = new URL(String(key.foreignKey))
+    return !!url.pathname && !!url.searchParams.get('keyName')
+  } catch (e) {
+    return false
+  }
+}
+
 // The member that `key` belongs to, if it's the kind of key that members add
 // to the chatroom when joining: a foreign key of their identity contract, named
 // `${memberID}/…`
@@ -40,9 +55,6 @@ const formerMemberIDs = (state: ?Object): string[] => {
     .filter((memberID) => !members[memberID] || members[memberID].hasLeft === true)
 }
 
-// Whether `key` is the key that `memberID` added to the chatroom when joining
-const isKeyOfMember = (key: Object, memberID: string): boolean => memberKeyOwner(key) === memberID
-
 // The height at which the current chatroom keys became valid: the earliest of
 // the CEK's and the CSK's, as they're rotated together. It's 0 if a key or its
 // height is missing (`Math.min` then returns `NaN`). That errs on the side of
@@ -60,26 +72,35 @@ export function currentKeysHeight (state: ?Object, CEKid: ?string, CSKid: ?strin
 // it hasn't been removed yet, or if it was removed at or after `height`.
 // "At" matters: a key removed in the same message that rotated the keys (e.g.,
 // a leave that includes the leaver's own rotation) still counts.
+// Keys that can't be removed (see `isRemovableKey`) don't count: rotating
+// can't change that they're current, so counting them would rotate the keys
+// again and again, and former members don't get the new keys anyway.
+// This runs for every chatroom event, so each key is looked at only once.
 export function formerMembersWithCurrentKeys (state: ?Object, height: number): string[] {
-  const keys: Object[] = (Object.values(state?._vm?.authorizedKeys || {}): any)
-  return formerMemberIDs(state).filter((memberID) => keys.some((key) =>
-    isKeyOfMember(key, memberID) &&
-    (key._notAfterHeight == null || key._notAfterHeight >= height)
-  ))
+  const formerMembers = new Set(formerMemberIDs(state))
+  const owners: Set<string> = new Set()
+  for (const key of (Object.values(state?._vm?.authorizedKeys || {}): any)) {
+    if (key._notAfterHeight != null && key._notAfterHeight < height) continue
+    const owner = memberKeyOwner(key)
+    if (owner && formerMembers.has(owner) && isRemovableKey(key)) owners.add(owner)
+  }
+  return [...owners]
 }
 
 // IDs of former members' keys that haven't been removed from the chatroom.
 // These must be removed before rotating the chatroom keys (in a separate
 // message, see `formerMembersWithCurrentKeys`); otherwise, their former owners
 // would still be considered to hold the current keys after the rotation, and
-// the keys would be rotated again.
+// the keys would be rotated again. Keys that can't be removed aren't included
+// (see `isRemovableKey`).
 export function formerMemberKeyIdsToRemove (state: ?Object): string[] {
   const authorizedKeys = state?._vm?.authorizedKeys || {}
-  const formerMembers = formerMemberIDs(state)
+  const formerMembers = new Set(formerMemberIDs(state))
   return Object.keys(authorizedKeys).filter((keyId) => {
     const key = authorizedKeys[keyId]
-    return key._notAfterHeight == null &&
-      formerMembers.some((memberID) => isKeyOfMember(key, memberID))
+    if (key._notAfterHeight != null) return false
+    const owner = memberKeyOwner(key)
+    return !!owner && formerMembers.has(owner) && isRemovableKey(key)
   })
 }
 
@@ -255,6 +276,8 @@ const chatRoomKeyRole = (state: Object, groupID: string, key: Object, checkForei
   return isLegacyKeyName(name) ? 'legacy' : undefined
 }
 
+export type ClassifiedChatRoomKeys = { kept: { [name: string]: string }, unexpected: string[], unknown: string[] }
+
 // Sorts the current keys of one of our private group chatrooms:
 //  - `kept`: for each of the chatroom's own keys and the group's keys, the one
 //    current key with that name (others with the same name are unexpected).
@@ -267,13 +290,16 @@ const chatRoomKeyRole = (state: Object, groupID: string, key: Object, checkForei
 //  - `unexpected`: keys that no legitimate operation adds (e.g., a key that a
 //    member added while holding the chatroom CSK, to keep access after leaving)
 //  - `unknown`: keys that older versions added, own keys kept without the
-//    expected shape, and foreign keys that we can't check yet (see
-//    `matchesForeignContract`), which are only reported
+//    expected shape, foreign keys that we can't check yet (see
+//    `matchesForeignContract`), and keys that would be unexpected but that
+//    Chelonia can't remove (see `isRemovableKey`), which are only reported.
+//    Asking to remove one would make the message invalid, so a rotation that
+//    removed it could never be sent.
 // Nothing is returned for chatrooms that aren't our private group chatrooms.
 export function classifyChatRoomKeys (
   state: ?Object, ourIdentityContractID: string, groupID: string, chatRoomID: string,
   haveSecretKey: (keyId: string) => boolean
-): { kept: { [name: string]: string }, unexpected: string[], unknown: string[] } {
+): ClassifiedChatRoomKeys {
   const result = { kept: {}, unexpected: [], unknown: [] }
   if (!state || !isOurPrivateGroupChatRoom(state, ourIdentityContractID, groupID, chatRoomID)) return result
   const keys: Object[] = (Object.values(state[chatRoomID]._vm.authorizedKeys || {}): any)
@@ -284,7 +310,7 @@ export function classifyChatRoomKeys (
   for (const name of UNIQUE_KEY_NAMES) {
     const withName = keys.filter((key) => key.name === name)
     const withRole = withName.filter((key) => roles.get(key))
-    const candidates = withRole.length || GROUP_KEYS[name] ? withRole : withName
+    const candidates = (withRole.length || GROUP_KEYS[name]) ? withRole : withName
     const kept = (
       (GROUP_KEYS[name] && candidates.find((key) => {
         const groupKey = groupKeys[key.id]
@@ -298,12 +324,11 @@ export function classifyChatRoomKeys (
 
   for (const key of keys) {
     const role = roles.get(key)
-    if (UNIQUE_KEY_NAMES.includes(key.name) && result.kept[key.name] !== key.id) {
-      result.unexpected.push(key.id)
-    } else if (role === 'legacy' || role === 'unverified' || (!role && UNIQUE_KEY_NAMES.includes(key.name))) {
+    const isUniqueName = UNIQUE_KEY_NAMES.includes(key.name)
+    if (isUniqueName ? result.kept[key.name] !== key.id : !role) {
+      (isRemovableKey(key) ? result.unexpected : result.unknown).push(key.id)
+    } else if (role === 'legacy' || role === 'unverified' || !role) {
       result.unknown.push(key.id)
-    } else if (!role) {
-      result.unexpected.push(key.id)
     }
   }
   return result
@@ -327,15 +352,36 @@ export function unexpectedKeysRemovedSince (state: ?Object, groupID: string, cha
   ).map((key) => key.id)
 }
 
+// Keys that can't be removed (see `isRemovableKey`), have the name of a key
+// that rotations replace (the CEK or the CSK), and aren't the one kept (see
+// `classifyChatRoomKeys`). The keys mustn't be rotated while there are any:
+// rotating adds the new key after them, and Chelonia's lookups by name return
+// the first current key with a name, so they'd be used instead of the new key
+// from then on (for example, to encrypt messages to a key that only whoever
+// added it holds, or to sign messages with a key that nobody holds).
+export function keysBlockingRotation (state: ?Object, chatRoomID: string, classified: ClassifiedChatRoomKeys): string[] {
+  const keys = state?.[chatRoomID]?._vm?.authorizedKeys || {}
+  return classified.unknown.filter((keyId) => {
+    const name = keys[keyId]?.name
+    return ['cek', 'csk'].includes(name) && classified.kept[name] !== keyId && !isRemovableKey(keys[keyId])
+  })
+}
+
 // Whether the keys of one of our private group chatrooms must be rotated:
 // former members still hold them, or someone may have used a key that no
-// legitimate operation adds while they were valid
+// legitimate operation adds while they were valid. Not while some key blocks
+// rotations (see `keysBlockingRotation`), as rotating would only make things
+// worse. `classified`, if given, is what `classifyChatRoomKeys` returns for the
+// same state (so that callers that need it as well don't classify the keys
+// twice).
 export function chatRoomKeysNeedRotation (
   state: ?Object, ourIdentityContractID: string, groupID: string, chatRoomID: string,
-  haveSecretKey: (keyId: string) => boolean
+  haveSecretKey: (keyId: string) => boolean, classified?: ClassifiedChatRoomKeys
 ): boolean {
   if (!state || !isOurPrivateGroupChatRoom(state, ourIdentityContractID, groupID, chatRoomID)) return false
-  const { kept, unexpected } = classifyChatRoomKeys(state, ourIdentityContractID, groupID, chatRoomID, haveSecretKey)
+  const classifiedKeys = classified || classifyChatRoomKeys(state, ourIdentityContractID, groupID, chatRoomID, haveSecretKey)
+  if (keysBlockingRotation(state, chatRoomID, classifiedKeys).length) return false
+  const { kept, unexpected } = classifiedKeys
   const height = currentKeysHeight(state[chatRoomID], kept.cek, kept.csk)
   return unexpected.length > 0 ||
     formerMembersWithCurrentKeys(state[chatRoomID], height).length > 0 ||

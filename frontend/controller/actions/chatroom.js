@@ -3,7 +3,7 @@ import sbp from '@sbp/sbp'
 
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { GIErrorUIRuntimeError, L } from '@common/common.js'
-import { CHELONIA_KV_STATUS_CHANGED, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
+import { CHELONIA_KV_STATUS_CHANGED, CONTRACTS_MODIFIED, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { CHATROOM_TYPES, MESSAGE_RECEIVE_RAW, MESSAGE_TYPES, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import { KV_KEYS, KV_LOAD_STATUS } from '~/frontend/utils/constants.js'
@@ -14,7 +14,9 @@ import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@cheloni
 import type { GIRegParams } from './types.js'
 import { actionInnerSigningContractID, encryptedAction, encryptedNotification } from './utils.js'
 import { makeMentionFromUserID } from '@model/chatroom/utils.js'
-import { chatRoomKeysNeedRotation, classifyChatRoomKeys, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, groupIDForChatRoom, isKeyRequestFromRemovedMember, isOurPrivateGroupChatRoom, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck } from '@model/chatroom/privateChatRoomSecurity.js'
+import type { ClassifiedChatRoomKeys } from '@model/chatroom/privateChatRoomSecurity.js'
+import { chatRoomKeysNeedRotation, classifyChatRoomKeys, currentKeysHeight, formerMemberKeyIdsToRemove, formerMembersWithCurrentKeys, groupIDForChatRoom, isKeyRequestFromRemovedMember, isOurPrivateGroupChatRoom, isRemovableKey, keysBlockingRotation, ourPrivateGroupChatRoomMembersToRemove, privateGroupChatRoomsToCheck, unexpectedKeysRemovedSince } from '@model/chatroom/privateChatRoomSecurity.js'
+import { retry } from '@utils/retry.js'
 import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.js'
 import { CHATROOM_PRIVACY_LEVEL } from '../../model/contracts/shared/constants.js'
@@ -107,6 +109,8 @@ const findAndRequestMissingChatroomKeys = debounce(() => {
   }
 }, 200)
 
+const haveSecretKeyById = (keyId: string): boolean => sbp('chelonia/haveSecretKey', keyId)
+
 // The key that 'gi.actions/chatroom/leave' signs with in a group chatroom: the
 // chatroom's `group-csk` if we have it, and otherwise its CSK. Using the
 // `group-csk` lets group members manage chatroom membership even when they
@@ -127,22 +131,38 @@ const syncGroup = async (groupID: string) => {
   }
 }
 
-// Keys that `classifyChatRoomKeys` can only report, reported once per session
+// Keys that `classifyChatRoomKeys` can only report, reported once per session.
+// Most are expected in older chatrooms, or only mean that our copy of another
+// contract is behind. Keys that Chelonia can't remove aren't: no legitimate
+// operation adds them, and they stay until Chelonia can remove them.
 const reportedUnknownChatRoomKeys: Set<string> = new Set()
-const reportUnknownChatRoomKeys = (groupID: string, chatRoomID: string, keyIds: string[]) => {
-  const toReport = keyIds.filter((keyId) => !reportedUnknownChatRoomKeys.has(`${chatRoomID}|${keyId}`))
+const reportUnknownChatRoomKeys = (groupID: string, chatRoomID: string, classified: ClassifiedChatRoomKeys) => {
+  const toReport = classified.unknown.filter((keyId) => !reportedUnknownChatRoomKeys.has(`${chatRoomID}|${keyId}`))
   if (!toReport.length) return
   toReport.forEach((keyId) => reportedUnknownChatRoomKeys.add(`${chatRoomID}|${keyId}`))
-  const keys = sbp('chelonia/contract/state', chatRoomID)?._vm?.authorizedKeys || {}
-  console.error('[enforceChatRoomMembership] Chatroom keys of unknown kinds found, which are kept', {
-    groupID,
-    chatRoomID,
-    keys: toReport.map((keyId) => {
-      const { name, ringLevel, purpose, permissions, allowedActions, foreignKey } = keys[keyId] || {}
-      return { keyId, name, ringLevel, purpose, permissions, allowedActions, foreignKey }
+  const rootState = sbp('chelonia/rootState')
+  const keys = rootState[chatRoomID]?._vm?.authorizedKeys || {}
+  const blockingRotation = keysBlockingRotation(rootState, chatRoomID, classified)
+  const describe = (keyId: string) => {
+    const { name, ringLevel, purpose, permissions, allowedActions, foreignKey } = keys[keyId] || {}
+    return { keyId, name, ringLevel, purpose, permissions, allowedActions, foreignKey, blocksRotation: blockingRotation.includes(keyId) }
+  }
+  const unremovable = toReport.filter((keyId) => keys[keyId] && !isRemovableKey(keys[keyId]))
+  const others = toReport.filter((keyId) => !unremovable.includes(keyId))
+  if (unremovable.length) {
+    console.error('[enforceChatRoomMembership] Keeping chatroom keys that Chelonia cannot remove', {
+      groupID, chatRoomID, keys: unremovable.map(describe)
     })
-  })
+  }
+  if (others.length) {
+    console.warn('[enforceChatRoomMembership] Keeping chatroom keys of unknown kinds', {
+      groupID, chatRoomID, keys: others.map(describe)
+    })
+  }
 }
+
+// Removing keys before rotating is attempted twice, this long apart
+const KEY_REMOVAL_RETRY_DELAY = 2000
 
 // Membership of private group chatrooms is managed through the group, and
 // former members must not keep access to a chatroom. For a single chatroom,
@@ -191,6 +211,10 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
     // chatroom's `group-csk` (or its CSK), which is also what's done when a
     // member leaves the group. Their key is removed in the same message, and
     // processing the leave action rotates the chatroom keys.
+    // 'gi.actions/chatroom/leave' picks the same signing key for group
+    // chatrooms, but passing it is still needed: the key that it otherwise
+    // checks first is the first current one named `csk`, which may be a key
+    // that someone added and that we don't hold (see below).
     await Promise.all(toRemove.map((memberID) => {
       return sbp('gi.actions/chatroom/leave', {
         contractID: chatRoomID,
@@ -218,43 +242,77 @@ const enforceChatRoomMembership = async (identityContractID: string, groupID: st
   if (!isStillOurPrivateGroupChatRoom()) return
   const rootState = sbp('chelonia/rootState')
   const state = rootState[chatRoomID]
-  const haveSecretKey = (keyId: string) => sbp('chelonia/haveSecretKey', keyId)
-  reportUnknownChatRoomKeys(groupID, chatRoomID, classifyChatRoomKeys(rootState, identityContractID, groupID, chatRoomID, haveSecretKey).unknown)
-  const CEKid = sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
-  const CSKid = sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+  const classified = classifyChatRoomKeys(rootState, identityContractID, groupID, chatRoomID, haveSecretKeyById)
+  reportUnknownChatRoomKeys(groupID, chatRoomID, classified)
+  // The keys that the classification keeps, rather than the first current
+  // keys with their names, which is what Chelonia's lookups by name return:
+  // anyone holding the chatroom CSK can add keys with the same names, which
+  // nobody else may hold, and which can come first.
+  const CEKid = classified.kept.cek
+  const CSKid = classified.kept.csk && haveSecretKeyById(classified.kept.csk) ? classified.kept.csk : undefined
   if (!CEKid || !CSKid) {
     console.info('[enforceChatRoomMembership] Skipping chatroom key rotation: no suitable keys found', { groupID, chatRoomID, hasCEK: !!CEKid, hasCSK: !!CSKid })
     return
   }
-  if (!chatRoomKeysNeedRotation(rootState, identityContractID, groupID, chatRoomID, haveSecretKey)) return
-  // Former members' keys that were never removed would make them count as
-  // holding the current keys even after rotating, so they're removed first,
-  // in a separate message (see `formerMembersWithCurrentKeys`). Because both
-  // operations go through the same publishing queue, the removal always
-  // happens before the rotation. Other unexpected keys are removed by the
-  // rotation itself (see 'gi.actions/chatroom/shareNewKeys').
+  if (!chatRoomKeysNeedRotation(rootState, identityContractID, groupID, chatRoomID, haveSecretKeyById, classified)) return
+  // Some keys are removed first, in a separate message:
+  //  - Former members' keys that were never removed: otherwise, they'd count
+  //    as holding the current keys even after rotating (see
+  //    `formerMembersWithCurrentKeys`).
+  //  - Other keys named like the keys being rotated: rotating works with the
+  //    lookups by name, which can return them instead of the keys kept, in
+  //    which case the rotation would leave out our keys.
+  // The removal is awaited, so that it comes before the rotation in the
+  // chatroom (a message's height is set once the server accepts it). If it
+  // still fails after retrying, the keys are rotated anyway, rather than
+  // waiting for the next check: the rotation removes the other unexpected
+  // keys as well (see 'gi.actions/chatroom/shareNewKeys'), and another
+  // rotation follows once former members' keys are removed.
   const staleKeyIds = formerMemberKeyIdsToRemove(state)
-  if (staleKeyIds.length) {
-    await sbp('chelonia/out/keyDel', {
+  const duplicateKeyIds = classified.unexpected.filter((keyId) => ['cek', 'csk'].includes(state._vm.authorizedKeys[keyId]?.name))
+  if (staleKeyIds.length || duplicateKeyIds.length) {
+    const removed = await retry(() => sbp('chelonia/out/keyDel', {
       contractID: chatRoomID,
       contractName: 'gi.contracts/chatroom',
-      data: staleKeyIds,
+      data: [...staleKeyIds, ...duplicateKeyIds],
       signingKeyId: CSKid,
       hooks: {
-        preSendCheck: (_, state) => formerMemberKeyIdsToRemove(state).some((id) => staleKeyIds.includes(id))
+        preSendCheck: (_, state) =>
+          formerMemberKeyIdsToRemove(state).some((id) => staleKeyIds.includes(id)) ||
+          duplicateKeyIds.some((id) => state._vm.authorizedKeys[id]?._notAfterHeight == null)
+      }
+    }), {
+      attempts: 2,
+      delayMs: KEY_REMOVAL_RETRY_DELAY,
+      onRetry: (e) => {
+        console.warn('[enforceChatRoomMembership] Error removing chatroom keys before rotating; trying again', { groupID, chatRoomID, staleKeyIds, duplicateKeyIds }, e)
       }
     }).then((message) => {
       if (message) {
-        console.warn('[enforceChatRoomMembership] Removed keys of former chatroom members', { groupID, chatRoomID, staleKeyIds })
+        console.warn('[enforceChatRoomMembership] Removed chatroom keys before rotating', { groupID, chatRoomID, staleKeyIds, duplicateKeyIds })
       }
-    }).catch((e) => {
-      console.error('[enforceChatRoomMembership] Error removing keys of former chatroom members', { groupID, chatRoomID }, e)
+      return true
+    }, (e) => {
+      console.error('[enforceChatRoomMembership] Error removing chatroom keys before rotating', { groupID, chatRoomID, staleKeyIds, duplicateKeyIds }, e)
+      return false
     })
+    if (removed && duplicateKeyIds.length) {
+      // So that the lookups by name no longer return them
+      await sbp('chelonia/contract/sync', chatRoomID)
+    }
   }
   // This is also the case for a short while after a member leaves, until the
   // rotation triggered by processing the leave action is done. Rotating here
   // as well is harmless, as only one rotation of the same keys gets sent.
-  console.info('[enforceChatRoomMembership] Requesting a chatroom key rotation: former members may hold the current keys', { groupID, chatRoomID })
+  const latestRootState = sbp('chelonia/rootState')
+  const height = currentKeysHeight(latestRootState[chatRoomID], CEKid, CSKid)
+  console.info('[enforceChatRoomMembership] Requesting a chatroom key rotation: former members may hold the current keys, or keys that no legitimate operation adds are or were current', {
+    groupID,
+    chatRoomID,
+    formerMembersWithCurrentKeys: formerMembersWithCurrentKeys(latestRootState[chatRoomID], height),
+    unexpectedKeyIds: classified.unexpected,
+    unexpectedKeysRemovedSince: unexpectedKeysRemovedSince(latestRootState, groupID, chatRoomID, height)
+  })
   await sbp('chelonia/contract/setPendingKeyRevocation', chatRoomID, ['cek', 'csk'], [CEKid, CSKid])
   await sbp('gi.actions/out/rotateKeys', chatRoomID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys')
 }
@@ -290,11 +348,14 @@ const runEnforceChatRoomMembership = (identityContractID: string, groupID: strin
   return run.promise
 }
 
-// Besides the migration in `state/vuex/postUpgradeVerification` (which covers
-// existing state and newly synced contracts), private group chatrooms are
-// checked when their events are processed, so that problems are handled right
-// away rather than on the next login. The check here is cheap; the delay lets
-// in-progress operations (like a member leaving) finish first. It handles:
+// Private group chatrooms are checked when we log in (see the migration in
+// `state/vuex/postUpgradeVerification`), when they or their groups are synced
+// later on (see the `CONTRACTS_MODIFIED` handler below), and when their events
+// are processed, so that problems are handled right away rather than on the
+// next login. The check here runs for every chatroom event, including every
+// message of a catch-up sync, so it only looks at each key a few times; the
+// delay lets in-progress operations (like a member leaving) finish first. It
+// handles:
 //  - members that the chatroom lists but the group doesn't (e.g., who joined
 //    the chatroom without going through the group), who are removed;
 //  - otherwise, chatroom keys that need rotating (see
@@ -312,13 +373,21 @@ const runEnforceChatRoomMembership = (identityContractID: string, groupID: strin
 // chatroom event. That record is cleared by the first event that shows nothing
 // to do, even while a check is pending, so that a member who re-joins later is
 // checked again. Checks are also skipped while we don't have the key that they
-// need (to sign removals, or the CSK to rotate); the first event after the key
+// need (to sign removals, or a CSK to rotate); the first event after the key
 // arrives triggers one.
 const MEMBERSHIP_RECHECK_MS = 5 * MINS_MILLIS
 const membershipCheckTimers: Map<string, TimeoutID> = new Map()
 // chatRoomID -> what was last checked (the members to remove, or the keys to
 // rotate), and when
 const lastMembershipChecks: Map<string, { subject: string, at: number }> = new Map()
+// Whether we hold any current key named `name`. Unlike Chelonia's lookups by
+// name, which only look at the first current key with a name, this can't be
+// thrown off by someone adding another key with the same name.
+const holdsCurrentKeyNamed = (state: Object, name: string): boolean => {
+  return Object.values(state?._vm?.authorizedKeys || {}).some((key: Object) => {
+    return key.name === name && key._notAfterHeight == null && haveSecretKeyById(key.id)
+  })
+}
 sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   const rootState = sbp('chelonia/rootState')
   if (rootState.contracts?.[contractID]?.type !== 'gi.contracts/chatroom') return
@@ -328,7 +397,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   if (!groupID) return
   const toRemove = ourPrivateGroupChatRoomMembersToRemove(rootState, identityContractID, groupID, contractID)
   const rotate = !toRemove.length &&
-    chatRoomKeysNeedRotation(rootState, identityContractID, groupID, contractID, (keyId) => sbp('chelonia/haveSecretKey', keyId))
+    chatRoomKeysNeedRotation(rootState, identityContractID, groupID, contractID, haveSecretKeyById)
   if (!toRemove.length && !rotate) {
     lastMembershipChecks.delete(contractID)
     return
@@ -336,7 +405,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   // A check is already scheduled; it will use the state at the time it runs
   if (membershipCheckTimers.has(contractID)) return
   const state = rootState[contractID]
-  if (rotate ? !sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true) : !groupChatRoomLeaveSigningKeyId(state)) return
+  if (rotate ? !holdsCurrentKeyNamed(state, 'csk') : !groupChatRoomLeaveSigningKeyId(state)) return
   const subject = rotate
     ? `rotate:${sbp('chelonia/contract/currentKeyIdByName', state, 'cek')}`
     : [...toRemove].sort().join(',')
@@ -349,6 +418,23 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
   }, 1000))
 })
 
+// Contracts synced during a session (for example, after logging in on a new
+// device, or after joining a group) are checked once they're ready, like those
+// that we have when logging in
+const MEMBERSHIP_CHECKED_CONTRACT_TYPES = ['gi.contracts/group', 'gi.contracts/chatroom']
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }: { added: string[] }) => {
+  if (!added?.length) return
+  sbp('chelonia/contract/wait', added).then(() => {
+    const rootState = sbp('chelonia/rootState')
+    if (!rootState.loggedIn?.identityContractID) return
+    const contractIDs = added.filter((contractID) => MEMBERSHIP_CHECKED_CONTRACT_TYPES.includes(rootState.contracts?.[contractID]?.type))
+    if (!contractIDs.length) return
+    return sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDs)
+  }).catch((e) => {
+    console.error('[chatroom] Error checking the private chatrooms of newly synced contracts', e)
+  })
+})
+
 // Chatroom members who are missing keys request them with a key request of
 // type 'missing', which the chatroom contract answers if the requester is a
 // member (see `_responseOptionsForKeyRequest`). In private group chatrooms,
@@ -359,6 +445,7 @@ sbp('okTurtles.events/on', EVENT_HANDLED, (contractID: string) => {
 // Someone re-added through the group while our copy of the group is behind is
 // declined too. Their request stays pending, and is answered by other members,
 // or by us when it's processed again (e.g., on another device).
+// Requests of other kinds are covered below.
 const keyRequestFilteredManifests: Set<string> = new Set()
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, ({ name, manifest }: { name: string, manifest: string }) => {
   if (name !== 'gi.contracts/chatroom' || keyRequestFilteredManifests.has(manifest)) return
@@ -375,6 +462,35 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, ({ name, manifest }: { name: str
     }
     return false
   })
+})
+
+// Chelonia answers key requests that aren't of a specific kind ('*', which is
+// also what `chelonia/out/keyRequest` sends if `request` isn't given) with
+// every shareable key, without asking the contract. Anyone in the group can
+// send one to any of its private chatrooms, signed with the chatroom's
+// `group-csk`, so answering them would give the chatroom keys to group members
+// who aren't (or are no longer) members of the chatroom. Chatrooms only ever
+// request keys of the 'missing' kind (see `findAndRequestMissingChatroomKeys`),
+// so private group chatrooms don't answer any other kind. Requests that aren't
+// of a specific kind are meant for invites, which only groups have; in private
+// group chatrooms, invite keys are among the keys that no legitimate operation
+// adds (see `classifyChatRoomKeys`). The request stays pending.
+sbp('sbp/filters/selector/add', 'chelonia/private/respondToKeyRequest', (domain, selector, [contractID, , hash]) => {
+  try {
+    const rootState = sbp('chelonia/rootState')
+    if (rootState.contracts?.[contractID]?.type !== 'gi.contracts/chatroom') return
+    const state = rootState[contractID]
+    const attributes = state?.attributes
+    if (attributes && (attributes.type !== CHATROOM_TYPES.GROUP || attributes.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE)) return
+    // `pendingKeyshares` entries are [encrypted, height, signingKeyId, context,
+    // request, ...], `context[0]` being whoever sent the request
+    const entry = state?._vm?.pendingKeyshares?.[hash]
+    if (!Array.isArray(entry) || entry[4] === 'missing') return
+    console.warn('[chatroom] Not answering a key request that is not for missing keys in a private group chatroom', { contractID, originatingContractID: entry[3]?.[0], request: entry[4] })
+  } catch (e) {
+    console.error('[chatroom] Error checking a key request; not answering it', { contractID }, e)
+  }
+  return false
 })
 
 function messageReceivedRawHandler ({ contractID, data, innerSigningContractID, newMessage }) {
@@ -661,32 +777,46 @@ export default (sbp('sbp/selectors/register', {
   // a former member who re-joined the chatroom directly) don't get the new keys
   // (`enforceChatRoomMembership` removes them), and keys that no legitimate
   // operation adds are removed in the same message as the rotation (see
-  // `classifyChatRoomKeys`).
+  // `classifyChatRoomKeys`). Rotations are refused while some key would take
+  // the place of the new keys (see `keysBlockingRotation`).
   'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Object, options: { lastAttempt?: boolean } = {}) => {
     const state = sbp('chelonia/contract/state', contractID)
-    const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
+    const rootState = sbp('chelonia/rootState')
 
-    const identityContractID = sbp('chelonia/rootState').loggedIn?.identityContractID
-    const groupID = identityContractID ? groupIDForChatRoom(sbp('chelonia/rootState'), identityContractID, contractID) : undefined
-    const membersNotInGroup = () => identityContractID && groupID
-      ? ourPrivateGroupChatRoomMembersToRemove(sbp('chelonia/rootState'), identityContractID, groupID, contractID)
+    const identityContractID = rootState.loggedIn?.identityContractID
+    const groupID = identityContractID ? groupIDForChatRoom(rootState, identityContractID, contractID) : undefined
+    // Our identity and the chatroom's group, if it's one of our group
+    // chatrooms. The checks below only apply to private ones (see
+    // `isOurPrivateGroupChatRoom`).
+    const ours = identityContractID && groupID ? { identityContractID, groupID } : undefined
+    const membersNotInGroup = () => ours
+      ? ourPrivateGroupChatRoomMembersToRemove(rootState, ours.identityContractID, ours.groupID, contractID)
       : []
-    if (groupID && membersNotInGroup().length) {
+    if (ours && membersNotInGroup().length) {
       // Membership is decided by the group, so we make sure that our view of
       // the group is up to date before leaving anyone out
-      await syncGroup(groupID).catch((e) => {
+      await syncGroup(ours.groupID).catch((e) => {
         if (!options.lastAttempt) throw e
         console.warn('[gi.actions/chatroom/shareNewKeys] Error syncing the group; rotating with the group state that we have', { contractID, groupID }, e)
       })
     }
     const notInGroup = membersNotInGroup()
-    const haveSecretKey = (keyId: string) => sbp('chelonia/haveSecretKey', keyId)
+    const classified = ours
+      ? classifyChatRoomKeys(rootState, ours.identityContractID, ours.groupID, contractID, haveSecretKeyById)
+      : undefined
+    const blockingKeyIds = classified ? keysBlockingRotation(rootState, contractID, classified) : []
+    if (blockingKeyIds.length) {
+      console.error('[gi.actions/chatroom/shareNewKeys] Refusing chatroom key rotation: chatroom keys that Chelonia cannot remove would be used instead of the new keys', { contractID, groupID, blockingKeyIds })
+      throw new Error('[chatroom] Refusing key rotation because of keys that cannot be removed')
+    }
+    // The keys kept by the classification in our private group chatrooms (see
+    // `enforceChatRoomMembership`), and otherwise the first current keys with
+    // these names
+    const mainCEKid = classified?.kept.cek || sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
     // $FlowFixMe[incompatible-use]
     const rotatedKeyIds = Object.values(newKeys).map(([oldKeyId]) => oldKeyId)
-    const unexpectedKeyIds = identityContractID && groupID
-      ? classifyChatRoomKeys(sbp('chelonia/rootState'), identityContractID, groupID, contractID, haveSecretKey).unexpected
-        .filter((keyId) => !rotatedKeyIds.includes(keyId))
-      : []
+    const unexpectedKeyIds = (classified?.unexpected || [])
+      .filter((keyId) => !rotatedKeyIds.includes(keyId) && isRemovableKey(state._vm.authorizedKeys[keyId]))
 
     // NOTE: The following code _prevents_ key rotations when no-one has left
     // The purpose of this is twofold:
@@ -706,7 +836,9 @@ export default (sbp('sbp/selectors/register', {
       // Check that it's the CEK that we're rotating
       if (state._volatile?.pendingKeyRevocations?.[mainCEKid]) {
         // Check that it's also the CSK that we're rotating
-        const mainCSKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
+        const mainCSKid = classified?.kept.csk && haveSecretKeyById(classified.kept.csk)
+          ? classified.kept.csk
+          : sbp('chelonia/contract/currentKeyIdByName', state, 'csk', true)
         if (mainCSKid && state._volatile.pendingKeyRevocations[mainCSKid]) {
           // Pick the height for the earliest rotation of the CEK or the CSK
           // For example, if the CEK was rotated last at height = 12 and
@@ -724,16 +856,16 @@ export default (sbp('sbp/selectors/register', {
           // In our private group chatrooms, it's also needed if someone that
           // the group doesn't list is a member, or if keys that no legitimate
           // operation adds are current or were used with the current keys.
-          const hasAnyoneLeftAfterLastRotation = notInGroup.length > 0 ||
+          const rotationNeeded = notInGroup.length > 0 ||
             formerMembersWithCurrentKeys(state, height).length > 0 ||
-            (identityContractID && groupID
-              ? chatRoomKeysNeedRotation(sbp('chelonia/rootState'), identityContractID, groupID, contractID, haveSecretKey)
+            (ours
+              ? chatRoomKeysNeedRotation(rootState, ours.identityContractID, ours.groupID, contractID, haveSecretKeyById, classified)
               : false)
-          if (!hasAnyoneLeftAfterLastRotation) {
+          if (!rotationNeeded) {
             delete state._volatile.pendingKeyRevocations[mainCEKid]
             delete state._volatile.pendingKeyRevocations[mainCSKid]
-            console.warn('NOTE: Refusing unnecessary chatroom key rotation because no-one has left', contractID, height)
-            throw new Error('[chatroom] Refusing key rotation because no-one has left')
+            console.warn('NOTE: Refusing unnecessary chatroom key rotation', contractID, height)
+            throw new Error('[chatroom] Refusing unnecessary key rotation')
           }
         }
       }
@@ -920,8 +1052,8 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   // Migration action to secure private group chatrooms (DMs are not affected)
-  // Called from postUpgradeVerification, for existing contracts and for
-  // contracts synced later on.
+  // Called from postUpgradeVerification for existing contracts, and from the
+  // `CONTRACTS_MODIFIED` handler above for contracts synced later on.
   // Removes members that a chatroom lists but its group doesn't (e.g., former
   // members who re-joined the chatroom directly, using keys that hadn't been
   // rotated), and rotates the chatroom keys if they need it (e.g., former
@@ -1050,12 +1182,16 @@ export default (sbp('sbp/selectors/register', {
     // the inner signer (no inner signature meaning no member).
     const userID = params.data.memberID ||
       actionInnerSigningContractID(params, params.contractID, sbp('chelonia/rootState'))
-    const keyIds = userID && await sbp('chelonia/contract/foreignKeysByContractID', params.contractID, userID)
 
     const state = sbp('chelonia/contract/state', params.contractID)
     if (!state?.attributes) {
       throw new Error(`[gi.actions/chatroom/leave] Cannot leave chatroom ${params.contractID}: contract state not available`)
     }
+    // Keys that Chelonia can't remove would make the whole message invalid,
+    // and anyone holding the chatroom CSK can add one pointing to any member
+    // (see `isRemovableKey`)
+    const keyIds = userID && (await sbp('chelonia/contract/foreignKeysByContractID', state, userID))
+      ?.filter((keyId) => isRemovableKey(state._vm?.authorizedKeys?.[keyId]))
     const isGroupChatroom = state.attributes.type === CHATROOM_TYPES.GROUP
 
     if (isGroupChatroom) {
