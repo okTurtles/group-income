@@ -819,7 +819,6 @@ export default ({
       return msg.from === prevMsg.from
     },
     setContractState (state) {
-      // sortMessages([])
       state.messages = sortMessages(state.messages)
       Vue.set(this.messageState, 'contract', state)
     },
@@ -955,7 +954,10 @@ export default ({
           revokeAttachmentURLs(attachments)
         }).catch((e) => {
           console.error('[ChatMain.vue] Error publishing a message', e)
-          if (!pendingMessageHash && putBackUnsentMessage()) return
+          if (!pendingMessageHash) {
+            if (!putBackUnsentMessage()) revokeAttachmentURLs(attachments)
+            return
+          }
           this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
         })
       }
@@ -1182,7 +1184,9 @@ export default ({
       if (this.latestHeight && !(this.ephemeral.currentHighestHeight >= this.latestHeight)) {
         const hash = this.$store.state.contracts[this.ephemeral.renderingChatRoomId]?.HEAD
         if (hash) {
-          this.scrollToMessage(hash, false)
+          this.scrollToMessage(hash, false).catch((e) => {
+            console.error('[ChatMain.vue] Error jumping to the latest message', e)
+          })
           return
         }
       }
@@ -1824,7 +1828,9 @@ export default ({
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
                 // Scroll-query to the latest message.
-                this.updateScroll()
+                this.updateScroll()?.catch((e) => {
+                  console.error('[ChatMain.vue] Error scrolling to the latest message', e)
+                })
               } else if (latestValidMessage) {
                 // If there are any temporary messages that do not exist in the
                 // contract, they should not be used for updateReadUntilMessageHash
