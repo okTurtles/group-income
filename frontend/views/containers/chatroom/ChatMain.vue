@@ -819,6 +819,7 @@ export default ({
       return msg.from === prevMsg.from
     },
     setContractState (state) {
+      // sortMessages([])
       state.messages = sortMessages(state.messages)
       Vue.set(this.messageState, 'contract', state)
     },
