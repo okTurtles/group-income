@@ -2,37 +2,41 @@
 page-section.c-section(
   :title='L("Roles and Permissions")'
 )
-  p.has-text-1.c-section-description
-    i18n(v-if='canViewOtherMembersPermissions') Here's a list of roles and permissions granted to your group members.
-    i18n(v-else) Below is the role and permissions granted to you.
+  template(v-if='userHasRole')
+    p.has-text-1.c-section-description
+      i18n(v-if='canViewOtherMembersPermissions') Here's a list of roles and permissions granted to your group members.
+      i18n(v-else) Below is the role and permissions granted to you.
 
-  table.table.table-in-card.c-permissions-table
-    thead
-      tr
-        // User and role columns are combined when the screen is not wide enough.
-        i18n.th-user-and-role-combined(v-if='ephemeral.isMobile' tag='th') User / Role
-        template(v-else)
-          i18n.th-user(tag='th') User
-          i18n.th-role(tag='th') Role
-        i18n.th-permissions(tag='th') Permissions
-        th.th-action(v-if='canDelegatePermissions' :aria-label='L("action")')
+    table.table.table-in-card.c-permissions-table
+      thead
+        tr
+          // User and role columns are combined when the screen is not wide enough.
+          i18n.th-user-and-role-combined(v-if='ephemeral.isMobile' tag='th') User / Role
+          template(v-else)
+            i18n.th-user(tag='th') User
+            i18n.th-role(tag='th') Role
+          i18n.th-permissions(tag='th') Permissions
+          th.th-action(v-if='canDelegatePermissions' :aria-label='L("action")')
 
-    tbody
-      permission-table-row(
-        v-for='entry in groupPermissionsToDisplay'
-        :key='entry.memberID'
-        :data='entry'
-        :is-mobile='ephemeral.isMobile'
+      tbody
+        permission-table-row(
+          v-for='entry in groupPermissionsToDisplay'
+          :key='entry.memberID'
+          :data='entry'
+          :is-mobile='ephemeral.isMobile'
+        )
+
+    banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+
+    .c-buttons-container(v-if='canDelegatePermissions')
+      button.is-small.is-outlined(
+        type='button'
+        @click='handleAddPermissionsClick'
       )
+        i18n Add Permissions
 
-  banner-scoped.c-feedback-banner(ref='formMsg' allow-a)
+  i18n.c-section-description.has-text-1(v-else tag='p') You have not been assigned a role yet.
 
-  .c-buttons-container(v-if='canDelegatePermissions')
-    button.is-small.is-outlined(
-      type='button'
-      @click='handleAddPermissionsClick'
-    )
-      i18n Add Permissions
 </template>
 
 <script>
@@ -44,6 +48,7 @@ import PermissionTableRow from './PermissionTableRow.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { OPEN_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'RolesAndPermissions',
@@ -62,10 +67,14 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'ourGroupProfile',
       'ourGroupPermissionsHas',
       'allGroupMemberRolesAndPermissions',
       'ourIdentityContractId'
     ]),
+    userHasRole () {
+      return !!this.ourGroupProfile.role
+    },
     canDelegatePermissions () {
       return this.ourGroupPermissionsHas(GROUP_PERMISSIONS.DELEGATE_PERMISSIONS)
     },
