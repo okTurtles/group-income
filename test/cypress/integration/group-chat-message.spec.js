@@ -1,6 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { randomUserSuffix } from '../support/lib.js'
 
+const API_URL = Cypress.config('baseUrl')
 /**
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
  * But Cypress doesn't render files using Flowtype annotations
@@ -12,6 +13,21 @@ function makeMentionFromUsername (username) {
     me: `@${username}`,
     all: '@all'
   }
+}
+
+// Replaces a selector in the tab. `gi.actions/*` calls normally go to the
+// service worker; a selector registered in the tab takes priority.
+function overrideSelector (selector, makeStub) {
+  cy.window().its('sbp').then(sbp => {
+    if (!sbp('sbp/selectors/fn', selector)) sbp('sbp/selectors/unsafe', [selector])
+    sbp('sbp/selectors/overwrite', { [selector]: makeStub(sbp) })
+  })
+}
+
+function restoreSelector (selector) {
+  cy.window().its('sbp').then(sbp => {
+    if (sbp('sbp/selectors/fn', selector)) sbp('sbp/selectors/unregister', [selector])
+  })
 }
 
 const groupName = 'Dreamers'
@@ -32,15 +48,70 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     me = username
   }
 
+  function openMessageEditor ({ fromMoreOptionsMenu = false } = {}) {
+    cy.get('.c-message-menu').within(() => {
+      cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
+      if (fromMoreOptionsMenu) {
+        cy.getByDT('menuTrigger').click({ force: true })
+        cy.getByDT('editMessage').click({ force: true })
+      } else {
+        cy.get('.c-actions button[aria-label="Edit"]').click()
+      }
+    })
+  }
+
   function editMessage (nth, message) {
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
-      cy.get('.c-message-menu').within(() => {
-        cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
-        cy.get('.c-actions button[aria-label="Edit"]').click()
-      })
+      openMessageEditor()
       cy.getByDT('messageInputWrapper').within(() => {
         cy.get('textarea').type(`{selectall}{del}${message}{enter}`)
       })
+      cy.get('.c-text').should('contain', message)
+      cy.get('.c-edited').should('contain', '(edited)')
+    })
+    cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message.sent`).should('exist')
+  }
+
+  function editMessageWithFailedFirstSave (nth, message, { fromMoreOptionsMenu = false } = {}) {
+    const messageSelector = `[data-index="${nth - 1}"] > .c-message`
+    let pendingSave = null
+
+    overrideSelector('gi.actions/chatroom/editMessage', () => () => new Promise((resolve, reject) => {
+      pendingSave = { resolve, reject }
+    }))
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      openMessageEditor({ fromMoreOptionsMenu })
+      cy.getByDT('messageInputWrapper').within(() => {
+        cy.get('textarea').type(`{selectall}{del}${message}`)
+        cy.getByDT('saveEditing').click()
+        cy.get('textarea').should('be.disabled').and('have.value', message)
+        cy.getByDT('cancelEditing').should('be.disabled')
+        cy.getByDT('saveEditing').should('be.disabled').and('have.attr', 'data-loading', 'true')
+      })
+    })
+
+    cy.wrap(null)
+      .should(() => { expect(pendingSave, 'edit request').to.not.equal(null) })
+      .then(() => pendingSave.reject(new Error('Simulated failure while saving an edited message')))
+
+    const failedSaveToast = ['.c-toast-container[data-area="chat-main"] .c-toast-card', "Couldn't save your changes. Please try again."]
+    cy.contains(...failedSaveToast).find('.c-toast-close').click()
+    cy.contains(...failedSaveToast).should('not.exist')
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      cy.getByDT('messageInputWrapper').within(() => {
+        cy.get('textarea').should('not.be.disabled').and('have.value', message)
+        cy.getByDT('cancelEditing').should('not.be.disabled')
+        cy.getByDT('saveEditing').should('not.be.disabled').and('not.have.attr', 'data-loading')
+      })
+    })
+
+    restoreSelector('gi.actions/chatroom/editMessage')
+
+    cy.getByDT('conversationWrapper').find(messageSelector).within(() => {
+      cy.getByDT('saveEditing').click()
+      cy.getByDT('messageInputWrapper').should('not.exist')
       cy.get('.c-text').should('contain', message)
       cy.get('.c-edited').should('contain', '(edited)')
     })
@@ -553,6 +624,28 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
   })
 
+  it('user1 edits a message and the editor stays open while saving, then recovers from a failed save', () => {
+    cy.giSwitchChannel(additionalChannelName)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessageWithFailedFirstSave(Number(length), 'Saved after a failed attempt')
+    })
+
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 edits a message from the "More options" menu on a phone, and the editor recovers from a failed save', () => {
+    cy.giSwitchChannel(additionalChannelName)
+    cy.viewport(375, 812)
+
+    cy.getByDT('conversationWrapper').invoke('attr', 'data-length').then(length => {
+      editMessageWithFailedFirstSave(Number(length), 'Saved on a phone after a failed attempt', { fromMoreOptionsMenu: true })
+    })
+
+    cy.viewport(1201, 900)
+    cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
+  })
+
   it('user1 checks how the infinite scroll works', () => {
     cy.giSwitchChannel(additionalChannelName)
     cy.giSwitchChannel(CHATROOM_GENERAL_NAME)
@@ -575,6 +668,387 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
       cy.get('[data-index="0"] > .c-message .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
+    cy.giLogout()
+  })
+})
+
+describe('Chatroom messages are rendered in chain order with unsent messages at the bottom', () => {
+  const orderingGroupName = 'Ordering'
+  const orderingSuffix = randomUserSuffix()
+  const orderingUser1 = `order1${orderingSuffix}`
+  const orderingUser2 = `order2${orderingSuffix}`
+  let orderingInvitationLink
+
+  function assertRenderedInOrder () {
+    cy.getByDT('conversationWrapper').find('[data-index]').should('have.length.at.least', 2).then($items => {
+      const items = [...$items]
+        .map(el => ({
+          index: Number(el.getAttribute('data-index')),
+          height: Number(el.getAttribute('data-height')),
+          unsent: !!el.querySelector('.c-message.pending, .c-message.failed')
+        }))
+        .sort((a, b) => a.index - b.index)
+      expect(items.every(item => Number.isFinite(item.height)), 'every rendered message has a height').to.equal(true)
+      const firstUnsent = items.findIndex(item => item.unsent)
+      const sent = firstUnsent < 0 ? items : items.slice(0, firstUnsent)
+      const unsent = firstUnsent < 0 ? [] : items.slice(firstUnsent)
+      expect(unsent.every(item => item.unsent), 'unsent messages are only at the bottom').to.equal(true)
+      const heights = sent.map(item => item.height)
+      expect(heights, 'sent messages are ordered by height').to.deep.equal([...heights].sort((a, b) => a - b))
+    })
+  }
+
+  function assertNothingPendingOrFailed () {
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message.pending').should('not.exist')
+      cy.get('.c-message.failed').should('not.exist')
+    })
+  }
+
+  // The virtual scroller doesn't keep the DOM in render order, so messages are
+  // looked up through their `data-index`.
+  function renderedItems ($items) {
+    return [...$items].sort((a, b) => Number(a.getAttribute('data-index')) - Number(b.getAttribute('data-index')))
+  }
+
+  function itemWithText (items, text) {
+    return items.find(item => item.querySelector('.c-text')?.textContent.includes(text))
+  }
+
+  function assertLastMessage (text, { pending }) {
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const last = renderedItems($items).pop()
+      expect(last.querySelector('.c-text')?.textContent, 'last message').to.contain(text)
+      expect(!!last.querySelector('.c-message.pending'), 'last message is still being sent').to.equal(pending)
+    })
+  }
+
+  function assertCopies (text, count) {
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const withText = renderedItems($items).filter(item => item.querySelector('.c-text')?.textContent.includes(text))
+      expect(withText, `copies of "${text}"`).to.have.length(count)
+    })
+  }
+
+  function sendWithoutWaiting (text) {
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').invoke('val', text).trigger('input').trigger('keyup')
+      cy.getByDT('sendMessageButton').click()
+    })
+  }
+
+  // Selectors registered in the tab take priority over the `gi.actions/*`
+  // route to the service worker, so these wrappers see every message sent
+  // from the chat and can delay or stop its publication. The `beforeRequest`
+  // hook runs right before the event is POSTed to the server, and the
+  // service worker waits for the promise it returns.
+  const ADD_MESSAGE = 'gi.actions/chatroom/addMessage'
+
+  function wrapAddMessage (wrapBeforeRequest) {
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      hooks: { ...params.hooks, beforeRequest: wrapBeforeRequest(params.hooks.beforeRequest) }
+    }))
+  }
+
+  function unwrapAddMessage () {
+    restoreSelector(ADD_MESSAGE)
+  }
+
+  // Sends `text` but stops it right before it reaches the server, and yields
+  // the signed event so that the test can publish it later.
+  function prepareUnsentMessage (text) {
+    let preparedEvent = null
+    wrapAddMessage(() => (message) => {
+      preparedEvent = message.serialize()
+      throw new Error('Not sent: the test publishes this message later')
+    })
+    sendWithoutWaiting(text)
+    cy.wrap(null).should(() => { expect(preparedEvent, 'prepared message').to.be.a('string') })
+    unwrapAddMessage()
+    return cy.wrap(null).then(() => preparedEvent)
+  }
+
+  // Shows the next message sent as pending, but holds its publication until
+  // `release()` is called. Later attempts (e.g., after a conflict) go through.
+  function holdNextPublish () {
+    const hold = { isHolding: false, release: null }
+    const held = new Promise(resolve => { hold.release = resolve })
+    let isFirstAttempt = true
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      await beforeRequest?.(...args)
+      if (isFirstAttempt) {
+        isFirstAttempt = false
+        hold.isHolding = true
+        await held
+      }
+    })
+    return cy.wrap(hold)
+  }
+
+  // Sends `text`, which ChatMain's own hook shows as pending, then fails its
+  // publication, so that it's shown with "Resend message"
+  function sendAndFail (text) {
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      await beforeRequest?.(...args)
+      throw new Error('Simulated send failure')
+    })
+    sendWithoutWaiting(text)
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    unwrapAddMessage()
+  }
+
+  it(`${orderingUser1} creates '${orderingGroupName}' and sends several messages back to back`, () => {
+    cy.visit('/')
+    cy.giSignup(orderingUser1, { bypassUI: true })
+    cy.giCreateGroup(orderingGroupName, { bypassUI: true })
+
+    cy.giRedirectToGroupChat()
+    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, orderingUser1)
+
+    for (let i = 1; i <= 4; i++) {
+      cy.giSendMessage(orderingUser1, `Rapid message ${i}`, { instantInput: true })
+      assertRenderedInOrder()
+    }
+    assertNothingPendingOrFailed()
+
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      orderingInvitationLink = url
+    })
+    cy.giLogout()
+  })
+
+  it(`${orderingUser2} joins and both members' messages stay in order`, () => {
+    cy.giAcceptGroupInvite(orderingInvitationLink, {
+      username: orderingUser2,
+      existingMemberUsername: orderingUser1,
+      groupName: orderingGroupName,
+      shouldLogoutAfter: false,
+      bypassUI: true
+    })
+
+    cy.giRedirectToGroupChat()
+    assertRenderedInOrder()
+
+    for (let i = 1; i <= 3; i++) {
+      cy.giSendMessage(orderingUser2, `Reply from ${orderingUser2} ${i}`, { instantInput: true })
+      assertRenderedInOrder()
+    }
+    assertNothingPendingOrFailed()
+  })
+
+  it(`${orderingUser2}'s message arrives while ${orderingUser1}'s is still being sent`, () => {
+    const otherDeviceText = `Sent from another device by ${orderingUser2}`
+    const desktopText = `Sent from desktop by ${orderingUser1}`
+    let preparedEvent
+    let hold
+
+    // Signed by orderingUser2 now, published later while orderingUser1's
+    // message is pending, so that both are written for the same height.
+    prepareUnsentMessage(otherDeviceText).then(event => { preparedEvent = event })
+
+    cy.giSwitchUser(orderingUser1)
+    cy.giRedirectToGroupChat()
+    assertRenderedInOrder()
+    assertNothingPendingOrFailed()
+    assertLastMessage(`Reply from ${orderingUser2} 3`, { pending: false })
+
+    holdNextPublish().then(h => { hold = h })
+    sendWithoutWaiting(desktopText)
+    assertLastMessage(desktopText, { pending: true })
+    cy.wrap(null).should(() => { expect(hold.isHolding, 'publication held').to.equal(true) })
+
+    cy.wrap(null).then(() => cy.request({
+      method: 'POST',
+      url: `${API_URL}/event`,
+      headers: { 'Content-Type': 'application/json' },
+      body: preparedEvent
+    }))
+    cy.getByDT('conversationWrapper').find('.c-text').should('contain', otherDeviceText)
+    assertRenderedInOrder()
+    assertLastMessage(desktopText, { pending: true })
+
+    // The server rejects the held event because its height is taken; it is
+    // signed again for the next height and sent.
+    cy.wrap(null).then(() => hold.release())
+    cy.getByDT('conversationWrapper').find('.c-message.pending').should('not.exist')
+    assertRenderedInOrder()
+    assertNothingPendingOrFailed()
+    assertLastMessage(desktopText, { pending: false })
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const items = renderedItems($items)
+      const heightOf = (text) => Number(itemWithText(items, text)?.getAttribute('data-height'))
+      expect(heightOf(desktopText), 'height of the message sent from desktop').to.be.greaterThan(heightOf(otherDeviceText))
+    })
+
+    unwrapAddMessage()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} resends a failed message once, even if Resend fires twice`, () => {
+    const text = `Resent once by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    sendAndFail(text)
+
+    // A text message is handed to `addMessage` from within the click handler,
+    // so the number of calls is final as soon as both clicks have run. The
+    // resent copy itself can be confirmed before the next render, so it isn't
+    // always shown as pending.
+    let sends = 0
+    wrapAddMessage((beforeRequest) => {
+      sends++
+      return beforeRequest
+    })
+    // Both clicks are handled before Vue re-renders, like a fast double click
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').then(([link]) => {
+      link.click()
+      link.click()
+    })
+    cy.wrap(null).then(() => {
+      expect(sends, 'messages sent by Resend').to.equal(1)
+    })
+    unwrapAddMessage()
+
+    assertLastMessage(text, { pending: false })
+    assertNothingPendingOrFailed()
+    assertCopies(text, 1)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} keeps a failed message if resending it is refused before it is sent`, () => {
+    const text = `Kept after a refused resend by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    sendAndFail(text)
+
+    // No key has this ID, so the service worker refuses to sign the resent
+    // message. That happens before ChatMain's hook could show the new copy.
+    let refusal = null
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      signingKeyId: 'no-such-key'
+    }).catch((e) => {
+      refusal = e
+      throw e
+    }))
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    cy.wrap(null).should(() => {
+      expect(refusal?.cause?.name, 'resend refused').to.equal('GIErrorMissingSigningKeyError')
+    })
+    unwrapAddMessage()
+
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    assertCopies(text, 1)
+
+    // The message can still be resent
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    assertLastMessage(text, { pending: false })
+    assertNothingPendingOrFailed()
+    assertCopies(text, 1)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} gets a new message back in the message box if sending it is refused`, () => {
+    const marker = `Put back after a refused send by ${orderingUser1}`
+    const text = `${marker} for ${makeMentionFromUsername(orderingUser2).me} today`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    // No key has this ID, so the service worker refuses to sign the message.
+    // That happens before ChatMain's hook could show it.
+    let refusal = null
+    overrideSelector(ADD_MESSAGE, (sbp) => (params) => sbp('gi.actions/*', ADD_MESSAGE, {
+      ...params,
+      signingKeyId: 'no-such-key'
+    }).catch((e) => {
+      refusal = e
+      throw e
+    }))
+    sendWithoutWaiting(text)
+    cy.wrap(null).should(() => {
+      expect(refusal?.cause?.name, 'send refused').to.equal('GIErrorMissingSigningKeyError')
+    })
+    unwrapAddMessage()
+
+    // The user is told, and the message is back as it was typed
+    cy.contains('.c-toast-container[data-area="chat-main"] .c-toast-card', "Your message couldn't be sent. Please try again.")
+      .find('.c-toast-close').click()
+    cy.getByDT('messageInputWrapper').find('textarea').should('have.value', text)
+    assertCopies(marker, 0)
+
+    // It can be sent again
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.getByDT('sendMessageButton').click()
+    })
+    cy.getByDT('messageInputWrapper').find('textarea').should('have.value', '')
+    assertLastMessage(marker, { pending: false })
+    assertNothingPendingOrFailed()
+    assertCopies(marker, 1)
+    assertRenderedInOrder()
+    cy.giLogout()
+  })
+
+  it(`${orderingUser1} resends a failed message that reached the server after all, and both copies stay`, () => {
+    const text = `Delivered after all by ${orderingUser1}`
+    cy.giLogin(orderingUser1, { bypassUI: true })
+    cy.giRedirectToGroupChat()
+
+    // Shown, then failed, as if the response to its POST had been lost. Its
+    // signed event is kept, so that it can reach the server later.
+    let lostEvent = null
+    wrapAddMessage((beforeRequest) => async (message, ...args) => {
+      lostEvent = message.serialize()
+      await beforeRequest?.(message, ...args)
+      throw new Error('Simulated: the response to the POST was lost')
+    })
+    sendWithoutWaiting(text)
+    cy.getByDT('conversationWrapper').find('.c-message.failed').should('contain', text)
+    unwrapAddMessage()
+
+    // The resend waits before ChatMain's hook, which is where the failed
+    // message is replaced by its new copy
+    const hold = { isHolding: false, release: null }
+    const held = new Promise(resolve => { hold.release = resolve })
+    let isFirstAttempt = true
+    wrapAddMessage((beforeRequest) => async (...args) => {
+      if (isFirstAttempt) {
+        isFirstAttempt = false
+        hold.isHolding = true
+        await held
+      }
+      return beforeRequest?.(...args)
+    })
+    cy.getByDT('conversationWrapper').contains('.c-failure-link', 'Resend message').click()
+    cy.wrap(null).should(() => { expect(hold.isHolding, 'resend held').to.equal(true) })
+
+    // Meanwhile, the first attempt reaches the server
+    cy.wrap(null).then(() => cy.request({
+      method: 'POST',
+      url: `${API_URL}/event`,
+      headers: { 'Content-Type': 'application/json' },
+      body: lostEvent
+    }))
+    cy.getByDT('conversationWrapper').find('[data-index]').should($items => {
+      const delivered = renderedItems($items).filter(item =>
+        item.querySelector('.c-text')?.textContent.includes(text) &&
+        !item.querySelector('.c-message.pending, .c-message.failed'))
+      expect(delivered, 'the delivered copy, shown as sent').to.have.length(1)
+    })
+
+    // The resend goes through as well (signed again after a conflict), and
+    // both copies stay on screen, as on the server
+    cy.wrap(null).then(() => hold.release())
+    cy.getByDT('conversationWrapper').find('.c-message.pending').should('not.exist')
+    unwrapAddMessage()
+    assertNothingPendingOrFailed()
+    assertCopies(text, 2)
+    assertRenderedInOrder()
     cy.giLogout()
   })
 })
