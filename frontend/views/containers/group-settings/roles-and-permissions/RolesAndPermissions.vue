@@ -48,7 +48,6 @@ import PermissionTableRow from './PermissionTableRow.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { OPEN_MODAL, GROUP_PERMISSIONS_UPDATE_SUCCESS } from '@utils/events.js'
 import { GROUP_PERMISSIONS } from '@model/contracts/shared/constants.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'RolesAndPermissions',
