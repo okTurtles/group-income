@@ -46,10 +46,10 @@
                       i18n Service worker
 
           label.checkbox.c-include-journal
-            input.input(type='checkbox' name='include-journal' v-model='form.includeJournal')
+            input.input(type='checkbox' name='include-journal' v-model='form.includeJournal' data-test='includeJournal')
             i18n Include contract journals
 
-          button-submit.is-small.c-download(@click='downloadOrShareLogs')
+          button-submit.is-small.c-download(@click='downloadOrShareLogs' data-test='downloadLogs')
             template(v-if='ephemeral.useWebShare')
               i.icon-share-alt.is-prefix
               i18n Share
@@ -59,7 +59,7 @@
 
           a(ref='linkDownload' hidden)
 
-        banner-scoped.c-err-banner(ref='errBanner')
+        banner-scoped.c-err-banner(ref='errBanner' data-test='appLogsMsg')
 
         textarea.textarea.c-logs(ref='textarea' rows='12' v-if='ephemeral.ready' readonly)
           | {{ prettyLogs }}
@@ -82,6 +82,21 @@ import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+
+const LOGS_FILENAME = 'gi_logs.json.txt'
+const LOGS_MIME_TYPE = 'text/plain'
+
+// Firefox for Android has `navigator.share` but rejects any file with a
+// TypeError, so `navigator.share` alone doesn't mean the logs can be shared.
+const canShareLogFile = (): boolean => {
+  try {
+    return Boolean((navigator: any).canShare?.({
+      files: [new File([''], LOGS_FILENAME, { type: LOGS_MIME_TYPE })]
+    }))
+  } catch {
+    return false
+  }
+}
 
 type LogPayload = {
   _instructions: string,
@@ -213,8 +228,6 @@ export default ({
 
       try {
         const elLink = this.$refs.linkDownload
-        const filename = 'gi_logs.json.txt'
-        const mimeType = 'text/plain'
         const payload: LogPayload = {
           // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
@@ -242,20 +255,24 @@ export default ({
           }
         }
 
-        const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: mimeType })
+        const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: LOGS_MIME_TYPE })
 
         if (actionType === 'share') {
           try {
             await (navigator: any).share({
-              files: [new File([blob], filename, { type: blob.type })],
+              files: [new File([blob], LOGS_FILENAME, { type: blob.type })],
               title: L('Application Logs')
             })
           } catch (err) {
-            // `share` needs transient user activation, which can expire while
-            // the journals are fetched above (WebKit allows less time than
-            // Chromium). Save the same file as a download instead of failing.
-            if (err?.name !== 'NotAllowedError') throw err
-            console.warn('AppLogs.vue: Sharing the app logs was not allowed, downloading them instead:', err)
+            // Dismissing the share sheet rejects with `AbortError`. So do some
+            // real failures (Chromium "Share failed", WebKit file read errors),
+            // but they can't be told apart from a cancel. Anything else falls
+            // back to saving the same file as a download: the user activation
+            // expired while the journals were fetched (`NotAllowedError`), the
+            // browser can't share files (`TypeError`), a share is still pending
+            // (`InvalidStateError`).
+            if (err?.name === 'AbortError') throw err
+            console.warn('AppLogs.vue: Sharing the app logs failed, downloading them instead:', err)
             actionType = 'download'
           }
         }
@@ -265,7 +282,7 @@ export default ({
 
           const url = URL.createObjectURL(blob)
           elLink.href = url
-          elLink.download = filename
+          elLink.download = LOGS_FILENAME
           elLink.click()
           setTimeout(() => {
             elLink.href = '#'
@@ -273,10 +290,12 @@ export default ({
           }, 0)
         }
 
+        // The user may have left this screen while the journals were fetched or
+        // the share sheet was open, which removes the banner.
         if (journalError) {
-          this.$refs.errBanner.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
+          this.$refs.errBanner?.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
         } else if (payload.journalTruncated) {
-          this.$refs.errBanner.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
+          this.$refs.errBanner?.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
         const isDownload = actionType === 'download'
@@ -289,13 +308,14 @@ export default ({
           : L('Failed to share the app logs. {reportError}', LError(err))
 
         console.error(`AppLogs.vue downloadOrShareLogs() '${actionType}' action error:`, err)
-        this.$refs.errBanner.danger(errorDisplay)
+        this.$refs.errBanner?.danger(errorDisplay)
       }
     },
     checkWebShareAvailable () {
       this.ephemeral.useWebShare = Boolean(navigator.share) &&
         window.matchMedia('(hover: none) and (pointer: coarse)').matches &&
-        window.matchMedia('screen and (max-width: 1199px)').matches
+        window.matchMedia('screen and (max-width: 1199px)').matches &&
+        canShareLogFile()
     },
     getLogs () {
       // Log entries in chronological order (oldest to most recent).
@@ -319,7 +339,7 @@ export default ({
             const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
 
             console.error('AppLogs.vue getLogs() error:', err)
-            this.$refs.errBanner.danger(errorDisplay)
+            this.$refs.errBanner?.danger(errorDisplay)
           })
           break
         }
@@ -345,7 +365,7 @@ export default ({
             const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
 
             console.error('AppLogs.vue getLogs() error:', err)
-            this.$refs.errBanner.danger(errorDisplay)
+            this.$refs.errBanner?.danger(errorDisplay)
           })
           break
         }

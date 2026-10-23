@@ -23,7 +23,14 @@ export const JOURNAL_ENTRY_SLACK_BYTES = 32
 export const MAX_JOURNAL_EXPORT_BYTES = 5 * 1024 * 1024
 
 export type JournalExportEntry = { type: string, journal: Object }
-export type JournalCandidate = { contractID: string, entry: JournalExportEntry }
+export type JournalCandidate = {
+  contractID: string,
+  type: string,
+  // Returns the journal as it will be written (already sanitized), or nothing
+  // if the contract has no journal. Must be synchronous, so that every journal
+  // is read from the same state.
+  loadJournal: () => ?Object
+}
 export type JournalSelection = {
   // `contractID -> JournalExportEntry`
   journals: Object,
@@ -73,13 +80,14 @@ export const orderJournalCandidates = (
   candidates: Array<JournalCandidate>,
   ownIdentityID: ?string
 ): Array<JournalCandidate> => {
-  const rank = ({ contractID, entry }) => journalExportRank(contractID, entry.type, ownIdentityID)
+  const rank = ({ contractID, type }) => journalExportRank(contractID, type, ownIdentityID)
   return candidates.slice().sort((a, b) => rank(a) - rank(b))
 }
 
 // Takes candidates in priority order and keeps each one that still fits in the
 // budget. A journal that doesn't fit is recorded in `omitted` and skipped, so a
-// smaller one later in the list can still be included.
+// smaller one later in the list can still be included. A contract without a
+// journal is left out of both.
 export const selectJournalsWithinBudget = (
   candidates: Array<JournalCandidate>,
   maxBytes: number = MAX_JOURNAL_EXPORT_BYTES
@@ -89,10 +97,16 @@ export const selectJournalsWithinBudget = (
   let exportBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES
   let truncated = false
 
-  for (const { contractID, entry } of candidates) {
+  for (const { contractID, type, loadJournal } of candidates) {
+    // Loaded here, one at a time, rather than up front: a journal left out
+    // becomes garbage as soon as it has been measured, instead of staying in
+    // memory with every other journal until the selection is done.
+    const journal = loadJournal()
+    if (!journal) continue
+    const entry: JournalExportEntry = { type, journal }
     const bytes = journalEntryBytes(contractID, entry)
     if (exportBytes + bytes > maxBytes) {
-      omitted[contractID] = { type: entry.type, bytes }
+      omitted[contractID] = { type, bytes }
       truncated = true
       continue
     }

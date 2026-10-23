@@ -152,10 +152,22 @@ describe('journal export size accounting', () => {
 })
 
 describe('journal export selection', () => {
-  const candidate = (contractID: string, type: string, count: number = 1) => ({
-    contractID,
-    entry: makeContract(type, count)
-  })
+  // A candidate as `sw/journal/getAll` builds it. `entry` is what the selection
+  // is expected to write for it, kept alongside to compute expected sizes.
+  const candidate = (contractID: string, type: string, count: number = 1) => {
+    const entry = makeContract(type, count)
+    return { contractID, type, loadJournal: () => entry.journal, entry }
+  }
+  // Same, recording in `loaded` every time its journal is loaded.
+  const trackedCandidate = (loaded: Array<string>, contractID: string, type: string, count: number = 1) => {
+    const c = candidate(contractID, type, count)
+    const load = c.loadJournal
+    c.loadJournal = () => {
+      loaded.push(contractID)
+      return load()
+    }
+    return c
+  }
   const ids = (candidates) => candidates.map(c => c.contractID)
 
   it('orders the own identity first, then groups, chatrooms and other identities', () => {
@@ -194,7 +206,43 @@ describe('journal export selection', () => {
     const { journals, omitted, truncated } = selectJournalsWithinBudget(candidates)
 
     assert.deepStrictEqual(Object.keys(journals), ['zIdentity', 'zGroup'])
-    assert.strictEqual(journals.zGroup, candidates[1].entry)
+    // The written entry is built from the candidate's type and loaded journal.
+    assert.deepStrictEqual(journals.zGroup, candidates[1].entry)
+    assert.strictEqual(journals.zGroup.journal, candidates[1].entry.journal)
+    assert.deepStrictEqual({ ...omitted }, {})
+    assert.strictEqual(truncated, false)
+  })
+
+  it('loads each journal once, in priority order, and only while selecting', () => {
+    const loaded = []
+    const candidates = orderJournalCandidates([
+      trackedCandidate(loaded, 'zChatroom', 'gi.contracts/chatroom'),
+      trackedCandidate(loaded, 'zLarge', 'gi.contracts/group', 50),
+      trackedCandidate(loaded, 'zOwnIdentity', 'gi.contracts/identity')
+    ], 'zOwnIdentity')
+    // Ranking reads the contract type only.
+    assert.deepStrictEqual(loaded, [])
+    const maxBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES +
+      journalEntryBytes('zOwnIdentity', candidates[0].entry) +
+      journalEntryBytes('zChatroom', candidates[2].entry)
+
+    const { journals, omitted } = selectJournalsWithinBudget(candidates, maxBytes)
+
+    // The journal left out is loaded too, exactly once, to measure it.
+    assert.deepStrictEqual(loaded, ['zOwnIdentity', 'zLarge', 'zChatroom'])
+    assert.deepStrictEqual(Object.keys(journals), ['zOwnIdentity', 'zChatroom'])
+    assert.deepStrictEqual(Object.keys(omitted), ['zLarge'])
+  })
+
+  it('leaves a contract without a journal out of both journals and omitted', () => {
+    const noJournal = { contractID: 'zNoJournal', type: 'gi.contracts/chatroom', loadJournal: () => undefined }
+
+    const { journals, omitted, truncated } = selectJournalsWithinBudget([
+      noJournal,
+      candidate('zGroup', 'gi.contracts/group')
+    ])
+
+    assert.deepStrictEqual(Object.keys(journals), ['zGroup'])
     assert.deepStrictEqual({ ...omitted }, {})
     assert.strictEqual(truncated, false)
   })

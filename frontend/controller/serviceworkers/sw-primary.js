@@ -301,25 +301,23 @@ sbp('sbp/selectors/register', {
   },
   'sw/journal/getAll': () => {
     const rootState = sbp('chelonia/rootState')
-    const candidates = []
-
-    for (const contractID of Object.keys(rootState.contracts || {})) {
-      const journal = sbp('chelonia/journal/get', contractID)
-      if (!journal) continue
+    // Only metadata here: `selectJournalsWithinBudget` loads the journals one
+    // at a time, in priority order, so a journal left out becomes garbage once
+    // it has been measured. Every load happens within this synchronous call, so
+    // all journals are read from the same state.
+    const candidates = Object.keys(rootState.contracts || {}).map(contractID => ({
+      contractID,
       // Contract IDs are opaque hashes, so the export labels each journal with
       // its contract type to tell groups, chatrooms and identities apart.
-      // `sanitizeJournal` mutates the clone returned by `chelonia/journal/get`
-      // and must run before the byte accounting in
-      // `selectJournalsWithinBudget`, so that the budget measures what is
-      // actually written to the file.
-      candidates.push({
-        contractID,
-        entry: {
-          type: rootState.contracts[contractID]?.type ?? '(unknown)',
-          journal: sanitizeJournal(journal)
-        }
-      })
-    }
+      type: rootState.contracts[contractID]?.type ?? '(unknown)',
+      // `sanitizeJournal` mutates the clone returned by `chelonia/journal/get`.
+      // It runs before the byte accounting, so that the budget measures what
+      // is actually written to the file.
+      loadJournal: () => {
+        const journal = sbp('chelonia/journal/get', contractID)
+        return journal ? sanitizeJournal(journal) : undefined
+      }
+    }))
 
     return selectJournalsWithinBudget(
       orderJournalCandidates(candidates, rootState.loggedIn?.identityContractID),

@@ -5,7 +5,12 @@ import { stringMax } from '../contracts/misc/flowTyper.js'
 import { REDACTED } from './redactions.js'
 import { sanitizeJournal, scrubErrorMessage } from './sanitize.js'
 
-const SCRUBBED_VALUE_LINE = `value    ${REDACTED}`
+const SCRUBBED_VALUE_LINE = `    value    ${REDACTED}`
+
+// Compares whole lines: a substring match would also accept the replacement
+// with a different indentation.
+const scrubbedLineCount = (message: string): number =>
+  message.split('\n').filter(line => line === SCRUBBED_VALUE_LINE).length
 
 // Builds the message Chelonia stores on a failed journal entry: the journal
 // recorder keeps `{ name, message }` verbatim, and `validate` runs inside
@@ -25,14 +30,14 @@ const makeJournal = (entries: Array<Object>): Object => {
   return journal
 }
 
-const makeEntry = (kind: string, message?: string): Object => {
+const makeEntry = (kind: string, message?: string, field: string = 'error'): Object => {
   const entry = Object.create(null)
   entry.kind = kind
   entry.hash = 'zQmhash'
   entry.height = 1
   entry.opType = 'gi.contracts/group/paymentUpdate'
   if (message !== undefined) {
-    entry.error = { name: 'TypeValidatorError', message }
+    entry[field] = { name: 'TypeValidatorError', message }
   }
   return entry
 }
@@ -48,7 +53,7 @@ describe('journal export sanitization', () => {
     const scrubbed = scrubErrorMessage(message)
 
     assert.ok(!scrubbed.includes(secret))
-    assert.ok(scrubbed.includes(SCRUBBED_VALUE_LINE))
+    assert.strictEqual(scrubbedLineCount(scrubbed), 1)
     // Everything that makes the failure diagnosable survives.
     assert.ok(scrubbed.includes('file  '))
     assert.ok(scrubbed.includes('expected string(max: 10)'))
@@ -84,7 +89,7 @@ describe('journal export sanitization', () => {
 
       assert.ok(!scrubbed.includes('my secret diagnosis'))
       assert.ok(!scrubbed.includes('rent money'))
-      assert.ok(scrubbed.includes(SCRUBBED_VALUE_LINE))
+      assert.strictEqual(scrubbedLineCount(scrubbed), 1)
       assert.ok(scrubbed.includes('type     string'))
     }
   })
@@ -95,7 +100,7 @@ describe('journal export sanitization', () => {
 
     assert.ok(!scrubbed.includes('first secret'))
     assert.ok(!scrubbed.includes('second secret'))
-    assert.strictEqual(scrubbed.split(SCRUBBED_VALUE_LINE).length - 1, 2)
+    assert.strictEqual(scrubbedLineCount(scrubbed), 2)
   })
 
   it('scrubs errors on both patch and snapshot entries without touching anything else', () => {
@@ -111,10 +116,30 @@ describe('journal export sanitization', () => {
     assert.ok(!JSON.stringify(journal).includes(secret))
     assert.ok(!JSON.stringify(journal).includes('a payment memo'))
     assert.strictEqual(patch.error.message, snapshot.error.message)
-    assert.ok(patch.error.message.includes(SCRUBBED_VALUE_LINE))
+    assert.strictEqual(scrubbedLineCount(patch.error.message), 1)
     assert.strictEqual(patch.error.name, 'TypeValidatorError')
     assert.strictEqual(patch.hash, 'zQmhash')
     assert.strictEqual(clean.error, undefined)
+  })
+
+  it('scrubs the journal-side diffError and redactionError fields too', () => {
+    // Chelonia records these next to `error`, verbatim, and copies them onto
+    // boundary snapshots.
+    const secret = 'a chat message that should never be exported'
+    const diffPatch = makeEntry('patch', realValidatorMessage(secret), 'diffError')
+    const diffSnapshot = makeEntry('snapshot', realValidatorMessage(secret), 'diffError')
+    const redactionPatch = makeEntry('patch', realValidatorMessage(secret), 'redactionError')
+    const both = makeEntry('patch', realValidatorMessage(secret))
+    both.redactionError = { name: 'TypeValidatorError', message: realValidatorMessage(secret) }
+    const journal = makeJournal([diffPatch, diffSnapshot, redactionPatch, both])
+
+    sanitizeJournal(journal)
+
+    assert.ok(!JSON.stringify(journal).includes(secret))
+    for (const detail of [diffPatch.diffError, diffSnapshot.diffError, redactionPatch.redactionError, both.error, both.redactionError]) {
+      assert.strictEqual(scrubbedLineCount(detail.message), 1)
+      assert.strictEqual(detail.name, 'TypeValidatorError')
+    }
   })
 
   it('is a no-op for journals without a usable entries array', () => {
@@ -129,10 +154,15 @@ describe('journal export sanitization', () => {
       makeEntry('patch'),
       { kind: 'patch', error: null },
       { kind: 'patch', error: {} },
-      { kind: 'patch', error: { message: 42 } }
+      { kind: 'patch', error: { message: 42 } },
+      { kind: 'patch', diffError: null },
+      { kind: 'patch', redactionError: {} },
+      { kind: 'patch', redactionError: { message: 42 } },
+      null
     ])
 
     assert.doesNotThrow(() => sanitizeJournal(journal))
     assert.strictEqual(journal.entries[3].error.message, 42)
+    assert.strictEqual(journal.entries[6].redactionError.message, 42)
   })
 })
