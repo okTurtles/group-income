@@ -9,7 +9,6 @@ const confettiComponents = {
   'confetii-triangle': ConfettiTriangle,
   'confetti-logo': ConfettiLogo
 }
-
 const confettiNames = Object.keys(confettiComponents)
 
 export {

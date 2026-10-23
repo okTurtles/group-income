@@ -29,7 +29,7 @@ function isOnlyNewlines (str: any): boolean {
 
 function replaceMultiple (input: string, replacements: Record<string, string>): string {
   return Object.entries(replacements).reduce(
-    (str, [from, to]: [string, any]) => str.replaceAll(from, to),
+    (str, [from, to]) => str.replaceAll(from, to),
     input
   )
 }

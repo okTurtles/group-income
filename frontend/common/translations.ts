@@ -93,7 +93,7 @@ String with Vue components inside:
   ) Invite {count} members to the party!
 */
 
-export function LTags (...tags: string[]): { br_: string } {
+export function LTags (...tags: string[]): { br_: string, [key: string]: string } {
   const o = {
     'br_': '<br/>'
   }

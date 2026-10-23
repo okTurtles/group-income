@@ -14,7 +14,7 @@ const modalMixins = {
       // where ModalTemplate is called with `undefined` for a11yTitle
       // see: https://github.com/okTurtles/group-income/issues/2828
       // and: https://github.com/okTurtles/group-income/pull/2820
-      default: L('Modal Title Missing') as string
+      default: L('Modal Title Missing')
     },
     backOnMobile: {
       type: Boolean,

@@ -384,7 +384,7 @@ export async function syncContractsInOrder (groupedContractIDs: Record<string, a
     const sortedContractTypes = Object.entries(groupedContractIDs).sort(([a], [b]) => {
       return getContractSyncPriority(a) - getContractSyncPriority(b)
     })
-    for (const [type, contractIDs] of sortedContractTypes as any[]) {
+    for (const [type, contractIDs] of sortedContractTypes) {
       // For each contract of this type, check if it still exists before syncing because
       // e.g. syncing a group contract could have removed one of the chatroom contracts
       for (const contractID of contractIDs) {

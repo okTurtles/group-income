@@ -61,7 +61,7 @@ sbp('sbp/selectors/register', {
         : keyIds === '*'
           ? pick(secretKeys, Object.entries(contractState._vm.authorizedKeys)
             .filter(([, key]) => {
-              return !!((key as any) as SPKey).meta?.private?.content
+              return !!(key as SPKey).meta?.private?.content
             })
             .map(([id]) => id)
           )
