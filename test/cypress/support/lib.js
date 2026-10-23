@@ -12,15 +12,16 @@ export const currentKeyByName = (state, name) => Object.values(state?._vm?.autho
 export const pendingKeyRequestsFrom = (state, requesterID) => Object.values(state?._vm?.pendingKeyshares || {})
   .filter((entry) => Array.isArray(entry) && entry[3]?.[0] === requesterID)
 
-// Reads the latest state of a chatroom, whether or not we're subscribed to it
-// (e.g., after leaving it)
-export const readChatRoom = async (sbp, chatRoomID, readFn) => {
+// Runs `fn` with the latest state of a chatroom, whether or not we're
+// subscribed to it (e.g., after leaving it). The chatroom is retained until
+// `fn` is done, so `fn` can also publish to it.
+export const withChatRoom = async (sbp, chatRoomID, fn) => {
   await sbp('chelonia/contract/retain', chatRoomID, { ephemeral: true })
   try {
     await sbp('chelonia/contract/sync', chatRoomID)
-    return await readFn(await sbp('chelonia/contract/state', chatRoomID))
+    return await fn(await sbp('chelonia/contract/state', chatRoomID))
   } finally {
     await sbp('chelonia/contract/release', chatRoomID, { ephemeral: true })
-      .catch((e) => console.warn('[readChatRoom] Error releasing', chatRoomID, e))
+      .catch((e) => console.warn('[withChatRoom] Error releasing', chatRoomID, e))
   }
 }

@@ -31,7 +31,7 @@ const userFacingActionError = (humanError: string | Function, params: GIActionPa
 // `contractID`: `params.innerSigningContractID` if set (`null` meaning no inner
 // signature), and otherwise the logged-in identity contract, unless the action
 // is sent to it.
-export const actionInnerSigningContractID = (params: GIActionParams, contractID: string, rootState: Object): ?string => {
+const actionInnerSigningContractID = (params: GIActionParams, contractID: string, rootState: Object): ?string => {
   return params.innerSigningContractID !== undefined
     ? params.innerSigningContractID
     : contractID === rootState.loggedIn.identityContractID

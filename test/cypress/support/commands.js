@@ -9,7 +9,7 @@ import 'cypress-file-upload'
 import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
 import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '@chelonia/lib/events'
-import { currentKeyByName, readChatRoom } from './lib.js'
+import { currentKeyByName, withChatRoom } from './lib.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -67,13 +67,14 @@ const getRandomNonMonetary = () => {
 // (e.g., they sync a contract), and their own work can emit those events
 // (retaining and releasing a contract emits `CONTRACTS_MODIFIED`), which would
 // otherwise re-run them back to back.
-// The check stops once Cypress gives up on the command (after
-// `defaultCommandTimeout`), so that it doesn't keep running in the background.
+// The check stops shortly before Cypress gives up on the command (after
+// `defaultCommandTimeout`), so that it doesn't keep running in the background,
+// and so that the failure names the check.
 const cySbpCheckCommand = (name, customCheckFn) => {
   Cypress.Commands.add(name, (...params) => {
     cy.window().its('sbp').then(sbp => {
-      return new Promise((resolve) => {
-        const deadline = Date.now() + Cypress.config('defaultCommandTimeout')
+      return new Promise((resolve, reject) => {
+        const deadline = Date.now() + Cypress.config('defaultCommandTimeout') - 1500
         let resolved = false
         let pending = false
         let isAsync = false
@@ -106,6 +107,7 @@ const cySbpCheckCommand = (name, customCheckFn) => {
             console.warn(`[cypress] SBP Check ${name} timed out`)
             resolved = true
             cleanup()
+            reject(new Error(`[cypress] SBP Check ${name} timed out`))
             return
           }
           if (pending) return
@@ -239,7 +241,7 @@ cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
   return !!currentCEK && currentCEK.id !== previousCEKid
 })
 
-cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => readChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
+cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => withChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
 
 // Whether no membership check of a chatroom (see
 // `frontend/controller/actions/chatroom.js`) is scheduled or running in the

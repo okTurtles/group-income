@@ -37,6 +37,21 @@ describe('retry', () => {
     should(retried).eql(['failure 1', 'failure 2'])
   })
 
+  // `onRetry` is meant for logging
+  it('keeps trying, and rejects with the error of the last attempt, if onRetry throws', async () => {
+    const { fn, calls } = failing(5)
+    const consoleError = console.error
+    const logged = []
+    console.error = (...args) => logged.push(args)
+    try {
+      await should(retry(fn, { attempts: 3, delayMs: 0, onRetry: () => { throw new Error('hook error') } })).be.rejectedWith('failure 3')
+    } finally {
+      console.error = consoleError
+    }
+    should(calls).eql([1, 2, 3])
+    should(logged.map(([, e]) => e.message)).eql(['hook error', 'hook error'])
+  })
+
   it('makes a single attempt if only one is allowed', async () => {
     const { fn, calls } = failing(1)
     await should(retry(fn, { attempts: 1, delayMs: 0 })).be.rejectedWith('failure 1')

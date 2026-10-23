@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { EVENT_HANDLED } from '@chelonia/lib/events'
+import { CHELONIA_RESET, CONTRACTS_MODIFIED, EVENT_HANDLED } from '@chelonia/lib/events'
 import { LOGOUT } from '~/frontend/utils/events.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { ownValue } from '~/frontend/utils/namespaceCache.js'
@@ -14,7 +14,6 @@ import { cloneDeep, debounce } from 'turtledash'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import getters from './getters.js'
-import { contractUpdate } from './contractUpdate.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { PROFILE_STATUS } from './contracts/shared/constants.js'
 
@@ -22,6 +21,67 @@ import { PROFILE_STATUS } from './contracts/shared/constants.js'
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule from '~/frontend/model/settings/vuexModule.js'
 import chatroomModule from '~/frontend/model/chatroom/vuexModule.js'
+
+// Wrapper function for performing contract upgrades and migrations
+// Unused as of https://github.com/okTurtles/group-income/pull/2525. For
+// usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
+// TODO: Consider moving this function into a different file
+// eslint-disable-next-line no-unused-vars
+const contractUpdate = (initialState: Object, updateFn: (state: Object, contractIDHints: ?string[]) => any, contractType: ?string) => {
+  // Wrapper for the update function. This performs a common check, namely that
+  // the contract is of a certain type, which helps return early
+  const wrappedUpdateFn = contractType
+  // The following disable is because eslint gets confused with 'Object'
+  // eslint-disable-next-line no-use-before-define
+    ? (state: Object, contractIDHints: ?string[]) => {
+        if (Array.isArray(contractIDHints)) {
+          if (!contractIDHints.some(contractID => state.contracts[contractID]?.type === contractType)) {
+            return
+          }
+        }
+        updateFn(state, contractIDHints)
+      }
+    : updateFn
+
+  const resetHandler = () => {
+    sbp('okTurtles.events/off', CONTRACTS_MODIFIED, modifiedHandler)
+  }
+  // This function is called when the set of subscribed contracts is modified
+  const modifiedHandler = (_, { added }) => {
+    // Wait for the added contracts to be ready, then call the update function
+    if (!added.length) return
+    sbp('chelonia/contract/wait', added).then(() => {
+      const state = sbp('state/vuex/state')
+      wrappedUpdateFn(state, added)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error updating newly added contracts', e)
+    })
+  }
+
+  // Add event listeners for `CONTRACTS_MODIFIED` and `CHELONIA_RESET` events
+  // `CONTRACTS_MODIFIED` is the important event. This is what allows updating
+  // contracts that are newly synced (for example, when logging in for the
+  // first time or joining an existing group or chatroom)
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, modifiedHandler)
+  // Receiving `CHELONIA_RESET` means that a new session has started. To prevent
+  // memory leaks and duplicate handlers, this event will remove the
+  // `CONTRACTS_MODIFIED` handler.
+  sbp('okTurtles.events/once', CHELONIA_RESET, resetHandler)
+
+  // Call the update function in the next tick
+  // We want this (in addition to `CONTRACTS_MODIFIED`) because this way we
+  // can update contracts that already exist, e.g., upon login with a saved
+  // state
+  const existingContracts = Object.keys(initialState.contracts)
+  setTimeout(() => {
+    sbp('chelonia/contract/wait', existingContracts).then(() => {
+      const state = sbp('state/vuex/state')
+      wrappedUpdateFn(state, existingContracts)
+    }).catch((e) => {
+      console.error('[contractUpdate] Error updating existing contracts', e)
+    })
+  }, 0)
+}
 
 Vue.use(Vuex)
 
@@ -243,21 +303,6 @@ sbp('sbp/selectors/register', {
         console.error('[chatroom/upgradeCekPermissions] Error', e)
       })
     })()
-
-    // Migration to secure private group chatrooms (not DMs): remove members
-    // that a chatroom lists but its group doesn't (e.g., former members who
-    // re-joined the chatroom directly, using keys that hadn't been rotated),
-    // and rotate the chatroom keys if former members still hold them.
-    // This runs for existing contracts. Contracts synced later on (for
-    // example, when logging in on a new device) are checked by the
-    // `CONTRACTS_MODIFIED` handler in 'frontend/controller/actions/chatroom.js'
-    // (in the service worker, once rather than once per open tab, and for the
-    // whole session).
-    contractUpdate(state, (_, contractIDHints) => {
-      sbp('gi.actions/chatroom/revokeFormerMemberAccess', contractIDHints).catch(e => {
-        console.error('[chatroom/revokeFormerMemberAccess] Error', e)
-      })
-    }, ['gi.contracts/group', 'gi.contracts/chatroom'])
 
     // Send an 'accept' action to any DMs that we have not yet accepted
     ;(() => {
