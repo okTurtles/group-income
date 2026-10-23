@@ -6,12 +6,14 @@ import {
   JOURNAL_REDACTIONS,
   JOURNAL_REDACTIONS_VERSION,
   REDACTED,
+  REDACTED_TEXT,
   emoticonsRedactor,
+  freeTextRedactor,
   hashRedactor,
-  messageTextRedactor
+  notificationParamsRedactor,
+  pinnedMessageRedactor,
+  redactedRedactor
 } from './redactions.js'
-import { clearStaleJournalsAfterRedactions } from './migration.js'
-import { DEVICE_SETTINGS } from '../../utils/constants.js'
 
 const redact = (state, contractName = 'gi.contracts/group') => applyRedactions(state, JOURNAL_REDACTIONS, contractName)
 
@@ -39,21 +41,23 @@ describe('journal redactions', () => {
     assert.strictEqual(hashRedactor(cyclic).length, 6)
   })
 
-  it('messageTextRedactor returns the message sentinel', () => {
-    assert.strictEqual(messageTextRedactor('secret'), 'xxxxxxxx')
+  it('freeTextRedactor returns the free-text sentinel', () => {
+    assert.strictEqual(freeTextRedactor('secret'), REDACTED_TEXT)
   })
 
   it('redacts identity profile fields while keeping the avatar manifestCid', () => {
     const original = {
       attributes: {
         username: 'alice',
-        displayName: 'Alice A',
+        displayName: 'Alice Realname',
         email: 'alice@example.com',
         bio: 'private bio',
         picture: { manifestCid: 'zAliceAvatar', downloadParams: { token: 'secret' } }
       },
       groups: {
-        group1: { inviteSecretId: 'secret invite key' }
+        // A key ID, not a secret. Hidden because it ties the identity to the
+        // invite it joined with, and so to that invite's creator.
+        group1: { inviteSecretId: 'z2Drjgb8FyVJq1N9rdFY7u4RVwU6Z3aqgyVZnbWe1ED5uu8YYTq' }
       },
       fileDeleteTokens: {
         zAliceAvatar: { token: 'delete-token' }
@@ -63,9 +67,9 @@ describe('journal redactions', () => {
     const redacted = redact(original, 'gi.contracts/identity')
 
     assert.strictEqual(redacted.attributes.username, 'alice')
-    assert.strictEqual(redacted.attributes.displayName, 'Alice A')
+    assert.strictEqual(redacted.attributes.displayName, REDACTED_TEXT)
     assert.strictEqual(redacted.attributes.email, REDACTED)
-    assert.strictEqual(redacted.attributes.bio, 'xxxxxxxx')
+    assert.strictEqual(redacted.attributes.bio, REDACTED_TEXT)
     assert.strictEqual(redacted.attributes.picture.manifestCid, 'zAliceAvatar')
     assert.strictEqual(redacted.attributes.picture.downloadParams, REDACTED)
     assert.strictEqual(redacted.groups.group1.inviteSecretId, REDACTED)
@@ -76,6 +80,8 @@ describe('journal redactions', () => {
     const exported = JSON.stringify(redacted)
     assert.ok(!exported.includes('alice@'))
     assert.ok(!exported.includes('secret'))
+    assert.ok(!exported.includes('Realname'))
+    assert.ok(!exported.includes('z2Drjgb8FyVJ'))
   })
 
   it('leaves the string form of an avatar URL unredacted', () => {
@@ -98,6 +104,7 @@ describe('journal redactions', () => {
     const redacted = redact({
       settings: {
         groupName: 'Private group',
+        sharedValues: 'Secret shared values',
         mincomeAmount: 1000,
         mincomeCurrency: 'USD',
         groupPicture: { manifestCid: 'zGroupAvatar', downloadParams: { IKM: 'group-avatar-secret' } }
@@ -138,7 +145,8 @@ describe('journal redactions', () => {
       }
     })
 
-    assert.strictEqual(redacted.settings.groupName, '[REDACTED]')
+    assert.strictEqual(redacted.settings.groupName, REDACTED_TEXT)
+    assert.strictEqual(redacted.settings.sharedValues, REDACTED_TEXT)
     assert.strictEqual(redacted.settings.mincomeAmount, REDACTED)
     assert.strictEqual(redacted.settings.mincomeCurrency, 'USD')
     assert.strictEqual(redacted.settings.groupPicture.manifestCid, 'zGroupAvatar')
@@ -147,7 +155,7 @@ describe('journal redactions', () => {
     assert.strictEqual(redacted.profiles.user1.incomeAmount, REDACTED)
     assert.strictEqual(redacted.profiles.user1.pledgeAmount, REDACTED)
     assert.strictEqual(redacted.profiles.user1.paymentMethods, REDACTED)
-    assert.deepStrictEqual(redacted.profiles.user1.nonMonetaryContributions, ['xxxxxxxx'])
+    assert.deepStrictEqual(redacted.profiles.user1.nonMonetaryContributions, [REDACTED_TEXT])
     assert.strictEqual(redacted.payments.payment1.data.details, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.memo, REDACTED)
     assert.strictEqual(redacted.payments.payment1.data.amount, REDACTED)
@@ -160,10 +168,34 @@ describe('journal redactions', () => {
     assert.deepStrictEqual(redacted.paymentsByPeriod['2026-01'].paymentsFrom, { user1: { user2: ['payment1'] } })
     assert.strictEqual(redacted.thankYousFrom.user1.user2, REDACTED)
     assert.strictEqual(redacted.totalPledgeAmount, REDACTED)
-    assert.strictEqual(redacted.invites.ik1.invitee, 'xxxxxxxx')
+    assert.strictEqual(redacted.invites.ik1.invitee, REDACTED_TEXT)
     assert.strictEqual(redacted.invites.ik1.inviteKeyId, 'ik1')
     assert.strictEqual(redacted.invites.ik1.creatorID, 'zCreator')
     assert.ok(!JSON.stringify(redacted).includes('Secret'))
+    assert.ok(!JSON.stringify(redacted).includes('Private group'))
+  })
+
+  it('redacts per-member payment and voting streaks but keeps group-wide ones', () => {
+    const streaks = {
+      lastStreakPeriod: '2026-01-01T00:00:00.000Z',
+      fullMonthlyPledges: 2,
+      fullMonthlySupport: 1,
+      onTimePayments: { zMemberA: 3 },
+      missedPayments: { zMemberB: 4 },
+      noVotes: { zMemberB: 2 }
+    }
+
+    const redacted = redact({ streaks })
+
+    assert.deepStrictEqual(redacted.streaks, {
+      lastStreakPeriod: '2026-01-01T00:00:00.000Z',
+      fullMonthlyPledges: 2,
+      fullMonthlySupport: 1,
+      onTimePayments: { zMemberA: REDACTED },
+      missedPayments: { zMemberB: REDACTED },
+      noVotes: { zMemberB: REDACTED }
+    })
+    assert.deepStrictEqual(streaks.missedPayments, { zMemberB: 4 })
   })
 
   it('redacts chat message text without removing attachment metadata or mutating input', () => {
@@ -208,21 +240,21 @@ describe('journal redactions', () => {
 
     const redacted = redact(original, 'gi.contracts/chatroom')
 
-    assert.strictEqual(redacted.messages[0].text, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].replyingMessage.text, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].pollData.question, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].text, REDACTED_TEXT)
+    assert.strictEqual(redacted.messages[0].replyingMessage.text, REDACTED_TEXT)
+    assert.strictEqual(redacted.messages[0].pollData.question, REDACTED_TEXT)
+    assert.strictEqual(redacted.messages[0].pollData.options[0].value, REDACTED_TEXT)
     assert.strictEqual(redacted.messages[0].proposal.proposalData, REDACTED)
-    assert.strictEqual(redacted.messages[0].attachments[0].name, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].attachments[0].name, REDACTED_TEXT)
     assert.strictEqual(redacted.messages[0].attachments[0].mimeType, 'application/pdf')
     assert.strictEqual(redacted.messages[0].attachments[0].downloadData.manifestCid, 'zAttachment')
     assert.strictEqual(redacted.messages[0].attachments[0].downloadData.downloadParams, REDACTED)
-    assert.strictEqual(redacted.pinnedMessages[0].text, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].replyingMessage.text, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].pollData.question, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].text, REDACTED_TEXT)
+    assert.strictEqual(redacted.pinnedMessages[0].replyingMessage.text, REDACTED_TEXT)
+    assert.strictEqual(redacted.pinnedMessages[0].pollData.question, REDACTED_TEXT)
+    assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].value, REDACTED_TEXT)
     assert.strictEqual(redacted.pinnedMessages[0].proposal.proposalData, REDACTED)
-    assert.strictEqual(redacted.pinnedMessages[0].attachments[0].name, 'xxxxxxxx')
+    assert.strictEqual(redacted.pinnedMessages[0].attachments[0].name, REDACTED_TEXT)
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.manifestCid, 'zPinnedAttachment')
     assert.strictEqual(redacted.pinnedMessages[0].attachments[0].downloadData.downloadParams, REDACTED)
     assert.strictEqual(original.messages[0].text, 'secret chat')
@@ -266,8 +298,7 @@ describe('journal redactions', () => {
     assert.ok(!exported.includes('👍'))
     // Reactor member IDs go with the strings: only how many reacted survives.
     assert.ok(!exported.includes('cid1'))
-    // A message with no reactions keeps no `emoticons` key at all, because the
-    // contract deletes it once the map is empty.
+    // Redaction never creates a key the state didn't have.
     assert.strictEqual(redacted.messages[1].emoticons, undefined)
     assert.deepStrictEqual(original.messages[0].emoticons['👍'], ['cid1', 'cid2'])
   })
@@ -312,7 +343,9 @@ describe('journal redactions', () => {
         authorizedKeys: {
           key1: {
             name: 'csk',
-            _private: 'private key data',
+            // The ID of the key that encrypts this key's private part, not
+            // key material, so it is kept for debugging key rotation.
+            _private: 'z2DrjgbEFd1Ay8C5m5tssd6GCZEjhXrQnqYEs4bf4iJ1uefjjrh',
             meta: {
               private: {
                 content: 'secret content',
@@ -343,7 +376,7 @@ describe('journal redactions', () => {
     const redacted = redact(original)
 
     assert.strictEqual(redacted._vm.authorizedKeys.key1.name, 'csk')
-    assert.strictEqual(redacted._vm.authorizedKeys.key1._private, REDACTED)
+    assert.strictEqual(redacted._vm.authorizedKeys.key1._private, 'z2DrjgbEFd1Ay8C5m5tssd6GCZEjhXrQnqYEs4bf4iJ1uefjjrh')
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.content.length, 6)
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.content, hashRedactor('secret content'))
     assert.strictEqual(redacted._vm.authorizedKeys.key1.meta.private.oldKeys.length, 6)
@@ -386,15 +419,19 @@ describe('journal redactions', () => {
   })
 
   it('redacts chat notification parameters and poll voters', () => {
+    // `addMessage` accepts extra notification keys and `createMessage` spreads
+    // them into `params`, so a param key can carry free text too.
+    const smuggledKey = 'SMUGGLED KEY my secret note'
     const original = {
       messages: [{
         notification: {
-          type: 'GROUP_UPDATED',
+          type: 'add-member',
           params: {
             channelName: 'general',
             channelDescription: 'private description',
-            count: 3,
-            smuggledText: 'private notification detail'
+            memberID: 'zMember',
+            actorID: 'zActor',
+            [smuggledKey]: 'private notification detail'
           }
         },
         pollData: {
@@ -404,12 +441,12 @@ describe('journal redactions', () => {
       }],
       pinnedMessages: [{
         notification: {
-          type: 'GROUP_UPDATED',
+          type: 'add-member',
           params: {
             channelName: 'pinned-channel',
             channelDescription: 'pinned description',
-            count: 1,
-            smuggledText: 'pinned notification detail'
+            memberID: 'zMember',
+            [smuggledKey]: 'pinned notification detail'
           }
         },
         pollData: {
@@ -420,22 +457,82 @@ describe('journal redactions', () => {
     }
 
     const redacted = redact(original, 'gi.contracts/chatroom')
+    const exported = JSON.stringify(redacted)
 
-    assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.count, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.smuggledText, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].pollData.options[0].value, 'xxxxxxxx')
+    assert.deepStrictEqual(redacted.messages[0].notification, {
+      type: 'add-member',
+      params: {
+        channelName: REDACTED_TEXT,
+        channelDescription: REDACTED_TEXT,
+        memberID: REDACTED_TEXT,
+        actorID: REDACTED_TEXT,
+        [hashRedactor(smuggledKey)]: REDACTED_TEXT
+      }
+    })
+    assert.strictEqual(redacted.messages[0].pollData.options[0].value, REDACTED_TEXT)
     assert.strictEqual(redacted.messages[0].pollData.options[0].voted, REDACTED)
     assert.strictEqual(redacted.messages[0].pollData.options[0].id, 'o1')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelDescription, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.count, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.smuggledText, 'xxxxxxxx')
+    assert.deepStrictEqual(redacted.pinnedMessages[0].notification.params, {
+      channelName: REDACTED_TEXT,
+      channelDescription: REDACTED_TEXT,
+      memberID: REDACTED_TEXT,
+      [hashRedactor(smuggledKey)]: REDACTED_TEXT
+    })
     assert.strictEqual(redacted.pinnedMessages[0].pollData.options[0].voted, REDACTED)
-    assert.ok(!JSON.stringify(redacted).includes('private notification detail'))
-    assert.ok(!JSON.stringify(redacted).includes('pinned notification detail'))
+    assert.ok(!exported.includes('my secret note'))
+    assert.ok(!exported.includes('private notification detail'))
+    assert.ok(!exported.includes('pinned notification detail'))
     assert.deepStrictEqual(original.messages[0].pollData.options[0].voted, ['alice', 'bob'])
+    assert.strictEqual(original.messages[0].notification.params[smuggledKey], 'private notification detail')
+  })
+
+  it('notificationParamsRedactor tolerates values that are not a params map', () => {
+    assert.deepStrictEqual(notificationParamsRedactor({ memberID: 'zMember' }), { memberID: REDACTED_TEXT })
+    assert.deepStrictEqual(notificationParamsRedactor(null), {})
+    assert.deepStrictEqual(notificationParamsRedactor('free text'), {})
+  })
+
+  it('reduces fields a pinning client added to a hashed key and a redacted value', () => {
+    // `pinMessage` validates its message only as `object`, so a client can pin
+    // an object with fields no message has.
+    const original = {
+      pinnedMessages: [{
+        type: 'text',
+        hash: 'zMessageHash',
+        height: 3,
+        from: 'zSender',
+        datetime: '2026-01-01T00:00:00.000Z',
+        text: 'pinned secret',
+        pinnedBy: 'zPinner',
+        'SMUGGLED FIELD my secret note': 'PIN_SECRET_VALUE'
+      }]
+    }
+
+    const redacted = redact(original, 'gi.contracts/chatroom')
+    const exported = JSON.stringify(redacted)
+
+    assert.deepStrictEqual(redacted.pinnedMessages[0], {
+      type: 'text',
+      hash: 'zMessageHash',
+      height: 3,
+      from: 'zSender',
+      datetime: '2026-01-01T00:00:00.000Z',
+      // The message rules still apply after the entry is rebuilt.
+      text: REDACTED_TEXT,
+      pinnedBy: 'zPinner',
+      [hashRedactor('SMUGGLED FIELD my secret note')]: REDACTED
+    })
+    assert.ok(!exported.includes('my secret note'))
+    assert.ok(!exported.includes('PIN_SECRET_VALUE'))
+    assert.ok(!exported.includes('pinned secret'))
+    assert.strictEqual(original.pinnedMessages[0].text, 'pinned secret')
+  })
+
+  it('pinnedMessageRedactor tolerates values that are not a message object', () => {
+    assert.strictEqual(pinnedMessageRedactor('free text'), REDACTED)
+    assert.strictEqual(pinnedMessageRedactor(['free text']), REDACTED)
+    assert.strictEqual(pinnedMessageRedactor(null), REDACTED)
+    assert.deepStrictEqual(pinnedMessageRedactor({}), {})
   })
 
   it('redacts chatroom channel name and description in every location', () => {
@@ -458,14 +555,14 @@ describe('journal redactions', () => {
       }]
     }, 'gi.contracts/chatroom')
 
-    assert.strictEqual(redacted.attributes.name, 'xxxxxxxx')
-    assert.strictEqual(redacted.attributes.description, 'xxxxxxxx')
+    assert.strictEqual(redacted.attributes.name, REDACTED_TEXT)
+    assert.strictEqual(redacted.attributes.description, REDACTED_TEXT)
     assert.strictEqual(redacted.attributes.privacyLevel, 'private')
     assert.strictEqual(redacted.attributes.type, 'group')
     assert.strictEqual(redacted.attributes.creatorID, 'zCreator')
-    assert.strictEqual(redacted.messages[0].notification.params.channelName, 'xxxxxxxx')
-    assert.strictEqual(redacted.messages[0].notification.params.channelDescription, 'xxxxxxxx')
-    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, 'xxxxxxxx')
+    assert.strictEqual(redacted.messages[0].notification.params.channelName, REDACTED_TEXT)
+    assert.strictEqual(redacted.messages[0].notification.params.channelDescription, REDACTED_TEXT)
+    assert.strictEqual(redacted.pinnedMessages[0].notification.params.channelName, REDACTED_TEXT)
     // The assertion that actually encodes the requirement: nothing sensitive
     // reaches the exported file, whatever the shape of the state.
     assert.ok(!JSON.stringify(redacted).includes('Secret'))
@@ -483,122 +580,92 @@ describe('journal redactions', () => {
       }
     })
 
-    assert.strictEqual(redacted.chatRooms.cid1.name, 'xxxxxxxx')
-    assert.strictEqual(redacted.chatRooms.cid1.description, 'xxxxxxxx')
+    assert.strictEqual(redacted.chatRooms.cid1.name, REDACTED_TEXT)
+    assert.strictEqual(redacted.chatRooms.cid1.description, REDACTED_TEXT)
     assert.strictEqual(redacted.chatRooms.cid1.privacyLevel, 'private')
     assert.ok(!JSON.stringify(redacted).includes('Secret'))
   })
 
-  it('pins the redaction rule set so changes force a version review', () => {
-    // When you intentionally change JOURNAL_REDACTIONS, update this list AND bump
-    // JOURNAL_REDACTIONS_VERSION so persisted journals get re-cleared via
-    // clearStaleJournalsAfterRedactions. Message rules live in
-    // MESSAGE_FIELD_REDACTIONS, which generates the `messages.*` and
-    // `pinnedMessages.*` pairs below.
-    const expectedPaths = [
-      '_vm.authorizedKeys.*._private',
-      '_vm.authorizedKeys.*.meta.private.content',
-      '_vm.authorizedKeys.*.meta.private.oldKeys',
-      '_vm.invites.*.inviteSecret',
-      'attributes.bio',
-      'attributes.description',
-      'attributes.email',
-      'attributes.name',
-      'attributes.picture.downloadParams',
-      'chatRooms.*.description',
-      'chatRooms.*.name',
-      'fileDeleteTokens',
-      'groups.*.inviteSecretId',
-      'invites.*.invitee',
-      'messages.*.attachments.*.downloadData.downloadParams',
-      'messages.*.attachments.*.name',
-      'messages.*.emoticons',
-      'messages.*.notification.params.*',
-      'messages.*.pollData.options.*.value',
-      'messages.*.pollData.options.*.voted',
-      'messages.*.pollData.question',
-      'messages.*.proposal.proposalData',
-      'messages.*.replyingMessage.text',
-      'messages.*.text',
-      'payments.*.data.amount',
-      'payments.*.data.details',
-      'payments.*.data.groupMincome',
-      'payments.*.data.memo',
-      'payments.*.data.txid',
-      'paymentsByPeriod.*.haveNeedsSnapshot',
-      'paymentsByPeriod.*.lastAdjustedDistribution',
-      'pinnedMessages.*.attachments.*.downloadData.downloadParams',
-      'pinnedMessages.*.attachments.*.name',
-      'pinnedMessages.*.emoticons',
-      'pinnedMessages.*.notification.params.*',
-      'pinnedMessages.*.pollData.options.*.value',
-      'pinnedMessages.*.pollData.options.*.voted',
-      'pinnedMessages.*.pollData.question',
-      'pinnedMessages.*.proposal.proposalData',
-      'pinnedMessages.*.replyingMessage.text',
-      'pinnedMessages.*.text',
-      'profiles.*.incomeAmount',
-      'profiles.*.nonMonetaryContributions.*',
-      'profiles.*.paymentMethods',
-      'profiles.*.pledgeAmount',
-      'proposals.*.data.proposalData',
-      'proposals.*.payload',
-      'settings.groupName',
-      'settings.groupPicture.downloadParams',
-      'settings.mincomeAmount',
-      'settings.sharedValues',
-      'thankYousFrom.*.*',
-      'totalPledgeAmount'
-    ]
+  it('pins the redaction rule set together with JOURNAL_REDACTIONS_VERSION', () => {
+    // When you intentionally change JOURNAL_REDACTIONS (a path OR its
+    // redactor), update this list AND bump JOURNAL_REDACTIONS_VERSION, so
+    // persisted journals get cleared again (see `migration.js`). This also
+    // applies when a value assertion above fails after a rule change. Message
+    // rules live in MESSAGE_FIELD_REDACTIONS, which generates the `messages.*`
+    // and `pinnedMessages.*` pairs below.
+    const redactorNames = new Map([
+      [freeTextRedactor, 'text'],
+      [redactedRedactor, 'redacted'],
+      [hashRedactor, 'hash'],
+      [emoticonsRedactor, 'emoticons'],
+      [notificationParamsRedactor, 'notificationParams'],
+      [pinnedMessageRedactor, 'pinnedMessage']
+    ])
+    const rules = JOURNAL_REDACTIONS
+      .map(r => `${r.path} -> ${redactorNames.get(r.redact) ?? 'UNKNOWN'}`)
+      .sort()
 
-    const actualPaths = JOURNAL_REDACTIONS.map(r => r.path).sort()
-    assert.deepStrictEqual(actualPaths, expectedPaths)
-  })
-})
-
-describe('clearStaleJournalsAfterRedactions migration', () => {
-  const makeConfig = () => ({
-    reactiveSet: (o, k, v) => { o[k] = v }
-  })
-
-  it('initializes deviceSettings and records the version when no contracts exist', () => {
-    const rootState = { contracts: {} }
-    let cleared = 0
-    const clearJournals = () => { cleared++; return 0 }
-
-    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
-
-    assert.strictEqual(cleared, 0)
-    assert.strictEqual(
-      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION],
-      JOURNAL_REDACTIONS_VERSION
-    )
-  })
-
-  it('clears journals and records the version when contracts exist', () => {
-    const rootState = { contracts: { contract1: {} }, deviceSettings: Object.create(null) }
-    let cleared = 0
-    const clearJournals = () => { cleared++; return 1 }
-
-    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
-
-    assert.strictEqual(cleared, 1)
-    assert.strictEqual(
-      rootState.deviceSettings[DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION],
-      JOURNAL_REDACTIONS_VERSION
-    )
-  })
-
-  it('is a no-op when the current version was already recorded', () => {
-    const rootState = {
-      contracts: { contract1: {} },
-      deviceSettings: { [DEVICE_SETTINGS.JOURNAL_REDACTIONS_APPLIED_VERSION]: JOURNAL_REDACTIONS_VERSION }
-    }
-    let cleared = 0
-    const clearJournals = () => { cleared++; return 1 }
-
-    clearStaleJournalsAfterRedactions(rootState, makeConfig(), clearJournals)
-
-    assert.strictEqual(cleared, 0)
+    assert.deepStrictEqual({ version: JOURNAL_REDACTIONS_VERSION, rules }, {
+      version: 4,
+      rules: [
+        '_vm.authorizedKeys.*.meta.private.content -> hash',
+        '_vm.authorizedKeys.*.meta.private.oldKeys -> hash',
+        '_vm.invites.*.inviteSecret -> redacted',
+        'attributes.bio -> text',
+        'attributes.description -> text',
+        'attributes.displayName -> text',
+        'attributes.email -> redacted',
+        'attributes.name -> text',
+        'attributes.picture.downloadParams -> redacted',
+        'chatRooms.*.description -> text',
+        'chatRooms.*.name -> text',
+        'fileDeleteTokens -> redacted',
+        'groups.*.inviteSecretId -> redacted',
+        'invites.*.invitee -> text',
+        'messages.*.attachments.*.downloadData.downloadParams -> redacted',
+        'messages.*.attachments.*.name -> text',
+        'messages.*.emoticons -> emoticons',
+        'messages.*.notification.params -> notificationParams',
+        'messages.*.pollData.options.*.value -> text',
+        'messages.*.pollData.options.*.voted -> redacted',
+        'messages.*.pollData.question -> text',
+        'messages.*.proposal.proposalData -> redacted',
+        'messages.*.replyingMessage.text -> text',
+        'messages.*.text -> text',
+        'payments.*.data.amount -> redacted',
+        'payments.*.data.details -> redacted',
+        'payments.*.data.groupMincome -> redacted',
+        'payments.*.data.memo -> redacted',
+        'payments.*.data.txid -> redacted',
+        'paymentsByPeriod.*.haveNeedsSnapshot -> redacted',
+        'paymentsByPeriod.*.lastAdjustedDistribution -> redacted',
+        'pinnedMessages.* -> pinnedMessage',
+        'pinnedMessages.*.attachments.*.downloadData.downloadParams -> redacted',
+        'pinnedMessages.*.attachments.*.name -> text',
+        'pinnedMessages.*.emoticons -> emoticons',
+        'pinnedMessages.*.notification.params -> notificationParams',
+        'pinnedMessages.*.pollData.options.*.value -> text',
+        'pinnedMessages.*.pollData.options.*.voted -> redacted',
+        'pinnedMessages.*.pollData.question -> text',
+        'pinnedMessages.*.proposal.proposalData -> redacted',
+        'pinnedMessages.*.replyingMessage.text -> text',
+        'pinnedMessages.*.text -> text',
+        'profiles.*.incomeAmount -> redacted',
+        'profiles.*.nonMonetaryContributions.* -> text',
+        'profiles.*.paymentMethods -> redacted',
+        'profiles.*.pledgeAmount -> redacted',
+        'proposals.*.data.proposalData -> redacted',
+        'proposals.*.payload -> redacted',
+        'settings.groupName -> text',
+        'settings.groupPicture.downloadParams -> redacted',
+        'settings.mincomeAmount -> redacted',
+        'settings.sharedValues -> text',
+        'streaks.missedPayments.* -> redacted',
+        'streaks.noVotes.* -> redacted',
+        'streaks.onTimePayments.* -> redacted',
+        'thankYousFrom.*.* -> redacted',
+        'totalPledgeAmount -> redacted'
+      ]
+    })
   })
 })

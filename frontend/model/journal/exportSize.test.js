@@ -7,16 +7,18 @@ import {
   JOURNAL_ENTRY_DEPTH,
   JOURNAL_ENTRY_SLACK_BYTES,
   journalEntryBytes,
-  journalKeyBytes
+  journalKeyBytes,
+  orderJournalCandidates,
+  selectJournalsWithinBudget
 } from './exportSize.js'
 
 const utf8Encoder = new TextEncoder()
 
-// The exported file is `{ journal: { "<contractID>": entry, … } }`, written with
+// The exported file is `{ journals: { "<contractID>": entry, … } }`, written with
 // `JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)`.
 const realExportBytes = (journals: Object): number => {
   return utf8Encoder.encode(
-    JSON.stringify({ journal: journals }, undefined, EXPORT_JSON_INDENT)
+    JSON.stringify({ journals }, undefined, EXPORT_JSON_INDENT)
   ).length
 }
 
@@ -82,7 +84,7 @@ describe('journal export size accounting', () => {
     const accounted = journalEntryBytes(contractID, entry)
 
     assert.ok(accounted > compact, `${accounted} should exceed the compact ${compact}`)
-    // The entry is nested at `payload.journal[contractID]`, so each of its
+    // The entry is nested at `payload.journals[contractID]`, so each of its
     // continuation lines gains `EXPORT_JSON_INDENT * JOURNAL_ENTRY_DEPTH`.
     const pretty = JSON.stringify(entry, undefined, EXPORT_JSON_INDENT)
     const continuationLines = pretty.split('\n').length - 1
@@ -119,12 +121,7 @@ describe('journal export size accounting', () => {
     )
   })
 
-  it('accounts for the JSON punctuation around each contract key', () => {
-    // `,\n` + the key's indentation + `"<contractID>": `
-    assert.strictEqual(
-      journalKeyBytes('z9brRu3V'),
-      2 + EXPORT_JSON_INDENT * JOURNAL_ENTRY_DEPTH + 4 + 'z9brRu3V'.length
-    )
+  it('counts contract key bytes as UTF-8', () => {
     // Contract IDs are base58 in practice; this pins the counting to UTF-8.
     assert.strictEqual(journalKeyBytes('秘密') - journalKeyBytes('ab'), '秘密'.length * 2)
   })
@@ -133,7 +130,7 @@ describe('journal export size accounting', () => {
     const journals = Object.create(null)
     journals.first = {}
     journals.second = {}
-    const serialized = JSON.stringify({ journal: journals }, undefined, EXPORT_JSON_INDENT)
+    const serialized = JSON.stringify({ journals }, undefined, EXPORT_JSON_INDENT)
     const secondKey = '    "second": '
 
     assert.ok(serialized.includes(`\n${secondKey}{}`))
@@ -151,5 +148,91 @@ describe('journal export size accounting', () => {
 
     assert.ok(JOURNAL_ENTRY_SLACK_BYTES > 0)
     assert.ok(journalEntryBytes('', entry) > withoutSlack)
+  })
+})
+
+describe('journal export selection', () => {
+  const candidate = (contractID: string, type: string, count: number = 1) => ({
+    contractID,
+    entry: makeContract(type, count)
+  })
+  const ids = (candidates) => candidates.map(c => c.contractID)
+
+  it('orders the own identity first, then groups, chatrooms and other identities', () => {
+    const candidates = [
+      candidate('zOtherIdentity1', 'gi.contracts/identity'),
+      candidate('zChatroom1', 'gi.contracts/chatroom'),
+      candidate('zUnknown', '(unknown)'),
+      candidate('zGroup', 'gi.contracts/group'),
+      candidate('zOwnIdentity', 'gi.contracts/identity'),
+      candidate('zOtherIdentity2', 'gi.contracts/identity'),
+      candidate('zChatroom2', 'gi.contracts/chatroom')
+    ]
+
+    const ordered = orderJournalCandidates(candidates, 'zOwnIdentity')
+
+    assert.deepStrictEqual(ids(ordered), [
+      'zOwnIdentity',
+      'zGroup',
+      // Same-rank candidates keep their original order.
+      'zChatroom1',
+      'zChatroom2',
+      'zOtherIdentity1',
+      'zOtherIdentity2',
+      'zUnknown'
+    ])
+    // The input is not reordered in place.
+    assert.strictEqual(candidates[0].contractID, 'zOtherIdentity1')
+  })
+
+  it('keeps every journal and omits nothing when the budget allows', () => {
+    const candidates = [
+      candidate('zIdentity', 'gi.contracts/identity'),
+      candidate('zGroup', 'gi.contracts/group', 3)
+    ]
+
+    const { journals, omitted, truncated } = selectJournalsWithinBudget(candidates)
+
+    assert.deepStrictEqual(Object.keys(journals), ['zIdentity', 'zGroup'])
+    assert.strictEqual(journals.zGroup, candidates[1].entry)
+    assert.deepStrictEqual({ ...omitted }, {})
+    assert.strictEqual(truncated, false)
+  })
+
+  it('names every journal it leaves out, and still fits later smaller ones', () => {
+    const small = candidate('zSmall1', 'gi.contracts/identity')
+    const large = candidate('zLarge', 'gi.contracts/group', 50)
+    const small2 = candidate('zSmall2', 'gi.contracts/chatroom')
+    const smallBytes = journalEntryBytes(small.contractID, small.entry)
+    const small2Bytes = journalEntryBytes(small2.contractID, small2.entry)
+    const largeBytes = journalEntryBytes(large.contractID, large.entry)
+    // Room for both small journals, but not for the large one as well.
+    const maxBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES + smallBytes + small2Bytes
+    assert.ok(largeBytes > small2Bytes)
+
+    const { journals, omitted, truncated } = selectJournalsWithinBudget([small, large, small2], maxBytes)
+
+    assert.deepStrictEqual(Object.keys(journals), ['zSmall1', 'zSmall2'])
+    assert.deepStrictEqual({ ...omitted }, {
+      zLarge: { type: 'gi.contracts/group', bytes: largeBytes }
+    })
+    assert.strictEqual(truncated, true)
+  })
+
+  it('keeps the written file within the budget it selects for', () => {
+    const candidates = orderJournalCandidates([
+      candidate('zChatroom', 'gi.contracts/chatroom', 30),
+      candidate('zGroup', 'gi.contracts/group', 20),
+      candidate('zOwnIdentity', 'gi.contracts/identity', 5)
+    ], 'zOwnIdentity')
+    const maxBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES +
+      journalEntryBytes('zOwnIdentity', candidates[0].entry) +
+      journalEntryBytes('zGroup', candidates[1].entry)
+
+    const { journals, omitted } = selectJournalsWithinBudget(candidates, maxBytes)
+
+    assert.deepStrictEqual(Object.keys(journals), ['zOwnIdentity', 'zGroup'])
+    assert.deepStrictEqual(Object.keys(omitted), ['zChatroom'])
+    assert.ok(realExportBytes(journals) <= maxBytes)
   })
 })

@@ -14,7 +14,7 @@ import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
-import { clearStaleJournalsAfterRedactions } from './model/journal/migration.js'
+import { clearStaleJournals } from './model/journal/migration.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
@@ -85,11 +85,6 @@ const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELON
   return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
 })
 const saveCheloniaDebounced = debounce(saveChelonia, 200)
-const clearStaleJournals = () => clearStaleJournalsAfterRedactions(
-  sbp('chelonia/rootState'),
-  sbp('chelonia/config'),
-  () => sbp('chelonia/journal/clear')
-)
 
 // Foreign identity contracts are never slot-owned: the identity KV slots'
 // `match` predicate (`onOwnIdentity`) is false for any identity contract that
@@ -130,8 +125,6 @@ const registerListeners = () => {
     sbp('gi.actions/identity/kv/load').catch(e => {
       console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
     })
-
-    clearStaleJournals()
 
     saveChelonia().catch(e => {
       console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
@@ -351,6 +344,9 @@ const initialize = async (): Promise<void> => {
     }
   })
 
+  // The state restored above may have been saved by an older app version, with
+  // journals recorded under older redaction rules (an SW restart after an
+  // update). Logins run the same check in `gi.actions/identity/login`.
   clearStaleJournals()
 
   sbp('chelonia.persistentActions/configure', {

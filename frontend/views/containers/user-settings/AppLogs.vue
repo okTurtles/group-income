@@ -89,8 +89,10 @@ type LogPayload = {
   version_info: Object,
   includeJournal: boolean,
   logs: Object[],
-  journal?: Object,
-  journalTruncated?: boolean
+  journals?: Object,
+  journalTruncated?: boolean,
+  journalOmitted?: Object,
+  journalError?: string
 }
 
 export default ({
@@ -207,8 +209,7 @@ export default ({
       this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
     async downloadOrShareLogs () {
-      const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
-      const isDownload = actionType === 'download'
+      let actionType = this.ephemeral.useWebShare ? 'share' : 'download'
 
       try {
         const elLink = this.$refs.linkDownload
@@ -226,18 +227,40 @@ export default ({
 
         if (this.form.includeJournal) {
           try {
-            const { journals, truncated } = await sbp('sw/journal/getAll')
-            payload.journal = journals
+            const { journals, omitted, truncated } = await sbp('sw/journal/getAll')
+            payload.journals = journals
             payload.journalTruncated = truncated
+            if (truncated) {
+              payload.journalOmitted = omitted
+            }
           } catch (err) {
             journalError = err
+            // Recorded in the file too, so whoever reads the report knows why
+            // the journals are missing.
+            payload.journalError = `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
             console.error('AppLogs.vue: Failed to obtain contract journals:', err)
           }
         }
 
         const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: mimeType })
 
-        if (isDownload) {
+        if (actionType === 'share') {
+          try {
+            await (navigator: any).share({
+              files: [new File([blob], filename, { type: blob.type })],
+              title: L('Application Logs')
+            })
+          } catch (err) {
+            // `share` needs transient user activation, which can expire while
+            // the journals are fetched above (WebKit allows less time than
+            // Chromium). Save the same file as a download instead of failing.
+            if (err?.name !== 'NotAllowedError') throw err
+            console.warn('AppLogs.vue: Sharing the app logs was not allowed, downloading them instead:', err)
+            actionType = 'download'
+          }
+        }
+
+        if (actionType === 'download') {
           if (!elLink) { return }
 
           const url = URL.createObjectURL(blob)
@@ -248,11 +271,6 @@ export default ({
             elLink.href = '#'
             URL.revokeObjectURL(url)
           }, 0)
-        } else {
-          await (navigator: any).share({
-            files: [new File([blob], filename, { type: blob.type })],
-            title: L('Application Logs')
-          })
         }
 
         if (journalError) {
@@ -261,6 +279,7 @@ export default ({
           this.$refs.errBanner.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
+        const isDownload = actionType === 'download'
         // Dismissing the native share sheet rejects with `AbortError`. That is a
         // cancellation, not a failure, so there is nothing to report.
         if (!isDownload && err?.name === 'AbortError') return

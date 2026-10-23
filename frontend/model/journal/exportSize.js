@@ -1,7 +1,8 @@
 /* @flow */
 
-// Byte accounting for the contract journal export in `sw/journal/getAll`.
-// Extracted from the service worker so the arithmetic can be unit tested.
+// Byte accounting and journal selection for the contract journal export in
+// `sw/journal/getAll`. Extracted from the service worker so it can be unit
+// tested.
 //
 // The export is written with
 // `JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)` (AppLogs.vue), so the
@@ -10,16 +11,27 @@
 
 // Shared with AppLogs.vue so the writer and the accountant cannot drift.
 export const EXPORT_JSON_INDENT = 2
-// Entries live at `payload.journal[contractID]`, so every continuation line of
+// Entries live at `payload.journals[contractID]`, so every continuation line of
 // an entry's pretty-printed form carries this many extra levels of indentation.
 export const JOURNAL_ENTRY_DEPTH = 2
 // Payload punctuation the per-entry accounting cannot see: the opening brace,
-// the `"journal": {` key line, and the closing braces and newlines.
+// the `"journals": {` key line, and the closing braces and newlines.
 export const JOURNAL_CONTAINER_OVERHEAD_BYTES = 48
 // Per-entry allowance so the estimate never under-counts the real file.
 export const JOURNAL_ENTRY_SLACK_BYTES = 32
 // Cap on the journal portion of the export. `logs` is not counted here.
 export const MAX_JOURNAL_EXPORT_BYTES = 5 * 1024 * 1024
+
+export type JournalExportEntry = { type: string, journal: Object }
+export type JournalCandidate = { contractID: string, entry: JournalExportEntry }
+export type JournalSelection = {
+  // `contractID -> JournalExportEntry`
+  journals: Object,
+  // `contractID -> { type, bytes }` for the journals left out to stay within
+  // the budget, so the person reading the report can tell what is missing.
+  omitted: Object,
+  truncated: boolean
+}
 
 const utf8Encoder = new TextEncoder()
 
@@ -41,4 +53,52 @@ export const journalEntryBytes = (contractID: string, entry: Object): number => 
     continuationLines * EXPORT_JSON_INDENT * JOURNAL_ENTRY_DEPTH +
     journalKeyBytes(contractID) +
     JOURNAL_ENTRY_SLACK_BYTES
+}
+
+// Lower ranks are kept first when the export is over budget: the user's own
+// identity, then groups, then chatrooms, then other members' identities.
+const journalExportRank = (contractID: string, type: string, ownIdentityID: ?string): number => {
+  if (contractID === ownIdentityID) return 0
+  switch (type) {
+    case 'gi.contracts/group': return 1
+    case 'gi.contracts/chatroom': return 2
+    case 'gi.contracts/identity': return 3
+    default: return 4
+  }
+}
+
+// Returns a sorted copy. The sort is stable, so candidates of the same rank
+// keep their original order.
+export const orderJournalCandidates = (
+  candidates: Array<JournalCandidate>,
+  ownIdentityID: ?string
+): Array<JournalCandidate> => {
+  const rank = ({ contractID, entry }) => journalExportRank(contractID, entry.type, ownIdentityID)
+  return candidates.slice().sort((a, b) => rank(a) - rank(b))
+}
+
+// Takes candidates in priority order and keeps each one that still fits in the
+// budget. A journal that doesn't fit is recorded in `omitted` and skipped, so a
+// smaller one later in the list can still be included.
+export const selectJournalsWithinBudget = (
+  candidates: Array<JournalCandidate>,
+  maxBytes: number = MAX_JOURNAL_EXPORT_BYTES
+): JournalSelection => {
+  const journals = Object.create(null)
+  const omitted = Object.create(null)
+  let exportBytes = JOURNAL_CONTAINER_OVERHEAD_BYTES
+  let truncated = false
+
+  for (const { contractID, entry } of candidates) {
+    const bytes = journalEntryBytes(contractID, entry)
+    if (exportBytes + bytes > maxBytes) {
+      omitted[contractID] = { type: entry.type, bytes }
+      truncated = true
+      continue
+    }
+    journals[contractID] = entry
+    exportBytes += bytes
+  }
+
+  return { journals, omitted, truncated }
 }

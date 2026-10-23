@@ -2,7 +2,10 @@
 
 import assert from 'node:assert'
 import { stringMax } from '../contracts/misc/flowTyper.js'
+import { REDACTED } from './redactions.js'
 import { sanitizeJournal, scrubErrorMessage } from './sanitize.js'
+
+const SCRUBBED_VALUE_LINE = `value    ${REDACTED}`
 
 // Builds the message Chelonia stores on a failed journal entry: the journal
 // recorder keeps `{ name, message }` verbatim, and `validate` runs inside
@@ -45,7 +48,7 @@ describe('journal export sanitization', () => {
     const scrubbed = scrubErrorMessage(message)
 
     assert.ok(!scrubbed.includes(secret))
-    assert.ok(scrubbed.includes('value    [REDACTED]'))
+    assert.ok(scrubbed.includes(SCRUBBED_VALUE_LINE))
     // Everything that makes the failure diagnosable survives.
     assert.ok(scrubbed.includes('file  '))
     assert.ok(scrubbed.includes('expected string(max: 10)'))
@@ -70,6 +73,31 @@ describe('journal export sanitization', () => {
     assert.ok(!scrubbed.includes('"secret"'))
   })
 
+  it('scrubs values that contain JS line separators', () => {
+    // `JSON.stringify` leaves U+2028 and U+2029 unescaped, and a regex `.` or a
+    // multiline `$` stops at them.
+    for (const separator of ['\u2028', '\u2029']) {
+      const message = realValidatorMessage(`rent money${separator}my secret diagnosis`)
+      assert.ok(message.includes('my secret diagnosis'))
+
+      const scrubbed = scrubErrorMessage(message)
+
+      assert.ok(!scrubbed.includes('my secret diagnosis'))
+      assert.ok(!scrubbed.includes('rent money'))
+      assert.ok(scrubbed.includes(SCRUBBED_VALUE_LINE))
+      assert.ok(scrubbed.includes('type     string'))
+    }
+  })
+
+  it('scrubs every value line in a message', () => {
+    const message = '    value    "first secret"\nnested:\n    value    "second secret"'
+    const scrubbed = scrubErrorMessage(message)
+
+    assert.ok(!scrubbed.includes('first secret'))
+    assert.ok(!scrubbed.includes('second secret'))
+    assert.strictEqual(scrubbed.split(SCRUBBED_VALUE_LINE).length - 1, 2)
+  })
+
   it('scrubs errors on both patch and snapshot entries without touching anything else', () => {
     const secret = 'a payment memo that should never be exported'
     const patch = makeEntry('patch', realValidatorMessage(secret))
@@ -83,7 +111,7 @@ describe('journal export sanitization', () => {
     assert.ok(!JSON.stringify(journal).includes(secret))
     assert.ok(!JSON.stringify(journal).includes('a payment memo'))
     assert.strictEqual(patch.error.message, snapshot.error.message)
-    assert.ok(patch.error.message.includes('value    [REDACTED]'))
+    assert.ok(patch.error.message.includes(SCRUBBED_VALUE_LINE))
     assert.strictEqual(patch.error.name, 'TypeValidatorError')
     assert.strictEqual(patch.hash, 'zQmhash')
     assert.strictEqual(clean.error, undefined)
