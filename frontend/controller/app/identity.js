@@ -68,6 +68,14 @@ sbp('okTurtles.events/on', LOGIN, async ({ identityContractID, encryptionParams,
         throw new Error('Received login event but there already is an active session')
       }
       const cheloniaState = cloneDeep(await sbp('chelonia/rootState'))
+      // The state will be augmented from the Chelonia state, which has the journal.
+      // We have no use for the `_journal` key in Vuex, and keeping it will just bloat the state.
+      // It's not sufficient to rely on `@chelonia/lib` to exclude this automatically, because this
+      // is a manual copy of the full Chelonia state.
+      Object.keys(cheloniaState.contracts || {}).forEach((k) => {
+        const c = cheloniaState.contracts[k]
+        if (c) delete c._journal
+      })
       // If `state` is set, process it and replace Vuex state with it
       if (state) {
       // Exclude contracts from the state
@@ -333,8 +341,15 @@ export default (sbp('sbp/selectors/register', {
       if (username) {
         // We expect that in development mode the same browser may be used and
         // server data cleared often, so we skip the cache lookup for dev
-        // convenience.
-        const nsIdentityContractID = await sbp('namespace/lookup', username, { skipCache: process.env.CI || process.env.NODE_ENV !== 'production' })
+        // convenience (and also any recently remembered server answer).
+        const fresh = !!(process.env.CI || process.env.NODE_ENV !== 'production')
+        let nsIdentityContractID = await sbp('namespace/lookup', username, { forceRefresh: fresh })
+        if (!nsIdentityContractID && !fresh) {
+          // A remembered 'not registered' answer (e.g., from the signup form)
+          // is outdated if the name has since been registered on another
+          // device, so ask the server before failing
+          nsIdentityContractID = await sbp('namespace/lookup', username, { forceRefresh: true })
+        }
         // If we've only been given a username, set `identityContractID` to the
         // contract ID we've just looked up
         if (!identityContractID) {

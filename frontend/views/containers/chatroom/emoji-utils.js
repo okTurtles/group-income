@@ -9,17 +9,17 @@ export const searchEmoji = (query: string = '', sortByRelevance: boolean = false
 
   if (results?.length > 0) {
     if (sortByRelevance) {
-      results = results.slice().sort((a, b) => {
-        const getColonsMatchIndex = (colons) => {
-          const matchIndex = colons.toLowerCase().indexOf(query.toLowerCase())
-          // If there is no matching string piece in the colons of the item, set the index to a large number so that it has low priority.
-          return matchIndex === -1 ? 10000 : matchIndex
-        }
-        const aColonsMatchIndex = getColonsMatchIndex(a.colons)
-        const bColonsMatchIndex = getColonsMatchIndex(b.colons)
+      const lowerCaseQuery = query.toLowerCase()
+      const getColonsMatchIndex = (colons) => {
+        const matchIndex = colons.toLowerCase().indexOf(lowerCaseQuery)
+        // If there is no matching string piece in the colons of the item, set the index to a large number so that it has low priority.
+        return matchIndex === -1 ? 10000 : matchIndex
+      }
 
-        return aColonsMatchIndex - bColonsMatchIndex
-      })
+      results = results
+        .map(emoji => ({ emoji, matchIndex: getColonsMatchIndex(emoji.colons) }))
+        .sort((a, b) => a.matchIndex - b.matchIndex)
+        .map(({ emoji }) => emoji)
     }
 
     results = results.slice(0, maxResults)

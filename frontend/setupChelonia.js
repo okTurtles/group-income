@@ -9,6 +9,7 @@ import type { SPMessage } from '@chelonia/lib/SPMessage'
 import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
+import { isContractDeletedError } from './controller/actions/namespaceCacheList.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
@@ -31,7 +32,10 @@ const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   return false
 }
 
-const handleDeletedContract = async (contractID: string) => {
+// `confirmed` tells whether the server confirmed the deletion (a deletion
+// notification or a 410). Otherwise (a 404), the contract may still exist, so
+// `_ondeleted` handlers should avoid changes that other devices would pick up.
+const handleDeletedContract = async (contractID: string, { confirmed }: { confirmed: boolean }) => {
   const { cheloniaState, contractState } = sbp('chelonia/contract/fullState', contractID)
   if (!cheloniaState) return
 
@@ -67,7 +71,7 @@ const handleDeletedContract = async (contractID: string) => {
   // removed, this is at worst redudant, but still safe, since removal of the
   // identity contract also deletes the same information.
   if (typeof handler === 'function') {
-    await handler(contractID, contractState).catch(e => {
+    await handler(contractID, contractState, { confirmed }).catch(e => {
       console.error('[handleDeletedContract] Error handling deletion of contract', contractID, e)
     })
   } else {
@@ -75,12 +79,102 @@ const handleDeletedContract = async (contractID: string) => {
   }
 }
 
+let logoutInProgress = false
+const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => {
+  if (logoutInProgress) return
+  return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
+})
+const saveCheloniaDebounced = debounce(saveChelonia, 200)
+const clearStaleJournals = () => clearStaleJournalsAfterRedactions(
+  sbp('chelonia/rootState'),
+  sbp('chelonia/config'),
+  () => sbp('chelonia/journal/clear')
+)
+
+// Foreign identity contracts are never slot-owned: the identity KV slots'
+// `match` predicate (`onOwnIdentity`) is false for any identity contract that
+// isn't the logged-in user's own, so the slot layer never sends a filter
+// frame for them. Without an explicit empty filter the pubsub server defaults
+// to "receive all keys" (see @chelonia/lib docs/api.md), which means every
+// client receives the KV frames (unreadMessages / preferences / notifications
+// writes) for every other member's identity contract it has synced. The frames
+// are dropped client-side (no attached slot), but the bandwidth and server
+// fan-out cost scales with group size × chat activity. The own identity is
+// excluded because `rootState.loggedIn` is populated by `chelonia/reset`
+// during `gi.actions/identity/login` before the identity contract sync emits
+// `CONTRACTS_MODIFIED`, so the slot layer owns it.
+const filterOutForeignIdentityKv = (contractIDs: string[]) => {
+  const rootState = sbp('chelonia/rootState')
+  const ownIdentity = rootState.loggedIn?.identityContractID
+  contractIDs.forEach((cID) => {
+    if (rootState.contracts?.[cID]?.type === 'gi.contracts/identity' && cID !== ownIdentity) {
+      sbp('chelonia/kv/setFilter', cID, [])
+    }
+  })
+}
+
+// Event listeners set up by `initialize`. Registered only once, even if
+// `initialize` is retried after failing.
+let listenersRegistered = false
+const registerListeners = () => {
+  if (listenersRegistered) return
+  listenersRegistered = true
+
+  sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
+    const state = sbp('chelonia/rootState')
+    if (!state.loggedIn) {
+      console.warn('Received LOGIN_COMPLETE event but state.loggedIn is not an object')
+      return
+    }
+
+    sbp('gi.actions/identity/kv/load').catch(e => {
+      console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
+    })
+
+    clearStaleJournals()
+
+    saveChelonia().catch(e => {
+      console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
+    })
+  })
+
+  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED, () => {
+    saveChelonia().catch(e => {
+      console.error('CHELONIA_STATE_MODIFIED handler: Error saving Chelonia state', e)
+    })
+  })
+
+  // See `filterOutForeignIdentityKv`
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
+    if (added.length) filterOutForeignIdentityKv(added)
+  })
+
+  sbp('okTurtles.events/on', LOGGING_OUT, () => {
+    logoutInProgress = true
+  })
+
+  sbp('okTurtles.events/on', LOGOUT, () => {
+    // TODO: [SW] This is to be done by the SW
+    saveCheloniaDebounced.clear()
+    Promise.all([
+      sbp('chelonia/reset'),
+      sbp('gi.db/settings/delete', SETTING_CHELONIA_STATE)
+    ]).catch(e => {
+      console.error('Logout event: error deleting Chelonia state:', e)
+    }).finally(() => {
+      logoutInProgress = false
+    })
+  })
+}
+
 // This function is tasked with most common tasks related to setting up Chelonia
 // for Group Income. If Chelonia is running in a service worker, the service
 // worker should call this function. On the other hand, if Chelonia is running
 // in the browsing context, the browsing context is the one that should call this
 // function.
-const setupChelonia = async (): Promise<*> => {
+// It runs once; connecting to the server is done separately by
+// `connectAndSync`, which is re-run after pubsub errors.
+const initialize = async (): Promise<void> => {
   // Load Chelonia state (this needs to be done in the SW when Chelonia is
   // running there)
   // We only load Chelonia state when SETTING_CURRENT_USER is set because,
@@ -113,7 +207,8 @@ const setupChelonia = async (): Promise<*> => {
   //      copies are to be considered a cache and are not authoritative.
   //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
   //      in a single direction: Chelonia -> Vuex)
-  await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
+  registerListeners()
+  await sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
@@ -122,7 +217,7 @@ const setupChelonia = async (): Promise<*> => {
     if (typeof WorkerGlobalScope === 'function') {
       await sbp('swLogs/startCapture', identityContractID)
     }
-  })
+  }))
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Object) => {
@@ -132,18 +227,6 @@ const setupChelonia = async (): Promise<*> => {
       console.error('Error saving logs during error notification', e)
     })
   }
-
-  let logoutInProgress = false
-  const saveChelonia = () => sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => {
-    if (logoutInProgress) return
-    return sbp('gi.db/settings/save', SETTING_CHELONIA_STATE, sbp('chelonia/rootState'))
-  })
-  const saveCheloniaDebounced = debounce(saveChelonia, 200)
-  const clearStaleJournals = () => clearStaleJournalsAfterRedactions(
-    sbp('chelonia/rootState'),
-    sbp('chelonia/config'),
-    () => sbp('chelonia/journal/clear')
-  )
 
   // When running in a SW, this call here needs to be moved to be made from the
   // SW itself
@@ -219,7 +302,7 @@ const setupChelonia = async (): Promise<*> => {
         if (!e) return
         if (e.name === 'ChelErrorResourceGone') {
           console.info('[syncContractError] Contract ID ' + contractID + ' has been deleted')
-          handleDeletedContract(contractID).catch(e => {
+          handleDeletedContract(contractID, { confirmed: isContractDeletedError(e) }).catch(e => {
             console.error('[syncContractError] Error handling contract deletion', e)
           })
         }
@@ -270,75 +353,15 @@ const setupChelonia = async (): Promise<*> => {
 
   clearStaleJournals()
 
-  sbp('okTurtles.events/on', LOGIN_COMPLETE, () => {
-    const state = sbp('chelonia/rootState')
-    if (!state.loggedIn) {
-      console.warn('Received LOGIN_COMPLETE event but state.loggedIn is not an object')
-      return
-    }
-
-    sbp('gi.actions/identity/kv/load').catch(e => {
-      console.error("Error from 'gi.actions/identity/kv/load' during login:", e)
-    })
-
-    clearStaleJournals()
-
-    saveChelonia().catch(e => {
-      console.error('LOGIN_COMPLETE handler: Error saving Chelonia state', e)
-    })
-  })
-
-  sbp('okTurtles.events/on', CHELONIA_STATE_MODIFIED, () => {
-    saveChelonia().catch(e => {
-      console.error('CHELONIA_STATE_MODIFIED handler: Error saving Chelonia state', e)
-    })
-  })
-
-  // Foreign identity contracts are never slot-owned: the identity KV slots'
-  // `match` predicate (`onOwnIdentity`) is false for any identity contract that
-  // isn't the logged-in user's own, so the slot layer never sends a filter
-  // frame for them. Without an explicit empty filter the pubsub server defaults
-  // to "receive all keys" (see @chelonia/lib docs/api.md), which means every
-  // client receives the KV frames (unreadMessages / preferences / notifications
-  // writes) for every other member's identity contract it has synced. The frames
-  // are dropped client-side (no attached slot), but the bandwidth and server
-  // fan-out cost scales with group size × chat activity. The own identity is
-  // excluded because `rootState.loggedIn` is populated by `chelonia/reset`
-  // during `gi.actions/identity/login` before the identity contract sync emits
-  // `CONTRACTS_MODIFIED`, so the slot layer owns it.
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
-    if (!added.length) return
-    const rootState = sbp('chelonia/rootState')
-    const ownIdentity = rootState.loggedIn?.identityContractID
-    added.forEach((cID) => {
-      if (rootState.contracts[cID]?.type === 'gi.contracts/identity' && cID !== ownIdentity) {
-        sbp('chelonia/kv/setFilter', cID, [])
-      }
-    })
-  })
-
-  sbp('okTurtles.events/on', LOGGING_OUT, () => {
-    logoutInProgress = true
-  })
-
-  sbp('okTurtles.events/on', LOGOUT, () => {
-    // TODO: [SW] This is to be done by the SW
-    saveCheloniaDebounced.clear()
-    Promise.all([
-      sbp('chelonia/reset'),
-      sbp('gi.db/settings/delete', SETTING_CHELONIA_STATE)
-    ]).catch(e => {
-      console.error('Logout event: error deleting Chelonia state:', e)
-    }).finally(() => {
-      logoutInProgress = false
-    })
-  })
-
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
   })
   await sbp('chelonia.persistentActions/load')
+}
 
+// Connects to the server and syncs the logged-in user's contracts. Unlike
+// `initialize`, this is re-run after pubsub errors.
+const connectAndSync = () => {
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
@@ -407,7 +430,7 @@ const setupChelonia = async (): Promise<*> => {
       },
       [NOTIFICATION_TYPE.DELETION] (contractID) {
         console.info('[messageHandler] Contract ID ' + contractID + ' has been deleted')
-        handleDeletedContract(contractID).catch(e => {
+        handleDeletedContract(contractID, { confirmed: true }).catch(e => {
           console.error('[messageHandler] Error handling contract deletion', e)
         })
       }
@@ -432,6 +455,14 @@ const setupChelonia = async (): Promise<*> => {
       }
     }
   }))
+  // `chelonia/connect` replaces the socket, but Chelonia still considers the
+  // contracts it has synced to be subscribed, so syncing them won't subscribe
+  // the new socket. Subscribe it explicitly (a no-op on the first connection).
+  // The new socket keeps the KV filters of Chelonia's KV slots but not the
+  // ones set by `filterOutForeignIdentityKv`, so set those first: subscription
+  // requests carry them.
+  filterOutForeignIdentityKv(Object.keys(sbp('chelonia/rootState').contracts || {}))
+  sbp('chelonia/pubsub/update')
 
   // this should be done here and not in LOGIN_COMPLETE because:
   // If the SW awakens but it's not a navigation event, you'll skip the code syncing all
@@ -450,6 +481,8 @@ const setupChelonia = async (): Promise<*> => {
     }).catch(e => {
       console.error('[setupChelonia] Error syncing identity contract and groups', e)
     })
+  }).catch(e => {
+    console.error('[setupChelonia] Error loading the current user to sync their contracts', e)
   })
 }
 
@@ -458,9 +491,20 @@ const setupChelonia = async (): Promise<*> => {
 // actual invocations actually happen (unless the last invocation resolved
 // and rejected)
 export default ((() => {
+  let initPromise
+  let promise
+  const ensureInitialized = () => {
+    if (!initPromise) {
+      initPromise = initialize().catch((e) => {
+        initPromise = undefined // Retry on the next call
+        throw e
+      })
+    }
+    return initPromise
+  }
   const singletonFn = () => {
     if (!promise) {
-      promise = setupChelonia().catch((e) => {
+      promise = ensureInitialized().then(connectAndSync).catch((e) => {
         console.error('[setupChelonia] Error during chelonia setup', e)
         promise = undefined // Reset on error
         throw e // Re-throw the error
@@ -468,11 +512,12 @@ export default ((() => {
     }
     return promise
   }
-  let promise
 
   // Listen for `PUBSUB_ERROR` events. These cause the WS to be destroyed
   // When this happens, if `setupChelonia` has been called, we will reset
-  // `promise` and then call `singletonFn` after a short delay.
+  // `promise` and then call `singletonFn` after a short delay. Initialization
+  // (loading the saved state, configuring Chelonia and registering event
+  // listeners) isn't repeated; only connecting and syncing are.
   sbp('okTurtles.events/on', PUBSUB_ERROR, () => {
     if (!promise) return
     promise = undefined

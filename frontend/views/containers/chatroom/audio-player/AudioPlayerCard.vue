@@ -20,10 +20,12 @@
     :hideDefaultPlayButton='true'
     :disabled='!src'
     :src='src'
-    :mimeType='mimeType'
+    :mimeType='mimeTypeEssence'
     :mode='forSendArea ? "minimal" : "default"'
     @playing='onPlaying'
     @pause='onPaused'
+    @audio-metadata-loaded='onAudioMetadataLoaded'
+    @audio-load-failed='onAudioLoadFailed'
   )
 
   i18n.error.c-error(
@@ -35,6 +37,7 @@
 <script>
 import AudioPlayer from '@components/AudioPlayer.vue'
 import { CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { getMimeTypeEssence } from '@containers/chatroom/voice-recording/voice-recording-utils.js'
 
 export default {
   name: 'AudioPlayerCard',
@@ -69,6 +72,9 @@ export default {
   computed: {
     isLoading () {
       return this.ephemeral.loadingStatus === 'loading'
+    },
+    mimeTypeEssence () {
+      return this.mimeType ? getMimeTypeEssence(this.mimeType) : ''
     }
   },
   methods: {
@@ -88,24 +94,36 @@ export default {
       this.ephemeral.isPlaying = false
     },
     async loadAudio () {
-      if (this.ephemeral.loadingStatus === 'loading') { return }
+      if (this.checkLoadingStatus('loading')) { return }
 
       try {
-        this.ephemeral.loadingStatus = 'loading'
-
+        this.setLoadingStatus('loading')
         await this.attachmentUtils.loadMediaObjectURL(this.attachment, CHATROOM_ATTACHMENT_TYPES.AUDIO)
-        this.ephemeral.loadingStatus = 'idle'
-
+      } catch (err) {
+        console.error('AudioPlayerCard.vue caught:', err)
+        this.setLoadingStatus('error')
+      }
+    },
+    checkLoadingStatus (status) {
+      return this.ephemeral.loadingStatus === status
+    },
+    setLoadingStatus (status) {
+      this.ephemeral.loadingStatus = status
+    },
+    onAudioMetadataLoaded () {
+      if (this.checkLoadingStatus('loading')) {
+        this.setLoadingStatus('idle')
         this.$nextTick(() => {
-          // The component might be destroyed before loadMediaObjectURL() call is completed, so check if the player is still mounted.
+          // The component might be destroyed while waiting, so check the ref before playing.
           if (this.$refs.audioPlayer) {
             this.togglePlay()
           }
         })
-      } catch (err) {
-        console.error('AudioPlayerCard.vue caught:', err)
-        this.ephemeral.loadingStatus = 'error'
       }
+    },
+    onAudioLoadFailed (error) {
+      console.error('AudioPlayerCard.vue caught error:', error)
+      this.setLoadingStatus('error')
     }
   }
 }
