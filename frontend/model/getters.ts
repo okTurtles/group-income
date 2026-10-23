@@ -370,8 +370,6 @@ const getters: { [x: string]: (state: Record<string, any>, getters: { [x: string
     const identityContractID = getters.ourIdentityContractId
     const groups = state[identityContractID]?.groups
     if (!groups) return []
-    // The code below was originally Object.entries(...) but changed to .keys()
-    // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     // we return event pending groups that we haven't finished joining so that we are not stuck
     // on the /pending-approval page if we are part of another working group already
     return Object.entries(groups)

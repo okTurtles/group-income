@@ -59,7 +59,7 @@ function generateImageBlobByCanvas ({
   resizingFactor,
   quality,
   compressToType
-}): Promise<any> {
+}): Promise<Blob | null> {
   const { naturalWidth, naturalHeight } = sourceImage
   const canvasEl = document.createElement('canvas')
   const c = canvasEl.getContext('2d')

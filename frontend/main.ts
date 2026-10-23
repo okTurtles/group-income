@@ -243,8 +243,6 @@ async function startApp () {
     },
     mounted () {
       let oldIdentityContractID = null // lets us know if there's a previously logged in user
-      // The `|| {}` fallback is for browsers without `matchMedia`, so `matches`
-      // is genuinely optional here — annotating it keeps the guard on the line below honest.
       const reducedMotionQuery: { matches?: boolean } = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)

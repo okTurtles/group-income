@@ -43,10 +43,10 @@ const decryptOldIekList = (contractID: string, IEK: Key, encryptedData: string |
     const parsedData = JSON.parse(encryptedData)
 
     // Decrypt the incoming data using the IEK and contract ID
-    const decryptedData = encryptedIncomingDataWithRawKey(IEK, parsedData, `meta.private.oldKeys;${contractID}`)
+    const decryptedData = encryptedIncomingDataWithRawKey<string>(IEK, parsedData, `meta.private.oldKeys;${contractID}`)
 
     // Parse the decrypted data back into a JavaScript object
-    const oldKeysList = JSON.parse(decryptedData.valueOf() as any)
+    const oldKeysList = JSON.parse(decryptedData.valueOf())
 
     return oldKeysList // Return the decrypted old keys
   } catch (error) {

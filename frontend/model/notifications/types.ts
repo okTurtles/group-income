@@ -27,6 +27,7 @@ export type Notification = {
   readonly timestamp: number;
   readonly type: string;
   // Other properties might be defined according to the notification's type.
+  [key: string]: unknown;
 }
 
 export type NotificationData = {

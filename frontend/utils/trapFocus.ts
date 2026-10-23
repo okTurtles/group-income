@@ -1,5 +1,5 @@
 const trapFocus = {
-  data (): { focusableElements: string, focusedElement: null } {
+  data (): { focusableElements: string, focusedElement: HTMLElement | null } {
     return {
       // focusedElement used when $el is not available (ex: the tooltip)
       focusedElement: null,

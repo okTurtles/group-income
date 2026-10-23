@@ -176,9 +176,7 @@ export function getLocale (): Intl.LocalesArgument {
   return typeof navigator === 'undefined'
     // Fallback for Mocha tests.
     ? fallback
-    // `navigator.languages` is `readonly string[]`, which is not compatible with the
-    // `string[]` expected by `.toLocaleDateString()`. Casting through `any` as a workaround.
-    : (navigator.languages as any) ?? navigator.language ?? fallback
+    : navigator.languages ?? navigator.language ?? fallback
 }
 
 export function humanDate (

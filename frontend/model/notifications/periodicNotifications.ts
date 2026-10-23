@@ -91,7 +91,7 @@ async function runNotificationListRecursive () {
   // only in the browser window (instead of also in the SW), a timeout was used
   // for a similar effect.
   await Promise.all(
-    ((Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')) as any) as [string, (Fn | string[])[]])
+    (Object.entries(sbp('okTurtles.eventQueue/queuedInvocations')) as Array<[string, (Fn | string[])[]]>)
       .map(([queue, invocations]) => {
         return !!invocations.length && sbp('okTurtles.eventQueue/queueEvent', queue, () => {}).catch(() => {})
       })
