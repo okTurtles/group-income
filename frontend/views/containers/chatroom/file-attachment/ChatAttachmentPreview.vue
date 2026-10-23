@@ -98,7 +98,7 @@ import MediaPreviewInTextArea from './MediaPreviewInTextArea.vue'
 import SendAreaAttachmentsGallery from './SendAreaAttachmentsGallery.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
-import { getFileExtension, getFileType, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
+import { getFileExtension, getFileType, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.ts'
 import { Secret } from '@chelonia/lib/Secret'
 import { OPEN_MODAL, DELETE_ATTACHMENT } from '@utils/events.js'
 import { uniq } from 'turtledash'
@@ -138,7 +138,7 @@ export default {
       },
       settledImgURLList: [],
       config: {
-        CHATROOM_ATTACHMENT_TYPES: CHATROOM_ATTACHMENT_TYPES
+        CHATROOM_ATTACHMENT_TYPES
       },
       ephemeral: {
         downloadInProgress: [] // array of entry ids that are currently being downloaded to user's device

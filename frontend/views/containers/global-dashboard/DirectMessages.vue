@@ -4,9 +4,9 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'NewAndUpdates'
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

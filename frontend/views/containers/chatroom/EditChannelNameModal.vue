@@ -46,10 +46,10 @@ import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { sanitizeChannelName } from '@view-utils/filters.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
+import { sanitizeChannelName } from '@view-utils/filters.ts'
 
-export default ({
+export default {
   name: 'EditChannelNameModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -140,7 +140,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

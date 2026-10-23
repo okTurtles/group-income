@@ -15,10 +15,10 @@
 </template>
 
 <script>
-import modalMixins from './ModalMixins.js'
-import trapFocus from '@utils/trapFocus.js'
+import modalMixins from './ModalMixins.ts'
+import trapFocus from '@utils/trapFocus.ts'
 
-export default ({
+export default {
   name: 'ModalBaseTemplate',
   mixins: [modalMixins, trapFocus],
   props: {
@@ -31,7 +31,7 @@ export default ({
       default: true
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

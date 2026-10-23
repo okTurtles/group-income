@@ -53,8 +53,8 @@ import {
   IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
   IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
 } from '@model/contracts/shared/constants.js'
-import { requestNotificationPermission } from '@model/notifications/nativeNotification.js'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { requestNotificationPermission } from '@model/notifications/nativeNotification.ts'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import {
   allowedUsernameCharacters,
   noConsecutiveHyphensOrUnderscores,
@@ -62,9 +62,9 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase,
   noWhitespace
-} from '@model/contracts/shared/validators.js'
+} from '@model/contracts/shared/validators.ts'
 import { Secret } from '@chelonia/lib/Secret'
-import ALLOWED_URLS from '@view-utils/allowedUrls.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.ts'
 
 export const usernameValidations = {
   [L('A username is required.')]: required,
@@ -77,7 +77,7 @@ export const usernameValidations = {
   [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores
 }
 
-export default ({
+export default {
   name: 'SignupForm',
   mixins: [
     validationMixin,
@@ -186,7 +186,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

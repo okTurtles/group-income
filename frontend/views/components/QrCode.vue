@@ -9,7 +9,7 @@ import QRious from 'qrious'
 import { mapGetters } from 'vuex'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'QrCode',
   props: {
     pixelSize: {
@@ -93,7 +93,7 @@ export default ({
       this.update()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -24,7 +24,7 @@ import sbp from '@sbp/sbp'
 import { mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationList from './NotificationList.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
 export default {
   name: 'NotificationModal',

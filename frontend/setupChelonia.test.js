@@ -6,8 +6,8 @@
 // "Less than 1 week left" notification was shown again on every SW cold start
 // (https://github.com/okTurtles/group-income/issues/3158).
 //
-// Each SW lifetime runs the real SW script (sw-primary.js, which calls
-// setupChelonia.js) in a new worker thread, so that every cold start begins
+// Each SW lifetime runs the real SW script (sw-primary.ts, which calls
+// setupChelonia.ts) in a new worker thread, so that every cold start begins
 // with fresh modules and globals, like a real SW does. The worker is then
 // terminated without any shutdown hook, like browsers do with idle SWs.
 // Only the environment is simulated: IndexedDB (file-backed, so that stored
@@ -33,7 +33,7 @@ const DAY = 24 * 60 * 60 * 1000
 // Worker side
 // ---------------------------------------------------------------------------
 
-// The subset of IndexedDB used by frontend/model/localforage.js, with one file
+// The subset of IndexedDB used by frontend/model/localforage.ts, with one file
 // per database. A write is durable as soon as it's made, and values are cloned
 // when `put` is called using the same algorithm as IndexedDB (structured
 // clone), so values that can't be stored throw like they would in a browser.
@@ -132,7 +132,7 @@ const registerFrontendModules = () => {
   require('@babel/register')({
     cwd: ROOT,
     cache: false,
-    extensions: ['.js'],
+    extensions: ['.js', '.ts'],
     only: [path.join(ROOT, 'frontend')],
     plugins: [
       ['module-resolver', {
@@ -212,9 +212,9 @@ const loadSbp = () => {
 // ends in 3 days, so the "Less than 1 week left" notification is due.
 const seed = async ({ daysIntoPeriod = 27 } = {}) => {
   const sbp = loadSbp()
-  const { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } = require(path.join(ROOT, 'frontend/model/database.js'))
-  const { makeNotificationHash } = require(path.join(ROOT, 'frontend/model/notifications/utils.js'))
-  const { dateToPeriodStamp, addTimeToDate } = require(path.join(ROOT, 'frontend/model/contracts/shared/time.js'))
+  const { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } = require(path.join(ROOT, 'frontend/model/database.ts'))
+  const { makeNotificationHash } = require(path.join(ROOT, 'frontend/model/notifications/utils.ts'))
+  const { dateToPeriodStamp, addTimeToDate } = require(path.join(ROOT, 'frontend/model/contracts/shared/time.ts'))
 
   const now = new Date()
   const currentPeriod = dateToPeriodStamp(addTimeToDate(now, -daysIntoPeriod * DAY))
@@ -277,7 +277,7 @@ const seed = async ({ daysIntoPeriod = 27 } = {}) => {
 // What a restarted SW would load
 const readSavedState = () => {
   const sbp = loadSbp()
-  const { SETTING_CHELONIA_STATE } = require(path.join(ROOT, 'frontend/model/database.js'))
+  const { SETTING_CHELONIA_STATE } = require(path.join(ROOT, 'frontend/model/database.ts'))
   return sbp('gi.db/settings/load', SETTING_CHELONIA_STATE)
 }
 
@@ -285,17 +285,17 @@ const readSavedState = () => {
 // state saves have settled.
 const lifetime = async ({ wake, messageListeners, shown, stateWrites }) => {
   const sbp = loadSbp()
-  const { SETTING_CHELONIA_STATE } = require(path.join(ROOT, 'frontend/model/database.js'))
+  const { SETTING_CHELONIA_STATE } = require(path.join(ROOT, 'frontend/model/database.ts'))
   const { NEW_CHATROOM_SCROLL_POSITION } = require(path.join(ROOT, 'frontend/utils/events.js'))
   const deliver = (data) => {
     messageListeners.forEach((fn) => fn({ data, source: { id: 'tab', postMessage () {} } }))
   }
 
-  require(path.join(ROOT, 'frontend/controller/serviceworkers/sw-primary.js'))
+  require(path.join(ROOT, 'frontend/controller/serviceworkers/sw-primary.ts'))
   deliver({
-    // The keep-alive ping sent by open tabs (service-worker.js)
+    // The keep-alive ping sent by open tabs (service-worker.ts)
     ping: { type: 'ping' },
-    // Sent by a tab when the user scrolls a chat (service-worker.js)
+    // Sent by a tab when the user scrolls a chat (service-worker.ts)
     scroll: { type: 'event', subtype: NEW_CHATROOM_SCROLL_POSITION, data: [{ chatRoomID: 'zChatRoom', messageHash: 'zMessage' }] }
   }[wake])
 

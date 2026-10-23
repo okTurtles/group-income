@@ -34,14 +34,14 @@
 </template>
 
 <script>
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { MenuItem } from '@components/menu/index.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'PaymentRowTodo',
   components: {
     MenuItem,
@@ -86,7 +86,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

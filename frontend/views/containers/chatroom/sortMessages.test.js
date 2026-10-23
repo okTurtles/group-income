@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { isUnsentMessage, sortMessages } from './sortMessages.js'
+import { isUnsentMessage, sortMessages } from './sortMessages.ts'
 
 const msg = (id, height, extra = {}) => ({ hash: id, height, ...extra })
 const ids = (messages) => messages.map(m => m.hash)

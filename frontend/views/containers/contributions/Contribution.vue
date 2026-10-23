@@ -78,7 +78,7 @@ import { required } from 'vuelidate/lib/validators'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { GROUP_NON_MONETARY_CONTRIBUTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'Contribution',
   mixins: [validationMixin],
   components: {
@@ -209,7 +209,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>
