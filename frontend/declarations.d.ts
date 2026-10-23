@@ -8,7 +8,7 @@
 // `const a: Function = 42` typechecks under Flow.
 // So the mechanical mirror for it in TypeScript is `any`.
 //
-// TypeScript has no usable 'any function' type to swap in (Its built-in `Function`
+// TypeScript has no usable 'any function' type to swap in (its built-in `Function`
 // carries no call signature, so it rejects assignment to every specific signature,
 // and `@typescript-eslint/no-unsafe-function-type` bans it outright).
 // So we declare our own 'any function' type and use it where Flow's `Function` used to be:

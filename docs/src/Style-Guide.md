@@ -246,7 +246,7 @@ banner-scoped(ref='formMsg')
 ```
 
 ```js
-import { L, LError } from '@view-utils/translations.js'
+import { L, LError } from '@view-utils/translations.ts'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
 submit () {

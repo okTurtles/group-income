@@ -1,5 +1,5 @@
 // @ts-nocheck
-// This file has never been meant to be typechecked; the pragma above keeps tsc
+// This file was never meant to be typechecked; the pragma above keeps tsc
 // from checking it.
 
 'use strict'

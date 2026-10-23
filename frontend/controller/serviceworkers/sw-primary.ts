@@ -40,7 +40,7 @@ import './sw-namespace.ts'
 
 // This module runs only in the service worker, where `self` is a
 // `ServiceWorkerGlobalScope`. But TypeScript's lib.dom assumes it is a `Window`,
-// So declaring it as `any` here is to satisfy the type checker.
+// so we declare it as `any` to satisfy the type checker.
 declare const self: any
 
 console.info('APP_VERSION:', process.env.APP_VERSION)
