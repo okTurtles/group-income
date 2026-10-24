@@ -332,6 +332,7 @@ import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
 import { selectMentionOptions, toMentionCandidate } from './mention-utils.js'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
+import { validateURL } from '@view-utils/misc.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 // The mention popup intentionally caps results for performance (each one renders an avatar component).
@@ -791,9 +792,34 @@ export default ({
       }
     },
     handlePaste (e) {
+      const isExternalLink = text => {
+        const { isValid, isExternalLink: isExternal } = validateURL(text)
+        return isValid && isExternal
+      }
+      const pastedText = e.clipboardData.getData('text/plain').trim()
+
       // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
       if (!this.isEditing && e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
+      } else if (isExternalLink(pastedText)) {
+        // Pasting an external link while a text segment is selected turns the segment into
+        // a markdown link: [segment](url). Every other case is left to the browser's default paste.
+        const inputEl = this.$refs.textarea
+        const selectedText = inputEl.value.slice(inputEl.selectionStart, inputEl.selectionEnd)
+
+        // If the selected text itself is also an external link, then
+        // keep the default paste behavior instead of transforming it into a markdown link.
+        const trimmedSelection = selectedText.trim()
+        if (trimmedSelection && !isExternalLink(trimmedSelection)) {
+          // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
+          // MDN doc mentions document.execCommand() is deprecated but it is supported in all modern browsers
+          // and there is no alternative to it which preserves undo/redo history like it does. Hence, it is used here.
+          const inserted = document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
+          if (inserted) {
+            e.preventDefault()
+            this.updateTextArea()
+          }
+        }
       }
     },
     onRecordingCompleted (recordingData) {
