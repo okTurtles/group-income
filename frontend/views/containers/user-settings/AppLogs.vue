@@ -45,7 +45,11 @@
                     option(value='serviceworker')
                       i18n Service worker
 
-          button-submit.is-small.c-download(@click='downloadOrShareLogs')
+          label.checkbox.c-include-journal
+            input.input(type='checkbox' name='include-journal' v-model='form.includeJournal' data-test='includeJournal')
+            i18n Include contract journals
+
+          button-submit.is-small.c-download(@click='downloadOrShareLogs' data-test='downloadLogs')
             template(v-if='ephemeral.useWebShare')
               i.icon-share-alt.is-prefix
               i18n Share
@@ -55,7 +59,7 @@
 
           a(ref='linkDownload' hidden)
 
-        banner-scoped.c-err-banner(ref='errBanner')
+        banner-scoped.c-err-banner(ref='errBanner' data-test='appLogsMsg')
 
         textarea.textarea.c-logs(ref='textarea' rows='12' v-if='ephemeral.ready' readonly)
           | {{ prettyLogs }}
@@ -73,10 +77,26 @@ import { CAPTURED_LOGS } from '@utils/events.js'
 import { MAX_LOG_ENTRIES } from '@utils/constants.ts'
 import safeLinkTag from '@view-utils/safeLinkTag.ts'
 import { L, LError } from '@common/common.js'
+import { EXPORT_JSON_INDENT } from '@model/journal/exportSize.ts'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
+
+const LOGS_FILENAME = 'gi_logs.json.txt'
+const LOGS_MIME_TYPE = 'text/plain'
+
+// Firefox for Android has `navigator.share` but rejects any file with a
+// TypeError, so `navigator.share` alone doesn't mean the logs can be shared.
+const canShareLogFile = () => {
+  try {
+    return Boolean(navigator.canShare?.({
+      files: [new File([''], LOGS_FILENAME, { type: LOGS_MIME_TYPE })]
+    }))
+  } catch {
+    return false
+  }
+}
 
 export default {
   name: 'AppLogs',
@@ -88,7 +108,8 @@ export default {
     return {
       form: {
         filter: this.$store.state.settings.appLogsFilter,
-        source: 'combined'
+        source: 'combined',
+        includeJournal: Boolean(this.$store.state.settings.appLogsIncludeJournal)
       },
       ephemeral: {
         ready: false,
@@ -120,6 +141,9 @@ export default {
     'form.filter' (filter) {
       this.setAppLogsFilter(filter)
     },
+    'form.includeJournal' (includeJournal) {
+      this.setAppLogsIncludeJournal(includeJournal)
+    },
     'form.source' (to, from) {
       if (to === from) return
       this.getLogs()
@@ -149,7 +173,8 @@ export default {
   },
   methods: {
     ...mapMutations([
-      'setAppLogsFilter'
+      'setAppLogsFilter',
+      'setAppLogsIncludeJournal'
     ]),
     async loadVersionInfo () {
       let swVersion = ''
@@ -186,53 +211,99 @@ export default {
     openTroubleshooting () {
       this.$router.push({ path: '/user-settings/troubleshooting' }).catch(logExceptNavigationDuplicated)
     },
-    downloadOrShareLogs () {
-      const actionType = this.ephemeral.useWebShare ? 'share' : 'download'
-      const isDownload = actionType === 'download'
+    async downloadOrShareLogs () {
+      let actionType = this.ephemeral.useWebShare ? 'share' : 'download'
 
       try {
         const elLink = this.$refs.linkDownload
-        const filename = 'gi_logs.json.txt'
-        const mimeType = 'text/plain'
-
-        const blob = new Blob([JSON.stringify({
-        // Add instructions in case the user opens the file.
+        const payload = {
+          // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),
+          includeJournal: this.form.includeJournal,
           logs: this.ephemeral.logs
-        }, undefined, 2)], { type: mimeType })
+        }
+        let journalError = null
 
-        if (isDownload) {
+        if (this.form.includeJournal) {
+          try {
+            const { journals, omitted, truncated } = await sbp('sw/journal/getAll')
+            payload.journals = journals
+            payload.journalTruncated = truncated
+            if (truncated) {
+              payload.journalOmitted = omitted
+            }
+          } catch (err) {
+            journalError = err
+            // Recorded in the file too, so whoever reads the report knows why
+            // the journals are missing.
+            payload.journalError = `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
+            console.error('AppLogs.vue: Failed to obtain contract journals:', err)
+          }
+        }
+
+        const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: LOGS_MIME_TYPE })
+
+        if (actionType === 'share') {
+          try {
+            await navigator.share({
+              files: [new File([blob], LOGS_FILENAME, { type: blob.type })],
+              title: L('Application Logs')
+            })
+          } catch (err) {
+            // Dismissing the share sheet rejects with `AbortError`. So do some
+            // real failures (Chromium "Share failed", WebKit file read errors),
+            // but they can't be told apart from a cancel. Anything else falls
+            // back to saving the same file as a download: the user activation
+            // expired while the journals were fetched (`NotAllowedError`), the
+            // browser can't share files (`TypeError`), a share is still pending
+            // (`InvalidStateError`).
+            if (err?.name === 'AbortError') throw err
+            console.warn('AppLogs.vue: Sharing the app logs failed, downloading them instead:', err)
+            actionType = 'download'
+          }
+        }
+
+        if (actionType === 'download') {
           if (!elLink) { return }
 
           const url = URL.createObjectURL(blob)
           elLink.href = url
-          elLink.download = filename
+          elLink.download = LOGS_FILENAME
           elLink.click()
           setTimeout(() => {
             elLink.href = '#'
             URL.revokeObjectURL(url)
           }, 0)
-        } else {
-          return navigator.share({
-            files: [new File([blob], filename, { type: blob.type })],
-            title: L('Application Logs')
-          })
+        }
+
+        // The user may have left this screen while the journals were fetched or
+        // the share sheet was open, which removes the banner.
+        if (journalError) {
+          this.$refs.errBanner?.danger(L('Failed to obtain contract journals. {reportError}', LError(journalError)))
+        } else if (payload.journalTruncated) {
+          this.$refs.errBanner?.danger(L('Some contract journals were omitted because the export exceeded the size limit.'))
         }
       } catch (err) {
+        const isDownload = actionType === 'download'
+        // Dismissing the native share sheet rejects with `AbortError`. That is a
+        // cancellation, not a failure, so there is nothing to report.
+        if (!isDownload && err?.name === 'AbortError') return
+
         const errorDisplay = isDownload
           ? L('Failed to download the app logs. {reportError}', LError(err))
           : L('Failed to share the app logs. {reportError}', LError(err))
 
         console.error(`AppLogs.vue downloadOrShareLogs() '${actionType}' action error:`, err)
-        this.$refs.errBanner.danger(errorDisplay)
+        this.$refs.errBanner?.danger(errorDisplay)
       }
     },
     checkWebShareAvailable () {
       this.ephemeral.useWebShare = Boolean(navigator.share) &&
         window.matchMedia('(hover: none) and (pointer: coarse)').matches &&
-        window.matchMedia('screen and (max-width: 1199px)').matches
+        window.matchMedia('screen and (max-width: 1199px)').matches &&
+        canShareLogFile()
     },
     getLogs () {
       // Log entries in chronological order (oldest to most recent).
@@ -256,7 +327,7 @@ export default {
             const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
 
             console.error('AppLogs.vue getLogs() error:', err)
-            this.$refs.errBanner.danger(errorDisplay)
+            this.$refs.errBanner?.danger(errorDisplay)
           })
           break
         }
@@ -282,7 +353,7 @@ export default {
             const errorDisplay = L('Error obtaining logs. {reportError}', LError(err))
 
             console.error('AppLogs.vue getLogs() error:', err)
-            this.$refs.errBanner.danger(errorDisplay)
+            this.$refs.errBanner?.danger(errorDisplay)
           })
           break
         }
@@ -329,6 +400,10 @@ export default {
   }
 }
 
+.c-include-journal {
+  width: 100%;
+}
+
 .c-source .c-label {
   display: flex;
   align-items: center;
@@ -341,6 +416,7 @@ export default {
 
 .c-filters,
 .c-source,
+.c-include-journal,
 .c-download,
 .c-logs {
   margin-bottom: 1rem;

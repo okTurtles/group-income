@@ -14,6 +14,8 @@ import '~/frontend/controller/actions/index.ts'
 import { registerKvSlots } from '~/frontend/controller/actions/kv-slots.ts'
 import chatroomGetters from '~/frontend/model/chatroom/getters.ts'
 import getters from '~/frontend/model/getters.ts'
+import { MAX_JOURNAL_EXPORT_BYTES, orderJournalCandidates, selectJournalsWithinBudget } from '~/frontend/model/journal/exportSize.ts'
+import { sanitizeJournal } from '~/frontend/model/journal/sanitize.ts'
 import notificationGetters from '~/frontend/model/notifications/getters.ts'
 import '~/frontend/model/notifications/selectors.ts'
 import setupChelonia from '~/frontend/setupChelonia.ts'
@@ -301,6 +303,31 @@ sbp('sbp/selectors/register', {
   },
   'sw/deviceSettings/get': (key) => {
     return sbp('chelonia/rootState').deviceSettings[key]
+  },
+  'sw/journal/getAll': () => {
+    const rootState = sbp('chelonia/rootState')
+    // Only metadata here: `selectJournalsWithinBudget` loads the journals one
+    // at a time, in priority order, so a journal left out becomes garbage once
+    // it has been measured. Every load happens within this synchronous call, so
+    // all journals are read from the same state.
+    const candidates = Object.keys(rootState.contracts || {}).map(contractID => ({
+      contractID,
+      // Contract IDs are opaque hashes, so the export labels each journal with
+      // its contract type to tell groups, chatrooms and identities apart.
+      type: rootState.contracts[contractID]?.type ?? '(unknown)',
+      // `sanitizeJournal` mutates the clone returned by `chelonia/journal/get`.
+      // It runs before the byte accounting, so that the budget measures what
+      // is actually written to the file.
+      loadJournal: () => {
+        const journal = sbp('chelonia/journal/get', contractID)
+        return journal ? sanitizeJournal(journal) : undefined
+      }
+    }))
+
+    return selectJournalsWithinBudget(
+      orderJournalCandidates(candidates, rootState.loggedIn?.identityContractID),
+      MAX_JOURNAL_EXPORT_BYTES
+    )
   }
 })
 

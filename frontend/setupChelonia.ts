@@ -13,6 +13,8 @@ import { isContractDeletedError } from './controller/actions/namespaceCacheList.
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.ts'
+import { JOURNAL_REDACTIONS } from './model/journal/redactions.ts'
+import { clearStaleJournals } from './model/journal/migration.ts'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Record<string, any>, vb?: Record<string, any>): boolean => {
@@ -227,7 +229,7 @@ const initialize = async (): Promise<void> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Record<string, any>, k: string, v: string) => {
+    reactiveSet: (o: Record<string, any>, k: string, v: unknown) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
@@ -336,9 +338,15 @@ const initialize = async (): Promise<void> => {
     },
     journal: {
       enabled: true,
-      snapshotInterval: 75
+      snapshotInterval: 75,
+      redactions: JOURNAL_REDACTIONS
     }
   })
+
+  // The state restored above may have been saved by an older app version, with
+  // journals recorded under older redaction rules (an SW restart after an
+  // update). Logins run the same check in `gi.actions/identity/login`.
+  clearStaleJournals()
 
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'
