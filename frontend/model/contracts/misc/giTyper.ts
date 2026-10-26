@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Vendored copy of the `flowTyper-js` library (originally inlined to satisfy rollup),
-// with GI-specific edits noted below. It was never meant to be typechecked; the
-// pragma above keeps tsc from checking it.
+// with GI-specific edits noted below. It was never meant to be typechecked;
+// the pragma above keeps tsc from checking it.
 //
 // GI EDIT NOTES:
 //
