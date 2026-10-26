@@ -84,7 +84,7 @@ const zoomCalculator = linearScale([ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX], [IMAGE_SC
   zoomCalculator(25) => 2 which is 1 + (5 - 1) * 0.25,
 */
 
-export default ({
+export default {
   name: 'AvatarEditor',
   components: {
     ModalTemplate,
@@ -166,7 +166,7 @@ export default ({
       URL.revokeObjectURL(this.ephemeral.replaceImageUrl)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

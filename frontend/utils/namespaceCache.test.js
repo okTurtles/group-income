@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { answerToUpdate, applyNamespaceUpdate, ownValue } from './namespaceCache.js'
+import { answerToUpdate, applyNamespaceUpdate, ownValue } from './namespaceCache.ts'
 
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k)
 const setters = {
@@ -113,7 +113,7 @@ describe('namespace cache', () => {
     it('keeps a tab in sync with the service worker, even if it misses broadcasts', () => {
       // The service worker writes every answer and broadcasts the changes; a
       // tab applies the broadcasts it gets, and after its own lookups copies
-      // what the service worker's cache holds (see `controller/namespace.js`).
+      // what the service worker's cache holds (see `controller/namespace.ts`).
       let seed = 42
       const random = (n) => {
         seed = (seed * 1103515245 + 12345) & 0x7fffffff
@@ -127,7 +127,7 @@ describe('namespace cache', () => {
         for (let step = 0; step < 40; step++) {
           const name = names[random(names.length)]
           const value = values[random(values.length)]
-          // Service worker (`project` in sw-namespace.js)
+          // Service worker (`project` in sw-namespace.ts)
           const update = answerToUpdate(sw.namespaceLookups, name, value)
           const changed = apply(sw, update)
           // Broadcast, sometimes missed

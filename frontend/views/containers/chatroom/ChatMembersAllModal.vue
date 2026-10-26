@@ -124,14 +124,14 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import DMMixin from './DMMixin.js'
+import DMMixin from './DMMixin.ts'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL, PROFILE_STATUS } from '@model/contracts/shared/constants.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 import { uniq } from 'turtledash'
-import { filterByKeyword } from '@view-utils/filters.js'
+import { filterByKeyword } from '@view-utils/filters.ts'
 
-export default ({
+export default {
   name: 'ChatMembersAllModal',
   mixins: [
     DMMixin
@@ -270,7 +270,7 @@ export default ({
     closeModal () {
       this.$refs.modal.close()
     },
-    removable (memberID: string) {
+    removable (memberID) {
       if (!this.isJoined) {
         return false
       }
@@ -284,7 +284,7 @@ export default ({
       }
       return false
     },
-    async removeMember (contractID: string, undoing = false) {
+    async removeMember (contractID, undoing = false) {
       if (!this.isJoinedChatRoom(this.currentChatRoomId, contractID)) {
         console.log(`${contractID} is not part of this chatroom`)
         return
@@ -314,7 +314,7 @@ export default ({
         console.error('ChatMembersAllModal.vue removeMember() error:', e)
       }
     },
-    async addToChannel (contractID: string, undoing = false) {
+    async addToChannel (contractID, undoing = false) {
       if (this.isGroupDirectMessage()) {
         // Drain the tab's state-projection queue so recently-synced DM
         // contracts are visible before we look for an existing conversation.
@@ -354,7 +354,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

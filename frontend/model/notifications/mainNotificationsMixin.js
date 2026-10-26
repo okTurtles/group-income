@@ -1,10 +1,10 @@
 'use strict'
 
-import { compareISOTimestamps, dateToPeriodStamp, MINS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, dateToPeriodStamp, MINS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.ts'
 import sbp from '@sbp/sbp'
 import { LOGOUT } from '@utils/events.js'
-import { ownValue } from '@utils/namespaceCache.js'
-import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
+import { ownValue } from '@utils/namespaceCache.ts'
+import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.ts'
 
 // util functions
 const myNotificationHas = (checkFunc, groupId = '') => {
@@ -17,7 +17,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
 
 /*
 
- *** NOTE: This mixin is imported into the root Vue instance in 'main.js'. feel free to extend the notification entry lists
+ *** NOTE: This mixin is imported into the root Vue instance in 'main.ts'. feel free to extend the notification entry lists
            for defining more notifications.
 
   There is two types of notifications that can be defined here.
@@ -72,7 +72,7 @@ const oneTimeNotificationEntries = [
 // because periodic notification state is reset on every login and group switch.
 // Cleared on logout, so that one account's attempts don't delay another's.
 const USERNAME_FETCH_INTERVAL = 30 * MINS_MILLIS
-const lastUsernameFetch: Map<string, number> = new Map()
+const lastUsernameFetch = new Map()
 sbp('okTurtles.events/on', LOGOUT, () => lastUsernameFetch.clear())
 
 const periodicNotificationEntries = [
@@ -90,7 +90,6 @@ const periodicNotificationEntries = [
       emitCondition: () => true,
       emit ({ rootState, rootGetters }) {
         Object.values(rootGetters.ourContactProfilesById)
-          // $FlowFixMe[incompatible-use]
           .map(({ contractID }) => ({ contractID, claimed: rootState[contractID]?.attributes?.username }))
           // Only get users that have a username defined and whose username
           // isn't cached at all (if it's cached for a different contract,

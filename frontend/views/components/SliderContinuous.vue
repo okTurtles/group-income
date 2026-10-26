@@ -30,7 +30,7 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'SliderContinuous',
   props: {
     /** Unique id to connect form and label */
@@ -83,7 +83,7 @@ export default ({
       this.updateSlider(this.value)
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

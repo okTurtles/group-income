@@ -4,14 +4,14 @@ export const MAX_HASH_LEN = 300
 export const MAX_MEMO_LEN = 4096
 export const MAX_URL_LEN = 2048
 
-// identity.js related
+// identity.ts related
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80
 export const IDENTITY_EMAIL_MAX_CHARS = 320
 export const IDENTITY_BIO_MAX_CHARS = 500
 
-// group.js related
+// group.ts related
 
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
 export const PROFILE_STATUS = {
@@ -104,7 +104,7 @@ export const GROUP_PERMISSIONS_PRESET = {
   ]
 }
 
-// chatroom.js related
+// chatroom.ts related
 
 export const CHATROOM_GENERAL_NAME = 'general' // Chatroom name must be lowercase-only.
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50

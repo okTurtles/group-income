@@ -31,7 +31,7 @@ import { L } from '@common/common.js'
 // https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
 const isMobile = !window.matchMedia('(any-pointer:fine)').matches
 
-export default ({
+export default {
   name: 'LinkToCopy',
   components: {
     Tooltip
@@ -82,7 +82,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

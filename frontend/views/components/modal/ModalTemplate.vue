@@ -29,10 +29,10 @@
 </template>
 
 <script>
-import modalMixins from './ModalMixins.js'
-import trapFocus from '@utils/trapFocus.js'
+import modalMixins from './ModalMixins.ts'
+import trapFocus from '@utils/trapFocus.ts'
 
-export default ({
+export default {
   name: 'ModalTemplate',
   mixins: [modalMixins, trapFocus],
   methods: {
@@ -42,7 +42,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

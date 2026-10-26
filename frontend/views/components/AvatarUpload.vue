@@ -26,11 +26,11 @@
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
 import { L, LError } from '@common/common.js'
-import { imageUpload } from '@utils/image.js'
+import { imageUpload } from '@utils/image.ts'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
-export default ({
+export default {
   name: 'AvatarUpload',
   props: {
     avatar: [String, Object],
@@ -87,7 +87,7 @@ export default ({
   beforeDestroy () {
     sbp('okTurtles.events/off', AVATAR_EDITED, this.uploadEditedImage)
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

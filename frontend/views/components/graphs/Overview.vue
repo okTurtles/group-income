@@ -39,9 +39,9 @@ div
 <script>
 import { mapGetters } from 'vuex'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'Overview',
   components: {
     GraphLegendItem,
@@ -119,7 +119,7 @@ export default ({
       } else {
         // Add new user to the list
         list[id] = {
-          amount: amount,
+          amount,
           total: amount > 0
             ? this.groupProfiles[id].pledgeAmount
             : this.groupProfiles[id].incomeAmount - this.mincome
@@ -128,7 +128,7 @@ export default ({
       return list
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

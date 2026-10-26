@@ -38,7 +38,7 @@ import PaymentRowSent from './PaymentRowSent.vue'
 import PaymentRowReceived from './PaymentRowReceived.vue'
 import { PAYMENTS_RECORDED } from '@utils/events.js'
 
-export default ({
+export default {
   name: 'PaymentsList',
   components: {
     AvatarUser,
@@ -136,7 +136,7 @@ export default ({
       this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

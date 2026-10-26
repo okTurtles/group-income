@@ -129,10 +129,10 @@ import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L, LTags } from '@common/common.js'
-import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.js'
-import { timeLeft } from '@view-utils/time.js'
+import { buildInvitationUrl } from '@view-utils/buildInvitationUrl.ts'
+import { timeLeft } from '@view-utils/time.ts'
 
-export default ({
+export default {
   name: 'InvitationsTable',
   components: {
     BannerScoped,
@@ -376,7 +376,7 @@ export default ({
   beforeDestroy () {
     this.matchMediaMobile.onchange = null
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

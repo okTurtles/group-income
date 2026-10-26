@@ -2,12 +2,6 @@ import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/
 import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
-/**
- * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
- * But Cypress doesn't render files using Flowtype annotations
- * So copied that function and use it here
- * TODO: figure out how to import functions with type annotations in Cypress
- */
 function makeMentionFromUsername (username) {
   return {
     me: `@${username}`,
@@ -262,7 +256,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       existingMemberUsername: user1,
-      groupName: groupName,
+      groupName,
       shouldLogoutAfter: false,
       bypassUI: true
     })
