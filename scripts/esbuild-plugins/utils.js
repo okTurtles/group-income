@@ -107,8 +107,8 @@ exports.createEslinter = (options = {}) => {
      * @param {string} code
      * @param {string} [filename]
      */
-    async lintCode (code, filename = '') {
-      const results = await eslint.lintText(code, { filePath: filename })
+    async lintCode (code, filename) {
+      const results = await eslint.lintText(code, { filePath: filename || undefined })
 
       const errorCount = results.reduce((n, r) => n + r.errorCount, 0)
       const warningCount = results.reduce((n, r) => n + r.warningCount, 0)

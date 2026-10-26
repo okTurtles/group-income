@@ -1117,7 +1117,6 @@ export default (sbp('sbp/selectors/register', {
       // If we just joined, we're likely witnessing an old error that was handled
       // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
-
       const memberID = msgMeta && msgMeta.innerSigningContractID
       const groupID = message.contractID()
       const rootState = sbp('chelonia/rootState')

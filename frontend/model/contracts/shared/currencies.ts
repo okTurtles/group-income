@@ -5,7 +5,7 @@ type Currency = {
   displayWithCurrency(n: number): string;
   displayWithoutCurrency(n: number): string;
   isCrypto: boolean;
-  numberFormat: any;
+  numberFormat: Intl.NumberFormat;
   symbol: string;
   symbolWithCode: string;
   validate(n: string): boolean;

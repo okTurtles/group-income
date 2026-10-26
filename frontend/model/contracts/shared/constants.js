@@ -4,7 +4,7 @@ export const MAX_HASH_LEN = 300
 export const MAX_MEMO_LEN = 4096
 export const MAX_URL_LEN = 2048
 
-// identity.js related
+// identity.ts related
 
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80

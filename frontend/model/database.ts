@@ -59,7 +59,7 @@ sbp('sbp/selectors/register', {
   'gi.db/ready': function () {
     return localforage.ready()
   },
-  'gi.db/settings/save': function (key: string, value: any): Promise<any> {
+  'gi.db/settings/save': function (key: string, value: any): Promise<void> {
   // Items in the DB have a prefix to disambiguate their type.
   //  'u' means unencrypted data
   //  'e' means encrypted data

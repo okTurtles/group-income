@@ -620,7 +620,7 @@ describe('Check basic markdown features - one feature per message', () => {
     sendMarkdownMessage(user1, injectionMarkdown)
     checkLastSentMessage(() => {
       // The double-quotes in the url would close the href="..." attribute of the anchor tag that
-      // markdown-utils.js builds, and inject an event handler right next to it. validateURL() only
+      // markdown-utils.ts builds, and inject an event handler right next to it. validateURL() only
       // accepts the characters that can legally appear in a URL, so the link markdown is left
       // unrendered and displayed as plain text instead.
       cy.get('a').should('not.exist')
@@ -632,7 +632,7 @@ describe('Check basic markdown features - one feature per message', () => {
   it('11. Miscellaneous checks', () => {
     cy.log('11-1. Raw html codes in a message must be displayed as plain text instead of being rendered')
 
-    // Check if the raw html escaping logics in markdown-utils.js work correctly
+    // Check if the raw html escaping logics in markdown-utils.ts work correctly
 
     const imgHTML = '<img src="this-image-does-not-exist.png" onerror="window.imgOnerrorExecuted = true">'
     const pHTML = '<p id="some-random-id"><strong>This is a paragraph</strong> and should be rendered as <em>plain text</em></p>'

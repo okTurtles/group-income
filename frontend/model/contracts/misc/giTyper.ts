@@ -109,8 +109,8 @@ export class TypeValidatorError extends Error {
 
   getSourceFile (): string {
     const fileNames = this.stack.match(/(\/[\w_\-.]+)+(\.\w+:\d+:\d+)/g) || []
-    // NOTE: flowTyper-js in below string is the name of the upstream library, not our file and
-    // '/flowTyper-js/dist/' was a path inside the npm package. So keeping it as is.
+    // NOTE: `flowTyper-js` below is the upstream library's name, not this file's:
+    // '/flowTyper-js/dist/' was a path inside its npm package, so it is kept as is.
     return fileNames.find(fileName => fileName.indexOf('/flowTyper-js/dist/') === -1) || ''
   }
 
