@@ -1612,13 +1612,6 @@ export default ({
   font-weight: 400;
 }
 
-.emoji-mart {
-  position: absolute;
-  right: 0;
-  bottom: 4rem;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
-}
-
 .c-reply-wrapper {
   display: table;
   table-layout: fixed;

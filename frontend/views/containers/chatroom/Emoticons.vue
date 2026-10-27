@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-picker(:class='{ "is-active": isActive }' @click='clickBackDrop')
-  .c-picker-wrapper(ref='pickerWrapper' :style='position')
+  .c-picker-wrapper(ref='pickerWrapper' :style='position' data-test='emojiPicker')
     picker(@select='select' :data='emoji' :show-preview='false' :auto-focus='true')
 </template>
 
@@ -85,8 +85,10 @@ export default ({
         this.position = undefined
         return
       }
-      const emotiWidth = 353
-      const emotiHeight = 440
+      // The picker works out its own width from its 'perLine' and 'emojiSize' props, so measure it.
+      const pickerEl = this.$refs.pickerWrapper?.querySelector('.emoji-mart')
+      const emotiWidth = pickerEl?.offsetWidth || 353
+      const emotiHeight = pickerEl?.offsetHeight || 420
       const padding = 16
       const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
       let top = this.pos_y - emotiHeight - padding

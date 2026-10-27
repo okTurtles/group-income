@@ -11,6 +11,9 @@ key.pub.json
 # prevent accidental addition of yarn.lock from making Travis builds longer
 /yarn.lock
 
+# Downloaded at build time by the `emojiSheet` Grunt task
+/frontend/assets/images/emoji/*.png
+
 # Caches
 .eslintcache
 .stylelintcache

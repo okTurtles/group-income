@@ -1,4 +1,5 @@
 import { EmojiIndex } from 'emoji-mart-vue-fast'
+// The picker's 'set' prop (default: 'apple') and the sheet downloaded by the `emojiSheet` Grunt task must match this data file.
 import data from 'emoji-mart-vue-fast/data/apple.json'
 
 export const emojiIndex: any = new EmojiIndex(data)

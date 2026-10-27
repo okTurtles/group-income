@@ -61,7 +61,7 @@ Each step is one commit that leaves the app working, so it can be reviewed and t
 | 4 | Follow the app's theme colours (dark mode) | Issue 4 |
 | 5 | *(optional)* Hide emojis the device can't draw | Partly issue 2 |
 
-Settle **before step 2**: which emoji set (Twitter or Google, given the image licences) and the sheet size (32px or 64px), plus whether to commit the PNG or gitignore it and download it at build time.
+**Decided for step 2:** the Apple set (data and sheet, as today), the 64px sheet, gitignored and downloaded at build time by a Grunt task. Twitter was considered for its CC-BY licence, but its downloadable sheets fill the 21 emojis Twemoji lacks with Apple's images, and the fallback-free ("clean") sheets are 4.7MB+ (32px) / 10.8MB (64px). Apple's artwork isn't openly licensed; mention in the PR that the sheet is now served from our own server.
 
 ---
 
@@ -69,7 +69,7 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 
 **Goal:** the picker and `:shortcode:` autocomplete run on emoji data 15.0.1 (1,867 emojis). The look stays as close to today's as possible; theme colours are step 4.
 
-1. In `package.json`, change `emoji-mart-vue-fast` from `7.0.7` to `15.0.5` (exact pin). Run `npm install`.
+1. In `package.json`, change `emoji-mart-vue-fast` from `7.0.7` to `15.0.5` (exact pin), and bump `vue` and `vue-template-compiler` from `2.6.12` to `2.6.14`. Run `npm install`. v15's bundle was compiled with a newer Vue 2 compiler that passes slot fallback content as a function, which Vue only supports from 2.6.13; on 2.6.12 the picker's search box rendered as the text "undefined".
 2. In `_emoji-mart.scss`, change the unpkg URLs from `@5.0.1` to `@15.0.1` and update `background-size` to the value in v15's `css/emoji-mart.css`. This is **temporary**: it keeps the images lined up with the new data until step 2 replaces the URLs. A 5.0.1 sheet with 15.0.1 data would show shifted emojis.
 3. Make the minimum SCSS fixes so the picker isn't broken under v15's markup. Class names changed between v7 and v15, for example the scroller, `.emoji-mart-category` and the anchors. Drop the dead `.scroller` / virtual-scroller rules.
 4. Check the API the app depends on:
@@ -100,21 +100,19 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 **Goal:** the app never requests anything from a host other than ours. The CDN is only contacted at build time, or never, if the PNG is committed.
 
 1. **Pick the set and size.**
-   - Set the `set` prop on `picker` in `Emoticons.vue` (it defaults to `apple`).
-   - Import the matching data file in `emoji-utils.js` (`data/twitter.json` or `data/google.json`). Each set's data lists only the emojis that set has images for.
+   - Keep `apple`: the `set` prop on `picker` in `Emoticons.vue` defaults to it, and `emoji-utils.js` keeps importing `data/apple.json`. Each set's data lists only the emojis that set has images for.
 2. **Add a Grunt task that downloads the sheet.**
    - Fetch `https://unpkg.com/emoji-datasource-<set>@15.0.1/img/<set>/sheets-256/<size>.png` into the assets folder (for example `frontend/assets/images/emoji/<set>-15.0.1-<size>.png`).
-   - Check the file's SHA-256 against a hash stored in the Gruntfile, so a changed or tampered file fails the build.
-   - Skip the download when the file exists and matches the hash, so repeat and offline builds work.
+   - Read the sheet URL from `emoji-mart-vue-fast`'s own `css/emoji-mart.css`, so the sheet always matches the package's emoji data.
+   - Skip the download when the file exists and was downloaded for the installed `emoji-mart-vue-fast` version (recorded in `node_modules/.cache/emoji-sheet-version`), so repeat and offline builds work and a package upgrade fetches the new sheet.
    - Wire it into `build`/`dev` before `copy` (`Gruntfile.js:282`), or skip the task and commit the PNG, depending on what was decided above.
    - Next to the pinned version, add a comment saying it must match the emoji data version in `emoji-mart-vue-fast`.
 3. **Point the CSS at the local sheet.** In `_emoji-mart.scss`, replace the four unpkg `background-image` rules with a single rule for the chosen set that uses the local path.
-4. **Attribution.** If Twemoji is chosen, add the CC-BY 4.0 credit where the app lists third-party licences.
 
 **Files:** `Gruntfile.js`, `frontend/assets/images/emoji/` (the sheet), possibly `.gitignore`, `frontend/assets/style/components/_emoji-mart.scss`, `frontend/views/containers/chatroom/Emoticons.vue`, `frontend/views/containers/chatroom/emoji-utils.js`, `frontend/declarations.js`
 
 **Done when:**
-- running the Grunt task twice downloads once and then skips; corrupting the file fails the build
+- running the Grunt task twice downloads once and then skips; changing the installed `emoji-mart-vue-fast` version downloads again
 - `grep -r unpkg dist/` returns nothing after a build
 - in `grunt dev`, the Network tab shows the sheet loading from our host and no request to an outside host
 - emojis line up with the right images (no shifted or blank cells)
@@ -197,5 +195,6 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 - **Issue 2 stays a known limitation** unless step 5 is done, and even then only partly.
 - **Licence:** the image licence decides which set we can ship. Settle it before step 2.
 - **Payload:** 1.3–4.4MB depending on set and size, downloaded once when the picker first opens. Check how the service worker caches it.
-- **Version drift:** a future `emoji-mart-vue-fast` upgrade must also bump the sheet version and its hash.
+- **Version drift:** handled automatically; the sheet URL comes from the installed package's CSS and is re-downloaded when the package version changes.
+- **Revisit after the Vue 3 migration:** the PM confirmed this issue can be revisited after the Vue 3 migration, possibly switching to a different emoji picker package.
 - **Breaking markup changes:** upgrading across 8 major versions means some class names will break. Step 1 carries most of the SCSS work.

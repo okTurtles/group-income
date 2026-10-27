@@ -17,58 +17,6 @@
   border: 1px solid #d9d9d9;
   border-radius: 5px;
   background: #fff;
-
-  .vue-recycle-scroller {
-    position: relative;
-
-    &.direction-vertical:not(.page-mode) {
-      overflow-y: auto;
-    }
-
-    &.direction-horizontal {
-      display: flex;
-
-      &:not(.page-mode) {
-        overflow-x: auto;
-      }
-    }
-
-    &.ready .vue-recycle-scroller__item-view {
-      position: absolute;
-      top: 0;
-      left: 0;
-      will-change: transform;
-    }
-
-    &.direction-vertical .vue-recycle-scroller__item-wrapper {
-      width: 100%;
-    }
-
-    &.direction-horizontal .vue-recycle-scroller__item-wrapper {
-      height: 100%;
-    }
-
-    &.ready {
-      &.direction-vertical .vue-recycle-scroller__item-view {
-        width: 100%;
-      }
-
-      &.direction-horizontal .vue-recycle-scroller__item-view {
-        height: 100%;
-      }
-    }
-  }
-
-  .vue-recycle-scroller__slot {
-    flex: auto 0 0;
-  }
-
-  .vue-recycle-scroller__item-wrapper {
-    flex: 1;
-    box-sizing: border-box;
-    overflow: hidden;
-    position: relative;
-  }
 }
 
 .emoji-mart-preview-emoji .emoji-mart-emoji span {
@@ -83,26 +31,12 @@
 }
 
 .emoji-type-image {
-  /* Emoji sheet has 56 columns, see also utils/emoji-data.js, SHEET_COLUMNS variable */
+  /* Emoji sheet has 61 columns, see also utils/emoji-data.js, SHEET_COLUMNS variable */
+  background-size: 6100%;
 
-  /* Here we use (56+1) * 100% to avoid visible edges of nearby icons when scaling for different
-   * screen sizes */
-  background-size: 5700%;
-
+  /* Self-hosted sheet, downloaded at build time by the `emojiSheet` task in Gruntfile.js */
   &.emoji-set-apple {
-    background-image: url("https://unpkg.com/emoji-datasource-apple@5.0.1/img/apple/sheets-256/64.png");
-  }
-
-  &.emoji-set-facebook {
-    background-image: url("https://unpkg.com/emoji-datasource-facebook@5.0.1/img/facebook/sheets-256/64.png");
-  }
-
-  &.emoji-set-google {
-    background-image: url("https://unpkg.com/emoji-datasource-google@5.0.1/img/google/sheets-256/64.png");
-  }
-
-  &.emoji-set-twitter {
-    background-image: url("https://unpkg.com/emoji-datasource-twitter@5.0.1/img/twitter/sheets-256/64.png");
+    background-image: url("/assets/images/emoji/apple-64.png");
   }
 }
 
@@ -164,9 +98,20 @@
   padding: 12px 4px;
   overflow: hidden;
   transition: color 0.1s ease-out;
+  // anchors are <button>s, so undo the global button styles (components/_buttons.scss)
+  min-height: auto;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: inherit;
 
   &:hover {
     color: #464646;
+  }
+
+  &:hover,
+  &:focus {
+    background-color: transparent;
   }
 }
 
@@ -187,20 +132,6 @@
   background-color: #464646;
 }
 
-.emoji-mart .scroller {
-  height: 250px;
-  position: relative;
-  flex: 1;
-  padding: 0 6px 6px 6px;
-  z-index: 0;
-
-  /* Fix for rendering sticky positioned category labels on Chrome */
-  will-change: transform;
-
-  /* avoids "repaints on scroll" in mobile Chrome */
-  -webkit-overflow-scrolling: touch;
-}
-
 .emoji-mart-search {
   margin-top: 6px;
   padding: 0 6px;
@@ -214,6 +145,10 @@
     border: 1px solid #d9d9d9;
     outline: 0;
   }
+}
+
+.emoji-mart-search .hidden {
+  display: none;
 }
 
 .emoji-mart-search-results {
@@ -232,7 +167,8 @@
       cursor: default;
     }
 
-    &:hover::before {
+    &:hover::before,
+    &.emoji-mart-emoji-selected::before {
       z-index: 0;
       content: "";
       position: absolute;
@@ -258,8 +194,9 @@
   position: relative;
 }
 
-.emoji-mart-category-label span {
+.emoji-mart-category-label h3 {
   display: block;
+  font-size: 16px;
   width: 100%;
   font-weight: 500;
   padding: 5px 6px;
@@ -272,6 +209,16 @@
   display: inline-block;
   font-size: 0;
   padding: 6px;
+  // emojis are <button>s, so undo the global button styles (components/_buttons.scss)
+  min-height: auto;
+  border: none;
+  border-radius: 0;
+  background: none;
+
+  &:hover,
+  &:focus {
+    background-color: transparent;
+  }
 
   span {
     display: inline-block;
