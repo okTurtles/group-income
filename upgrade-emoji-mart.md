@@ -1,4 +1,4 @@
-# #2334 Emoji picker: upgrade emoji-mart-vue-fast, self-host the sprite sheet, restyle
+# #2334 Emoji picker: upgrade emoji-mart-vue-fast, self-host the sprite sheet, dark mode
 
 Issue: https://github.com/okTurtles/group-income/issues/2334
 
@@ -8,15 +8,13 @@ Issue #2334 (Priority:High, Note:Security) lists four picker problems:
 1. **External resources.** While someone is using the app, the picker loads its sprite sheets from `unpkg.com/emoji-datasource-*@5.0.1`, set at `frontend/assets/style/components/_emoji-mart.scss:93-106`. The app should never request anything from a host other than GI's own.
 2. **No fallback.** The picker shows sprite images, but reactions are stored and shown as native Unicode (`emoticon.native` at `MessageBase.vue:315` and `SendArea.vue:1294`). A reaction can show up as a blank box (tofu) on a device whose font lacks that glyph.
 3. **Missing emojis.** We're on `emoji-mart-vue-fast@7.0.7`, which uses emoji-datasource 5.0.1 with 1,735 emojis.
-4. **Looks bad in dark mode.** `_emoji-mart.scss` has no `.is-dark-theme` rules.
+4. **Looks bad in dark mode.** When the app is switched to the dark theme, the picker keeps its light-theme colours (white background, dark text). The PM confirmed this is what the issue item means. The cause: `_emoji-mart.scss` hard-codes its colours as hex values (e.g. `background: #fff`, `color: #222427`, `#464646`, `#f4f4f4`) instead of using the app's theme variables.
 
-The PM suggested GitLab's picker, wants as few dependencies as possible and no third-party hosts. corrideat suggested upgrading the package (its emoji images are 5.0.1, current is 15.0.1) and pointed out that native glyphs differ across platforms (for example the pistol emoji, U+1F52B).
+The PM wants as few dependencies as possible and no third-party hosts. corrideat suggested upgrading the package (its emoji images are 5.0.1, current is 15.0.1) and pointed out that native glyphs differ across platforms (for example the pistol emoji, U+1F52B).
 
-**Decision:** upgrade `emoji-mart-vue-fast` to `15.0.5`, keep the sprite-image rendering, host the matching `15.0.1` sprite sheet ourselves under our assets, point the CSS at that local path, and restyle the picker, including dark mode.
+**Decision:** upgrade `emoji-mart-vue-fast` to `15.0.5`, keep the sprite-image rendering, host the matching `15.0.1` sprite sheet ourselves under our assets, point the CSS at that local path, and make the picker follow the app's theme colours.
 
 ## Research findings
-
-**Why not GitLab's picker.** It isn't on npm and isn't part of `@gitlab/ui`. It lives inside the gitlab-org/gitlab monorepo (`app/assets/javascripts/emoji/`) and is built from `@gitlab/ui` components, GitLab's server-side `emojis.json` and its `<gl-emoji>` element. Using it would mean writing our own picker modelled on it. That's a possible follow-up if the restyle can't get close enough to the GitLab look, and it could reuse the upgraded package's emoji data.
 
 **`emoji-mart-vue-fast@15.0.5`, the latest release:**
 - Peer dependency `vue >2.0.0`, so it works with our Vue 2.6.
@@ -46,6 +44,7 @@ The PM suggested GitLab's picker, wants as few dependencies as possible and no t
 - `SendArea.vue:1615`: a stray `.emoji-mart` style rule.
 - `frontend/declarations.js:45-46`: Flow module declarations.
 - `frontend/main.js:418`: puts the `.is-dark-theme` class on the root element.
+- `frontend/model/settings/colors.js`: the light and dark colour palettes. `frontend/views/components/AppStyles.vue` writes the active palette into CSS custom properties on `:root` (`--background_0`, `--text_0`, `--general_0`, ...), and `frontend/assets/style/_colors.scss` exposes them as SCSS variables (`$background_0: var(--background_0)`, ...). Styles that use these variables switch theme automatically.
 - `Gruntfile.js:282`: the `copy` task that copies `frontend/assets` into `dist/`.
 
 ---
@@ -58,10 +57,9 @@ Each step is one commit that leaves the app working, so it can be reviewed and t
 |---|---|---|
 | 1 | Upgrade `emoji-mart-vue-fast` to `15.0.5` | Issue 3 (missing emojis) |
 | 2 | Self-host the sprite sheet | Issue 1 (external resources) |
-| 3 | Restyle the picker, fix its layout and scrolling | PM's GitLab-look request, the "doesn't scroll down" note |
-| 4 | Dark mode | Issue 4 |
-| 5 | Translated picker labels | i18n rule in AGENTS.md (not in the issue) |
-| 6 | *(optional)* Hide emojis the device can't draw | Partly issue 2 |
+| 3 | Scroll the chat so a reaction on the last message is fully visible | #2601 (the issue's "doesn't scroll down" note) |
+| 4 | Follow the app's theme colours (dark mode) | Issue 4 |
+| 5 | *(optional)* Hide emojis the device can't draw | Partly issue 2 |
 
 Settle **before step 2**: which emoji set (Twitter or Google, given the image licences) and the sheet size (32px or 64px), plus whether to commit the PNG or gitignore it and download it at build time.
 
@@ -69,7 +67,7 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 
 ### Step 1: Upgrade `emoji-mart-vue-fast` to `15.0.5` [issue 3]
 
-**Goal:** the picker and `:shortcode:` autocomplete run on emoji data 15.0.1 (1,867 emojis). The look stays as close to today's as possible; the restyle is step 3.
+**Goal:** the picker and `:shortcode:` autocomplete run on emoji data 15.0.1 (1,867 emojis). The look stays as close to today's as possible; theme colours are step 4.
 
 1. In `package.json`, change `emoji-mart-vue-fast` from `7.0.7` to `15.0.5` (exact pin). Run `npm install`.
 2. In `_emoji-mart.scss`, change the unpkg URLs from `@5.0.1` to `@15.0.1` and update `background-size` to the value in v15's `css/emoji-mart.css`. This is **temporary**: it keeps the images lined up with the new data until step 2 replaces the URLs. A 5.0.1 sheet with 15.0.1 data would show shifted emojis.
@@ -79,14 +77,19 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
    - the `select` event payload consumed by `MessageBase.vue:315` and `SendArea.vue:1294`
    - `focusSearch()` in `Emoticons.vue:112-118` still finds `.emoji-mart-search input`
 5. Update `frontend/declarations.js:45-46` if the import paths change.
-6. Fix `sendEmoticon()` in `test/cypress/integration/group-chat-message.spec.js:163`. It uses `.vue-recycle-scroller__item-*`, which no longer exists. Prefer a `data-test` hook on our wrapper over library class names.
+6. Fix the picker's size and position, since v15 works out its width differently:
+   - `setPosition()` in `Emoticons.vue` hard-codes `emotiWidth`/`emotiHeight` at 353×440, but v15's width comes from `perLine` × `emojiSize`. Derive them, or set `perLine`/`emojiSize` explicitly and match them.
+   - Check the phone layout (`width: 100%`).
+   - Remove the stray `.emoji-mart` rule at `SendArea.vue:1615` if nothing needs it.
+7. Fix `sendEmoticon()` in `test/cypress/integration/group-chat-message.spec.js:163`. It uses `.vue-recycle-scroller__item-*`, which no longer exists. Prefer a `data-test` hook on our wrapper over library class names.
 
-**Files:** `package.json`, `package-lock.json`, `frontend/assets/style/components/_emoji-mart.scss`, `frontend/views/containers/chatroom/Emoticons.vue` (only if needed), `frontend/declarations.js`, `test/cypress/integration/group-chat-message.spec.js`
+**Files:** `package.json`, `package-lock.json`, `frontend/assets/style/components/_emoji-mart.scss`, `frontend/views/containers/chatroom/Emoticons.vue`, `frontend/views/containers/chatroom/SendArea.vue` (style only), `frontend/declarations.js`, `test/cypress/integration/group-chat-message.spec.js`
 
 **Done when:**
 - `npm run lint`, `npm run flow`, `npm run stylelint` pass
 - in `grunt dev`, the picker opens from the send area and from "Add reaction", search works, and selecting an emoji inserts it or adds the reaction
 - newer emojis appear and their images are right, for example 🫠 and 🪿 from Unicode 14/15
+- the popup stays on screen near the top, bottom and right edges of a desktop window, and at phone width it's full width
 - `:smi` autocomplete still works
 - the Cypress spec passes (ask before running)
 
@@ -119,61 +122,61 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 
 ---
 
-### Step 3: Restyle the picker, fix its layout and scrolling [PM's GitLab-look request, "doesn't scroll down"]
+### Step 3: Scroll the chat so a reaction on the last message is fully visible [#2601]
 
-**Goal:** the picker looks close to GitLab's and behaves well at every size. We can only change styles, not the library's HTML, so aim for close rather than identical.
+**Problem (#2601):** when there are enough messages to fill the screen and the user reacts to the **last** message, the new reaction row appears partly hidden behind the send area. The chat doesn't scroll down to show it. With only a few messages it's fine, because they all fit on screen.
 
-1. Restyle in `_emoji-mart.scss`:
-   - category tabs at the top
-   - a rounded search field
-   - a 9-column grid with a highlighted cell on hover
-   - sticky category headers
-   - no preview bar (`:show-preview='false'` is already set)
+**Why it happens:**
+- `addEmoticon()` (`ChatMain.vue:1446`) only sends `gi.actions/chatroom/makeEmotion`; nothing scrolls afterwards.
+- The reaction row makes the last message taller. The `dynamic-scroller` re-measures it (`message.emoticons` is in its `size-dependencies`, `ChatMain.vue:55`), but it keeps the same `scrollTop`, so the extra height grows downwards, below the visible area.
 
-   Use the `$general_*` / `$text_*` variables from `@assets/style/_variables.scss`.
-2. Fix `setPosition()` in `Emoticons.vue`: `emotiWidth`/`emotiHeight` are hard-coded at 353×440, and v15's width is worked out from `perLine` × `emojiSize`. Derive them, or set `perLine`/`emojiSize` explicitly and match them.
-3. Check the phone layout (`width: 100%`) and that the picker scrolls to the bottom (the issue notes it "doesn't scroll down"). The linked #2601 is a different problem: a new reaction hidden under the send area in the chat. It belongs to the chat view, not the picker, so it stays out of this plan.
-4. Remove the stray `.emoji-mart` rule at `SendArea.vue:1615` if nothing needs it.
+**Goal:** after a reaction is added to the last message, the chat scrolls to the bottom so the whole reaction row is visible above the send area.
 
-**Files:** `frontend/assets/style/components/_emoji-mart.scss`, `frontend/views/containers/chatroom/Emoticons.vue`, `frontend/views/containers/chatroom/SendArea.vue` (style only)
+1. In `ChatMain.vue`, when the reacted message is the last one in `ephemeral.messages`, scroll to the bottom with the existing `jumpToLatest()` (`ChatMain.vue:1182`) or `updateScroll()` (`ChatMain.vue:1158`).
+2. Scroll only **after** the reaction is rendered and the scroller has re-measured the message. Scrolling right after calling `makeEmotion` would happen before the message gets taller. Options, simplest first:
+   - wait for `makeEmotion` to resolve, then `$nextTick` and scroll
+   - set a "scroll to bottom when the last message's height changes" flag in `addEmoticon()` and act on it when the scroller reports the resize
+3. Also handle the case where someone else reacts to the last message while the user is already at the bottom (`ephemeral.scrollableDistance` is about 0). The chat should stay pinned to the bottom. Check this doesn't scroll for users who have scrolled up to read older messages.
+4. Leave reactions on older messages alone: no scrolling.
+
+**Files:** `frontend/views/containers/chatroom/ChatMain.vue`
 
 **Done when:**
-- side-by-side with the PM's GitLab screenshot, the picker looks close
-- the popup stays on screen near the top, bottom and right edges of a desktop window
-- at phone width it's full width and every category can be scrolled to
+- in a chatroom with more messages than fit on screen, reacting to the last message (from the hover menu or the "+" button on its reaction row) shows the full reaction row above the send area, as in the issue's expected screenshot
+- adding a second, different reaction to the last message also stays fully visible
+- reacting to an older message doesn't move the scroll position
+- while scrolled up reading older messages, someone else reacting to the last message doesn't pull the view down
+- works on desktop and at phone width
+
+---
+
+### Step 4: Follow the app's theme colours [issue 4]
+
+**Goal:** when the app is in the dark theme, the picker uses dark-theme colours instead of staying light. The layout and look don't change otherwise.
+
+1. In `_emoji-mart.scss`, replace the hard-coded hex colours with the theme variables from `@assets/style/_colors.scss` (`$background_0`, `$general_0`/`$general_1`/`$general_2`, `$text_0`/`$text_1`, ...). These are CSS custom properties set from `frontend/model/settings/colors.js`, so the picker then switches with the app's theme with no extra rules. This covers:
+   - the picker background and border
+   - the search input (background, border, text, placeholder)
+   - category labels and the sticky header background (today `#fff` / `rgba(255, 255, 255, 0.95)`)
+   - the hover/selected cell (`#f4f4f4`)
+   - anchor icons and the selected-anchor bar (`#858585`, `#464646`)
+   - the "no results" text and the scrollbar
+2. Pick each variable by matching what the colour does in light mode today, so the light theme looks the same as before.
+3. Only where no theme variable fits, add a `.is-dark-theme &` override (the class is set on the root at `frontend/main.js:418`), following the existing pattern in `frontend/views/components/menu/MenuContent.vue:95`. For example, the popup's `box-shadow` in `Emoticons.vue` needs a darker shadow like the one used there.
+4. Check v15's own `css/emoji-mart.css` for hard-coded colours that our overrides don't cover yet, and override those too.
+
+**Files:** `frontend/assets/style/components/_emoji-mart.scss`, `frontend/views/containers/chatroom/Emoticons.vue` (shadow only)
+
+**Done when:**
+- with the app in the dark theme, no part of the picker shows light-theme colours (background, search, headers, hover, anchors, scrollbar)
+- the light theme looks the same as before this commit
+- switching the theme in settings changes the picker's colours too, even if it's open
+- text and icons meet WCAG AA contrast in both themes
 - `npm run stylelint` passes
 
 ---
 
-### Step 4: Dark mode [issue 4]
-
-**Goal:** the picker matches the app's dark theme.
-
-1. Add `.is-dark-theme .emoji-mart { ... }` rules (the class is set on the root at `frontend/main.js:418`) for the background, borders, search input, category labels and sticky headers, hover/selected cell, the anchor bar and the scrollbar.
-2. Reuse the dark-theme variables that other components use; see `frontend/views/components/menu/MenuContent.vue:95` and `Tooltip.vue:399` for the pattern.
-
-**Files:** `frontend/assets/style/components/_emoji-mart.scss`
-
-**Done when:**
-- switching the theme in settings while the picker is open restyles it immediately
-- text and icons meet WCAG AA contrast in both themes
-
----
-
-### Step 5: Translated picker labels [i18n]
-
-**Goal:** no hard-coded English inside the picker.
-
-1. Pass the picker's `:i18n` prop from `Emoticons.vue` with `L()` strings for the search placeholder, "not found" text, category names, "Recent" and skin-tone labels.
-2. Add the new strings to the i18n strings file the way the project normally does.
-
-**Files:** `frontend/views/containers/chatroom/Emoticons.vue`, the strings file
-
-**Done when:** switching the app language changes the picker labels.
-
----
-
-### Step 6 (optional): Hide emojis the device can't draw [partly issue 2]
+### Step 5 (optional): Hide emojis the device can't draw [partly issue 2]
 
 **Goal:** stop users picking an emoji that will show as a blank box (tofu) in the reaction. The picker uses sheet images but reactions use the device's font, so this can't be fully fixed without rendering reactions as images too, which is out of scope.
 
@@ -191,8 +194,8 @@ Settle **before step 2**: which emoji set (Twitter or Google, given the image li
 ---
 
 ## Risks
-- **Issue 2 stays a known limitation** unless step 6 is done, and even then only partly.
+- **Issue 2 stays a known limitation** unless step 5 is done, and even then only partly.
 - **Licence:** the image licence decides which set we can ship. Settle it before step 2.
 - **Payload:** 1.3–4.4MB depending on set and size, downloaded once when the picker first opens. Check how the service worker caches it.
 - **Version drift:** a future `emoji-mart-vue-fast` upgrade must also bump the sheet version and its hash.
-- **Breaking markup changes:** upgrading across 8 major versions means some class names will break. Steps 1 and 3 carry most of the SCSS work.
+- **Breaking markup changes:** upgrading across 8 major versions means some class names will break. Step 1 carries most of the SCSS work.
