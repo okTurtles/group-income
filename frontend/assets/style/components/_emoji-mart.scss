@@ -135,17 +135,19 @@
 }
 
 .emoji-mart-search {
-  margin-top: 6px;
-  padding: 0 6px;
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
 
   input {
-    font-size: 16px;
+    font-size: $size_4;
+    color: $text_0;
     display: block;
     width: 100%;
-    padding: 0.2em 0.6em;
-    border-radius: 25px;
-    border: 1px solid #d9d9d9;
-    outline: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: $radius;
+    background-color: $background_0;
+    border: 1px solid $general_0;
+    outline: none;
   }
 }
 
@@ -205,10 +207,11 @@
 
 .emoji-mart-category-label h3 {
   display: block;
-  font-size: 16px;
   width: 100%;
-  font-weight: 500;
-  padding: 5px 6px;
+  font-weight: 700;
+  font-size: $size_4;
+  font-family: "Poppins";
+  padding: 0.75rem 0.25rem;
   background-color: $background_0;
 }
 
