@@ -193,7 +193,7 @@ export default ({
     box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
 
     .is-dark-theme & {
-      box-shadow: 0 0 20px rgba(38, 38, 38, 0.625);
+      box-shadow: $dark_theme_popup_shadow;
     }
   }
 }

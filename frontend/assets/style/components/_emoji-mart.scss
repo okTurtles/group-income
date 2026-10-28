@@ -1,3 +1,5 @@
+@use "../variables" as *;
+
 .emoji-mart {
   box-sizing: border-box;
   line-height: 1.15;
@@ -16,7 +18,7 @@
   color: #222427;
   border: 1px solid #d9d9d9;
   border-radius: 5px;
-  background: #fff;
+  background: $background_0;
 }
 
 .emoji-mart-preview-emoji .emoji-mart-emoji span {
@@ -164,7 +166,7 @@
       z-index: 1;
       position: relative;
       text-align: center;
-      cursor: default;
+      cursor: inherit;
     }
 
     &:hover::before,
@@ -176,11 +178,17 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #f4f4f4;
+      background-color: $general_2;
       border-radius: 100%;
-      opacity: 0;
       opacity: 1;
     }
+  }
+}
+
+.is-dark-theme .emoji-mart-category .emoji-mart-emoji {
+  &:hover::before,
+  &.emoji-mart-emoji-selected::before {
+    background-color: $general_1;
   }
 }
 
@@ -192,6 +200,7 @@
 .emoji-mart-static .emoji-mart-category-label {
   z-index: 2;
   position: relative;
+  color: $text_0;
 }
 
 .emoji-mart-category-label h3 {
@@ -200,8 +209,7 @@
   width: 100%;
   font-weight: 500;
   padding: 5px 6px;
-  background-color: #fff;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: $background_0;
 }
 
 .emoji-mart-emoji {
