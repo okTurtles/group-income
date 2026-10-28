@@ -34,9 +34,9 @@
   /* Emoji sheet has 61 columns, see also utils/emoji-data.js, SHEET_COLUMNS variable */
   background-size: 6100%;
 
-  /* Self-hosted sheet, downloaded at build time by the `emojiSheet` task in Gruntfile.js */
-  &.emoji-set-apple {
-    background-image: url("/assets/images/emoji/apple-64.png");
+  /* Self-hosted sheet, see assets/images/emoji/README.md */
+  &.emoji-set-twitter {
+    background-image: url("/assets/images/emoji/twitter-64.png");
   }
 }
 

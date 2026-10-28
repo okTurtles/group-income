@@ -43,7 +43,7 @@ declare module 'node:buffer' { declare module.exports: { Buffer: typeof Buffer }
 declare module 'chalk' { declare module.exports: any }
 declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
-declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: any }
+declare module 'emoji-mart-vue-fast/data/twitter.json' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }
 declare module 'node:fs/promises' { declare module.exports: any }
 declare module 'node:path' { declare module.exports: any }

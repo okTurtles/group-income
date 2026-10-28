@@ -19,7 +19,7 @@ const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, execSync, spawn } = require('child_process')
 const execP = util.promisify(exec)
-const { readdir, cp, mkdir, rm, copyFile, readFile, writeFile } = require('fs/promises')
+const { readdir, cp, mkdir, rm, copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -76,14 +76,6 @@ const serviceWorkerDir = `${srcDir}/controller/serviceworkers`
 const contractsDir = `${srcDir}/model/contracts`
 const mainSrc = path.join(srcDir, 'main.js')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
-// The emoji picker's sprite sheet. We serve it ourselves so the app never requests it from a CDN (#2334).
-// It's downloaded from the URL in `emoji-mart-vue-fast`'s own CSS so that it always matches the package's
-// emoji data, and downloaded again whenever the installed `emoji-mart-vue-fast` version changes.
-const emojiSheet = {
-  dest: path.join(srcDir, 'assets/images/emoji/apple-64.png'),
-  // The `emoji-mart-vue-fast` version the current sheet was downloaded for.
-  versionFile: 'node_modules/.cache/emoji-sheet-version'
-}
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -465,35 +457,6 @@ module.exports = (grunt) => {
     done()
   })
 
-  grunt.registerTask('emojiSheet', 'Download the emoji picker sprite sheet if it is missing', async function () {
-    const done = this.async()
-    const { version } = require('emoji-mart-vue-fast/package.json')
-
-    try {
-      const downloadedFor = fs.existsSync(emojiSheet.versionFile) ? await readFile(emojiSheet.versionFile, 'utf8') : null
-      if (fs.existsSync(emojiSheet.dest) && downloadedFor === version) {
-        return done()
-      }
-      const css = await readFile(require.resolve('emoji-mart-vue-fast/css/emoji-mart.css'), 'utf8')
-      const url = css.match(/https:\/\/unpkg\.com\/emoji-datasource-apple@[^/]+\/img\/apple\/sheets-256\/64\.png/)?.[0]
-      if (!url) {
-        throw new Error(`Could not find the Apple sheet URL in emoji-mart-vue-fast@${version}'s CSS`)
-      }
-      grunt.log.writeln(`Downloading ${chalk.cyan(url)}`)
-      const res = await fetch(url)
-      if (!res.ok) {
-        throw new Error(`Failed to download ${url}: HTTP ${res.status}`)
-      }
-      await mkdir(path.dirname(emojiSheet.dest), { recursive: true })
-      await writeFile(emojiSheet.dest, Buffer.from(await res.arrayBuffer()))
-      await mkdir(path.dirname(emojiSheet.versionFile), { recursive: true })
-      await writeFile(emojiSheet.versionFile, version)
-      done()
-    } catch (e) {
-      done(e)
-    }
-  })
-
   grunt.registerTask('build', function () {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
@@ -502,7 +465,7 @@ module.exports = (grunt) => {
 
       grunt.task.run([
         ...(this.flags.skiplint ? [] : lintTasks),
-        'clean', 'emojiSheet', 'copy', esbuild
+        'clean', 'copy', esbuild
       ])
     }
   })

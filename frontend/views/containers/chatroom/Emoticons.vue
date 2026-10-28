@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-picker(:class='{ "is-active": isActive }' @click='clickBackDrop')
   .c-picker-wrapper(ref='pickerWrapper' :style='position' data-test='emojiPicker')
-    picker(@select='select' :data='emoji' :show-preview='false' :auto-focus='true')
+    picker(@select='select' :data='emoji' set='twitter' :show-preview='false' :auto-focus='true')
 </template>
 
 <script>
