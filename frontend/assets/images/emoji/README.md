@@ -1,17 +1,28 @@
 # Emoji sprite sheet
 
-`twitter-64.png` is the sprite sheet used by the emoji picker (`emoji-mart-vue-fast`). We serve it ourselves so
-the app never requests it from a CDN (#2334).
+`twitter-64.png` is the emoji picker's (`emoji-mart-vue-fast`) sprite sheet, served by the app itself instead of a CDN. It is `img/twitter/sheets-256/64.png` from [`emoji-datasource-twitter@15.0.1`](https://github.com/iamcal/emoji-data), the version matching the emoji data bundled with `emoji-mart-vue-fast`; the picker locates each emoji on the sheet by the position given in that data.
 
-## Source
+## Upgrading
 
-`img/twitter/sheets-256/64.png` from [`emoji-datasource-twitter@15.0.1`](https://github.com/iamcal/emoji-data).
-That version must match the emoji data bundled with `emoji-mart-vue-fast` (see the sheet URLs in its
-`css/emoji-mart.css`), because the picker locates each emoji on the sheet by the position given in that data.
+When upgrading `emoji-mart-vue-fast`, replace this sheet:
 
-The downloaded sheet fills the 31 cells Twemoji has no artwork for (those with `has_img_twitter: false` in `emoji-datasource-twitter`'s `emoji.json`) with Apple's images, which aren't openly licensed. Those cells have been made transparent. The picker never shows them, since `data/twitter.json` leaves those emojis out.
+1. Upgrade the package: `npm install emoji-mart-vue-fast@<version>`.
+2. Get the matching sheet URL from the package's CSS (`node_modules/emoji-mart-vue-fast/css/emoji-mart.css`).
+   The quickest way is to run:
 
-When upgrading `emoji-mart-vue-fast` to a version with newer emoji data, replace this sheet with the matching version and clear those cells again.
+   ```bash
+   grep -o 'https://unpkg.com/emoji-datasource-twitter@[^)"'"'"']*64\.png' node_modules/emoji-mart-vue-fast/css/emoji-mart.css
+   ```
+
+   It prints a URL like this:
+
+   ```
+   https://unpkg.com/emoji-datasource-twitter@<version>/img/twitter/sheets-256/64.png
+   ```
+
+   NOTE: The version in this URL doesn't have to match the `emoji-mart-vue-fast` version. That's expected.
+3. Download the sheet from that URL and save it over `twitter-64.png`. Keep the file name, because the picker's styles in `@assets/style/components/_emoji-mart.scss` refer to it.
+4. Update the version at the top of this file, then run `grunt dev` and check that the emoji picker works.
 
 ## License
 
