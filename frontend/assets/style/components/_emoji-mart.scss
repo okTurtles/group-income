@@ -77,7 +77,7 @@
   flex-direction: row;
   justify-content: space-between;
   padding: 0 6px;
-  color: $general_0;
+  color: $text_1;
   line-height: 0;
 
   i {
@@ -164,6 +164,10 @@
 .emoji-mart-category {
   position: relative;
 
+  &:first-of-type {
+    margin-top: 0.5rem;
+  }
+
   .emoji-mart-emoji {
     span {
       z-index: 1;
@@ -241,7 +245,7 @@
   font-size: 14px;
   text-align: center;
   padding-top: 70px;
-  color: #858585;
+  color: $text_1;
 
   .emoji-mart-category-label {
     display: none;
