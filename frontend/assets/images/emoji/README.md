@@ -9,12 +9,9 @@ the app never requests it from a CDN (#2334).
 That version must match the emoji data bundled with `emoji-mart-vue-fast` (see the sheet URLs in its
 `css/emoji-mart.css`), because the picker locates each emoji on the sheet by the position given in that data.
 
-The downloaded sheet fills the 31 cells Twemoji has no artwork for (those with `has_img_twitter: false` in
-`emoji-datasource-twitter`'s `emoji.json`) with Apple's images, which aren't openly licensed. Those cells have been
-made transparent. The picker never shows them, since `data/twitter.json` leaves those emojis out.
+The downloaded sheet fills the 31 cells Twemoji has no artwork for (those with `has_img_twitter: false` in `emoji-datasource-twitter`'s `emoji.json`) with Apple's images, which aren't openly licensed. Those cells have been made transparent. The picker never shows them, since `data/twitter.json` leaves those emojis out.
 
-When upgrading `emoji-mart-vue-fast` to a version with newer emoji data, replace this sheet with the matching
-version and clear those cells again.
+When upgrading `emoji-mart-vue-fast` to a version with newer emoji data, replace this sheet with the matching version and clear those cells again.
 
 ## License
 
