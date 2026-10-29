@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   height: 420px;
-  color: #222427;
+  color: $text_0;
   border: 1px solid $general_0;
   border-radius: 5px;
   background: $background_0;
@@ -305,7 +305,7 @@
 
 .emoji-mart-preview-emoticon {
   font-size: 11px;
-  color: #bbb;
+  color: $general_0;
 
   + .emoji-mart-preview-emoticon {
     margin-left: 0.5em;
@@ -324,7 +324,7 @@
 }
 
 .emoji-mart-title-label {
-  color: #999a9c;
+  color: $text_1;
   font-size: 21px;
   font-weight: 300;
 }
@@ -334,7 +334,7 @@
   padding: 2px 0;
   border: 1px solid $general_0;
   border-radius: 12px;
-  background-color: #fff;
+  background-color: $background_0;
 }
 
 .emoji-mart-skin-swatches-opened {
@@ -394,7 +394,7 @@
     width: 4px;
     height: 4px;
     margin: -2px 0 0 -2px;
-    background-color: #fff;
+    background-color: $background_0;
     border-radius: 100%;
     pointer-events: none;
     opacity: 0;

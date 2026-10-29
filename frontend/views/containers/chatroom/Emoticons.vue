@@ -8,6 +8,7 @@
       color='var(--primary_0)'
       :show-preview='false'
       :auto-focus='true'
+      :i18n='pickerI18n'
     )
 </template>
 
@@ -19,6 +20,7 @@ import { emojiIndex } from './emoji-utils.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 import { debounce } from 'turtledash'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'Emoticons',
@@ -33,6 +35,29 @@ export default ({
       pos_y: Number,
       isActive: false,
       lastFocus: null // Record element that open the modal
+    }
+  },
+  computed: {
+    pickerI18n () {
+      // https://github.com/serebrov/emoji-mart-vue#i18n
+      return {
+        search: L('Search'),
+        notfound: L('No Emoji Found'),
+        categories: {
+          search: L('Search Results'),
+          recent: L('Frequently Used'),
+          smileys: L('Smileys & Emoticon'),
+          people: L('People & Body'),
+          nature: L('Animals & Nature'),
+          foods: L('Food & Drink'),
+          activity: L('Activity'),
+          places: L('Travel & Places'),
+          objects: L('Objects'),
+          symbols: L('Symbols'),
+          flags: L('Flags'),
+          custom: L('Custom')
+        }
+      }
     }
   },
   created () {
