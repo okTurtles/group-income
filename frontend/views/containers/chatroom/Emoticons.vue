@@ -46,7 +46,7 @@ export default ({
         categories: {
           search: L('Search Results'),
           recent: L('Frequently Used'),
-          smileys: L('Smileys & Emoticon'),
+          smileys: L('Smileys & Emotion'),
           people: L('People & Body'),
           nature: L('Animals & Nature'),
           foods: L('Food & Drink'),
