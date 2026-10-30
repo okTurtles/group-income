@@ -134,7 +134,7 @@ export default {
   opacity: 0;
   height: 0;
   pointer-events: none;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: $light_theme_popup_shadow;
 
   .is-dark-theme & {
     box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
