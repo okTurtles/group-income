@@ -1,7 +1,9 @@
+@use "../variables" as *;
+
 .emoji-mart {
   box-sizing: border-box;
   line-height: 1.15;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-family: "Lato", "Helvetica Neue", sans-serif;
   font-size: 16px;
 
   * {
@@ -13,62 +15,10 @@
   display: flex;
   flex-direction: column;
   height: 420px;
-  color: #222427;
-  border: 1px solid #d9d9d9;
+  color: $text_0;
+  border: 1px solid $general_0;
   border-radius: 5px;
-  background: #fff;
-
-  .vue-recycle-scroller {
-    position: relative;
-
-    &.direction-vertical:not(.page-mode) {
-      overflow-y: auto;
-    }
-
-    &.direction-horizontal {
-      display: flex;
-
-      &:not(.page-mode) {
-        overflow-x: auto;
-      }
-    }
-
-    &.ready .vue-recycle-scroller__item-view {
-      position: absolute;
-      top: 0;
-      left: 0;
-      will-change: transform;
-    }
-
-    &.direction-vertical .vue-recycle-scroller__item-wrapper {
-      width: 100%;
-    }
-
-    &.direction-horizontal .vue-recycle-scroller__item-wrapper {
-      height: 100%;
-    }
-
-    &.ready {
-      &.direction-vertical .vue-recycle-scroller__item-view {
-        width: 100%;
-      }
-
-      &.direction-horizontal .vue-recycle-scroller__item-view {
-        height: 100%;
-      }
-    }
-  }
-
-  .vue-recycle-scroller__slot {
-    flex: auto 0 0;
-  }
-
-  .vue-recycle-scroller__item-wrapper {
-    flex: 1;
-    box-sizing: border-box;
-    overflow: hidden;
-    position: relative;
-  }
+  background: $background_0;
 }
 
 .emoji-mart-preview-emoji .emoji-mart-emoji span {
@@ -83,31 +33,16 @@
 }
 
 .emoji-type-image {
-  /* Emoji sheet has 56 columns, see also utils/emoji-data.js, SHEET_COLUMNS variable */
+  background-size: 6100%;
 
-  /* Here we use (56+1) * 100% to avoid visible edges of nearby icons when scaling for different
-   * screen sizes */
-  background-size: 5700%;
-
-  &.emoji-set-apple {
-    background-image: url("https://unpkg.com/emoji-datasource-apple@5.0.1/img/apple/sheets-256/64.png");
-  }
-
-  &.emoji-set-facebook {
-    background-image: url("https://unpkg.com/emoji-datasource-facebook@5.0.1/img/facebook/sheets-256/64.png");
-  }
-
-  &.emoji-set-google {
-    background-image: url("https://unpkg.com/emoji-datasource-google@5.0.1/img/google/sheets-256/64.png");
-  }
-
+  /* Self-hosted sheet, see assets/images/emoji/README.md */
   &.emoji-set-twitter {
-    background-image: url("https://unpkg.com/emoji-datasource-twitter@5.0.1/img/twitter/sheets-256/64.png");
+    background-image: url("/assets/images/emoji/twitter-64.png");
   }
 }
 
 .emoji-mart-bar {
-  border: 0 solid #d9d9d9;
+  border: 0 solid $general_0;
 
   &:first-child {
     border-bottom-width: 1px;
@@ -141,7 +76,7 @@
   flex-direction: row;
   justify-content: space-between;
   padding: 0 6px;
-  color: #858585;
+  color: $text_1;
   line-height: 0;
 
   i {
@@ -164,14 +99,23 @@
   padding: 12px 4px;
   overflow: hidden;
   transition: color 0.1s ease-out;
+  // anchors are <button>s, so undo the global button styles (components/_buttons.scss)
+  min-height: auto;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: inherit;
 
-  &:hover {
-    color: #464646;
+  &:hover,
+  &:focus {
+    color: $text_0;
+    background-color: transparent;
+    box-shadow: none;
   }
 }
 
 .emoji-mart-anchor-selected {
-  color: #464646;
+  color: $text_0;
 
   .emoji-mart-anchor-bar {
     bottom: 0;
@@ -184,36 +128,28 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background-color: #464646;
-}
-
-.emoji-mart .scroller {
-  height: 250px;
-  position: relative;
-  flex: 1;
-  padding: 0 6px 6px 6px;
-  z-index: 0;
-
-  /* Fix for rendering sticky positioned category labels on Chrome */
-  will-change: transform;
-
-  /* avoids "repaints on scroll" in mobile Chrome */
-  -webkit-overflow-scrolling: touch;
+  background-color: $text_0;
 }
 
 .emoji-mart-search {
-  margin-top: 6px;
-  padding: 0 6px;
+  margin-top: 0.5rem;
+  padding: 0 0.5rem;
 
   input {
-    font-size: 16px;
+    font-size: $size_4;
+    color: $text_0;
     display: block;
     width: 100%;
-    padding: 0.2em 0.6em;
-    border-radius: 25px;
-    border: 1px solid #d9d9d9;
-    outline: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: $radius;
+    background-color: $background_0;
+    border: 1px solid $general_0;
+    outline: none;
   }
+}
+
+.emoji-mart-search .hidden {
+  display: none;
 }
 
 .emoji-mart-search-results {
@@ -224,15 +160,20 @@
 .emoji-mart-category {
   position: relative;
 
+  &:first-of-type {
+    margin-top: 0.25rem;
+  }
+
   .emoji-mart-emoji {
     span {
       z-index: 1;
       position: relative;
       text-align: center;
-      cursor: default;
+      cursor: inherit;
     }
 
-    &:hover::before {
+    &:hover::before,
+    &.emoji-mart-emoji-selected::before {
       z-index: 0;
       content: "";
       position: absolute;
@@ -240,11 +181,16 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #f4f4f4;
+      background-color: $general_2;
       border-radius: 100%;
-      opacity: 0;
-      opacity: 1;
     }
+  }
+}
+
+.is-dark-theme .emoji-mart-category .emoji-mart-emoji {
+  &:hover::before,
+  &.emoji-mart-emoji-selected::before {
+    background-color: $general_1;
   }
 }
 
@@ -256,15 +202,17 @@
 .emoji-mart-static .emoji-mart-category-label {
   z-index: 2;
   position: relative;
+  color: $text_0;
 }
 
-.emoji-mart-category-label span {
+.emoji-mart-category-label h3 {
   display: block;
   width: 100%;
-  font-weight: 500;
-  padding: 5px 6px;
-  background-color: #fff;
-  background-color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  font-size: $size_4;
+  font-family: "Poppins";
+  padding: 1.25rem 0.25rem 0.75rem;
+  background-color: $background_0;
 }
 
 .emoji-mart-emoji {
@@ -272,6 +220,16 @@
   display: inline-block;
   font-size: 0;
   padding: 6px;
+  // emojis are <button>s, so undo the global button styles (components/_buttons.scss)
+  min-height: auto;
+  border: none;
+  border-radius: 0;
+  background: none;
+
+  &:hover,
+  &:focus {
+    background-color: transparent;
+  }
 
   span {
     display: inline-block;
@@ -282,7 +240,7 @@
   font-size: 14px;
   text-align: center;
   padding-top: 70px;
-  color: #858585;
+  color: $text_1;
 
   .emoji-mart-category-label {
     display: none;
@@ -331,7 +289,7 @@
 
 .emoji-mart-preview-shortname {
   font-size: 12px;
-  color: #888;
+  color: $text_1;
 
   + {
     .emoji-mart-preview-shortname,
@@ -343,7 +301,7 @@
 
 .emoji-mart-preview-emoticon {
   font-size: 11px;
-  color: #bbb;
+  color: $general_0;
 
   + .emoji-mart-preview-emoticon {
     margin-left: 0.5em;
@@ -362,7 +320,7 @@
 }
 
 .emoji-mart-title-label {
-  color: #999a9c;
+  color: $text_1;
   font-size: 21px;
   font-weight: 300;
 }
@@ -370,9 +328,9 @@
 .emoji-mart-skin-swatches {
   font-size: 0;
   padding: 2px 0;
-  border: 1px solid #d9d9d9;
+  border: 1px solid $general_0;
   border-radius: 12px;
-  background-color: #fff;
+  background-color: $background_0;
 }
 
 .emoji-mart-skin-swatches-opened {
@@ -432,7 +390,7 @@
     width: 4px;
     height: 4px;
     margin: -2px 0 0 -2px;
-    background-color: #fff;
+    background-color: $background_0;
     border-radius: 100%;
     pointer-events: none;
     opacity: 0;

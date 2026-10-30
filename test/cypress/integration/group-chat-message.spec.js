@@ -160,7 +160,6 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   }
 
   function sendEmoticon (nth, emojiCode, emojiCount) {
-    const emojiWrapperSelector = '.c-picker-wrapper .emoji-mart .vue-recycle-scroller__item-wrapper .vue-recycle-scroller__item-view:first-child .emoji-mart-category'
     cy.getByDT('conversationWrapper').find(`[data-index="${nth - 1}"] > .c-message`).within(() => {
       cy.get('.c-message-menu').within(() => {
         cy.get('.c-actions').invoke('attr', 'style', 'display: flex').invoke('show').should('be.visible')
@@ -168,7 +167,7 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
         cy.get('.c-actions').invoke('hide').should('be.hidden')
       })
     })
-    cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
+    cy.getByDT('emojiPicker').find(`button.emoji-mart-emoji[data-title="${emojiCode}"]`).eq(0).click()
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get(`[data-index="${nth - 1}"] > .c-message .c-emoticons-list`).should('exist')

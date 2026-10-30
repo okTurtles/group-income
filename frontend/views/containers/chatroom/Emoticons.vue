@@ -1,7 +1,15 @@
 <template lang='pug'>
 .c-picker(:class='{ "is-active": isActive }' @click='clickBackDrop')
-  .c-picker-wrapper(ref='pickerWrapper' :style='position')
-    picker(@select='select' :data='emoji' :show-preview='false' :auto-focus='true')
+  .c-picker-wrapper(ref='pickerWrapper' :style='position' data-test='emojiPicker')
+    picker(
+      @select='select'
+      :data='emoji'
+      set='twitter'
+      color='var(--primary_0)'
+      :show-preview='false'
+      :auto-focus='true'
+      :i18n='pickerI18n'
+    )
 </template>
 
 <script>
@@ -12,6 +20,7 @@ import { emojiIndex } from './emoji-utils.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 import { debounce } from 'turtledash'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'Emoticons',
@@ -26,6 +35,29 @@ export default ({
       pos_y: Number,
       isActive: false,
       lastFocus: null // Record element that open the modal
+    }
+  },
+  computed: {
+    pickerI18n () {
+      // https://github.com/serebrov/emoji-mart-vue#i18n
+      return {
+        search: L('Search'),
+        notfound: L('No Emoji Found'),
+        categories: {
+          search: L('Search Results'),
+          recent: L('Frequently Used'),
+          smileys: L('Smileys & Emotion'),
+          people: L('People & Body'),
+          nature: L('Animals & Nature'),
+          foods: L('Food & Drink'),
+          activity: L('Activity'),
+          places: L('Travel & Places'),
+          objects: L('Objects'),
+          symbols: L('Symbols'),
+          flags: L('Flags'),
+          custom: L('Custom')
+        }
+      }
     }
   },
   created () {
@@ -85,8 +117,10 @@ export default ({
         this.position = undefined
         return
       }
-      const emotiWidth = 353
-      const emotiHeight = 440
+      // The picker works out its own width from its 'perLine' and 'emojiSize' props, so measure it.
+      const pickerEl = this.$refs.pickerWrapper?.querySelector('.emoji-mart')
+      const emotiWidth = pickerEl?.offsetWidth || 353
+      const emotiHeight = pickerEl?.offsetHeight || 420
       const padding = 16
       const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
       let top = this.pos_y - emotiHeight - padding
@@ -160,7 +194,7 @@ export default ({
 .c-picker-wrapper {
   @extend %floating-panel;
   position: absolute;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: $light_theme_popup_shadow;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -172,5 +206,9 @@ export default ({
       width: 100% !important;
     }
   }
+}
+
+.is-dark-theme .c-picker-wrapper {
+  box-shadow: $dark_theme_popup_shadow;
 }
 </style>

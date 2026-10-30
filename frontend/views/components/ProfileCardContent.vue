@@ -202,7 +202,7 @@ export default {
   color: $text_1;
   max-width: 100vw;
   width: 24.3rem;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: $light_theme_popup_shadow;
 
   &:last-child {
     margin-bottom: 0;
