@@ -122,13 +122,19 @@ export default ({
       const emotiWidth = pickerEl?.offsetWidth || 353
       const emotiHeight = pickerEl?.offsetHeight || 420
       const padding = 16
-      const left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth / 2)
+      let left = Math.min(this.pos_x - emotiWidth / 2, winWidth - padding - emotiWidth)
       let top = this.pos_y - emotiHeight - padding
+
       if (top < 0) {
         top = this.pos_y + padding
       } else if (top + emotiHeight > winHeight) {
         top = winHeight - emotiHeight
       }
+
+      if (left < padding) {
+        left = padding
+      }
+
       this.position = { left: `${left}px`, top: `${top}px` }
     },
     debouncedSetPosition: debounce(function () {
@@ -194,6 +200,7 @@ export default ({
 .c-picker-wrapper {
   @extend %floating-panel;
   position: absolute;
+  transform: none;
   box-shadow: $light_theme_popup_shadow;
   max-height: 0;
   opacity: 0;
