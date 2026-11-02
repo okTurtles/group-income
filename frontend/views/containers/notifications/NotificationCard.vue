@@ -93,7 +93,7 @@ export default {
 
   @include tablet {
     margin-top: -0.5rem; // better aligned with bell icon
-    box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+    box-shadow: $light_theme_popup_shadow;
     width: 25rem;
     padding: 0;
 
