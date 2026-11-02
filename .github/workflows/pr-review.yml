@@ -1,0 +1,23 @@
+# shared workflow
+name: AI PR Review
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  review:
+    uses: okTurtles/libcheloniajs/.github/workflows/pull-review-crush.yml@main
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    with:
+      provider: ${{ vars.REVIEW_PROVIDER }}
+      model: ${{ vars.REVIEW_MODEL }}
+      project-context: ${{ vars.PROJECT_CTX }}
+      timeout-minutes: ${{ fromJSON(vars.REVIEW_TIMEOUT_MINUTES || '30') }}
+    secrets:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+      KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}

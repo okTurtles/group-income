@@ -51,6 +51,7 @@ key.pub.json
 /test/cypress/screenshots
 /test/cypress/cache/*
 !/test/cypress/cache/.gitkeep
+/cypress/downloads/*
 
 # Translation
 strings.exe

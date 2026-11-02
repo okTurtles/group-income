@@ -29,6 +29,7 @@ export const defaultSettings = {
   appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
     : ['error', 'warn', 'info']): string[]),
+  appLogsIncludeJournal: false,
   fontSize: 16,
   increasedContrast: false,
   notificationEnabled: null, // 3 values: null (unset), true (user-enabled), false (user-disabled)
@@ -66,6 +67,9 @@ const mutations = {
   setAppLogsFilter (state, filter) {
     state.appLogsFilter = filter
     sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filter)
+  },
+  setAppLogsIncludeJournal (state, includeJournal) {
+    state.appLogsIncludeJournal = includeJournal
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
