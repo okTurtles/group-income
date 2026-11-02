@@ -4,7 +4,7 @@
     picker(
       @select='select'
       :data='emoji'
-      set='twitter'
+      :native='true'
       color='var(--primary_0)'
       :show-preview='false'
       :auto-focus='true'

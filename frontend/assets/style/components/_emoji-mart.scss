@@ -32,15 +32,6 @@
   word-break: keep-all;
 }
 
-.emoji-type-image {
-  background-size: 6100%;
-
-  /* Self-hosted sheet, see assets/images/emoji/README.md */
-  &.emoji-set-twitter {
-    background-image: url("/assets/images/emoji/twitter-64.png");
-  }
-}
-
 .emoji-mart-bar {
   border: 0 solid $general_0;
 
