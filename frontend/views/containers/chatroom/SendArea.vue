@@ -104,6 +104,7 @@
             direction='top'
             :text='L("Add reaction")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -114,6 +115,7 @@
             direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -124,6 +126,7 @@
             direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -134,6 +137,7 @@
             direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -144,6 +148,7 @@
             direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -154,6 +159,7 @@
             direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -181,6 +187,7 @@
             direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -191,6 +198,7 @@
             direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -201,6 +209,7 @@
             direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -211,6 +220,7 @@
             direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -221,6 +231,7 @@
             direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            triggerElementSelector='button.is-icon'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -233,6 +244,7 @@
             tooltip(
               direction='top'
               :text='L("Create poll")'
+              triggerElementSelector='button.is-icon'
             )
               button.is-icon(
                 data-test='createPoll'
@@ -243,6 +255,7 @@
             tooltip(
               direction='top'
               :text='L("Add reaction")'
+              triggerElementSelector='button.is-icon'
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
@@ -252,6 +265,7 @@
             tooltip(
               direction='top'
               :text='L("Attach file")'
+              triggerElementSelector='button.is-icon'
             )
               button.is-icon.c-file-attachment-btn(
                 :aria-label='L("Attach file")'
@@ -264,11 +278,13 @@
                   multiple
                   data-test='attachments'
                   @change='fileAttachmentHandler($event.target.files)'
+                  inert='true'
                 )
             tooltip(
               v-if='ephemeral.voiceRecording.supported'
               direction='top'
               :text='L("Record voice message")'
+              triggerElementSelector='button.is-icon'
             )
               button.is-icon(
                 :aria-label='L("Record voice message")'
