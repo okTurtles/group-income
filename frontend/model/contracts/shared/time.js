@@ -175,7 +175,7 @@ export function getLocale (): string {
   const fallback = 'en-US-POSIX'
 
   return typeof navigator === 'undefined'
-    // Fallback for Mocha tests.
+    // Fallback for Node versions (< 21) that lack a `navigator` global.
     ? fallback
     // Flow considers `navigator.languages` to be of type `$ReadOnlyArray<string>`,
     // which is not compatible with the `string[]` expected by `.toLocaleDateString()`.
