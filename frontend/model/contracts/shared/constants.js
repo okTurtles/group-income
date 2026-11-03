@@ -27,6 +27,10 @@ export const GROUP_CURRENCY_MAX_CHAR = 10
 export const GROUP_MAX_PLEDGE_AMOUNT = 1000000000
 export const GROUP_MINCOME_MAX = 1000000000
 export const GROUP_DISTRIBUTION_PERIOD_MAX_DAYS = 365
+export const GROUP_PERMISSION_CHANGE_ACTIONS = {
+  UPSERT: 'upsert', // add or edit
+  REMOVE: 'remove'
+}
 
 // group-proposal related
 
@@ -65,8 +69,8 @@ export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
 export const GROUP_ROLES = {
   ADMIN: 'admin',
-  MODERATOR: 'moderator',
   MODERATOR_DELEGATOR: 'moderator-delegator',
+  MODERATOR: 'moderator',
   CUSTOM: 'custom'
 }
 
@@ -75,34 +79,41 @@ export const GROUP_PERMISSIONS = {
   ASSIGN_DELEGATOR: 'assign-delegator',
   DELEGATE_PERMISSIONS: 'delegate-permissions', // add/edit/remove permissions
   REMOVE_MEMBER: 'remove-member',
-  REVOKE_INVITE: 'revoke-invite',
-  DELETE_CHANNEL: 'delete-channel'
+  REVOKE_INVITE: 'revoke-invite'
+  // DELETE_CHANNEL: 'delete-channel' TODO: Implement this
 }
 const GP = GROUP_PERMISSIONS
 
 export const GROUP_PERMISSIONS_PRESET = {
-  ADMIN: [
+  'admin': [
     GP.VIEW_PERMISSIONS,
     GP.ASSIGN_DELEGATOR,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ],
-  MODERATOR_DELEGATOR: [
+  'moderator-delegator': [
     GP.VIEW_PERMISSIONS,
     GP.DELEGATE_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ],
-  MODERATOR: [
+  'moderator': [
     GP.VIEW_PERMISSIONS,
     GP.REMOVE_MEMBER,
-    GP.REVOKE_INVITE,
-    GP.DELETE_CHANNEL
+    GP.REVOKE_INVITE
+    // GP.DELETE_CHANNEL
   ]
 }
+
+export const GROUP_PERMISSIONS_CUSTOM_OPTIONS = [
+  GP.VIEW_PERMISSIONS,
+  GP.REMOVE_MEMBER,
+  GP.REVOKE_INVITE
+  // GP.DELETE_CHANNEL
+]
 
 // chatroom.js related
 
