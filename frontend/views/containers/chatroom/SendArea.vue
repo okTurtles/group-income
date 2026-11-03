@@ -108,6 +108,7 @@
             button.is-icon(
               :aria-label='L("Add reaction")'
               @click='openEmoticon'
+              @keyup.prevent.stop='onAddReactionKeyUp'
             )
               i.icon-smile-beam
           tooltip(
@@ -247,6 +248,7 @@
               button.is-icon(
                 :aria-label='L("Add reaction")'
                 @click='openEmoticon'
+                @keyup.prevent.stop='onAddReactionKeyUp'
               )
                 i.icon-smile-beam
             tooltip(
@@ -1421,6 +1423,14 @@ export default ({
       if (this.ephemeral.voiceRecording.isOpen) {
         this.ephemeral.voiceRecording.isOpen = false
       }
+    },
+    onAddReactionKeyUp (e) {
+      // TODO: only run below for enter/space keys
+      const bbox = e.target.getBoundingClientRect()
+      this.openEmoticon({
+        x: bbox.left + bbox.width / 2,
+        y: bbox.top + bbox.height / 2
+      })
     }
   }
 }: Object)
