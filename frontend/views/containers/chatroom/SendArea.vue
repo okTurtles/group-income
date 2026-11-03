@@ -107,8 +107,7 @@
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
-              @click='openEmoticon'
-              @keyup.prevent.stop='onAddReactionKeyUp'
+              @click='onAddReactionClick'
             )
               i.icon-smile-beam
           tooltip(
@@ -247,8 +246,7 @@
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
-                @click='openEmoticon'
-                @keyup.prevent.stop='onAddReactionKeyUp'
+                @click='onAddReactionClick'
               )
                 i.icon-smile-beam
             tooltip(
@@ -1424,13 +1422,18 @@ export default ({
         this.ephemeral.voiceRecording.isOpen = false
       }
     },
-    onAddReactionKeyUp (e) {
-      // TODO: only run below for enter/space keys
-      const bbox = e.target.getBoundingClientRect()
-      this.openEmoticon({
-        x: bbox.left + bbox.width / 2,
-        y: bbox.top + bbox.height / 2
-      })
+    onAddReactionClick (e) {
+      if (e.detail === 0) {
+        // e.detail holds the number of clicks that occurred and in case of keyboard-initiated click, it is 0.
+        // In this case, we anchor the emoticon picker to the center of the button.
+        const bbox = e.currentTarget.getBoundingClientRect()
+        this.openEmoticon({
+          x: bbox.left + bbox.width / 2,
+          y: bbox.top + bbox.height / 2
+        })
+      } else {
+        this.openEmoticon(e)
+      }
     }
   }
 }: Object)
