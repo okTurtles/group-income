@@ -2,9 +2,8 @@
 .c-message-menu
   .c-actions
     tooltip(
-      direction='top'
       :text='L("Add reaction")'
-      triggerElementSelector='button.is-icon-small'
+      v-bind='tooltipTriggerCommonProps'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Add reaction")'
@@ -14,9 +13,8 @@
 
     tooltip(
       v-if='isEditable'
-      direction='top'
       :text='L("Edit")'
-      triggerElementSelector='button.is-icon-small'
+      v-bind='tooltipTriggerCommonProps'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
@@ -26,9 +24,8 @@
 
     tooltip(
       v-if='isReplyable'
-      direction='top'
       :text='L("Reply")'
-      triggerElementSelector='button.is-icon-small'
+      v-bind='tooltipTriggerCommonProps'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Reply")'
@@ -38,9 +35,8 @@
 
     tooltip(
       v-if='variant==="failed"'
-      direction='top'
       :text='L("Retry")'
-      triggerElementSelector='button.is-icon-small'
+      v-bind='tooltipTriggerCommonProps'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Retry")'
@@ -177,6 +173,12 @@ export default ({
       }]
 
       return possibleMoreOptions.filter(option => option.conditionToShow)
+    },
+    tooltipTriggerCommonProps () {
+      return {
+        direction: 'top',
+        triggerElementSelector: 'button.is-icon-small'
+      }
     }
   },
   created () {

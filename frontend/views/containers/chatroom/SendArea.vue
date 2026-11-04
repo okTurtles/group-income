@@ -101,10 +101,9 @@
         .addons.addons-editing
           tooltip(
             v-if='ephemeral.showButtons'
-            direction='top'
             :text='L("Add reaction")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -112,10 +111,9 @@
             )
               i.icon-smile-beam
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -123,10 +121,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -134,10 +131,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -145,10 +141,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -156,10 +151,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -184,10 +178,9 @@
       .c-edit-action-wrapper(v-else)
         .addons(v-if='ephemeral.showButtons')
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -195,10 +188,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -206,10 +198,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -217,10 +208,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -228,10 +218,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
-            triggerElementSelector='button.is-icon'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -242,9 +231,8 @@
         .primary-ctas
           .addons(v-if='ephemeral.showButtons')
             tooltip(
-              direction='top'
               :text='L("Create poll")'
-              triggerElementSelector='button.is-icon'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 data-test='createPoll'
@@ -253,9 +241,8 @@
               )
                 i.icon-poll
             tooltip(
-              direction='top'
               :text='L("Add reaction")'
-              triggerElementSelector='button.is-icon'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
@@ -263,9 +250,8 @@
               )
                 i.icon-smile-beam
             tooltip(
-              direction='top'
               :text='L("Attach file")'
-              triggerElementSelector='button.is-icon'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon.c-file-attachment-btn(
                 :aria-label='L("Attach file")'
@@ -277,14 +263,14 @@
                   type='file'
                   multiple
                   data-test='attachments'
+                  tabindex='-1'
+                  aria-hidden='true'
                   @change='fileAttachmentHandler($event.target.files)'
-                  inert='true'
                 )
             tooltip(
               v-if='ephemeral.voiceRecording.supported'
-              direction='top'
               :text='L("Record voice message")'
-              triggerElementSelector='button.is-icon'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Record voice message")'
@@ -605,6 +591,12 @@ export default ({
     },
     segmentInsertionEnabled () {
       return this.ephemeral.segmentInsertion.options.length > 0
+    },
+    tooltipTriggerCommonProps () {
+      return {
+        direction: 'top',
+        triggerElementSelector: 'button.is-icon'
+      }
     }
   },
   methods: {
