@@ -163,6 +163,11 @@
       cursor: inherit;
     }
 
+    &:focus {
+      box-shadow: none;
+    }
+
+    &:focus::before,
     &:hover::before,
     &.emoji-mart-emoji-selected::before {
       z-index: 0;
@@ -179,6 +184,7 @@
 }
 
 .is-dark-theme .emoji-mart-category .emoji-mart-emoji {
+  &:focus::before,
   &:hover::before,
   &.emoji-mart-emoji-selected::before {
     background-color: $general_1;
