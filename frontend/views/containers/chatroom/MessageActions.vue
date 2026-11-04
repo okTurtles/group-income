@@ -4,6 +4,7 @@
     tooltip(
       direction='top'
       :text='L("Add reaction")'
+      triggerElementSelector='button.is-icon-small'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Add reaction")'
@@ -15,6 +16,7 @@
       v-if='isEditable'
       direction='top'
       :text='L("Edit")'
+      triggerElementSelector='button.is-icon-small'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
@@ -26,6 +28,7 @@
       v-if='isReplyable'
       direction='top'
       :text='L("Reply")'
+      triggerElementSelector='button.is-icon-small'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Reply")'
@@ -37,6 +40,7 @@
       v-if='variant==="failed"'
       direction='top'
       :text='L("Retry")'
+      triggerElementSelector='button.is-icon-small'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Retry")'
@@ -49,7 +53,7 @@
         :aria-label='L("More options")'
       )
         i.icon-ellipsis-h
-      dialog.c-dialog(ref='dialog' @click='clickAway' @close='closeDialog')
+      dialog.c-dialog(ref='dialog' tabindex='-1' @click='clickAway' @close='closeDialog')
         menu-content(:class='{ "is-to-down": isToDown }')
           menu
             template(v-for='(option, index) in moreOptions')
@@ -218,6 +222,9 @@ export default ({
     },
     moreOptionsTriggered () {
       this.$refs.dialog.showModal()
+      // showModal() auto-focuses the first focusable element inside the dialog (i.e. the first menu item).
+      // Move the focus to the dialog itself instead, so that no menu item is pre-focused.
+      this.$refs.dialog.focus()
 
       const repositionDialog = () => requestAnimationFrame(() => {
         const dialogEl = this.$refs.dialog
@@ -259,12 +266,6 @@ export default ({
         this.$refs.dialog.removeEventListener('close', closeHandler, false)
       }
       this.$refs.dialog.addEventListener('close', closeHandler, false)
-
-      if (document.activeElement && document.activeElement.matches('button.c-item-link')) {
-        // There is a Firefox bug where a first menu item is pre-focused when the menu is opened,
-        // This is a fix to check if this happens and prevent it.
-        document.activeElement.blur()
-      }
     },
     closeDialog (e) {
       this.$refs.menu?.closeMenu()
@@ -334,6 +335,10 @@ export default ({
     overflow: visible;
     background: transparent;
     min-width: 100%;
+
+    &:focus {
+      outline: none;
+    }
 
     @include tablet {
       min-width: auto;

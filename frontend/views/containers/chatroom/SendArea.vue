@@ -108,7 +108,7 @@
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
-              @click='onAddReactionClick'
+              @click='openEmoticon'
             )
               i.icon-smile-beam
           tooltip(
@@ -259,7 +259,7 @@
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
-                @click='onAddReactionClick'
+                @click='openEmoticon'
               )
                 i.icon-smile-beam
             tooltip(
@@ -1436,19 +1436,6 @@ export default ({
     closeVoiceRecorder () {
       if (this.ephemeral.voiceRecording.isOpen) {
         this.ephemeral.voiceRecording.isOpen = false
-      }
-    },
-    onAddReactionClick (e) {
-      if (e.detail === 0) {
-        // e.detail holds the number of clicks that occurred and in case of keyboard-initiated click, it is 0.
-        // In this case, we anchor the emoticon picker to the center of the button.
-        const bbox = e.currentTarget.getBoundingClientRect()
-        this.openEmoticon({
-          x: bbox.left + bbox.width / 2,
-          y: bbox.top + bbox.height / 2
-        })
-      } else {
-        this.openEmoticon(e)
       }
     }
   }
