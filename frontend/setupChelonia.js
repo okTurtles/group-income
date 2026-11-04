@@ -13,6 +13,8 @@ import { isContractDeletedError } from './controller/actions/namespaceCacheList.
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
+import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
+import { clearStaleJournals } from './model/journal/migration.js'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
@@ -198,7 +200,8 @@ const initialize = async (): Promise<void> => {
   //      copies are to be considered a cache and are not authoritative.
   //   5. Vuex state is _not_ copied to Chelonia state (i.e., the copying is
   //      in a single direction: Chelonia -> Vuex)
-  await sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
+  registerListeners()
+  await sbp('okTurtles.eventQueue/queueEvent', SETTING_CHELONIA_STATE, () => sbp('gi.db/settings/load', SETTING_CHELONIA_STATE).then(async (cheloniaState) => {
     if (!cheloniaState) return
     const identityContractID = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     if (!identityContractID) return
@@ -207,7 +210,7 @@ const initialize = async (): Promise<void> => {
     if (typeof WorkerGlobalScope === 'function') {
       await sbp('swLogs/startCapture', identityContractID)
     }
-  })
+  }))
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
   const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Object) => {
@@ -227,7 +230,7 @@ const initialize = async (): Promise<void> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Object, k: string, v: string) => {
+    reactiveSet: (o: Object, k: string, v: mixed) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
@@ -336,11 +339,15 @@ const initialize = async (): Promise<void> => {
     },
     journal: {
       enabled: true,
-      snapshotInterval: 75
+      snapshotInterval: 75,
+      redactions: JOURNAL_REDACTIONS
     }
   })
 
-  registerListeners()
+  // The state restored above may have been saved by an older app version, with
+  // journals recorded under older redaction rules (an SW restart after an
+  // update). Logins run the same check in `gi.actions/identity/login`.
+  clearStaleJournals()
 
   sbp('chelonia.persistentActions/configure', {
     databaseKey: '_private_persistent_actions'

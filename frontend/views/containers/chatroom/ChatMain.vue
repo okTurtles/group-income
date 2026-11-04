@@ -54,6 +54,7 @@
           :active='active'
           :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
+          :data-height='message.height'
         )
           .c-divider(
             v-if='changeDay(message, ephemeral.messages[index - 1]) || isNew(message.hash)'
@@ -92,6 +93,7 @@
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
             :isEditing='ephemeral.isEditing[message.hash]'
+            :isSavingEdit='!!ephemeral.savingEdits[message.hash]'
             :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
             @message-is-editing='status => triggerEditMessage(message.hash, status)'
@@ -164,6 +166,7 @@ import {
   CHATROOM_EVENTS, NEW_CHATROOM_SCROLL_POSITION, DELETE_ATTACHMENT_FEEDBACK
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
+import { isUnsentMessage, sortMessages } from './sortMessages.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -181,6 +184,12 @@ const enqueue = function (fn) {
     if (hasChatroomSwitchedSince()) return
 
     return fn()
+  })
+}
+
+const revokeAttachmentURLs = (attachments) => {
+  attachments?.forEach((attachment) => {
+    if (attachment.url) URL.revokeObjectURL(attachment.url)
   })
 }
 
@@ -216,7 +225,7 @@ const onChatScroll = function (ev) {
 
   for (let i = lastMesageIndex; i >= firstMessageIndex; i--) {
     const msg = this.ephemeral.messages[i]
-    if (msg.pending || msg.hasFailed || !this.$refs[msg.hash]?.$el) continue
+    if (isUnsentMessage(msg) || !this.$refs[msg.hash]?.$el) continue
     if (this.isMessageVisible(msg.hash)) {
       const bottomMessageCreatedHeight = msg.height
       const latestMessageCreatedHeight = this.currentChatRoomReadUntil?.createdHeight
@@ -239,7 +248,7 @@ const onChatScroll = function (ev) {
     // Save the current scroll position per each chatroom
     const iterator = this.visibleMessageIterator()
     for (const msg of iterator) {
-      if (msg.pending || msg.hasFailed) continue
+      if (isUnsentMessage(msg)) continue
 
       if (msg.hash !== this.currentChatRoomScrollPosition) {
         sbp('okTurtles.events/emit', NEW_CHATROOM_SCROLL_POSITION, {
@@ -331,6 +340,7 @@ export default ({
         loadingUp: undefined,
         messages: [],
         isEditing: {},
+        savingEdits: {},
         uploadingAttachments: {},
         scrollActionId: null,
         focusedEffect: null,
@@ -384,6 +394,9 @@ export default ({
     sbp('okTurtles.events/off', EVENT_HANDLED, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
     window.removeEventListener('focus', this.windowFocusHandler)
+
+    this.ephemeral.switchController.abort(new Error('ChatMain destroyed'))
+    this.ephemeral.chatroomIdToSwitchTo = null
 
     this.cleanupFailedMessagesAttachments()
   },
@@ -510,7 +523,7 @@ export default ({
       }
     },
     setMessages: debounce(function () {
-      if (!this.ephemeral.renderingChatRoomId) return
+      if (!this.ephemeral.renderingChatRoomId || this.hasChatroomSwitchedSince()) return
       const newMessages = this.messageState.contract?.messages || []
       if (this.ephemeral.messages === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
@@ -717,6 +730,7 @@ export default ({
           state = await sbp('chelonia/in/processMessage', event.serialize(), state)
           // This for block is potentially time-consuming, so if the chatroom has switched, avoid unnecessary processing.
           if (hasChatroomSwitchedSince()) return
+          this.clearFailureOfDeliveredMessage(state, event.hash())
         }
 
         if (this.messageState.fetched) {
@@ -726,7 +740,7 @@ export default ({
 
         const previousLength = this.messageState.contract.messages.length
         const previousFirstHeight = this.messageState.contract.messages[0]?.height
-        Vue.set(this.messageState, 'contract', state)
+        this.setContractState(state)
 
         if (
           // If there are no messages
@@ -804,11 +818,54 @@ export default ({
       if (timeBetween > MINS_MILLIS * 10) { return false }
       return msg.from === prevMsg.from
     },
+    setContractState (state) {
+      state.messages = sortMessages(state.messages)
+      Vue.set(this.messageState, 'contract', state)
+    },
+    clearFailureOfDeliveredMessage (state, messageHash) {
+      const message = state.messages[findMessageIdx(messageHash, state.messages)]
+      if (!message?.hasFailed || message.pending) return
+      Vue.delete(message, 'hasFailed')
+      this.releaseFailedMessageAttachments(messageHash)
+    },
+    // While setMessages is debounced, the rendered list can still be an older
+    // array than the contract list.
+    forEachMessageList (fn) {
+      for (const messages of new Set([this.messageState.contract.messages, this.ephemeral.messages])) {
+        if (messages) fn(messages)
+      }
+    },
     stopReplying () {
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingTo = null
     },
-    handleSendMessage (text, attachments, replyingMessage) {
+    updateContractMessage (hasChatroomSwitchedSince, messageHash, description, update) {
+      return enqueue.call(this, () => {
+        if (hasChatroomSwitchedSince()) return
+        const messages = this.messageState.contract.messages || []
+        const message = messages[findMessageIdx(messageHash, messages)]
+        if (message) update(message)
+      }).catch((e) => {
+        console.error(`[ChatMain.vue] Error while ${description}`, messageHash, e)
+      })
+    },
+    markMessageAsFailed (hasChatroomSwitchedSince, messageHash, attachments) {
+      Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
+      return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'marking a message as failed', (message) => {
+        if (!isUnsentMessage(message)) return
+        Vue.set(message, 'hasFailed', true)
+
+        if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[message.hash]) {
+          // Attachments are kept so that they can be used again for the next re-attempt.
+          this.ephemeral.failedMessagesAttachments[message.hash] = attachments
+        }
+      }).then(() => {
+        if (this.ephemeral.failedMessagesAttachments[messageHash] !== attachments) {
+          revokeAttachmentURLs(attachments)
+        }
+      })
+    },
+    handleSendMessage (text, attachments, replyingMessage, retriedMessageHash = null) {
       const hasAttachments = attachments?.length > 0
       const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
       const contractID = this.ephemeral.renderingChatRoomId
@@ -818,10 +875,37 @@ export default ({
         data.replyingMessage = replyingMessage
       }
 
-      const sendMessage = (beforePrePublish) => {
-        let pendingMessageHash = null
+      // For a new message refused before it was shown: there is no failed copy to
+      // resend, so the user is told, and the message goes back into the message
+      // box. Returns whether the message box took it, with its attachments.
+      const putBackUnsentMessage = () => {
+        if (hasChatroomSwitchedSince()) return false
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L("Your message couldn't be sent. Please try again."),
+          variant: 'error',
+          position: 'bottom-center',
+          duration: 5000,
+          closeable: true
+        })
+        return !!this.$refs.sendArea?.restoreUnsentMessage(swapMentionIDForDisplayname(text), attachments)
+      }
+
+      // When resending, the failed message stays until its new copy is shown,
+      // so that it can be marked as failed again if the resend fails before that.
+      const removeRetriedMessage = () => {
+        if (!retriedMessageHash) return
+        this.forEachMessageList((messages) => {
+          const index = findMessageIdx(retriedMessageHash, messages)
+          // A copy that was delivered in the meantime stays
+          if (index >= 0 && isUnsentMessage(messages[index])) messages.splice(index, 1)
+        })
+      }
+
+      const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
+        let pendingMessageHash = temporaryMessageHash
         const beforeRequest = (message, oldMessage) => {
           if (hasChatroomSwitchedSince()) return
+          pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
             beforePrePublish?.()
 
@@ -839,17 +923,18 @@ export default ({
                 }
                 this.jumpToLatest()
               }
-              Vue.set(this.messageState, 'contract', newContractState)
+              this.setContractState(newContractState)
               this.stopReplying()
             } else {
               msg.hash = message.hash()
               msg.height = message.height()
-              pendingMessageHash = message.hash()
 
               // NOTE: whenever the message.hash() is changed, we should update the related state too
               //       (chatroomReadUntilMessageHash, chatroomScrollPosotion)
               this.onChatScroll()
             }
+          }).catch((e) => {
+            console.error('[ChatMain.vue] Error in the beforeRequest hook', e)
           })
         }
         // Call 'gi.actions/chatroom/addMessage' action with necessary data to send the message
@@ -866,28 +951,14 @@ export default ({
           }
         }).then(() => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
-          if (attachments?.length > 0) {
-            attachments.forEach(attachment => {
-              if (attachment.url) {
-                URL.revokeObjectURL(attachment.url)
-              }
-            })
-          }
+          revokeAttachmentURLs(attachments)
         }).catch((e) => {
-          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert(L("Can't send message when offline, please connect to the Internet"))
+          console.error('[ChatMain.vue] Error publishing a message', e)
+          if (!pendingMessageHash) {
+            if (!putBackUnsentMessage()) revokeAttachmentURLs(attachments)
+            return
           }
-
-          const msgIndex = findMessageIdx(pendingMessageHash, this.messageState.contract.messages)
-          if (msgIndex > 0) {
-            const failedMsg = this.messageState.contract.messages[msgIndex]
-            Vue.set(failedMsg, 'hasFailed', true)
-
-            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[failedMsg.hash]) {
-              // Attachments are kept so that they can be used again for the next re-attempt.
-              this.ephemeral.failedMessagesAttachments[failedMsg.hash] = attachments
-            }
-          }
+          this.markMessageAsFailed(hasChatroomSwitchedSince, pendingMessageHash, attachments)
         })
       }
       const uploadAttachments = async () => {
@@ -907,7 +978,7 @@ export default ({
       }
 
       if (!hasAttachments) {
-        sendMessage()
+        sendMessage(removeRetriedMessage, retriedMessageHash)
       } else {
         let temporaryMessage = null
         sbp('gi.actions/chatroom/addMessage', {
@@ -928,10 +999,11 @@ export default ({
                   this.jumpToLatest()
                 }
 
-                Vue.set(this.messageState, 'contract', await sbp('chelonia/in/processMessage', message, this.messageState.contract))
+                this.setContractState(await sbp('chelonia/in/processMessage', message, this.messageState.contract))
                 temporaryMessage = this.messageState.contract.messages.find((m) => m.hash === message.hash())
                 if (temporaryMessage) {
                   Vue.set(this.ephemeral.uploadingAttachments, temporaryMessage.hash, true)
+                  removeRetriedMessage()
                 }
               })
 
@@ -941,37 +1013,27 @@ export default ({
         }).then(async () => {
           await uploadAttachments()
           const removeTemporaryMessage = () => {
+            removeRetriedMessage()
             // NOTE: remove temporary message which is created before uploading attachments
             if (temporaryMessage) {
               const messageHash = temporaryMessage.hash
-              if (this.ephemeral.uploadingAttachments[messageHash]) {
-                Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
-              }
+              Vue.delete(this.ephemeral.uploadingAttachments, messageHash)
               const messages = this.messageState.contract.messages
               const msgIndex = findMessageIdx(messageHash, messages)
               if (msgIndex < 0) return
               messages.splice(msgIndex, 1)
             }
           }
-          sendMessage(removeTemporaryMessage)
+          sendMessage(removeTemporaryMessage, temporaryMessage?.hash || retriedMessageHash)
         }).catch((e) => {
-          if (e.cause?.name === 'ChelErrorFetchServerTimeFailed') {
-            alert(L("Can't send message when offline, please connect to the Internet"))
-          }
-
+          console.error('[ChatMain.vue] Error preparing a message with attachments', e)
           if (temporaryMessage) {
-            Vue.set(temporaryMessage, 'hasFailed', true)
-
-            if (attachments?.length > 0 && !this.ephemeral.failedMessagesAttachments[temporaryMessage.hash]) {
-              // Attachments are kept so that they can be used again for the next re-attempt.
-              this.ephemeral.failedMessagesAttachments[temporaryMessage.hash] = attachments
-            }
-
-            if (this.ephemeral.uploadingAttachments[temporaryMessage.hash]) {
-              Vue.delete(this.ephemeral.uploadingAttachments, temporaryMessage.hash)
-            }
+            this.markMessageAsFailed(hasChatroomSwitchedSince, temporaryMessage.hash, attachments)
+          } else if (retriedMessageHash) {
+            this.markMessageAsFailed(hasChatroomSwitchedSince, retriedMessageHash, attachments)
+          } else if (!putBackUnsentMessage()) {
+            revokeAttachmentURLs(attachments)
           }
-          console.error('[ChatMain.vue] Error sending message', e)
         })
       }
     },
@@ -1030,11 +1092,13 @@ export default ({
       const contractID = this.ephemeral.renderingChatRoomId
 
       const scrollAndHighlight = () => {
+        if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
         const index = findMessageIdx(messageHash, this.ephemeral.messages)
+        if (index < 0) return
 
         if (effect) {
           this.$nextTick(() => {
-            if (hasChatroomSwitchedSince()) return
+            if (hasChatroomSwitchedSince() || !this.$refs.conversation) return
             this.$refs.conversation.scrollToItem(Math.max(index - 1, 0))
             this.ephemeral.focusedEffect = messageHash
             setTimeout(() => {
@@ -1120,7 +1184,9 @@ export default ({
       if (this.latestHeight && !(this.ephemeral.currentHighestHeight >= this.latestHeight)) {
         const hash = this.$store.state.contracts[this.ephemeral.renderingChatRoomId]?.HEAD
         if (hash) {
-          this.scrollToMessage(hash, false)
+          this.scrollToMessage(hash, false).catch((e) => {
+            console.error('[ChatMain.vue] Error jumping to the latest message', e)
+          })
           return
         }
       }
@@ -1136,9 +1202,28 @@ export default ({
       })
     },
     retryMessage (msg) {
+      // Only a failed message can be resent. Showing the rendered copy as being
+      // resent ignores a repeated click that arrives before the list re-renders.
+      if (!msg.hasFailed) return
       const message = cloneDeep(msg)
-      const index = this.ephemeral.messages.indexOf(msg)
-      if (index >= 0) this.ephemeral.messages.splice(index, 1)
+      const showAsResending = (copy) => {
+        // A copy that isn't failed anymore was delivered in the meantime
+        if (!copy?.hasFailed) return
+        Vue.delete(copy, 'hasFailed')
+        // Also for a failed message that was edited, which is no longer pending,
+        // so that it can be marked as failed again
+        Vue.set(copy, 'pending', true)
+      }
+      const showCopiesAsResending = () => {
+        this.forEachMessageList((messages) => showAsResending(messages[findMessageIdx(message.hash, messages)]))
+      }
+      // Done now, and again after any chat event already being processed, which
+      // works on a copy that is still marked as failed.
+      showAsResending(msg)
+      showCopiesAsResending()
+      enqueue.call(this, showCopiesAsResending).catch((e) => {
+        console.error('[ChatMain.vue] Error preparing a failed message for resending', e)
+      })
 
       // Check if there were attachments from the failed previous attempt and include them.
       const attachments = this.ephemeral.failedMessagesAttachments[message.hash]
@@ -1147,7 +1232,7 @@ export default ({
         delete this.ephemeral.failedMessagesAttachments[message.hash]
       }
 
-      this.handleSendMessage(message.text, attachments, message.replyingMessage)
+      this.handleSendMessage(message.text, attachments, message.replyingMessage, message.hash)
     },
     replyToMessage (message) {
       const { text, hash, type, attachments } = message
@@ -1175,19 +1260,42 @@ export default ({
       this.ephemeral.replyingTo = isTypeInteractive ? L('Proposal notification') : this.who(message)
     },
     editMessage (message, newMessage) {
-      this.triggerEditMessage(message.hash, false)
-      message.text = newMessage
-      message.pending = true
+      const messageHash = message.hash
+      if (this.ephemeral.savingEdits[messageHash]) return
       const contractID = this.ephemeral.renderingChatRoomId
+      const hasChatroomSwitchedSince = this.hasChatroomSwitchedSince
+      const previousText = message.text
+      Vue.set(this.ephemeral.savingEdits, messageHash, true)
+
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
-          hash: message.hash,
+          hash: messageHash,
           createdHeight: message.height,
           text: newMessage
         }
-      }).catch((e) => {
-        console.error(`Error while editing message(${message.hash}) in chatroom(${contractID})`, e)
+      }).then(() => {
+        return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
+          if (latest.text === previousText) latest.text = newMessage
+          this.forEachMessageList((messages) => {
+            const copy = messages[findMessageIdx(messageHash, messages)]
+            if (copy) copy.text = latest.text
+          })
+        }).then(() => {
+          if (!hasChatroomSwitchedSince()) this.triggerEditMessage(messageHash, false)
+        })
+      }, (e) => {
+        console.error(`Error while editing message(${messageHash}) in chatroom(${contractID})`, e)
+        if (hasChatroomSwitchedSince()) return
+        sbp('gi.ui/toast', 'chat-main', {
+          message: L("Couldn't save your changes. Please try again."),
+          variant: 'error',
+          position: 'bottom-center',
+          duration: 5000,
+          closeable: true
+        })
+      }).finally(() => {
+        if (!hasChatroomSwitchedSince()) Vue.delete(this.ephemeral.savingEdits, messageHash)
       })
     },
     pinToChannel (message) {
@@ -1383,6 +1491,7 @@ export default ({
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}
+      this.ephemeral.savingEdits = {}
       this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null
       const readUntilPosition = this.currentChatRoomReadUntil?.messageHash
@@ -1488,7 +1597,9 @@ export default ({
             // NOTE: we do want the 'c-focused' animation if there is a scroll-to-message query.
             scrollingToSpecificMessage,
             0 // don't need the delay here
-          )
+          )?.catch((e) => {
+            console.error('[ChatMain.vue] Error scrolling to the initial position', e)
+          })
           // NOTE: delete mhash in the query after scroll and highlight the message with mhash
           if (scrollingToSpecificMessage) {
             const newQuery = { ...this.$route.query }
@@ -1710,14 +1821,16 @@ export default ({
 
           // When the current scroll position is nearly at the bottom and a new message is added, auto-scroll to the bottom.
           if (isMessageAdded) {
-            const latestValidMessage = this.messageState.contract.messages.filter(m => !m.pending && !m.hasFailed).pop()
+            const latestValidMessage = this.messageState.contract.messages.filter(m => !isUnsentMessage(m)).pop()
 
             if (this.ephemeral.scrollableDistance < 50 && this.messageState.contract.messages.length) {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.$el.scrollHeight > this.$refs.conversation.$el.clientHeight
               if (isScrollable) {
                 // Scroll-query to the latest message.
-                this.updateScroll()
+                this.updateScroll()?.catch((e) => {
+                  console.error('[ChatMain.vue] Error scrolling to the latest message', e)
+                })
               } else if (latestValidMessage) {
                 // If there are any temporary messages that do not exist in the
                 // contract, they should not be used for updateReadUntilMessageHash
@@ -1748,6 +1861,8 @@ export default ({
               contractID: this.ephemeral.renderingChatRoomId,
               messageHash: value.data.hash,
               createdHeight: value.data.height
+            }).catch((e) => {
+              console.error(`[ChatMain.vue] Error from 'gi.actions/identity/kv/${action}'`, e)
             })
           }
         })()
@@ -1889,14 +2004,15 @@ export default ({
       }
     }, process.env.CI ? 25 : 250),
     cleanupFailedMessagesAttachments () {
-      Object.values(this.ephemeral.failedMessagesAttachments).forEach(attachments => {
-        attachments.forEach(attachment => {
-          if (attachment.url) {
-            URL.revokeObjectURL(attachment.url)
-          }
-        })
+      Object.keys(this.ephemeral.failedMessagesAttachments).forEach((hash) => {
+        this.releaseFailedMessageAttachments(hash)
       })
-      this.ephemeral.failedMessagesAttachments = {}
+    },
+    releaseFailedMessageAttachments (messageHash) {
+      const attachments = this.ephemeral.failedMessagesAttachments[messageHash]
+      if (!attachments) return
+      revokeAttachmentURLs(attachments)
+      delete this.ephemeral.failedMessagesAttachments[messageHash]
     }
   },
   provide () {
@@ -1915,6 +2031,9 @@ export default ({
       const initAfterSynced = (toChatRoomId) => {
         // If the user has switched to another chatroom during syncing, no need to process the chatroom that has been swithed away.
         if (toChatRoomId !== this.summary.chatRoomID) return
+        // Not redundant with the check in processChatroomSwitch: that method is debounced and shared by every
+        // ChatMain instance, so calling it from a destroyed instance would replace the pending call of the live one.
+        if (!this.ephemeral.chatroomIdToSwitchTo) return
         this.processChatroomSwitch()
       }
 

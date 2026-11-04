@@ -39,6 +39,7 @@
           v-if='isEditing && text'
           :defaultText='swapMentionIDForDisplayname(text)'
           :isEditing='true'
+          :isSavingEdit='isSavingEdit'
           @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
@@ -173,7 +174,8 @@ export default ({
         truncateToggle: {
           enabled: false,
           isShowingAll: false
-        }
+        },
+        textBeforeEditing: null
       }
     }
   },
@@ -197,6 +199,7 @@ export default ({
     },
     edited: Boolean,
     isEditing: Boolean,
+    isSavingEdit: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -295,10 +298,6 @@ export default ({
     onMessageEdited (newMessage) {
       if (this.text !== newMessage) {
         this.$emit('message-edited', newMessage)
-
-        // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
-        this.ephemeral.truncateToggle.enabled = false
-        this.ephemeral.truncateToggle.isShowingAll = false
       } else {
         this.$emit('message-is-editing', false)
       }
@@ -381,8 +380,24 @@ export default ({
       }
     },
     updatedDate (newVal) {
-      if (newVal && this.shouldCheckToTruncate) {
+      if (newVal && this.shouldCheckToTruncate && !this.isEditing) {
         // When the messge is edited, check again if truncate-toggle is needed.
+        this.$nextTick(() => {
+          this.determineToEnableTruncationToggle()
+        })
+      }
+    },
+    isEditing (isEditing) {
+      if (isEditing) {
+        this.ephemeral.textBeforeEditing = this.text
+        return
+      }
+      const textChanged = this.text !== this.ephemeral.textBeforeEditing
+      this.ephemeral.textBeforeEditing = null
+      if (textChanged && this.shouldCheckToTruncate) {
+        // The truncate-toggle is re-calculated after message-edition is processed. So resetting the relevant states here.
+        this.ephemeral.truncateToggle.enabled = false
+        this.ephemeral.truncateToggle.isShowingAll = false
         this.$nextTick(() => {
           this.determineToEnableTruncationToggle()
         })

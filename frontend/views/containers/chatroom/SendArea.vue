@@ -10,7 +10,7 @@
 
   fieldset.c-send.inputgroup(
     :class='{"is-editing": isEditing}'
-    :disabled='loading'
+    :disabled='loading || isSavingEdit'
     data-test='messageInputWrapper'
   )
     .c-segment-selection(
@@ -101,9 +101,9 @@
         .addons.addons-editing
           tooltip(
             v-if='ephemeral.showButtons'
-            direction='top'
             :text='L("Add reaction")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -111,9 +111,9 @@
             )
               i.icon-smile-beam
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -121,9 +121,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -131,9 +131,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -141,9 +141,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -151,9 +151,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -168,17 +168,19 @@
           @click='cancelEditing'
         ) Cancel
 
-        i18n.button.is-small(
+        i18n.button.is-small.is-loader(
           tag='button'
+          data-test='saveEditing'
+          :data-loading='isSavingEdit'
           @click='sendMessage'
         ) Save changes
 
       .c-edit-action-wrapper(v-else)
         .addons(v-if='ephemeral.showButtons')
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -186,9 +188,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -196,9 +198,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -206,9 +208,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -216,9 +218,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -229,8 +231,8 @@
         .primary-ctas
           .addons(v-if='ephemeral.showButtons')
             tooltip(
-              direction='top'
               :text='L("Create poll")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 data-test='createPoll'
@@ -239,8 +241,8 @@
               )
                 i.icon-poll
             tooltip(
-              direction='top'
               :text='L("Add reaction")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
@@ -248,8 +250,8 @@
               )
                 i.icon-smile-beam
             tooltip(
-              direction='top'
               :text='L("Attach file")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon.c-file-attachment-btn(
                 :aria-label='L("Attach file")'
@@ -261,12 +263,14 @@
                   type='file'
                   multiple
                   data-test='attachments'
+                  tabindex='-1'
+                  aria-hidden='true'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
             tooltip(
               v-if='ephemeral.voiceRecording.supported'
-              direction='top'
               :text='L("Record voice message")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Record voice message")'
@@ -386,6 +390,10 @@ export default ({
     isEditing: {
       type: Boolean,
       default: false
+    },
+    isSavingEdit: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -434,6 +442,13 @@ export default ({
       this.focusOnTextArea()
     },
     loading (newValue, oldValue) {
+      if (!newValue) {
+        this.$nextTick(() => {
+          this.focusOnTextArea()
+        })
+      }
+    },
+    isSavingEdit (newValue) {
       if (!newValue) {
         this.$nextTick(() => {
           this.focusOnTextArea()
@@ -577,6 +592,12 @@ export default ({
     },
     segmentInsertionEnabled () {
       return this.ephemeral.segmentInsertion.options.length > 0
+    },
+    tooltipTriggerCommonProps () {
+      return {
+        direction: 'top',
+        triggerElementSelector: 'button.is-icon'
+      }
     }
   },
   methods: {
@@ -999,14 +1020,18 @@ export default ({
         this.replyingMessage
       ) // TODO remove first / last empty lines
 
-      this.clearTextArea()
+      if (this.isEditing) {
+        this.endSegmentSelection()
+        this.emitUserStopTypingEvent()
+      } else {
+        this.clearTextArea()
+      }
     },
     clearTextArea () {
       this.$refs.textarea.value = ''
       this.updateTextArea()
       this.endSegmentSelection()
       if (this.hasAttachments) { this.clearAllAttachments() }
-      if (this.isEditing) return
 
       // The message is being sent, so replace any pending draft-save with a delete.
       // It is queued behind any in-flight write, so that write can't bring the draft back afterwards.
@@ -1014,6 +1039,16 @@ export default ({
       this.cancelPendingDraftWrite(draftKey)
       this.queueDraftWrite(draftKey, () => this.clearMessageDraft(draftKey))
       this.ephemeral.lastDraftText = this.ephemeral.textWithLines
+    },
+    // Puts back a message whose send was refused before it was shown, unless
+    // something has been typed or attached since.
+    restoreUnsentMessage (text, attachments) {
+      if (!this.$refs.textarea || this.$refs.textarea.value || this.ephemeral.attachments.length) return false
+      this.$refs.textarea.value = text
+      this.updateTextArea()
+      if (attachments?.length) this.ephemeral.attachments = attachments
+      this.saveOrDeleteMessageDraft()
+      return true
     },
     async initializeTextArea () {
       // If there is existing attachments (e.g. switching to a different chatroom while attachments are still in the textarea)
@@ -1542,6 +1577,17 @@ export default ({
     .is-outlined {
       margin-right: 0.5rem;
     }
+
+    &:disabled {
+      cursor: not-allowed;
+
+      .c-send-textarea,
+      .addons-editing,
+      .c-edit-actions .is-outlined {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+    }
   }
 }
 
@@ -1598,13 +1644,6 @@ export default ({
 
 .icon-smile-beam::before {
   font-weight: 400;
-}
-
-.emoji-mart {
-  position: absolute;
-  right: 0;
-  bottom: 4rem;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
 .c-reply-wrapper {

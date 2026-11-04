@@ -8,6 +8,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import { cloneDeep, has, omit } from 'turtledash'
 import { SETTING_CHELONIA_STATE } from '@model/database.js'
+import { clearStaleJournals } from '@model/journal/migration.js'
 import sbp from '@sbp/sbp'
 import promiseWithResolvers from '@utils/promiseWithResolvers.js'
 import { imageUpload, objectURLtoBlob } from '@utils/image.js'
@@ -427,6 +428,10 @@ export default (sbp('sbp/selectors/register', {
         await sbp('swLogs/startCapture', identityContractID)
       }
       await sbp('chelonia/reset', { ...cheloniaState, loggedIn: { identityContractID } })
+      // A restored state may carry journals recorded under older redaction
+      // rules, so clear them before the sync below appends to them. A fresh
+      // state has no contracts yet, so this only records the current version.
+      clearStaleJournals()
       await sbp('chelonia/storeSecretKeys', new Secret(transientSecretKeys))
 
       if (oldKeysAnchorCid) {

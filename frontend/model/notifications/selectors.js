@@ -7,6 +7,12 @@ import { makeNotificationHash } from './utils.js'
 import { KV_KEYS } from '~/frontend/utils/constants.js'
 import { CHELONIA_STATE_MODIFIED, NOTIFICATION_EMITTED, NOTIFICATION_REMOVED } from '~/frontend/utils/events.js'
 
+const runKvAction = (caller: string, selector: string, ...args: any[]): void => {
+  sbp(selector, ...args).catch((e) => {
+    console.error(`[${caller}] Error from '${selector}':`, e)
+  })
+}
+
 /*
  * NOTE: do not refactor occurences of `sbp('state/vuex/state')` by defining a shared constant in the
  *   outer scope, because login actions might invalidate it by calling `replaceState()`.
@@ -48,11 +54,11 @@ sbp('sbp/selectors/register', {
     const index = rootState.notifications.items.findLastIndex(item => item.timestamp < notification.timestamp)
     rootState.notifications.items.splice(Math.max(0, index), 0, notification)
     sbp('okTurtles.events/emit', CHELONIA_STATE_MODIFIED)
-    sbp('gi.actions/identity/kv/addNotificationStatus', notification)
+    runKvAction('gi.notifications/emit', 'gi.actions/identity/kv/addNotificationStatus', notification)
     sbp('okTurtles.events/emit', NOTIFICATION_EMITTED, notification)
   },
   'gi.notifications/markAsRead' (notification: Notification) {
-    sbp('gi.actions/identity/kv/markNotificationStatusRead', notification.hash)
+    runKvAction('gi.notifications/markAsRead', 'gi.actions/identity/kv/markNotificationStatusRead', notification.hash)
   },
   'gi.notifications/markAllAsRead' (groupID: string) {
     const rootState = sbp('chelonia/rootState')
@@ -62,7 +68,7 @@ sbp('sbp/selectors/register', {
     const hashes = rootState.notifications.items.filter(item => {
       return !(status[item.hash]?.read ?? item.read) && (!groupID || !item.groupID || item.groupID === groupID)
     }).map(item => item.hash)
-    sbp('gi.actions/identity/kv/markNotificationStatusRead', hashes)
+    runKvAction('gi.notifications/markAllAsRead', 'gi.actions/identity/kv/markNotificationStatusRead', hashes)
   },
   'gi.notifications/remove' (hashes: string | string[]) {
     if (!Array.isArray(hashes)) hashes = [hashes]
