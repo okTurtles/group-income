@@ -90,7 +90,7 @@ import QrCode from '@components/QrCode.vue'
 import CopyableInput from '@components/CopyableInput.vue'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'SendPayemntsViaLightning',
   components: {
     ModalBaseTemplate,
@@ -157,7 +157,7 @@ export default ({
       this.form.memo = target.value
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

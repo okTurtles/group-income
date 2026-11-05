@@ -12,7 +12,7 @@ import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'MessageNotification',
   components: {
     MessageBase
@@ -87,7 +87,7 @@ export default ({
       this.$emit('add-emoticon', emoticon)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -31,13 +31,13 @@
 </template>
 
 <script>
-import { TOAST_VARIANTS } from '@utils/constants.js'
+import { TOAST_VARIANTS } from '@utils/constants.ts'
 
 export default {
   name: 'ToastCard',
   props: {
     data: {
-      // type ToastData from '@utils/ui.js'
+      // type ToastData from '@view-utils/ui.ts'
       type: Object,
       required: true
     }

@@ -2,7 +2,7 @@
 import sbp from '@sbp/sbp'
 
 // From https://markus.oberlehner.net/blog/transition-to-height-auto-with-vue/
-export default ({
+export default {
   name: 'TransitionExpand',
   functional: true,
   render (createElement, context) {
@@ -56,7 +56,7 @@ export default ({
     }
     return createElement('transition', data, context.children)
   }
-}: Object)
+}
 </script>
 
 <style scoped>

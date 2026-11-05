@@ -38,7 +38,7 @@ describe('Group Income - Removing contracts', () => {
       cy.giAcceptGroupInvite(invitationLink, {
         username: `user2-${userId}`,
         existingMemberUsername: `user1-${userId}`,
-        groupName: groupName,
+        groupName,
         bypassUI: true
       })
 

@@ -28,7 +28,7 @@ import TodoHistory from '@containers/contributions/TodoHistory.vue'
 import GroupMembersActivity from '@containers/dashboard/GroupMembersActivity.vue'
 
 import { L } from '@common/common.js'
-export default ({
+export default {
   name: 'GroupActivity',
   data () {
     return {
@@ -61,7 +61,7 @@ export default ({
       this.ephemeral.activeTab = url
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

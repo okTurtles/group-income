@@ -21,10 +21,10 @@
 </template>
 
 <script>
-import safeLinkTag from '@view-utils/safeLinkTag.js'
+import safeLinkTag from '@view-utils/safeLinkTag.ts'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'Acknowledgements',
   data () {
     return {
@@ -95,7 +95,7 @@ export default ({
       window.open(url, '_blank').focus()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

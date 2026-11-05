@@ -68,10 +68,10 @@
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
-import currencies from '@model/contracts/shared/currencies.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
+import currencies from '@model/contracts/shared/currencies.ts'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.ts'
 
-export default ({
+export default {
   name: 'GroupMincome',
   components: {
     Tooltip
@@ -113,7 +113,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

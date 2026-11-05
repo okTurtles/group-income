@@ -6,4 +6,4 @@ Unlike the code in `frontend/common/`, this code does get included in the slim v
 
 For the most part, it should be safe to modify this code, but please read [**Calls-From-Contracts.md**](../../../../docs/src/Calls-From-Contracts.md) in the docs before doing so.
 
-Additionally, care should also be taken to avoid adding too much code to this folder, because it will result in duplicated code between the frontend UI (e.g. in main.js bundle), and the bundled contracts themselves.
+Additionally, care should also be taken to avoid adding too much code to this folder, because it will result in duplicated code between the frontend UI (e.g. in main.ts bundle), and the bundled contracts themselves.

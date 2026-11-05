@@ -37,12 +37,12 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.ts'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
-export default ({
+export default {
   name: 'GroupVotingSystem',
   components: {
     BannerSimple
@@ -142,7 +142,7 @@ export default ({
       }[ruleName]
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

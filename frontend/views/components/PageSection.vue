@@ -8,7 +8,7 @@ section.card(:id='anchor')
 </template>
 
 <script>
-export default ({
+export default {
   name: 'PageSection',
   props: {
     title: String,
@@ -22,7 +22,7 @@ export default ({
       return this.anchor ? `<a class='c-section-anchor' href='#${this.anchor}'>${this.title}</a>` : this.title
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -32,13 +32,13 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.ts'
 import ProgressBar from '@components/graphs/Progress.vue'
 import { L } from '@common/common.js'
-import { humanDate } from '@model/contracts/shared/time.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'MonthOverview',
   components: {
     ProgressBar
@@ -118,7 +118,7 @@ export default ({
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

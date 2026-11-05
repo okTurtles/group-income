@@ -26,11 +26,11 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import currencies from '@model/contracts/shared/currencies.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import currencies from '@model/contracts/shared/currencies.ts'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import PaymentRow from './payment-row/PaymentRow.vue'
 
-export default ({
+export default {
   name: 'PaymentRowRecord',
   components: {
     PaymentRow
@@ -78,7 +78,7 @@ export default ({
       this.form.amount = this.config.initialAmount
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

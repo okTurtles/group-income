@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from './rules.js'
+import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from './rules.ts'
 import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.js'
 const should = require('should')
 
