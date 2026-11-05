@@ -930,7 +930,7 @@ export default ({
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
       maskEl.textContent = text + (isLastLineEmpty ? '.' : '')
-      // ...and apply the maks's height to the textarea so it dynamically grows as the user types
+      // ...and apply the mask's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = maskEl.offsetHeight - 2
       this.ephemeral.maskCappedText = maskEl.scrollHeight - maskEl.clientHeight > 1 ? text : null
     },
@@ -1503,7 +1503,6 @@ export default ({
     width: 100%;
     font-size: 1rem;
     word-wrap: break-word;
-    max-height: 12.75rem;
   }
 
   &-textarea {
@@ -1515,6 +1514,7 @@ export default ({
     border: none;
     padding: 0.5rem;
     overflow-y: auto;
+    max-height: 12.75rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -1534,6 +1534,7 @@ export default ({
     height: auto;
     white-space: pre-line;
     min-height: 0;
+    max-height: 50dvh;
     overflow-y: hidden;
   }
 

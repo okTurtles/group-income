@@ -484,23 +484,6 @@ export default ({
     }
   },
   methods: {
-    resetObservers () {
-      const observeSizeChanges = () => {
-        if (!this.resizeObserver) return
-        if (!this.$refs.conversation?.$el) {
-          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
-          return
-        }
-        if (this.mutationObserver) {
-          this.mutationObserver.disconnect()
-          this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
-        }
-        this.resizeObserver.disconnect()
-        this.resizeObserver.observe(this.$refs.conversation.$el)
-        this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
-      }
-      observeSizeChanges()
-    },
     /* applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
       // options
@@ -2069,10 +2052,6 @@ export default ({
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
       this.setMessages()
-    },
-    'ephemeral.renderingChatRoomId' (to) {
-      if (!to) return
-      this.$nextTick(this.resetObservers)
     },
     'ephemeral.loadingDown' (newVal) {
       // If ephemeral.loadingDown changes, it means that we're dynamically
