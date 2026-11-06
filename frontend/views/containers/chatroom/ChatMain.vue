@@ -52,7 +52,7 @@
         dynamic-scroller-item(
           :item='message'
           :active='active'
-          :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
+          :size-dependencies='[message.hash, message.text, ephemeral.editingHash === message.hash, message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
           :data-height='message.height'
         )
@@ -92,7 +92,7 @@
             :isMsgSender='isMsgSender(message.from)'
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
-            :isEditing='ephemeral.isEditing[message.hash]'
+            :isEditing='ephemeral.editingHash === message.hash'
             :isSavingEdit='!!ephemeral.savingEdits[message.hash]'
             :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
@@ -339,7 +339,7 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
-        isEditing: {},
+        editingHash: null, // hash of the message being edited (only one edit at a time)
         savingEdits: {},
         uploadingAttachments: {},
         scrollActionId: null,
@@ -495,14 +495,18 @@ export default ({
     }, */
     triggerEditMessage (hash, status) {
       if (status) {
-        Vue.set(this.ephemeral.isEditing, hash, status)
+        // Only one message can be edited at a time. Starting a new edit closes the
+        // previous one, discarding its unsaved changes.
+        this.ephemeral.editingHash = hash
         if (!this.isScrolledUp) {
           this.$nextTick(() => {
             this.jumpToLatest()
           })
         }
-      } else {
-        Vue.delete(this.ephemeral.isEditing, hash)
+      } else if (this.ephemeral.editingHash === hash) {
+        // Guard against closing a different edit. (e.g. a save of message A that
+        // completes after the user has started editing message B)
+        this.ephemeral.editingHash = null
       }
     },
     setMessages: debounce(function () {
@@ -1473,7 +1477,7 @@ export default ({
         this.ephemeral.latestHeight = undefined
       }
       this.ephemeral.unprocessedEvents = []
-      this.ephemeral.isEditing = {}
+      this.ephemeral.editingHash = null
       this.ephemeral.savingEdits = {}
       this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null

@@ -1534,7 +1534,7 @@ export default ({
     height: auto;
     white-space: pre-line;
     min-height: 0;
-    max-height: 50dvh;
+    max-height: 50vh;
     overflow-y: hidden;
   }
 
