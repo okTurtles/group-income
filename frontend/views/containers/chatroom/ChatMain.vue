@@ -167,6 +167,7 @@ import {
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { isUnsentMessage, sortMessages } from './sortMessages.js'
+import { checkSentMessageLater, resyncChatroomIfUnsubscribed } from './chatroomResync.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -903,7 +904,11 @@ export default ({
 
       const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
         let pendingMessageHash = temporaryMessageHash
+        // The height of the last attempt (a conflict makes Chelonia resend the
+        // message at a new height), also when the user switched chatrooms
+        let publishedHeight = null
         const beforeRequest = (message, oldMessage) => {
+          publishedHeight = message.height()
           if (hasChatroomSwitchedSince()) return
           pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
@@ -952,6 +957,18 @@ export default ({
         }).then(() => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
           revokeAttachmentURLs(attachments)
+          // Safety net for when the event doesn't come back over pubsub
+          // (#3176), which leaves the message pending, and missing once the
+          // chatroom is rendered again
+          if (typeof publishedHeight === 'number') {
+            checkSentMessageLater({
+              chatRoomID: contractID,
+              height: publishedHeight,
+              getLatestHeight: () => sbp('state/vuex/state').contracts?.[contractID]?.height,
+              isJoined: () => sbp('state/vuex/getters').isJoinedChatRoom(contractID),
+              sync: (chatRoomID) => sbp('chelonia/contract/sync', chatRoomID)
+            })
+          }
         }).catch((e) => {
           console.error('[ChatMain.vue] Error publishing a message', e)
           if (!pendingMessageHash) {
@@ -1488,6 +1505,14 @@ export default ({
         this.ephemeral.latestHeight = latestHeight
       } else {
         this.ephemeral.latestHeight = undefined
+        // Safety net for a chatroom whose subscription was lost (#3176). Not
+        // awaited; the events the sync brings are handled like live ones.
+        resyncChatroomIfUnsubscribed({
+          chatRoomID,
+          getStatus: () => sbp('sw/connection/status'),
+          isJoined: () => sbp('state/vuex/getters').isJoinedChatRoom(chatRoomID),
+          sync: (id) => sbp('chelonia/contract/sync', id)
+        })
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}

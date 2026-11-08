@@ -66,6 +66,11 @@ describe('Application logs export', () => {
         expect(file.journalTruncated).to.equal(false)
         expect(file).not.to.have.property('journalError')
 
+        // The service worker's connection status: connected, subscribed
+        expect(file.connection).not.to.have.property('error')
+        expect(file.connection).to.include({ state: 'open', degraded: false })
+        expect(file.connection.wanted).to.be.above(0)
+
         const contractIDs = Object.keys(file.journals)
         // The user's own identity is ranked first.
         expect(contractIDs[0]).to.equal(identityContractID)

@@ -18,7 +18,7 @@ import { MAX_JOURNAL_EXPORT_BYTES, orderJournalCandidates, selectJournalsWithinB
 import { sanitizeJournal } from '~/frontend/model/journal/sanitize.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
-import setupChelonia from '~/frontend/setupChelonia.js'
+import setupChelonia, { connectionMonitor } from '~/frontend/setupChelonia.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
@@ -27,7 +27,7 @@ import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
   CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  CHATROOM_USER_TYPING, CONNECTION_STATUS_CHANGED, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   JOINED_CHATROOM, JOINED_GROUP,
   LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
@@ -80,6 +80,9 @@ const selectorBlacklist = [
   'chelonia/haveSecretKey',
   'chelonia/private/enqueuePostSyncOps',
   'chelonia/private/invoke',
+  // Called every few seconds
+  'chelonia/pubsub/status',
+  'sw/connection/status',
   'state/vuex/state',
   'state/vuex/getters',
   'state/vuex/settings',
@@ -136,7 +139,7 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
-  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED,
+  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CONNECTION_STATUS_CHANGED,
   LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP,
   NOTIFICATION_TYPE.VERSION_INFO,
   MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION,
@@ -291,6 +294,9 @@ sbp('sbp/selectors/register', {
       NODE_ENV: process.env.NODE_ENV
     }
   },
+  // The same status as the `CONNECTION_STATUS_CHANGED` event, for tabs that
+  // have just opened (or missed events)
+  'sw/connection/status': () => connectionMonitor.getStatus(),
   'sw/deviceSettings/set': (key, value) => {
     const reactiveSet = sbp('chelonia/config').reactiveSet
     const rootState = sbp('chelonia/rootState')

@@ -17,12 +17,13 @@ import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
+import { CONNECTION_BANNER, createConnectionBannerController } from './controller/connectionBanner.js'
 import { applyNamespaceUpdateToVuex } from './controller/namespace.js'
 import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, CONNECTION_STATUS_CHANGED, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -327,22 +328,46 @@ async function startApp () {
             console.error('came back online, tried to report push subscription, but got:', e)
           })
         }
-        sbp('gi.ui/clearBanner')
       })
-      sbp('okTurtles.events/on', OFFLINE, () => {
-        sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
+      // The connection banner follows the service worker's connection status,
+      // which is queried right away (so that it's also shown in tabs opened
+      // during an outage), whenever the service worker broadcasts a change,
+      // and periodically.
+      const connectionBanner = createConnectionBannerController({
+        getStatus: () => sbp('sw/connection/status'),
+        isOnline: () => navigator.onLine !== false,
+        onChange: (kind) => {
+          switch (kind) {
+            case CONNECTION_BANNER.OFFLINE:
+              sbp('gi.ui/showConnectionBanner', L('Your device appears to be offline.'), 'wifi')
+              break
+            case CONNECTION_BANNER.RECONNECTING:
+              sbp('gi.ui/showConnectionBanner', L('Trying to reconnect...'), 'wifi')
+              break
+            case CONNECTION_BANNER.FAILED:
+              sbp('gi.ui/showConnectionBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
+              break
+            case CONNECTION_BANNER.DEGRADED:
+              sbp('gi.ui/showConnectionBanner', L('Some updates may be delayed. Resynchronizing...'), 'wifi')
+              break
+            default:
+              sbp('gi.ui/clearConnectionBanner')
+          }
+        }
       })
-      sbp('okTurtles.events/on', RECONNECTING, () => {
-        sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
-      })
-      sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
-        sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
-      })
-
-      // Useful in case the app is started in offline mode.
-      if (navigator.onLine === false) {
-        sbp('okTurtles.events/emit', OFFLINE)
+      sbp('okTurtles.events/on', CONNECTION_STATUS_CHANGED, (status) => connectionBanner.apply(status))
+      // The banner follows these events with older service workers, which
+      // don't provide the connection status; otherwise they trigger a query
+      for (const event of [OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED]) {
+        sbp('okTurtles.events/on', event, () => connectionBanner.onLegacyEvent(event))
       }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') connectionBanner.refresh()
+      })
+      window.addEventListener('online', () => connectionBanner.refresh())
+      window.addEventListener('offline', () => connectionBanner.refresh())
+      connectionBanner.start()
+
       if (this.ephemeral.isCorrupted) {
         const baseRoute = sbp('controller/router').options.base
         sbp('gi.ui/dangerBanner',
