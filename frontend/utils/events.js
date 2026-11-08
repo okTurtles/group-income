@@ -41,6 +41,8 @@ export const OPEN_EMOTICON = 'open-emoticon'
 export const CLOSE_EMOTICON = 'close-emoticon'
 export const SELECT_EMOTICON = 'select-emoticon'
 
+export const CLOSE_PINNED_MESSAGES = 'close-pinned-messages'
+
 export const CLOSE_NAVIGATION_SIDEBAR = 'close-navigation-sidebar'
 
 export const OPEN_TOUCH_LINK_HELPER = 'open-touch-link-helper'
