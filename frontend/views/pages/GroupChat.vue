@@ -41,8 +41,11 @@ page(pageTestName='groupChat' :miniHeader='isGroupDirectMessage()')
                 i18n Add People
 
             template(v-if='summary.isJoined')
-              menu-item.hide-desktop(v-if='pinnedMessages.length')
-                i18n(@click='showPinnedMessages($event)') Pinned Messages
+              menu-item.hide-desktop(
+                v-if='pinnedMessages.length'
+                @click='showPinnedMessages()'
+              )
+                i18n Pinned Messages
 
               menu-item(
                 :class='`${!summary.isGeneral && !isGroupDirectMessage() ? "c-separator" : ""}`'
@@ -215,12 +218,16 @@ export default ({
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
-    showPinnedMessages (event) {
-      const element = event.target.parentNode.getBoundingClientRect()
-      this.$refs.pinnedMessages.open({
-        left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
-        top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
-      }, this.pinnedMessages)
+    showPinnedMessages (event = null) {
+      if (event) {
+        const element = event.target.parentNode.getBoundingClientRect()
+        this.$refs.pinnedMessages.open({
+          left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
+          top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
+        }, this.pinnedMessages)
+      } else {
+        this.$refs.pinnedMessages.open(null, this.pinnedMessages)
+      }
     },
     editDescription () {
       this.openModal('EditChannelDescriptionModal')
