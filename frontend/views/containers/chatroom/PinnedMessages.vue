@@ -43,8 +43,6 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { OPEN_VIDEO_VIEWER } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -180,7 +178,6 @@ export default {
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_VIDEO_VIEWER, this.close)
     this.matchMediaDesktop = window.matchMedia('screen and (min-width: 1200px)')
     this.matchMediaDesktop.onchange = (e) => {
       this.ephemeral.isDesktopScreen = e.matches
@@ -190,7 +187,6 @@ export default {
     window.addEventListener('resize', this.resizeHandler)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', OPEN_VIDEO_VIEWER, this.close)
     window.removeEventListener('resize', this.resizeHandler)
 
     this.matchMediaDesktop.onchange = null
@@ -210,7 +206,7 @@ export default {
   // NOTE: z-index should be bigger than the one of sidebar
   //       because PinnedMessages modal is rendered before the sidebar
   // REF:  https://github.com/okTurtles/group-income/issues/1843
-  z-index: $zindex-modal + 1;
+  z-index: $zindex-pinned-messages;
   pointer-events: initial;
   height: 100%;
 }
