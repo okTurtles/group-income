@@ -44,6 +44,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { OPEN_VIDEO_VIEWER } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -53,7 +54,6 @@ import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
 import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { CLOSE_PINNED_MESSAGES } from '@utils/events.js'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -180,7 +180,7 @@ export default {
     }
   },
   created () {
-    sbp('okTurtles.events/on', CLOSE_PINNED_MESSAGES, this.close)
+    sbp('okTurtles.events/on', OPEN_VIDEO_VIEWER, this.close)
     this.matchMediaDesktop = window.matchMedia('screen and (min-width: 1200px)')
     this.matchMediaDesktop.onchange = (e) => {
       this.ephemeral.isDesktopScreen = e.matches
@@ -190,7 +190,7 @@ export default {
     window.addEventListener('resize', this.resizeHandler)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', CLOSE_PINNED_MESSAGES, this.close)
+    sbp('okTurtles.events/off', OPEN_VIDEO_VIEWER, this.close)
     window.removeEventListener('resize', this.resizeHandler)
 
     this.matchMediaDesktop.onchange = null

@@ -109,8 +109,10 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { getFileExtension, getFileType, formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
+import { OPEN_VIDEO_VIEWER } from '@utils/events.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
 import AudioPlayerCard from '../audio-player/AudioPlayerCard.vue'
@@ -208,6 +210,7 @@ export default {
       if (this.isVideo) {
         this.$refs.videoPlayer.pause()
 
+        sbp('okTurtles.events/emit', OPEN_VIDEO_VIEWER)
         this.attachmentUtils.openVideoViewer(this.mediaObjectURL, {
           initialTime: this.getVideoCurrentTime()
         })
