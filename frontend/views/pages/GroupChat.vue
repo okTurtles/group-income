@@ -219,15 +219,15 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     showPinnedMessages (event = null) {
+      let position = null
       if (event) {
         const element = event.target.parentNode.getBoundingClientRect()
-        this.$refs.pinnedMessages.open({
+        position = {
           left: `${element.left - 3.2}px`, // 3.2 -> 0.2rem of description element padding
           top: `${element.bottom + 8}px` // 8 -> 0.5rem gap
-        }, this.pinnedMessages)
-      } else {
-        this.$refs.pinnedMessages.open(null, this.pinnedMessages)
+        }
       }
+      this.$refs.pinnedMessages.open(position, this.pinnedMessages)
     },
     editDescription () {
       this.openModal('EditChannelDescriptionModal')
