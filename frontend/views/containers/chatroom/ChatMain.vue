@@ -493,10 +493,21 @@ export default ({
       const padding = Math.max(conversation.parentElement.clientHeight - conversation.scrollHeight + conversationTP.clientHeight - 1, 0)
       conversationTP.style.height = `0.0${padding}px`
     }, */
-    triggerEditMessage (hash, status) {
+    async triggerEditMessage (hash, status) {
       if (status) {
-        // Only one message can be edited at a time. Starting a new edit closes the
-        // previous one, discarding its unsaved changes.
+        if (this.ephemeral.editingHash && this.ephemeral.editingHash !== hash) {
+          // If there is an existing edit, prompt the user to confirm they want to start a new edit.
+          const yesSelected = await sbp('gi.ui/prompt', {
+            heading: L('Want to start a new edit?'),
+            question: L('You will lose your unsaved changes to your current edit.'),
+            primaryButton: L('Yes'),
+            primaryButtonStyle: 'primary',
+            secondaryButton: L('No')
+          })
+
+          if (!yesSelected) { return }
+        }
+
         this.ephemeral.editingHash = hash
         if (!this.isScrolledUp) {
           this.$nextTick(() => {
@@ -504,8 +515,13 @@ export default ({
           })
         }
       } else if (this.ephemeral.editingHash === hash) {
-        // Guard against closing a different edit. (e.g. a save of message A that
-        // completes after the user has started editing message B)
+        // Only close the edit if it is still the one this call refers to.
+        // A save closes its edit only after the server responds (see editMessage()),
+        // and the user can start editing another message while that save is in flight:
+        //   1. User saves message A -> request sent, editingHash is still A.
+        //   2. User clicks 'Edit' on message B -> editingHash becomes B.
+        //   3. A's save finishes -> triggerEditMessage(A, false) is called.
+        // Without this check, step 3 would close B's edit and discard what the user typed there.
         this.ephemeral.editingHash = null
       }
     },
