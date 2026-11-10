@@ -289,6 +289,7 @@
 
     .textarea.c-send-mask(
       ref='mask'
+      :style='textareaMaskStyles'
     )
 
     voice-recorder(
@@ -365,6 +366,7 @@ const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIA
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
+  inject: ['conversationWrapper'],
   components: {
     Avatar,
     Tooltip,
@@ -438,6 +440,9 @@ export default ({
     }
   },
   watch: {
+    conversationWrapperHeight (newVal) {
+      console.log('!@# conversationWrapperHeight', newVal)
+    },
     replyingMessage () {
       this.focusOnTextArea()
     },
@@ -523,6 +528,9 @@ export default ({
       'ourIdentityContractId',
       'mentionableChatroomsInDetails'
     ]),
+    conversationWrapperHeight () {
+      return this.conversationWrapper.height
+    },
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
       const isInDM = this.isDirectMessage(this.currentChatRoomId)
@@ -561,9 +569,16 @@ export default ({
       return !this.ephemeral.voiceRecording.isOpen &&
         (this.hasAttachments || this.ephemeral.hasText)
     },
+    textareaMaskStyles () {
+      return {
+        // 100 here is just there to prevent the textarea become too small when the browser viewport is small.
+        maxHeight: `${Math.max(100, this.conversationWrapperHeight - 32)}px`
+      }
+    },
     textareaStyles () {
       return {
-        height: this.ephemeral.maskHeight + 'px'
+        height: this.ephemeral.maskHeight + 'px',
+        ...this.textareaMaskStyles
       }
     },
     isPublicChannel () {
@@ -1503,7 +1518,6 @@ export default ({
     width: 100%;
     font-size: 1rem;
     word-wrap: break-word;
-    max-height: 12.75rem;
   }
 
   &-textarea {

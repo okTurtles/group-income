@@ -12,7 +12,7 @@
 
   touch-link-helper
 
-  .c-body
+  .c-body(ref='chatMainBody')
     dynamic-scroller.c-body-conversation(
       :items='ephemeral.messages'
       :min-item-size='54'
@@ -351,6 +351,7 @@ export default ({
         latestHeight: undefined,
         // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
         failedMessagesAttachments: {},
+        bodyResizeObserver: null,
         conversationWrapperHeight: null
       },
       messageState: {
@@ -389,6 +390,7 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
+    this.initResizeObserver()
   },
   beforeDestroy () {
     // Destroy various event listeners.
@@ -398,6 +400,7 @@ export default ({
 
     this.ephemeral.switchController.abort(new Error('ChatMain destroyed'))
     this.ephemeral.chatroomIdToSwitchTo = null
+    this.destroyResizeObserver()
 
     this.cleanupFailedMessagesAttachments()
   },
@@ -485,22 +488,20 @@ export default ({
     }
   },
   methods: {
-    resetObservers () {
-      const observeSizeChanges = () => {
-        if (!this.resizeObserver) return
-        if (!this.$refs.conversation?.$el) {
-          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
-          return
-        }
-        if (this.mutationObserver) {
-          this.mutationObserver.disconnect()
-          this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
-        }
-        this.resizeObserver.disconnect()
-        this.resizeObserver.observe(this.$refs.conversation.$el)
-        this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+    initResizeObserver () {
+      if (!this.ephemeral.bodyResizeObserver) {
+        this.ephemeral.bodyResizeObserver = new ResizeObserver(entries => {
+          const wrapperElBbox = entries[0].target.getBoundingClientRect()
+          this.ephemeral.conversationWrapperHeight = wrapperElBbox.height
+        })
       }
-      observeSizeChanges()
+      this.ephemeral.bodyResizeObserver.observe(this.$refs.chatMainBody)
+    },
+    destroyResizeObserver () {
+      if (this.ephemeral.bodyResizeObserver) {
+        this.ephemeral.bodyResizeObserver.disconnect()
+        this.ephemeral.bodyResizeObserver = null
+      }
     },
     /* applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
@@ -2099,10 +2100,6 @@ export default ({
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
       this.setMessages()
-    },
-    'ephemeral.renderingChatRoomId' (to) {
-      if (!to) return
-      this.$nextTick(this.resetObservers)
     },
     'ephemeral.loadingDown' (newVal) {
       // If ephemeral.loadingDown changes, it means that we're dynamically
