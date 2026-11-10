@@ -1503,6 +1503,7 @@ export default ({
     width: 100%;
     font-size: 1rem;
     word-wrap: break-word;
+    max-height: 12.75rem;
   }
 
   &-textarea {
@@ -1514,7 +1515,6 @@ export default ({
     border: none;
     padding: 0.5rem;
     overflow-y: auto;
-    max-height: 12.75rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -1534,7 +1534,6 @@ export default ({
     height: auto;
     white-space: pre-line;
     min-height: 0;
-    max-height: 50vh;
     overflow-y: hidden;
   }
 

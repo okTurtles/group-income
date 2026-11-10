@@ -350,7 +350,8 @@ export default ({
         // Used for non-joined chatrooms
         latestHeight: undefined,
         // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
-        failedMessagesAttachments: {}
+        failedMessagesAttachments: {},
+        conversationWrapperHeight: null
       },
       messageState: {
         // `fetched` indicates whether we've loaded messages dynamically
@@ -484,6 +485,23 @@ export default ({
     }
   },
   methods: {
+    resetObservers () {
+      const observeSizeChanges = () => {
+        if (!this.resizeObserver) return
+        if (!this.$refs.conversation?.$el) {
+          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
+          return
+        }
+        if (this.mutationObserver) {
+          this.mutationObserver.disconnect()
+          this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
+        }
+        this.resizeObserver.disconnect()
+        this.resizeObserver.observe(this.$refs.conversation.$el)
+        this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+      }
+      observeSizeChanges()
+    },
     /* applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
       // options
@@ -2019,11 +2037,20 @@ export default ({
     }
   },
   provide () {
+    const conversationWrapper = {}
+    Object.defineProperties(conversationWrapper, {
+      height: {
+        enumerable: true,
+        get: () => this.ephemeral.conversationWrapperHeight
+      }
+    })
+
     return {
       chatMainConfig: this.config,
       chatMainUtils: {
         markAsUnread: this.markAsUnread
-      }
+      },
+      conversationWrapper
     }
   },
   watch: {
@@ -2072,6 +2099,10 @@ export default ({
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
       this.setMessages()
+    },
+    'ephemeral.renderingChatRoomId' (to) {
+      if (!to) return
+      this.$nextTick(this.resetObservers)
     },
     'ephemeral.loadingDown' (newVal) {
       // If ephemeral.loadingDown changes, it means that we're dynamically
