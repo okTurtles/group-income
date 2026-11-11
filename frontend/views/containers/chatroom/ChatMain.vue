@@ -122,6 +122,7 @@
       :replyingMessage='ephemeral.replyingMessage'
       :replyingTo='ephemeral.replyingTo'
       :scrolledUp='isScrolledUp'
+      :disableJumpToLatest='!!ephemeral.editingHash'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'

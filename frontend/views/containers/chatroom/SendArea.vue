@@ -54,7 +54,7 @@
           emoji-shortcut-item-display(:data='emoji')
 
     .c-jump-to-latest(
-      v-if='scrolledUp && !replyingMessage'
+      v-if='scrolledUp && !replyingMessage && !disableJumpToLatest'
       @click='$emit("jump-to-latest")'
     )
       i18n Jump to latest message
@@ -396,6 +396,10 @@ export default ({
     isSavingEdit: {
       type: Boolean,
       default: false
+    },
+    disableJumpToLatest: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -456,6 +460,12 @@ export default ({
           this.focusOnTextArea()
         })
       }
+    },
+    'ephemeral.maskHeight' (to, from) {
+      // This watcher ensures the edit send-area is scrolled and stays visible after the textarea height grows automatically.
+      // It skips the first measurement though as mounted() already scrolls the edit area into view.
+      if (!this.isEditing || !from) return
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
     },
     currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
