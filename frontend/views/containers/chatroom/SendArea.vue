@@ -366,7 +366,7 @@ const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIA
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
-  inject: ['conversationWrapper'],
+  inject: ['chatMainConfig'],
   components: {
     Avatar,
     Tooltip,
@@ -529,7 +529,7 @@ export default ({
       'mentionableChatroomsInDetails'
     ]),
     conversationWrapperHeight () {
-      return this.conversationWrapper.height
+      return this.chatMainConfig.height
     },
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
@@ -570,10 +570,13 @@ export default ({
         (this.hasAttachments || this.ephemeral.hasText)
     },
     textareaMaskStyles () {
-      return {
-        // 100 here is just there to prevent the textarea become too small when the browser viewport is small.
-        maxHeight: `${Math.max(100, this.conversationWrapperHeight - 32)}px`
-      }
+      return this.isEditing
+        ? {
+          // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
+          // 50px: Some additional margin.
+          maxHeight: `${Math.max(100, this.conversationWrapperHeight - 60)}px`
+        }
+        : {}
     },
     textareaStyles () {
       return {
@@ -1516,6 +1519,7 @@ export default ({
   &-mask {
     display: block;
     width: 100%;
+    max-height: 12.75rem; // In edit mode, this is overridden by the inline styles.
     font-size: 1rem;
     word-wrap: break-word;
   }

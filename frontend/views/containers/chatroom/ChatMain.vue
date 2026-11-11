@@ -2038,20 +2038,23 @@ export default ({
     }
   },
   provide () {
-    const conversationWrapper = {}
-    Object.defineProperties(conversationWrapper, {
+    const chatMainConfig = {}
+    Object.defineProperties(chatMainConfig, {
       height: {
         enumerable: true,
         get: () => this.ephemeral.conversationWrapperHeight
+      },
+      isPhone: {
+        enumerable: true,
+        get: () => this.config.isPhone
       }
     })
 
     return {
-      chatMainConfig: this.config,
       chatMainUtils: {
         markAsUnread: this.markAsUnread
       },
-      conversationWrapper
+      chatMainConfig
     }
   },
   watch: {
