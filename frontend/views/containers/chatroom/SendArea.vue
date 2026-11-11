@@ -440,9 +440,6 @@ export default ({
     }
   },
   watch: {
-    conversationWrapperHeight (newVal) {
-      console.log('!@# conversationWrapperHeight', newVal)
-    },
     replyingMessage () {
       this.focusOnTextArea()
     },
@@ -492,6 +489,12 @@ export default ({
     this.initializeTextArea()
     this.config.maskResizeObserver = new ResizeObserver(() => { this.ephemeral.maskCappedText = null })
     this.config.maskResizeObserver.observe(this.$refs.mask)
+
+    if (this.isEditing) {
+      // Make sure the whole edit area (including the Cancel/Save buttons) is visible when edit mode opens.
+      // 'nearest' scrolls only if part of it is off-screen, and only by as much as needed.
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
+    }
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -575,8 +578,8 @@ export default ({
       return this.isEditing
         ? {
             // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
-            // 60px: Some additional margin.
-            maxHeight: `${Math.max(100, this.conversationWrapperHeight - 60)}px`
+            // 80px: Some additional margin - so that send-area cta buttons are not cut off.
+            maxHeight: `${Math.max(100, this.conversationWrapperHeight - 80)}px`
           }
         : {}
     },

@@ -528,11 +528,6 @@ export default ({
         }
 
         this.ephemeral.editingHash = hash
-        if (!this.isScrolledUp) {
-          this.$nextTick(() => {
-            this.jumpToLatest()
-          })
-        }
       } else if (this.ephemeral.editingHash === hash) {
         // Only close the edit if it is still the one this call refers to.
         // A save closes its edit only after the server responds (see editMessage()),
