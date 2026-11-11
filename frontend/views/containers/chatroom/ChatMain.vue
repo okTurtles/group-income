@@ -492,8 +492,8 @@ export default ({
     initResizeObserver () {
       if (!this.ephemeral.bodyResizeObserver) {
         this.ephemeral.bodyResizeObserver = new ResizeObserver(entries => {
-          const wrapperElBbox = entries[0].target.getBoundingClientRect()
-          this.ephemeral.conversationWrapperHeight = wrapperElBbox.height
+          // 'contentRect' reference: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry/contentRect
+          this.ephemeral.conversationWrapperHeight = entries[0].contentRect.height
         })
       }
       this.ephemeral.bodyResizeObserver.observe(this.$refs.chatMainBody)
@@ -526,6 +526,8 @@ export default ({
           })
 
           if (!yesSelected) { return }
+          // If the message deleted meanwhile (e.g. From another session of the user), just return.
+          if (findMessageIdx(hash, this.ephemeral.messages) === -1) { return }
         }
 
         this.ephemeral.editingHash = hash

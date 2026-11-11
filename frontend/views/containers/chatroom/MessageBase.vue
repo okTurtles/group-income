@@ -337,6 +337,8 @@ export default ({
       return cleaned
     },
     determineToEnableTruncationToggle () {
+      if (this.isEditing) { return }
+
       const msgBodyEl = this.isTypePoll
         ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container
         : this.$refs.msgBody
