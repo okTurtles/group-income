@@ -129,10 +129,12 @@ Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com
 
 ## Making a release
 
-The app and its contracts share one version number. The `version` field in
-`package.json` is the source of truth. `grunt pin` copies it to `appVersion`
-in `chelonia.json` and pins the selected contracts to that version. A version
-is never passed on the command line.
+The `version` field in `package.json` is the app version and the source of
+truth. Every `grunt build` (and so `grunt dev`, `grunt test`, `grunt deploy`
+and `grunt pin`) copies it to `appVersion` in `chelonia.json`, which
+`chel serve` reads. Each contract keeps the version it was last pinned at
+(listed in `chelonia.json`) until `grunt pin` pins it again at the app
+version. A version is never passed on the command line.
 
 ### 1. Bump the version
 
@@ -173,9 +175,14 @@ $ NODE_ENV=production grunt pin --none
 $ NODE_ENV=production grunt pin:chatroom
 ```
 
-Add `--overwrite` to replace an already-pinned version on disk.
+Add `--overwrite` to replace an already-pinned version on disk. `grunt pin`
+stops with an error if the `CI` environment variable is set, because `CI`
+changes the contract code. Unset it first (for example with `env -u CI`).
 
-Commit the pinned snapshot together with the files from step 1:
+Commit the pinned snapshot together with the files from step 1. Always include
+`chelonia.json`, even for a release with no contract changes. The server reads
+`appVersion` from it, and `dist.sh` would otherwise change it during the build
+and mark the build `-dirty`:
 
 ```bash
 $ git add package.json package-lock.json chelonia.json contracts/

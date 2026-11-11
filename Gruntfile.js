@@ -54,12 +54,12 @@ if (!['development', 'production'].includes(NODE_ENV)) {
   throw new TypeError(`Invalid NODE_ENV value: ${NODE_ENV}.`)
 }
 // Build the per-contract CONTRACTS_VERSION object from chelonia.json
-let CONTRACTS_VERSION = Object.fromEntries(
+const CONTRACTS_VERSION = Object.fromEntries(
   Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
 )
 // In development, append a timestamp so that browsers will detect a new version
 // and reload whenever the live server is restarted.
-let APP_VERSION = cheloniaJSON.appVersion + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
+const APP_VERSION = packageJSON.version + (NODE_ENV === 'development' && process.argv[2] === 'dev' ? `@${new Date().toISOString()}` : '')
 
 // Make version info available to subprocesses.
 Object.assign(process.env, { APP_VERSION })
@@ -128,7 +128,37 @@ module.exports = (grunt) => {
     }
   }
 
-  async function generateManifests (dir, version) {
+  // `chel serve` reads `appVersion` from chelonia.json, but the release version
+  // lives in package.json. Copy it over so the two cannot drift apart (#3184).
+  function syncAppVersion () {
+    if (cheloniaJSON.appVersion === packageJSON.version) return
+    cheloniaJSON.appVersion = packageJSON.version
+    fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
+    console.log(chalk.green('updated chelonia.json "appVersion" to:'), packageJSON.version)
+  }
+
+  // `filter` is '--all', a contract short name (e.g. 'chatroom'), a full SBP
+  // name (e.g. 'gi.contracts/chatroom') or a manifest path. Unset means all.
+  function matchesPinFilter (shortName, filter) {
+    return !filter || filter === '--all' ||
+      filter === shortName ||
+      filter === `gi.contracts/${shortName}` ||
+      path.basename(filter).startsWith(`${shortName}.`)
+  }
+
+  // Set by `grunt pin` to the filter of the contracts it is about to pin.
+  let pinFilter = null
+
+  // The version stamped into a freshly built contract manifest. Each contract
+  // keeps its own version from chelonia.json, not the app version. `chel pin`
+  // rejects a manifest whose version differs from the pin version, so the
+  // contracts being pinned (and contracts never pinned) get the app version.
+  function manifestVersion (shortName) {
+    if (pinFilter !== null && matchesPinFilter(shortName, pinFilter)) return packageJSON.version
+    return cheloniaJSON.contracts[`gi.contracts/${shortName}`]?.version ?? packageJSON.version
+  }
+
+  async function generateManifests (dir) {
     const keyFile = process.env.KEY_FILE || 'key.json'
     const pubKeyFile = process.env.PUB_KEY_FILE || 'key.pub.json'
     if (fs.existsSync(keyFile)) {
@@ -138,12 +168,16 @@ module.exports = (grunt) => {
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel keygen --pubout ${pubKeyFile} --out ${keyFile}`)
       console.log(stdout)
     }
-    grunt.log.writeln(chalk.underline(`\nRunning 'chel manifest' (version ${version})`))
-    const cmd = `ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest --name gi.contracts/{} --contract-version ${version} --slim ${dir}/{}-slim.js ${keyFile} ${dir}/{}.js`
-    grunt.log.writeln(cmd)
-    // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
-    console.log(stdout)
+    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    const contractNames = (await readdir(dir))
+      .filter(file => file.endsWith('-slim.js'))
+      .map(file => file.slice(0, -'-slim.js'.length))
+    for (const name of contractNames) {
+      const cmd = `./node_modules/.bin/chel manifest --name gi.contracts/${name} --contract-version ${manifestVersion(name)} --slim ${dir}/${name}-slim.js ${keyFile} ${dir}/${name}.js`
+      grunt.log.writeln(cmd)
+      const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
+      console.log(stdout)
+    }
   }
 
   async function deployAndUpdateMainSrc (manifestDir, dest) {
@@ -159,8 +193,8 @@ module.exports = (grunt) => {
     console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  async function genManifestsAndDeploy (dir, version, dest) {
-    await generateManifests(dir, version)
+  async function genManifestsAndDeploy (dir, dest) {
+    await generateManifests(dir)
     await deployAndUpdateMainSrc(dir, dest)
   }
 
@@ -458,6 +492,7 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('build', function () {
+    syncAppVersion()
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
@@ -506,22 +541,12 @@ module.exports = (grunt) => {
   grunt.registerTask('_pin', async function (filter) {
     // a task internally executed in 'pin' task below
     const done = this.async()
-    const version = cheloniaJSON.appVersion
+    const version = packageJSON.version
 
     try {
       const entries = await fs.promises.readdir(distContracts, { withFileTypes: true })
       const manifests = entries.filter(e => e.isFile() && e.name.endsWith('.manifest.json'))
-      // `filter` is a contract short-name (e.g. 'chatroom'), a full SBP name
-      // (e.g. 'gi.contracts/chatroom'), or a manifest path. When unset, pin all.
-      const matches = manifests.filter(entry => {
-        if (!filter || filter === '--all') return true
-        const shortName = entry.name.split('.')[0]
-        const fullName = `gi.contracts/${shortName}`
-        return filter === shortName ||
-          filter === fullName ||
-          path.basename(filter) === entry.name ||
-          path.basename(filter).startsWith(`${shortName}.`)
-      })
+      const matches = manifests.filter(entry => matchesPinFilter(entry.name.split('.')[0], filter))
       if (matches.length === 0) {
         throw new Error(`grunt pin: no contract matches '${filter}'`)
       }
@@ -563,36 +588,38 @@ module.exports = (grunt) => {
       return
     }
 
-    // Update appVersion in chelonia.json from package.json before anything else
-    // so that the subsequent build embeds the new version into the manifests.
-    // We always make a new 'version' for the app even if only
-    // the contracts changed, since the app needs to track the
-    // latest contract manifest CIDs: a change affecting
-    // just contracts will always result in a modified app.
-    const newVersion = packageJSON.version
-    if (cheloniaJSON.appVersion !== newVersion) {
-      cheloniaJSON.appVersion = newVersion
-      fs.writeFileSync('chelonia.json', JSON.stringify(cheloniaJSON, null, 2) + '\n', 'utf8')
-      console.log(chalk.green('updated chelonia.json "appVersion" to:'), newVersion)
-    } else {
-      console.log(chalk.green('chelonia.json "appVersion" already matches package.json:'), newVersion)
+    // `process.env.CI` is compiled into the contract bundles (see `define`
+    // below), so pinning with it set would freeze CI-only code forever.
+    if (CI) {
+      grunt.fail.fatal([
+        `grunt pin: refusing to pin while the CI environment variable is set (CI=${JSON.stringify(CI)}).`,
+        'The build compiles process.env.CI into the contract code. With CI set, the contracts',
+        "include test-only code (for example the 'gi.contracts/group/forceDistributionDate' action),",
+        'and their hashes differ from a normal build. Pinned contracts can never be changed.',
+        'To fix this, unset CI and run the command again, for example:',
+        `  env -u CI NODE_ENV=production grunt ${process.argv.slice(2).join(' ')}`,
+        'Setting it to an empty value (CI=) also works.'
+      ].join('\n'))
     }
-    // Refresh derived values so `build` / `esbuild` pick up the new version.
-    APP_VERSION = cheloniaJSON.appVersion
-    process.env.APP_VERSION = APP_VERSION
-    CONTRACTS_VERSION = Object.fromEntries(
-      Object.entries(cheloniaJSON.contracts).map(([name, { version }]) => [name, version])
-    )
+
+    // Normally `build` copies the version; `--none` skips the build, so copy it
+    // here too. We always make a new app version even if only the contracts
+    // changed, since the app needs to track the latest contract manifest CIDs.
+    syncAppVersion()
 
     if (none) {
       console.log(chalk.green('--none specified: skipping contract pinning'))
       return
     }
 
+    if (!production) {
+      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production. Contracts built in development mode include test-only code, and pinned contracts can never be changed.'))
+    }
+
     // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
     // registering handlers for 'unhandledRejection' or 'uncaughtException'
-    const filter = all ? '--all' : arg
-    grunt.task.run(['build', `_pin:${filter}`])
+    pinFilter = all ? '--all' : arg
+    grunt.task.run(['build', `_pin:${pinFilter}`])
   })
 
   grunt.registerTask('deploy', function () {
@@ -733,7 +760,7 @@ module.exports = (grunt) => {
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
-      .then(() => genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion))
+      .then(() => genManifestsAndDeploy(distContracts))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
       .catch(error => {
         grunt.log.error(error.message)
@@ -815,10 +842,14 @@ module.exports = (grunt) => {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
               const dest = process.env.API_URL
-              await genManifestsAndDeploy(distContracts, cheloniaJSON.appVersion, dest)
-              // genManifestsAndDeploy modifies manifests.json, which means we need
-              // to regenerate the main bundle since it imports that file
-              await buildMain.run({ fileEventName, filePath })
+              await genManifestsAndDeploy(distContracts, dest)
+              // Both bundles import contract code (e.g. `shared/`), and the
+              // service worker also imports manifests.json, which
+              // genManifestsAndDeploy has just rewritten.
+              await Promise.all([
+                buildMain.run({ fileEventName, filePath }),
+                buildServiceWorkers.run({ fileEventName, filePath })
+              ])
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
             } else {
