@@ -570,12 +570,14 @@ export default ({
         (this.hasAttachments || this.ephemeral.hasText)
     },
     textareaMaskStyles () {
+      // 'max-height' css is enlarged for edit mode for convenience.
+      // In the default mode, the original 12.75rem is kept so that the message content is still visible while typing.
       return this.isEditing
         ? {
-          // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
-          // 50px: Some additional margin.
-          maxHeight: `${Math.max(100, this.conversationWrapperHeight - 60)}px`
-        }
+            // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
+            // 60px: Some additional margin.
+            maxHeight: `${Math.max(100, this.conversationWrapperHeight - 60)}px`
+          }
         : {}
     },
     textareaStyles () {

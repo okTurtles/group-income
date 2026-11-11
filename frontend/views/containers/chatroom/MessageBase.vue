@@ -277,7 +277,7 @@ export default ({
     },
     isMessageCropped () {
       // Check if the truncate-toggle is enabled and the message is folded.
-      return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
+      return !this.isEditing && this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
