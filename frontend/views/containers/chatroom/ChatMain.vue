@@ -548,6 +548,10 @@ export default ({
       if (this.ephemeral.messages === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages
+
+      if (this.ephemeral.editingHash && findMessageIdx(this.ephemeral.editingHash, newMessages) === -1) {
+        this.ephemeral.editingHash = null
+      }
       const postSetMessageState = this.ephemeral.postSetMessageState
       delete this.ephemeral.postSetMessageState
       if (!postSetMessageState?.noRerender) {
