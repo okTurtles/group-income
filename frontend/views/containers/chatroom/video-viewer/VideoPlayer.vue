@@ -1,5 +1,8 @@
 <template lang="pug">
-.video-player-container.plyr_override.for-video(:class='{ "is-taller-than-wider": ephemeral.isTallerThanWider }')
+.video-player-container.plyr_override.for-video(
+  :class='{ "is-taller-than-wider": ephemeral.isTallerThanWider }'
+  @click.stop=''
+)
   video.c-video-el(
     ref='videoEl'
     playsinline

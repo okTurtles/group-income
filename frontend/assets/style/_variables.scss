@@ -3,9 +3,11 @@
 $zindex-banner: 70;
 $zindex-toast-global: 60; // Global toast need to be on top of sidebar.
 $zindex-tooltip: 50;
+$zindex-prompt: 45; // some page content presented as 'position: fixed' has z-index larger than $zindex-modal (e.g. GroupWelcome.vue)
+$zindex-media-viewer: 42; // Media viewer modals (image/video viewer) overlay the pinned-messages pop-up but are placed below prompt.
+$zindex-pinned-messages: 41; // pinned-messages pop-up overlays the sidebar (issues #1843)
 $zindex-modal: 40;
 $zindex-sidebar: 40;
-$zindex-prompt: 45; // some page content presented as 'position: fixed' has z-index larger than $zindex-modal (e.g. GroupWelcome.vue)
 $zindex-header: 30;
 
 // Used for typography
