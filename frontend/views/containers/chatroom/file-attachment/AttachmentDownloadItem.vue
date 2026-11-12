@@ -349,12 +349,13 @@ $mobile-narrow: 441px;
     user-select: none;
     cursor: pointer;
     max-width: 100%;
-    max-height: 12rem;
-    min-width: 4rem;
+    max-height: 14rem;
+    min-width: 6rem;
+    object-fit: contain;
 
     @include tablet {
       max-height: 20rem;
-      min-width: 6rem;
+      min-width: 8rem;
     }
   }
 
