@@ -1,81 +1,24 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
+import { fakeClock } from '../../test/unit-helpers/fakeClock.js'
+import { connectionStatus } from '../../test/unit-helpers/connectionStatus.js'
+import { deferred, settle, silenceConsole } from '../../test/unit-helpers/utils.js'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
 import {
   CONNECTION_BANNER,
   CONNECTION_BANNER_GRACE,
   CONNECTION_BANNER_REFRESH_INTERVAL,
-  CONNECTION_STATUS_REQUEST_TIMEOUT,
   bannerForStatus,
   createConnectionBannerController
 } from './connectionBanner.js'
+import { CONNECTION_STATUS_TIMEOUT } from './connectionStatus.js'
 
 const GRACE = CONNECTION_BANNER_GRACE
 const REFRESH = CONNECTION_BANNER_REFRESH_INTERVAL
 
-const fakeClock = () => {
-  let time = 1_000_000
-  let nextID = 1
-  const queue = []
-  const add = (fn, ms, every) => {
-    const id = nextID++
-    queue.push({ id, at: time + ms, fn, every })
-    return id
-  }
-  const remove = (id) => {
-    const index = queue.findIndex(timer => timer.id === id)
-    if (index !== -1) queue.splice(index, 1)
-  }
-  const advance = (ms) => {
-    const end = time + ms
-    for (;;) {
-      queue.sort((a, b) => a.at - b.at || a.id - b.id)
-      const timer = queue[0]
-      if (!timer || timer.at > end) break
-      time = timer.at
-      if (timer.every) timer.at += timer.every
-      else queue.shift()
-      timer.fn()
-    }
-    time = end
-  }
-  return {
-    now: () => time,
-    set: (value) => { time = value },
-    timers: {
-      setTimeout: (fn, ms) => add(fn, ms),
-      clearTimeout: remove,
-      setInterval: (fn, ms) => add(fn, ms, ms),
-      clearInterval: remove
-    },
-    advance,
-    pendingTimers: () => queue.length
-  }
-}
-
-// Lets the promise callbacks run
-const settle = () => new Promise(resolve => setImmediate(resolve))
-
-const deferred = () => {
-  const handlers = {}
-  const promise = new Promise((resolve, reject) => { Object.assign(handlers, { resolve, reject }) })
-  return { promise, ...handlers }
-}
-
 // A status from `sw/connection/status` (see `ConnectionStatus`)
-const status = (state, { at, since = at, degraded = false } = {}) => ({
-  at,
-  source: 'app',
-  state,
-  since,
-  wanted: 2,
-  missing: [],
-  pending: [],
-  oldestPendingSince: null,
-  unsubscribedSince: null,
-  degraded,
-  heals: 0
-})
+const status = (state, { at, since = at, degraded = false } = {}) =>
+  connectionStatus(state, { at, since, wanted: 2, degraded })
 
 const NOT_REGISTERED = 'SBP: selector not registered: sw/connection/status'
 
@@ -107,22 +50,6 @@ const harness = ({ answer, online = true, ...options } = {}) => {
 
 const answering = (state, options) => (now) => Promise.resolve(status(state, { at: now, ...options }))
 const rejecting = (message = NOT_REGISTERED) => () => Promise.reject(new Error(message))
-
-const silenceConsole = () => {
-  const logs = []
-  const original = {}
-  beforeEach(() => {
-    logs.length = 0
-    for (const level of ['info', 'warn', 'error']) {
-      original[level] = console[level]
-      console[level] = (...args) => { logs.push({ level, args }) }
-    }
-  })
-  afterEach(() => {
-    Object.assign(console, original)
-  })
-  return logs
-}
 
 describe('connection banner', () => {
   const logs = silenceConsole()
@@ -213,10 +140,11 @@ describe('connection banner', () => {
       t.env.answer = answering('connecting')
       t.controller.apply(t.current('connecting'))
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, CONNECTION_BANNER.RECONNECTING])
-      // An older service worker emits ONLINE on the browser's `online` event
+      // In status mode, connection events only trigger a query
       t.controller.onLegacyEvent(ONLINE)
       await settle()
       assert.equal(t.env.calls, 2)
+      assert.equal(t.controller.legacy, false)
       assert.equal(t.controller.kind, CONNECTION_BANNER.RECONNECTING)
       t.controller.apply(t.current('open'))
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, CONNECTION_BANNER.RECONNECTING, null])
@@ -240,7 +168,6 @@ describe('connection banner', () => {
       t.controller.apply(t.current('closed'))
       t.clock.advance(100)
       t.controller.apply(t.current('connecting'))
-      t.env.answer = answering('connecting', { since: t.clock.now() })
       t.clock.advance(GRACE * 2)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
     })
@@ -322,19 +249,41 @@ describe('connection banner', () => {
       assert.deepEqual(t.env.changes, [], 'events only trigger a query')
     })
 
+    it('skips the periodic query while the tab is hidden', async () => {
+      let visible = false
+      const t = harness({ answer: answering('open'), isVisible: () => visible })
+      await t.start()
+      for (let i = 0; i < 3; i++) {
+        t.clock.advance(REFRESH)
+        await settle()
+      }
+      assert.equal(t.env.calls, 1, 'only the initial query')
+      t.controller.refresh()
+      await settle()
+      assert.equal(t.env.calls, 2)
+      visible = true
+      t.clock.advance(REFRESH)
+      await settle()
+      assert.equal(t.env.calls, 3)
+    })
+
     it('makes one query at a time, and one more for the refreshes requested meanwhile', async () => {
+      // Shorter than the request timeout, so that the first query is still
+      // in flight when the interval fires
+      const refreshInterval = CONNECTION_STATUS_TIMEOUT / 2
       const answers = []
       const t = harness({
         answer: () => {
           const answer = deferred()
           answers.push(answer)
           return answer.promise
-        }
+        },
+        refreshInterval
       })
       t.controller.start()
       t.controller.refresh()
       t.controller.onLegacyEvent(OFFLINE)
-      t.clock.advance(REFRESH)
+      t.clock.advance(refreshInterval)
       assert.equal(t.env.calls, 1)
       answers[0].resolve(t.current('open'))
       await settle()
@@ -426,12 +375,16 @@ describe('connection banner', () => {
             const answer = deferred()
             answers.push(answer)
             return answer.promise
-          }
+          },
+          // So that a refresh is requested while the first query waits
+          refreshInterval: CONNECTION_STATUS_TIMEOUT / 2
         })
         t.controller.start()
-        t.clock.advance(CONNECTION_STATUS_REQUEST_TIMEOUT - 1)
+        t.clock.advance(CONNECTION_STATUS_TIMEOUT - 1)
+        await settle()
         assert.equal(t.controller.legacy, false)
         t.clock.advance(1)
+        await settle()
         assert.equal(t.controller.legacy, true)
         // The refreshes requested meanwhile are made after the timeout
         assert.equal(t.env.calls, 2)
@@ -452,10 +405,14 @@ describe('connection banner', () => {
       const t = harness({
         answer: () => { throw new Error('getStatus') },
         onChange: () => { throw new Error('onChange') },
-        isOnline: () => { throw new Error('isOnline') }
+        isOnline: () => { throw new Error('isOnline') },
+        isVisible: () => { throw new Error('isVisible') }
       })
       await t.start()
       assert.equal(t.controller.legacy, true)
+      t.clock.advance(REFRESH)
+      await settle()
+      assert.equal(t.env.calls, 2, 'a tab whose visibility is unknown keeps querying')
       t.controller.onLegacyEvent(OFFLINE)
       assert.equal(t.controller.kind, CONNECTION_BANNER.OFFLINE)
       t.controller.apply(t.current('open'))
@@ -463,11 +420,16 @@ describe('connection banner', () => {
       assert.ok(count('error') >= 2)
     })
 
-    it('stops querying and applying statuses once stopped', async () => {
+    it('clears its banner and state when stopped, and does nothing until restarted', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
       t.controller.apply(t.current('closed'))
+      assert.equal(t.controller.kind, CONNECTION_BANNER.RECONNECTING)
+      assert.equal(t.clock.pendingTimers(), 2, 'the interval and the grace timer')
       t.controller.stop()
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, null])
+      assert.equal(t.controller.kind, null)
+      assert.equal(t.controller.legacy, false)
       assert.equal(t.clock.pendingTimers(), 0)
       t.clock.advance(60e3)
       t.controller.refresh()
@@ -475,30 +437,114 @@ describe('connection banner', () => {
       t.controller.apply(t.current('reconnecting', { sinceAgo: 0 }))
       await settle()
       assert.equal(t.env.calls, 1)
-      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, null])
     })
 
-    it('ignores answers to queries made before a restart', async () => {
-      const answers = []
-      const t = harness({
-        answer: () => {
-          const answer = deferred()
-          answers.push(answer)
-          return answer.promise
-        }
-      })
+    it('leaves legacy mode when stopped', async () => {
+      const t = harness({ answer: rejecting() })
+      await t.start()
+      assert.equal(t.controller.legacy, true)
+      t.controller.onLegacyEvent(OFFLINE)
+      assert.equal(t.controller.kind, CONNECTION_BANNER.OFFLINE)
+      t.controller.stop()
+      assert.equal(t.controller.legacy, false)
+      assert.equal(t.controller.kind, null)
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null])
+      t.env.answer = answering('open')
+      await t.start()
+      assert.equal(t.controller.legacy, false)
+      assert.equal(t.env.calls, 2)
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null])
+    })
+
+    it('shows the banner again after a restart', async () => {
+      const t = harness({ answer: answering('offline') })
+      await t.start()
+      t.controller.stop()
+      await t.start()
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null, CONNECTION_BANNER.OFFLINE])
+      assert.equal(t.controller.kind, CONNECTION_BANNER.OFFLINE)
+    })
+
+    it('applies the first status after a restart, even if older than the last one before', () => {
+      const t = harness({ answer: () => new Promise(() => {}) })
       t.controller.start()
+      const before = t.clock.now()
+      t.controller.apply(t.current('offline'))
       t.controller.stop()
       t.controller.start()
-      assert.equal(t.env.calls, 2)
-      answers[0].reject(new Error('old'))
-      await settle()
-      assert.equal(t.controller.legacy, false, 'the old query does not count')
+      t.controller.apply(status('reconnecting', { at: before - 1000 }))
+      assert.equal(t.controller.kind, CONNECTION_BANNER.RECONNECTING)
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null, CONNECTION_BANNER.RECONNECTING])
+    })
+
+    for (const outcome of ['rejection', 'resolution']) {
+      it(`ignores answers to queries made before a restart (${outcome})`, async () => {
+        const answers = []
+        const t = harness({
+          answer: () => {
+            const answer = deferred()
+            answers.push(answer)
+            return answer.promise
+          }
+        })
+        t.controller.start()
+        t.controller.stop()
+        t.controller.start()
+        assert.equal(t.env.calls, 2)
+        if (outcome === 'rejection') answers[0].reject(new Error('old'))
+        else answers[0].resolve(t.current('offline'))
+        await settle()
+        assert.equal(t.controller.legacy, false, 'the old query does not count')
+        assert.equal(t.controller.kind, null)
+        assert.deepEqual(t.env.changes, [])
+        t.controller.refresh()
+        assert.equal(t.env.calls, 2, 'the new query is still in flight')
+        answers[1].resolve(t.current('open'))
+        await settle()
+        assert.equal(t.env.calls, 3)
+      })
+    }
+
+    it('ignores an invalid answer to a query made before a restart, whenever the restart happens', async () => {
+      // Restarts after `ticks` microtasks, so that some iterations restart
+      // between the old query getting its answer and that answer being checked
+      for (let ticks = 0; ticks < 20; ticks++) {
+        const answer = deferred()
+        const t = harness({ answer: () => answer.promise })
+        t.controller.start()
+        answer.resolve(undefined)
+        for (let i = 0; i < ticks; i++) await null
+        t.controller.stop()
+        t.env.answer = () => new Promise(() => {})
+        t.controller.start()
+        await settle()
+        assert.equal(t.controller.legacy, false, `restarted after ${ticks} microtasks`)
+      }
+    })
+
+    it('drops the refreshes requested before it was stopped', async () => {
+      const t = harness({ answer: () => new Promise(() => {}) })
+      t.controller.start()
       t.controller.refresh()
-      assert.equal(t.env.calls, 2, 'the new query is still in flight')
-      answers[1].resolve(t.current('open'))
+      t.controller.stop()
+      t.env.answer = answering('open')
+      await t.start()
+      assert.equal(t.env.calls, 2)
+    })
+
+    it('leaves no timer behind when stopped with a query in flight', async () => {
+      const answer = deferred()
+      const t = harness({ answer: () => answer.promise })
+      t.controller.start()
+      t.controller.stop()
       await settle()
-      assert.equal(t.env.calls, 3)
+      assert.equal(t.clock.pendingTimers(), 0)
+      answer.resolve(t.current('offline'))
+      t.clock.advance(CONNECTION_STATUS_TIMEOUT)
+      await settle()
+      assert.deepEqual(t.env.changes, [])
+      assert.equal(t.controller.legacy, false)
     })
   })
 })

@@ -17,7 +17,7 @@ import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
 import { clearStaleJournals } from './model/journal/migration.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, CONNECTION_STATUS_CHANGED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, CONNECTION_STATUS_CHANGED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   // If the types don't match, a different release has been made
@@ -152,16 +152,11 @@ const registerListeners = () => {
     })
   })
 
-  // See `filterOutForeignIdentityKv`
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
-    if (added.length) filterOutForeignIdentityKv(added)
-  })
-
-  // The first argument lists the contracts Chelonia processes events for,
-  // i.e., those the pubsub client should be subscribed to. There's no other
-  // way to read it.
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscriptionSet) => {
-    connectionMonitor.setWanted(subscriptionSet)
+  // The first argument lists the contracts Chelonia processes events for, i.e.,
+  // those the pubsub client should be subscribed to (there's no other way to read it)
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscribedIDs, { added }) => {
+    connectionMonitor.setWanted(subscribedIDs)
+    if (added.length) filterOutForeignIdentityKv(added) // see `filterOutForeignIdentityKv`
   })
   // Only emitted by @chelonia/lib versions with okTurtles/libcheloniajs#125
   sbp('okTurtles.events/on', LIB_PUBSUB_STATE_CHANGED, () => connectionMonitor.update())
@@ -459,8 +454,7 @@ const connectAndSync = () => {
     },
     handlers: createPubsubHandlers({
       monitor: connectionMonitor,
-      emitEvent: (name) => sbp('okTurtles.events/emit', name),
-      events: { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED }
+      emitEvent: (name) => sbp('okTurtles.events/emit', name)
     })
   }))
   // The connection status depends on the client, which was just replaced

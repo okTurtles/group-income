@@ -5,13 +5,14 @@ import { L, LError } from '@common/common.js'
 import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
 
 // Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
-// sbp('gi.ui/showBanner', L('Copied to clipboard'), 'check-circle')
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
-// sbp('gi.ui/clearBanner') // clears the danger and showBanner banners
+// sbp('gi.ui/clearBanner') // clears the danger banner (and a transient one, such as the sync banner)
 // The connection banner is owned by the connection status code in main.js;
 // other callers can neither replace nor clear it:
 // sbp('gi.ui/showConnectionBanner', L('Trying to reconnect...'), 'wifi')
 // sbp('gi.ui/clearConnectionBanner')
+// Short confirmations, e.g. "Copied to clipboard", are toasts: sbp('gi.ui/toast', area, { message, variant:
+// 'success', duration })
 
 type ToastData = {
   // These are the data definitions for 'gi.ui/toast' sbp call.
@@ -61,9 +62,6 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.ui/dangerBanner' (message: string, icon: string = 'exclamation-triangle'): void {
     sbp('okTurtles.data/get', 'BANNER')?.danger(message, icon)
-  },
-  'gi.ui/showBanner' (message: string, icon: string): void {
-    sbp('okTurtles.data/get', 'BANNER')?.show(message, icon)
   },
   'gi.ui/showConnectionBanner' (message: string, icon: string): void {
     sbp('okTurtles.data/get', 'BANNER')?.showConnection(message, icon)

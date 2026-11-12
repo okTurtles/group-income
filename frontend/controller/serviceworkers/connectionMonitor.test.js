@@ -1,8 +1,12 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { fakeClock } from '../../../test/unit-helpers/fakeClock.js'
+import { silenceConsole } from '../../../test/unit-helpers/utils.js'
+import { OFFLINE, ONLINE, RECONNECTING } from '../../utils/events.js'
 import {
   CONNECTION_DEGRADED_GRACE,
+  CONNECTION_MAX_DEGRADED_HEALS,
   CONNECTION_TICK_INTERVAL,
   createConnectionMonitor,
   createPubsubHandlers,
@@ -10,7 +14,6 @@ import {
 } from './connectionMonitor.js'
 
 const SOCKET = { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 }
-const EVENTS = { OFFLINE: 'offline', ONLINE: 'online', RECONNECTING: 'reconnecting', RECONNECTION_FAILED: 'reconnection-failed' }
 
 const fakeSocket = (readyState) => ({ ...SOCKET, readyState })
 
@@ -32,46 +35,6 @@ const fakeClient = ({ readyState = SOCKET.OPEN, subscribed = [], pending = [] } 
   }
   client.setPending(pending)
   return client
-}
-
-const fakeClock = () => {
-  let time = 1_000_000
-  let nextID = 1
-  const queue = []
-  const add = (fn, ms, every) => {
-    const id = nextID++
-    queue.push({ id, at: time + ms, fn, every })
-    return id
-  }
-  const remove = (id) => {
-    const index = queue.findIndex(timer => timer.id === id)
-    if (index !== -1) queue.splice(index, 1)
-  }
-  const advance = (ms) => {
-    const end = time + ms
-    for (;;) {
-      queue.sort((a, b) => a.at - b.at || a.id - b.id)
-      const timer = queue[0]
-      if (!timer || timer.at > end) break
-      time = timer.at
-      if (timer.every) timer.at += timer.every
-      else queue.shift()
-      timer.fn()
-    }
-    time = end
-  }
-  return {
-    now: () => time,
-    timers: {
-      setTimeout: (fn, ms) => add(fn, ms),
-      clearTimeout: remove,
-      setInterval: (fn, ms) => add(fn, ms, ms),
-      clearInterval: remove
-    },
-    advance,
-    flush: () => advance(0),
-    pendingTimers: () => queue.length
-  }
 }
 
 // Requests every wanted contract that is neither subscribed nor pending, like
@@ -113,22 +76,6 @@ const harness = ({ client = fakeClient(), wanted = [], onHeal = () => {}, libSta
   }
   t.status = () => t.monitor.getStatus()
   return t
-}
-
-const silenceConsole = () => {
-  const logs = []
-  const original = {}
-  beforeEach(() => {
-    logs.length = 0
-    for (const level of ['info', 'warn', 'error']) {
-      original[level] = console[level]
-      console[level] = (...args) => { logs.push({ level, args }) }
-    }
-  })
-  afterEach(() => {
-    Object.assign(console, original)
-  })
-  return logs
 }
 
 describe('connection monitor', () => {
@@ -194,7 +141,7 @@ describe('connection monitor', () => {
   it("doesn't report the connection as back on the browser's online event (B3)", () => {
     const t = harness({ client: fakeClient({ readyState: SOCKET.CLOSING }), wanted: ['a'] })
     const events = []
-    const handlers = createPubsubHandlers({ monitor: t.monitor, emitEvent: (name) => events.push(name), events: EVENTS })
+    const handlers = createPubsubHandlers({ monitor: t.monitor, emitEvent: (name) => events.push(name) })
     t.env.online = false
     t.start()
     handlers.offline()
@@ -214,7 +161,7 @@ describe('connection monitor', () => {
     handlers['reconnection-scheduled']()
     t.clock.flush()
     assert.equal(t.status().state, 'reconnecting')
-    assert.deepEqual(events, [EVENTS.OFFLINE])
+    assert.deepEqual(events, [OFFLINE])
     assert.deepEqual(t.emits.map(status => status.state), ['offline', 'reconnecting'])
 
     t.env.client.nextConnectionAttemptDelayID = undefined
@@ -227,7 +174,7 @@ describe('connection monitor', () => {
     handlers['reconnection-succeeded']()
     t.clock.flush()
     assert.equal(t.status().state, 'open')
-    assert.deepEqual(events, [EVENTS.OFFLINE, EVENTS.RECONNECTING, EVENTS.ONLINE])
+    assert.deepEqual(events, [OFFLINE, RECONNECTING, ONLINE])
   })
 
   it('reports a scheduled attempt without a socket as reconnecting (B4)', () => {
@@ -272,11 +219,12 @@ describe('connection monitor', () => {
   })
 
   it('heals a contract left unsubscribed after the grace period, backed off (B7)', () => {
-    const t = harness({ client: fakeClient({ subscribed: ['a', 'b'] }), wanted: ['a', 'b', 'c'] })
+    const t = harness({ client: fakeClient({ subscribed: ['zA1', 'zB2'] }), wanted: ['zA1', 'zB2', 'zC3'] })
+    const refused = `[connection] 1 subscription(s) still refused after ${CONNECTION_MAX_DEGRADED_HEALS} attempts; no longer reported as degraded, still re-subscribing`
     t.start()
     let status = t.status()
     assert.equal(status.state, 'open')
-    assert.deepEqual(status.missing, ['c'])
+    assert.deepEqual(status.missing, ['zC3'])
     assert.equal(status.unsubscribedSince, t.startedAt)
     assert.equal(status.degraded, false)
 
@@ -284,37 +232,147 @@ describe('connection monitor', () => {
     assert.equal(t.status().degraded, false)
     assert.deepEqual(t.heals, [])
 
-    // The server keeps rejecting the subscription: the heal changes nothing
-    t.clock.advance(100e3)
+    // The server keeps refusing the subscription: the heals change nothing
     const at = (ms) => t.startedAt + ms
+    t.clock.advance(at(40e3) - t.clock.now())
+    assert.deepEqual(t.heals, [at(10e3), at(20e3), at(40e3)])
+    status = t.status()
+    assert.equal(status.degraded, false)
+    assert.deepEqual(status.missing, ['zC3'])
+    assert.equal(status.unsubscribedSince, t.startedAt)
+    assert.equal(status.heals, 3)
+
+    // Still requested, backed off, but no longer reported as degraded
+    t.clock.advance(60e3)
     assert.deepEqual(t.heals, [at(10e3), at(20e3), at(40e3), at(80e3)])
     status = t.status()
-    assert.equal(status.degraded, true)
+    assert.equal(status.degraded, false)
     assert.equal(status.heals, 4)
-    assert.deepEqual(t.emits.map(({ degraded, missing }) => [degraded, missing.length]), [[false, 1], [true, 1]])
+    assert.deepEqual(t.emits.map(({ degraded, missing }) => [degraded, missing.length]), [[false, 1], [true, 1], [false, 1]])
+    assert.equal(t.emits[2].at, at(40e3))
     assert.ok(messages().includes('[connection] degraded: 1 missing, 0 pending for 10 s; re-subscribing'))
     assert.ok(messages().includes('[connection] still degraded: 1 missing, 0 pending for 20 s; re-subscribing (attempt 2)'))
-    assert.ok(messages().every(message => !/\b[abc]\b/.test(message)), 'no contract IDs in the logs')
+    assert.equal(messages().filter(message => message === refused).length, 1)
+    assert.ok(!messages().includes('[connection] subscriptions healthy again'))
+    assert.ok(messages().every(message => !/z[ABC]\d/.test(message)), 'no contract IDs in the logs')
 
     // Subscribed at last
-    t.env.client.subscriptionSet.add('c')
-    createPubsubHandlers({ monitor: t.monitor, emitEvent: () => {}, events: EVENTS })['subscription-succeeded']()
+    t.env.client.subscriptionSet.add('zC3')
+    createPubsubHandlers({ monitor: t.monitor, emitEvent: () => {} })['subscription-succeeded']()
     t.clock.flush()
     status = t.status()
     assert.equal(status.degraded, false)
     assert.equal(status.heals, 0)
     assert.equal(status.unsubscribedSince, null)
-    assert.equal(t.emits.length, 3)
+    assert.equal(t.emits.length, 4)
     assert.ok(messages().includes('[connection] subscriptions healthy again'))
 
-    // A new episode starts without the previous backoff
-    t.env.client.subscriptionSet.delete('c')
+    // Counted again once it was subscribed: a new episode starts without the
+    // previous backoff
+    t.env.client.subscriptionSet.delete('zC3')
     const lostAt = t.clock.now()
     t.monitor.update()
     t.clock.advance(CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
+    assert.equal(t.status().degraded, true)
     assert.equal(t.heals.length, 5)
     assert.ok(t.heals[4] - lostAt >= CONNECTION_DEGRADED_GRACE)
     assert.ok(t.heals[4] - lostAt < CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
+  })
+
+  it('heals a newly lost contract promptly while another is refused', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1', 'zB2'] }), wanted: ['zA1', 'zB2', 'zC3'] })
+    t.start()
+    // `zC3` was given up at 40 s
+    t.clock.advance(100e3)
+    assert.equal(t.status().degraded, false)
+    assert.equal(t.heals.length, 4)
+    assert.equal(t.status().heals, 4)
+
+    t.env.client.subscriptionSet.delete('zB2')
+    const lostAt = t.clock.now()
+    t.monitor.update()
+    t.clock.advance(CONNECTION_DEGRADED_GRACE - 1)
+    assert.equal(t.status().degraded, false)
+    assert.equal(t.heals.length, 4)
+
+    // Not after `zC3`'s backoff (160 s)
+    t.clock.advance(CONNECTION_TICK_INTERVAL)
+    assert.equal(t.heals.length, 5)
+    const firstHeal = t.heals[4]
+    assert.ok(firstHeal - lostAt >= CONNECTION_DEGRADED_GRACE)
+    assert.ok(firstHeal - lostAt < CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
+    const status = t.status()
+    assert.equal(status.degraded, true)
+    assert.deepEqual(status.missing, ['zB2', 'zC3'])
+    assert.equal(status.heals, 1)
+
+    // Degraded until `zB2`'s third request
+    t.clock.advance(60e3)
+    assert.deepEqual(t.heals.slice(4), [firstHeal, firstHeal + 10e3, firstHeal + 30e3])
+    assert.deepEqual(
+      t.emits.slice(3).map(({ at, degraded, missing }) => [at, degraded, missing.length]),
+      [[lostAt, false, 2], [firstHeal, true, 2], [firstHeal + 30e3, false, 2]]
+    )
+    assert.equal(t.status().degraded, false)
+  })
+
+  it('counts a refused contract again once it was no longer wanted', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1', 'zC3'] })
+    t.start()
+    t.clock.advance(60e3)
+    assert.equal(t.status().degraded, false)
+
+    // Unwanted, then wanted again, while the connection is down (e.g., a
+    // logout and a login)
+    t.env.client.socket = null
+    t.env.client.nextConnectionAttemptDelayID = 1
+    t.monitor.update()
+    t.clock.flush()
+    t.monitor.setWanted(['zA1'])
+    t.clock.flush()
+    t.monitor.setWanted(['zA1', 'zC3'])
+    t.clock.flush()
+
+    t.env.client.nextConnectionAttemptDelayID = undefined
+    t.env.client.socket = fakeSocket(SOCKET.OPEN)
+    t.monitor.update()
+    t.clock.advance(CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
+    assert.equal(t.status().degraded, true)
+  })
+
+  it('caps the re-subscription backoff', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1', 'zB2'], maxHealDelay: 25e3 })
+    t.start()
+    t.clock.advance(100e3)
+    const at = (ms) => t.startedAt + ms
+    assert.deepEqual(t.heals, [at(10e3), at(20e3), at(40e3), at(65e3), at(90e3)])
+  })
+
+  it('answers status queries without re-subscribing, logging or broadcasting', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1', 'zB2'] }), wanted: ['zA1', 'zB2'] })
+    t.start()
+    // The grace period ends between two ticks
+    t.clock.advance(CONNECTION_TICK_INTERVAL / 2)
+    t.env.client.subscriptionSet.delete('zB2')
+    const lostAt = t.clock.now()
+    t.monitor.update()
+    t.clock.advance(CONNECTION_DEGRADED_GRACE + 500)
+
+    const emits = t.emits.length
+    const logged = logs.length
+    for (let i = 0; i < 3; i++) {
+      const status = t.status()
+      assert.equal(status.degraded, true)
+      assert.equal(status.heals, 0)
+    }
+    assert.deepEqual(t.heals, [])
+    assert.equal(t.emits.length, emits)
+    assert.equal(logs.length, logged)
+    assert.equal(t.clock.pendingTimers(), 1)
+
+    t.clock.advance(CONNECTION_TICK_INTERVAL)
+    assert.equal(t.heals.length, 1)
+    assert.ok(t.heals[0] - lostAt < CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
   })
 
   it('reports a successful heal right away', () => {
@@ -380,7 +438,41 @@ describe('connection monitor', () => {
     t.clock.advance(1)
     status = t.status()
     assert.equal(status.degraded, true)
-    assert.deepEqual(t.heals, [t.clock.now()])
+    // Queries don't heal: the next tick does
+    assert.deepEqual(t.heals, [])
+    t.clock.advance(CONNECTION_TICK_INTERVAL)
+    assert.equal(t.heals.length, 1)
+    assert.ok(t.heals[0] - openedAt < CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
+  })
+
+  it('reports how long a re-sent subscription request has been pending, not since the disconnection', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
+    t.start()
+    // The 2.0.0 client marks the subscribed contracts as pending when the
+    // socket closes
+    t.env.client.socket = null
+    t.env.client.nextConnectionAttemptDelayID = 1
+    t.env.client.subscriptionSet.delete('zA1')
+    t.env.client.setPending(['zA1'])
+    t.monitor.update()
+    t.clock.flush()
+    let status = t.status()
+    assert.equal(status.state, 'reconnecting')
+    assert.deepEqual(status.pending, ['zA1'])
+    assert.equal(status.oldestPendingSince, null)
+
+    // It re-sends the request once the socket re-opens
+    t.clock.advance(3e3)
+    t.env.client.nextConnectionAttemptDelayID = undefined
+    t.env.client.socket = fakeSocket(SOCKET.OPEN)
+    const reopenedAt = t.clock.now()
+    t.monitor.update()
+    t.clock.flush()
+    t.clock.advance(500)
+    status = t.status()
+    assert.equal(status.state, 'open')
+    assert.deepEqual(status.pending, ['zA1'])
+    assert.equal(status.oldestPendingSince, reopenedAt)
   })
 
   it('re-subscribes after reconnecting, once the pending subscriptions are re-sent', () => {
@@ -410,11 +502,11 @@ describe('connection monitor', () => {
   it('re-subscribes from the reconnection handler and coalesces repeated calls', () => {
     const t = harness({ client: fakeClient({ subscribed: ['a'] }), wanted: ['a', 'b'] })
     const events = []
-    const handlers = createPubsubHandlers({ monitor: t.monitor, emitEvent: (name) => events.push(name), events: EVENTS })
+    const handlers = createPubsubHandlers({ monitor: t.monitor, emitEvent: (name) => events.push(name) })
     t.start()
     handlers['reconnection-succeeded']()
     t.monitor.onReconnected()
-    assert.deepEqual(events, [EVENTS.ONLINE])
+    assert.deepEqual(events, [ONLINE])
     t.clock.flush()
     assert.equal(t.heals.length, 1)
   })
@@ -512,10 +604,27 @@ describe('connection monitor', () => {
       brokenTimers.update()
       brokenTimers.onReconnected()
       brokenTimers.stop()
+      brokenTimers.start()
     })
 
+    // Without a previous status, the fallback uses the injected clock
+    const clock = fakeClock()
+    const unreadable = createConnectionMonitor({
+      getPubsub: () => ({ get socket () { throw new Error('unreadable') } }),
+      getLibStatus: fail,
+      isOnline: () => true,
+      heal: () => {},
+      emit: () => {},
+      now: clock.now,
+      timers: clock.timers
+    })
+    clock.advance(1234)
+    const fallback = unreadable.getStatus()
+    assert.equal(fallback.at, clock.now())
+    assert.equal(fallback.state, 'closed')
+
     const throwingMonitor = { update: fail, onReconnected: fail }
-    const handlers = createPubsubHandlers({ monitor: throwingMonitor, emitEvent: fail, events: EVENTS })
+    const handlers = createPubsubHandlers({ monitor: throwingMonitor, emitEvent: fail })
     for (const [name, handler] of Object.entries(handlers)) {
       assert.doesNotThrow(() => handler(), name)
     }
@@ -523,7 +632,7 @@ describe('connection monitor', () => {
     // A failing step doesn't prevent the next ones
     const calls = []
     const monitor = { update: () => calls.push('update'), onReconnected: () => calls.push('onReconnected') }
-    const partial = createPubsubHandlers({ monitor, emitEvent: fail, events: EVENTS })
+    const partial = createPubsubHandlers({ monitor, emitEvent: fail })
     partial.offline()
     partial['reconnection-succeeded']()
     assert.deepEqual(calls, ['update', 'onReconnected'])
@@ -561,15 +670,51 @@ describe('connection monitor', () => {
     assert.equal(t.emits.length, 1)
   })
 
-  it('stops its timers', () => {
-    const t = harness({ client: fakeClient(), wanted: ['a'] })
+  it('schedules nothing once stopped', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
     t.start()
     t.monitor.onReconnected()
     t.monitor.update()
     t.monitor.stop()
     assert.equal(t.clock.pendingTimers(), 0)
+
+    t.monitor.update()
+    t.monitor.onReconnected()
+    t.monitor.setWanted(['zA1', 'zB2'])
+    assert.equal(t.clock.pendingTimers(), 0)
+
+    const emits = t.emits.length
+    const logged = logs.length
+    t.clock.advance(60e3)
+    assert.deepEqual(t.heals, [])
+    assert.equal(t.emits.length, emits)
+    assert.equal(logs.length, logged)
+
+    // Queries still answer, with the wanted set given while stopped
+    const status = t.status()
+    assert.equal(status.wanted, 2)
+    assert.deepEqual(status.missing, ['zB2'])
+    assert.equal(t.clock.pendingTimers(), 0)
+  })
+
+  it('re-emits an unchanged status after a restart', () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
+    const summary = ({ state, degraded, wanted, missing, pending }) => [state, degraded, wanted, missing.length, pending.length]
+    t.start()
+    assert.equal(t.emits.length, 1)
+    t.monitor.stop()
+    t.start()
+    assert.equal(t.emits.length, 2)
+    assert.deepEqual(summary(t.emits[1]), summary(t.emits[0]))
+  })
+
+  it('starts its periodic check once', () => {
+    const t = harness({ client: fakeClient(), wanted: ['zA1'] })
     t.monitor.start()
     t.monitor.start()
+    // The interval and one coalesced update
     assert.equal(t.clock.pendingTimers(), 2)
+    t.clock.flush()
+    assert.equal(t.clock.pendingTimers(), 1)
   })
 })

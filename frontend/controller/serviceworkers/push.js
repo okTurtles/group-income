@@ -7,9 +7,11 @@ import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, REQUEST_TYPE } from '
 import { DEVICE_SETTINGS } from '@utils/constants.js'
 import { createPushReporter } from './pushReporter.js'
 
+const pushManager = self.registration?.pushManager
+
 const pushReporter = createPushReporter({
   getPubsub: () => sbp('okTurtles.data/get', PUBSUB_INSTANCE),
-  pushManager: self.registration?.pushManager,
+  pushManager,
   isLoggedIn: () => !!sbp('chelonia/rootState').loggedIn,
   notificationsDisabled: () => !!sbp('sw/deviceSettings/get', DEVICE_SETTINGS.DISABLE_NOTIFICATIONS)
 })
@@ -26,7 +28,7 @@ export default (sbp('sbp/selectors/register', {
   }
 }): string[])
 
-if (self.registration?.pushManager) {
+if (pushManager) {
   sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SUCCEEDED, pushReporter.onReconnected)
 }
 

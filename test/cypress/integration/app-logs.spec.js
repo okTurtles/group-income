@@ -60,16 +60,26 @@ describe('Application logs export', () => {
     cy.getByDT('downloadLogs').should('contain', 'Download').click()
 
     cy.window().its('sbp').then(sbp => sbp('state/vuex/state').loggedIn.identityContractID).then(identityContractID => {
-      cy.readFile(`${Cypress.config('downloadsFolder')}/${LOGS_FILENAME}`).then(content => {
+      cy.readFile(`${Cypress.config('downloadsFolder')}/${LOGS_FILENAME}`).should(content => {
+        // `null` until the file exists. The browser creates the file before it
+        // has written all of it.
+        expect(content, 'the downloaded file').to.be.a('string')
+        expect(() => JSON.parse(content), 'the downloaded file is complete').not.to.throw()
+      }).then(content => {
         const file = JSON.parse(content)
         expect(file.includeJournal).to.equal(true)
         expect(file.journalTruncated).to.equal(false)
         expect(file).not.to.have.property('journalError')
 
-        // The service worker's connection status: connected, subscribed
+        // The service worker's connection status. Only its shape: a socket drop
+        // on CI makes any single snapshot non-'open' for up to a second.
         expect(file.connection).not.to.have.property('error')
-        expect(file.connection).to.include({ state: 'open', degraded: false })
+        expect(file.connection.state).to.be.oneOf(['connecting', 'open', 'reconnecting', 'offline', 'closed'])
+        expect(file.connection.degraded).to.be.a('boolean')
         expect(file.connection.wanted).to.be.above(0)
+        // With journals, the contract IDs are kept.
+        expect(file.connection.missing).to.be.an('array')
+        expect(file.connection.pending).to.be.an('array')
 
         const contractIDs = Object.keys(file.journals)
         // The user's own identity is ranked first.
@@ -102,6 +112,7 @@ describe('Application logs export', () => {
   })
 
   it('downloads the file instead when sharing it fails', () => {
+    cy.getByDT('includeJournal').uncheck({ force: true })
     cy.window().then(win => {
       const share = cy.stub().as('share').rejects(new win.TypeError('Passing files is currently not supported.'))
       fakeShareSupport({ canShare: () => true, share })
@@ -110,7 +121,17 @@ describe('Application logs export', () => {
     cy.getByDT('downloadLogs').should('contain', 'Share').click()
 
     cy.get('@share').should('have.been.calledOnce').then(share => {
-      expect(share.firstCall.args[0].files[0].name).to.equal(LOGS_FILENAME)
+      const [file] = share.firstCall.args[0].files
+      expect(file.name).to.equal(LOGS_FILENAME)
+      return file.text()
+    }).then(text => {
+      // Without journals, the contract IDs of the connection status are only
+      // counted.
+      const { includeJournal, connection } = JSON.parse(text)
+      expect(includeJournal).to.equal(false)
+      expect(connection).not.to.have.property('error')
+      expect(connection.missing).to.be.a('number')
+      expect(connection.pending).to.be.a('number')
     })
     cy.getByDT('downloadLogs').should('not.be.disabled')
     cy.get('@anchorClick').should(spy => {

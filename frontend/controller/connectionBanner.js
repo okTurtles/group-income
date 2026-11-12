@@ -1,17 +1,20 @@
 'use strict'
 
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
+import type { Timers } from '../utils/timers.js'
+import { defaultTimers } from '../utils/timers.js'
+import { CONNECTION_STATUS_TIMEOUT, requestConnectionStatus } from './connectionStatus.js'
 import type { ConnectionStatus } from './serviceworkers/connectionMonitor.js'
 
 // The kinds of connection banner a tab can show (the texts are in main.js)
-export const CONNECTION_BANNER = {
+export const CONNECTION_BANNER = Object.freeze({
   OFFLINE: 'offline',
   RECONNECTING: 'reconnecting',
   FAILED: 'failed',
   DEGRADED: 'degraded'
-}
+})
 
-export type ConnectionBannerKind = 'offline' | 'reconnecting' | 'failed' | 'degraded'
+export type ConnectionBannerKind = $Values<typeof CONNECTION_BANNER>
 
 // A connection that is `closed` for less than this is shown as reconnecting:
 // after a pubsub error, the service worker re-creates the connection 100 ms
@@ -20,26 +23,10 @@ export type ConnectionBannerKind = 'offline' | 'reconnecting' | 'failed' | 'degr
 // service worker connects for the first time doesn't flash
 // "Trying to reconnect...".
 export const CONNECTION_BANNER_GRACE = 2 * 1000
-// The status is also queried periodically, in case a broadcast is missed
-export const CONNECTION_BANNER_REFRESH_INTERVAL = 5 * 1000
-// A request to a service worker that was terminated can stay unanswered
-export const CONNECTION_STATUS_REQUEST_TIMEOUT = 10 * 1000
-
-type Timers = {
-  setTimeout: (fn: () => mixed, ms: number) => any,
-  clearTimeout: (id: any) => void,
-  setInterval: (fn: () => mixed, ms: number) => any,
-  clearInterval: (id: any) => void
-}
-
-// Wrapped, because browsers throw 'Illegal invocation' when these are called
-// as methods of another object
-const defaultTimers: Timers = {
-  setTimeout: (fn, ms) => setTimeout(fn, ms),
-  clearTimeout: (id) => clearTimeout(id),
-  setInterval: (fn, ms) => setInterval(fn, ms),
-  clearInterval: (id) => clearInterval(id)
-}
+// The status is also queried periodically while the tab is visible. The
+// statuses broadcast by the service worker are the main channel; this catches
+// the missed ones, e.g., after the browser restarts an idle service worker.
+export const CONNECTION_BANNER_REFRESH_INTERVAL = 30 * 1000
 
 const isStatus = (status: any): boolean => (
   !!status && typeof status === 'object' &&
@@ -102,25 +89,29 @@ export type ConnectionBannerController = {
 //   - `onChange(kind)`: shows the banner for `kind`, or clears it (`null`).
 //     Only called when the kind changes.
 //   - `isOnline()`: `navigator.onLine`.
-// The status is queried on `start()`, every `refreshInterval` and on
-// `refresh()`; statuses broadcast by the service worker are passed to
-// `apply()`. A service worker that can't answer (e.g., one from an older
-// version, without `sw/connection/status`) puts the controller in legacy
-// mode, where the banner follows the connection events passed to
+//   - `isVisible()`: whether the tab is visible.
+// The status is queried on `start()`, every `refreshInterval` while the tab is
+// visible and on `refresh()`; statuses broadcast by the service worker are
+// passed to `apply()`. A service worker that can't answer (e.g., one from an
+// older version, without `sw/connection/status`) puts the controller in
+// legacy mode, where the banner follows the connection events passed to
 // `onLegacyEvent()`, as it used to. A valid status ends legacy mode.
+// `stop()` clears the banner and the state; a restart starts afresh.
 export function createConnectionBannerController ({
   getStatus,
   onChange,
   isOnline,
+  isVisible = () => true,
   now = () => Date.now(),
   graceMs = CONNECTION_BANNER_GRACE,
   refreshInterval = CONNECTION_BANNER_REFRESH_INTERVAL,
-  requestTimeout = CONNECTION_STATUS_REQUEST_TIMEOUT,
+  requestTimeout = CONNECTION_STATUS_TIMEOUT,
   timers = defaultTimers
 }: {
   getStatus: () => mixed,
   onChange: (kind: ConnectionBannerKind | null) => mixed,
   isOnline: () => boolean,
+  isVisible?: () => boolean,
   now?: () => number,
   graceMs?: number,
   refreshInterval?: number,
@@ -133,12 +124,13 @@ export function createConnectionBannerController ({
   let lastStatus: ConnectionStatus | null = null
   let interval: any = null
   let graceTimer: any = null
-  let requestTimer: any = null
   let inFlight = false
-  let again = false
-  // Incremented by `stop()`, so that requests made before don't affect the
-  // ones made after a restart
+  let refreshQueued = false
+  // Incremented by `stop()`: a query made before is ignored, whether it
+  // resolves or rejects, even after a restart
   let generation = 0
+  // Settles the query in flight, so that `stop()` leaves no timer behind
+  let cancelRequest: (() => void) | null = null
 
   const setKind = (next: ConnectionBannerKind | null) => {
     if (next === kind) return
@@ -184,7 +176,7 @@ export function createConnectionBannerController ({
     evaluate()
   }
 
-  const fail = (e: mixed) => {
+  const enterLegacyMode = (e: mixed) => {
     if (!running || legacy) return
     legacy = true
     console.warn('[connection banner] Could not get the connection status; following the connection events instead', e)
@@ -199,61 +191,70 @@ export function createConnectionBannerController ({
     if (offline) setKind(CONNECTION_BANNER.OFFLINE)
   }
 
+  const visible = (): boolean => {
+    try {
+      return isVisible() !== false
+    } catch (e) {
+      console.warn('[connection banner] Error checking whether the tab is visible', e)
+      return true
+    }
+  }
+
   const refresh = () => {
     if (!running) return
     if (inFlight) {
-      again = true
+      refreshQueued = true
       return
     }
     inFlight = true
     const requestGeneration = generation
-    let settled = false
-    const settle = (fn: () => void) => {
-      if (settled || requestGeneration !== generation) return
-      settled = true
-      if (requestTimer !== null) timers.clearTimeout(requestTimer)
-      requestTimer = null
-      fn()
-      inFlight = false
-      if (again) {
-        again = false
-        refresh()
-      }
-    }
-    requestTimer = timers.setTimeout(() => {
-      requestTimer = null
-      settle(() => fail(new Error('Timed out getting the connection status')))
-    }, requestTimeout)
-    let request: Promise<mixed>
-    try {
-      request = Promise.resolve(getStatus())
-    } catch (e) {
-      request = Promise.reject(e)
-    }
-    request.then((status) => {
-      // A late answer is still used
-      apply(status)
-      settle(() => { if (!isStatus(status)) fail(new Error('Invalid connection status')) })
-    }, (e) => {
-      settle(() => fail(e))
+    const current = () => requestGeneration === generation
+    // `getStatus()` is called right away; an answer that arrives after the
+    // timeout is still applied (and ends legacy mode)
+    const answer: Promise<mixed> = new Promise(resolve => resolve(getStatus()))
+    answer.then((status) => { if (current()) apply(status) }, () => {})
+    const cancelled: Promise<mixed> = new Promise((resolve, reject) => {
+      cancelRequest = () => reject(new Error('Connection banner stopped'))
     })
+    requestConnectionStatus({ getStatus: () => Promise.race([answer, cancelled]), timeout: requestTimeout, timers })
+      .then((status) => {
+        if (current() && !isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
+      }, (e) => {
+        if (current()) enterLegacyMode(e)
+      })
+      .finally(() => {
+        // `stop()` already reset these for the next request
+        if (!current()) return
+        cancelRequest = null
+        inFlight = false
+        if (refreshQueued) {
+          refreshQueued = false
+          refresh()
+        }
+      })
   }
 
   return {
     start () {
       if (running) return
       running = true
-      interval = timers.setInterval(refresh, refreshInterval)
+      interval = timers.setInterval(() => { if (visible()) refresh() }, refreshInterval)
       refresh()
     },
     stop () {
       running = false
-      if (interval !== null) timers.clearInterval(interval)
-      if (requestTimer !== null) timers.clearTimeout(requestTimer)
-      clearGraceTimer()
-      interval = requestTimer = null
-      inFlight = again = false
       generation++
+      if (interval !== null) timers.clearInterval(interval)
+      interval = null
+      clearGraceTimer()
+      cancelRequest?.()
+      cancelRequest = null
+      inFlight = refreshQueued = false
+      lastStatus = null
+      legacy = false
+      // `onChange(null)` if a banner is showing, so that a stopped
+      // controller doesn't leave it on screen
+      setKind(null)
     },
     refresh,
     apply,

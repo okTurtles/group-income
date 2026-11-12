@@ -4,6 +4,8 @@ import { getSubscriptionId as defaultGetSubscriptionId } from '@chelonia/lib/fun
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
 import { Buffer } from 'buffer'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
+import type { Timers } from '../../utils/timers.js'
+import { defaultTimers, isSocketOpen } from '../../utils/timers.js'
 
 // The server's VAPID public key should change very infrequently, if at all
 export const VAPID_CACHE_DURATION = 3600e3
@@ -17,22 +19,10 @@ export type PushReporter = {
   onReconnected: (client?: Object) => Promise<void>
 }
 
-type Timers = {
-  setTimeout: (fn: () => mixed, ms: number) => any,
-  clearTimeout: (id: any) => void
-}
-
-// Wrapped, because browsers throw 'Illegal invocation' when these are called
-// as methods of another object
-const defaultTimers: Timers = {
-  setTimeout: (fn, ms) => setTimeout(fn, ms),
-  clearTimeout: (id) => clearTimeout(id)
-}
-
 // The application server (public) key could be either an ArrayBuffer (which is
 // what we get from fetching the current subscription), or it could be a
 // base64url-encoded string (which is what we usually get from the server)
-// This string coerces both of these into an `Uint8Array` instance.
+// This function coerces both of these into a `Uint8Array` instance.
 export const strOrBufToBuf = (v: string | Uint8Array | ArrayBuffer): Uint8Array => {
   if (typeof v === 'string') {
     return Buffer.from(
@@ -65,8 +55,6 @@ const pubsubNotOpenError = (message: string): Error => {
   e.name = PUBSUB_NOT_OPEN_ERROR
   return e
 }
-
-const isOpen = (socket: ?Object): boolean => !!socket && socket.readyState === (socket.OPEN ?? 1)
 
 // Reports this device's Web Push subscription to the server, over the service
 // worker's pubsub connection. The server pairs push subscriptions with
@@ -116,17 +104,21 @@ export function createPushReporter ({
       const pubsub = getPubsub()
       if (!pubsub) return reject(pubsubNotOpenError('Missing pubsub instance'))
       const socket = pubsub.socket
-      if (!isOpen(socket)) return reject(pubsubNotOpenError('WebSocket connection is not open'))
+      if (!isSocketOpen(socket)) return reject(pubsubNotOpenError('WebSocket connection is not open'))
 
       const waiter = (options) => {
         vapidWaiters.delete(waiter)
         timers.clearTimeout(timeoutID)
         resolve(options)
       }
-      // Usually, the socket died without being closed yet
+      // Either the socket died without being closed yet (a connection
+      // problem: retried on reconnection), or the server is slow or answered
+      // with an error, which the 2.0.0 client only logs (the tab retries)
       const timeoutID = timers.setTimeout(() => {
         vapidWaiters.delete(waiter)
-        reject(pubsubNotOpenError('Timed out requesting VAPID key'))
+        const message = 'Timed out requesting VAPID key'
+        const gone = getPubsub() !== pubsub || pubsub.socket !== socket || !isSocketOpen(socket)
+        reject(gone ? pubsubNotOpenError(message) : new Error(message))
       }, VAPID_REQUEST_TIMEOUT)
       vapidWaiters.add(waiter)
 
@@ -143,9 +135,14 @@ export function createPushReporter ({
     })
   }
 
-  // The subscription the server should have for this device: `undefined`
-  // until known; `subscriptionInfo` is `undefined` or `null` for none
-  let wanted: void | { subscriptionInfo: ?Object, applicationServerKey: ?ArrayBuffer }
+  // The subscription the server should have for this device;
+  // `subscriptionInfo` is `undefined` or `null` for none. Until the first
+  // report, that's also what is assumed, so nothing is sent
+  let wanted: { subscriptionInfo: ?Object, applicationServerKey: ?ArrayBuffer } = { subscriptionInfo: null, applicationServerKey: null }
+  // Incremented by every report (from a tab, or after a subscription change),
+  // so that a reconnection doesn't replace a report made while it read the
+  // browser's subscription
+  let reportGeneration = 0
   const reportedSubscriptionBySocket: WeakMap<Object, ?Object> = new WeakMap()
 
   const getSubID = async (subscription: Object): Promise<string> => {
@@ -161,8 +158,7 @@ export function createPushReporter ({
   const flushOnce = async (): Promise<boolean> => {
     const pubsub = getPubsub()
     const socket = pubsub?.socket
-    if (!pubsub || !socket || !isOpen(socket)) return false
-    if (wanted === undefined) return true
+    if (!pubsub || !socket || !isSocketOpen(socket)) return false
 
     const { subscriptionInfo, applicationServerKey } = wanted
     const reported = reportedSubscriptionBySocket.get(socket)
@@ -199,7 +195,7 @@ export function createPushReporter ({
 
     // The connection may have been replaced or closed meanwhile. Then the
     // reconnection reports it on the new socket.
-    if (getPubsub() !== pubsub || pubsub.socket !== socket || !isOpen(socket)) return false
+    if (getPubsub() !== pubsub || pubsub.socket !== socket || !isSocketOpen(socket)) return false
     if (message) {
       console.info(`[reportExistingSubscription] ${description}`)
       socket.send(message)
@@ -218,6 +214,7 @@ export function createPushReporter ({
   }
 
   const reportExistingSubscription = async (subscriptionInfo?: ?Object, applicationServerKey?: ?ArrayBuffer): Promise<boolean> => {
+    reportGeneration++
     wanted = { subscriptionInfo, applicationServerKey }
     const sent = await flush()
     if (!sent) {
@@ -286,10 +283,13 @@ export function createPushReporter ({
           console.info('pubsub reconnected. disableNotifications=', disableNotifications)
           if (disableNotifications) continue
           try {
+            const generation = reportGeneration
             const subscription = await pushManager.getSubscription()
-            wanted = {
-              subscriptionInfo: subscription?.toJSON(),
-              applicationServerKey: subscription?.options.applicationServerKey
+            if (generation === reportGeneration && !notificationsDisabled()) {
+              wanted = {
+                subscriptionInfo: subscription?.toJSON(),
+                applicationServerKey: subscription?.options.applicationServerKey
+              }
             }
             await flush()
           } catch (e) {

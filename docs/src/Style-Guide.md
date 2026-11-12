@@ -271,8 +271,14 @@ This banner informs the user that there's something going on with the app itself
 // main.js
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 
-this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
+sbp('okTurtles.data/set', 'BANNER', this.$refs.bannerGeneral) // make it globally accessible
+
+// anywhere in the app
+sbp('gi.ui/dangerBanner', L('Your app seems to be corrupted.'))
+sbp('gi.ui/clearBanner')
 ```
+
+Connection messages go through `gi.ui/showConnectionBanner` and `gi.ui/clearConnectionBanner`, which are owned by `main.js`: other callers can neither replace nor clear them. Short confirmations such as "Copied to clipboard" are toasts (`gi.ui/toast`), not banners.
 
 NOTE: this type of banner is under construction and will change soon.
 

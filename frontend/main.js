@@ -97,7 +97,9 @@ async function startApp () {
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
-      'gi.db/settings/save'
+      'gi.db/settings/save',
+      // Queried by the connection banner, periodically and on connection events
+      'sw/connection/status'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selectorBlacklist[selector]) return
@@ -332,10 +334,11 @@ async function startApp () {
       // The connection banner follows the service worker's connection status,
       // which is queried right away (so that it's also shown in tabs opened
       // during an outage), whenever the service worker broadcasts a change,
-      // and periodically.
+      // and periodically while the tab is visible.
       const connectionBanner = createConnectionBannerController({
         getStatus: () => sbp('sw/connection/status'),
         isOnline: () => navigator.onLine !== false,
+        isVisible: () => document.visibilityState === 'visible',
         onChange: (kind) => {
           switch (kind) {
             case CONNECTION_BANNER.OFFLINE:
@@ -358,8 +361,8 @@ async function startApp () {
       sbp('okTurtles.events/on', CONNECTION_STATUS_CHANGED, (status) => connectionBanner.apply(status))
       // The banner follows these events with older service workers, which
       // don't provide the connection status; otherwise they trigger a query
-      for (const event of [OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED]) {
-        sbp('okTurtles.events/on', event, () => connectionBanner.onLegacyEvent(event))
+      for (const eventName of [OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED]) {
+        sbp('okTurtles.events/on', eventName, () => connectionBanner.onLegacyEvent(eventName))
       }
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') connectionBanner.refresh()

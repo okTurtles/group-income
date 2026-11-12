@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { BANNER_SLOTS, emptyBannerSlots, pickBanner } from './bannerSlots.js'
+import { BANNER_SLOTS, clearSlots, emptyBannerSlots, pickBanner, setSlot } from './bannerSlots.js'
 
 const entry = (message, icon = 'wifi') => ({ message, icon })
 
@@ -70,6 +70,70 @@ describe('bannerSlots', () => {
     assert.equal(pickBanner(slots)?.message, 'Your device appears to be offline.')
     slots.transient = null
     assert.equal(pickBanner(slots)?.message, 'Your device appears to be offline.')
+  })
+
+  it('sets a slot and returns its entry, and empties it without a message', () => {
+    const slots = emptyBannerSlots()
+    const shown = setSlot(slots, 'connection', 'Trying to reconnect...', 'wifi')
+    assert.deepEqual(shown, entry('Trying to reconnect...'))
+    assert.equal(slots.connection, shown)
+    assert.deepEqual(slots, { danger: null, connection: shown, transient: null })
+    assert.equal(setSlot(slots, 'connection', '', 'wifi'), null)
+    assert.equal(setSlot(slots, 'transient', null, 'wifi'), null)
+    assert.deepEqual(slots, emptyBannerSlots())
+  })
+
+  it('clears the danger and transient slots, never the connection slot, without an entry', () => {
+    const connection = entry('Your device appears to be offline.')
+    const slots = {
+      danger: entry('Fatal error', 'exclamation-triangle'),
+      connection,
+      transient: entry('Loading events from server...')
+    }
+    clearSlots(slots)
+    assert.deepEqual(slots, { danger: null, connection, transient: null })
+    assert.equal(slots.connection, connection)
+    clearSlots(slots, null)
+    assert.equal(slots.connection, connection)
+  })
+
+  it('clears only the given entry: the danger and connection banners survive clearing the sync banner', () => {
+    const danger = entry('Fatal error', 'exclamation-triangle')
+    const connection = entry('Trying to reconnect...')
+    const sync = entry('Loading events from server...')
+    const slots = { danger, connection, transient: sync }
+    clearSlots(slots, sync)
+    assert.deepEqual(slots, { danger, connection, transient: null })
+    assert.equal(slots.danger, danger)
+    assert.equal(slots.connection, connection)
+    assert.equal(pickBanner(slots)?.message, 'Fatal error')
+    clearSlots(slots, danger)
+    assert.deepEqual(slots, { danger: null, connection, transient: null })
+    assert.equal(slots.connection, connection)
+  })
+
+  it('does not clear a transient entry that replaced the given one', () => {
+    const sync = entry('Loading events from server...')
+    const newer = entry('Loading events from server...')
+    const slots = { ...emptyBannerSlots(), transient: sync }
+    slots.transient = newer
+    clearSlots(slots, sync)
+    assert.equal(slots.transient, newer)
+    assert.equal(pickBanner(slots)?.message, 'Loading events from server...')
+  })
+
+  it('does nothing for an entry that is no longer displayed', () => {
+    const sync = entry('Loading events from server...')
+    const danger = entry('Fatal error', 'exclamation-triangle')
+    const connection = entry('Trying to reconnect...')
+    const slots = { ...emptyBannerSlots(), transient: sync }
+    clearSlots(slots, sync)
+    slots.danger = danger
+    slots.connection = connection
+    clearSlots(slots, sync)
+    assert.deepEqual(slots, { danger, connection, transient: null })
+    assert.equal(slots.danger, danger)
+    assert.equal(slots.connection, connection)
   })
 
   it('ignores unknown slots', () => {

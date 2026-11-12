@@ -284,6 +284,25 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     checkMessageBySender(4, user2, 'Hello everyone. Thanks for inviting me to this group.')
   })
 
+  it('user2 confirms a copied link with a toast', () => {
+    const copiedToast = ['.c-toast-container[data-area="chat-main"] .c-toast-card', 'Copied to clipboard']
+
+    cy.window().then(win => {
+      // The stub keeps the test independent of the clipboard permission and of the window focus
+      if (win.navigator.clipboard) cy.stub(win.navigator.clipboard, 'writeText').resolves()
+      win.sbp('okTurtles.events/emit', 'open-touch-link-helper', 'https://example.com/') // OPEN_TOUCH_LINK_HELPER
+    })
+    cy.get('.c-touch-link-helper.is-active .c-panel-menu-item').contains('Copy link').click()
+    cy.get('.c-touch-link-helper').should('not.have.class', 'is-active')
+
+    cy.get('.c-toast-container[data-area="chat-main"]')
+      .should('have.attr', 'aria-live', 'polite')
+      .contains('.c-toast-card', 'Copied to clipboard')
+    cy.contains('[data-test="bannerGeneral"]', 'Copied to clipboard').should('not.exist')
+    // It closes by itself, without covering the send area for the next tests
+    cy.contains(...copiedToast).should('not.exist')
+  })
+
   it('user2 mentions user1 and adds/removes reactions to the message', () => {
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user1).me}. When is the best time for you to help me with learning more about this group?`)
 

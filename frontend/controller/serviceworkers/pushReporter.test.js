@@ -1,7 +1,10 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { Buffer } from 'buffer'
+import { getSubscriptionId } from '@chelonia/lib/functions'
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { fakeClock } from '../../../test/unit-helpers/fakeClock.js'
+import { deferred, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
 import {
   VAPID_CACHE_DURATION,
@@ -51,15 +54,6 @@ const SUB_A = 'https://push.example.com/a'
 const SUB_B = 'https://push.example.com/b'
 const SUB_NEW = 'https://push.example.com/new'
 
-const deferred = () => {
-  const result = {}
-  result.promise = new Promise((resolve, reject) => {
-    result.resolve = resolve
-    result.reject = reject
-  })
-  return result
-}
-
 const fakePushManager = (subscription = null) => {
   const pushManager = {
     subscription,
@@ -80,47 +74,10 @@ const fakePushManager = (subscription = null) => {
   return pushManager
 }
 
-const fakeClock = () => {
-  let time = 1_000_000
-  let nextID = 1
-  const queue = []
-  const advance = (ms) => {
-    const end = time + ms
-    for (;;) {
-      queue.sort((a, b) => a.at - b.at || a.id - b.id)
-      const timer = queue[0]
-      if (!timer || timer.at > end) break
-      time = timer.at
-      queue.shift()
-      timer.fn()
-    }
-    time = end
-  }
-  return {
-    now: () => time,
-    timers: {
-      setTimeout: (fn, ms) => {
-        const id = nextID++
-        queue.push({ id, at: time + ms, fn })
-        return id
-      },
-      clearTimeout: (id) => {
-        const index = queue.findIndex(timer => timer.id === id)
-        if (index !== -1) queue.splice(index, 1)
-      }
-    },
-    advance,
-    pendingTimers: () => queue.length
-  }
-}
+// Deterministic; the real (WebCrypto) hash is only used where the report is awaited
+const fakeSubscriptionId = (info) => Promise.resolve(`sub:${info.endpoint}`)
 
-// Lets every pending promise chain run (hashing the subscription ID can take
-// more than one turn)
-const settle = async () => {
-  for (let i = 0; i < 20; i++) await new Promise(resolve => setImmediate(resolve))
-}
-
-const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = fakePushManager(subscription), ...options } = {}) => {
+const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = fakePushManager(subscription), getSubscriptionId = fakeSubscriptionId, ...options } = {}) => {
   const clock = fakeClock()
   const env = { client: fakeClient(readyState), loggedIn: true, disabled: false }
   const t = { clock, env, pushManager }
@@ -129,6 +86,7 @@ const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = 
     pushManager,
     isLoggedIn: () => typeof env.loggedIn === 'function' ? env.loggedIn() : env.loggedIn,
     notificationsDisabled: () => env.disabled,
+    getSubscriptionId,
     now: clock.now,
     timers: clock.timers,
     ...options
@@ -143,21 +101,7 @@ const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = 
   return t
 }
 
-const silenceConsole = () => {
-  const logs = []
-  const original = {}
-  beforeEach(() => {
-    logs.length = 0
-    for (const level of ['info', 'warn', 'error']) {
-      original[level] = console[level]
-      console[level] = (...args) => { logs.push({ level, args }) }
-    }
-  })
-  afterEach(() => {
-    Object.assign(console, original)
-  })
-  return logs
-}
+const sendPublicKey = (t, key) => t.reporter.onPushAction({ data: { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: key } })
 
 describe('push reporter', () => {
   const logs = silenceConsole()
@@ -165,7 +109,7 @@ describe('push reporter', () => {
 
   describe('reportExistingSubscription', () => {
     it('reports a subscription once per socket', async () => {
-      const t = harness()
+      const t = harness({ getSubscriptionId })
       const firstSocket = t.env.client.socket
       const subscription = fakeSubscription(SUB_A)
 
@@ -175,6 +119,8 @@ describe('push reporter', () => {
       assert.equal(payload.subscriptionInfo.endpoint, SUB_A)
       assert.equal(payload.applicationServerKey, Buffer.from(KEY).toString('base64'))
       assert.equal(payload.settings.heartbeatInterval, 12 * 60 * 60 * 1000)
+      // The real subscription ID (a UUID) is logged
+      assert.ok(messages('info').some(line => /^\[reportExistingSubscription\] reporting '[0-9a-f]{8}-[0-9a-f]{4}-/.test(line)))
 
       assert.equal(await t.report(subscription), true)
       assert.equal(firstSocket.sent.length, 1)
@@ -211,7 +157,7 @@ describe('push reporter', () => {
     })
 
     for (const [name, readyState] of [['connecting', SOCKET.CONNECTING], ['closing', SOCKET.CLOSING], ['closed', SOCKET.CLOSED]]) {
-      it(`P2/P3: resolves to false while the socket is ${name}, then reports on reconnection`, async () => {
+      it(`resolves to false while the socket is ${name}, then reports on reconnection`, async () => {
         const subscription = fakeSubscription(SUB_A)
         const t = harness({ readyState, subscription })
         const oldSocket = t.env.client.socket
@@ -221,19 +167,45 @@ describe('push reporter', () => {
         assert.ok(messages('info').some(line => line.includes('will be reported once reconnected')))
         assert.deepEqual(messages('error'), [])
 
-        await t.reconnect()
-        assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
-        assert.deepEqual(oldSocket.sent, [])
+        if (readyState === SOCKET.CONNECTING) {
+          // The same socket opens
+          oldSocket.readyState = SOCKET.OPEN
+          await t.reporter.onReconnected(t.env.client)
+          assert.deepEqual(oldSocket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
+        } else {
+          await t.reconnect()
+          assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
+          assert.deepEqual(oldSocket.sent, [])
+        }
       })
     }
 
-    it('P2/P3: resolves to false without a pubsub client', async () => {
+    it('resolves to false without a pubsub client', async () => {
       const t = harness()
       t.env.client = null
       assert.equal(await t.report(fakeSubscription(SUB_A)), false)
     })
 
-    it('P5: sends nothing on a socket replaced while building the message', async () => {
+    it('sends a report made while an earlier one was being built, even if the earlier one was not sent', async () => {
+      const gate = deferred()
+      const t = harness({
+        getSubscriptionId: async (info) => {
+          if (info.endpoint === SUB_A) await gate.promise
+          return `sub:${info.endpoint}`
+        }
+      })
+      const first = t.report(fakeSubscription(SUB_A))
+      await settle()
+      const second = t.report(fakeSubscription(SUB_B))
+      t.env.client.socket = fakeSocket(SOCKET.OPEN)
+      gate.resolve()
+      assert.equal(await first, false)
+      assert.equal(await second, true)
+      const endpoints = t.env.client.socket.sent.map(message => message.data.payload.subscriptionInfo.endpoint)
+      assert.deepEqual(endpoints, [SUB_B])
+    })
+
+    it('sends nothing on a socket replaced while building the message', async () => {
       const gate = deferred()
       const t = harness({
         subscription: fakeSubscription(SUB_A),
@@ -259,7 +231,7 @@ describe('push reporter', () => {
       assert.deepEqual(newSocket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
     })
 
-    it('P5: sends nothing on a socket that closed while building the message', async () => {
+    it('sends nothing on a socket that closed while building the message', async () => {
       const gate = deferred()
       const t = harness({
         getSubscriptionId: async () => {
@@ -300,8 +272,6 @@ describe('push reporter', () => {
   })
 
   describe('getSubscriptionOptions', () => {
-    const sendPublicKey = (t, key) => t.reporter.onPushAction({ data: { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: key } })
-
     it('requests the VAPID key and caches it for an hour', async () => {
       const t = harness()
       const socket = t.env.client.socket
@@ -333,7 +303,7 @@ describe('push reporter', () => {
     })
 
     for (const [name, readyState] of [['connecting', SOCKET.CONNECTING], ['closing', SOCKET.CLOSING], ['closed', SOCKET.CLOSED]]) {
-      it(`P4: rejects without sending or waiting while the socket is ${name}`, async () => {
+      it(`rejects without sending or waiting while the socket is ${name}`, async () => {
         const t = harness({ readyState })
         await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'WebSocket connection is not open' })
         assert.deepEqual(t.env.client.socket.sent, [])
@@ -341,18 +311,18 @@ describe('push reporter', () => {
       })
     }
 
-    it('P4: rejects without a pubsub client', async () => {
+    it('rejects without a pubsub client', async () => {
       const t = harness()
       t.env.client = null
       await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'Missing pubsub instance' })
       assert.equal(t.clock.pendingTimers(), 0)
     })
 
-    it('rejects as not connected when the key does not arrive in time', async () => {
+    it('rejects with a plain error when the key does not arrive in time on an open socket', async () => {
       const t = harness()
       const options = t.reporter.getSubscriptionOptions()
       t.clock.advance(VAPID_REQUEST_TIMEOUT)
-      await assert.rejects(options, { name: PUBSUB_NOT_OPEN_ERROR, message: 'Timed out requesting VAPID key' })
+      await assert.rejects(options, { name: 'Error', message: 'Timed out requesting VAPID key' })
       assert.equal(t.clock.pendingTimers(), 0)
 
       // A late answer is still cached
@@ -360,6 +330,21 @@ describe('push reporter', () => {
       assert.deepEqual(await t.reporter.getSubscriptionOptions(), { userVisibleOnly: true, applicationServerKey: base64url(KEY) })
       assert.equal(t.env.client.socket.sent.length, 1)
     })
+
+    for (const [name, loseSocket] of [
+      ['closed', (t) => { t.env.client.socket.readyState = SOCKET.CLOSED }],
+      ['replaced', (t) => { t.env.client.socket = fakeSocket(SOCKET.OPEN) }],
+      ['gone with its client', (t) => { t.env.client = null }]
+    ]) {
+      it(`rejects as not connected when the socket was ${name} while waiting for the key`, async () => {
+        const t = harness()
+        const options = t.reporter.getSubscriptionOptions()
+        loseSocket(t)
+        t.clock.advance(VAPID_REQUEST_TIMEOUT)
+        await assert.rejects(options, { name: PUBSUB_NOT_OPEN_ERROR, message: 'Timed out requesting VAPID key' })
+        assert.equal(t.clock.pendingTimers(), 0)
+      })
+    }
 
     it('rejects with the send error and leaves nothing pending', async () => {
       const t = harness()
@@ -370,8 +355,6 @@ describe('push reporter', () => {
   })
 
   describe('onPushAction', () => {
-    const sendPublicKey = (t, key) => t.reporter.onPushAction({ data: { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: key } })
-
     it('replaces the subscription when the server key changes', async () => {
       const subscription = fakeSubscription(SUB_A, KEY)
       const t = harness({ subscription })
@@ -416,15 +399,41 @@ describe('push reporter', () => {
 
     it('ignores other actions and never throws', async () => {
       const pushManager = fakePushManager()
-      pushManager.getSubscription = () => Promise.reject(new Error('no push service'))
+      let getSubscriptionCalls = 0
+      pushManager.getSubscription = () => {
+        getSubscriptionCalls++
+        return Promise.reject(new Error('no push service'))
+      }
       const t = harness({ pushManager })
+      const socket = t.env.client.socket
 
       t.reporter.onPushAction({ data: { type: 'other' } })
       t.reporter.onPushAction({ data: null })
       t.reporter.onPushAction({})
-      sendPublicKey(t, base64url(KEY))
       await settle()
-      assert.ok(messages('error').some(line => line.includes('no push service')))
+      assert.equal(getSubscriptionCalls, 0, 'no re-subscription')
+      // Nothing was cached: the key is still requested
+      const options = t.reporter.getSubscriptionOptions()
+      assert.deepEqual(socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
+
+      sendPublicKey(t, base64url(KEY))
+      await options
+      await settle()
+      assert.equal(getSubscriptionCalls, 1)
+      assert.equal(messages('error').filter(line => line.includes('no push service')).length, 1)
+    })
+
+    it('logs a failed unsubscribe and subscribes nothing', async () => {
+      const subscription = fakeSubscription(SUB_A, KEY)
+      subscription.unsubscribe = () => Promise.reject(new Error('unsubscribe failed'))
+      const t = harness({ subscription })
+
+      sendPublicKey(t, base64url(OTHER_KEY))
+      await settle()
+      assert.deepEqual(t.pushManager.subscribeCalls, [])
+      assert.deepEqual(t.env.client.socket.sent, [])
+      const errors = messages('error').filter(line => line.includes('Error re-subscribing after a VAPID key change') && line.includes('unsubscribe failed'))
+      assert.equal(errors.length, 1)
     })
   })
 
@@ -458,7 +467,7 @@ describe('push reporter', () => {
       assert.equal(t.pushManager.getSubscriptionCalls, 0)
     })
 
-    it('P5: reports a reconnection that happens during a slow getSubscription()', async () => {
+    it('reports a reconnection that happens during a slow getSubscription()', async () => {
       const t = harness({ subscription: fakeSubscription(SUB_A) })
       t.pushManager.gate = deferred()
       const first = t.reconnect()
@@ -473,7 +482,7 @@ describe('push reporter', () => {
       assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
     })
 
-    it('P5: reports a reconnection that happens while the report is being built', async () => {
+    it('reports a reconnection that happens while the report is being built', async () => {
       const gate = deferred()
       const t = harness({
         subscription: fakeSubscription(SUB_A),
@@ -492,6 +501,26 @@ describe('push reporter', () => {
       assert.deepEqual(firstSocket.sent, [])
       assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
     })
+
+    for (const [name, report, expected] of [
+      ['a removal', null, []],
+      ['another subscription', SUB_B, [SUB_B]]
+    ]) {
+      it(`keeps ${name} reported by a tab while it reads the browser's subscription`, async () => {
+        const t = harness({ subscription: fakeSubscription(SUB_A) })
+        t.pushManager.gate = deferred()
+        const reconnecting = t.reconnect()
+        await settle()
+        // Notifications were just turned off, or a new subscription created
+        if (!report) t.env.disabled = true
+        const reported = t.report(report && fakeSubscription(report))
+        t.pushManager.gate.resolve()
+        await reconnecting
+        assert.equal(await reported, true)
+        const endpoints = t.env.client.socket.sent.map(message => message.data.payload.subscriptionInfo.endpoint)
+        assert.deepEqual(endpoints, expected)
+      })
+    }
 
     it('never rejects', async () => {
       const t = harness({ subscription: fakeSubscription(SUB_A) })
