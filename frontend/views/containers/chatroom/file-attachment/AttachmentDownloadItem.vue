@@ -22,7 +22,7 @@
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :alt='attachment.name'
-      @click='attachmentUtils.openImageViewer(mediaObjectURL)'
+      @click.stop='attachmentUtils.openImageViewer(mediaObjectURL)'
       @load='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
       @error='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
     )

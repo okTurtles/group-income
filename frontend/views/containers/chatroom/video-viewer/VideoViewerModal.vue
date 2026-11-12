@@ -229,7 +229,7 @@ export default {
 @import "@assets/style/components/_media-viewer_utils.scss";
 
 .c-video-viewer-modal {
-  @include media-viewer-modal-container($zindex:$zindex-modal);
+  @include media-viewer-modal-container($zindex-media-viewer);
   display: flex;
   flex-direction: column;
 
