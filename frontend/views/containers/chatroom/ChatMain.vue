@@ -12,7 +12,7 @@
 
   touch-link-helper
 
-  .c-body
+  .c-body(ref='chatMainBody')
     dynamic-scroller.c-body-conversation(
       :items='ephemeral.messages'
       :min-item-size='54'
@@ -52,7 +52,7 @@
         dynamic-scroller-item(
           :item='message'
           :active='active'
-          :size-dependencies='[message.hash, message.text, ephemeral.isEditing[message.hash], message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
+          :size-dependencies='[message.hash, message.text, ephemeral.editingHash === message.hash, message.from, message.type, message.attachments, message.proposal, message.pollData, message.datetime, message.updatedDate, message.emoticons, message.delete, message.notification, message.pinnedBy, message.replyingMessage]'
           :data-index='index'
           :data-height='message.height'
         )
@@ -92,7 +92,7 @@
             :isMsgSender='isMsgSender(message.from)'
             :isFocused='message.hash === ephemeral.focusedEffect'
             :isGroupCreator='isGroupCreator'
-            :isEditing='ephemeral.isEditing[message.hash]'
+            :isEditing='ephemeral.editingHash === message.hash'
             :isSavingEdit='!!ephemeral.savingEdits[message.hash]'
             :uploadingAttachments='ephemeral.uploadingAttachments[message.hash]'
             :class='{removed: message.delete}'
@@ -122,6 +122,7 @@
       :replyingMessage='ephemeral.replyingMessage'
       :replyingTo='ephemeral.replyingTo'
       :scrolledUp='isScrolledUp'
+      :disableJumpToLatest='!!ephemeral.editingHash'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'
@@ -339,7 +340,7 @@ export default ({
         loadingDown: undefined,
         loadingUp: undefined,
         messages: [],
-        isEditing: {},
+        editingHash: null, // hash of the message being edited (only one edit at a time)
         savingEdits: {},
         uploadingAttachments: {},
         scrollActionId: null,
@@ -350,7 +351,9 @@ export default ({
         // Used for non-joined chatrooms
         latestHeight: undefined,
         // attachments for failed messages should be kept temporarily so that they can be re-used for the next re-attempt.
-        failedMessagesAttachments: {}
+        failedMessagesAttachments: {},
+        bodyResizeObserver: null,
+        conversationWrapperHeight: null
       },
       messageState: {
         // `fetched` indicates whether we've loaded messages dynamically
@@ -388,6 +391,7 @@ export default ({
       this.ephemeral.chatroomIdToSwitchTo = this.summary.chatRoomID
       this.processChatroomSwitch()
     }
+    this.initResizeObserver()
   },
   beforeDestroy () {
     // Destroy various event listeners.
@@ -397,6 +401,7 @@ export default ({
 
     this.ephemeral.switchController.abort(new Error('ChatMain destroyed'))
     this.ephemeral.chatroomIdToSwitchTo = null
+    this.destroyResizeObserver()
 
     this.cleanupFailedMessagesAttachments()
   },
@@ -484,22 +489,20 @@ export default ({
     }
   },
   methods: {
-    resetObservers () {
-      const observeSizeChanges = () => {
-        if (!this.resizeObserver) return
-        if (!this.$refs.conversation?.$el) {
-          setTimeout(() => this.$nextTick(observeSizeChanges), 100)
-          return
-        }
-        if (this.mutationObserver) {
-          this.mutationObserver.disconnect()
-          this.mutationObserver.observe(this.$refs.conversation.$el, { childList: true })
-        }
-        this.resizeObserver.disconnect()
-        this.resizeObserver.observe(this.$refs.conversation.$el)
-        this.resizeObserver.observe(this.$refs.conversation.$el.parentElement)
+    initResizeObserver () {
+      if (!this.ephemeral.bodyResizeObserver) {
+        this.ephemeral.bodyResizeObserver = new ResizeObserver(entries => {
+          // 'contentRect' reference: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry/contentRect
+          this.ephemeral.conversationWrapperHeight = entries[0].contentRect.height
+        })
       }
-      observeSizeChanges()
+      this.ephemeral.bodyResizeObserver.observe(this.$refs.chatMainBody)
+    },
+    destroyResizeObserver () {
+      if (this.ephemeral.bodyResizeObserver) {
+        this.ephemeral.bodyResizeObserver.disconnect()
+        this.ephemeral.bodyResizeObserver = null
+      }
     },
     /* applyTopPadding () {
       // Top padding used so that there's enough space to render the menu
@@ -510,16 +513,33 @@ export default ({
       const padding = Math.max(conversation.parentElement.clientHeight - conversation.scrollHeight + conversationTP.clientHeight - 1, 0)
       conversationTP.style.height = `0.0${padding}px`
     }, */
-    triggerEditMessage (hash, status) {
+    async triggerEditMessage (hash, status) {
       if (status) {
-        Vue.set(this.ephemeral.isEditing, hash, status)
-        if (!this.isScrolledUp) {
-          this.$nextTick(() => {
-            this.jumpToLatest()
+        if (this.ephemeral.editingHash && this.ephemeral.editingHash !== hash) {
+          // If there is an existing edit, prompt the user to confirm they want to start a new edit.
+          const yesSelected = await sbp('gi.ui/prompt', {
+            heading: L('Want to start a new edit?'),
+            question: L('You will lose your unsaved changes to your current edit.'),
+            primaryButton: L('Yes'),
+            primaryButtonStyle: 'primary',
+            secondaryButton: L('No')
           })
+
+          if (!yesSelected) { return }
+          // If the message deleted meanwhile (e.g. From another session of the user), just return.
+          if (findMessageIdx(hash, this.ephemeral.messages) === -1) { return }
         }
-      } else {
-        Vue.delete(this.ephemeral.isEditing, hash)
+
+        this.ephemeral.editingHash = hash
+      } else if (this.ephemeral.editingHash === hash) {
+        // Only close the edit if it is still the one this call refers to.
+        // A save closes its edit only after the server responds (see editMessage()),
+        // and the user can start editing another message while that save is in flight:
+        //   1. User saves message A -> request sent, editingHash is still A.
+        //   2. User clicks 'Edit' on message B -> editingHash becomes B.
+        //   3. A's save finishes -> triggerEditMessage(A, false) is called.
+        // Without this check, step 3 would close B's edit and discard what the user typed there.
+        this.ephemeral.editingHash = null
       }
     },
     setMessages: debounce(function () {
@@ -528,6 +548,10 @@ export default ({
       if (this.ephemeral.messages === newMessages) return
       const currentVisibleMessage = this.visibleMessageIterator().next().value
       this.ephemeral.messages = newMessages
+
+      if (this.ephemeral.editingHash && findMessageIdx(this.ephemeral.editingHash, newMessages) === -1) {
+        this.ephemeral.editingHash = null
+      }
       const postSetMessageState = this.ephemeral.postSetMessageState
       delete this.ephemeral.postSetMessageState
       if (!postSetMessageState?.noRerender) {
@@ -1490,7 +1514,7 @@ export default ({
         this.ephemeral.latestHeight = undefined
       }
       this.ephemeral.unprocessedEvents = []
-      this.ephemeral.isEditing = {}
+      this.ephemeral.editingHash = null
       this.ephemeral.savingEdits = {}
       this.ephemeral.uploadingAttachments = {}
       this.ephemeral.focusedEffect = null
@@ -2016,11 +2040,23 @@ export default ({
     }
   },
   provide () {
+    const chatMainConfig = {}
+    Object.defineProperties(chatMainConfig, {
+      height: {
+        enumerable: true,
+        get: () => this.ephemeral.conversationWrapperHeight
+      },
+      isPhone: {
+        enumerable: true,
+        get: () => this.config.isPhone
+      }
+    })
+
     return {
-      chatMainConfig: this.config,
       chatMainUtils: {
         markAsUnread: this.markAsUnread
-      }
+      },
+      chatMainConfig
     }
   },
   watch: {
@@ -2069,10 +2105,6 @@ export default ({
     'messageState.contract' (to, from) {
       if (from.messages === to.messages) return
       this.setMessages()
-    },
-    'ephemeral.renderingChatRoomId' (to) {
-      if (!to) return
-      this.$nextTick(this.resetObservers)
     },
     'ephemeral.loadingDown' (newVal) {
       // If ephemeral.loadingDown changes, it means that we're dynamically

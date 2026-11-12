@@ -54,7 +54,7 @@
           emoji-shortcut-item-display(:data='emoji')
 
     .c-jump-to-latest(
-      v-if='scrolledUp && !replyingMessage'
+      v-if='scrolledUp && !replyingMessage && !disableJumpToLatest'
       @click='$emit("jump-to-latest")'
     )
       i18n Jump to latest message
@@ -289,6 +289,7 @@
 
     .textarea.c-send-mask(
       ref='mask'
+      :style='textareaMaskStyles'
     )
 
     voice-recorder(
@@ -365,6 +366,7 @@ const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIA
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
+  inject: ['chatMainConfig'],
   components: {
     Avatar,
     Tooltip,
@@ -392,6 +394,10 @@ export default ({
       default: false
     },
     isSavingEdit: {
+      type: Boolean,
+      default: false
+    },
+    disableJumpToLatest: {
       type: Boolean,
       default: false
     }
@@ -455,6 +461,12 @@ export default ({
         })
       }
     },
+    'ephemeral.maskHeight' (to, from) {
+      // This watcher ensures the edit send-area is scrolled and stays visible after the textarea height grows automatically.
+      // It skips the first measurement though as mounted() already scrolls the edit area into view.
+      if (!this.isEditing || !from) return
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
+    },
     currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
@@ -487,6 +499,12 @@ export default ({
     this.initializeTextArea()
     this.config.maskResizeObserver = new ResizeObserver(() => { this.ephemeral.maskCappedText = null })
     this.config.maskResizeObserver.observe(this.$refs.mask)
+
+    if (this.isEditing) {
+      // Make sure the whole edit area (including the Cancel/Save buttons) is visible when edit mode opens.
+      // 'nearest' scrolls only if part of it is off-screen, and only by as much as needed.
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
+    }
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -523,6 +541,9 @@ export default ({
       'ourIdentityContractId',
       'mentionableChatroomsInDetails'
     ]),
+    conversationWrapperHeight () {
+      return this.chatMainConfig.height
+    },
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
       const isInDM = this.isDirectMessage(this.currentChatRoomId)
@@ -561,9 +582,21 @@ export default ({
       return !this.ephemeral.voiceRecording.isOpen &&
         (this.hasAttachments || this.ephemeral.hasText)
     },
+    textareaMaskStyles () {
+      // 'max-height' css is enlarged for edit mode for convenience.
+      // In the default mode, the original 12.75rem is kept so that the message content is still visible while typing.
+      return this.isEditing
+        ? {
+            // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
+            // 80px: Some additional margin - so that send-area cta buttons are not cut off.
+            maxHeight: `${Math.max(100, this.conversationWrapperHeight - 80)}px`
+          }
+        : {}
+    },
     textareaStyles () {
       return {
-        height: this.ephemeral.maskHeight + 'px'
+        height: this.ephemeral.maskHeight + 'px',
+        ...this.textareaMaskStyles
       }
     },
     isPublicChannel () {
@@ -930,7 +963,7 @@ export default ({
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
       maskEl.textContent = text + (isLastLineEmpty ? '.' : '')
-      // ...and apply the maks's height to the textarea so it dynamically grows as the user types
+      // ...and apply the mask's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = maskEl.offsetHeight - 2
       this.ephemeral.maskCappedText = maskEl.scrollHeight - maskEl.clientHeight > 1 ? text : null
     },
@@ -1501,9 +1534,9 @@ export default ({
   &-mask {
     display: block;
     width: 100%;
+    max-height: 12.75rem; // In edit mode, this is overridden by the inline styles.
     font-size: 1rem;
     word-wrap: break-word;
-    max-height: 12.75rem;
   }
 
   &-textarea {
