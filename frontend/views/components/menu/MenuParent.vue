@@ -4,7 +4,7 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'MenuParent',
   data () {
     return {
@@ -45,7 +45,7 @@ export default ({
       this.$refs.details.open = false
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -138,13 +138,13 @@ import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'Contributions',
   components: {
     Page,
@@ -248,7 +248,7 @@ export default ({
     },
     withGroupCurrency
   }
-}: Object)
+}
 </script>
 
 <style lang="scss">

@@ -138,7 +138,7 @@ import Page from '@components/Page.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
-import ChatMixin from '@containers/chatroom/ChatMixin.js'
+import ChatMixin from '@containers/chatroom/ChatMixin.ts'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import PinnedMessages from '@containers/chatroom/PinnedMessages.vue'
 import { OPEN_MODAL } from '@utils/events.js'
@@ -146,7 +146,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@com
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'GroupChat',
   mixins: [
     ChatMixin
@@ -258,7 +258,7 @@ export default ({
     }
   },
   watch: {
-    '$route' (to: Object, from: Object) {
+    '$route' (to, from) {
       this.$nextTick(() => {
         this.refreshTitle()
       })
@@ -293,7 +293,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -9,7 +9,7 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'ProgressBar',
   props: {
     max: Number,
@@ -61,7 +61,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

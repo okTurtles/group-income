@@ -15,7 +15,6 @@ export const dummyLightningUsers = [
 
 export const dummyLightningTodoItems = [
   {
-    // $FlowFixMe
     hash: randomHexString(10),
     username: 'fake-user-1',
     displayName: 'fake-user-1',
@@ -26,7 +25,6 @@ export const dummyLightningTodoItems = [
     date: '2022-09-24T11:27:28.893Z'
   },
   {
-    // $FlowFixMe
     hash: randomHexString(10),
     username: 'fake-user-2',
     displayName: 'fake-user-2',
@@ -40,7 +38,6 @@ export const dummyLightningTodoItems = [
 
 export const dummyLightningPaymentDetails = {
   data: {
-    // $FlowFixMe
     transactionId: randomHexString(50),
     toMemberID: 'fake-user-2',
     amount: 98.57142857,

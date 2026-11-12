@@ -27,7 +27,7 @@ form.c-search-form(@submit.prevent='')
 <script>
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'Search',
   props: {
     value: {
@@ -52,7 +52,7 @@ export default ({
       this.$emit('input', this.value)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

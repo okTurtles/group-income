@@ -38,7 +38,7 @@
 
 <script>
 import { L } from '@common/common.js'
-import { getPermissionDisplayName } from './permissions-utils.js'
+import { getPermissionDisplayName } from './permissions-utils.ts'
 import { mixin as clickaway } from 'vue-clickaway'
 import ModalClose from '@components/modal/ModalClose.vue'
 

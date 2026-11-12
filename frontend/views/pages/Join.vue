@@ -66,7 +66,7 @@ import { keyId } from '@chelonia/crypto'
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
 
-export default ({
+export default {
   name: 'Join',
   components: {
     Loading,
@@ -234,7 +234,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

@@ -93,9 +93,10 @@ exports.createEslinter = (options = {}) => {
     throwOnWarning = false
   } = options
 
-  const { CLIEngine } = require('eslint')
-  const cli = new CLIEngine()
-  const formatter = cli.getFormatter(format)
+  // ESLint 8 removed `CLIEngine`; the `ESLint` class replaces it and is async.
+  const { ESLint } = require('eslint')
+  const eslint = new ESLint()
+  const formatterPromise = eslint.loadFormatter(format)
 
   return {
     name: 'eslint',
@@ -106,15 +107,16 @@ exports.createEslinter = (options = {}) => {
      * @param {string} code
      * @param {string} [filename]
      */
-    async lintCode (code, filename = '') {
-      const report = cli.executeOnText(code, filename)
+    async lintCode (code, filename) {
+      const results = await eslint.lintText(code, { filePath: filename || undefined })
 
-      const { errorCount, results, warningCount } = report
+      const errorCount = results.reduce((n, r) => n + r.errorCount, 0)
+      const warningCount = results.reduce((n, r) => n + r.warningCount, 0)
 
       if (!errorCount && !warningCount) {
         return
       }
-      const output = formatter(results)
+      const output = (await formatterPromise).format(results)
 
       if (output) {
         console.log(output)

@@ -83,8 +83,8 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
+import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
 import PaymentMethods from './PaymentMethods.vue'
 import NonMonetaryPledges from './NonMonetaryPledges.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -97,7 +97,7 @@ import { L } from '@common/common.js'
 import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import { GROUP_MAX_PLEDGE_AMOUNT } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'IncomeDetails',
   mixins: [validationMixin],
   components: {
@@ -284,7 +284,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

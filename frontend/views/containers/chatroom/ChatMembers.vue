@@ -65,7 +65,7 @@ import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersToolti
 import ListItem from '@components/ListItem.vue'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ChatMembers',
   components: {
     Avatar,
@@ -170,7 +170,7 @@ export default ({
       immediate: true
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

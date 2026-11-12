@@ -18,7 +18,7 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'ErrorPage',
   props: {
     type: {
@@ -56,7 +56,7 @@ export default ({
     window.removeEventListener('online', this.onlineHandler)
     window.removeEventListener('offline', this.offlineHandler)
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

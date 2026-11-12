@@ -23,9 +23,9 @@ import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
 
-export default ({
+export default {
   name: 'Troubleshooting',
   components: {
     BannerScoped,
@@ -93,7 +93,7 @@ Are you sure?`)
       this.ephemeral.progress.percentage = percentage
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

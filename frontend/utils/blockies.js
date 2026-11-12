@@ -1,3 +1,4 @@
+// @ts-nocheck
 // blockies minified: https://raw.githubusercontent.com/ethereum/blockies/master/blockies.min.js
 // Edition: Commented out window.blockies declaration to prevent global access.
 /* eslint-disable */

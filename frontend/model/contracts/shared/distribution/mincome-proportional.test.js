@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 import should from 'should'
-import mincomeProportional from './mincome-proportional.js'
+import mincomeProportional from './mincome-proportional.ts'
 
 describe('proportionalMincomeDistributionTest', function () {
   it('distribute income above mincome proportionally', function () {

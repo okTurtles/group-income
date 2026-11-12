@@ -49,11 +49,11 @@ import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
-import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.ts'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ProposalsWidget',
   components: {
     ProposalItem,
@@ -251,7 +251,7 @@ export default ({
       this.refreshArchivedProposals()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

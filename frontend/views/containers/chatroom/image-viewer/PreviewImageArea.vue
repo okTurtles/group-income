@@ -56,7 +56,7 @@
 
 <script>
 import SliderContinuous from '@components/SliderContinuous.vue'
-import pointerEventsMixinFactory from '@view-utils/pointerEventsMixins.js'
+import pointerEventsMixinFactory from '@view-utils/pointerEventsMixins.ts'
 import { linearScale, debounce } from 'turtledash'
 
 const linearScaler = {

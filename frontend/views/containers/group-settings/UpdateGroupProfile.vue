@@ -57,7 +57,7 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import { required, maxLength } from 'vuelidate/lib/validators'
 import { GROUP_NAME_MAX_CHAR, GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'

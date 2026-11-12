@@ -109,7 +109,7 @@
 </template>
 
 <script>
-import { getFileExtension, getFileType, formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.js'
+import { getFileExtension, getFileType, formatBytesDecimal, checkBrowserVideoMimeTypeSupport } from '@view-utils/filters.ts'
 import { MESSAGE_VARIANTS, CHATROOM_ATTACHMENT_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import VideoPlayer from '../video-viewer/VideoPlayer.vue'
