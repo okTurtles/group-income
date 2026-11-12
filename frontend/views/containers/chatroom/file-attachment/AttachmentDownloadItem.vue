@@ -232,7 +232,6 @@ export default {
     }
   },
   mounted () {
-    console.log('!@# this.attachment.dimension', this.attachment.dimension)
     if (this.isImage && this.attachment.dimension) {
       this.ephemeral.imgLoadingBoxStyles = this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
     }
