@@ -232,6 +232,7 @@ export default {
     }
   },
   mounted () {
+    console.log('!@# this.attachment.dimension', this.attachment.dimension)
     if (this.isImage && this.attachment.dimension) {
       this.ephemeral.imgLoadingBoxStyles = this.attachmentUtils.getStretchedDimension(this.attachment.dimension)
     }
@@ -348,10 +349,12 @@ $mobile-narrow: 441px;
     user-select: none;
     cursor: pointer;
     max-width: 100%;
-    max-height: 20rem;
+    max-height: 12rem;
+    min-width: 4rem;
 
-    @include phone {
-      max-height: 12rem;
+    @include tablet {
+      max-height: 20rem;
+      min-width: 6rem;
     }
   }
 
