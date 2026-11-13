@@ -32,8 +32,9 @@ export default ({
     }
   },
   methods: {
-    // Clears the danger and transient slots. The connection slot has a single
-    // owner and is only cleared by `cleanConnection()`.
+    // Clears the danger slot (`gi.ui/clearBanner`). The connection and sync
+    // banners are only cleared by their owners, through `clearConnection()`
+    // and `debouncedShow`.
     clean () {
       clearSlots(this.ephemeral.slots)
     },
@@ -48,8 +49,8 @@ export default ({
     showConnection (message: string, icon: string) {
       return setSlot(this.ephemeral.slots, 'connection', message, icon)
     },
-    cleanConnection () {
-      this.ephemeral.slots.connection = null
+    clearConnection () {
+      setSlot(this.ephemeral.slots, 'connection', null, '')
     },
     debouncedShow ({ message, icon, seconds, clearWhen }: {
       message: Function, icon: string, seconds: number, clearWhen: Function

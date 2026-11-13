@@ -278,9 +278,13 @@ sbp('gi.ui/dangerBanner', L('Your app seems to be corrupted.'))
 sbp('gi.ui/clearBanner')
 ```
 
-Connection messages go through `gi.ui/showConnectionBanner` and `gi.ui/clearConnectionBanner`, which are owned by `main.js`: other callers can neither replace nor clear them. Short confirmations such as "Copied to clipboard" are toasts (`gi.ui/toast`), not banners.
+The general banner shows one message at a time, by priority:
 
-NOTE: this type of banner is under construction and will change soon.
+1. connection messages (`gi.ui/showConnectionBanner`), set only by `main.js`;
+2. danger messages (`gi.ui/dangerBanner`, `gi.ui/seriousErrorBanner`);
+3. "Loading events from server...", shown while contracts take more than 2 seconds to sync.
+
+Clearing a message reveals the next one, so a danger message comes back once the connection is restored. Connection messages go through `gi.ui/showConnectionBanner` and `gi.ui/clearConnectionBanner`, which are owned by `main.js`: other callers can neither replace nor clear them. `gi.ui/clearBanner` clears the danger message only; "Loading events from server..." clears itself when syncing ends. Short confirmations such as "Copied to clipboard" are toasts (`gi.ui/toast`), not banners.
 
 ## Folder Structure Style Guide
 
