@@ -34,6 +34,7 @@ import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'
+import { checkPublishedEvent } from './chatroomResync.js'
 
 export default ({
   name: 'MessagePoll',
@@ -104,10 +105,12 @@ export default ({
     checkAndSetupPollExpirationTimer () {
       const markPollClosed = async () => {
         try {
-          await sbp('gi.actions/chatroom/closePoll', {
-            contractID: this.currentChatRoomId,
+          const contractID = this.currentChatRoomId
+          const msg = await sbp('gi.actions/chatroom/closePoll', {
+            contractID,
             data: { hash: this.messageHash }
           })
+          checkPublishedEvent(contractID, msg)
         } catch (e) {
           console.error('"closePoll" action failed: ', e)
           this.$refs.errBanner.danger(e.message)

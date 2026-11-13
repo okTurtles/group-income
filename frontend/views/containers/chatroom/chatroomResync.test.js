@@ -2,15 +2,15 @@
 import assert from 'node:assert/strict'
 import { fakeClock } from '../../../../test/unit-helpers/fakeClock.js'
 import { connectionStatus } from '../../../../test/unit-helpers/connectionStatus.js'
-import { settle } from '../../../../test/unit-helpers/utils.js'
+import { settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
 import { CONNECTION_STATUS_TIMEOUT } from '../../../controller/connectionStatus.js'
 import {
-  SENT_MESSAGE_CHECK_DELAY,
-  checkSentMessageLater,
+  PUBLISHED_EVENT_CHECK_DELAY,
+  checkPublishedEvent,
+  checkPublishedEventLater,
   isChatroomUnsubscribed,
   isHeightProcessed,
-  resyncChatroomIfUnsubscribed,
-  trackPublishedHeight
+  resyncChatroomIfUnsubscribed
 } from './chatroomResync.js'
 
 const ROOM = 'zChatroom'
@@ -60,20 +60,14 @@ const appSelectors = ({ latestHeight = 9, joined = true, connection = status('op
   return { sbp, calls }
 }
 
-// Captures `console.warn` while `fn` runs
-const withWarnings = async (fn) => {
-  const warnings = []
-  const original = console.warn
-  console.warn = (...args) => { warnings.push(args) }
-  try {
-    await fn(warnings)
-  } finally {
-    console.warn = original
-  }
-  return warnings
-}
-
 describe('chatroomResync', () => {
+  // Each test asserts what it logged: the warnings it expects, or nothing
+  const logs = silenceConsole()
+  const warnings = () => logs.map(({ level, args }) => {
+    assert.equal(level, 'warn')
+    return args
+  })
+
   describe('isChatroomUnsubscribed', () => {
     it('is true for a chatroom missing while the connection is open', () => {
       assert.equal(isChatroomUnsubscribed(status('open', { missing: [OTHER, ROOM] }), ROOM), true)
@@ -120,9 +114,9 @@ describe('chatroomResync', () => {
   })
 
   describe('resyncChatroomIfUnsubscribed', () => {
-    const run = (overrides = {}) => {
+    const run = ({ syncImpl, ...overrides } = {}) => {
       const clock = fakeClock()
-      const spy = syncSpy(overrides.syncImpl)
+      const spy = syncSpy(syncImpl)
       const promise = resyncChatroomIfUnsubscribed({
         chatRoomID: ROOM,
         getStatus: () => Promise.resolve(status('open', { missing: [ROOM] })),
@@ -135,14 +129,12 @@ describe('chatroomResync', () => {
     }
 
     it('syncs a chatroom that is not subscribed, once', async () => {
-      const warnings = await withWarnings(async () => {
-        const { spy, promise, clock } = run()
-        assert.equal(await promise, true)
-        assert.deepEqual(spy.calls, [ROOM])
-        assert.equal(clock.pendingTimers(), 0)
-      })
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0].includes(ROOM))
+      const { spy, promise, clock } = run()
+      assert.equal(await promise, true)
+      assert.deepEqual(spy.calls, [ROOM])
+      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0].includes(ROOM))
     })
 
     it('does nothing for a subscribed chatroom', async () => {
@@ -150,86 +142,87 @@ describe('chatroomResync', () => {
       assert.equal(await promise, false)
       assert.deepEqual(spy.calls, [])
       assert.equal(clock.pendingTimers(), 0)
+      assert.deepEqual(logs, [])
     })
 
     it('does nothing when the chatroom is no longer joined', async () => {
       const { spy, promise } = run({ isJoined: () => false })
       assert.equal(await promise, false)
       assert.deepEqual(spy.calls, [])
+      assert.deepEqual(logs, [])
     })
 
     it('does nothing when the status is unavailable (older service worker)', async () => {
-      const warnings = await withWarnings(async () => {
-        const { spy, promise, clock } = run({ getStatus: () => Promise.reject(new Error('SBP: selector not registered: sw/connection/status')) })
-        assert.equal(await promise, false)
-        assert.deepEqual(spy.calls, [])
-        assert.equal(clock.pendingTimers(), 0)
-      })
-      assert.equal(warnings.length, 0)
+      const { spy, promise, clock } = run({ getStatus: () => Promise.reject(new Error('SBP: selector not registered: sw/connection/status')) })
+      assert.equal(await promise, false)
+      assert.deepEqual(spy.calls, [])
+      assert.equal(clock.pendingTimers(), 0)
+      assert.deepEqual(logs, [])
     })
 
     it('logs other failures to get the status', async () => {
-      const warnings = await withWarnings(async () => {
-        const { spy, promise } = run({ getStatus: () => { throw new Error('boom') } })
-        assert.equal(await promise, false)
-        assert.deepEqual(spy.calls, [])
-      })
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0].includes(ROOM))
-      assert.equal(warnings[0][2]?.message, 'boom')
+      const { spy, promise } = run({ getStatus: () => { throw new Error('boom') } })
+      assert.equal(await promise, false)
+      assert.deepEqual(spy.calls, [])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('Could not get the connection status'), warnings()[0][0])
+      assert.equal(warnings()[0][1], ROOM)
+      assert.equal(warnings()[0][2]?.message, 'boom')
     })
 
     it('gives up when the status request stays unanswered', async () => {
-      const warnings = await withWarnings(async () => {
-        const { spy, promise, clock } = run({ getStatus: () => new Promise(() => {}) })
-        let result
-        promise.then(value => { result = value })
-        await settle()
-        clock.advance(CONNECTION_STATUS_TIMEOUT - 1)
-        await settle()
-        assert.equal(result, undefined)
-        clock.advance(1)
-        await settle()
-        assert.equal(result, false)
-        assert.deepEqual(spy.calls, [])
-      })
-      assert.equal(warnings.length, 1)
-      assert.equal(warnings[0][2]?.message, 'Timed out getting the connection status')
+      const { spy, promise, clock } = run({ getStatus: () => new Promise(() => {}) })
+      let result
+      promise.then(value => { result = value })
+      await settle()
+      clock.advance(CONNECTION_STATUS_TIMEOUT - 1)
+      await settle()
+      assert.equal(result, undefined)
+      clock.advance(1)
+      await settle()
+      assert.equal(result, false)
+      assert.deepEqual(spy.calls, [])
+      assert.equal(warnings().length, 1)
+      assert.equal(warnings()[0][2]?.message, 'Timed out getting the connection status')
     })
 
-    it('never rejects when the sync or isJoined fail', async () => {
-      const warnings = await withWarnings(async () => {
-        const rejecting = run({ syncImpl: () => Promise.reject(new Error('sync failed')) })
-        assert.equal(await rejecting.promise, true)
-        const throwing = run({ syncImpl: () => { throw new Error('sync threw') } })
-        assert.equal(await throwing.promise, true)
-        const joinedThrows = run({ isJoined: () => { throw new Error('getter threw') } })
-        assert.equal(await joinedThrows.promise, false)
-        assert.deepEqual(joinedThrows.spy.calls, [])
-      })
-      // Two "re-syncing" warnings, two sync errors and one isJoined error
-      assert.equal(warnings.length, 5)
+    it('logs a failure of isJoined as such', async () => {
+      const { spy, promise } = run({ isJoined: () => { throw new Error('getter threw') } })
+      assert.equal(await promise, false)
+      assert.deepEqual(spy.calls, [])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('Error checking the chatroom subscription'), warnings()[0][0])
+      assert.equal(warnings()[0][1], ROOM)
+      assert.equal(warnings()[0][2]?.message, 'getter threw')
+    })
+
+    it('never rejects when the sync fails', async () => {
+      const rejecting = run({ syncImpl: () => Promise.reject(new Error('sync failed')) })
+      assert.equal(await rejecting.promise, true)
+      const throwing = run({ syncImpl: () => { throw new Error('sync threw') } })
+      assert.equal(await throwing.promise, true)
+      // A "re-syncing" warning, then a sync error, for each
+      assert.deepEqual(warnings().map(args => args[2]?.message), [undefined, 'sync failed', undefined, 'sync threw'])
     })
 
     it("uses the app's selectors by default", async () => {
       const clock = fakeClock()
       const app = appSelectors()
-      await withWarnings(async () => {
-        assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, timers: clock.timers }), true)
-      })
+      assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, timers: clock.timers }), true)
       assert.deepEqual(app.calls, [
         ['sw/connection/status'],
         ['state/vuex/getters'],
         ['isJoinedChatRoom', ROOM],
         ['chelonia/contract/sync', ROOM]
       ])
+      assert.equal(warnings().length, 1)
     })
   })
 
-  describe('checkSentMessageLater', () => {
-    const run = (overrides = {}) => {
+  describe('checkPublishedEventLater', () => {
+    const run = ({ syncImpl, ...overrides } = {}) => {
       const clock = fakeClock()
-      const spy = syncSpy(overrides.syncImpl)
+      const spy = syncSpy(syncImpl)
       const state = { latestHeight: 9, joined: true }
       const options = {
         chatRoomID: ROOM,
@@ -241,18 +234,18 @@ describe('chatroomResync', () => {
         checks: new Map(),
         ...overrides
       }
-      checkSentMessageLater(options)
+      checkPublishedEventLater(options)
       return { clock, spy, state, checks: options.checks, options }
     }
 
-    // Checks of `ROOM` and `OTHER` that share one clock and one map of pending
-    // checks
+    // Checks of `ROOM` and `OTHER` that share one clock and one map of
+    // pending checks
     const checker = () => {
       const clock = fakeClock()
       const spy = syncSpy()
       const checks = new Map()
       const latest = { [ROOM]: 9, [OTHER]: 3 }
-      const check = (chatRoomID, height) => checkSentMessageLater({
+      const check = (chatRoomID, height) => checkPublishedEventLater({
         chatRoomID,
         height,
         getLatestHeight: () => latest[chatRoomID],
@@ -264,126 +257,119 @@ describe('chatroomResync', () => {
       return { clock, spy, checks, latest, check }
     }
 
-    it('does nothing when the message has been received in time', async () => {
+    it('does nothing when the event has been received in time', async () => {
       const { clock, spy, state } = run()
       state.latestHeight = 10
-      clock.advance(SENT_MESSAGE_CHECK_DELAY)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
       await settle()
       assert.deepEqual(spy.calls, [])
       assert.equal(clock.pendingTimers(), 0)
+      assert.deepEqual(logs, [])
     })
 
-    it('syncs the chatroom when the message has not been received after the delay', async () => {
-      const warnings = await withWarnings(async () => {
-        const { clock, spy } = run()
-        clock.advance(SENT_MESSAGE_CHECK_DELAY - 1)
-        await settle()
-        assert.deepEqual(spy.calls, [])
-        clock.advance(1)
-        await settle()
-        assert.deepEqual(spy.calls, [ROOM])
-        clock.advance(10 * SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-        assert.deepEqual(spy.calls, [ROOM])
-      })
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0].includes(ROOM))
+    it('syncs the chatroom when the event has not been received after the delay', async () => {
+      const { clock, spy } = run()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 1)
+      await settle()
+      assert.deepEqual(spy.calls, [])
+      clock.advance(1)
+      await settle()
+      assert.deepEqual(spy.calls, [ROOM])
+      clock.advance(10 * PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.deepEqual(spy.calls, [ROOM])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0].includes(ROOM))
     })
 
     it('syncs when the latest height is unknown', async () => {
       const { clock, spy } = run({ getLatestHeight: () => undefined })
-      await withWarnings(async () => {
-        clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-      })
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
       assert.deepEqual(spy.calls, [ROOM])
+      assert.equal(warnings().length, 1)
     })
 
     it('does nothing when the chatroom is no longer joined', async () => {
       const { clock, spy, state } = run()
       state.joined = false
-      clock.advance(SENT_MESSAGE_CHECK_DELAY)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
       await settle()
       assert.deepEqual(spy.calls, [])
+      assert.deepEqual(logs, [])
     })
 
     it('never throws when the sync or the getters fail', async () => {
-      const warnings = await withWarnings(async () => {
-        const rejecting = run({ syncImpl: () => Promise.reject(new Error('sync failed')) })
-        rejecting.clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        const throwing = run({ syncImpl: () => { throw new Error('sync threw') } })
-        throwing.clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        const heightThrows = run({ getLatestHeight: () => { throw new Error('getter threw') } })
-        heightThrows.clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-        assert.deepEqual(rejecting.spy.calls, [ROOM])
-        assert.deepEqual(throwing.spy.calls, [ROOM])
-        assert.deepEqual(heightThrows.spy.calls, [])
-      })
+      const rejecting = run({ syncImpl: () => Promise.reject(new Error('sync failed')) })
+      rejecting.clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      const throwing = run({ syncImpl: () => { throw new Error('sync threw') } })
+      throwing.clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      const heightThrows = run({ getLatestHeight: () => { throw new Error('getter threw') } })
+      heightThrows.clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.deepEqual(rejecting.spy.calls, [ROOM])
+      assert.deepEqual(throwing.spy.calls, [ROOM])
+      assert.deepEqual(heightThrows.spy.calls, [])
       // Two "re-syncing" warnings, two sync errors and one getter error
-      assert.equal(warnings.length, 5)
+      assert.equal(warnings().length, 5)
     })
 
     it('makes one sync and one warning for a burst', async () => {
       const { clock, spy, checks, check } = checker()
-      const warnings = await withWarnings(async () => {
-        check(ROOM, 10)
-        assert.equal(clock.pendingTimers(), 1)
-        clock.advance(1000)
-        check(ROOM, 11)
-        assert.equal(clock.pendingTimers(), 1)
-        clock.advance(1000)
-        check(ROOM, 12)
-        assert.equal(clock.pendingTimers(), 1)
-        clock.advance(SENT_MESSAGE_CHECK_DELAY - 1)
-        await settle()
-        assert.deepEqual(spy.calls, [])
-        clock.advance(1)
-        await settle()
-      })
+      check(ROOM, 10)
+      assert.equal(clock.pendingTimers(), 1)
+      clock.advance(1000)
+      check(ROOM, 11)
+      assert.equal(clock.pendingTimers(), 1)
+      clock.advance(1000)
+      check(ROOM, 12)
+      assert.equal(clock.pendingTimers(), 1)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 1)
+      await settle()
+      assert.deepEqual(spy.calls, [])
+      clock.advance(1)
+      await settle()
       assert.deepEqual(spy.calls, [ROOM])
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0][0].includes('height 12'), warnings[0][0])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('height 12'), warnings()[0][0])
       assert.equal(checks.size, 0)
       assert.equal(clock.pendingTimers(), 0)
     })
 
     it('covers an older or equal height with the pending check', async () => {
       const { clock, spy, checks, check } = checker()
-      const warnings = await withWarnings(async () => {
-        check(ROOM, 12)
-        clock.advance(1000)
-        check(ROOM, 12)
-        check(ROOM, 11)
-        assert.equal(clock.pendingTimers(), 1)
-        assert.equal(checks.get(ROOM)?.height, 12)
-        clock.advance(SENT_MESSAGE_CHECK_DELAY - 1000)
-        await settle()
-      })
+      check(ROOM, 12)
+      clock.advance(1000)
+      check(ROOM, 12)
+      check(ROOM, 11)
+      assert.equal(clock.pendingTimers(), 1)
+      assert.equal(checks.get(ROOM)?.height, 12)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 1000)
+      await settle()
       assert.deepEqual(spy.calls, [ROOM])
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0][0].includes('height 12'), warnings[0][0])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('height 12'), warnings()[0][0])
       assert.equal(clock.pendingTimers(), 0)
     })
 
     it('replaces the pending check with a newer height', async () => {
       for (const [latestHeight, expected] of [[10, [ROOM]], [11, []]]) {
         const { clock, spy, latest, check } = checker()
-        await withWarnings(async () => {
-          check(ROOM, 10)
-          clock.advance(3000)
-          check(ROOM, 11)
-          clock.advance(SENT_MESSAGE_CHECK_DELAY - 3000)
-          await settle()
-          assert.deepEqual(spy.calls, [])
-          assert.equal(clock.pendingTimers(), 1)
-          latest[ROOM] = latestHeight
-          clock.advance(3000)
-          await settle()
-        })
+        check(ROOM, 10)
+        clock.advance(3000)
+        check(ROOM, 11)
+        clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 3000)
+        await settle()
+        assert.deepEqual(spy.calls, [])
+        assert.equal(clock.pendingTimers(), 1)
+        latest[ROOM] = latestHeight
+        clock.advance(3000)
+        await settle()
         assert.deepEqual(spy.calls, expected, `latest height ${latestHeight}`)
         assert.equal(clock.pendingTimers(), 0)
       }
+      // From the first run only
+      assert.equal(warnings().length, 1)
     })
 
     it('keeps the replacement when a replaced timer still fires', async () => {
@@ -393,7 +379,7 @@ describe('chatroomResync', () => {
       clock.advance(1000)
       check(ROOM, 11)
       latest[ROOM] = 10
-      clock.advance(SENT_MESSAGE_CHECK_DELAY - 1000)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 1000)
       await settle()
       assert.deepEqual(spy.calls, [])
       assert.equal(checks.get(ROOM)?.height, 11)
@@ -402,25 +388,25 @@ describe('chatroomResync', () => {
       await settle()
       assert.deepEqual(spy.calls, [])
       assert.equal(checks.size, 0)
+      assert.deepEqual(logs, [])
     })
 
     it('keeps the checks of different chatrooms independent', async () => {
       for (const [otherReceived, expected] of [[false, [OTHER, ROOM]], [true, [ROOM]]]) {
+        const before = logs.length
         const { clock, spy, checks, latest, check } = checker()
-        const warnings = await withWarnings(async () => {
-          check(ROOM, 10)
-          check(OTHER, 4)
-          assert.equal(clock.pendingTimers(), 2)
-          clock.advance(1000)
-          check(ROOM, 11)
-          assert.equal(clock.pendingTimers(), 2)
-          assert.equal(checks.size, 2)
-          if (otherReceived) latest[OTHER] = 4
-          clock.advance(SENT_MESSAGE_CHECK_DELAY)
-          await settle()
-        })
+        check(ROOM, 10)
+        check(OTHER, 4)
+        assert.equal(clock.pendingTimers(), 2)
+        clock.advance(1000)
+        check(ROOM, 11)
+        assert.equal(clock.pendingTimers(), 2)
+        assert.equal(checks.size, 2)
+        if (otherReceived) latest[OTHER] = 4
+        clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+        await settle()
         assert.deepEqual(spy.calls, expected, `${OTHER} received: ${String(otherReceived)}`)
-        assert.equal(warnings.length, expected.length)
+        assert.equal(warnings().length - before, expected.length)
         assert.equal(checks.size, 0)
       }
     })
@@ -432,39 +418,37 @@ describe('chatroomResync', () => {
         'getter throws': { getLatestHeight: () => { throw new Error('getter threw') } }
       }
       for (const [outcome, overrides] of Object.entries(outcomes)) {
-        await withWarnings(async () => {
-          const { clock, spy, checks, options } = run(overrides)
-          assert.equal(checks.size, 1, outcome)
-          clock.advance(SENT_MESSAGE_CHECK_DELAY)
-          await settle()
-          assert.deepEqual(spy.calls, [], outcome)
-          assert.equal(checks.size, 0, outcome)
-          assert.equal(clock.pendingTimers(), 0, outcome)
-          checkSentMessageLater(options)
-          assert.equal(clock.pendingTimers(), 1, outcome)
-          assert.equal(checks.size, 1, outcome)
-        })
+        const { clock, spy, checks, options } = run(overrides)
+        assert.equal(checks.size, 1, outcome)
+        clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+        await settle()
+        assert.deepEqual(spy.calls, [], outcome)
+        assert.equal(checks.size, 0, outcome)
+        assert.equal(clock.pendingTimers(), 0, outcome)
+        checkPublishedEventLater(options)
+        assert.equal(clock.pendingTimers(), 1, outcome)
+        assert.equal(checks.size, 1, outcome)
       }
+      // From "getter throws" only
+      assert.equal(warnings().length, 1)
     })
 
     it("uses the app's selectors by default", async () => {
       const received = appSelectors({ latestHeight: 10 })
       const notReceived = appSelectors({ latestHeight: 9 })
       const clock = fakeClock()
-      await withWarnings(async () => {
-        checkSentMessageLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers, checks: new Map() })
-        // Without `checks`, the module's map, which must be left empty
-        checkSentMessageLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
-        checkSentMessageLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
-        assert.equal(clock.pendingTimers(), 2)
-        clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-        assert.equal(clock.pendingTimers(), 0)
-        checkSentMessageLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers })
-        assert.equal(clock.pendingTimers(), 1)
-        clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-      })
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers, checks: new Map() })
+      // Without `checks`, the module's map, which must be left empty
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
+      assert.equal(clock.pendingTimers(), 2)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.equal(clock.pendingTimers(), 0)
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers })
+      assert.equal(clock.pendingTimers(), 1)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
       assert.deepEqual(received.calls, [['state/vuex/state'], ['state/vuex/state']])
       assert.deepEqual(notReceived.calls, [
         ['state/vuex/state'],
@@ -472,85 +456,65 @@ describe('chatroomResync', () => {
         ['isJoinedChatRoom', ROOM],
         ['chelonia/contract/sync', ROOM]
       ])
+      assert.equal(warnings().length, 1)
     })
   })
 
-  describe('trackPublishedHeight', () => {
+  describe('checkPublishedEvent', () => {
     const run = () => {
       const clock = fakeClock()
       const spy = syncSpy()
-      const state = { latestHeight: 9 }
       const options = {
-        getLatestHeight: () => state.latestHeight,
+        getLatestHeight: () => 9,
         isJoined: () => true,
         sync: spy.sync,
         timers: clock.timers,
         checks: new Map()
       }
-      const tracker = trackPublishedHeight(ROOM, options)
-      return { clock, spy, state, options, tracker }
+      return { clock, spy, options }
     }
 
-    it('checks the height of the last attempt', async () => {
-      const { clock, spy, state, tracker } = run()
-      tracker.beforeRequest({ height: () => 10 })
-      tracker.beforeRequest({ height: () => 11 })
-      assert.equal(clock.pendingTimers(), 0)
-      tracker.published()
-      state.latestHeight = 10
-      const warnings = await withWarnings(async () => {
-        clock.advance(SENT_MESSAGE_CHECK_DELAY - 1)
-        await settle()
-        assert.deepEqual(spy.calls, [])
-        clock.advance(1)
-        await settle()
-      })
+    it('checks the height of the published event', async () => {
+      const { clock, spy, options } = run()
+      checkPublishedEvent(ROOM, { height: () => 11 }, options)
+      assert.equal(options.checks.get(ROOM)?.height, 11)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
       assert.deepEqual(spy.calls, [ROOM])
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0][0].includes('height 11'), warnings[0][0])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('height 11'), warnings()[0][0])
     })
 
     it('coalesces with a check already pending', async () => {
-      const { clock, spy, state, options, tracker } = run()
-      checkSentMessageLater({ ...options, chatRoomID: ROOM, height: 10 })
-      assert.equal(clock.pendingTimers(), 1)
+      const { clock, spy, options } = run()
+      checkPublishedEventLater({ ...options, chatRoomID: ROOM, height: 10 })
       clock.advance(1000)
-      tracker.beforeRequest({ height: () => 11 })
-      tracker.published()
+      checkPublishedEvent(ROOM, { height: () => 11 }, options)
       assert.equal(clock.pendingTimers(), 1)
       assert.equal(options.checks.get(ROOM)?.height, 11)
-      state.latestHeight = 10
-      const warnings = await withWarnings(async () => {
-        clock.advance(SENT_MESSAGE_CHECK_DELAY)
-        await settle()
-      })
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
       assert.deepEqual(spy.calls, [ROOM])
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0][0].includes('height 11'), warnings[0][0])
+      assert.equal(warnings().length, 1)
+      assert.ok(warnings()[0][0].includes('height 11'), warnings()[0][0])
       assert.equal(clock.pendingTimers(), 0)
     })
 
-    it('does nothing when no attempt was made', () => {
-      const { clock, tracker } = run()
-      tracker.published()
+    it('does nothing for a result without a numeric height', () => {
+      const { clock, options } = run()
+      for (const result of [undefined, null, {}, { height: 11 }, { height: () => undefined }]) {
+        checkPublishedEvent(ROOM, result, options)
+      }
       assert.equal(clock.pendingTimers(), 0)
+      assert.deepEqual(logs, [])
     })
 
-    it('ignores a height that is not a number', () => {
-      const { clock, tracker } = run()
-      tracker.beforeRequest({ height: () => undefined })
-      tracker.published()
-      assert.equal(clock.pendingTimers(), 0)
-    })
-
-    it('never throws from the hook', async () => {
-      const { clock, tracker } = run()
-      const warnings = await withWarnings(() => {
-        tracker.beforeRequest({ height: () => { throw new Error('bad') } })
-        tracker.published()
-      })
-      assert.equal(warnings.length, 1)
-      assert.ok(warnings[0].includes(ROOM))
+    it('never throws', () => {
+      const { clock, options } = run()
+      checkPublishedEvent(ROOM, { height: () => { throw new Error('bad') } }, options)
+      assert.equal(warnings().length, 1)
+      assert.equal(warnings()[0][1], ROOM)
+      assert.equal(warnings()[0][2]?.message, 'bad')
       assert.equal(clock.pendingTimers(), 0)
     })
   })

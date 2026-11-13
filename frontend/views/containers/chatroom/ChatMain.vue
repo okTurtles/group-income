@@ -167,7 +167,7 @@ import {
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { isUnsentMessage, sortMessages } from './sortMessages.js'
-import { resyncChatroomIfUnsubscribed, trackPublishedHeight } from './chatroomResync.js'
+import { checkPublishedEvent, resyncChatroomIfUnsubscribed } from './chatroomResync.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -904,12 +904,7 @@ export default ({
 
       const sendMessage = (beforePrePublish, temporaryMessageHash = null) => {
         let pendingMessageHash = temporaryMessageHash
-        // Records the height of the last attempt (a conflict makes Chelonia
-        // resend the message at a new height), also when the user switched
-        // chatrooms
-        const tracker = trackPublishedHeight(contractID)
         const beforeRequest = (message, oldMessage) => {
-          tracker.beforeRequest(message)
           if (hasChatroomSwitchedSince()) return
           pendingMessageHash = message.hash()
           enqueue.call(this, async () => {
@@ -955,15 +950,13 @@ export default ({
             // messages as pending in the UI
             beforeRequest
           }
-        }).then(() => {
+        }).then((msg) => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
           revokeAttachmentURLs(attachments)
           // Safety net for when the event doesn't come back over pubsub
           // (#3176), which leaves the message pending, and missing once the
-          // chatroom is rendered again. Every chat action that the user
-          // publishes from this view has it: messages, edits, deletions,
-          // reactions, pins, unpins and attachment deletions.
-          tracker.published()
+          // chatroom is rendered again (see checkPublishedEvent)
+          checkPublishedEvent(contractID, msg)
         }).catch((e) => {
           console.error('[ChatMain.vue] Error publishing a message', e)
           if (!pendingMessageHash) {
@@ -1279,17 +1272,15 @@ export default ({
       const previousText = message.text
       Vue.set(this.ephemeral.savingEdits, messageHash, true)
 
-      const tracker = trackPublishedHeight(contractID)
       sbp('gi.actions/chatroom/editMessage', {
         contractID,
         data: {
           hash: messageHash,
           createdHeight: message.height,
           text: newMessage
-        },
-        hooks: { beforeRequest: tracker.beforeRequest }
-      }).then(() => {
-        tracker.published()
+        }
+      }).then((msg) => {
+        checkPublishedEvent(contractID, msg)
         return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
           if (latest.text === previousText) latest.text = newMessage
           this.forEachMessageList((messages) => {
@@ -1315,12 +1306,10 @@ export default ({
     },
     pinToChannel (message) {
       const contractID = this.ephemeral.renderingChatRoomId
-      const tracker = trackPublishedHeight(contractID)
       sbp('gi.actions/chatroom/pinMessage', {
         contractID,
-        data: { message },
-        hooks: { beforeRequest: tracker.beforeRequest }
-      }).then(tracker.published).catch((e) => {
+        data: { message }
+      }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
         console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
@@ -1337,12 +1326,10 @@ export default ({
       const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
 
       if (primaryButtonSelected) {
-        const tracker = trackPublishedHeight(contractID)
         sbp('gi.actions/chatroom/unpinMessage', {
           contractID,
-          data: { hash },
-          hooks: { beforeRequest: tracker.beforeRequest }
-        }).then(tracker.published).catch((e) => {
+          data: { hash }
+        }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
           console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
         })
       }
@@ -1370,13 +1357,11 @@ export default ({
       try {
         const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
         if (primaryButtonSelected) {
-          const tracker = trackPublishedHeight(contractID)
-          await sbp('gi.actions/chatroom/deleteMessage', {
+          const msg = await sbp('gi.actions/chatroom/deleteMessage', {
             contractID,
-            data: { hash: msgHash, manifestCids, messageSender: message.from },
-            hooks: { beforeRequest: tracker.beforeRequest }
+            data: { hash: msgHash, manifestCids, messageSender: message.from }
           })
-          tracker.published()
+          checkPublishedEvent(contractID, msg)
 
           // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
           // it needs to be updated to the second most recent one.
@@ -1443,10 +1428,9 @@ export default ({
 
       if (primaryButtonSelected) {
         const data = { hash, manifestCid, messageSender: from }
-        const tracker = trackPublishedHeight(contractID)
-        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data, hooks: { beforeRequest: tracker.beforeRequest } })
-          .then(() => {
-            tracker.published()
+        sbp('gi.actions/chatroom/deleteAttachment', { contractID, data })
+          .then((msg) => {
+            checkPublishedEvent(contractID, msg)
             sendDeleteAttachmentFeedback('complete')
           })
           .catch((e) => {
@@ -1471,12 +1455,10 @@ export default ({
     },
     addEmoticon (message, emoticon) {
       const contractID = this.ephemeral.renderingChatRoomId
-      const tracker = trackPublishedHeight(contractID)
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID,
-        data: { hash: message.hash, emoticon },
-        hooks: { beforeRequest: tracker.beforeRequest }
-      }).then(tracker.published).catch((e) => {
+        data: { hash: message.hash, emoticon }
+      }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },

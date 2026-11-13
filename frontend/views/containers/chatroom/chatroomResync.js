@@ -11,7 +11,7 @@ import type { Timers } from '../../../utils/timers.js'
 import { defaultTimers } from '../../../utils/timers.js'
 
 // How long after it was published an event of the user may stay unreceived
-export const SENT_MESSAGE_CHECK_DELAY = 5 * 1000
+export const PUBLISHED_EVENT_CHECK_DELAY = 5 * 1000
 
 // Whether a connection status (`sw/connection/status`) shows that the events
 // of a chatroom may not be arriving although the connection is open: it isn't
@@ -39,6 +39,13 @@ export const isHeightProcessed = (latestHeight: mixed, height: number): boolean 
 // other test files register some of them and lock the `chelonia` domain.
 type CallSelector = (selector: string, ...args: any[]) => any
 
+const defaultIsJoined = (callSelector: CallSelector, chatRoomID: string) => (): boolean =>
+  callSelector('state/vuex/getters').isJoinedChatRoom(chatRoomID)
+
+const defaultSync = (callSelector: CallSelector) => (chatRoomID: string): mixed =>
+  callSelector('chelonia/contract/sync', chatRoomID)
+
+// Never rejects
 const syncChatroom = (sync: (chatRoomID: string) => mixed, chatRoomID: string): Promise<void> =>
   Promise.resolve()
     .then(() => sync(chatRoomID))
@@ -46,46 +53,65 @@ const syncChatroom = (sync: (chatRoomID: string) => mixed, chatRoomID: string): 
       console.warn('[chatroomResync] Error re-syncing the chatroom', chatRoomID, e)
     })
 
+// The options that both checks take (see `CallSelector`). Exact, so that a
+// misspelled option fails Flow instead of falling back to its default.
+type SyncOptions = {|
+  sbp?: CallSelector,
+  isJoined?: () => boolean,
+  sync?: (chatRoomID: string) => mixed,
+  timers?: Timers
+|}
+
+type ResyncOptions = {|
+  ...SyncOptions,
+  chatRoomID: string,
+  getStatus?: () => mixed,
+  timeout?: number
+|}
+
 // For a chatroom being opened. Resolves to whether a sync was made; never
 // rejects. Does nothing if the status is unavailable (older service worker).
 export function resyncChatroomIfUnsubscribed ({
   chatRoomID,
   sbp: callSelector = sbp,
   getStatus = () => callSelector('sw/connection/status'),
-  isJoined = () => callSelector('state/vuex/getters').isJoinedChatRoom(chatRoomID),
-  sync = (id) => callSelector('chelonia/contract/sync', id),
+  isJoined = defaultIsJoined(callSelector, chatRoomID),
+  sync = defaultSync(callSelector),
   timeout = CONNECTION_STATUS_TIMEOUT,
   timers = defaultTimers
-}: {
-  chatRoomID: string,
-  sbp?: CallSelector,
-  getStatus?: () => mixed,
-  isJoined?: () => boolean,
-  sync?: (chatRoomID: string) => mixed,
-  timeout?: number,
-  timers?: Timers
-}): Promise<boolean> {
+}: ResyncOptions): Promise<boolean> {
   return requestConnectionStatus({ getStatus, timeout, timers }).then((status) => {
     if (!isChatroomUnsubscribed(status, chatRoomID) || !isJoined()) return false
     console.warn('[chatroomResync] The chatroom is not subscribed although connected; re-syncing it', chatRoomID)
     return syncChatroom(sync, chatRoomID).then(() => true)
-  }).catch((e) => {
+  }, (e) => {
     // A service worker older than `sw/connection/status` is expected
     if (!isStatusUnavailableError(e)) {
-      console.warn('[chatroomResync] Not checking the chatroom subscription', chatRoomID, e)
+      console.warn('[chatroomResync] Could not get the connection status; not checking the chatroom subscription', chatRoomID, e)
     }
+    return false
+  }).catch((e) => {
+    console.warn('[chatroomResync] Error checking the chatroom subscription', chatRoomID, e)
     return false
   })
 }
 
-type SentMessageCheck = { height: number, cancel: () => void }
+type PublishedEventCheck = { height: number, cancel: () => void }
 
-// The pending check of each chatroom (see `checkSentMessageLater`)
-const pendingSentMessageChecks: Map<string, SentMessageCheck> = new Map()
+// The pending check of each chatroom (see `checkPublishedEventLater`)
+const pendingPublishedEventChecks: Map<string, PublishedEventCheck> = new Map()
+
+type PublishedEventCheckOptions = {|
+  ...SyncOptions,
+  getLatestHeight?: () => mixed,
+  delay?: number,
+  checks?: Map<string, PublishedEventCheck>
+|}
 
 // For an event that the user published to a chatroom at `height` (a message,
-// an edit, a reaction, etc.): if, after `delay`, the chatroom's latest
-// processed event is still older, the chatroom is synced.
+// an edit, a reaction, etc.), once the server accepted it: if, after `delay`,
+// the chatroom's latest processed event is still older, the chatroom is
+// synced.
 // Checks are coalesced per chatroom, so that a burst of actions makes at most
 // one sync and one warning: a check for a newer height replaces the pending
 // one (an event at the newer height being processed implies the older ones
@@ -93,34 +119,24 @@ const pendingSentMessageChecks: Map<string, SentMessageCheck> = new Map()
 // one. In the running app, a burst made one sync even before this: while the
 // subscription is broken, each later publish conflicts, and Chelonia fetches
 // the earlier events.
-// A check can't be cancelled, and doesn't need to be: `isJoined()` is checked
+// Callers can't cancel a check, and don't need to: `isJoined()` is checked
 // when the timer fires, and an event still missing after the user switched
 // chatrooms should still be synced.
-export function checkSentMessageLater ({
+export function checkPublishedEventLater ({
   chatRoomID,
   height,
   sbp: callSelector = sbp,
   getLatestHeight = () => callSelector('state/vuex/state').contracts?.[chatRoomID]?.height,
-  isJoined = () => callSelector('state/vuex/getters').isJoinedChatRoom(chatRoomID),
-  sync = (id) => callSelector('chelonia/contract/sync', id),
-  delay = SENT_MESSAGE_CHECK_DELAY,
+  isJoined = defaultIsJoined(callSelector, chatRoomID),
+  sync = defaultSync(callSelector),
+  delay = PUBLISHED_EVENT_CHECK_DELAY,
   timers = defaultTimers,
-  checks = pendingSentMessageChecks
-}: {
-  chatRoomID: string,
-  height: number,
-  sbp?: CallSelector,
-  getLatestHeight?: () => mixed,
-  isJoined?: () => boolean,
-  sync?: (chatRoomID: string) => mixed,
-  delay?: number,
-  timers?: Timers,
-  checks?: Map<string, SentMessageCheck>
-}): void {
+  checks = pendingPublishedEventChecks
+}: {| ...PublishedEventCheckOptions, chatRoomID: string, height: number |}): void {
   const pending = checks.get(chatRoomID)
   if (pending && pending.height >= height) return
   pending?.cancel()
-  const check: SentMessageCheck = { height, cancel: () => {} }
+  const check: PublishedEventCheck = { height, cancel: () => {} }
   const timer = timers.setTimeout(() => {
     if (checks.get(chatRoomID) === check) checks.delete(chatRoomID)
     try {
@@ -136,26 +152,18 @@ export function checkSentMessageLater ({
   checks.set(chatRoomID, check)
 }
 
-// For an action published to a chatroom: `beforeRequest` is the Chelonia hook
-// (`hooks.beforeRequest`), called before each publishing attempt (a conflict
-// makes Chelonia resend the event at a new height); `published()` starts the
-// check once the action has resolved. Never throws: an exception in the hook
-// would fail the action.
-export const trackPublishedHeight = (chatRoomID: string, options: Object = {}): {
-  beforeRequest: (message: Object) => void, published: () => void
-} => {
-  let height: number | null = null
-  return {
-    beforeRequest: (message: Object) => {
-      try {
-        const h = message.height()
-        if (typeof h === 'number') height = h
-      } catch (e) {
-        console.warn('[chatroomResync] Error reading the height of a published event', chatRoomID, e)
-      }
-    },
-    published: () => {
-      if (height !== null) checkSentMessageLater({ ...options, chatRoomID, height })
-    }
+// The safety net for an event that a tab published to a chatroom: call it
+// with the action's result once the action has resolved. That result is the
+// event as the server accepted it, after any conflict resend. Every chatroom
+// action that a tab publishes should call it, as ChatMain.vue's and the poll
+// components' do. Chatroom events published from within the service worker
+// (e.g., by `gi.actions/group/renameChatRoom`, or by contract side effects)
+// aren't covered. Never throws.
+export const checkPublishedEvent = (chatRoomID: string, message: mixed, options?: PublishedEventCheckOptions): void => {
+  try {
+    const height = typeof (message: any)?.height === 'function' ? (message: any).height() : undefined
+    if (typeof height === 'number') checkPublishedEventLater({ ...options, chatRoomID, height })
+  } catch (e) {
+    console.warn('[chatroomResync] Error reading the height of a published event', chatRoomID, e)
   }
 }
