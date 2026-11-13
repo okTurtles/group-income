@@ -2,10 +2,12 @@
 import assert from 'node:assert/strict'
 import { fakeClock } from '../../../../test/unit-helpers/fakeClock.js'
 import { connectionStatus } from '../../../../test/unit-helpers/connectionStatus.js'
-import { settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
+import { deferred, settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
 import { CONNECTION_STATUS_TIMEOUT } from '../../../controller/connectionStatus.js'
 import {
   PUBLISHED_EVENT_CHECK_DELAY,
+  RECENT_SYNC_WINDOW,
+  SHARED_SYNC_MAX_AGE,
   checkPublishedEvent,
   checkPublishedEventLater,
   isChatroomUnsubscribed,
@@ -123,6 +125,8 @@ describe('chatroomResync', () => {
         isJoined: () => true,
         sync: spy.sync,
         timers: clock.timers,
+        syncs: new Map(),
+        now: clock.now,
         ...overrides
       })
       return { clock, spy, promise }
@@ -208,7 +212,7 @@ describe('chatroomResync', () => {
     it("uses the app's selectors by default", async () => {
       const clock = fakeClock()
       const app = appSelectors()
-      assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, timers: clock.timers }), true)
+      assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, timers: clock.timers, syncs: new Map() }), true)
       assert.deepEqual(app.calls, [
         ['sw/connection/status'],
         ['state/vuex/getters'],
@@ -232,18 +236,21 @@ describe('chatroomResync', () => {
         sync: spy.sync,
         timers: clock.timers,
         checks: new Map(),
+        syncs: new Map(),
+        now: clock.now,
         ...overrides
       }
       checkPublishedEventLater(options)
       return { clock, spy, state, checks: options.checks, options }
     }
 
-    // Checks of `ROOM` and `OTHER` that share one clock and one map of
-    // pending checks
+    // Checks of `ROOM` and `OTHER` that share one clock, one map of pending
+    // checks and one map of syncs
     const checker = () => {
       const clock = fakeClock()
       const spy = syncSpy()
       const checks = new Map()
+      const syncs = new Map()
       const latest = { [ROOM]: 9, [OTHER]: 3 }
       const check = (chatRoomID, height) => checkPublishedEventLater({
         chatRoomID,
@@ -252,7 +259,9 @@ describe('chatroomResync', () => {
         isJoined: () => true,
         sync: spy.sync,
         timers: clock.timers,
-        checks
+        checks,
+        syncs,
+        now: clock.now
       })
       return { clock, spy, checks, latest, check }
     }
@@ -437,15 +446,16 @@ describe('chatroomResync', () => {
       const received = appSelectors({ latestHeight: 10 })
       const notReceived = appSelectors({ latestHeight: 9 })
       const clock = fakeClock()
-      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers, checks: new Map() })
+      const syncs = new Map()
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers, checks: new Map(), syncs })
       // Without `checks`, the module's map, which must be left empty
-      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
-      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers })
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers, syncs })
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: notReceived.sbp, timers: clock.timers, syncs })
       assert.equal(clock.pendingTimers(), 2)
       clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
       await settle()
       assert.equal(clock.pendingTimers(), 0)
-      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers })
+      checkPublishedEventLater({ chatRoomID: ROOM, height: 10, sbp: received.sbp, timers: clock.timers, syncs })
       assert.equal(clock.pendingTimers(), 1)
       clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
       await settle()
@@ -469,7 +479,9 @@ describe('chatroomResync', () => {
         isJoined: () => true,
         sync: spy.sync,
         timers: clock.timers,
-        checks: new Map()
+        checks: new Map(),
+        syncs: new Map(),
+        now: clock.now
       }
       return { clock, spy, options }
     }
@@ -516,6 +528,334 @@ describe('chatroomResync', () => {
       assert.equal(warnings()[0][1], ROOM)
       assert.equal(warnings()[0][2]?.message, 'bad')
       assert.equal(clock.pendingTimers(), 0)
+    })
+  })
+
+  // The check of a published event and the sync when a chatroom is opened
+  describe('shared syncs', () => {
+    const setup = () => {
+      const clock = fakeClock()
+      const calls = []
+      const results = []
+      // Each sync settles when the test says so
+      const sync = (id) => {
+        calls.push(id)
+        const d = deferred()
+        results.push(d)
+        return d.promise
+      }
+      const syncs = new Map()
+      const latest = { [ROOM]: 9, [OTHER]: 3 }
+      const check = (chatRoomID = ROOM, height = 10) => checkPublishedEventLater({
+        chatRoomID, height, getLatestHeight: () => latest[chatRoomID], isJoined: () => true, sync, timers: clock.timers, checks: new Map(), syncs, now: clock.now
+      })
+      const open = (chatRoomID = ROOM) => resyncChatroomIfUnsubscribed({
+        chatRoomID, getStatus: () => Promise.resolve(status('open', { missing: [chatRoomID] })), isJoined: () => true, sync, timers: clock.timers, syncs, now: clock.now
+      })
+      return { clock, calls, results, syncs, latest, check, open }
+    }
+
+    // What each warning was about, in order
+    const warned = () => warnings().map(([text, chatRoomID]) => {
+      const kind = text.includes('not subscribed') ? 'open' : text.includes('not received') ? 'check' : text.includes('Error re-syncing') ? 'sync error' : text
+      return `${kind} ${chatRoomID}`
+    })
+
+    it('the check makes no sync when one started after it is running, and succeeds', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      const opened = open()
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      clock.advance(100)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      results[0].resolve()
+      assert.equal(await opened, true)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      // The check's time limit on waiting (SHARED_SYNC_MAX_AGE) is cleared
+      assert.equal(clock.pendingTimers(), 0)
+      assert.deepEqual(warned(), [`open ${ROOM}`])
+    })
+
+    it('the check syncs when the running sync that started after it then fails', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      const opened = open()
+      await settle()
+      clock.advance(100)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      results[0].reject(new Error('sync failed'))
+      assert.equal(await opened, true)
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`, `sync error ${ROOM}`, `check ${ROOM}`])
+    })
+
+    it('the check makes no sync when one started after it has succeeded, although the height is still old', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      const opened = open()
+      await settle()
+      results[0].resolve()
+      assert.equal(await opened, true)
+      clock.advance(100)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`])
+    })
+
+    it('the check syncs when the sync that started after it failed', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      const opened = open()
+      await settle()
+      results[0].reject(new Error('sync failed'))
+      assert.equal(await opened, true)
+      clock.advance(100)
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`, `sync error ${ROOM}`, `check ${ROOM}`])
+    })
+
+    it('the check syncs when the running sync started before it', async () => {
+      const { clock, calls, results, check, open } = setup()
+      const opened = open()
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      results.forEach(d => d.resolve())
+      assert.equal(await opened, true)
+      assert.deepEqual(warned(), [`open ${ROOM}`, `check ${ROOM}`])
+    })
+
+    it("opening the chatroom joins the check's running sync, without a warning", async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      let opened = false
+      open().then((value) => { opened = value })
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      assert.equal(opened, false)
+      results[0].resolve()
+      await settle()
+      assert.equal(opened, true)
+      assert.deepEqual(warned(), [`check ${ROOM}`])
+    })
+
+    it("opening the chatroom just after the check's sync succeeded doesn't sync again", async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      results[0].resolve()
+      await settle()
+      clock.advance(RECENT_SYNC_WINDOW - 1)
+      assert.equal(await open(), false)
+      assert.deepEqual(calls, [ROOM])
+      assert.deepEqual(warned(), [`check ${ROOM}`])
+    })
+
+    it("opening the chatroom later, or after the check's sync failed, syncs again", async () => {
+      for (const [failed, wait] of [[false, RECENT_SYNC_WINDOW], [true, 0]]) {
+        logs.length = 0
+        const { clock, calls, results, check, open } = setup()
+        check()
+        clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+        await settle()
+        if (failed) results[0].reject(new Error('sync failed'))
+        else results[0].resolve()
+        await settle()
+        clock.advance(wait)
+        const opened = open()
+        await settle()
+        results[1]?.resolve()
+        assert.equal(await opened, true)
+        assert.deepEqual(calls, [ROOM, ROOM], `failed: ${String(failed)}`)
+        assert.deepEqual(warned(), failed
+          ? [`check ${ROOM}`, `sync error ${ROOM}`, `open ${ROOM}`]
+          : [`check ${ROOM}`, `open ${ROOM}`])
+      }
+    })
+
+    it('opening the chatroom twice in a row syncs once', async () => {
+      const { clock, calls, results, open } = setup()
+      const first = open()
+      await settle()
+      results[0].resolve()
+      assert.equal(await first, true)
+      clock.advance(RECENT_SYNC_WINDOW - 1)
+      assert.equal(await open(), false)
+      assert.deepEqual(calls, [ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`])
+    })
+
+    it('keeps the syncs of different chatrooms independent', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check(ROOM, 10)
+      check(OTHER, 4)
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      const opened = open(OTHER)
+      await settle()
+      clock.advance(100)
+      await settle()
+      results.forEach(d => d.resolve())
+      assert.equal(await opened, true)
+      assert.deepEqual(calls, [OTHER, ROOM])
+      // `OTHER`'s check was covered by the sync of the opened chatroom
+      assert.deepEqual(warned(), [`open ${OTHER}`, `check ${ROOM}`])
+    })
+
+    // ChatMain.vue passes neither `syncs` nor `now`. The chatroom is used by
+    // no other test, since the module's map keeps its entry.
+    it('shares the syncs of the two checks by default', async () => {
+      const chatRoomID = 'zSharedByDefault'
+      const clock = fakeClock()
+      const calls = []
+      const result = deferred()
+      const sync = (id) => {
+        calls.push(id)
+        return result.promise
+      }
+      checkPublishedEventLater({ chatRoomID, height: 10, getLatestHeight: () => 9, isJoined: () => true, sync, timers: clock.timers, checks: new Map() })
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      const opened = resyncChatroomIfUnsubscribed({
+        chatRoomID, getStatus: () => Promise.resolve(status('open', { missing: [chatRoomID] })), isJoined: () => true, sync, timers: clock.timers
+      })
+      await settle()
+      result.resolve()
+      assert.equal(await opened, true)
+      assert.deepEqual(calls, [chatRoomID])
+      assert.deepEqual(warned(), [`check ${chatRoomID}`])
+    })
+
+    it('opening the chatroom joins the newer sync after an older concurrent one settles', async () => {
+      const { clock, calls, results, check, open } = setup()
+      open()
+      await settle()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      results[0].resolve()
+      await settle()
+      const opened = open()
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      results[1].resolve()
+      assert.equal(await opened, true)
+      assert.deepEqual(warned(), [`open ${ROOM}`, `check ${ROOM}`])
+    })
+
+    it('keeps the newest success when an older concurrent sync succeeds last', async () => {
+      const { clock, calls, results, check, open } = setup()
+      open()
+      await settle()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY)
+      await settle()
+      results[1].resolve()
+      await settle()
+      results[0].resolve()
+      await settle()
+      clock.advance(RECENT_SYNC_WINDOW - 1)
+      assert.equal(await open(), false)
+      assert.deepEqual(calls, [ROOM, ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`, `check ${ROOM}`])
+    })
+
+    it('measures the window from the start of the sync', async () => {
+      const { clock, calls, results, open } = setup()
+      open()
+      await settle()
+      clock.advance(RECENT_SYNC_WINDOW - 500)
+      results[0].resolve()
+      await settle()
+      clock.advance(1000)
+      const opened = open()
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      results[1].resolve()
+      assert.equal(await opened, true)
+      assert.deepEqual(warned(), [`open ${ROOM}`, `open ${ROOM}`])
+    })
+
+    it('a newer sync keeps the earlier success for a check made before it', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      open()
+      await settle()
+      results[0].resolve()
+      await settle()
+      clock.advance(RECENT_SYNC_WINDOW)
+      open()
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - RECENT_SYNC_WINDOW)
+      await settle()
+      // The check is done: it doesn't wait for the newer sync
+      assert.equal(clock.pendingTimers(), 0)
+      results[1].reject(new Error('sync failed'))
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`, `open ${ROOM}`, `sync error ${ROOM}`])
+    })
+
+    // A tab's call to the service worker never settles if the service worker
+    // is stopped while it answers
+    it('opening the chatroom starts a new sync once a hung one is SHARED_SYNC_MAX_AGE old', async () => {
+      const { clock, calls, results, open } = setup()
+      open()
+      await settle()
+      clock.advance(SHARED_SYNC_MAX_AGE - 1)
+      open()
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      clock.advance(1)
+      const opened = open()
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      results[1].resolve()
+      assert.equal(await opened, true)
+      assert.deepEqual(warned(), [`open ${ROOM}`, `open ${ROOM}`])
+    })
+
+    it('a check stops waiting for a hung sync once it is SHARED_SYNC_MAX_AGE old', async () => {
+      const { clock, calls, results, check, open } = setup()
+      check()
+      clock.advance(PUBLISHED_EVENT_CHECK_DELAY - 100)
+      open()
+      await settle()
+      clock.advance(100)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      clock.advance(SHARED_SYNC_MAX_AGE - 100 - 1)
+      await settle()
+      assert.deepEqual(calls, [ROOM])
+      clock.advance(1)
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      // The check's own sync fails, then the hung one at last: the check
+      // doesn't run again
+      results[1].reject(new Error('sync failed'))
+      await settle()
+      results[0].reject(new Error('sync failed'))
+      await settle()
+      assert.deepEqual(calls, [ROOM, ROOM])
+      assert.deepEqual(warned(), [`open ${ROOM}`, `check ${ROOM}`, `sync error ${ROOM}`, `sync error ${ROOM}`])
     })
   })
 })
