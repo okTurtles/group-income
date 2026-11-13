@@ -20,9 +20,9 @@ sbp('okTurtles.events/on', REQUEST_TYPE.PUSH_ACTION, pushReporter.onPushAction)
 
 export default (sbp('sbp/selectors/register', {
   'push/getSubscriptionOptions': () => pushReporter.getSubscriptionOptions(),
-  // Resolves to `false` if the subscription couldn't be reported because the
-  // SW isn't connected to the server. It is then reported on reconnection.
-  // See `createPushReporter` for when this is called.
+  // Resolves to `false` if the SW isn't connected to the server. The
+  // reconnection then reports the subscription the browser holds. See
+  // `createPushReporter` for when this is called.
   'push/reportExistingSubscription': (subscriptionInfo?: Object, applicationServerKey?: ArrayBuffer) => {
     return pushReporter.reportExistingSubscription(subscriptionInfo, applicationServerKey)
   }

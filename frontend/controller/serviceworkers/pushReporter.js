@@ -69,9 +69,10 @@ const pubsubNotOpenError = (message: string): Error => {
 //   3. on the 'pushsubscriptionchange' event, so that the server replaces
 //      the old subscription;
 //   4. when the server's VAPID key changes (`onPushAction`).
-// Not being connected is not an error: a report made while disconnected is
-// sent by the reconnection that follows, and `reportExistingSubscription`
-// resolves to `false`.
+// Not being connected is not an error: `reportExistingSubscription` resolves
+// to `false`, and the reconnection that follows reports the subscription the
+// browser holds then (nothing if notifications are disabled), not the earlier
+// report.
 //   - `getPubsub()`: the current pubsub client, if any.
 //   - `pushManager`: the SW registration's `PushManager`, if any.
 //   - `isLoggedIn()`, `notificationsDisabled()`: checked on reconnection and
@@ -96,11 +97,11 @@ export function createPushReporter ({
   let cachedVapidInformation: ?[number, Object]
   const vapidWaiters: Set<(options: Object) => void> = new Set()
 
-  const getSubscriptionOptions = (): Promise<Object> => {
-    if (cachedVapidInformation && (now() - cachedVapidInformation[0]) < VAPID_CACHE_DURATION) {
-      return Promise.resolve(cachedVapidInformation[1])
-    }
+  // Whether `socket` is still the open socket of the current client
+  const isCurrentOpenSocket = (pubsub: Object, socket: Object): boolean =>
+    getPubsub() === pubsub && pubsub.socket === socket && isSocketOpen(socket)
 
+  const requestVapidKey = (): Promise<Object> => {
     return new Promise((resolve, reject) => {
       const pubsub = getPubsub()
       if (!pubsub) return reject(pubsubNotOpenError('Missing pubsub instance'))
@@ -118,8 +119,7 @@ export function createPushReporter ({
       const timeoutID = timers.setTimeout(() => {
         vapidWaiters.delete(waiter)
         const message = 'Timed out requesting VAPID key'
-        const gone = getPubsub() !== pubsub || pubsub.socket !== socket || !isSocketOpen(socket)
-        reject(gone ? pubsubNotOpenError(message) : new Error(message))
+        reject(isCurrentOpenSocket(pubsub, socket) ? new Error(message) : pubsubNotOpenError(message))
       }, VAPID_REQUEST_TIMEOUT)
       vapidWaiters.add(waiter)
 
@@ -134,6 +134,28 @@ export function createPushReporter ({
         reject(e)
       }
     })
+  }
+
+  // The request in flight, shared by later callers while its socket is the
+  // current one and open. One made on a socket that has been replaced or is
+  // closing may never be answered: a later caller doesn't wait for it, but
+  // sends its own request, or is rejected at once if the socket isn't open.
+  let vapidRequest: ?{ socket: Object, promise: Promise<Object> } = null
+
+  const getSubscriptionOptions = (): Promise<Object> => {
+    if (cachedVapidInformation && (now() - cachedVapidInformation[0]) < VAPID_CACHE_DURATION) {
+      return Promise.resolve(cachedVapidInformation[1])
+    }
+    const socket = getPubsub()?.socket
+    if (vapidRequest && vapidRequest.socket === socket && isSocketOpen(socket)) return vapidRequest.promise
+    const promise = requestVapidKey()
+    if (socket) {
+      const request = { socket, promise }
+      vapidRequest = request
+      const clear = () => { if (vapidRequest === request) vapidRequest = null }
+      promise.then(clear, clear)
+    }
+    return promise
   }
 
   // The subscription the server should have for this device;
@@ -194,9 +216,9 @@ export function createPushReporter ({
       )
     }
 
-    // The connection may have been replaced or closed meanwhile. Then the
-    // reconnection reports it on the new socket.
-    if (getPubsub() !== pubsub || pubsub.socket !== socket || !isSocketOpen(socket)) return false
+    // The connection may have been replaced or closed meanwhile. Then nothing
+    // is recorded, and the reconnection reports on the new socket.
+    if (!isCurrentOpenSocket(pubsub, socket)) return false
     if (message) {
       console.info(`[reportExistingSubscription] ${description}`)
       socket.send(message)
@@ -219,7 +241,7 @@ export function createPushReporter ({
     wanted = { subscriptionInfo, applicationServerKey }
     const sent = await flush()
     if (!sent) {
-      console.info('[reportExistingSubscription] not connected to the server; the subscription will be reported once reconnected')
+      console.info("[reportExistingSubscription] not connected to the server; the browser's subscription will be reported once reconnected")
     }
     return sent
   }
@@ -286,7 +308,10 @@ export function createPushReporter ({
           try {
             const generation = reportGeneration
             const subscription = await pushManager.getSubscription()
-            if (generation === reportGeneration && !notificationsDisabled()) {
+            // Disabled during the read: nothing is sent (the tab reports the
+            // removal)
+            if (notificationsDisabled()) continue
+            if (generation === reportGeneration) {
               wanted = {
                 subscriptionInfo: subscription?.toJSON(),
                 applicationServerKey: subscription?.options.applicationServerKey

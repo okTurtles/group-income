@@ -27,6 +27,17 @@ const fakeSocket = (readyState = SOCKET.OPEN) => ({
       assert.equal(message.type, REQUEST_TYPE.PUSH_ACTION)
       return message.data.action
     })
+  },
+  // `store <endpoint>` or `delete` for each report, so that a wrong action
+  // fails as a readable difference rather than a TypeError
+  reports () {
+    return this.sent.map(message => {
+      assert.equal(message.type, REQUEST_TYPE.PUSH_ACTION)
+      const { action, payload } = message.data
+      if (action === PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION) return `store ${payload?.subscriptionInfo?.endpoint}`
+      if (action === PUSH_SERVER_ACTION_TYPE.DELETE_SUBSCRIPTION) return 'delete'
+      return action
+    })
   }
 })
 
@@ -156,28 +167,30 @@ describe('push reporter', () => {
       assert.deepEqual(t.env.client.socket.sent, [])
     })
 
+    // The reconnection reports what the browser then holds, not the earlier
+    // report: here, another subscription or none
     for (const [name, readyState] of [['connecting', SOCKET.CONNECTING], ['closing', SOCKET.CLOSING], ['closed', SOCKET.CLOSED]]) {
-      it(`resolves to false while the socket is ${name}, then reports on reconnection`, async () => {
-        const subscription = fakeSubscription(SUB_A)
-        const t = harness({ readyState, subscription })
-        const oldSocket = t.env.client.socket
+      for (const [held, expected] of [[SUB_B, [`store ${SUB_B}`]], [null, []]]) {
+        it(`resolves to false while the socket is ${name}; the reconnection then reports the browser's subscription (${held ? 'another' : 'none'})`, async () => {
+          const t = harness({ readyState, subscription: held && fakeSubscription(held) })
+          const oldSocket = t.env.client.socket
 
-        assert.equal(await t.report(subscription), false)
-        assert.deepEqual(oldSocket.sent, [])
-        assert.ok(messages('info').some(line => line.includes('will be reported once reconnected')))
-        assert.deepEqual(messages('error'), [])
-
-        if (readyState === SOCKET.CONNECTING) {
-          // The same socket opens
-          oldSocket.readyState = SOCKET.OPEN
-          await t.reporter.onReconnected(t.env.client)
-          assert.deepEqual(oldSocket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
-        } else {
-          await t.reconnect()
-          assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
+          assert.equal(await t.report(fakeSubscription(SUB_A)), false)
           assert.deepEqual(oldSocket.sent, [])
-        }
-      })
+          assert.ok(messages('info').some(line => line.includes('will be reported once reconnected')))
+          assert.deepEqual(messages('error'), [])
+
+          if (readyState === SOCKET.CONNECTING) {
+            // The same socket opens
+            oldSocket.readyState = SOCKET.OPEN
+            await t.reporter.onReconnected(t.env.client)
+          } else {
+            await t.reconnect()
+            assert.deepEqual(oldSocket.sent, [])
+          }
+          assert.deepEqual(t.env.client.socket.reports(), expected)
+        })
+      }
     }
 
     it('resolves to false without a pubsub client', async () => {
@@ -201,8 +214,7 @@ describe('push reporter', () => {
       gate.resolve()
       assert.equal(await first, false)
       assert.equal(await second, true)
-      const endpoints = t.env.client.socket.sent.map(message => message.data.payload.subscriptionInfo.endpoint)
-      assert.deepEqual(endpoints, [SUB_B])
+      assert.deepEqual(t.env.client.socket.reports(), [`store ${SUB_B}`])
     })
 
     it('sends nothing on a socket replaced while building the message', async () => {
@@ -293,9 +305,11 @@ describe('push reporter', () => {
       await refreshed
     })
 
-    it('answers every request waiting for the key', async () => {
+    it('answers every request waiting for the key, with a single request per socket', async () => {
       const t = harness()
       const requests = [t.reporter.getSubscriptionOptions(), t.reporter.getSubscriptionOptions()]
+      assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
+      assert.equal(t.clock.pendingTimers(), 1)
       sendPublicKey(t, base64url(KEY))
       const answers = await Promise.all(requests)
       assert.deepEqual(answers.map(answer => answer.applicationServerKey), [base64url(KEY), base64url(KEY)])
@@ -345,6 +359,45 @@ describe('push reporter', () => {
         assert.equal(t.clock.pendingTimers(), 0)
       })
     }
+
+    it('requests the key again on a new socket while the request on the old one waits', async () => {
+      const t = harness()
+      const oldSocket = t.env.client.socket
+      const first = t.reporter.getSubscriptionOptions()
+      t.env.client.socket = fakeSocket(SOCKET.OPEN)
+      const second = t.reporter.getSubscriptionOptions()
+      assert.deepEqual(oldSocket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
+      assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
+      sendPublicKey(t, base64url(KEY))
+      const answers = await Promise.all([first, second])
+      assert.deepEqual(answers.map(answer => answer.applicationServerKey), [base64url(KEY), base64url(KEY)])
+      assert.equal(t.clock.pendingTimers(), 0)
+    })
+
+    it('keeps sharing the request on a new socket when the one on the old socket times out', async () => {
+      const t = harness()
+      const first = t.reporter.getSubscriptionOptions()
+      t.clock.advance(VAPID_REQUEST_TIMEOUT / 2)
+      t.env.client.socket = fakeSocket(SOCKET.OPEN)
+      const second = t.reporter.getSubscriptionOptions()
+      t.clock.advance(VAPID_REQUEST_TIMEOUT / 2)
+      await assert.rejects(first, { name: PUBSUB_NOT_OPEN_ERROR })
+      const third = t.reporter.getSubscriptionOptions()
+      assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
+      sendPublicKey(t, base64url(KEY))
+      await Promise.all([second, third])
+      assert.equal(t.clock.pendingTimers(), 0)
+    })
+
+    it('rejects at once on a socket that is closing while a request on it waits', async () => {
+      const t = harness()
+      const first = t.reporter.getSubscriptionOptions()
+      t.env.client.socket.readyState = SOCKET.CLOSING
+      await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'WebSocket connection is not open' })
+      t.clock.advance(VAPID_REQUEST_TIMEOUT)
+      await assert.rejects(first, { name: PUBSUB_NOT_OPEN_ERROR })
+      assert.equal(t.clock.pendingTimers(), 0)
+    })
 
     it('rejects with the send error and leaves nothing pending', async () => {
       const t = harness()
@@ -502,25 +555,51 @@ describe('push reporter', () => {
       assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.STORE_SUBSCRIPTION])
     })
 
+    // Notifications stay enabled, so that only the report generation keeps
+    // the tab's report (a removal: e.g., the permission was revoked)
     for (const [name, report, expected] of [
       ['a removal', null, []],
-      ['another subscription', SUB_B, [SUB_B]]
+      ['another subscription', SUB_B, [`store ${SUB_B}`]]
     ]) {
       it(`keeps ${name} reported by a tab while it reads the browser's subscription`, async () => {
         const t = harness({ subscription: fakeSubscription(SUB_A) })
         t.pushManager.gate = deferred()
         const reconnecting = t.reconnect()
         await settle()
-        // Notifications were just turned off, or a new subscription created
-        if (!report) t.env.disabled = true
         const reported = t.report(report && fakeSubscription(report))
         t.pushManager.gate.resolve()
         await reconnecting
         assert.equal(await reported, true)
-        const endpoints = t.env.client.socket.sent.map(message => message.data.payload.subscriptionInfo.endpoint)
-        assert.deepEqual(endpoints, expected)
+        assert.deepEqual(t.env.client.socket.reports(), expected)
       })
     }
+
+    it('does not undo a removal reported on the same socket while it reads the browser subscription', async () => {
+      const t = harness({ subscription: fakeSubscription(SUB_A) })
+      await t.report(fakeSubscription(SUB_A))
+      t.pushManager.gate = deferred()
+      const reconnecting = t.reporter.onReconnected(t.env.client)
+      await settle()
+      assert.equal(await t.report(null), true)
+      t.pushManager.gate.resolve()
+      await reconnecting
+      assert.deepEqual(t.env.client.socket.reports(), [`store ${SUB_A}`, 'delete'])
+    })
+
+    it('sends nothing when notifications are disabled while it reads the browser subscription', async () => {
+      const t = harness({ readyState: SOCKET.CLOSED, subscription: fakeSubscription(SUB_B) })
+      assert.equal(await t.report(fakeSubscription(SUB_A)), false)
+      t.pushManager.gate = deferred()
+      const reconnecting = t.reconnect()
+      await settle()
+      t.env.disabled = true
+      t.pushManager.gate.resolve()
+      await reconnecting
+      assert.deepEqual(t.env.client.socket.reports(), [])
+      // Neither does the tab's removal report that follows
+      assert.equal(await t.report(null), true)
+      assert.deepEqual(t.env.client.socket.reports(), [])
+    })
 
     it('never rejects', async () => {
       const t = harness({ subscription: fakeSubscription(SUB_A) })
