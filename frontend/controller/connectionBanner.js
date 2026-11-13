@@ -3,7 +3,7 @@
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
 import type { Timers } from '../utils/timers.js'
 import { defaultTimers } from '../utils/timers.js'
-import { CONNECTION_STATUS_TIMEOUT, requestConnectionStatus } from './connectionStatus.js'
+import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from './connectionStatus.js'
 import type { ConnectionStatus } from './serviceworkers/connectionMonitor.js'
 
 // The kinds of connection banner a tab can show (the texts are in main.js)
@@ -91,10 +91,13 @@ export type ConnectionBannerController = {
 //   - `isVisible()`: whether the tab is visible.
 // The status is queried on `start()`, every `refreshInterval` while the tab is
 // visible and on `refresh()`; statuses broadcast by the service worker are
-// passed to `apply()`. A service worker that can't answer (e.g., one from an
-// older version, without `sw/connection/status`) puts the controller in
-// legacy mode, where the banner follows the connection events passed to
-// `onLegacyEvent()`, as it used to. A valid status ends legacy mode.
+// passed to `apply()`. A service worker from an older version (without
+// `sw/connection/status`) puts the controller in legacy mode, where the
+// banner follows the connection events passed to `onLegacyEvent()`, as it
+// used to. So does a query that fails before any status was received, or
+// while the device is offline. Other failures (e.g., a busy or restarting
+// service worker) keep the last status, whose grace period still applies,
+// until a query answers. A valid status ends legacy mode.
 export function createConnectionBannerController ({
   getStatus,
   onChange,
@@ -123,6 +126,9 @@ export function createConnectionBannerController ({
   let graceTimer: any = null
   let inFlight = false
   let refreshQueued = false
+  // One warning per run of failed queries: a busy service worker can fail
+  // every query for minutes
+  let failureLogged = false
 
   const setKind = (next: ConnectionBannerKind | null) => {
     if (next === kind) return
@@ -161,11 +167,21 @@ export function createConnectionBannerController ({
     // the clock went back since the last status.
     if (lastStatus && valid.at < lastStatus.at && lastStatus.at <= now()) return
     lastStatus = valid
+    failureLogged = false
     if (legacy) {
       legacy = false
       console.info('[connection banner] The connection status is available again')
     }
     evaluate()
+  }
+
+  const deviceOffline = (): boolean => {
+    try {
+      return isOnline() === false
+    } catch (e) {
+      console.warn('[connection banner] Error checking whether the device is online', e)
+      return false
+    }
   }
 
   const enterLegacyMode = (e: mixed) => {
@@ -174,13 +190,19 @@ export function createConnectionBannerController ({
     console.warn('[connection banner] Could not get the connection status; following the connection events instead', e)
     clearGraceTimer()
     lastStatus = null
-    let offline = false
-    try {
-      offline = isOnline() === false
-    } catch (err) {
-      console.warn('[connection banner] Error checking whether the device is online', err)
+    if (deviceOffline()) setKind(CONNECTION_BANNER.OFFLINE)
+  }
+
+  // Legacy mode is also used when there's no status to keep, since the tab
+  // would otherwise show no banner at all, and while the device is offline,
+  // which the last status may not show
+  const queryFailed = (e: mixed) => {
+    if (isStatusUnavailableError(e) || !lastStatus || deviceOffline()) {
+      enterLegacyMode(e)
+    } else if (!failureLogged) {
+      failureLogged = true
+      console.warn('[connection banner] Could not get the connection status; will retry', e)
     }
-    if (offline) setKind(CONNECTION_BANNER.OFFLINE)
   }
 
   const visible = (): boolean => {
@@ -206,7 +228,7 @@ export function createConnectionBannerController ({
     requestConnectionStatus({ getStatus: () => answer, timeout: requestTimeout, timers })
       .then((status) => {
         if (!isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
-      }, enterLegacyMode)
+      }, queryFailed)
       .finally(() => {
         inFlight = false
         if (refreshQueued) {

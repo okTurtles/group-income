@@ -336,11 +336,61 @@ describe('connection banner', () => {
       it('keeps the current banner when the status becomes unavailable', async () => {
         const t = harness({ answer: answering('reconnecting') })
         await t.start()
-        t.env.answer = rejecting('SW controller changed')
+        t.env.answer = rejecting()
         t.clock.advance(REFRESH)
         await settle()
         assert.equal(t.controller.legacy, true)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+      })
+
+      for (const reason of ['SW controller changed', 'SBP: selector not registered: some/other']) {
+        it(`is not entered when a query fails after a status (${reason}): the status is kept, with one warning per run of failures`, async () => {
+          const t = harness({ answer: answering('reconnecting') })
+          await t.start()
+          t.env.answer = rejecting(reason)
+          for (let i = 0; i < 3; i++) {
+            t.clock.advance(REFRESH)
+            await settle()
+          }
+          assert.equal(t.env.calls, 4)
+          assert.equal(t.controller.legacy, false)
+          assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+          assert.equal(count('warn'), 1)
+          t.env.answer = answering('open')
+          t.clock.advance(REFRESH)
+          await settle()
+          t.env.answer = rejecting(reason)
+          t.clock.advance(REFRESH)
+          await settle()
+          assert.equal(count('warn'), 2)
+          assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, null])
+        })
+      }
+
+      it('is not entered when a query times out during a grace period, which still ends', async () => {
+        const t = harness({ answer: answering('open') })
+        await t.start()
+        t.env.answer = () => new Promise(() => {})
+        t.clock.advance(REFRESH + CONNECTION_STATUS_TIMEOUT - 1000)
+        await settle()
+        t.controller.apply(t.current('closed'))
+        t.clock.advance(1000)
+        await settle()
+        assert.equal(t.controller.legacy, false)
+        assert.equal(t.controller.kind, CONNECTION_BANNER.RECONNECTING)
+        t.clock.advance(GRACE - 1000)
+        assert.equal(t.controller.kind, CONNECTION_BANNER.FAILED)
+      })
+
+      it('is entered when a query fails while the device is offline, even after a status', async () => {
+        const t = harness({ answer: answering('open') })
+        await t.start()
+        t.env.answer = rejecting('SW controller changed')
+        t.env.online = false
+        t.controller.refresh()
+        await settle()
+        assert.equal(t.controller.legacy, true)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE])
       })
 
       it('ends once a query answers', async () => {
