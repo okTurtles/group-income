@@ -1,4 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { OPEN_TOUCH_LINK_HELPER } from '../../../frontend/utils/events.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -285,19 +286,21 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
   })
 
   it('user2 confirms a copied link with a toast', () => {
-    const copiedToast = ['.c-toast-container[data-area="chat-main"] .c-toast-card', 'Copied to clipboard']
+    const toasts = '.c-toast-container[data-area="chat-main"]'
+    // Not chained on `cy.get(toasts)`: `.contains()` would then search inside
+    // the container, where the container's own selector doesn't match
+    const copiedToast = [`${toasts} .c-toast-card`, 'Copied to clipboard']
 
     cy.window().then(win => {
       // The stub keeps the test independent of the clipboard permission and of the window focus
       if (win.navigator.clipboard) cy.stub(win.navigator.clipboard, 'writeText').resolves()
-      win.sbp('okTurtles.events/emit', 'open-touch-link-helper', 'https://example.com/') // OPEN_TOUCH_LINK_HELPER
+      win.sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, 'https://example.com/')
     })
     cy.get('.c-touch-link-helper.is-active .c-panel-menu-item').contains('Copy link').click()
     cy.get('.c-touch-link-helper').should('not.have.class', 'is-active')
 
-    cy.get('.c-toast-container[data-area="chat-main"]')
-      .should('have.attr', 'aria-live', 'polite')
-      .contains('.c-toast-card', 'Copied to clipboard')
+    cy.get(toasts).should('have.attr', 'aria-live', 'polite')
+    cy.contains(...copiedToast)
     cy.contains('[data-test="bannerGeneral"]', 'Copied to clipboard').should('not.exist')
     // It closes by itself, without covering the send area for the next tests
     cy.contains(...copiedToast).should('not.exist')
