@@ -140,8 +140,10 @@ const oldest = (map: Map<string, number>, include: (id: string) => boolean = () 
 //   - `heal()`: requests the missing subscriptions (`chelonia/pubsub/update`).
 //   - `emit(status)`: called when the status changes in a way that matters
 //     for the UI.
-// None of the methods throw: they're called from pubsub event handlers, where
-// an exception makes the app re-create the connection.
+// None of the methods throw: `update()` and `onReconnected()` are called from
+// pubsub event handlers, where an exception makes the app re-create the
+// connection, and `getStatus()` answers the tabs' queries. `heal` and `emit`
+// only run in the monitor's own timer callbacks.
 export function createConnectionMonitor ({
   getPubsub,
   getLibStatus,
@@ -181,6 +183,11 @@ export function createConnectionMonitor ({
   // Re-subscription requests made for each contract while it stayed
   // unsubscribed
   const healAttempts: Map<string, number> = new Map()
+  const keepHealAttempts = (ids: Set<string>) => {
+    for (const id of Array.from(healAttempts.keys())) {
+      if (!ids.has(id)) healAttempts.delete(id)
+    }
+  }
   let heals = 0
   let nextHealAt = 0
   let lastStatus: ConnectionStatus | null = null
@@ -210,15 +217,12 @@ export function createConnectionMonitor ({
   }
 
   const requestHeal = (reason: string) => {
+    const warn = (e: mixed) => console.warn(`[connection] Error requesting re-subscription (${reason})`, e)
     try {
       const result: any = heal()
-      if (typeof result?.catch === 'function') {
-        result.catch((e) => {
-          console.warn(`[connection] Error requesting re-subscription (${reason})`, e)
-        })
-      }
+      if (typeof result?.catch === 'function') result.catch(warn)
     } catch (e) {
-      console.warn(`[connection] Error requesting re-subscription (${reason})`, e)
+      warn(e)
     }
   }
 
@@ -297,7 +301,7 @@ export function createConnectionMonitor ({
     heals: 0
   })
 
-  const describe = (status: ConnectionStatus) => `wanted ${status.wanted}, missing ${status.missing.length}, pending ${status.pending.length}`
+  const describeCounts = (status: ConnectionStatus) => `wanted ${status.wanted}, missing ${status.missing.length}, pending ${status.pending.length}`
 
   const recompute = (): ConnectionStatus | null => {
     try {
@@ -332,10 +336,7 @@ export function createConnectionMonitor ({
       }
       if (status.state === 'open') {
         // Subscribed at last: a later loss counts toward `degraded` again
-        const unsubscribed = new Set(status.missing.concat(status.pending))
-        for (const id of Array.from(healAttempts.keys())) {
-          if (!unsubscribed.has(id)) healAttempts.delete(id)
-        }
+        keepHealAttempts(new Set(status.missing.concat(status.pending)))
       }
       status.heals = heals
       lastStatus = status
@@ -344,7 +345,7 @@ export function createConnectionMonitor ({
       // Counts only: these lines are written on every change, and contract
       // IDs are only exported with journals (AppLogs.vue)
       if (previous?.state !== status.state) {
-        console.info(`[connection] ${previous ? `${previous.state} -> ` : ''}${status.state} (${describe(status)})`)
+        console.info(`[connection] ${previous ? `${previous.state} -> ` : ''}${status.state} (${describeCounts(status)})`)
       }
       if (status.degraded && (!previous?.degraded || healed)) {
         const duration = Math.round((status.at - (status.unsubscribedSince ?? status.at)) / 1000)
@@ -364,6 +365,8 @@ export function createConnectionMonitor ({
       const key = [status.state, status.degraded, status.wanted, status.missing.length, status.pending.length].join('|')
       if (key !== lastEmitted) {
         lastEmitted = key
+        // Guarded on its own, so that a failing broadcast doesn't prevent
+        // reporting a heal right away (below)
         safely('emitting the connection status', () => emit(status), undefined)
       }
 
@@ -393,18 +396,15 @@ export function createConnectionMonitor ({
   return {
     setWanted (ids: mixed) {
       wanted = Array.isArray(ids) ? Array.from(new Set(onlyStrings(ids))) : []
-      const current = new Set(wanted)
-      for (const id of Array.from(healAttempts.keys())) {
-        if (!current.has(id)) healAttempts.delete(id)
-      }
+      keepHealAttempts(new Set(wanted))
       update()
     },
     update,
     // Stopgap until the library re-subscribes after reconnecting
     // (okTurtles/libcheloniajs#125): with 2.0.0, contracts whose subscription
     // was given up stay unsubscribed. Called from the `open` handler, before
-    // the client re-sends its pending subscriptions, hence the timer: those
-    // must be pending when `heal()` runs, or they'd be requested twice.
+    // the client re-sends the subscriptions it had: a contract requested now
+    // would be sent right away and then again by that loop, hence the timer.
     onReconnected () {
       notSubscribedSince.clear()
       heals = 0
