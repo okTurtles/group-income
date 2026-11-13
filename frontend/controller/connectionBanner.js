@@ -41,7 +41,7 @@ const inGrace = (status: ConnectionStatus, now: number, graceMs: number): boolea
 export function bannerForStatus (
   status: ConnectionStatus,
   now: number,
-  { graceMs = CONNECTION_BANNER_GRACE, current = null }: { graceMs?: number, current?: ConnectionBannerKind | null } = {}
+  { graceMs = CONNECTION_BANNER_GRACE, current = null }: {| graceMs?: number, current?: ConnectionBannerKind | null |} = {}
 ): ConnectionBannerKind | null {
   switch (status.state) {
     case 'open':
@@ -109,7 +109,7 @@ export function createConnectionBannerController ({
   refreshInterval = CONNECTION_BANNER_REFRESH_INTERVAL,
   requestTimeout = CONNECTION_STATUS_TIMEOUT,
   timers = defaultTimers
-}: {
+}: {|
   getStatus: () => mixed,
   onChange: (kind: ConnectionBannerKind | null) => mixed,
   isOnline: () => boolean,
@@ -119,7 +119,7 @@ export function createConnectionBannerController ({
   refreshInterval?: number,
   requestTimeout?: number,
   timers?: Timers
-}): ConnectionBannerController {
+|}): ConnectionBannerController {
   let running = false
   let kind: ConnectionBannerKind | null = null
   let legacy = false

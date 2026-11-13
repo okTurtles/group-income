@@ -156,7 +156,7 @@ export function createConnectionMonitor ({
   maxHealDelay = CONNECTION_MAX_HEAL_DELAY,
   maxDegradedHeals = CONNECTION_MAX_DEGRADED_HEALS,
   timers = defaultTimers
-}: {
+}: {|
   getPubsub: () => ?Object,
   getLibStatus: () => mixed,
   isOnline: () => boolean,
@@ -168,7 +168,7 @@ export function createConnectionMonitor ({
   maxHealDelay?: number,
   maxDegradedHeals?: number,
   timers?: Timers
-}): ConnectionMonitor {
+|}): ConnectionMonitor {
   let wanted: string[] = []
   // Used to compute `since` when the library doesn't provide a status
   let appClient: ?Object = null
@@ -464,10 +464,10 @@ export function createConnectionMonitor ({
 // The custom handlers passed to `chelonia/connect`. They keep emitting the
 // events older tabs rely on, except `ONLINE` on the browser's `online` event:
 // the network being back doesn't mean the connection is.
-export function createPubsubHandlers ({ monitor, emitEvent }: {
+export function createPubsubHandlers ({ monitor, emitEvent }: {|
   monitor: ConnectionMonitor,
   emitEvent: (name: string) => mixed
-}): { [name: string]: () => void } {
+|}): { [name: string]: () => void } {
   // An exception in a pubsub handler makes the app re-create the connection
   const handler = (name: string, steps: Array<() => mixed>) => () => {
     for (const step of steps) {

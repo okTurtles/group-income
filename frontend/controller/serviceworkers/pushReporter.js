@@ -85,7 +85,7 @@ export function createPushReporter ({
   getSubscriptionId = defaultGetSubscriptionId,
   now = () => performance.now(),
   timers = defaultTimers
-}: {
+}: {|
   getPubsub: () => ?Object,
   pushManager: ?Object,
   isLoggedIn: () => boolean,
@@ -93,7 +93,7 @@ export function createPushReporter ({
   getSubscriptionId?: (subscriptionInfo: Object) => Promise<string>,
   now?: () => number,
   timers?: Timers
-}): PushReporter {
+|}): PushReporter {
   let cachedVapidInformation: ?[number, Object]
   const vapidWaiters: Set<(options: Object) => void> = new Set()
 
