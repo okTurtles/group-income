@@ -106,7 +106,7 @@ describe('connection banner', () => {
       assert.equal(t.controller.legacy, false)
     })
 
-    it('shows the banner from the first answer when started during an outage (B5)', async () => {
+    it('shows the banner from the first answer when started during an outage', async () => {
       const t = harness({ answer: answering('reconnecting') })
       await t.start()
       assert.equal(t.env.calls, 1)
@@ -118,6 +118,7 @@ describe('connection banner', () => {
       await t.start()
       assert.deepEqual(t.env.changes, [])
       t.controller.apply(t.current('open'))
+      assert.equal(t.clock.pendingTimers(), 1, 'the interval: the grace timer was cleared')
       t.clock.advance(GRACE * 2)
       assert.deepEqual(t.env.changes, [])
     })
@@ -132,7 +133,7 @@ describe('connection banner', () => {
       assert.equal(t.env.calls, 1, 're-evaluated without a new query')
     })
 
-    it('keeps a banner after the browser goes online while the socket is not open (B3)', async () => {
+    it('keeps a banner after the browser goes online while the socket is not open', async () => {
       const t = harness({ answer: answering('offline') })
       await t.start()
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE])
@@ -168,6 +169,7 @@ describe('connection banner', () => {
       t.controller.apply(t.current('closed'))
       t.clock.advance(100)
       t.controller.apply(t.current('connecting'))
+      assert.equal(t.clock.pendingTimers(), 2, 'the interval and one grace timer')
       t.clock.advance(GRACE * 2)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
     })
@@ -248,7 +250,7 @@ describe('connection banner', () => {
       })
     })
 
-    it('shows the degraded banner and clears it on recovery (B7)', async () => {
+    it('shows the degraded banner and clears it on recovery', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
       t.controller.apply(t.current('open', { degraded: true }))
@@ -378,10 +380,10 @@ describe('connection banner', () => {
         assert.deepEqual(t.env.changes, [])
         const steps = [
           [OFFLINE, CONNECTION_BANNER.OFFLINE],
+          ['some-other-event', CONNECTION_BANNER.OFFLINE],
           [RECONNECTING, CONNECTION_BANNER.RECONNECTING],
           [RECONNECTION_FAILED, CONNECTION_BANNER.FAILED],
-          [ONLINE, null],
-          ['some-other-event', null]
+          [ONLINE, null]
         ]
         for (const [event, expected] of steps) {
           t.controller.onLegacyEvent(event)
