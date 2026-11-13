@@ -82,9 +82,28 @@ import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { requestConnectionStatus } from '~/frontend/controller/connectionStatus.js'
+import { exportedConnection } from './exportedConnection.js'
 
 const LOGS_FILENAME = 'gi_logs.json.txt'
 const LOGS_MIME_TYPE = 'text/plain'
+// The service worker answers at once, unless it has to start or is stuck; the
+// export must not hang in the latter case.
+const CONNECTION_STATUS_EXPORT_TIMEOUT = 5 * 1000
+// `navigator.share` needs the click's user activation, which lasts about 5 s
+// (Chromium, Firefox). When nothing else is awaited before sharing, the status
+// must not use it up.
+const CONNECTION_STATUS_SHARE_TIMEOUT = 1000
+
+const errorSummary = (err: any): string => `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
+
+// The service worker's connection and subscription status, or why it isn't
+// available (e.g., a service worker from an older version). Never rejects.
+const getConnectionStatus = (timeout: number): Promise<Object> =>
+  requestConnectionStatus({ timeout }).then((status: any) => status, (err) => {
+    console.warn('AppLogs.vue: Failed to obtain the connection status:', err)
+    return { error: errorSummary(err) }
+  })
 
 // Firefox for Android has `navigator.share` but rejects any file with a
 // TypeError, so `navigator.share` alone doesn't mean the logs can be shared.
@@ -102,6 +121,7 @@ type LogPayload = {
   _instructions: string,
   ua: string,
   version_info: Object,
+  connection: Object | null,
   includeJournal: boolean,
   logs: Object[],
   journals?: Object,
@@ -225,20 +245,28 @@ export default ({
     },
     async downloadOrShareLogs () {
       let actionType = this.ephemeral.useWebShare ? 'share' : 'download'
+      // The checkbox can change while the journals are fetched
+      const { includeJournal } = this.form
 
       try {
         const elLink = this.$refs.linkDownload
+        // Requested now, so that it is obtained while the journals are.
+        const connectionStatus = getConnectionStatus(
+          actionType === 'share' && !includeJournal ? CONNECTION_STATUS_SHARE_TIMEOUT : CONNECTION_STATUS_EXPORT_TIMEOUT
+        )
         const payload: LogPayload = {
           // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
           version_info: omit(this.ephemeral.versionInfos, ['loading']),
-          includeJournal: this.form.includeJournal,
+          // Set below. Listed here so that it comes before the logs in the file.
+          connection: null,
+          includeJournal,
           logs: this.ephemeral.logs
         }
         let journalError = null
 
-        if (this.form.includeJournal) {
+        if (includeJournal) {
           try {
             const { journals, omitted, truncated } = await sbp('sw/journal/getAll')
             payload.journals = journals
@@ -250,10 +278,11 @@ export default ({
             journalError = err
             // Recorded in the file too, so whoever reads the report knows why
             // the journals are missing.
-            payload.journalError = `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
+            payload.journalError = errorSummary(err)
             console.error('AppLogs.vue: Failed to obtain contract journals:', err)
           }
         }
+        payload.connection = exportedConnection(await connectionStatus, includeJournal)
 
         const blob = new Blob([JSON.stringify(payload, undefined, EXPORT_JSON_INDENT)], { type: LOGS_MIME_TYPE })
 

@@ -167,6 +167,7 @@ import {
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { isUnsentMessage, sortMessages } from './sortMessages.js'
+import { checkPublishedEvent, resyncChatroomIfUnsubscribed } from './chatroomResync.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -949,9 +950,13 @@ export default ({
             // messages as pending in the UI
             beforeRequest
           }
-        }).then(() => {
+        }).then((msg) => {
           // revoke object URLs of attachments if any, to avoid memory leaks, but only revoke them after confirmed successful send.
           revokeAttachmentURLs(attachments)
+          // Safety net for when the event doesn't come back over pubsub
+          // (#3176), which leaves the message pending, and missing once the
+          // chatroom is rendered again (see checkPublishedEvent)
+          checkPublishedEvent(contractID, msg)
         }).catch((e) => {
           console.error('[ChatMain.vue] Error publishing a message', e)
           if (!pendingMessageHash) {
@@ -1274,7 +1279,8 @@ export default ({
           createdHeight: message.height,
           text: newMessage
         }
-      }).then(() => {
+      }).then((msg) => {
+        checkPublishedEvent(contractID, msg)
         return this.updateContractMessage(hasChatroomSwitchedSince, messageHash, 'showing an edited message', (latest) => {
           if (latest.text === previousText) latest.text = newMessage
           this.forEachMessageList((messages) => {
@@ -1303,7 +1309,7 @@ export default ({
       sbp('gi.actions/chatroom/pinMessage', {
         contractID,
         data: { message }
-      }).catch((e) => {
+      }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
         console.error(`Error while pinning message(${message.hash}) in chatroom(${contractID})`, e)
       })
     },
@@ -1323,7 +1329,7 @@ export default ({
         sbp('gi.actions/chatroom/unpinMessage', {
           contractID,
           data: { hash }
-        }).catch((e) => {
+        }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
           console.error(`Error while un-pinning message(${hash}) in chatroom(${contractID})`, e)
         })
       }
@@ -1351,10 +1357,11 @@ export default ({
       try {
         const primaryButtonSelected = await sbp('gi.ui/prompt', promptConfig)
         if (primaryButtonSelected) {
-          await sbp('gi.actions/chatroom/deleteMessage', {
+          const msg = await sbp('gi.actions/chatroom/deleteMessage', {
             contractID,
             data: { hash: msgHash, manifestCids, messageSender: message.from }
           })
+          checkPublishedEvent(contractID, msg)
 
           // If the deleted message is the most recent message and 'currentChatRoomReadUntil' is pointing to the deleted one,
           // it needs to be updated to the second most recent one.
@@ -1422,7 +1429,10 @@ export default ({
       if (primaryButtonSelected) {
         const data = { hash, manifestCid, messageSender: from }
         sbp('gi.actions/chatroom/deleteAttachment', { contractID, data })
-          .then(() => sendDeleteAttachmentFeedback('complete'))
+          .then((msg) => {
+            checkPublishedEvent(contractID, msg)
+            sendDeleteAttachmentFeedback('complete')
+          })
           .catch((e) => {
             console.error(`Error while deleting attachment(${manifestCid}) of message(${hash}) for chatroom(${contractID})`, e)
             sendDeleteAttachmentFeedback('error')
@@ -1448,7 +1458,7 @@ export default ({
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID,
         data: { hash: message.hash, emoticon }
-      }).catch((e) => {
+      }).then((msg) => checkPublishedEvent(contractID, msg)).catch((e) => {
         console.error(`Error while adding emotion for ${contractID}`, e)
       })
     },
@@ -1488,6 +1498,9 @@ export default ({
         this.ephemeral.latestHeight = latestHeight
       } else {
         this.ephemeral.latestHeight = undefined
+        // Safety net for a chatroom whose subscription was lost (#3176). Not
+        // awaited; the events the sync brings are handled like live ones.
+        resyncChatroomIfUnsubscribed({ chatRoomID })
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.isEditing = {}

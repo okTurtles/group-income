@@ -1,6 +1,9 @@
 <template lang='pug'>
 .toast-container.c-toast-container(
   :data-area='area'
+  role='status'
+  aria-live='polite'
+  aria-atomic='false'
 )
   template(v-if='ephemeral.isLargeScreen')
     template(v-for='(items, position) in toastPockets.large')
@@ -25,8 +28,6 @@
         v-if='items.length'
         :class='["for-small-screen", "is-" + position]'
         :key='position'
-        role='status'
-        aria-live='polite'
       )
         toast-card(
           v-for='item in items'
