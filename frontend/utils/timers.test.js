@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { fakeClock } from '../../test/unit-helpers/fakeClock.js'
-import { settle } from '../../test/unit-helpers/utils.js'
+import { deferred, settle } from '../../test/unit-helpers/utils.js'
 import { callWithTimeout, isSocketOpen } from './timers.js'
 
 const MESSAGE = 'Timed out doing it'
@@ -62,11 +62,11 @@ describe('timers', () => {
 
     it('ignores an answer that comes after the timeout', async () => {
       const clock = fakeClock()
-      let answer
-      const result = track(callWithTimeout(() => new Promise((resolve) => { answer = resolve }), MS, MESSAGE, clock.timers))
+      const answer = deferred()
+      const result = track(callWithTimeout(() => answer.promise, MS, MESSAGE, clock.timers))
       clock.advance(MS)
       await settle()
-      answer('late')
+      answer.resolve('late')
       await settle()
       assert.equal(result.error?.message, MESSAGE)
       assert.equal(result.value, undefined)
@@ -81,15 +81,16 @@ describe('timers', () => {
 
     it('leaves no pending timer once settled either way', async () => {
       const clock = fakeClock()
-      let answer, fail
-      const resolved = track(callWithTimeout(() => new Promise((resolve) => { answer = resolve }), MS, MESSAGE, clock.timers))
-      const rejected = track(callWithTimeout(() => new Promise((resolve, reject) => { fail = reject }), MS, MESSAGE, clock.timers))
+      const answer = deferred()
+      const failure = deferred()
+      const resolved = track(callWithTimeout(() => answer.promise, MS, MESSAGE, clock.timers))
+      const rejected = track(callWithTimeout(() => failure.promise, MS, MESSAGE, clock.timers))
       assert.equal(clock.pendingTimers(), 2)
-      answer('done')
+      answer.resolve('done')
       await settle()
       assert.deepEqual(resolved, { settled: true, value: 'done' })
       assert.equal(clock.pendingTimers(), 1)
-      fail(new Error('failed'))
+      failure.reject(new Error('failed'))
       await settle()
       assert.equal(rejected.error?.message, 'failed')
       assert.equal(clock.pendingTimers(), 0)
