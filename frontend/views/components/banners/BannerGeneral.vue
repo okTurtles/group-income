@@ -4,7 +4,6 @@
       v-if='current'
       data-test='bannerGeneral'
       :class='`is-${current.severity}`'
-      aria-live='polite'
     )
       i(:class='`icon-${current.icon} is-prefix`')
       .c-banner-content(v-safe-html:a='current.message')
@@ -13,6 +12,7 @@
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { clearSlots, emptyBannerSlots, pickBanner, setSlot } from '@view-utils/bannerSlots.js'
+import type { DisplayedBanner } from '@view-utils/bannerSlots.js'
 import { debounce } from 'turtledash'
 
 export default ({
@@ -29,6 +29,18 @@ export default ({
   computed: {
     current () {
       return pickBanner(this.ephemeral.slots)
+    }
+  },
+  watch: {
+    // The live region is in index.html, always rendered: this banner is only
+    // rendered while there is a message, and a live region inserted together
+    // with its content often isn't announced. It gets the message as text
+    // (`DOMParser` runs no scripts and loads nothing).
+    current (current: ?DisplayedBanner) {
+      const text = current
+        ? new DOMParser().parseFromString(current.message, 'text/html').body?.textContent || ''
+        : ''
+      this.$emit('announce', text)
     }
   },
   methods: {

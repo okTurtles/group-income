@@ -303,6 +303,23 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.contains(...copiedToast).should('not.exist')
   })
 
+  it('user2 gets general banner messages through a live region that is always rendered', () => {
+    const liveRegion = '[data-test="bannerLiveRegion"]'
+    const danger = 'Test danger banner'
+
+    cy.get(liveRegion)
+      .should('have.attr', 'role', 'status')
+      .and('have.attr', 'aria-live', 'polite')
+      .and('have.attr', 'aria-atomic', 'true')
+    cy.window().its('sbp').then(sbp => sbp('gi.ui/dangerBanner', `${danger} <a class="link" href="#">with a link</a>`))
+    cy.getByDT('bannerGeneral').should('contain', danger).and('not.have.attr', 'aria-live')
+    // Plain text: a link in the hidden region would be an invisible tab stop
+    cy.get(liveRegion).should('have.text', `${danger} with a link`)
+    cy.window().its('sbp').then(sbp => sbp('gi.ui/clearBanner'))
+    cy.contains('[data-test="bannerGeneral"]', danger).should('not.exist')
+    cy.get(liveRegion).should('exist').and('not.contain', danger)
+  })
+
   it('user2 mentions user1 and adds/removes reactions to the message', () => {
     cy.giSendMessage(me, `Hi ${makeMentionFromUsername(user1).me}. When is the best time for you to help me with learning more about this group?`)
 

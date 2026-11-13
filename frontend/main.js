@@ -236,7 +236,10 @@ async function startApp () {
           finishedLogin: 'no',
           debouncedSyncBanner: null,
           isCorrupted: false, // TODO #761
-          ready: false
+          ready: false,
+          // Text of the banner's live region (index.html). The region can't be in
+          // BannerGeneral, which is only rendered while it has a message
+          bannerAnnouncement: ''
         }
       }
     },
