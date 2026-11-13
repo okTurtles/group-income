@@ -83,6 +83,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { requestConnectionStatus } from '~/frontend/controller/connectionStatus.js'
+import { exportedConnection } from './exportedConnection.js'
 
 const LOGS_FILENAME = 'gi_logs.json.txt'
 const LOGS_MIME_TYPE = 'text/plain'
@@ -103,18 +104,6 @@ const getConnectionStatus = (timeout: number): Promise<Object> =>
     console.warn('AppLogs.vue: Failed to obtain the connection status:', err)
     return { error: errorSummary(err) }
   })
-
-// Without journals (the opt-in for identifying data), the contract IDs the
-// status lists (which groups, chatrooms and DMs the user follows) are only
-// counted.
-const exportedConnection = (status: Object, includeJournal: boolean): Object => {
-  if (includeJournal || !status || typeof status !== 'object') return status
-  const counted = { ...status }
-  for (const key of ['missing', 'pending']) {
-    if (Array.isArray(counted[key])) counted[key] = counted[key].length
-  }
-  return counted
-}
 
 // Firefox for Android has `navigator.share` but rejects any file with a
 // TypeError, so `navigator.share` alone doesn't mean the logs can be shared.

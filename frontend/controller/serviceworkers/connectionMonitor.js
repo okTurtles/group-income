@@ -345,8 +345,9 @@ export function createConnectionMonitor ({
       lastStatus = status
       lastUnhealthy = unhealthy
 
-      // Counts only: these lines are written on every change, and contract
-      // IDs are only exported with journals (AppLogs.vue)
+      // Counts only: these lines are written on every change, and while the
+      // connection is down the lists hold every contract the user follows
+      // (the exported logs count them too, see `exportedConnection`)
       if (previous?.state !== status.state) {
         console.info(`[connection] ${previous ? `${previous.state} -> ` : ''}${status.state} (${describeCounts(status)})`)
       }
