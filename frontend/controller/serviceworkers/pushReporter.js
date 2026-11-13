@@ -5,7 +5,8 @@ import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/
 import { Buffer } from 'buffer'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
 import type { Timers } from '../../utils/timers.js'
-import { defaultTimers, isSocketOpen } from '../../utils/timers.js'
+import { defaultTimers } from '../../utils/timers.js'
+import { isSocketOpen } from './socket.js'
 
 // The server's VAPID public key should change very infrequently, if at all
 export const VAPID_CACHE_DURATION = 3600e3

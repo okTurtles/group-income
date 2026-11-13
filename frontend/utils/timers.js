@@ -16,9 +16,6 @@ export const defaultTimers: Timers = {
   clearInterval: (id) => clearInterval(id)
 }
 
-export const isSocketOpen = (socket: ?Object): boolean =>
-  !!socket && socket.readyState === (socket.OPEN ?? 1)
-
 // Calls `fn()` right away and settles like its result, or rejects with
 // `message` after `ms`. `fn()` throwing is a rejection.
 export const callWithTimeout = <T>(fn: () => Promise<T> | T, ms: number, message: string, timers: Timers = defaultTimers): Promise<T> =>

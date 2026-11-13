@@ -3,7 +3,8 @@
 import { REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../../utils/events.js'
 import type { Timers } from '../../utils/timers.js'
-import { defaultTimers, isSocketOpen } from '../../utils/timers.js'
+import { defaultTimers } from '../../utils/timers.js'
+import { isSocketOpen } from './socket.js'
 
 // Events added by okTurtles/libcheloniajs#125. They're referenced by name
 // because `@chelonia/lib` 2.0.0 doesn't export them, and importing a name
