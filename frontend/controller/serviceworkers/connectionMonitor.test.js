@@ -328,9 +328,10 @@ describe('connection monitor', () => {
     // Degraded until `zB2`'s third request
     t.clock.advance(60e3)
     assert.deepEqual(t.heals.slice(4), [firstHeal, firstHeal + 10e3, firstHeal + 30e3])
+    // Losing `zB2` only changed how many are missing, which isn't broadcast
     assert.deepEqual(
       t.emits.slice(3).map(({ at, degraded, missing }) => [at, degraded, missing.length]),
-      [[lostAt, false, 2], [firstHeal, true, 2], [firstHeal + 30e3, false, 2]]
+      [[firstHeal, true, 2], [firstHeal + 30e3, false, 2]]
     )
     assert.equal(t.status().degraded, false)
   })
@@ -650,7 +651,6 @@ describe('connection monitor', () => {
 
     t.env.client = fail
     assert.doesNotThrow(() => t.status())
-    assert.equal(t.status().state, 'closed')
     assert.doesNotThrow(() => {
       t.monitor.update()
       t.monitor.onReconnected()
@@ -714,6 +714,18 @@ describe('connection monitor', () => {
     })
   })
 
+  it("keeps the last status while the pubsub client can't be read", () => {
+    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
+    t.start()
+    assert.equal(t.emits.length, 1)
+    t.env.client = () => { throw new Error('unreadable') }
+    t.clock.advance(60e3)
+    // Not a closed connection without a client
+    assert.equal(t.status(), t.emits[0])
+    assert.equal(t.emits.length, 1)
+    assert.ok(messages().some(message => message.startsWith('[connection] Error computing the connection status')))
+  })
+
   it('has nothing missing once nothing is wanted (logout, chelonia/reset)', () => {
     const t = harness({ client: fakeClient({ subscribed: ['a'] }), wanted: ['a', 'b'] })
     t.start()
@@ -741,6 +753,46 @@ describe('connection monitor', () => {
     t.clock.flush()
     assert.equal(t.env.pubsubCalls, 1)
     assert.equal(t.emits.length, 1)
+  })
+
+  it('broadcasts once while the subscriptions are confirmed one by one', () => {
+    const wanted = ['zA1', 'zB2', 'zC3', 'zD4']
+    const t = harness({ client: fakeClient({ subscribed: wanted }), wanted })
+    const handlers = createPubsubHandlers({ monitor: t.monitor, emitEvent: () => {} })
+    t.start()
+    const { client } = t.env
+    closeSocket(client)
+    handlers.close()
+    t.clock.flush()
+    openSocket(client, handlers)
+    t.clock.flush()
+    // Each OK is a separate message, with its own recompute
+    for (const id of wanted) {
+      client.ack(id)
+      handlers['subscription-succeeded']()
+      t.clock.flush()
+    }
+    // A wanted contract added and subscribed at once (e.g., a joined chatroom)
+    client.subscriptionSet.add('zE5')
+    t.monitor.setWanted([...wanted, 'zE5'])
+    t.clock.flush()
+    assert.deepEqual(
+      t.emits.map(({ state, pending }) => [state, pending.length]),
+      [['open', 0], ['reconnecting', 4], ['open', 4], ['open', 0]]
+    )
+    assert.equal(t.status().wanted, 5)
+  })
+
+  it('broadcasts a closed status again once it has a client', () => {
+    const t = harness({ client: null, wanted: ['zA1'] })
+    t.start()
+    // A client that was closed for good right after it was created
+    const client = fakeClient({ readyState: null })
+    client.shouldReconnect = false
+    t.env.client = client
+    t.monitor.update()
+    t.clock.flush()
+    assert.deepEqual(t.emits.map(({ state, since }) => [state, since]), [['closed', null], ['closed', t.clock.now()]])
   })
 
   it('starts its periodic check once', () => {

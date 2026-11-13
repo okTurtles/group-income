@@ -161,6 +161,9 @@ const registerListeners = () => {
   // Only emitted by @chelonia/lib versions with okTurtles/libcheloniajs#125
   sbp('okTurtles.events/on', LIB_PUBSUB_STATE_CHANGED, () => connectionMonitor.update())
   sbp('okTurtles.events/on', LIB_PUBSUB_SUBSCRIPTION_FAILED, () => connectionMonitor.update())
+  // Before `connectAndSync` creates the pubsub client, so that a restarted
+  // service worker tells the open tabs that it has no connection yet
+  // (`closed` without `since`, which they show as a connection being made)
   connectionMonitor.start()
 
   sbp('okTurtles.events/on', LOGGING_OUT, () => {

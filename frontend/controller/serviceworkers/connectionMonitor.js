@@ -230,7 +230,10 @@ export function createConnectionMonitor ({
   // emit, and none of the state `recompute()` keeps
   const compute = (): { status: ConnectionStatus, client: ?Object, unhealthy: boolean } => {
     const at = now()
-    const client = safely('getting the pubsub client', getPubsub, null)
+    // Not guarded: a client that can't be read isn't a missing one. The
+    // callers then keep the last status, rather than report a connection that
+    // is down.
+    const client = getPubsub()
     const libStatus = normalizeLibStatus(safely('getting the library connection status', getLibStatus, null))
     let status: ConnectionStatus
     if (libStatus) {
@@ -362,7 +365,15 @@ export function createConnectionMonitor ({
         console.info(`[connection] ${givenUp} subscription(s) still refused after ${maxDegradedHeals} attempts; no longer reported as degraded, still re-subscribing`)
       }
 
-      const key = [status.state, status.degraded, status.wanted, status.missing.length, status.pending.length].join('|')
+      // Broadcast when what the tabs show may change: the state, `degraded`,
+      // whether `since` is known (`closed` without it: no pubsub client yet),
+      // and whether anything is missing or pending. Not on every change of
+      // the counts, which queries return: each subscription confirmed after
+      // a reconnection would be broadcast to every tab.
+      const key = [
+        status.state, status.degraded, status.since === null,
+        status.missing.length > 0, status.pending.length > 0
+      ].join('|')
       if (key !== lastEmitted) {
         lastEmitted = key
         // Guarded on its own, so that a failing broadcast doesn't prevent
