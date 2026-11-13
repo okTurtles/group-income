@@ -603,7 +603,6 @@ describe('connection monitor', () => {
       brokenTimers.start()
       brokenTimers.update()
       brokenTimers.onReconnected()
-      brokenTimers.stop()
       brokenTimers.start()
     })
 
@@ -668,44 +667,6 @@ describe('connection monitor', () => {
     t.clock.flush()
     assert.equal(t.env.pubsubCalls, 1)
     assert.equal(t.emits.length, 1)
-  })
-
-  it('schedules nothing once stopped', () => {
-    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
-    t.start()
-    t.monitor.onReconnected()
-    t.monitor.update()
-    t.monitor.stop()
-    assert.equal(t.clock.pendingTimers(), 0)
-
-    t.monitor.update()
-    t.monitor.onReconnected()
-    t.monitor.setWanted(['zA1', 'zB2'])
-    assert.equal(t.clock.pendingTimers(), 0)
-
-    const emits = t.emits.length
-    const logged = logs.length
-    t.clock.advance(60e3)
-    assert.deepEqual(t.heals, [])
-    assert.equal(t.emits.length, emits)
-    assert.equal(logs.length, logged)
-
-    // Queries still answer, with the wanted set given while stopped
-    const status = t.status()
-    assert.equal(status.wanted, 2)
-    assert.deepEqual(status.missing, ['zB2'])
-    assert.equal(t.clock.pendingTimers(), 0)
-  })
-
-  it('re-emits an unchanged status after a restart', () => {
-    const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1'] })
-    const summary = ({ state, degraded, wanted, missing, pending }) => [state, degraded, wanted, missing.length, pending.length]
-    t.start()
-    assert.equal(t.emits.length, 1)
-    t.monitor.stop()
-    t.start()
-    assert.equal(t.emits.length, 2)
-    assert.deepEqual(summary(t.emits[1]), summary(t.emits[0]))
   })
 
   it('starts its periodic check once', () => {

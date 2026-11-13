@@ -49,8 +49,7 @@ export type ConnectionMonitor = {
   update: () => void,
   onReconnected: () => void,
   getStatus: () => ConnectionStatus,
-  start: () => void,
-  stop: () => void
+  start: () => void
 }
 
 const CONNECTION_STATES: ConnectionState[] = ['connecting', 'open', 'reconnecting', 'offline', 'closed']
@@ -192,9 +191,6 @@ export function createConnectionMonitor ({
   let updateTimer: any = null
   let reconnectTimer: any = null
   let interval: any = null
-  // Set by `stop()`, cleared by `start()`. While stopped, nothing schedules a
-  // timer, re-subscribes or emits; `getStatus()` still answers.
-  let stopped = false
 
   const safely = <T>(description: string, fn: () => T, fallback: T): T => {
     try {
@@ -382,7 +378,7 @@ export function createConnectionMonitor ({
 
   // Coalesces bursts of events into a single recompute
   const update = () => {
-    if (stopped || updateTimer !== null) return
+    if (updateTimer !== null) return
     try {
       updateTimer = timers.setTimeout(() => {
         updateTimer = null
@@ -396,7 +392,6 @@ export function createConnectionMonitor ({
 
   return {
     setWanted (ids: mixed) {
-      // Still recorded while stopped, so that a restart uses the current set
       wanted = Array.isArray(ids) ? Array.from(new Set(onlyStrings(ids))) : []
       const current = new Set(wanted)
       for (const id of Array.from(healAttempts.keys())) {
@@ -414,7 +409,6 @@ export function createConnectionMonitor ({
       notSubscribedSince.clear()
       heals = 0
       nextHealAt = 0
-      if (stopped) return
       if (reconnectTimer === null) {
         try {
           reconnectTimer = timers.setTimeout(() => {
@@ -443,7 +437,6 @@ export function createConnectionMonitor ({
       }
     },
     start () {
-      stopped = false
       if (interval !== null) return
       try {
         interval = timers.setInterval(recompute, tickInterval)
@@ -452,19 +445,6 @@ export function createConnectionMonitor ({
         console.warn('[connection] Error starting the connection monitor', e)
       }
       update()
-    },
-    stop () {
-      stopped = true
-      try {
-        if (interval !== null) timers.clearInterval(interval)
-        if (updateTimer !== null) timers.clearTimeout(updateTimer)
-        if (reconnectTimer !== null) timers.clearTimeout(reconnectTimer)
-      } catch (e) {
-        console.warn('[connection] Error stopping the connection monitor', e)
-      }
-      interval = updateTimer = reconnectTimer = null
-      // A restart reports the status again, even if it didn't change
-      lastEmitted = null
     }
   }
 }

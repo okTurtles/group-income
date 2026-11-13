@@ -75,7 +75,6 @@ const LEGACY_BANNERS: Map<string, ConnectionBannerKind | null> = new Map([
 
 export type ConnectionBannerController = {
   start: () => void,
-  stop: () => void,
   refresh: () => void,
   apply: (status: mixed) => void,
   onLegacyEvent: (name: string) => void,
@@ -96,7 +95,6 @@ export type ConnectionBannerController = {
 // older version, without `sw/connection/status`) puts the controller in
 // legacy mode, where the banner follows the connection events passed to
 // `onLegacyEvent()`, as it used to. A valid status ends legacy mode.
-// `stop()` clears the banner and the state; a restart starts afresh.
 export function createConnectionBannerController ({
   getStatus,
   onChange,
@@ -122,15 +120,9 @@ export function createConnectionBannerController ({
   let kind: ConnectionBannerKind | null = null
   let legacy = false
   let lastStatus: ConnectionStatus | null = null
-  let interval: any = null
   let graceTimer: any = null
   let inFlight = false
   let refreshQueued = false
-  // Incremented by `stop()`: a query made before is ignored, whether it
-  // resolves or rejects, even after a restart
-  let generation = 0
-  // Settles the query in flight, so that `stop()` leaves no timer behind
-  let cancelRequest: (() => void) | null = null
 
   const setKind = (next: ConnectionBannerKind | null) => {
     if (next === kind) return
@@ -149,7 +141,7 @@ export function createConnectionBannerController ({
 
   const evaluate = () => {
     clearGraceTimer()
-    if (!running || !lastStatus) return
+    if (!lastStatus) return
     const status = lastStatus
     const at = now()
     setKind(bannerForStatus(status, at, { graceMs, current: kind }))
@@ -177,7 +169,7 @@ export function createConnectionBannerController ({
   }
 
   const enterLegacyMode = (e: mixed) => {
-    if (!running || legacy) return
+    if (legacy) return
     legacy = true
     console.warn('[connection banner] Could not get the connection status; following the connection events instead', e)
     clearGraceTimer()
@@ -207,25 +199,15 @@ export function createConnectionBannerController ({
       return
     }
     inFlight = true
-    const requestGeneration = generation
-    const current = () => requestGeneration === generation
     // `getStatus()` is called right away; an answer that arrives after the
     // timeout is still applied (and ends legacy mode)
     const answer: Promise<mixed> = new Promise(resolve => resolve(getStatus()))
-    answer.then((status) => { if (current()) apply(status) }, () => {})
-    const cancelled: Promise<mixed> = new Promise((resolve, reject) => {
-      cancelRequest = () => reject(new Error('Connection banner stopped'))
-    })
-    requestConnectionStatus({ getStatus: () => Promise.race([answer, cancelled]), timeout: requestTimeout, timers })
+    answer.then(apply, () => {})
+    requestConnectionStatus({ getStatus: () => answer, timeout: requestTimeout, timers })
       .then((status) => {
-        if (current() && !isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
-      }, (e) => {
-        if (current()) enterLegacyMode(e)
-      })
+        if (!isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
+      }, enterLegacyMode)
       .finally(() => {
-        // `stop()` already reset these for the next request
-        if (!current()) return
-        cancelRequest = null
         inFlight = false
         if (refreshQueued) {
           refreshQueued = false
@@ -238,23 +220,8 @@ export function createConnectionBannerController ({
     start () {
       if (running) return
       running = true
-      interval = timers.setInterval(() => { if (visible()) refresh() }, refreshInterval)
+      timers.setInterval(() => { if (visible()) refresh() }, refreshInterval)
       refresh()
-    },
-    stop () {
-      running = false
-      generation++
-      if (interval !== null) timers.clearInterval(interval)
-      interval = null
-      clearGraceTimer()
-      cancelRequest?.()
-      cancelRequest = null
-      inFlight = refreshQueued = false
-      lastStatus = null
-      legacy = false
-      // `onChange(null)` if a banner is showing, so that a stopped
-      // controller doesn't leave it on screen
-      setKind(null)
     },
     refresh,
     apply,
