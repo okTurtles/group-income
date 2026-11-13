@@ -53,7 +53,8 @@ export function bannerForStatus (
     case 'connecting':
       return current === null && inGrace(status, now, graceMs) ? null : CONNECTION_BANNER.RECONNECTING
     case 'closed':
-      // `since` is `null` before the service worker has a pubsub client
+      // `since` is `null` before the service worker has a pubsub client (the
+      // controller shows that like a connection being made, see `apply()`)
       return status.since === null || inGrace(status, now, graceMs) ? CONNECTION_BANNER.RECONNECTING : CONNECTION_BANNER.FAILED
     default:
       return current
@@ -129,6 +130,11 @@ export function createConnectionBannerController ({
   // One warning per run of failed queries: a busy service worker can fail
   // every query for minutes
   let failureLogged = false
+  // When a `closed` status without `since` was first seen: the service worker
+  // has no pubsub client yet (e.g., the browser just restarted it). It's shown
+  // like a connection being made since then, so that a restart doesn't flash
+  // a banner, and a client that doesn't come still shows one.
+  let noClientSince: number | null = null
 
   const setKind = (next: ConnectionBannerKind | null) => {
     if (next === kind) return
@@ -162,10 +168,16 @@ export function createConnectionBannerController ({
 
   const apply = (status: mixed) => {
     if (!running || !isStatus(status)) return
-    const valid: ConnectionStatus = (status: any)
+    let valid: ConnectionStatus = (status: any)
     // Answers and broadcasts can arrive out of order. The check is skipped if
     // the clock went back since the last status.
     if (lastStatus && valid.at < lastStatus.at && lastStatus.at <= now()) return
+    if (valid.state === 'closed' && valid.since === null) {
+      if (noClientSince === null) noClientSince = valid.at
+      valid = { ...valid, state: 'connecting', since: noClientSince }
+    } else {
+      noClientSince = null
+    }
     lastStatus = valid
     failureLogged = false
     if (legacy) {
@@ -190,6 +202,7 @@ export function createConnectionBannerController ({
     console.warn('[connection banner] Could not get the connection status; following the connection events instead', e)
     clearGraceTimer()
     lastStatus = null
+    noClientSince = null
     if (deviceOffline()) setKind(CONNECTION_BANNER.OFFLINE)
   }
 

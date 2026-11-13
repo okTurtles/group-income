@@ -172,6 +172,82 @@ describe('connection banner', () => {
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
     })
 
+    describe('a service worker without a pubsub client (closed, no since)', () => {
+      const noClient = (at) => status('closed', { at, since: null })
+
+      it('shows no banner for the grace period, as if the connection were being made', async () => {
+        const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
+        await t.start()
+        assert.deepEqual(t.env.changes, [])
+        t.clock.advance(GRACE - 1)
+        assert.deepEqual(t.env.changes, [])
+        t.clock.advance(1)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+        assert.equal(t.env.calls, 1, 're-evaluated without a new query')
+      })
+
+      it('counts the grace period from the first such status', async () => {
+        const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
+        await t.start()
+        for (let i = 0; i < 3; i++) {
+          t.clock.advance(GRACE / 4)
+          t.controller.apply(noClient(t.clock.now()))
+        }
+        assert.deepEqual(t.env.changes, [])
+        t.clock.advance(GRACE / 4)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+      })
+
+      it('shows no banner when the client connects within the grace period, at each service worker restart', async () => {
+        const t = harness({ answer: answering('open') })
+        await t.start()
+        for (let i = 0; i < 2; i++) {
+          t.controller.apply(noClient(t.clock.now()))
+          t.clock.advance(300)
+          t.controller.apply(t.current('connecting'))
+          t.clock.advance(500)
+          t.controller.apply(t.current('open'))
+          t.clock.advance(GRACE * 2)
+        }
+        assert.deepEqual(t.env.changes, [])
+      })
+
+      it('shows "could not connect" once a closed client follows, after its own grace period', async () => {
+        const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
+        await t.start()
+        t.clock.advance(GRACE)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+        t.controller.apply(t.current('closed'))
+        t.clock.advance(GRACE - 1)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+        t.clock.advance(1)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, CONNECTION_BANNER.FAILED])
+      })
+
+      it('counts the grace period again after legacy mode', async () => {
+        const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
+        await t.start()
+        t.env.answer = rejecting()
+        t.controller.refresh()
+        await settle()
+        assert.equal(t.controller.legacy, true)
+        t.clock.advance(REFRESH / 2)
+        t.controller.apply(noClient(t.clock.now()))
+        assert.equal(t.controller.legacy, false)
+        t.clock.advance(GRACE - 1)
+        assert.deepEqual(t.env.changes, [])
+      })
+
+      it('shows other states without since as before (only closed means no client)', async () => {
+        const t = harness({ answer: (now) => Promise.resolve(status('offline', { at: now, since: null })) })
+        await t.start()
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE])
+        t.controller.apply(status('open', { at: t.clock.now(), since: null }))
+        t.clock.advance(GRACE * 2)
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null])
+      })
+    })
+
     it('shows the degraded banner and clears it on recovery (B7)', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
