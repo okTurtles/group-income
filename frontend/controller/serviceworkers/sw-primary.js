@@ -67,6 +67,12 @@ deserializer.register(Secret)
 // https://stackoverflow.com/a/49748437 => https://medium.com/@nekrtemplar/self-destroying-serviceworker-73d62921d717 => https://love2dev.com/blog/how-to-uninstall-a-service-worker/
 
 const reducer = (o, v) => { o[v] = true; return o }
+// Status queries, made periodically: `chelonia/pubsub/status` by the
+// connection monitor every few seconds (once `@chelonia/lib` provides it), and
+// `sw/connection/status` by each visible tab every 30 s and on connection
+// events. They aren't logged at the debug level, here or in the `message`
+// handler.
+const statusSelectors = ['chelonia/pubsub/status', 'sw/connection/status']
 // Domains for which debug logging won't be enabled.
 const domainBlacklist = [
   'sbp',
@@ -80,9 +86,7 @@ const selectorBlacklist = [
   'chelonia/haveSecretKey',
   'chelonia/private/enqueuePostSyncOps',
   'chelonia/private/invoke',
-  // Called every few seconds
-  'chelonia/pubsub/status',
-  'sw/connection/status',
+  ...statusSelectors,
   'state/vuex/state',
   'state/vuex/getters',
   'state/vuex/settings',
@@ -390,12 +394,18 @@ const sendMessageToClient = async function (payload) {
 }
 */
 
+// A tab's request for one of the `statusSelectors`. The selector is the first
+// serialized argument, as a plain string.
+const isStatusQuery = (data: any): boolean =>
+  data?.type === 'sbp' && Array.isArray(data.data) && statusSelectors.includes(data.data[0])
+
 self.addEventListener('message', function (event) {
-  console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
+  const quiet = isStatusQuery(event.data)
+  if (!quiet) console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
   // const client = await self.clients.get(event.source.id)
   // const client = await self.clients.get(event.clientId)
   if (typeof event.data === 'object' && event.data.type) {
-    console.debug('[sw] event received:', event.data)
+    if (!quiet) console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
       case 'sbp': {
         // We don't filter the selectors because such a filter would be
