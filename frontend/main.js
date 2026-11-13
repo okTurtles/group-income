@@ -18,6 +18,7 @@ import '@chelonia/lib/local-selectors'
 import './controller/app/index.js'
 import './controller/backend.js'
 import { CONNECTION_BANNER, createConnectionBannerController } from './controller/connectionBanner.js'
+import type { ConnectionBannerKind } from './controller/connectionBanner.js'
 import { applyNamespaceUpdateToVuex } from './controller/namespace.js'
 import router from './controller/router.js'
 import './controller/service-worker.js'
@@ -334,6 +335,15 @@ async function startApp () {
           })
         }
       })
+      // Functions, so that `L()` runs when a banner is shown: that stays correct
+      // if this table moves to module scope, which runs before
+      // `translations/init`
+      const connectionBannerTexts: { [ConnectionBannerKind]: () => string } = {
+        [CONNECTION_BANNER.OFFLINE]: () => L('Your device appears to be offline.'),
+        [CONNECTION_BANNER.RECONNECTING]: () => L('Trying to reconnect...'),
+        [CONNECTION_BANNER.FAILED]: () => L('We could not connect to the server. Please refresh the page.'),
+        [CONNECTION_BANNER.DEGRADED]: () => L('Some updates may be delayed. Re-syncing...')
+      }
       // The connection banner follows the service worker's connection status,
       // which is queried right away (so that it's also shown in tabs opened
       // during an outage), whenever the service worker broadcasts a change,
@@ -343,22 +353,9 @@ async function startApp () {
         isOnline: () => navigator.onLine !== false,
         isVisible: () => document.visibilityState === 'visible',
         onChange: (kind) => {
-          switch (kind) {
-            case CONNECTION_BANNER.OFFLINE:
-              sbp('gi.ui/showConnectionBanner', L('Your device appears to be offline.'), 'wifi')
-              break
-            case CONNECTION_BANNER.RECONNECTING:
-              sbp('gi.ui/showConnectionBanner', L('Trying to reconnect...'), 'wifi')
-              break
-            case CONNECTION_BANNER.FAILED:
-              sbp('gi.ui/showConnectionBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
-              break
-            case CONNECTION_BANNER.DEGRADED:
-              sbp('gi.ui/showConnectionBanner', L('Some updates may be delayed. Resynchronizing...'), 'wifi')
-              break
-            default:
-              sbp('gi.ui/clearConnectionBanner')
-          }
+          const text = kind ? connectionBannerTexts[kind] : null
+          if (text) sbp('gi.ui/showConnectionBanner', text(), 'wifi')
+          else sbp('gi.ui/clearConnectionBanner')
         }
       })
       sbp('okTurtles.events/on', CONNECTION_STATUS_CHANGED, (status) => connectionBanner.apply(status))
