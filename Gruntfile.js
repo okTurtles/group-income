@@ -142,6 +142,21 @@ module.exports = (grunt) => {
     grunt.log.warn(chalk.bold.yellow(`⚠️  You should probably run with NODE_ENV=production.${reason ? ` ${reason}` : ''}`))
   }
 
+  // `process.env.CI` is compiled into the app and contract bundles (see
+  // `define` below), so a build with it set contains test-only code.
+  function failIfCI (task, consequence) {
+    if (!CI) return
+    grunt.fail.fatal([
+      `grunt ${task}: refusing to run while the CI environment variable is set (CI=${JSON.stringify(CI)}).`,
+      'The build compiles process.env.CI into the app and contract code. With CI set, the code',
+      "includes test-only code (for example the 'gi.contracts/group/forceDistributionDate' action).",
+      consequence,
+      'To fix this, unset CI and run the command again, for example:',
+      `  env -u CI NODE_ENV=production grunt ${process.argv.slice(2).join(' ')}`,
+      'Setting it to an empty value (CI=) also works.'
+    ].join('\n'))
+  }
+
   // `filter` is '--all', a contract short name (e.g. 'chatroom'), a full SBP
   // name (e.g. 'gi.contracts/chatroom') or a manifest path. Unset means all.
   function matchesPinFilter (shortName, filter) {
@@ -163,6 +178,24 @@ module.exports = (grunt) => {
     return cheloniaJSON.contracts[`gi.contracts/${shortName}`]?.version ?? packageJSON.version
   }
 
+  // In production, a contract that is not being pinned and whose bundles are
+  // byte-identical to its pinned copy must ship the pinned manifest. Signing
+  // it again with another key.json gives a different manifest under the same
+  // version, and clients that already trust the old signing key reject it.
+  // Development builds always sign with key.json for the same reason: after a
+  // contract edit in `grunt dev`, clients that trusted the pinned key first
+  // would reject the locally signed manifest.
+  async function unchangedPinnedManifest (dir, shortName) {
+    if (development || (pinFilter !== null && matchesPinFilter(shortName, pinFilter))) return null
+    const pinned = cheloniaJSON.contracts[`gi.contracts/${shortName}`]
+    if (!pinned || !fs.existsSync(pinned.path)) return null
+    for (const file of [`${shortName}.js`, `${shortName}-slim.js`]) {
+      const pinnedFile = path.join(path.dirname(pinned.path), file)
+      if (!fs.existsSync(pinnedFile) || !(await readFile(`${dir}/${file}`)).equals(await readFile(pinnedFile))) return null
+    }
+    return pinned.path
+  }
+
   async function generateManifests (dir) {
     const keyFile = process.env.KEY_FILE || 'key.json'
     const pubKeyFile = process.env.PUB_KEY_FILE || 'key.pub.json'
@@ -178,6 +211,12 @@ module.exports = (grunt) => {
       .filter(file => file.endsWith('-slim.js'))
       .map(file => file.slice(0, -'-slim.js'.length))
     for (const name of contractNames) {
+      const pinnedManifest = await unchangedPinnedManifest(dir, name)
+      if (pinnedManifest) {
+        grunt.log.writeln(`${name} is unchanged since it was pinned, using ${pinnedManifest}`)
+        await copyFile(pinnedManifest, `${dir}/${path.basename(pinnedManifest)}`)
+        continue
+      }
       const cmd = `./node_modules/.bin/chel manifest --name gi.contracts/${name} --contract-version ${manifestVersion(name)} --slim ${dir}/${name}-slim.js ${keyFile} ${dir}/${name}.js`
       grunt.log.writeln(cmd)
       const { stdout } = await execWithErrMsg(cmd, 'error generating manifests')
@@ -403,11 +442,15 @@ module.exports = (grunt) => {
       }
       const freshFile = `${distContracts}/${fileName}`
       const pinnedFile = `contracts/${info.dirName}/${info.version}/${fileName}`
-      // A production build of an unchanged contract is byte-identical to its
-      // pinned copy. If they differ, the contract changed but was not pinned,
-      // and it would ship labelled as the old version. Development and CI
-      // builds always differ because they include test-only code.
-      if (production && !CI && fileName.endsWith('.js') && fs.existsSync(pinnedFile)) {
+      // In production, every file of an unchanged contract is byte-identical
+      // to its pinned copy (generateManifests reuses the pinned manifest). If
+      // one differs, the contract changed but was not pinned, and it would
+      // ship labelled as the old version. Development builds always differ
+      // because they include test-only code.
+      if (production) {
+        if (!fs.existsSync(pinnedFile)) {
+          throw new Error(`copyAndMoveContracts: ${pinnedFile} is missing, so ${freshFile} cannot be checked against version ${info.version}. Restore the pinned copy from git, or pin the contract again: NODE_ENV=production grunt pin:${shortName}`)
+        }
         if (!(await readFile(freshFile)).equals(await readFile(pinnedFile))) {
           throw new Error(`copyAndMoveContracts: ${freshFile} differs from ${pinnedFile}. The contract changed after version ${info.version} was pinned. Pin it first: NODE_ENV=production grunt pin:${shortName}`)
         }
@@ -604,19 +647,7 @@ module.exports = (grunt) => {
       return
     }
 
-    // `process.env.CI` is compiled into the contract bundles (see `define`
-    // below), so pinning with it set would freeze CI-only code forever.
-    if (CI) {
-      grunt.fail.fatal([
-        `grunt pin: refusing to pin while the CI environment variable is set (CI=${JSON.stringify(CI)}).`,
-        'The build compiles process.env.CI into the contract code. With CI set, the contracts',
-        "include test-only code (for example the 'gi.contracts/group/forceDistributionDate' action),",
-        'and their hashes differ from a normal build. Pinned contracts can never be changed.',
-        'To fix this, unset CI and run the command again, for example:',
-        `  env -u CI NODE_ENV=production grunt ${process.argv.slice(2).join(' ')}`,
-        'Setting it to an empty value (CI=) also works.'
-      ].join('\n'))
-    }
+    failIfCI('pin', 'The contract hashes differ from a normal build, and pinned contracts can never be changed.')
 
     // Normally `build` copies the version; `--none` skips the build, so copy it
     // here too. We always make a new app version even if only the contracts
@@ -638,6 +669,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('deploy', function () {
     warnIfNotProduction()
+    if (production) failIfCI('deploy', 'A production release must not contain it.')
     grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
   })
   grunt.registerTask('serve', function () {

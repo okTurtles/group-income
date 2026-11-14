@@ -198,8 +198,9 @@ $ ./scripts/dist.sh
 
 `dist.sh` reads the version from `package.json`, builds the app twice (debug
 and production), and writes `gi-v2.9.0.tgz` archives. The production build
-stops with an error if a contract differs from its pinned copy, which means it
-changed but was not pinned in step 2.
+stops with an error if a contract differs from its pinned copy (it changed but
+was not pinned in step 2), if a pinned file is missing, or if the `CI`
+environment variable is set.
 
 ## Donating
 
