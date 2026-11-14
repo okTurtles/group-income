@@ -137,6 +137,11 @@ module.exports = (grunt) => {
     console.log(chalk.green('updated chelonia.json "appVersion" to:'), packageJSON.version)
   }
 
+  function warnIfNotProduction (reason) {
+    if (production) return
+    grunt.log.warn(chalk.bold.yellow(`⚠️  You should probably run with NODE_ENV=production.${reason ? ` ${reason}` : ''}`))
+  }
+
   // `filter` is '--all', a contract short name (e.g. 'chatroom'), a full SBP
   // name (e.g. 'gi.contracts/chatroom') or a manifest path. Unset means all.
   function matchesPinFilter (shortName, filter) {
@@ -396,10 +401,21 @@ module.exports = (grunt) => {
       if (!info) {
         throw new Error(`copyAndMoveContracts: unrecognized contract file in ${distContracts}: ${fileName}`)
       }
+      const freshFile = `${distContracts}/${fileName}`
+      const pinnedFile = `contracts/${info.dirName}/${info.version}/${fileName}`
+      // A production build of an unchanged contract is byte-identical to its
+      // pinned copy. If they differ, the contract changed but was not pinned,
+      // and it would ship labelled as the old version. Development and CI
+      // builds always differ because they include test-only code.
+      if (production && !CI && fileName.endsWith('.js') && fs.existsSync(pinnedFile)) {
+        if (!(await readFile(freshFile)).equals(await readFile(pinnedFile))) {
+          throw new Error(`copyAndMoveContracts: ${freshFile} differs from ${pinnedFile}. The contract changed after version ${info.version} was pinned. Pin it first: NODE_ENV=production grunt pin:${shortName}`)
+        }
+      }
       const destDir = `${distContracts}/${info.dirName}/${info.version}`
       await mkdir(destDir, { recursive: true })
-      await copyFile(`${distContracts}/${fileName}`, `${destDir}/${fileName}`)
-      await rm(`${distContracts}/${fileName}`)
+      await copyFile(freshFile, `${destDir}/${fileName}`)
+      await rm(freshFile)
     }
 
     // NOTE: all previously pinned versions — mirror the
@@ -430,6 +446,8 @@ module.exports = (grunt) => {
 
   let child
   grunt.registerTask('backend:launch', '[internal]', function () {
+    // `chel serve` reads `appVersion`, and `grunt serve` does not run `build`.
+    syncAppVersion()
     const done = this.async() // Tell Grunt we're async.
     grunt.log.writeln('backend: forking...')
     grunt.log.writeln(chalk.underline('\nRunning \'chel serve\''))
@@ -568,11 +586,9 @@ module.exports = (grunt) => {
     //   grunt pin:<contract>            → bump appVersion and pin only <contract>
     //
     // In every "doing-something" variant, `appVersion` in chelonia.json is set
-    // to the `version` field from package.json so that contract versions stay
-    // in lockstep with the app version (see follow-up issue #3129).
-    // Keeping `version` and `appVersion` in lockstep is a GI
-    // convention; contract versioning is arbitrary and a different
-    // convention could be chosen (this is, contracts _could_ follow their own versioning scheme that's separate and independent from GI versions).
+    // to the `version` field from package.json. Only the contracts being pinned
+    // get that version. The others keep the version they were last pinned at
+    // (see follow-up issue #3129).
     const arg = this.args[0]
     const all = grunt.option('all')
     const none = grunt.option('none')
@@ -612,9 +628,7 @@ module.exports = (grunt) => {
       return
     }
 
-    if (!production) {
-      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production. Contracts built in development mode include test-only code, and pinned contracts can never be changed.'))
-    }
+    warnIfNotProduction('Contracts built in development mode include test-only code, and pinned contracts can never be changed.')
 
     // note: there is no way to catch exceptions thrown by grunt.task.run, not even by
     // registering handlers for 'unhandledRejection' or 'uncaughtException'
@@ -623,15 +637,11 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('deploy', function () {
-    if (!production) {
-      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
-    }
+    warnIfNotProduction()
     grunt.task.run(['checkDependencies', 'build', 'copyAndMoveContracts'])
   })
   grunt.registerTask('serve', function () {
-    if (!production) {
-      grunt.log.warn(chalk.bold.yellow('⚠️  You should probably run with NODE_ENV=production'))
-    }
+    warnIfNotProduction()
     // NOTE: here we want to call 'exec:chelProdDeploy', not 'chelDeploy', so that the frontend
     // contract manifests match the ones that are the dist archive. We do this in both production
     // and development environments to make sure they match when serving the site using grunt serve.
@@ -757,8 +767,8 @@ module.exports = (grunt) => {
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
 
-    // first we build the contracts since genManifestsAndDeploy depends on that
-    // and then we build the main bundle since it depends on manifests.json
+    // First build the contracts, since genManifestsAndDeploy needs them. Then
+    // build the bundles: the service worker imports manifests.json.
     await Promise.all([buildContracts.run(), buildContractsSlim.run()])
       .then(() => genManifestsAndDeploy(distContracts))
       .then(() => Promise.all([buildMain.run(), buildServiceWorkers.run()]))
@@ -834,24 +844,23 @@ module.exports = (grunt) => {
               vuePluginOptions.cache.clear()
             }
           }
-          // Only rebuild the relevant entry point.
+          // Only rebuild the entry points that can include the changed file.
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
-            } else if (filePath.startsWith(contractsDir)) {
-              await buildContracts.run({ fileEventName, filePath })
-              await buildContractsSlim.run({ fileEventName, filePath })
-              const dest = process.env.API_URL
-              await genManifestsAndDeploy(distContracts, dest)
-              // Both bundles import contract code (e.g. `shared/`), and the
-              // service worker also imports manifests.json, which
-              // genManifestsAndDeploy has just rewritten.
+            } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
+              if (filePath.startsWith(contractsDir)) {
+                await buildContracts.run({ fileEventName, filePath })
+                await buildContractsSlim.run({ fileEventName, filePath })
+                await genManifestsAndDeploy(distContracts, process.env.API_URL)
+              }
+              // The service worker also bundles much of frontend/ that main.js
+              // does not, e.g. controller/actions/ and setupChelonia.js (which
+              // imports the manifests.json that genManifestsAndDeploy rewrites).
               await Promise.all([
                 buildMain.run({ fileEventName, filePath }),
                 buildServiceWorkers.run({ fileEventName, filePath })
               ])
-            } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
-              await buildMain.run({ fileEventName, filePath })
             } else {
               grunt.log.error('no builder defined for path:', filePath)
             }

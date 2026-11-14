@@ -131,10 +131,10 @@ Try also: [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com
 
 The `version` field in `package.json` is the app version and the source of
 truth. Every `grunt build` (and so `grunt dev`, `grunt test`, `grunt deploy`
-and `grunt pin`) copies it to `appVersion` in `chelonia.json`, which
-`chel serve` reads. Each contract keeps the version it was last pinned at
-(listed in `chelonia.json`) until `grunt pin` pins it again at the app
-version. A version is never passed on the command line.
+and `grunt pin`) and every `grunt serve` copies it to `appVersion` in
+`chelonia.json`, which `chel serve` reads. Each contract keeps the version it
+was last pinned at (listed in `chelonia.json`) until `grunt pin` pins it again
+at the app version. A version is never passed on the command line.
 
 ### 1. Bump the version
 
@@ -180,9 +180,9 @@ stops with an error if the `CI` environment variable is set, because `CI`
 changes the contract code. Unset it first (for example with `env -u CI`).
 
 Commit the pinned snapshot together with the files from step 1. Always include
-`chelonia.json`, even for a release with no contract changes. The server reads
-`appVersion` from it, and `dist.sh` would otherwise change it during the build
-and mark the build `-dirty`:
+`chelonia.json`, even for a release with no contract changes. Otherwise
+`dist.sh` changes it during the build and marks the build `-dirty`, and
+`grunt serve` changes it in the server's checkout:
 
 ```bash
 $ git add package.json package-lock.json chelonia.json contracts/
@@ -197,7 +197,9 @@ $ ./scripts/dist.sh
 ```
 
 `dist.sh` reads the version from `package.json`, builds the app twice (debug
-and production), and writes `gi-v2.9.0.tgz` archives.
+and production), and writes `gi-v2.9.0.tgz` archives. The production build
+stops with an error if a contract differs from its pinned copy, which means it
+changed but was not pinned in step 2.
 
 ## Donating
 
