@@ -106,7 +106,7 @@ export function LTags (...tags: string[]): { br_: string, [key: string]: string 
 
 export function L (
   key: string,
-  args?: Array<any> | Record<string, any>
+  args?: unknown[] | Record<string, unknown>
 ): string {
   return template(currentTranslationTable[key] || key, args)
     // Avoid inopportune linebreaks before certain punctuations.
@@ -116,7 +116,7 @@ export function L (
     .replace(/\s(?=[;:?!])/g, '\u00a0')
 }
 
-export function LError (error: Error, toGithub?: boolean): { reportError: any } {
+export function LError (error: Error, toGithub?: boolean): { reportError: unknown } {
   let url = 'https://github.com/okTurtles/group-income/issues'
   if (!toGithub && sbp('state/vuex/state').loggedIn) {
     const baseRoute = sbp('controller/router').options.base

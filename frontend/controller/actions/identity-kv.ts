@@ -264,7 +264,7 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/kv/update', {
       contractID: identityContractID,
       key: KV_KEYS.UNREAD_MESSAGES,
-      updater: (prev: any = {}) => {
+      updater: (prev: Record<string, unknown> = {}) => {
         if (!(contractID in prev)) return KV_NOOP
         const { [contractID]: _gone, ...rest } = prev
         return rest

@@ -1,7 +1,3 @@
-// @ts-nocheck
-// The pragma is for editors. `**/*.test.ts` is ignored by the project's tsconfig.json,
-// but the editor's language server doesn't honour that exclusion.
-
 /* eslint-env mocha */
 
 // run with: ./node_modules/.bin/mocha -w --require @babel/register frontend/model/contracts/shared/distribution/distribution.test.ts

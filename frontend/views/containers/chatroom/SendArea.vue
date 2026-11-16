@@ -334,7 +334,7 @@ import { getFileType } from '@view-utils/filters.ts'
 import { searchEmoji } from './emoji-utils.ts'
 import { selectMentionOptions, toMentionCandidate } from './mention-utils.ts'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.ts'
-import { validateURL } from '@view-utils/misc.js'
+import { validateURL } from '@view-utils/misc.ts'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 // The mention popup intentionally caps results for performance (each one renders an avatar component).
