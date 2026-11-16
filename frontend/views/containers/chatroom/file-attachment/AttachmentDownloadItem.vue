@@ -363,9 +363,11 @@ $mobile-narrow: 441px;
     max-height: 14rem;
     min-height: unset;
     max-width: 100%;
+    min-width: 6rem;
 
     @include tablet {
       max-height: 20rem;
+      min-width: 8rem;
     }
   }
 }
