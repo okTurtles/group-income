@@ -70,9 +70,10 @@
       "rootDir": "/"
     }
   },
-  "include": ["frontend/**/*.ts"],
+  "include": ["frontend/**/*.ts", "frontend/**/*.js"],
   // All test.js files were excluded in the past, so keeping it that way.
   "exclude": [
-    "**/*.test.ts"
+    "**/*.test.ts",
+    "**/*.test.js"
   ]
 }

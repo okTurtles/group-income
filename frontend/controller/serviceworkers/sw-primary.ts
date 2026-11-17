@@ -479,7 +479,7 @@ self.addEventListener('message', function (event) {
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.
         // This handles new SW clients that have an outdated
         // `process.env.APP_VERSION` (for example, by having loaded a cached
-        // version of `main.ts`).
+        // version of `main.js`).
         if (
           currentVersionInfo &&
           event.source &&

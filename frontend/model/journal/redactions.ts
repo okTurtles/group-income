@@ -84,7 +84,7 @@ export const pinnedMessageRedactor = (value: unknown): unknown => {
 
 // Bump whenever `JOURNAL_REDACTIONS` changes, so journals persisted under the
 // old rules get cleared (see `migration.ts`). The pin test in
-// `redactions.test.ts` fails until both are updated together.
+// `redactions.test.js` fails until both are updated together.
 export const JOURNAL_REDACTIONS_VERSION = 4
 
 type Redactor = (value: unknown) => unknown
