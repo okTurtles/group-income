@@ -216,6 +216,11 @@ export default {
 
       try {
         const elLink = this.$refs.linkDownload
+        // Format of the exported gi_logs.json.txt file:
+        //   _instructions: string, ua: string, version_info: Object,
+        //   includeJournal: boolean, logs: Object[],
+        //   journals?: Object, journalTruncated?: boolean,
+        //   journalOmitted?: Object, journalError?: string
         const payload = {
           // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',

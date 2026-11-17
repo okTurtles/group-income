@@ -9,7 +9,7 @@ const confettiComponents = {
   'confetii-triangle': ConfettiTriangle,
   'confetti-logo': ConfettiLogo
 }
-const confettiNames = Object.keys(confettiComponents)
+const confettiNames = Object.keys(confettiComponents) as Array<keyof typeof confettiComponents>
 
 export {
   confettiComponents,

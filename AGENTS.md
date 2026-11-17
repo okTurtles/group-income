@@ -335,5 +335,5 @@ Two jobs, each starting from `npm ci`:
 
 There is no separate lint or typecheck step. `ci-test:unit` runs `build`, whose
 lint phase is `exec:eslint`, `exec:typecheck`, `exec:puglint`, `exec:stylelint`
-(`Gruntfile.js:458`) — so ESLint and `tsc` are enforced there. `ci-test:cypress`
-uses `build:skiplint` and deliberately skips them.
+(the `lintTasks` list in the `build` task) — so ESLint and `tsc` are enforced
+there. `ci-test:cypress` uses `build:skiplint` and deliberately skips them.

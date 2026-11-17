@@ -28,7 +28,7 @@ export default {
   },
   methods: {
     redirect (content: any) {
-      let query: any = { name: content }
+      let query: { name: any } | { query: { modal: any, step: any } } = { name: content }
       // Overright for modals
       if (this.$route.query.modal) {
         query = { query: { modal: this.$route.query.modal, step: content } }

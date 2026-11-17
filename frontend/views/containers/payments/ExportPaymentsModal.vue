@@ -57,7 +57,7 @@ import { uniq } from 'turtledash'
 import { humanDate } from '@model/contracts/shared/time.ts'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ExportPaymentsModal',
   components: {
     ModalTemplate
@@ -169,7 +169,7 @@ export default ({
       this.close()
     }
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

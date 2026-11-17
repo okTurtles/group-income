@@ -69,7 +69,7 @@ export function getProposalDetails (proposal: Record<string, any>): Record<strin
     'votingSystem': L('voting system'),
     'votingRule': L('voting rules')
   }
-  const options: any = {}
+  const options: Record<string, any> = {}
   if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
     if (proposalData.ruleName !== proposalData.current.ruleName) {
       options['settingType'] = 'votingSystem'

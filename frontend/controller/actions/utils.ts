@@ -10,7 +10,7 @@ import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '@chelonia/
 import type { GIActionParams } from './types.ts'
 
 const enqueueDeferredPromise = (queue) => {
-  let finished: Fn
+  let finished: (value?: unknown) => void
   const onFinishPromise = new Promise<any>((resolve) => {
     finished = resolve
   })

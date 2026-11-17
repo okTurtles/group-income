@@ -8,7 +8,7 @@
 import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.ts'
 
-export default ({
+export default {
   name: 'PaymentNextDistributionPill',
   computed: {
     ...mapGetters([
@@ -26,7 +26,7 @@ export default ({
       })
     }
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

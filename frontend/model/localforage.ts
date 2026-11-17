@@ -33,13 +33,13 @@ const localforage = {
               const request = self.indexedDB.open(name + '--' + storeName, version)
 
               // Create the object store if it doesn't exist
-              request.onupgradeneeded = (event: any) => {
-                const db = event.target.result
+              request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+                const db = (event.target as IDBOpenDBRequest).result
                 db.createObjectStore(storeName)
               }
 
-              request.onsuccess = (event: any) => {
-                const db = event.target.result
+              request.onsuccess = (event: Event) => {
+                const db = (event.target as IDBOpenDBRequest).result
                 if (!db.objectStoreNames.contains(storeName)) {
                   return openDB(db.version + 1)
                 }
