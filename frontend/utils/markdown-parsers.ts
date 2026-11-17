@@ -9,7 +9,7 @@ export type MarkdownSegment = {
 }
 
 export function combineMarkdownSegmentListIntoString (
-  segmentList: Array<MarkdownSegment>
+  segmentList: MarkdownSegment[]
 ): string {
   // This is pretty much reverting what splitStringByMarkdownCode() below does.
   // It combines the object list into a string.
@@ -21,7 +21,7 @@ export function combineMarkdownSegmentListIntoString (
 
 export function splitStringByMarkdownCode (
   str: string
-): Array<MarkdownSegment> {
+): MarkdownSegment[] {
   // This function takes a markdown string and split it by texts written as either inline/block code.
   // (e.g. `asdf`, ```const var = 123```)
 

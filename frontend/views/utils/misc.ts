@@ -111,7 +111,7 @@ export function withGroupCurrency (amount: number): string {
   return withCurrency(code, amount)
 }
 
-export async function fetchNews (): Promise<Array<any>> {
+export async function fetchNews (): Promise<any[]> {
   const response = await fetch('https://groupincome.org/news.json')
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)

@@ -7,7 +7,7 @@ export type SizeOption = {
   label: string
 }
 
-export const textSizeOptions: Array<SizeOption> = [
+export const textSizeOptions: SizeOption[] = [
   {
     value: 14,
     alias: 'sm',

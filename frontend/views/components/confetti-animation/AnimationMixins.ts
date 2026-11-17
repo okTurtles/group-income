@@ -275,7 +275,7 @@ const animationMixins = {
   components: {
     ...confettiComponents
   },
-  data (): { animationActive: boolean, confettis: Array<any>, timeout: null } {
+  data (): { animationActive: boolean, confettis: any[], timeout: null } {
     return {
       confettis: [],
       animationActive: true,

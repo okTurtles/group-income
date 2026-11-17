@@ -926,7 +926,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/identity/leaveGroup', L('Failed to leave a group.')),
   ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
   'gi.actions/identity/uploadFiles': async ({ attachments, billableContractID }: {
-    attachments: Array<Record<string, any>>, billableContractID: string
+    attachments: Record<string, any>[], billableContractID: string
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     try {

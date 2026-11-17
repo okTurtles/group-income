@@ -24,7 +24,7 @@ const realValidatorMessage = (value: string): string => {
   throw new Error('expected stringMax to throw')
 }
 
-const makeJournal = (entries: Array<Record<string, any>>): Record<string, any> => {
+const makeJournal = (entries: Record<string, any>[]): Record<string, any> => {
   const journal = Object.create(null)
   journal.entries = entries
   return journal

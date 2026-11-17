@@ -2,10 +2,10 @@ export type DomObject = {
   tagName: string | null,
   attributes: Record<string, string>, // can be an empty object too.
   text?: string,
-  children?: Array<DomObject>
+  children?: DomObject[]
 }
 
-export function htmlStringToDomObjectTree (htmlString: string): Array<DomObject> {
+export function htmlStringToDomObjectTree (htmlString: string): DomObject[] {
   // Use DOMParser to parse the HTML string into a DOM tree.
   // Reference 1. (DOMParser API): https://developer.mozilla.org/en-US/docs/Web/API/DOMParser
   // Refernce 2. (Converting html to virtual DOM): https://medium.com/@fulit103/converting-html-to-a-virtual-dom-in-javascript-3a6db0f563b1)

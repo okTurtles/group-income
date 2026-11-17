@@ -159,7 +159,7 @@ describe('journal export selection', () => {
     return { contractID, type, loadJournal: () => entry.journal, entry }
   }
   // Same, recording in `loaded` every time its journal is loaded.
-  const trackedCandidate = (loaded: Array<string>, contractID: string, type: string, count: number = 1) => {
+  const trackedCandidate = (loaded: string[], contractID: string, type: string, count: number = 1) => {
     const c = candidate(contractID, type, count)
     const load = c.loadJournal
     c.loadJournal = () => {

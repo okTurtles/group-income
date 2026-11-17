@@ -24,7 +24,7 @@ export default class CircularList {
     this.#offset = (offset + 1) % capacity
   }
 
-  addAll (entries: Array<any>) {
+  addAll (entries: any[]) {
     for (const entry of entries) {
       this.add(entry)
     }
@@ -36,7 +36,7 @@ export default class CircularList {
     this.#offset = 0
   }
 
-  toArray (): Array<any> {
+  toArray (): any[] {
     const buffer = this.#buffer
     const offset = this.#offset
     return (

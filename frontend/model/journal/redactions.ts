@@ -99,7 +99,7 @@ type JournalRedaction = { path: string, redact: Redactor }
 // known fields (such as `hash` or `from`) and unknown fields nested inside
 // known ones are only covered by the rules below, which assume an honest
 // client. A modified client can still place text there.
-const MESSAGE_FIELD_REDACTIONS: Array<[string, Redactor]> = [
+const MESSAGE_FIELD_REDACTIONS: [string, Redactor][] = [
   ['text', freeTextRedactor],
   ['emoticons', emoticonsRedactor],
   ['replyingMessage.text', freeTextRedactor],
@@ -112,7 +112,7 @@ const MESSAGE_FIELD_REDACTIONS: Array<[string, Redactor]> = [
   ['notification.params', notificationParamsRedactor]
 ]
 
-const messageRedactions: Array<JournalRedaction> = [
+const messageRedactions: JournalRedaction[] = [
   // Runs before the field rules below, which then apply to the rebuilt entries.
   { path: 'pinnedMessages.*', redact: pinnedMessageRedactor },
   ...['messages', 'pinnedMessages'].flatMap(
@@ -122,7 +122,7 @@ const messageRedactions: Array<JournalRedaction> = [
   )
 ]
 
-export const JOURNAL_REDACTIONS: Array<JournalRedaction> = [
+export const JOURNAL_REDACTIONS: JournalRedaction[] = [
   // A 6-character base58 hash is ~35 bits, so a short dictionary recovers the
   // address: it would only look protective in a file users are told to attach
   // publicly. `attributes.username` already carries the diagnostic value.

@@ -52,7 +52,7 @@ export default {
       this.$emit('done')
     }
   },
-  data (): { config: { steps: Array<any> }, content: string } {
+  data (): { config: { steps: any[] }, content: string } {
     return {
       content: '',
       config: { steps: [] }

@@ -174,7 +174,7 @@ export async function postLeaveChatRoomCleanup (contractID: string, state: Recor
   // contract (for DMs).
 }
 
-export function findMessageIdx (hash: string, messages: Array<Record<string, any>> = []): number {
+export function findMessageIdx (hash: string, messages: Record<string, any>[] = []): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].hash === hash) {
       return i

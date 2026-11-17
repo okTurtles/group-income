@@ -75,9 +75,9 @@ const journalExportRank = (contractID: string, type: string, ownIdentityID: stri
 // Returns a sorted copy. The sort is stable, so candidates of the same rank
 // keep their original order.
 export const orderJournalCandidates = (
-  candidates: Array<JournalCandidate>,
+  candidates: JournalCandidate[],
   ownIdentityID: string | null | undefined
-): Array<JournalCandidate> => {
+): JournalCandidate[] => {
   const rank = ({ contractID, type }) => journalExportRank(contractID, type, ownIdentityID)
   return candidates.slice().sort((a, b) => rank(a) - rank(b))
 }
@@ -87,7 +87,7 @@ export const orderJournalCandidates = (
 // smaller one later in the list can still be included. A contract without a
 // journal is left out of both.
 export const selectJournalsWithinBudget = (
-  candidates: Array<JournalCandidate>,
+  candidates: JournalCandidate[],
   maxBytes: number = MAX_JOURNAL_EXPORT_BYTES
 ): JournalSelection => {
   const journals = Object.create(null)

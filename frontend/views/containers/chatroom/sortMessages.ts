@@ -6,7 +6,7 @@ export const isUnsentMessage = (message: Record<string, any>): boolean =>
 const heightRank = (message: Record<string, any>): number =>
   Number.isFinite(message.height) ? message.height : Infinity
 
-export const sortMessages = (messages: Array<Record<string, any>>): Array<Record<string, any>> => {
+export const sortMessages = (messages: Record<string, any>[]): Record<string, any>[] => {
   const sent = []
   const unsent = []
   for (const message of messages) {

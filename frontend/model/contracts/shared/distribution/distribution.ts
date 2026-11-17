@@ -6,12 +6,12 @@ import mincomeProportional from './mincome-proportional.ts'
 import type { HaveNeedObject } from './mincome-proportional.ts'
 import minimizeTotalPaymentsCount from './payments-minimizer.ts'
 
-type Distribution = Array<Record<string, any>>;
+type Distribution = Record<string, any>[];
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
 export function unadjustedDistribution ({ haveNeeds = [], minimize = true }: {
-  haveNeeds: Array<HaveNeedObject>, minimize?: boolean
+  haveNeeds: HaveNeedObject[], minimize?: boolean
 }): Distribution {
   const distribution = mincomeProportional(haveNeeds)
   return minimize ? minimizeTotalPaymentsCount(distribution) : distribution

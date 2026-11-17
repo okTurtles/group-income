@@ -189,7 +189,7 @@ export default (sbp('sbp/selectors/register', {
     contractID: string,
     messageHash: string,
     createdHeight: number,
-    unreadMessages: Array<{ messageHash: string, createdHeight: number }>
+    unreadMessages: { messageHash: string, createdHeight: number }[]
   }) => {
     const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
     if (!identityContractID) {

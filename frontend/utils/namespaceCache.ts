@@ -37,7 +37,7 @@ export const applyNamespaceUpdate = (
   const reverseCache = state.reverseNamespaceLookups
   const currentValue = ownValue(cache, name)
   // Removes reverse entries that still point to `name`
-  const forget = (values: Array<string | null | undefined>): boolean => {
+  const forget = (values: (string | null | undefined)[]): boolean => {
     let changed = false
     for (const oldValue of new Set(values)) {
       if (oldValue && oldValue !== value && ownValue(reverseCache, oldValue) === name) {

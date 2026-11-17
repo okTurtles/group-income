@@ -43,7 +43,7 @@ export async function createLogger (config: Record<string, any>, { getItem, remo
         consoleProxy.error(error)
       }
     },
-    setAppLogsFilter (filter: Array<string>) {
+    setAppLogsFilter (filter: string[]) {
       appLogsFilter.splice(0, appLogsFilter.length, ...filter)
       // NOTE: Find a way to capture logs without messing up with log file location.
       // console.log() doesnt include stack trace, so when logged, we can't access

@@ -8,7 +8,7 @@ const normalizeForMentionSearch = (str: string): string => str.normalize().toUpp
 
 // `names` are the strings a keyword is matched against (e.g., a member's
 // username and display name). Missing names are ignored.
-export const toMentionCandidate = (item: Record<string, any>, names: Array<string | null | undefined>): MentionCandidate => ({
+export const toMentionCandidate = (item: Record<string, any>, names: (string | null | undefined)[]): MentionCandidate => ({
   item,
   searchKeys: names.flatMap(name => typeof name === 'string' ? [normalizeForMentionSearch(name)] : [])
 })
