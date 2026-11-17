@@ -72,7 +72,7 @@ const oneTimeNotificationEntries = [
 // because periodic notification state is reset on every login and group switch.
 // Cleared on logout, so that one account's attempts don't delay another's.
 const USERNAME_FETCH_INTERVAL = 30 * MINS_MILLIS
-const lastUsernameFetch = new Map()
+const lastUsernameFetch = new Map<string, number>()
 sbp('okTurtles.events/on', LOGOUT, () => lastUsernameFetch.clear())
 
 const periodicNotificationEntries = [

@@ -37,7 +37,7 @@ import './views/utils/vFocus.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import hasAllRequiredFeatures from '@model/featureCheck.ts'
 import Vue from 'vue'
-import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
+import notificationsMixin from './model/notifications/mainNotificationsMixin.ts'
 import './model/notifications/periodicNotifications.ts'
 import FaviconBadge from './utils/faviconBadge.ts'
 import './utils/init-vue-plugins.js'
