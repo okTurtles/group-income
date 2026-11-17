@@ -1,7 +1,3 @@
-// @ts-nocheck
-// This file was never meant to be typechecked; the pragma above keeps tsc
-// from checking it.
-
 'use strict'
 
 import { deserializer, serializer } from '@chelonia/serdes'
@@ -17,6 +13,13 @@ import { getSubscriptionId } from '@chelonia/lib/functions'
 const pwa = {
   deferredInstallPrompt: null,
   installed: false
+}
+
+// Periodic Background Sync API is experimental and absent from lib.dom.
+// https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API
+declare const PeriodicSyncManager: unknown
+type PeriodicSyncServiceWorkerRegistration = ServiceWorkerRegistration & {
+  periodicSync: { register(tag: string, options?: { minInterval?: number }): Promise<void> }
 }
 
 deserializer.register(SPMessage)
@@ -40,7 +43,7 @@ const serviceWorkerMap = new WeakMap()
 const waitUntilSwReady = () => {
   let cleanup, worker
 
-  const promise = new Promise((resolve, reject) => {
+  const promise = new Promise<void>((resolve, reject) => {
     navigator.serviceWorker.ready.then((registration) => {
       worker = registration.active
       if (!worker) {
@@ -143,7 +146,7 @@ sbp('sbp/selectors/register', {
             case 'pong':
               break
             case 'event': {
-              sbp('okTurtles.events/emit', event.data.subtype, ...deserializer(event.data.data))
+              sbp('okTurtles.events/emit', event.data.subtype, ...(deserializer(event.data.data) as unknown[]))
               break
             }
             case 'navigate': {
@@ -157,12 +160,12 @@ sbp('sbp/selectors/register', {
             // `notificationclick` handler for notifications that have an
             // `sbpInvocation` instead of a `linkTo` property.
             case 'sbp': {
-              sbp(...deserializer(event.data.data))
+              sbp(...(deserializer(event.data.data) as [string, ...unknown[]]))
               break
             }
             case CAPTURED_LOGS: {
               // Emit silently to avoid flooding logs with event emitted entries
-              silentEmit(CAPTURED_LOGS, ...deserializer(event.data.data))
+              silentEmit(CAPTURED_LOGS, ...(deserializer(event.data.data) as unknown[]))
               break
             }
             default:
@@ -178,7 +181,7 @@ sbp('sbp/selectors/register', {
 
       if (!process.env.CI && typeof PeriodicSyncManager === 'function') {
         navigator.permissions.query({
-          name: 'periodic-background-sync'
+          name: 'periodic-background-sync' as PermissionName
         }).then((status) => {
           if (status.state !== 'granted') {
             console.error('[service-workers/setup] Periodic sync event permission denied')
@@ -186,7 +189,7 @@ sbp('sbp/selectors/register', {
           }
 
           return navigator.serviceWorker.ready.then((registration) =>
-            registration.periodicSync.register('periodic-notifications', {
+            (registration as PeriodicSyncServiceWorkerRegistration).periodicSync.register('periodic-notifications', {
               // An interval of 12 hours
               minInterval: 12 * HOURS_MILLIS
             })
@@ -213,7 +216,7 @@ sbp('sbp/selectors/register', {
             e.target.postMessage({ type: 'skip-waiting' })
           }
         }
-        e.target.installing.addEventListener('statechange', handler, false)
+        (e.target as ServiceWorkerRegistration).installing.addEventListener('statechange', handler, false)
       })
 
       // Keep the service worker alive while the window is open
