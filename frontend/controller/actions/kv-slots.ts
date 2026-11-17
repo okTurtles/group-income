@@ -32,7 +32,7 @@ import { namespaceCacheList, scheduleSaveCachedNames } from './identity-kv.ts'
 //   - return a plain JSON object (no Date/Map) for the mirror.
 // The stored shape is `{ [hash]: { timestamp, read } }`.
 const notificationStatusSchema = {
-  parse (value: any): Record<string, any> {
+  parse (value: unknown): Record<string, any> {
     if (value == null || typeof value !== 'object' || Array.isArray(value)) {
       throw new TypeError('notifications: expected an object of notification statuses')
     }

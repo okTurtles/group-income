@@ -4,7 +4,7 @@ export default {
   methods: {
     // Takes colors in hex format (i.e. #F06D06)
     // and lightens or darkens them with a value
-    lightenDarkenColor (col: string, amt: number): any {
+    lightenDarkenColor (col: string, amt: number): string {
       return this.HSLToHex(...this.hexToHSLDarken(col, amt))
     },
     // Modified version of https://stackoverflow.com/questions/21646738/convert-hex-to-rgba

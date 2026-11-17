@@ -40,7 +40,7 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   )
 }
 
-export const proposalSettingsType: any = objectOf({
+export const proposalSettingsType = objectOf({
   rule: ruleType,
   expires_ms: number,
   ruleSettings: objectOf({
@@ -212,4 +212,4 @@ const proposals: Record<string, any> = {
 
 export default proposals
 
-export const proposalType: any = unionOf(...Object.keys(proposals).map(k => literalOf(k)))
+export const proposalType = unionOf(...Object.keys(proposals).map(k => literalOf(k)))

@@ -22,7 +22,7 @@ import {
 
 // group.ts related
 
-export const inviteType: any = objectOf({
+export const inviteType = objectOf({
   inviteKeyId: string,
   creatorID: string,
   invitee: optional(string)
@@ -30,7 +30,7 @@ export const inviteType: any = objectOf({
 
 // chatroom.ts related
 
-export const chatRoomAttributesType: any = objectOf({
+export const chatRoomAttributesType = objectOf({
   name: stringMax(CHATROOM_NAME_LIMITS_IN_CHARS),
   description: stringMax(CHATROOM_DESCRIPTION_LIMITS_IN_CHARS),
   // NOTE: creatorID is optional parameter which is not being used
@@ -41,7 +41,7 @@ export const chatRoomAttributesType: any = objectOf({
   privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
 })
 
-export const messageType: any = objectMaybeOf({
+export const messageType = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   text: string,
   proposal: objectOf({

@@ -402,7 +402,7 @@ self.addEventListener('message', function (event) {
         const port = event.data.port
         let revokables
 
-        ;(async () => await sbp(...(deserializer(event.data.data) as [string, ...any[]])))().then((r) => {
+        ;(async () => await sbp(...(deserializer(event.data.data) as [string, ...unknown[]])))().then((r) => {
           const { data, transferables, revokables: rr } = serializer(r)
           revokables = rr
           port.postMessage([true, data], transferables)
@@ -450,7 +450,7 @@ self.addEventListener('message', function (event) {
         self.skipWaiting()
         break
       case 'event':
-        sbp('okTurtles.events/emit', event.data.subtype, ...(deserializer(event.data.data) as any[]))
+        sbp('okTurtles.events/emit', event.data.subtype, ...(deserializer(event.data.data) as unknown[]))
         break
       case 'ready': {
         // The 'ready' message is sent by a client (i.e., a tab or window) to

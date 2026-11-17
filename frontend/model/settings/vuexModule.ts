@@ -15,7 +15,7 @@ const checkSystemColor = () => {
 
 const updateMetaThemeTag = (theme: string) => {
   // update the content of <meta name='theme-color' /> according to the changed theme
-  const metaTag: any = document.querySelector('meta[name="theme-color"]')
+  const metaTag = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
 
   if (metaTag) {
     metaTag.content = theme === THEME_DARK ? '#2E3032' : '#F5F5F5'

@@ -23,7 +23,7 @@ export function imageDataURItoBlob (dataURI: string): Blob {
   return new Blob([ab], { type: imageType })
 }
 
-export const imageUpload = async (imageFile: File, params?: Record<string, unknown> | null): Promise<any> => {
+export const imageUpload = async (imageFile: File, params?: Record<string, any> | null): Promise<any> => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   const { download } = await sbp('chelonia/fileUpload', imageFile, { type: file.type, cipher: 'aes256gcm' }, params)
@@ -45,7 +45,7 @@ export function supportsWebP (): Promise<boolean> {
   })
 }
 
-function loadImage (url): any {
+function loadImage (url): Promise<HTMLImageElement> {
   const imgEl = new Image()
 
   return new Promise((resolve) => {
@@ -94,7 +94,7 @@ function getResizingFactor (sourceImage) {
   return 1
 }
 
-export async function compressImage (imgUrl: string, sourceMimeType?: string): Promise<any> {
+export async function compressImage (imgUrl: string, sourceMimeType?: string): Promise<Blob> {
   // Takes a source image url and generate a blob of the compressed image.
 
   // According to the testing result, webP format has a better compression ratio than jpeg.

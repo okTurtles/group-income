@@ -85,8 +85,8 @@ const rules: Record<string, any> = {
 
 export default rules
 
-export const ruleType: any = unionOf(...Object.keys(rules).map(k => literalOf(k)))
-export const voteType: any = unionOf(...[VOTE_AGAINST, VOTE_INDIFFERENT, VOTE_UNDECIDED, VOTE_FOR].map(v => literalOf(v)))
+export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
+export const voteType = unionOf(...[VOTE_AGAINST, VOTE_INDIFFERENT, VOTE_UNDECIDED, VOTE_FOR].map(v => literalOf(v)))
 
 /**
  *

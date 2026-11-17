@@ -1,5 +1,5 @@
 const promiseWithResolvers: () => {
-    promise: Promise<any>,
+    promise: Promise<unknown>,
     resolve: Fn,
     reject: Fn
 } = (() => {

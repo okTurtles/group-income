@@ -55,7 +55,7 @@ export function applyStorageRules (notifications: Notification[], status: { [key
     ;[
       [item => item.read, MAX_COUNT_READ],
       [item => !item.read, MAX_COUNT_UNREAD]
-    ].forEach(([condition, associatedMaxCount]: [any, any]) => {
+    ].forEach(([condition, associatedMaxCount]: [(item: { read: boolean }) => boolean, number]) => {
       if (associatedMaxCount !== -1 && associatedMaxCount < MAX_COUNT) {
         let count = 0
 

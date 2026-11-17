@@ -25,7 +25,7 @@ export const minusOnePeriodLength = (timestamp: string, periodLength: number): s
 export function periodStampsForDate (
   date: Date | string,
   { knownSortedStamps, periodLength, guess }: { knownSortedStamps: string[], periodLength: number, guess?: boolean }
-): Record<string, any> {
+): { previous?: string, current?: string, next?: string } {
   if (!(isIsoString(date) || Object.prototype.toString.call(date) === '[object Date]')) {
     throw new TypeError('must be ISO string or Date object')
   }
@@ -195,7 +195,7 @@ export function humanDate (
 
 export function humanTimeString (
   date: number | Date | string,
-  options: any = { hour: '2-digit', minute: '2-digit' }
+  options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
 ): string {
   const dateObj = new Date(date)
   return dateObj.toLocaleTimeString(getLocale(), options)

@@ -54,7 +54,7 @@ marked.use({
   }
 })
 
-export function renderMarkdown (str: string): any {
+export function renderMarkdown (str: string): string {
   // STEP 1. Handle multiple line-breaks
   // markedjs with the gfm(Github Flavored Markdown) style always collapses multiple line-breaks into one
   // so we need some custom logic to handle it manually.
@@ -101,7 +101,7 @@ export function injectOrStripSpecialChar (
   type: string, // type of markdown needed to inject.
   startIndex: number, // start position of the target segment.
   endIndex: number // end position of the target segment.
-): any {
+): { output: string, focusIndex: { start: number, end: number } } {
   const charMap = {
     'bold': '**',
     'italic': '_',
@@ -150,7 +150,7 @@ export function injectOrStripLink (
   str: string, // A target string.
   startIndex: number, // start position of the target segment.
   endIndex: number // end position of the target segment.
-): any {
+): { output: string, focusIndex: { start: number, end: number } } {
   let segment = str.slice(startIndex, endIndex)
   let before = str.slice(0, startIndex)
   let after = str.slice(endIndex)

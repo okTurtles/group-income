@@ -32,6 +32,6 @@ declare module '*.svg' {
 // this declaration yet — declared anyway, like `*.svg`, so the first one that
 // does needs no edit.
 declare module '*.scss' {
-  const styles: any
+  const styles: unknown
   export default styles
 }

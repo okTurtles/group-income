@@ -45,7 +45,7 @@ export const encryptedAction = (
 ): Record<string, any> => {
   const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
-    const invocation: [string, ...any[]] = [
+    const invocation: [string, ...unknown[]] = [
       'chelonia/out/actionEncrypted',
       {
         ...params,

@@ -10,7 +10,7 @@ let currentFavicon = null
 let originalFavicon = null
 let faviconImage
 let canvas = null
-let options: any = {}
+let options: { width?: number, height?: number, background?: string, crossOrigin?: boolean } = {}
 // Chrome browsers with nonstandard zoom report fractional devicePixelRatio.
 const r = Math.ceil(window.devicePixelRatio) || 1
 const size = 16 * r

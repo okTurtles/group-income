@@ -4,6 +4,7 @@ import type { SPKey } from '@chelonia/lib/SPMessage'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { findKeyIdByName, findSuitableSecretKeyId } from '@chelonia/lib/utils'
+import type { Key } from '@chelonia/crypto'
 import { keyId, keygenOfSameType, serializeKey } from '@chelonia/crypto'
 import './kv-slots.ts'
 
@@ -83,7 +84,7 @@ sbp('sbp/selectors/register', {
         }))
       }
 
-      const invocation: [string, ...any[]] = ['chelonia/out/keyShare', {
+      const invocation: [string, ...unknown[]] = ['chelonia/out/keyShare', {
         contractID,
         contractName,
         data: encryptedOutgoingData(contractID, CEKid, payload),
@@ -134,7 +135,7 @@ sbp('sbp/selectors/register', {
       return
     }
 
-    const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]: [any, any, any, any]) => {
+    const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]: [string, Key, string, string]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
       const isRotatedEncryptionKey = has(newKeys, encryptionKeyName)
       const encryptionKey = isRotatedEncryptionKey ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data

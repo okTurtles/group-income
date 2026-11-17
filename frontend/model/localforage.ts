@@ -1,4 +1,4 @@
-const _instances: (() => Promise<any>)[] = []
+const _instances: (() => Promise<unknown>)[] = []
 // Localforage-like API for IndexedDB
 
 const localforage = {

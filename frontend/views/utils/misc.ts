@@ -5,11 +5,11 @@ import VueRouter from 'vue-router'
 import { L } from '@common/common.js'
 import { withCurrency } from '@model/contracts/shared/currencies.ts'
 
-export function logExceptNavigationDuplicated (err: any) {
+export function logExceptNavigationDuplicated (err: Error) {
   err.name !== 'NavigationDuplicated' && console.error(err)
 }
 
-export function ignoreWhenNavigationCancelled (err: any, path: string) {
+export function ignoreWhenNavigationCancelled (err: unknown, path: string) {
   const { isNavigationFailure, NavigationFailureType } = VueRouter
   if (isNavigationFailure(err, NavigationFailureType.cancelled)) {
     console.log(`Navigation to ${path} cancelled, and another navigation took place instead`)
@@ -111,7 +111,7 @@ export function withGroupCurrency (amount: number): string {
   return withCurrency(code, amount)
 }
 
-export async function fetchNews (): Promise<any[]> {
+export async function fetchNews (): Promise<unknown[]> {
   const response = await fetch('https://groupincome.org/news.json')
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`)

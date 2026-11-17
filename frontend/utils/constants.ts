@@ -12,7 +12,7 @@ export const CHAT_ATTACHMENT_SIZE_LIMIT = 30 * MEGABYTE // in byte.
 export const IMAGE_ATTACHMENT_MAX_SIZE = 400 * KILOBYTE // 400KB
 export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_DESKTOP = 500 * 1.25 // in px
 export const CHAT_LONG_MESSAGE_HEIGHT_THRESHOLD_MOBILE = 500 * 1.5 // The value of mobile is more tolerant considering smaller screen size.
-export const EMOJI_REGEX: any = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
+export const EMOJI_REGEX: RegExp = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|[\u2615-\u27BF]|\u200D)/gu
 export const VOICE_RECORDING_MIME_TYPES = {
   DEFAULT: 'audio/mp4',
   // Firefox's MediaRecorder cannot produce mp4 and defaults to ogg natively

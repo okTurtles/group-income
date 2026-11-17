@@ -23,7 +23,7 @@ export function htmlStringToDomObjectTree (htmlString: string): DomObject[] {
   return createRecursiveDomObjects(rootNode)?.children || []
 }
 
-function isOnlyNewlines (str: any): boolean {
+function isOnlyNewlines (str: string): boolean {
   return /^[\n]*$/.test(str)
 }
 

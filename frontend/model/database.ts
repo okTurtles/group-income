@@ -97,7 +97,7 @@ sbp('sbp/selectors/register', {
       })
     })
   },
-  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<any>): Promise<any> {
+  'gi.db/settings/loadEncrypted': function (key: string, stateKeyEncryptionKeyFn: (stateEncryptionKeyId: string, salt: string) => Promise<any>): Promise<unknown> {
     return appSettings.getItem('e' + key).then(async (encryptedValue) => {
       if (!encryptedValue || typeof encryptedValue !== 'string') {
         throw new EmptyValue(`Unable to retrive state for ${key || ''}`)
@@ -208,7 +208,7 @@ const filesCache = localforage.createInstance({
 const maxFileEntries = 100
 
 sbp('sbp/selectors/register', {
-  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<any> {
+  'gi.db/filesCache/save': async function (cacheKey: string, blob: Blob): Promise<unknown> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     // We need to perform several operations in the DB, which includes
     // the operation requested (i.e., saving a file) and updating the `keys`
@@ -277,7 +277,7 @@ sbp('sbp/selectors/register', {
   'gi.db/filesCache/clear': async function (): Promise<void> {
     await filesCache.clear()
   },
-  'gi.db/filesCache/temporary/save': function (cacheKey: string, blob: Blob): Promise<any> {
+  'gi.db/filesCache/temporary/save': function (cacheKey: string, blob: Blob): Promise<unknown> {
     if (cacheKey.startsWith('__')) throw new Error('Invalid key')
     return sbp('gi.db/filesCache/save', `temporary/${cacheKey}/`, blob)
   },

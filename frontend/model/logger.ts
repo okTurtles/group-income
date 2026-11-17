@@ -4,11 +4,11 @@ import CircularList from '~/frontend/utils/CircularList.ts'
 
 const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']
 const originalConsole = console
-const noop = (...args: any) => undefined
+const noop = (...args: unknown[]) => undefined
 
 // `Promise<any>`, not `any`: TypeScript requires an async function's return type to be
 // `Promise<T>` (TS1064). Callers still get `any` after `await`.
-export async function createLogger (config: Record<string, any>, { getItem, removeItem, setItem }: { getItem: Fn, removeItem: Fn, setItem: Fn }): Promise<any> {
+export async function createLogger (config: Record<string, any>, { getItem, removeItem, setItem }: { getItem: Fn, removeItem: Fn, setItem: Fn }): Promise<unknown> {
   const entries = new CircularList(config.maxEntries)
   const methods = Object.fromEntries(loggingLevels.map((name) =>
     [name, (...args) => {
