@@ -16,7 +16,7 @@ const fetchName = (name: string, signal: AbortSignal): Promise<string | null | u
       return null
     }
     // An empty answer isn't a contract ID
-    return r['text']().then((text: string) => text || null)
+    return r.text().then((text: string) => text || null)
   })
 }
 

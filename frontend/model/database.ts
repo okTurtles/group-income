@@ -73,7 +73,7 @@ sbp('sbp/selectors/register', {
   'gi.db/settings/delete': function (key: string): Promise<void> {
     return appSettings.removeItem('u' + key)
   },
-  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<any> {
+  'gi.db/settings/saveEncrypted': async function (key: string, value: any, encryptionParams: any): Promise<void> {
     const {
       stateEncryptionKeyId,
       salt,
@@ -162,7 +162,7 @@ sbp('sbp/selectors/register', {
     return appSettings.removeItem('e' + key)
   },
   // Chatroom drafts related selectors
-  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<any> {
+  'gi.db/chatDrafts/save': function (key: string, value: any): Promise<void> {
     return appSettings.setItem(`${CHATROOM_DRAFT_KEY_PREFIX}${key}`, value)
   },
   'gi.db/chatDrafts/load': function (key: string): Promise<any> {
@@ -312,7 +312,7 @@ const archive = localforage.createInstance({
 })
 
 sbp('sbp/selectors/register', {
-  'gi.db/archive/save': function (key: string, value: any): Promise<any> {
+  'gi.db/archive/save': function (key: string, value: any): Promise<void> {
     return archive.setItem(key, value)
   },
   'gi.db/archive/load': function (key: string): Promise<any> {
@@ -336,7 +336,7 @@ const logs = localforage.createInstance({
 })
 
 sbp('sbp/selectors/register', {
-  'gi.db/logs/save': function (key: string, value: any): Promise<any> {
+  'gi.db/logs/save': function (key: string, value: any): Promise<void> {
     return logs.setItem(key, value)
   },
   'gi.db/logs/load': function (key: string): Promise<any> {

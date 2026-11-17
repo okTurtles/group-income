@@ -6,9 +6,8 @@
 // `.vue` module carries no type information to expose — `any` is the honest
 // description, not a shortcut.
 //
-// Separate file from `declarations.d.ts` because the two have different
-// lifetimes. That one holds ambient globals; this one is permanent for as long
-// as the build has non-JS imports.
+// Kept separate from `declarations.d.ts`, which holds ambient globals; this
+// file only declares modules for non-JS imports.
 
 // Only `.vue` imports made from `.ts` files reach this declaration (e.g.
 // `controller/router.ts`, `utils/lazyLoadedView.ts`). `.vue`-to-`.vue` imports
@@ -29,8 +28,9 @@ declare module '*.svg' {
 }
 
 // Only `AppStyles.vue` imports SCSS from a script block rather than a style
-// block, and it is the sole reason this declaration exists. A wildcard costs
-// nothing and does not need revisiting if a second one appears.
+// block, and `tsc` never looks inside `.vue` files, so no `.ts` file reaches
+// this declaration yet — declared anyway, like `*.svg`, so the first one that
+// does needs no edit.
 declare module '*.scss' {
   const styles: any
   export default styles

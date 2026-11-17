@@ -68,8 +68,7 @@ export const isType: any = typeFn => (v, _scope = '') => {
   }
 }
 
-// This function will return value based on schema with inferred types. This
-// value can be used to define type in TypeScript with 'typeof' utility.
+// This function will return value based on schema with inferred types.
 export const typeOf: any = schema => schema(EMPTY_VALUE, '')
 export const getType: any = (typeFn, _options) => {
   if (isFunction(typeFn.type)) return typeFn.type(_options)

@@ -206,10 +206,8 @@ export default (sbp('sbp/selectors/register', {
         }
       }
       if (!distributionDate) {
-        // 3 days after group creation by default. we put this here for a kind of dumb but
-        // necessary reason: the Cypress tests could not import dateToPeriodStamp or any of
-        // the other time.ts functions back when they carried Flow annotations, even though
-        // our .babelrc should have made it work.
+        // Default to 3 days after group creation when the caller (e.g. the Cypress
+        // group-creation helpers) doesn't provide a distribution date.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
 
