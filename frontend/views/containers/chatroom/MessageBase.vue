@@ -277,7 +277,7 @@ export default ({
     },
     isMessageCropped () {
       // Check if the truncate-toggle is enabled and the message is folded.
-      return this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
+      return !this.isEditing && this.ephemeral.truncateToggle.enabled && !this.ephemeral.truncateToggle.isShowingAll
     },
     isPending () {
       return this.variant === MESSAGE_VARIANTS.PENDING
@@ -337,6 +337,8 @@ export default ({
       return cleaned
     },
     determineToEnableTruncationToggle () {
+      if (this.isEditing) { return }
+
       const msgBodyEl = this.isTypePoll
         ? this.$refs.msgFullWidthBody // poll message is rendered in .c-full-width-body container
         : this.$refs.msgBody
