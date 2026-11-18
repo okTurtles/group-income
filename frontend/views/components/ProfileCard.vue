@@ -25,7 +25,7 @@ import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
 import ProfileCardContent from './ProfileCardContent.vue'
 
-export default ({
+export default {
   name: 'ProfileCard',
   components: {
     Tooltip,
@@ -57,7 +57,7 @@ export default ({
       this.$refs.tooltip?.toggle()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

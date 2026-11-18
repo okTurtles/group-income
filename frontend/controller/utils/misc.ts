@@ -1,0 +1,16 @@
+'use strict'
+
+import { ChelErrorResourceGone, ChelErrorUnexpectedHttpResponseCode } from '@chelonia/lib/errors'
+
+export function handleFetchResult (type: string): ((r: Response) => any) {
+  return function (r: Response) {
+    if (!r.ok) {
+      const msg = `${r.status}: ${r.statusText}`
+      // 410 is sometimes special (for example, it can mean that a contract or
+      // a file been deleted)
+      if (r.status === 404 || r.status === 410) throw new ChelErrorResourceGone(msg, { cause: r.status })
+      throw new ChelErrorUnexpectedHttpResponseCode(msg)
+    }
+    return r[type]()
+  }
+}

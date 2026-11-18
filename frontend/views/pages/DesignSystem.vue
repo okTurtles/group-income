@@ -1539,7 +1539,7 @@ page(
 
 <script>
 import sbp from '@sbp/sbp'
-import '@views/utils/ui.js'
+import '@views/utils/ui.ts'
 import Page from '@components/Page.vue'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -1572,7 +1572,7 @@ import SvgAttachment from '@svgs/attachment.svg'
 import { mapGetters, mapMutations } from 'vuex'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
-export default ({
+export default {
   name: 'DesignSystemView',
   data () {
     return {
@@ -1728,7 +1728,7 @@ export default ({
       link.setAttribute('href', `#${el.id}`)
       menu.appendChild(link)
       this.articles.push({
-        link: link,
+        link,
         top: el.getBoundingClientRect().top - window.innerHeight
       })
     })
@@ -1819,7 +1819,7 @@ export default ({
       'isDarkTheme'
     ])
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

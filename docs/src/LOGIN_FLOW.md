@@ -204,7 +204,7 @@ are not prompted to log in again when they have already done so in the past.
 
 ##### Triggers
 
-###### `actions/identity.js`
+###### `actions/identity.ts`
 
 The `LOGIN` event is emitted in the service worker after calling
 `'gi.actions/identity/login'`. Its purpose is to let all open tabs that a new
@@ -216,21 +216,21 @@ while all tabs need to know that a user recently logged in, only the caller
 needs to know when it logging in fails (for example, to display feedback in the
 login form)
 
-###### `app/identity.js`
+###### `app/identity.ts`
 
-Exceptionally, the `LOGIN` event can also be emitted locally in `app/identity.js`.
+Exceptionally, the `LOGIN` event can also be emitted locally in `app/identity.ts`.
 This happens when _there already is an active session_ and
 `'gi.actions/identity/login'` is not called (i.e., when opening a new tab of
 Group Income on a device where the user has already logged in). The purpose of
 emitting this event is to trigger the various handlers that set up the app state
 based on an existing session, thus reusing the same logic as for then this event
-originates in `actions/identity.js`.
+originates in `actions/identity.ts`.
 
 ##### Handlers
 
-###### `app/identity.js`
+###### `app/identity.ts`
 
-The handler in `app/identity.js` will react to a `LOGIN` event and load a copy of
+The handler in `app/identity.ts` will react to a `LOGIN` event and load a copy of
 the app local state from IndexedDB. Once this is done, this handler will emit
 either of `LOGIN_COMPLETE` or `LOGIN_ERROR`, depending on whether an error
 occurred or not.
@@ -244,7 +244,7 @@ the handlers here handle logging in or signing up as part of joining a group.
 
 ##### Triggers
 
-###### `app/identity.js`
+###### `app/identity.ts`
 
 The `LOGIN_COMPLETE` (or `LOGIN_ERROR`) event is emitted in the handler of the
 `LOGIN` event. The event is emitted after successfully (or, in the case of
@@ -252,19 +252,19 @@ The `LOGIN_COMPLETE` (or `LOGIN_ERROR`) event is emitted in the handler of the
 
 ##### Handlers
 
-###### `app/identity.js`
+###### `app/identity.ts`
 
 The `gi.app/identity/login` selector sets up event listeners for
 `LOGIN_COMPLETE` and `LOGIN_ERROR` and returns after either of these is
 received.
 
-###### `setupChelonia.js`
+###### `setupChelonia.ts`
 
 An event listener for `LOGIN_COMPLETE` loads KV values after a successful login
 session and saves Chelonia state into IndexedDB. This enables session
 persistence.
 
-###### `main.js`
+###### `main.ts`
 
 The `LOGIN_ERROR` event handler removes the loading animation.
 
@@ -273,7 +273,7 @@ The `LOGIN_COMPLETE` event handler finishes setting up the global app state.
 #### `LOGOUT`
 ##### Triggers
 
-###### `actions/identity.js`
+###### `actions/identity.ts`
 
 The `LOGOUT` event is emitted right at the end of the
 `gi.actions/identity/logout` selector to signal that the current session has
@@ -281,33 +281,33 @@ ended.
 
 ##### Handlers
 
-###### `app/identity.js`
+###### `app/identity.ts`
 
 This event listener unloads persistent actions (currently commented out).
 
-###### `setupChelonia.js`
+###### `setupChelonia.ts`
 
 This event listener resets Chelonia and removes Chelonia state from IndexedDB.
 
-###### `main.js`
+###### `main.ts`
 
 This event listener sets up global app state related to there being no active
 session.
 
-###### `state.js`
+###### `state.ts`
 
 This event listener (working in conjunction with a filter on the
 `gi.app/identity/logout` selector) is used to determine whether a logout process
 is currently in progress. If there's an ongoing logout process, session state
 is not regularly persisted to IndexedDB like it normally would be.
 
-###### `actions/group.js`
+###### `actions/group.ts`
 
 This event listener is set up during the course of an ongoing group joining
 process (i.e., a call to `gi.actions/group/join`) for the purpose of cleaning
 up other event listeners set up connected to joining a group.
 
-###### `settings/vuexModule.js`
+###### `settings/vuexModule.ts`
 
 This event listener restores the Vuex module state to its initial value after
 logging out.

@@ -51,12 +51,12 @@ import { L } from '@common/common.js'
 import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import { withGroupCurrency } from '@view-utils/misc.js'
-import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.ts'
+import { withGroupCurrency } from '@view-utils/misc.ts'
+import { humanDate, comparePeriodStamps } from '@model/contracts/shared/time.ts'
 import { cloneDeep } from 'turtledash'
 
-export default ({
+export default {
   name: 'PaymentDetail',
   components: {
     ModalTemplate,
@@ -136,7 +136,7 @@ export default ({
   validations: {
     form: {}
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

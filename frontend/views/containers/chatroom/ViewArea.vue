@@ -18,7 +18,7 @@ import { L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default ({
+export default {
   name: 'ViewArea',
   components: {
     ButtonSubmit
@@ -54,7 +54,7 @@ export default ({
       }
     }
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

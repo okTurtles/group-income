@@ -39,7 +39,7 @@ const menuList = [
   { id: 'share', name: L('Share'), icon: 'share-alt', enableCheck: () => 'share' in window.navigator }
 ]
 
-export default ({
+export default {
   name: 'TouchLinkHelper',
   data () {
     return {
@@ -108,7 +108,7 @@ export default ({
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_TOUCH_LINK_HELPER, this.open)
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

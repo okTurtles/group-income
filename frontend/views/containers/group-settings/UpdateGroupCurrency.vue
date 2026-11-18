@@ -35,7 +35,7 @@
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
-import currencies from '@model/contracts/shared/currencies.js'
+import currencies from '@model/contracts/shared/currencies.ts'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 

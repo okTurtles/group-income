@@ -27,7 +27,7 @@ import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default ({
+export default {
   name: 'LeaveChannelModal',
   components: {
     ModalTemplate,
@@ -69,7 +69,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

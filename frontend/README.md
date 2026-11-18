@@ -2,4 +2,4 @@
 
 This is the application itself.
 
-Entry point is `main.js`.
+Entry point is `main.ts`.

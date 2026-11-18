@@ -14,7 +14,7 @@ import Page from '@components/Page.vue'
 import NewsAndUpdates from '@containers/global-dashboard/NewsAndUpdates.vue'
 import DirectMessages from '@containers/global-dashboard/DirectMessages.vue'
 
-export const GLOBAL_DASHBOARD_SETTINGS: {[string]: Object } = {
+export const GLOBAL_DASHBOARD_SETTINGS = {
   'news-and-updates': {
     title: L('News & Updates'),
     routeTo: '/global-dashboard/news-and-updates',
@@ -32,7 +32,7 @@ const contentComponentsMap = {
   'direct-messages': DirectMessages
 }
 
-export default ({
+export default {
   name: 'GlobalDashboard',
   components: {
     Page
@@ -45,7 +45,7 @@ export default ({
       return contentComponentsMap[this.$route.params.id || 'news-and-updates']
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

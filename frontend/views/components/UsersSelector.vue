@@ -41,7 +41,7 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default ({
+export default {
   name: 'UsersSelector',
   components: {
     AvatarUser,
@@ -54,7 +54,7 @@ export default ({
     },
     userIDs: {
       type: Array,
-      default: []
+      default: () => []
     },
     defaultValue: {
       type: String,
@@ -92,13 +92,13 @@ export default ({
       this.$refs.input.innerHTML = ''
       this.value = ''
     },
-    onHandleKeyDown (e: KeyboardEvent) {
+    onHandleKeyDown (e) {
       const { keyCode } = e
       if (keyCode === 13 || keyCode === 39) { // Enter
         e.preventDefault()
       }
     },
-    onHandleKeyUp (e: KeyboardEvent) {
+    onHandleKeyUp (e) {
       const { keyCode } = e
 
       if (keyCode === 13 || keyCode === 39) { // Enter
@@ -117,7 +117,7 @@ export default ({
       this.$emit('change', this.value)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

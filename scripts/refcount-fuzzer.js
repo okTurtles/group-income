@@ -1,4 +1,3 @@
-/* @noflow */
 const queueFactory = () => {
   const events = []
   const queue = async (fn) => {

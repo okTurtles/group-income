@@ -19,7 +19,7 @@
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
-export default ({
+export default {
   name: 'BannerScoped',
   components: {
     BannerSimple,
@@ -58,7 +58,7 @@ export default ({
       this.ephemeral.severity = severity
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

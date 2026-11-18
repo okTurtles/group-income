@@ -21,7 +21,7 @@ MenuItem(
 import { mapGetters, mapMutations } from 'vuex'
 import UserSettingsTabMenuItem from '../UserSettingsTabMenuItem.vue'
 import Slider from '@components/Slider.vue'
-import { textSizeOptions } from '@view-utils/textSizes.js'
+import { textSizeOptions } from '@view-utils/textSizes.ts'
 
 export default {
   name: 'TextSizeTile',

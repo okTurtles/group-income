@@ -14,7 +14,7 @@
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'BannerGeneral',
   components: {
     TransitionExpand
@@ -47,9 +47,7 @@ export default ({
     severity () {
       return this.ephemeral.severity
     },
-    debouncedShow ({ message, icon, seconds, clearWhen }: {
-      message: Function, icon: string, seconds: number, clearWhen: Function
-    }) {
+    debouncedShow ({ message, icon, seconds, clearWhen }) {
       let clearBannerTimer
       return debounce((...args) => {
         const clearBanner = () => {
@@ -70,7 +68,7 @@ export default ({
       }, 1000 * seconds)
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

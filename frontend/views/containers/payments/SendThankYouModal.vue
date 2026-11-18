@@ -57,7 +57,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgHello from '@svgs/hello.svg'
 
-export default ({
+export default {
   name: 'SendThankYouModal',
   components: {
     ModalTemplate,
@@ -98,7 +98,7 @@ export default ({
       }
     }
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>

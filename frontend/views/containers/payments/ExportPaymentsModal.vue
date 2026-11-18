@@ -54,10 +54,10 @@ modal-template(ref='modal' :a11yTitle='modalTitle')
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { uniq } from 'turtledash'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import { L } from '@common/common.js'
 
-export default ({
+export default {
   name: 'ExportPaymentsModal',
   components: {
     ModalTemplate
@@ -169,7 +169,7 @@ export default ({
       this.close()
     }
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>
