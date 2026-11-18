@@ -106,6 +106,7 @@ import { L, LError } from '@common/common.js'
 
 export default {
   name: 'ChatAttachmentPreview',
+  inject: ['chatMainConfig'],
   components: {
     Tooltip,
     AttachmentDownloadItem,
@@ -350,8 +351,8 @@ export default {
       }
     },
     getStretchedDimension ({ width, height }) {
-      // NOTE: 320px = 20rem of max-height (.loading-box)
-      const maxHeight = 320
+      // NOTE: 320px = 20rem of max-height (.loading-box), 224px = 14rem on mobile
+      const maxHeight = this.chatMainConfig.isPhone ? 224 : 320
       // NOTE: 16px = 2 * 0.5rem of padding (.c-preview-img)
       //       2px = 2 * 1px of border width (.c-attachment-preview)
       const maxWidth = this.$refs.container.clientWidth - 16 - 2
