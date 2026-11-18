@@ -106,7 +106,8 @@ export default {
       'groupSettings',
       'currentGroupOwnerID',
       'ourIdentityContractId',
-      'groupProposalSettings'
+      'groupProposalSettings',
+      'ourGroupProfile'
     ]),
     isGroupAdmin () {
       // TODO: https://github.com/okTurtles/group-income/issues/202
@@ -118,7 +119,7 @@ export default {
     },
     displayRolesAndPermissions () {
       // TODO: Remove this once the development is complete and the feature is ready for release.
-      return process.env.NODE_ENV === 'development'
+      return process.env.NODE_ENV === 'development' && this.ourGroupProfile.role
     },
     groupCurrency () {
       return this.groupSettings.mincomeCurrency
