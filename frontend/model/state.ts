@@ -27,7 +27,7 @@ import chatroomModule from '~/frontend/model/chatroom/vuexModule.ts'
 // usage examples see commit 01e9169d9dcb294da1e6aea88d75a185887fa861
 // TODO: Consider moving this function into a different file
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const contractUpdate = (initialState: Record<string, any>, updateFn: (state: Record<string, any>, contractIDHints: string[] | null | undefined) => any, contractType?: string | null) => {
+const contractUpdate = (initialState: Record<string, any>, updateFn: (state: Record<string, unknown>, contractIDHints: string[] | null | undefined) => any, contractType?: string | null) => {
   // Wrapper for the update function. This performs a common check, namely that
   // the contract is of a certain type, which helps return early
   const wrappedUpdateFn = contractType

@@ -611,7 +611,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Record<string, any>, options: Record<string, any>) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Record<string, any>, options: Record<string, unknown>) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
@@ -964,7 +964,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/removeFiles': async ({ manifestCids, option }: {
-    manifestCids: string[], option: Record<string, any>
+    manifestCids: string[], option: Record<string, unknown>
   }) => {
     const { identityContractID } = sbp('state/vuex/state').loggedIn
     const { shouldDeleteFile, shouldDeleteToken, throwIfMissingToken } = option
@@ -1390,7 +1390,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }))
   },
-  'gi.actions/identity/_ondeleted': async (contractID: string, state: Record<string, any>, { confirmed = false }: { confirmed?: boolean } = {}) => {
+  'gi.actions/identity/_ondeleted': async (contractID: string, state: Record<string, unknown>, { confirmed = false }: { confirmed?: boolean } = {}) => {
     const ourIdentityContractId = sbp('state/vuex/getters').ourIdentityContractId
 
     if (contractID === ourIdentityContractId) {

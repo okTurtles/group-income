@@ -97,7 +97,7 @@ export function createNamespaceCacheList ({
 
   const localNames = (): string[] => Object.keys(getState().namespaceLookups || {})
 
-  const outbox = (): { add: Record<string, any>, drop: Record<string, any> } => {
+  const outbox = (): { add: Record<string, unknown>, drop: Record<string, unknown> } => {
     const state = getState()
     if (!state[NS_CACHE_OUTBOX]) {
       // First use (including after upgrading from a version without an

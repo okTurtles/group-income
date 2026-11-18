@@ -19,7 +19,7 @@ export function getIdFromChannelMention (str: string): string {
 
 export function swapMentionIDForDisplayname (
   text: string,
-  options: Record<string, any> = {
+  options: Record<string, unknown> = {
     escaped: true, // this indicates that the text contains escaped characters
     forChat: true // this indicates that the function is being used for messages inside chatroom
   }

@@ -185,7 +185,7 @@ export default ({
     }
   },
   periodBeforePeriodForGroup (state, getters) {
-    return (groupState: Record<string, any>, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: Record<string, unknown>, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -196,7 +196,7 @@ export default ({
     return (periodStamp: string, periods?: string[]) => getters.periodBeforePeriodForGroup(getters.currentGroupState, periodStamp, periods)
   },
   periodAfterPeriodForGroup (state, getters) {
-    return (groupState: Record<string, any>, periodStamp: string, periods?: string[]): string | void => {
+    return (groupState: Record<string, unknown>, periodStamp: string, periods?: string[]): string | void => {
       return periodStampsForDate(periodStamp, {
         knownSortedStamps: periods || getters.groupSortedPeriodKeysForGroup(groupState),
         periodLength: getters.groupSettingsForGroup(groupState).distributionPeriodLength
@@ -287,13 +287,13 @@ export default ({
       return state.paymentsByPeriod || {}
     }
   },
-  groupPeriodPayments (state, getters): Record<string, any> {
+  groupPeriodPayments (state, getters): Record<string, unknown> {
     return getters.groupPeriodPaymentsForGroup(getters.currentGroupState)
   },
-  groupThankYousFrom (state, getters): Record<string, any> {
+  groupThankYousFrom (state, getters): Record<string, unknown> {
     return getters.currentGroupState.thankYousFrom || {}
   },
-  groupStreaks (state, getters): Record<string, any> {
+  groupStreaks (state, getters): Record<string, unknown> {
     return getters.currentGroupState.streaks || {}
   },
   groupTotalPledgeAmount (state, getters): number {
@@ -370,4 +370,4 @@ export default ({
   //     return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
   //   }
   // }
-} as Record<string, any>)
+} as Record<string, unknown>)

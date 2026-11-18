@@ -104,7 +104,7 @@ const updateKVPreferences = (updater: Fn) => {
 // Shallow-merge `patch` over the current preferences via the slot's
 // `defaultUpdater` (kv-slots.ts). Use this for single-shape writes; use
 // `updateKVPreferences` when the write needs to read `prev` (e.g. nested merges).
-const setKVPreferences = (patch: Record<string, any>) => {
+const setKVPreferences = (patch: Record<string, unknown>) => {
   const identityContractID = sbp('state/vuex/state').loggedIn?.identityContractID
   if (!identityContractID) {
     throw new Error('Unable to update preferences without an active session')

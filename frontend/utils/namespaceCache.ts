@@ -9,13 +9,13 @@ import { has } from 'turtledash'
 // username must be read with this: after state is saved and restored (e.g.,
 // IndexedDB, JSON or `postMessage`), they have `Object.prototype` as their
 // prototype, and `constructor` is a valid username.
-export const ownValue = (obj: Record<string, any> | null | undefined, key: string): any => obj && has(obj, key) ? obj[key] : undefined
+export const ownValue = (obj: Record<string, unknown> | null | undefined, key: string): any => obj && has(obj, key) ? obj[key] : undefined
 
 export type NamespaceUpdate = { name: string, value?: string | null | undefined, deletedValue?: string | null | undefined }
 
 // The update that records `value` (a contract ID, or `null` if the name isn't
 // registered) as the current answer for `name` in `cache`.
-export const answerToUpdate = (cache: Record<string, any> | null | undefined, name: string, value: string | null | undefined): NamespaceUpdate =>
+export const answerToUpdate = (cache: Record<string, unknown> | null | undefined, name: string, value: string | null | undefined): NamespaceUpdate =>
   value ? { name, value } : { name, deletedValue: ownValue(cache, name) }
 
 // Applies an update to the username cache (`namespaceLookups`, name to
@@ -29,7 +29,7 @@ export const answerToUpdate = (cache: Record<string, any> | null | undefined, na
 export const applyNamespaceUpdate = (
   state: Record<string, any>,
   { name, value, deletedValue }: NamespaceUpdate,
-  { set, del }: { set: (obj: Record<string, any>, key: string, value: any) => unknown, del: (obj: Record<string, any>, key: string) => unknown }
+  { set, del }: { set: (obj: Record<string, unknown>, key: string, value: any) => unknown, del: (obj: Record<string, unknown>, key: string) => unknown }
 ): boolean => {
   if (!state.namespaceLookups) set(state, 'namespaceLookups', Object.create(null))
   if (!state.reverseNamespaceLookups) set(state, 'reverseNamespaceLookups', Object.create(null))

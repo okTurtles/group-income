@@ -114,7 +114,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   state?: Record<string, any>,
   pending?: boolean,
   innerSigningContractID?: string
-}): Record<string, any> {
+}): Record<string, unknown> {
   const { type, text, replyingMessage, attachments } = data
   const { createdDate } = meta
 
@@ -160,7 +160,7 @@ export function createMessage ({ meta, data, hash, height, state, pending, inner
   return newMessage
 }
 
-export async function postLeaveChatRoomCleanup (contractID: string, state: Record<string, any>) {
+export async function postLeaveChatRoomCleanup (contractID: string, state: Record<string, unknown>) {
   if (await sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     return
   }
@@ -174,7 +174,7 @@ export async function postLeaveChatRoomCleanup (contractID: string, state: Recor
   // contract (for DMs).
 }
 
-export function findMessageIdx (hash: string, messages: Record<string, any>[] = []): number {
+export function findMessageIdx (hash: string, messages: Record<string, unknown>[] = []): number {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].hash === hash) {
       return i
@@ -283,7 +283,7 @@ export const validateChatRoomName = (name: string) => {
 //                             function into the queue.
 //   queue slot 5: [referenceTally]: Function pushed onto the queue by event 3.
 //                              Since the temp count is -1, release is called.
-export const referenceTally = (selector: string): Record<string, any> => {
+export const referenceTally = (selector: string): Record<string, unknown> => {
   const delta = {
     'retain': 1,
     'release': -1

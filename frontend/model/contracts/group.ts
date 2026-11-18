@@ -47,7 +47,7 @@ import { chatRoomAttributesType, inviteType } from './shared/types.ts'
 import proposals, { notifyAndArchiveProposal, proposalSettingsType, proposalType } from './shared/voting/proposals.ts'
 import votingRules, { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, ruleType, voteType } from './shared/voting/rules.ts'
 
-function fetchInitKV (obj: Record<string, any>, key: string, initialValue: any): any {
+function fetchInitKV (obj: Record<string, unknown>, key: string, initialValue: any): any {
   let value = obj[key]
   if (!value) {
     obj[key] = initialValue
@@ -1505,7 +1505,7 @@ sbp('chelonia/defineContract', {
       // unsubscribe from other group members identity contract
       const { identityContractID } = sbp('state/vuex/state').loggedIn
       const dependentContractIDs = [
-        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, Record<string, any>]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
+        ...Object.entries(state?.profiles || {}).filter(([, state]: [string, Record<string, unknown>]) => state.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID),
         ...Object.entries(state?.chatRooms || {}).filter(([, state]: [string, Record<string, any>]) => state.members[identityContractID]?.status === PROFILE_STATUS.ACTIVE).map(([cID]) => cID)
       ]
       if (dependentContractIDs.length) {

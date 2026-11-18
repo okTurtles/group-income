@@ -36,7 +36,7 @@ export function createNamespaceResolver ({
   unregisteredTtl?: number,
   requestTimeout?: number
 }): Record<string, any> {
-  const entries: Map<string, Record<string, any>> = new Map()
+  const entries: Map<string, Record<string, unknown>> = new Map()
   // Incremented by `reset()`. A lookup started before a reset still returns its
   // answer but doesn't write it into the (new) cache. Server answers aren't tied
   // to a session: lookups started after a reset may reuse a remembered answer
@@ -67,11 +67,11 @@ export function createNamespaceResolver ({
     ]).finally(() => clearTimeout(timer))
   }
 
-  const start = (name: string): Record<string, any> => {
+  const start = (name: string): Record<string, unknown> => {
     for (const [key, entry] of entries) {
       if (!isFresh(entry)) entries.delete(key)
     }
-    const entry: Record<string, any> = { settled: false, value: undefined, at: 0 }
+    const entry: Record<string, unknown> = { settled: false, value: undefined, at: 0 }
     entry.promise = fetchWithTimeout(name).then((value) => {
       if (entries.get(name) === entry) {
         entry.settled = true

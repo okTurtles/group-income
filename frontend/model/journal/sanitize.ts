@@ -36,7 +36,7 @@ const ERROR_FIELDS = ['error', 'diffError', 'redactionError']
 // touched. Runs as part of loading each journal in `sw/journal/getAll`, before
 // the byte accounting, so that the export budget measures what is actually
 // written to the file.
-export const sanitizeJournal = (journal: Record<string, any>): Record<string, any> => {
+export const sanitizeJournal = (journal: Record<string, unknown>): Record<string, unknown> => {
   const entries = journal?.entries
   if (!Array.isArray(entries)) return journal
   for (const entry of entries) {

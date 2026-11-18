@@ -1,12 +1,12 @@
 'use strict'
 
-export const isUnsentMessage = (message: Record<string, any>): boolean =>
+export const isUnsentMessage = (message: Record<string, unknown>): boolean =>
   !!message.hasFailed || !!message.pending
 
 const heightRank = (message: Record<string, any>): number =>
   Number.isFinite(message.height) ? message.height : Infinity
 
-export const sortMessages = (messages: Record<string, any>[]): Record<string, any>[] => {
+export const sortMessages = (messages: Record<string, unknown>[]): Record<string, unknown>[] => {
   const sent = []
   const unsent = []
   for (const message of messages) {

@@ -23,7 +23,7 @@ export function notifyAndArchiveProposal ({ state, proposalHash, proposal, contr
   proposalHash: string,
   proposal: any,
   contractID: string,
-  meta: Record<string, any>,
+  meta: Record<string, unknown>,
   height: number
 }) {
   delete state.proposals[proposalHash]
@@ -64,12 +64,12 @@ export function oneVoteToCloseWith (state: Record<string, any>, proposalHash: st
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (state: Record<string, any>, proposalHash: string): boolean {
+export function oneVoteToPass (state: Record<string, unknown>, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_FOR)
 }
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToFail (state: Record<string, any>, proposalHash: string): boolean {
+export function oneVoteToFail (state: Record<string, unknown>, proposalHash: string): boolean {
   return oneVoteToCloseWith(state, proposalHash, VOTE_AGAINST)
 }
 

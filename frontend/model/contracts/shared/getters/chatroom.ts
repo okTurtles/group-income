@@ -15,7 +15,7 @@ export default ({
     return (getters.currentChatRoomState.pinnedMessages || []).sort((a, b) => a.height < b.height ? 1 : -1)
   },
   isJoinedChatRoomForChatRoom (state, getters) {
-    return (state: Record<string, any>, memberID?: string) => {
+    return (state: Record<string, unknown>, memberID?: string) => {
       if (!memberID) memberID = getters.ourIdentityContractId
       const members = state?.members
       return !!members?.[memberID] && !members[memberID].hasLeft
@@ -28,4 +28,4 @@ export default ({
       return Object.keys(members).filter(memberID => !members[memberID].hasLeft)
     }
   }
-} as Record<string, any>)
+} as Record<string, unknown>)

@@ -497,7 +497,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })).then((keys) => [keys.filter(Boolean)])
   },
-  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Record<string, any>) => {
+  'gi.actions/chatroom/_ondeleted': async (contractID: string, state: Record<string, unknown>) => {
     const rootGetters = sbp('state/vuex/getters')
     const identityState = rootGetters.currentIdentityState
     if (identityState.chatRooms?.[contractID]) {

@@ -125,11 +125,11 @@ export function maxAge (notification: Notification): number {
   return notification.read ? MAX_AGE_READ : MAX_AGE_UNREAD
 }
 
-export function makeNotificationHash (notification: Record<string, any>): string {
+export function makeNotificationHash (notification: Record<string, unknown>): string {
   return blake32Hash(JSON.stringify(hashableRepresentation(notification)))
 }
 
-export function extractProposalData (proposal: Record<string, any>, extraFields: Record<string, any> = {}): Record<string, any> {
+export function extractProposalData (proposal: Record<string, any>, extraFields: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     proposalType: proposal.data.proposalType,
     proposalData: proposal.data.proposalData,

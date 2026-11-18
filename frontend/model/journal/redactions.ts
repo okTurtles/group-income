@@ -32,7 +32,7 @@ export const redactedRedactor = (_value: unknown): string => REDACTED
 // fits here even though picker emoji are low entropy, unlike the
 // `attributes.email` rule: an emoji identifies nobody, and the free text a
 // modified client can smuggle into a reaction is high entropy.
-export const emoticonsRedactor = (value: unknown): Record<string, any> => {
+export const emoticonsRedactor = (value: unknown): Record<string, unknown> => {
   const redacted = {}
   if (typeof value !== 'object' || value === null) return redacted
   for (const [emoticon, reactors] of Object.entries(value)) {
@@ -48,7 +48,7 @@ const NOTIFICATION_PARAM_KEYS = new Set(['channelName', 'channelDescription', 'm
 // extra key, and `createMessage` spreads it into `params`. So, like a reaction,
 // a param *key* can carry free text. Known keys are kept so the notification
 // stays readable, any other key is hashed, and every value is blanked.
-export const notificationParamsRedactor = (value: unknown): Record<string, any> => {
+export const notificationParamsRedactor = (value: unknown): Record<string, unknown> => {
   const redacted = {}
   if (typeof value !== 'object' || value === null) return redacted
   for (const key of Object.keys(value)) {

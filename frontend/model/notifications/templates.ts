@@ -331,7 +331,7 @@ export default ({
       }]
     }
   },
-  PROPOSAL_CLOSED (data: { groupID: string, proposal: Record<string, any>, proposalHash: string }) {
+  PROPOSAL_CLOSED (data: { groupID: string, proposal: Record<string, unknown>, proposalHash: string }) {
     const rootState = sbp('state/vuex/state')
     const { creatorID, status, type, options } = getProposalDetails(data.proposal)
     const isCreator = creatorID === sbp('state/vuex/getters').ourIdentityContractId // notification message is different for creator and non-creator
@@ -579,4 +579,4 @@ export default ({
       groupID: data.groupID
     }
   }
-} as { [key: string]: ((data: Record<string, any>) => NotificationTemplate) })
+} as { [key: string]: ((data: Record<string, unknown>) => NotificationTemplate) })

@@ -42,7 +42,7 @@ export const encryptedAction = (
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): Record<string, any> => {
+): Record<string, unknown> => {
   const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
     const invocation: [string, ...unknown[]] = [
@@ -176,7 +176,7 @@ export const encryptedNotification = (
   encryptionKeyName?: string,
   signingKeyName?: string,
   innerSigningKeyName?: string
-): Record<string, any> => {
+): Record<string, unknown> => {
   const sendMessageFactory = (outerParams: GIActionParams) => (innerParams?: Partial<GIActionParams>): any[] | Promise<void> => {
     const params = innerParams ?? outerParams
 
@@ -337,7 +337,7 @@ export async function createInvite ({ contractID, quantity = 1, creatorID, expir
   }
 }
 
-export function groupContractsByType (contracts?: Record<string, any>): Record<string, any> {
+export function groupContractsByType (contracts?: Record<string, unknown>): Record<string, unknown> {
   const contractIDs = Object.create(null)
   if (contracts) {
     // Note: `references` holds non-ephemeral references (i.e., explicit

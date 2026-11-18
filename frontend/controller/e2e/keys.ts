@@ -24,7 +24,7 @@ function genDeviceSecretFromSeed (
 }
 
 function deviceObjToContextStr (
-  dev: Record<string, any>
+  dev: Record<string, unknown>
 ): string {
   // TODO: figure out the description
   return `scope:${dev.scope},devType:${dev.devType},description:<encrypted description>,deviceIdx:${dev.deviceIdx},status:${dev.status}`
@@ -38,11 +38,8 @@ function contextStrToDeviceObj (
 
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
-    // `SPKeyType` is a union of three key-type literals, so the `''` default is
-    // not assignable to it. The cast keeps the default's runtime value untouched
-    // while preserving the declared type.
-    { type = '' as SPKeyType }: {
-      type: SPKeyType
+    { type = '' }: {
+      type: SPKeyType | ''
     }) {
 
   },

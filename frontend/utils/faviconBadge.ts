@@ -134,7 +134,7 @@ const refreshFavicon = () => {
 }
 
 const FaviconBadge = {
-  setOptions: function (custom: Record<string, any>) {
+  setOptions: function (custom: Record<string, unknown>) {
     options = {}
 
     for (const key in defaults) {

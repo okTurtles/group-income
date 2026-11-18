@@ -9,7 +9,7 @@ const vueSetters = { set: Vue.set, del: Vue.delete }
 
 // Applies a namespace cache update (as broadcast by the service worker with
 // NAMESPACE_REGISTRATION) to this tab's Vuex state. Does nothing if unchanged.
-export const applyNamespaceUpdateToVuex = (state: Record<string, any>, update: NamespaceUpdate) => {
+export const applyNamespaceUpdateToVuex = (state: Record<string, unknown>, update: NamespaceUpdate) => {
   applyNamespaceUpdate(state, update, vueSetters)
 }
 

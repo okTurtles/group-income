@@ -17,9 +17,9 @@ const periodicNotificationEntries: {
   type: string;
   notificationData: {
     stateKey: string;
-    emitCondition: (arg: { rootState: Record<string, any>, rootGetters: Record<string, any> }) => boolean;
-    emit: (arg: { rootState: Record<string, any>, rootGetters: Record<string, any> }) => void | Promise<void>;
-    shouldClearStateKey: (arg: { rootState: Record<string, any>, rootGetters: Record<string, any> }) => boolean;
+    emitCondition: (arg: { rootState: Record<string, unknown>, rootGetters: Record<string, any> }) => boolean;
+    emit: (arg: { rootState: Record<string, unknown>, rootGetters: Record<string, any> }) => void | Promise<void>;
+    shouldClearStateKey: (arg: { rootState: Record<string, unknown>, rootGetters: Record<string, any> }) => boolean;
   }
 }[] = [
   {

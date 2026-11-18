@@ -349,13 +349,13 @@ sbp('sbp/selectors/register', {
   })
 )
 
-sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (obj: any) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_SCROLL_POSITION, (obj: Record<string, unknown>) => {
   // Don't send messages from the SW back to the SW to prevent infinite loops
   if (obj.from === 'sw') return
   navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_SCROLL_POSITION, data: [obj] })
 })
 
-sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (obj: any) => {
+sbp('okTurtles.events/on', NEW_CHATROOM_NOTIFICATION_SETTINGS, (obj: Record<string, unknown>) => {
   // Don't send messages from the SW back to the SW to prevent infinite loops
   if (obj.from === 'sw') return
   navigator.serviceWorker.controller?.postMessage({ type: 'event', subtype: NEW_CHATROOM_NOTIFICATION_SETTINGS, data: [obj] })

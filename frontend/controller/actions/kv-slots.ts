@@ -32,7 +32,7 @@ import { namespaceCacheList, scheduleSaveCachedNames } from './identity-kv.ts'
 //   - return a plain JSON object (no Date/Map) for the mirror.
 // The stored shape is `{ [hash]: { timestamp, read } }`.
 const notificationStatusSchema = {
-  parse (value: unknown): Record<string, any> {
+  parse (value: unknown): Record<string, unknown> {
     if (value == null || typeof value !== 'object' || Array.isArray(value)) {
       throw new TypeError('notifications: expected an object of notification statuses')
     }
@@ -52,7 +52,7 @@ const notificationStatusSchema = {
 // `setFilter` gating in `setupChelonia.ts`. (KV-REVAMPED.md §4.1 / §7.2)
 export const onOwnIdentity = (
   contractID: string,
-  _contractState: Record<string, any>,
+  _contractState: Record<string, unknown>,
   rootState: Record<string, any>
 ): boolean => contractID === rootState.loggedIn?.identityContractID
 

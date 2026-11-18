@@ -20,21 +20,21 @@ export const JOURNAL_ENTRY_SLACK_BYTES = 32
 // Cap on the journal portion of the export. `logs` is not counted here.
 export const MAX_JOURNAL_EXPORT_BYTES = 5 * 1024 * 1024
 
-export type JournalExportEntry = { type: string, journal: Record<string, any> }
+export type JournalExportEntry = { type: string, journal: Record<string, unknown> }
 export type JournalCandidate = {
   contractID: string,
   type: string,
   // Returns the journal as it will be written (already sanitized), or nothing
   // if the contract has no journal. Must be synchronous, so that every journal
   // is read from the same state.
-  loadJournal: () => Record<string, any> | null | undefined
+  loadJournal: () => Record<string, unknown> | null | undefined
 }
 export type JournalSelection = {
   // `contractID -> JournalExportEntry`
-  journals: Record<string, any>,
+  journals: Record<string, unknown>,
   // `contractID -> { type, bytes }` for the journals left out to stay within
   // the budget, so the person reading the report can tell what is missing.
-  omitted: Record<string, any>,
+  omitted: Record<string, unknown>,
   truncated: boolean
 }
 
@@ -51,7 +51,7 @@ export const journalKeyBytes = (contractID: string): number => {
 // (channel names, display names) costs 2-4 bytes per code point and
 // `String.length` would let the export exceed its budget. Adds the indentation
 // the entry gains from sitting `JOURNAL_ENTRY_DEPTH` levels below the root.
-export const journalEntryBytes = (contractID: string, entry: Record<string, any>): number => {
+export const journalEntryBytes = (contractID: string, entry: Record<string, unknown>): number => {
   const pretty = JSON.stringify(entry, undefined, EXPORT_JSON_INDENT)
   const continuationLines = pretty.split('\n').length - 1
   return utf8Encoder.encode(pretty).length +

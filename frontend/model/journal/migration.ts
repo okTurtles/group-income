@@ -17,7 +17,7 @@ import { JOURNAL_REDACTIONS_VERSION } from './redactions.ts'
 // a state that has no version yet, and delete them.
 export const clearStaleJournalsAfterRedactions = (
   rootState: Record<string, any>,
-  reactiveSet: (o: Record<string, any>, k: string, v: unknown) => void,
+  reactiveSet: (o: Record<string, unknown>, k: string, v: unknown) => void,
   clearJournals: () => number
 ): void => {
   if (!rootState.deviceSettings) {

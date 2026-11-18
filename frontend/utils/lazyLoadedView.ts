@@ -5,7 +5,7 @@ import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'
 import LoadingModalFullScreen from '@views/containers/loading-error/LoadingBaseModal.vue'
 import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
 
-type LazyImport = () => Promise<Record<string, any>>;
+type LazyImport = () => Promise<Record<string, unknown>>;
 type LazyOptions = { loading?: unknown, error?: unknown };
 
 // See https://v2.vuejs.org/v2/guide/components-dynamic-async.html#Async-Components

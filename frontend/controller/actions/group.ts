@@ -1178,7 +1178,7 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Record<string, any> }) {
+  'gi.actions/group/notifyProposalStateInGeneralChatRoom': async function ({ groupID, proposal }: { groupID: string, proposal: Record<string, unknown> }) {
     const { generalChatRoomId } = await sbp('chelonia/contract/state', groupID)
     return sbp('gi.actions/chatroom/addMessage', {
       contractID: generalChatRoomId,

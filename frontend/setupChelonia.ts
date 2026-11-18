@@ -17,7 +17,7 @@ import { JOURNAL_REDACTIONS } from './model/journal/redactions.ts'
 import { clearStaleJournals } from './model/journal/migration.ts'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
 
-const diffContractVersion = (va?: Record<string, any>, vb?: Record<string, any>): boolean => {
+const diffContractVersion = (va?: Record<string, unknown>, vb?: Record<string, unknown>): boolean => {
   // If the types don't match, a different release has been made
   if (typeof va !== typeof vb) return true
   // Sort contracts by name
@@ -212,7 +212,7 @@ const initialize = async (): Promise<void> => {
   }))
 
   // Used in 'chelonia/configure' hooks to emit an error notification.
-  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Record<string, any>) => {
+  const errorNotification = (activity: string, error: Error, message: SPMessage, msgMeta?: Record<string, unknown>) => {
     sbp('gi.notifications/emit', 'CHELONIA_ERROR', { createdDate: new Date().toISOString(), activity, error, message, msgMeta })
     // Since a runtime error just occured, we likely want to persist app logs to local storage now.
     sbp('appLogs/save').catch(e => {
@@ -229,13 +229,13 @@ const initialize = async (): Promise<void> => {
     // are still needed to persist Chelonia state (this separation means that
     // Chelonia state and Vuex state need to be persisted separately).
     // // stateSelector: 'state/vuex/state',
-    reactiveSet: (o: Record<string, any>, k: string, v: unknown) => {
+    reactiveSet: (o: Record<string, unknown>, k: string, v: unknown) => {
       if (o[k] !== v) {
         o[k] = v
         saveCheloniaDebounced()
       }
     },
-    reactiveDel: (o: Record<string, any>, k: string) => {
+    reactiveDel: (o: Record<string, unknown>, k: string) => {
       if (has(o, k)) {
         delete o[k]
         saveCheloniaDebounced()

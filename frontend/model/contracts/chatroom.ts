@@ -41,8 +41,8 @@ export const GIChatroomNotMemberError = ChelErrorGenerator('GIChatroomNotMemberE
 
 function createNotificationData (
   notificationType: string,
-  moreParams: Record<string, any> = {}
-): Record<string, any> {
+  moreParams: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     type: MESSAGE_TYPES.NOTIFICATION,
     notification: {
@@ -52,7 +52,7 @@ function createNotificationData (
   }
 }
 
-async function deleteEncryptedFiles (manifestCids: string | string[], option: Record<string, any>) {
+async function deleteEncryptedFiles (manifestCids: string | string[], option: Record<string, unknown>) {
   if (Object.values(option).reduce((a, c) => a || c, false)) {
     if (!Array.isArray(manifestCids)) {
       manifestCids = [manifestCids]
