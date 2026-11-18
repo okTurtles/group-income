@@ -15,6 +15,7 @@ import {
 import { getProposalDetails } from '@model/contracts/shared/functions.js'
 import { findContractIDByForeignKeyId } from '@chelonia/lib/utils'
 import { withCurrency } from '@model/contracts/shared/currencies.js'
+import { findGroupIdForContract } from '@model/contracts/shared/groupScope.js'
 
 export default ({
   CHELONIA_ERROR (data: { activity: string, error: Error, message: SPMessage, msgMeta?: Object }) {
@@ -40,6 +41,12 @@ export default ({
         plaintextWho = sbp('state/vuex/getters').userDisplayNameFromID(innerSigningContractID)
       }
     }
+
+    // Scope this notification to whichever group owns the errored contract
+    // (if any), so it only shows up in that group's feed instead of
+    // leaking into every group's notifications.
+    // See: https://github.com/okTurtles/group-income/issues/2567
+    const groupID = findGroupIdForContract(state, contractID)
 
     const LcommonParams = {
       errName: error.name,
@@ -71,7 +78,8 @@ export default ({
       icon: 'exclamation-triangle',
       level: 'danger',
       linkTo: `/app/user-settings/application-logs?errorMsg=${encodeURIComponent(error.message)}`,
-      scope: 'app'
+      scope: groupID ? 'group' : 'app',
+      ...(groupID ? { groupID } : {})
     }
   },
   GENERAL (data: { contractID: string, message: string }) {
