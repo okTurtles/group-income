@@ -69,3 +69,8 @@ export const DEVICE_SETTINGS = {
   DISABLE_NOTIFICATIONS: 'disableNotifications',
   JOURNAL_REDACTIONS_APPLIED_VERSION: 'journalRedactionsAppliedVersion'
 }
+
+// `Error.name` of push-subscription requests that failed only because the
+// service worker isn't connected to the server. It survives the SW <-> tab
+// RPC, so that tabs can tell these apart from Web Push failures.
+export const PUBSUB_NOT_OPEN_ERROR = 'GIErrorPubsubNotOpen'

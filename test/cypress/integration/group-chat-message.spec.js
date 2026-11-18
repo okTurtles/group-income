@@ -1,4 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { OPEN_TOUCH_LINK_HELPER } from '../../../frontend/utils/events.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -282,6 +283,44 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     checkMessageBySender(2, user1, 'We are helping each other to make the world better!')
     checkMessageBySender(3, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
     checkMessageBySender(4, user2, 'Hello everyone. Thanks for inviting me to this group.')
+  })
+
+  it('user2 confirms a copied link with a toast', () => {
+    const toasts = '.c-toast-container[data-area="chat-main"]'
+    // Not chained on `cy.get(toasts)`: `.contains()` would then search inside
+    // the container, where the container's own selector doesn't match
+    const copiedToast = [`${toasts} .c-toast-card`, 'Copied to clipboard']
+
+    cy.window().then(win => {
+      // The stub keeps the test independent of the clipboard permission and of the window focus
+      if (win.navigator.clipboard) cy.stub(win.navigator.clipboard, 'writeText').resolves()
+      win.sbp('okTurtles.events/emit', OPEN_TOUCH_LINK_HELPER, 'https://example.com/')
+    })
+    cy.get('.c-touch-link-helper.is-active .c-panel-menu-item').contains('Copy link').click()
+    cy.get('.c-touch-link-helper').should('not.have.class', 'is-active')
+
+    cy.get(toasts).should('have.attr', 'aria-live', 'polite')
+    cy.contains(...copiedToast)
+    cy.contains('[data-test="bannerGeneral"]', 'Copied to clipboard').should('not.exist')
+    // It closes by itself, without covering the send area for the next tests
+    cy.contains(...copiedToast).should('not.exist')
+  })
+
+  it('user2 gets general banner messages through a live region that is always rendered', () => {
+    const liveRegion = '[data-test="bannerLiveRegion"]'
+    const danger = 'Test danger banner'
+
+    cy.get(liveRegion)
+      .should('have.attr', 'role', 'status')
+      .and('have.attr', 'aria-live', 'polite')
+      .and('have.attr', 'aria-atomic', 'true')
+    cy.window().its('sbp').then(sbp => sbp('gi.ui/dangerBanner', `${danger} <a class="link" href="#">with a link</a>`))
+    cy.getByDT('bannerGeneral').should('contain', danger).and('not.have.attr', 'aria-live')
+    // Plain text: a link in the hidden region would be an invisible tab stop
+    cy.get(liveRegion).should('have.text', `${danger} with a link`)
+    cy.window().its('sbp').then(sbp => sbp('gi.ui/clearBanner'))
+    cy.contains('[data-test="bannerGeneral"]', danger).should('not.exist')
+    cy.get(liveRegion).should('exist').and('not.contain', danger)
   })
 
   it('user2 mentions user1 and adds/removes reactions to the message', () => {

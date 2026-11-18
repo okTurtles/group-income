@@ -264,17 +264,30 @@ This banner informs the user that there's something going on with the app itself
 
 ```html
 <!-- index.html -->
-<banner-general ref="bannerGeneral"></banner-general>
+<banner-general ref="bannerGeneral" @announce="ephemeral.bannerAnnouncement = $event"></banner-general>
+<div class="sr-only" role="status" aria-live="polite" aria-atomic="true" v-text="ephemeral.bannerAnnouncement"></div>
 ```
 
 ```js
 // main.js
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 
-this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
+sbp('okTurtles.data/set', 'BANNER', this.$refs.bannerGeneral) // make it globally accessible
+
+// anywhere in the app
+sbp('gi.ui/dangerBanner', L('Your app seems to be corrupted.'))
+sbp('gi.ui/clearBanner')
 ```
 
-NOTE: this type of banner is under construction and will change soon.
+The general banner shows one message at a time, by priority:
+
+1. connection messages (`gi.ui/showConnectionBanner`), set only by `main.js`;
+2. danger messages (`gi.ui/dangerBanner`, `gi.ui/seriousErrorBanner`);
+3. "Loading events from server...", shown while contracts take more than 2 seconds to sync.
+
+Clearing a message reveals the next one, so a danger message comes back once the connection is restored. Connection messages go through `gi.ui/showConnectionBanner` and `gi.ui/clearConnectionBanner`, which are owned by `main.js`: other callers can neither replace nor clear them. `gi.ui/clearBanner` clears the danger message only; "Loading events from server..." clears itself when syncing ends. Short confirmations such as "Copied to clipboard" are toasts (`gi.ui/toast`), not banners.
+
+The banner is only rendered while it has a message. Screen readers learn about its messages through the visually hidden live region next to it, which is always rendered: `BannerGeneral` emits each message as plain text (`announce`).
 
 ## Folder Structure Style Guide
 
