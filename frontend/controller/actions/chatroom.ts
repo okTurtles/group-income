@@ -11,8 +11,7 @@ import { debounce, has, omit } from 'turtledash'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
-import type { Key } from '@chelonia/crypto'
-import type { GIRegParams } from './types.ts'
+import type { GIRegParams, RotatedKeys } from './types.ts'
 import { encryptedAction, encryptedNotification } from './utils.ts'
 import { makeMentionFromUserID } from '@model/chatroom/utils.ts'
 import messageReceivePostEffect from '@model/notifications/messageReceivePostEffect.ts'
@@ -379,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: Record<string, any>, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/chatroom/shareNewKeys': async (contractID: string, newKeys: RotatedKeys, options: { lastAttempt?: boolean } = {}) => {
     const state = sbp('chelonia/contract/state', contractID)
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
 
@@ -473,7 +472,7 @@ export default (sbp('sbp/selectors/register', {
             data: encryptedOutgoingData(contractID, mainCEKid, {
               contractID,
               foreignContractID: pContractID,
-              keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+              keys: Object.values(newKeys).map(([, newKey, newId]) => ({
                 id: newId,
                 meta: {
                   private: {

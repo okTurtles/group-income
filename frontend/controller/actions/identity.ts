@@ -22,6 +22,7 @@ import { EVENT_HANDLED } from '@chelonia/lib/events'
 import { findKeyIdByName } from '@chelonia/lib/utils'
 import { blake32Hash } from '@chelonia/lib/functions'
 import type { Key } from '@chelonia/crypto'
+import type { RotatedKeys } from './types.ts'
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, generateSalt, keyId, keygen, serializeKey } from '@chelonia/crypto'
 import { handleFetchResult } from '../utils/misc.ts'
 import { encryptedAction, groupContractsByType, syncContractsInOrder } from './utils.ts'
@@ -611,7 +612,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/addJoinDirectMessageKey': (contractID, foreignContractID, keyName) => {
     // no longer used; left empty for compatibility with old contracts
   },
-  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: Record<string, any>, options: Record<string, unknown>) => {
+  'gi.actions/identity/shareNewPEK': async (contractID: string, newKeys: RotatedKeys, options: Record<string, unknown>) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     // TODO: Also share PEK with DMs
@@ -649,7 +650,7 @@ export default (sbp('sbp/selectors/register', {
           contractName: rootState.contracts[groupID].type,
           data: encryptedOutgoingData(groupID, CEKid, {
             contractID,
-            keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+            keys: Object.values(newKeys).map(([, newKey, newId]) => ({
               id: newId,
               meta: {
                 private: {

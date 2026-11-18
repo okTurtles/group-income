@@ -39,9 +39,8 @@ import { Secret } from '@chelonia/lib/Secret'
 import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '@chelonia/lib/encryptedData'
 import { CHELONIA_RESET, CONTRACT_HAS_RECEIVED_KEYS, EVENT_HANDLED } from '@chelonia/lib/events'
 import { createInvite, encryptedAction } from './utils.ts'
-import type { Key } from '@chelonia/crypto'
 import type { ChelKeyRequestParams } from '@chelonia/lib'
-import type { GIActionParams } from './types.ts'
+import type { GIActionParams, RotatedKeys } from './types.ts'
 import { extractProposalData } from '@model/notifications/utils.ts'
 
 // Function debounced because it might get called too often (on every group
@@ -754,7 +753,7 @@ export default (sbp('sbp/selectors/register', {
   // If it _is_ the last attempt, we proceed with key rotation, even though we
   // may exclude some members. Those members can notice and send an `OP_KEY_REQUEST`
   // later (but will be temporarily unable to participate).
-  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: Record<string, any>, options: { lastAttempt?: boolean } = {}) => {
+  'gi.actions/group/shareNewKeys': async (contractID: string, newKeys: RotatedKeys, options: { lastAttempt?: boolean } = {}) => {
     const rootState = sbp('chelonia/rootState')
     const state = rootState[contractID]
     const mainCEKid = await sbp('chelonia/contract/currentKeyIdByName', state, 'cek')
@@ -835,7 +834,7 @@ export default (sbp('sbp/selectors/register', {
                 data: encryptedOutgoingData(contractID, mainCEKid, {
                   contractID,
                   foreignContractID: pContractID,
-                  keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+                  keys: Object.values(newKeys).map(([, newKey, newId]) => ({
                     id: newId,
                     meta: {
                       private: {

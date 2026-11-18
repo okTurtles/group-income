@@ -1,5 +1,7 @@
 'use strict'
 
+import type { Key } from '@chelonia/crypto'
+
 // keep in sync with ChelRegParams
 export type GIRegParams = {
   contractID?: string; // always set on contract actions, but not when creating a contract
@@ -32,3 +34,5 @@ export type GIActionParams = {
   publishOptions?: { maxAttempts: number };
   returnInvocation?: boolean;
 }
+
+export type RotatedKeys = Record<string, [oldKeyId: string, newKey: Key, newKeyId: string, encryptionKeyId: string]>
