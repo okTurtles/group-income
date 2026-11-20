@@ -206,7 +206,7 @@ export default {
   // NOTE: z-index should be bigger than the one of sidebar
   //       because PinnedMessages modal is rendered before the sidebar
   // REF:  https://github.com/okTurtles/group-income/issues/1843
-  z-index: $zindex-modal + 1;
+  z-index: $zindex-pinned-messages;
   pointer-events: initial;
   height: 100%;
 }
