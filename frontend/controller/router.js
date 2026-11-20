@@ -19,7 +19,8 @@ const lazyContributions = lazyPage(() => import('@pages/Contributions.vue'))
 const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
 const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
-const lazyGlobalDashboard = lazyPage(() => import('@pages/GlobalDashboard.vue'))
+const lazyGlobalNewsAndUpdates = lazyPage(() => import('@pages/global-dashboard/NewsAndUpdates.vue'))
+const lazyGlobalDirectMessages = lazyPage(() => import('@pages/global-dashboard/DirectMessages.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyUserSettings = lazyPage(() => import('@pages/UserSettings.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
@@ -111,14 +112,33 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard, pendingApprovalGuard)
     },
     {
-      path: '/global-dashboard/:id',
-      component: lazyGlobalDashboard,
-      name: 'GlobalDashboard',
-      meta: { title: L('Global Dashboard') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+      path: '/global-dashboard/news-and-updates',
+      component: lazyGlobalNewsAndUpdates,
+      name: 'GlobalNewsAndUpdates',
+      meta: { title: L('News & Updates') },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
-      path: '/global-dashboard', redirect: '/global-dashboard/news-and-updates'
+      path: '/global-dashboard/direct-messages',
+      component: lazyGlobalDirectMessages,
+      name: 'GlobalDirectMessages',
+      meta: { title: L('Direct Messages') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/global-dashboard/direct-messages/:chatRoomID',
+      component: lazyGlobalDirectMessages,
+      name: 'GlobalDirectMessagesConversation',
+      meta: { title: L('Direct Messages') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/global-dashboard',
+      redirect: '/global-dashboard/news-and-updates'
+    },
+    {
+      path: '/global-dashboard/*',
+      redirect: '/global-dashboard/news-and-updates'
     },
     {
       path: '/contributions',
@@ -220,6 +240,15 @@ router.beforeEach((to, from, next) => {
     // the user is not logged in now, navigate to home page and set the next query param
     // to redirect to the requested page after login.
     return next({ path: '/', query: { next: to.fullPath } })
+  }
+
+  const isEnteringGlobalDashboard = to.path?.startsWith('/global-dashboard')
+  const globalDashboardFlagInStore = store.getters.isInGlobalDashboard
+  if (isEnteringGlobalDashboard && !globalDashboardFlagInStore) {
+    sbp('state/vuex/commit', 'setIsInGlobalDashboard', true)
+  }
+  if (!isEnteringGlobalDashboard && globalDashboardFlagInStore) {
+    sbp('state/vuex/commit', 'setIsInGlobalDashboard', false)
   }
 
   document.title = to.meta.title

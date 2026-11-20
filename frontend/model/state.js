@@ -95,7 +95,10 @@ const initialState = {
   periodicNotificationAlreadyFiredMap: {
     alreadyFired: Object.create(null), // { notificationKey: boolean },
     lastRun: Object.create(null) // { notificationKey: number }
-  }
+  },
+  // 'isInGlobalDashboard': a Vuex flag to indicate whether the user is currently in the global dashboard.
+  // Various parts of the app(Various chatroom related getters and Vue components) need to know this to adjust their behavior accordingly.
+  isInGlobalDashboard: false
 }
 
 if (window.matchMedia) {
@@ -407,6 +410,9 @@ const mutations = {
       sbp('controller/router').push({ path: '/pending-approval' }).catch(() => {})
     }
   },
+  setIsInGlobalDashboard (state, isInGlobalDashboard) {
+    Vue.set(state, 'isInGlobalDashboard', isInGlobalDashboard)
+  },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
   noop () {}
@@ -423,6 +429,9 @@ const store: any = new Vuex.Store({
     },
     currentPaymentPeriod (state, getters) {
       return getters.currentPaymentPeriodForGroup(getters.currentGroupState)
+    },
+    isInGlobalDashboard (state) {
+      return state.isInGlobalDashboard
     }
   },
   modules: {
