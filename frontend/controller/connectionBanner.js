@@ -27,6 +27,11 @@ export const CONNECTION_BANNER_GRACE = 2 * 1000
 // statuses broadcast by the service worker are the main channel; this catches
 // the missed ones, e.g., after the browser restarts an idle service worker.
 export const CONNECTION_BANNER_REFRESH_INTERVAL = 30 * 1000
+// A query that times out keeps its request to the service worker (a
+// `MessagePort` and listeners) until it settles, so no other query is sent
+// meanwhile. One that doesn't settle for this long (e.g., the service worker
+// was stopped while answering) is abandoned.
+export const CONNECTION_BANNER_QUERY_MAX_WAIT = 5 * 60 * 1000
 
 const isStatus = (status: any): boolean => (
   !!status && typeof status === 'object' &&
@@ -126,6 +131,7 @@ export function createConnectionBannerController ({
   let lastStatus: ConnectionStatus | null = null
   let graceTimer: any = null
   let inFlight = false
+  let pendingAnswer: Promise<mixed> | null = null
   let refreshQueued = false
   // One warning per run of failed queries: a busy service worker can fail
   // every query for minutes
@@ -227,9 +233,16 @@ export function createConnectionBannerController ({
     }
   }
 
+  const sendQueued = () => {
+    if (refreshQueued) {
+      refreshQueued = false
+      refresh()
+    }
+  }
+
   const refresh = () => {
     if (!running) return
-    if (inFlight) {
+    if (inFlight || pendingAnswer) {
       refreshQueued = true
       return
     }
@@ -237,17 +250,24 @@ export function createConnectionBannerController ({
     // `getStatus()` is called right away; an answer that arrives after the
     // timeout is still applied (and ends legacy mode)
     const answer: Promise<mixed> = new Promise(resolve => resolve(getStatus()))
-    answer.then(apply, () => {})
+    pendingAnswer = answer
+    const answered = () => {
+      if (pendingAnswer !== answer) return
+      pendingAnswer = null
+      sendQueued()
+    }
+    const abandonTimer = timers.setTimeout(answered, CONNECTION_BANNER_QUERY_MAX_WAIT)
+    answer.then(apply, () => {}).finally(() => {
+      timers.clearTimeout(abandonTimer)
+      answered()
+    })
     requestConnectionStatus({ getStatus: () => answer, timeout: requestTimeout, timers })
       .then((status) => {
         if (!isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
       }, queryFailed)
       .finally(() => {
         inFlight = false
-        if (refreshQueued) {
-          refreshQueued = false
-          refresh()
-        }
+        sendQueued()
       })
   }
 

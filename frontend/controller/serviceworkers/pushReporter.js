@@ -115,7 +115,7 @@ export function createPushReporter ({
       }
       // Either the socket died without being closed yet (a connection
       // problem: retried on reconnection), or the server is slow or answered
-      // with an error, which the 2.0.0 client only logs (the tab retries)
+      // with an error, which the pubsub client only logs (the tab retries)
       const timeoutID = timers.setTimeout(() => {
         vapidWaiters.delete(waiter)
         const message = 'Timed out requesting VAPID key'
@@ -241,7 +241,9 @@ export function createPushReporter ({
     wanted = { subscriptionInfo, applicationServerKey }
     const sent = await flush()
     if (!sent) {
-      console.info("[reportExistingSubscription] not connected to the server; the browser's subscription will be reported once reconnected")
+      console.info(notificationsDisabled()
+        ? '[reportExistingSubscription] not connected to the server; notifications are off, so nothing will be reported once reconnected'
+        : "[reportExistingSubscription] not connected to the server; the browser's subscription (if any) will be reported once reconnected")
     }
     return sent
   }

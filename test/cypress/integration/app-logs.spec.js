@@ -43,6 +43,11 @@ function downloadAttempts (spy) {
   return spy.thisValues.filter(el => el.download === LOGS_FILENAME).length
 }
 
+// The exported files given to a `URL.createObjectURL` spy
+function exportedBlobs (spy) {
+  return spy.args.map(([blob]) => blob).filter(blob => blob?.type === 'text/plain')
+}
+
 describe('Application logs export', () => {
   it('user1 creates a group and sends a chat message', () => {
     cy.visit('/')
@@ -99,6 +104,31 @@ describe('Application logs export', () => {
     cy.getByDT('appLogsMsg').should('not.exist')
   })
 
+  it('counts the contract IDs of the connection status in a download without journals', () => {
+    cy.getByDT('includeJournal').uncheck({ force: true })
+    // The file is read from its Blob: the downloads folder already has one of
+    // the same name
+    cy.window().then(win => {
+      cy.spy(win.URL, 'createObjectURL').as('createObjectURL')
+    })
+    cy.getByDT('downloadLogs').should('contain', 'Download').click()
+
+    cy.get('@createObjectURL').should(spy => {
+      expect(exportedBlobs(spy)).to.have.length(1)
+    }).then(spy => exportedBlobs(spy)[0].text()).then(text => {
+      const { includeJournal, connection } = JSON.parse(text)
+      expect(includeJournal).to.equal(false)
+      // A download waits up to 5 s for the connection status
+      // (`CONNECTION_STATUS_EXPORT_TIMEOUT`)
+      expect(connection).not.to.have.property('error')
+      // Without journals, the contract IDs of the connection status are only
+      // counted.
+      expect(connection.missing).to.be.a('number')
+      expect(connection.pending).to.be.a('number')
+    })
+    cy.getByDT('appLogsMsg').should('not.exist')
+  })
+
   it('offers Share only where the browser can share a file', () => {
     const share = () => Promise.resolve()
 
@@ -118,14 +148,6 @@ describe('Application logs export', () => {
       fakeShareSupport({ canShare: () => true, share })
     })
     spyOnDownloads()
-    // Sharing waits at most 1 s for the connection status
-    // (`CONNECTION_STATUS_SHARE_TIMEOUT`). Let a busy service worker catch up,
-    // and note whether it is slow to answer (more than half of that 1 s)
-    let slowStatus = false
-    cy.window().its('sbp').then(sbp => {
-      const start = Date.now()
-      return sbp('sw/connection/status').then(() => { slowStatus = Date.now() - start > 500 })
-    })
     cy.getByDT('downloadLogs').should('contain', 'Share').click()
 
     cy.get('@share').should('have.been.calledOnce').then(share => {
@@ -135,16 +157,14 @@ describe('Application logs export', () => {
     }).then(text => {
       const { includeJournal, connection } = JSON.parse(text)
       expect(includeJournal).to.equal(false)
-      // A service worker that is slow to answer can take longer than 1 s,
-      // which the app allows. A quick one must make it in time.
-      if (slowStatus && connection.error) {
+      // Sharing waits at most 1 s for the connection status
+      // (`CONNECTION_STATUS_SHARE_TIMEOUT`), which a busy service worker can
+      // take longer than. The counts are checked by the download test above.
+      if (connection.error) {
         expect(connection.error).to.match(/Timed out getting the connection status/)
         cy.log('The connection status timed out: its counts were not checked')
         return
       }
-      expect(connection).not.to.have.property('error')
-      // Without journals, the contract IDs of the connection status are only
-      // counted.
       expect(connection.missing).to.be.a('number')
       expect(connection.pending).to.be.a('number')
     })

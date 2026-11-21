@@ -95,12 +95,12 @@ const CONNECTION_STATUS_EXPORT_TIMEOUT = 5 * 1000
 // must not use it up.
 const CONNECTION_STATUS_SHARE_TIMEOUT = 1000
 
-const errorSummary = (err: any): string => `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
+const errorSummary = (err) => `${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`
 
 // The service worker's connection and subscription status, or why it isn't
 // available (e.g., a service worker from an older version). Never rejects.
-const getConnectionStatus = (timeout: number): Promise<Object> =>
-  requestConnectionStatus({ timeout }).then((status: any) => status, (err) => {
+const getConnectionStatus = (timeout) =>
+  requestConnectionStatus({ timeout }).catch((err) => {
     console.warn('AppLogs.vue: Failed to obtain the connection status:', err)
     return { error: errorSummary(err) }
   })

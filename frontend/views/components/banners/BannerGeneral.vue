@@ -12,7 +12,7 @@
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { clearSlots, emptyBannerSlots, pickBanner, setSlot } from '@view-utils/bannerSlots.js'
-import type { DisplayedBanner } from '@view-utils/bannerSlots.js'
+// TODO: use the banner types from bannerSlots.js after the Vue 3 migration
 import { debounce } from 'turtledash'
 
 export default ({
@@ -36,7 +36,7 @@ export default ({
     // rendered while there is a message, and a live region inserted together
     // with its content often isn't announced. It gets the message as text
     // (`DOMParser` runs no scripts and loads nothing).
-    current (current: ?DisplayedBanner) {
+    current (current) {
       const text = current
         ? new DOMParser().parseFromString(current.message, 'text/html').body?.textContent || ''
         : ''
@@ -52,13 +52,13 @@ export default ({
     },
     // A transient banner (used by `debouncedShow`). Short confirmations such as
     // 'Copied to clipboard' are toasts (`gi.ui/toast`)
-    show (message: string, icon: string) {
+    show (message, icon) {
       return setSlot(this.ephemeral.slots, 'transient', message, icon)
     },
-    danger (message: string, icon: string) {
+    danger (message, icon) {
       return setSlot(this.ephemeral.slots, 'danger', message, icon)
     },
-    showConnection (message: string, icon: string) {
+    showConnection (message, icon) {
       return setSlot(this.ephemeral.slots, 'connection', message, icon)
     },
     clearConnection () {

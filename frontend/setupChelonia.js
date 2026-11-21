@@ -6,13 +6,13 @@ import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
-import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { NOTIFICATION_TYPE, PUBSUB_ERROR, PUBSUB_STATE_CHANGED, PUBSUB_SUBSCRIPTION_FAILED, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { isContractDeletedError } from './controller/actions/namespaceCacheList.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import type { ConnectionMonitor } from './controller/serviceworkers/connectionMonitor.js'
-import { LIB_PUBSUB_STATE_CHANGED, LIB_PUBSUB_SUBSCRIPTION_FAILED, createConnectionMonitor, createPubsubHandlers } from './controller/serviceworkers/connectionMonitor.js'
+import { createConnectionMonitor, createPubsubHandlers } from './controller/serviceworkers/connectionMonitor.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
@@ -114,11 +114,7 @@ const filterOutForeignIdentityKv = (contractIDs: string[]) => {
 // banner (`sw/connection/status` and `CONNECTION_STATUS_CHANGED`). It also
 // requests again the subscriptions the pubsub client lost.
 export const connectionMonitor: ConnectionMonitor = createConnectionMonitor({
-  getPubsub: () => sbp('okTurtles.data/get', PUBSUB_INSTANCE),
-  // Only @chelonia/lib versions with okTurtles/libcheloniajs#125 have it
-  getLibStatus: () => sbp('sbp/selectors/fn', 'chelonia/pubsub/status') ? sbp('chelonia/pubsub/status') : null,
-  // Same check as @chelonia/lib: `navigator.onLine` is only reliable when false
-  isOnline: () => !(typeof navigator === 'object' && navigator.onLine === false),
+  getLibStatus: () => sbp('chelonia/pubsub/status'),
   heal: () => sbp('chelonia/pubsub/update'),
   emit: (status) => sbp('okTurtles.events/emit', CONNECTION_STATUS_CHANGED, status)
 })
@@ -158,9 +154,8 @@ const registerListeners = () => {
     connectionMonitor.setWanted(subscribedIDs)
     if (added.length) filterOutForeignIdentityKv(added) // see `filterOutForeignIdentityKv`
   })
-  // Only emitted by @chelonia/lib versions with okTurtles/libcheloniajs#125
-  sbp('okTurtles.events/on', LIB_PUBSUB_STATE_CHANGED, () => connectionMonitor.update())
-  sbp('okTurtles.events/on', LIB_PUBSUB_SUBSCRIPTION_FAILED, () => connectionMonitor.update())
+  sbp('okTurtles.events/on', PUBSUB_STATE_CHANGED, () => connectionMonitor.update())
+  sbp('okTurtles.events/on', PUBSUB_SUBSCRIPTION_FAILED, () => connectionMonitor.update())
   // Before `connectAndSync` creates the pubsub client, so that a restarted
   // service worker tells the open tabs that it has no connection yet
   // (`closed` without `since`, which they show as a connection being made)

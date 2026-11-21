@@ -24,6 +24,7 @@ import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
+import { CONNECTION_STATUS_SELECTOR } from './utils/constants.js'
 import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, CONNECTION_STATUS_CHANGED, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
@@ -100,7 +101,7 @@ async function startApp () {
       'state/vuex/settings',
       'gi.db/settings/save',
       // Queried by the connection banner, periodically and on connection events
-      'sw/connection/status'
+      CONNECTION_STATUS_SELECTOR
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selectorBlacklist[selector]) return
@@ -349,7 +350,7 @@ async function startApp () {
       // during an outage), whenever the service worker broadcasts a change,
       // and periodically while the tab is visible.
       const connectionBanner = createConnectionBannerController({
-        getStatus: () => sbp('sw/connection/status'),
+        getStatus: () => sbp(CONNECTION_STATUS_SELECTOR),
         isOnline: () => navigator.onLine !== false,
         isVisible: () => document.visibilityState === 'visible',
         onChange: (kind) => {
@@ -456,6 +457,9 @@ async function startApp () {
       ]),
       setBadgeOnTab () {
         FaviconBadge.setBubble(this.shouldSetBadge)
+      },
+      setBannerAnnouncement (text: string) {
+        this.ephemeral.bannerAnnouncement = text
       },
       removeLoadingAnimation () {
         // remove the minimal loading animation in index.html

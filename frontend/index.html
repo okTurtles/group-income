@@ -31,7 +31,7 @@
       :data-ready="ephemeral.ready"
     >
       <app-styles></app-styles>
-      <banner-general ref="bannerGeneral" @announce="ephemeral.bannerAnnouncement = $event"></banner-general>
+      <banner-general ref="bannerGeneral" @announce="setBannerAnnouncement"></banner-general>
       <!-- The general banner's live region. Unlike the banner, it is always rendered, because a live region
            inserted together with its content often isn't announced. Visually hidden and out of the grid. -->
       <div class="sr-only" data-test="bannerLiveRegion" role="status" aria-live="polite" aria-atomic="true" v-text="ephemeral.bannerAnnouncement"></div>

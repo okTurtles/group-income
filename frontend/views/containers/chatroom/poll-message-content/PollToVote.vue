@@ -36,7 +36,6 @@ import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PollMixin from '@containers/chatroom/PollMixin.js'
-import { checkPublishedEvent } from '@containers/chatroom/chatroomResync.js'
 
 export default ({
   name: 'PollToVote',
@@ -82,16 +81,14 @@ export default ({
   methods: {
     async submitVotes () {
       try {
-        const contractID = this.currentChatRoomId
-        const msg = await sbp('gi.actions/chatroom/voteOnPoll', {
-          contractID,
+        await sbp('gi.actions/chatroom/voteOnPoll', {
+          contractID: this.currentChatRoomId,
           data: {
             hash: this.messageHash,
             votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
             votesAsString: this.isAnonymousPoll ? '' : `"${this.selectedVotesAsString}"`
           }
         })
-        checkPublishedEvent(contractID, msg)
       } catch (e) {
         console.error('"voteOnPoll" action failed: ', e)
         this.$refs.errBanner.danger(e.message)
@@ -99,16 +96,14 @@ export default ({
     },
     async changeVotes () {
       try {
-        const contractID = this.currentChatRoomId
-        const msg = await sbp('gi.actions/chatroom/changeVoteOnPoll', {
-          contractID,
+        await sbp('gi.actions/chatroom/changeVoteOnPoll', {
+          contractID: this.currentChatRoomId,
           data: {
             hash: this.messageHash,
             votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
             votesAsString: this.isAnonymousPoll ? '' : `"${this.selectedVotesAsString}"`
           }
         })
-        checkPublishedEvent(contractID, msg)
 
         this.onCancelClick()
       } catch (e) {

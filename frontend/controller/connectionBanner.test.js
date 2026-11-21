@@ -7,6 +7,7 @@ import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/eve
 import {
   CONNECTION_BANNER,
   CONNECTION_BANNER_GRACE,
+  CONNECTION_BANNER_QUERY_MAX_WAIT,
   CONNECTION_BANNER_REFRESH_INTERVAL,
   bannerForStatus,
   createConnectionBannerController
@@ -43,12 +44,18 @@ const harness = ({ answer, online = true, ...options } = {}) => {
     await settle()
   }
   // A status as computed by the service worker now
-  const current = (state, { sinceAgo = 0, degraded = false } = {}) =>
-    status(state, { at: clock.now(), since: clock.now() - sinceAgo, degraded })
+  const current = (state, { degraded = false } = {}) =>
+    status(state, { at: clock.now(), degraded })
   return { clock, env, controller, start, current }
 }
 
 const answering = (state, options) => (now) => Promise.resolve(status(state, { at: now, ...options }))
+// Records the answers, to be settled by the test
+const deferredAnswers = (answers) => () => {
+  const answer = deferred()
+  answers.push(answer)
+  return answer.promise
+}
 const rejecting = (message = NOT_REGISTERED) => () => Promise.reject(new Error(message))
 
 describe('connection banner', () => {
@@ -350,14 +357,7 @@ describe('connection banner', () => {
       // in flight when the interval fires
       const refreshInterval = CONNECTION_STATUS_TIMEOUT / 2
       const answers = []
-      const t = harness({
-        answer: () => {
-          const answer = deferred()
-          answers.push(answer)
-          return answer.promise
-        },
-        refreshInterval
-      })
+      const t = harness({ answer: deferredAnswers(answers), refreshInterval })
       t.controller.start()
       t.controller.refresh()
       t.controller.onLegacyEvent(OFFLINE)
@@ -370,6 +370,71 @@ describe('connection banner', () => {
       await settle()
       assert.equal(t.env.calls, 2)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+    })
+
+    it('sends no other query until one that timed out settles, then one for the refreshes requested meanwhile', async () => {
+      const answers = []
+      const t = harness({ answer: answering('open') })
+      await t.start()
+      t.env.answer = deferredAnswers(answers)
+      t.clock.advance(REFRESH + CONNECTION_STATUS_TIMEOUT)
+      await settle()
+      assert.equal(count('warn'), 1, 'the timeout is a failure')
+      for (let i = 0; i < 3; i++) {
+        t.clock.advance(REFRESH)
+        t.controller.refresh()
+        await settle()
+      }
+      assert.equal(t.env.calls, 2)
+      answers[0].resolve(t.current('reconnecting'))
+      await settle()
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING], 'the late answer is applied')
+      assert.equal(t.env.calls, 3)
+      answers[1].reject(new Error('SW controller changed'))
+      await settle()
+      assert.equal(t.env.calls, 3)
+      t.controller.refresh()
+      await settle()
+      assert.equal(t.env.calls, 4, 'a rejection also settles the query')
+      assert.equal(t.controller.legacy, false)
+    })
+
+    it('abandons a query that does not settle, and still applies its late answer', async () => {
+      const answers = []
+      const t = harness({ answer: deferredAnswers(answers) })
+      t.controller.start()
+      t.clock.advance(CONNECTION_BANNER_QUERY_MAX_WAIT - 1)
+      await settle()
+      assert.equal(t.env.calls, 1)
+      t.clock.advance(1)
+      await settle()
+      assert.equal(t.env.calls, 2, 'the refreshes requested meanwhile are made')
+      t.clock.advance(CONNECTION_STATUS_TIMEOUT)
+      await settle()
+      answers[0].resolve(t.current('reconnecting'))
+      await settle()
+      assert.equal(t.controller.legacy, false)
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+      t.controller.refresh()
+      await settle()
+      assert.equal(t.env.calls, 2, 'the abandoned query settling does not end the wait for the next one')
+      answers[1].resolve(t.current('open'))
+      await settle()
+      assert.equal(t.env.calls, 3)
+      assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, null])
+    })
+
+    it('makes no query when abandoning one if no refresh was requested meanwhile', async () => {
+      const answers = []
+      const t = harness({ answer: deferredAnswers(answers), isVisible: () => false })
+      await t.start()
+      t.clock.advance(CONNECTION_BANNER_QUERY_MAX_WAIT)
+      await settle()
+      assert.equal(t.env.calls, 1)
+      assert.equal(t.clock.pendingTimers(), 1, 'the interval')
+      t.controller.refresh()
+      await settle()
+      assert.equal(t.env.calls, 2)
     })
 
     describe('legacy mode (service worker without the connection status)', () => {
@@ -499,11 +564,7 @@ describe('connection banner', () => {
       it('starts when a query is not answered in time, and a late answer ends it', async () => {
         const answers = []
         const t = harness({
-          answer: () => {
-            const answer = deferred()
-            answers.push(answer)
-            return answer.promise
-          },
+          answer: deferredAnswers(answers),
           // So that a refresh is requested while the first query waits
           refreshInterval: CONNECTION_STATUS_TIMEOUT / 2
         })
@@ -514,12 +575,13 @@ describe('connection banner', () => {
         t.clock.advance(1)
         await settle()
         assert.equal(t.controller.legacy, true)
-        // The refreshes requested meanwhile are made after the timeout
-        assert.equal(t.env.calls, 2)
+        // The refreshes requested meanwhile wait for the answer
+        assert.equal(t.env.calls, 1)
         answers[0].resolve(t.current('reconnecting'))
         await settle()
         assert.equal(t.controller.legacy, false)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+        assert.equal(t.env.calls, 2)
       })
 
       it('starts with an invalid answer', async () => {

@@ -37,6 +37,7 @@ import {
   OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
+import { CONNECTION_STATUS_SELECTOR } from '~/frontend/utils/constants.js'
 import './push.js'
 import './sw-namespace.js'
 
@@ -68,11 +69,10 @@ deserializer.register(Secret)
 
 const reducer = (o, v) => { o[v] = true; return o }
 // Status queries, made periodically: `chelonia/pubsub/status` by the
-// connection monitor every few seconds (once `@chelonia/lib` provides it), and
-// `sw/connection/status` by each visible tab every 30 s and on connection
-// events. They aren't logged at the debug level, here or in the `message`
-// handler.
-const statusSelectors = ['chelonia/pubsub/status', 'sw/connection/status']
+// connection monitor every few seconds, and `sw/connection/status` by each
+// visible tab every 30 s and on connection events. They aren't logged at the
+// debug level, here or in the `message` handler.
+const statusSelectors = ['chelonia/pubsub/status', CONNECTION_STATUS_SELECTOR]
 // Domains for which debug logging won't be enabled.
 const domainBlacklist = [
   'sbp',
@@ -300,7 +300,7 @@ sbp('sbp/selectors/register', {
   },
   // The same status as the `CONNECTION_STATUS_CHANGED` event, for tabs that
   // have just opened (or missed events)
-  'sw/connection/status': () => connectionMonitor.getStatus(),
+  [CONNECTION_STATUS_SELECTOR]: () => connectionMonitor.getStatus(),
   'sw/deviceSettings/set': (key, value) => {
     const reactiveSet = sbp('chelonia/config').reactiveSet
     const rootState = sbp('chelonia/rootState')

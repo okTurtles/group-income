@@ -132,7 +132,6 @@ import { MESSAGE_TYPES, POLL_TYPES, POLL_MAX_OPTIONS, POLL_OPTION_MAX_CHARS, POL
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
-import { checkPublishedEvent } from './chatroomResync.js'
 
 const createRandomId = () => {
   const randomStr = () => Math.random().toString(20).slice(2)
@@ -250,7 +249,7 @@ export default {
       const contractID = this.currentChatRoomId
       this.$refs.formMsg.clean()
       try {
-        const msg = await sbp('gi.actions/chatroom/addMessage', {
+        await sbp('gi.actions/chatroom/addMessage', {
           contractID,
           data: {
             type: MESSAGE_TYPES.POLL,
@@ -265,7 +264,6 @@ export default {
             }
           }
         })
-        checkPublishedEvent(contractID, msg)
 
         this.form = {
           question: '',

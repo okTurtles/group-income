@@ -1,16 +1,8 @@
 'use strict'
 
-import { REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../../utils/events.js'
 import type { Timers } from '../../utils/timers.js'
 import { defaultTimers } from '../../utils/timers.js'
-import { isSocketOpen } from './socket.js'
-
-// Events added by okTurtles/libcheloniajs#125. They're referenced by name
-// because `@chelonia/lib` 2.0.0 doesn't export them, and importing a name
-// that a module doesn't export breaks the build.
-export const LIB_PUBSUB_STATE_CHANGED = 'pubsub-state-changed'
-export const LIB_PUBSUB_SUBSCRIPTION_FAILED = 'pubsub-subscription-failed'
 
 // How long a wanted contract may stay unsubscribed while the connection is
 // open before the connection is considered degraded.
@@ -32,6 +24,7 @@ export type ConnectionState = 'connecting' | 'open' | 'reconnecting' | 'offline'
 
 export type ConnectionStatus = {
   at: number,
+  // `app`: the fallback, when the library's status couldn't be read yet
   source: 'chelonia' | 'app',
   state: ConnectionState,
   since: number | null,
@@ -54,41 +47,10 @@ export type ConnectionMonitor = {
 
 const CONNECTION_STATES: ConnectionState[] = ['connecting', 'open', 'reconnecting', 'offline', 'closed']
 
-// The state of a `@chelonia/lib` pubsub client, computed from fields that
-// exist since 2.0.0. Same rules as `computeState` in okTurtles/libcheloniajs#125.
-export function deriveState (client: ?Object, isOnline: () => boolean): ConnectionState {
-  if (!client) return 'closed'
-  const { socket } = client
-  if (socket) {
-    if (isSocketOpen(socket)) return 'open'
-    if (socket.readyState === (socket.CONNECTING ?? 0)) return 'connecting'
-  }
-  if (!client.shouldReconnect) return 'closed'
-  if (isOnline() === false) return 'offline'
-  if (client.nextConnectionAttemptDelayID != null || socket) return 'reconnecting'
-  return 'closed'
-}
-
-// Wanted contracts the client is neither subscribed to nor subscribing to
-// (`missing`), and those with a subscription request not yet acknowledged
-// (`pending`).
-const clientSubscriptions = (client: ?Object, wanted: string[]): { missing: string[], pending: string[] } => {
-  if (!client) return { missing: wanted.slice(), pending: [] }
-  const subscribed = client.subscriptionSet
-  const pendingSubs = client.pendingOperations?.get?.(REQUEST_TYPE.SUB)
-  const missing = []
-  const pending = []
-  for (const id of wanted) {
-    if (pendingSubs?.has(id)) pending.push(id)
-    else if (!subscribed?.has(id)) missing.push(id)
-  }
-  return { missing, pending }
-}
-
 const onlyStrings = (list: $ReadOnlyArray<mixed>): string[] => (list.filter(id => typeof id === 'string'): any)
 
-// The answer of `chelonia/pubsub/status` (okTurtles/libcheloniajs#125), or
-// `null` if it doesn't have the expected shape
+// The answer of `chelonia/pubsub/status`, or `null` if it doesn't have the
+// expected shape
 const normalizeLibStatus = (status: any): ?{ state: ConnectionState, since: number | null, wanted: ?number, missing: string[], pending: string[], oldestPendingSince: number | null } => {
   if (
     !status || typeof status !== 'object' ||
@@ -134,9 +96,7 @@ const oldest = (map: Map<string, number>, include: (id: string) => boolean = () 
 // (through `heal`), backed off. A contract still unsubscribed after
 // `maxDegradedHeals` requests keeps being requested, but no longer counts
 // toward `degraded`.
-//   - `getPubsub()`: the current pubsub client, if any.
-//   - `getLibStatus()`: the library's own status (`chelonia/pubsub/status`),
-//     or `null` when the library doesn't provide one. Used when available.
+//   - `getLibStatus()`: the library's status (`chelonia/pubsub/status`).
 //   - `heal()`: requests the missing subscriptions (`chelonia/pubsub/update`).
 //   - `emit(status)`: called when the status changes in a way that matters
 //     for the UI.
@@ -145,9 +105,7 @@ const oldest = (map: Map<string, number>, include: (id: string) => boolean = () 
 // connection, and `getStatus()` answers the tabs' queries. `heal` and `emit`
 // only run in the monitor's own timer callbacks.
 export function createConnectionMonitor ({
-  getPubsub,
   getLibStatus,
-  isOnline,
   heal,
   emit,
   now = () => Date.now(),
@@ -157,9 +115,7 @@ export function createConnectionMonitor ({
   maxDegradedHeals = CONNECTION_MAX_DEGRADED_HEALS,
   timers = defaultTimers
 }: {|
-  getPubsub: () => ?Object,
   getLibStatus: () => mixed,
-  isOnline: () => boolean,
   heal: () => mixed,
   emit: (status: ConnectionStatus) => mixed,
   now?: () => number,
@@ -170,11 +126,6 @@ export function createConnectionMonitor ({
   timers?: Timers
 |}): ConnectionMonitor {
   let wanted: string[] = []
-  // Used to compute `since` when the library doesn't provide a status
-  let appClient: ?Object = null
-  let appState: ConnectionState | null = null
-  let appSince: number | null = null
-  const pendingSince: Map<string, number> = new Map()
   // Wanted contracts not subscribed while the connection is open, and since
   // when. Cleared whenever the connection isn't open, so that the grace
   // period starts when it opens or when the contract becomes unsubscribed,
@@ -196,8 +147,18 @@ export function createConnectionMonitor ({
   let lastUnhealthy = false
   let lastEmitted: string | null = null
   let updateTimer: any = null
-  let reconnectTimer: any = null
   let interval: any = null
+  // Whether the last attempt to compute the status failed: a failure is
+  // logged once, not on every tick and query, until it succeeds again
+  let failing = false
+  const computeFailed = (e: mixed) => {
+    if (!failing) console.warn('[connection] Error computing the connection status (not logged again until it succeeds)', e)
+    failing = true
+  }
+  const computeSucceeded = () => {
+    if (failing) console.info('[connection] computing the connection status works again')
+    failing = false
+  }
 
   const safely = <T>(description: string, fn: () => T, fallback: T): T => {
     try {
@@ -205,14 +166,6 @@ export function createConnectionMonitor ({
     } catch (e) {
       console.warn(`[connection] Error ${description}`, e)
       return fallback
-    }
-  }
-
-  const online = (): boolean => {
-    try {
-      return isOnline() !== false
-    } catch (e) {
-      return true
     }
   }
 
@@ -227,56 +180,25 @@ export function createConnectionMonitor ({
   }
 
   // Updates the first-seen bookkeeping only: no re-subscription, log line or
-  // emit, and none of the state `recompute()` keeps
-  const compute = (): { status: ConnectionStatus, client: ?Object, unhealthy: boolean } => {
+  // emit, and none of the state `recompute()` keeps. Throws when the library's
+  // status can't be read: the callers then keep the last status, rather than
+  // report a connection that is down.
+  const compute = (): { status: ConnectionStatus, unhealthy: boolean } => {
     const at = now()
-    // Not guarded: a client that can't be read isn't a missing one. The
-    // callers then keep the last status, rather than report a connection that
-    // is down.
-    const client = getPubsub()
-    const libStatus = normalizeLibStatus(safely('getting the library connection status', getLibStatus, null))
-    let status: ConnectionStatus
-    if (libStatus) {
-      status = {
-        at,
-        source: 'chelonia',
-        state: libStatus.state,
-        since: libStatus.since,
-        wanted: libStatus.wanted ?? wanted.length,
-        missing: libStatus.missing,
-        pending: libStatus.pending,
-        oldestPendingSince: libStatus.oldestPendingSince,
-        unsubscribedSince: null,
-        degraded: false,
-        heals
-      }
-    } else {
-      const state = deriveState(client, online)
-      if (!client) {
-        appSince = null
-      } else if (client !== appClient || state !== appState) {
-        appSince = at
-      }
-      appClient = client
-      appState = state
-      const { missing, pending } = clientSubscriptions(client, wanted)
-      // The 2.0.0 client marks subscribed contracts as pending again when the
-      // socket closes; their requests are only re-sent once it re-opens
-      if (state === 'open') trackFirstSeen(pendingSince, pending, at)
-      else pendingSince.clear()
-      status = {
-        at,
-        source: 'app',
-        state,
-        since: appSince,
-        wanted: wanted.length,
-        missing,
-        pending,
-        oldestPendingSince: oldest(pendingSince),
-        unsubscribedSince: null,
-        degraded: false,
-        heals
-      }
+    const libStatus = normalizeLibStatus(getLibStatus())
+    if (!libStatus) throw new Error('Unexpected library connection status')
+    const status: ConnectionStatus = {
+      at,
+      source: 'chelonia',
+      state: libStatus.state,
+      since: libStatus.since,
+      wanted: libStatus.wanted ?? wanted.length,
+      missing: libStatus.missing,
+      pending: libStatus.pending,
+      oldestPendingSince: libStatus.oldestPendingSince,
+      unsubscribedSince: null,
+      degraded: false,
+      heals
     }
     if (status.state === 'open') {
       trackFirstSeen(notSubscribedSince, status.missing.concat(status.pending), at)
@@ -287,7 +209,7 @@ export function createConnectionMonitor ({
     const unsubscribedSince = oldest(notSubscribedSince)
     status.unsubscribedSince = unsubscribedSince
     status.degraded = overdue(oldest(notSubscribedSince, (id) => (healAttempts.get(id) ?? 0) < maxDegradedHeals))
-    return { status, client, unhealthy: overdue(unsubscribedSince) }
+    return { status, unhealthy: overdue(unsubscribedSince) }
   }
 
   const fallbackStatus = (): ConnectionStatus => ({
@@ -308,7 +230,7 @@ export function createConnectionMonitor ({
 
   const recompute = (): ConnectionStatus | null => {
     try {
-      const { status, client, unhealthy } = compute()
+      const { status, unhealthy } = compute()
       const previous = lastStatus
       const previousUnhealthy = lastUnhealthy
       let healed = false
@@ -323,7 +245,7 @@ export function createConnectionMonitor ({
           heals = 0
           nextHealAt = 0
         }
-        if (status.missing.length > 0 && status.at >= nextHealAt && client) {
+        if (status.missing.length > 0 && status.at >= nextHealAt) {
           // Pending-only degradation (a slow server) isn't healed: requesting
           // a pending subscription again does nothing.
           requestHeal('degraded')
@@ -367,14 +289,9 @@ export function createConnectionMonitor ({
       }
 
       // Broadcast when what the tabs show may change: the state, `degraded`,
-      // whether `since` is known (`closed` without it: no pubsub client yet),
-      // and whether anything is missing or pending. Not on every change of
-      // the counts, which queries return: each subscription confirmed after
-      // a reconnection would be broadcast to every tab.
-      const key = [
-        status.state, status.degraded, status.since === null,
-        status.missing.length > 0, status.pending.length > 0
-      ].join('|')
+      // and whether `since` is known (`closed` without it: no pubsub client
+      // yet). The lists are only returned by queries.
+      const key = [status.state, status.degraded, status.since === null].join('|')
       if (key !== lastEmitted) {
         lastEmitted = key
         // Guarded on its own, so that a failing broadcast doesn't prevent
@@ -384,9 +301,10 @@ export function createConnectionMonitor ({
 
       // The re-subscription request changes the subscriptions right away
       if (healed) update()
+      computeSucceeded()
       return status
     } catch (e) {
-      console.warn('[connection] Error computing the connection status', e)
+      computeFailed(e)
       return lastStatus
     }
   }
@@ -412,29 +330,12 @@ export function createConnectionMonitor ({
       update()
     },
     update,
-    // Stopgap until the library re-subscribes after reconnecting
-    // (okTurtles/libcheloniajs#125): with 2.0.0, contracts whose subscription
-    // was given up stay unsubscribed. Called from the `open` handler, before
-    // the client re-sends the subscriptions it had: a contract requested now
-    // would be sent right away and then again by that loop, hence the timer.
+    // Called from the `open` handler. The library then requests the
+    // subscriptions again, so the grace period and the backoff restart.
     onReconnected () {
       notSubscribedSince.clear()
       heals = 0
       nextHealAt = 0
-      if (reconnectTimer === null) {
-        try {
-          reconnectTimer = timers.setTimeout(() => {
-            reconnectTimer = null
-            if (safely('getting the pubsub client', getPubsub, null)) {
-              requestHeal('reconnected')
-            }
-            update()
-          }, 0)
-        } catch (e) {
-          reconnectTimer = null
-          console.warn('[connection] Error scheduling re-subscription', e)
-        }
-      }
       update()
     },
     // For queries (`sw/connection/status`): no re-subscription, log line or
@@ -442,9 +343,11 @@ export function createConnectionMonitor ({
     // so that they don't depend on how many tabs are open
     getStatus (): ConnectionStatus {
       try {
-        return compute().status
+        const { status } = compute()
+        computeSucceeded()
+        return status
       } catch (e) {
-        console.warn('[connection] Error computing the connection status', e)
+        computeFailed(e)
         return lastStatus ?? fallbackStatus()
       }
     },

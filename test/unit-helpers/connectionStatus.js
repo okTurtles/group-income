@@ -3,7 +3,7 @@
 // `connectionMonitor.test.js` checks that a real status has the same fields.
 export const connectionStatus = (state, overrides = {}) => ({
   at: 0,
-  source: 'app',
+  source: 'chelonia',
   state,
   since: null,
   wanted: 0,

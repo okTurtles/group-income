@@ -4,6 +4,7 @@ import { Buffer } from 'buffer'
 import { getSubscriptionId } from '@chelonia/lib/functions'
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { fakeClock } from '../../../test/unit-helpers/fakeClock.js'
+import { SOCKET } from '../../../test/unit-helpers/socket.js'
 import { deferred, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
 import {
@@ -12,8 +13,6 @@ import {
   bufferEq,
   createPushReporter
 } from './pushReporter.js'
-
-const SOCKET = { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 }
 
 const fakeSocket = (readyState = SOCKET.OPEN) => ({
   ...SOCKET,
@@ -177,7 +176,7 @@ describe('push reporter', () => {
 
           assert.equal(await t.report(fakeSubscription(SUB_A)), false)
           assert.deepEqual(oldSocket.sent, [])
-          assert.ok(messages('info').some(line => line.includes('will be reported once reconnected')))
+          assert.ok(messages('info').some(line => line.includes("the browser's subscription (if any) will be reported once reconnected")))
           assert.deepEqual(messages('error'), [])
 
           if (readyState === SOCKET.CONNECTING) {
@@ -192,6 +191,18 @@ describe('push reporter', () => {
         })
       }
     }
+
+    it('resolves to false while not connected with notifications off; the reconnection then reports nothing', async () => {
+      const t = harness({ readyState: SOCKET.CLOSED, subscription: fakeSubscription(SUB_A) })
+      t.env.disabled = true
+
+      assert.equal(await t.report(null), false)
+      assert.ok(messages('info').some(line => line.includes('notifications are off, so nothing will be reported once reconnected')))
+      assert.ok(!messages('info').some(line => line.includes("browser's subscription")))
+
+      await t.reconnect()
+      assert.deepEqual(t.env.client.socket.sent, [])
+    })
 
     it('resolves to false without a pubsub client', async () => {
       const t = harness()
@@ -464,6 +475,7 @@ describe('push reporter', () => {
       t.reporter.onPushAction({ data: null })
       t.reporter.onPushAction({})
       await settle()
+      assert.deepEqual(messages('error'), [])
       assert.equal(getSubscriptionCalls, 0, 'no re-subscription')
       // Nothing was cached: the key is still requested
       const options = t.reporter.getSubscriptionOptions()
@@ -512,6 +524,7 @@ describe('push reporter', () => {
       const withoutPush = harness({ pushManager: null })
       await withoutPush.reconnect()
       assert.deepEqual(withoutPush.env.client.socket.sent, [])
+      assert.deepEqual(messages('error'), [])
     })
 
     it('ignores reconnections of a client that is not the current one', async () => {
