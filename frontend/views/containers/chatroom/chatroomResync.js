@@ -10,8 +10,6 @@
 
 import sbp from '@sbp/sbp'
 import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from '../../../controller/connectionStatus.js'
-import type { Timers } from '../../../utils/timers.js'
-import { defaultTimers } from '../../../utils/timers.js'
 import { CONNECTION_STATUS_SELECTOR } from '../../../utils/constants.js'
 
 // A chatroom being opened isn't synced again if a sync of it started less
@@ -102,7 +100,6 @@ type ResyncOptions = {|
   isJoined?: () => boolean,
   sync?: (chatRoomID: string) => mixed,
   timeout?: number,
-  timers?: Timers,
   syncs?: ChatroomSyncs,
   now?: () => number
 |}
@@ -117,11 +114,10 @@ export function resyncChatroomIfUnsubscribed ({
   isJoined = defaultIsJoined(callSelector, chatRoomID),
   sync = defaultSync(callSelector),
   timeout = CONNECTION_STATUS_TIMEOUT,
-  timers = defaultTimers,
   syncs = chatroomSyncs,
   now = () => Date.now()
 }: ResyncOptions): Promise<boolean> {
-  return requestConnectionStatus({ getStatus, timeout, timers }).then((status) => {
+  return requestConnectionStatus({ getStatus, timeout }).then((status) => {
     if (!isChatroomUnsubscribed(status, chatRoomID) || !isJoined()) return false
     // A sync that is running (for less than SHARED_SYNC_MAX_AGE), or that
     // started less than RECENT_SYNC_WINDOW ago and succeeded, will do

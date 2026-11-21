@@ -1,8 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { fakeClock } from '../../../../test/unit-helpers/fakeClock.js'
 import { connectionStatus } from '../../../../test/unit-helpers/connectionStatus.js'
-import { deferred, settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
+import { deferred, fakeTimers, settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
 import { CONNECTION_STATUS_TIMEOUT } from '../../../controller/connectionStatus.js'
 import {
   RECENT_SYNC_WINDOW,
@@ -57,7 +56,12 @@ const appSelectors = ({ joined = true, connection = status('open', { missing: [R
   return { sbp, calls }
 }
 
+let clock
+
 describe('chatroomResync', () => {
+  beforeEach(() => { clock = fakeTimers() })
+  afterEach(() => { clock.restore() })
+
   // Each test asserts what it logged: the warnings it expects, or nothing
   const logs = silenceConsole()
   const warnings = () => logs.map(({ level, args }) => {
@@ -99,7 +103,6 @@ describe('chatroomResync', () => {
     // `open()` opens a chatroom that the status shows as missing. All its
     // calls share the clock, the sync spy and the syncs.
     const setup = ({ syncImpl, ...overrides } = {}) => {
-      const clock = fakeClock()
       const spy = syncSpy(syncImpl)
       const syncs = new Map()
       const open = (chatRoomID = ROOM) => resyncChatroomIfUnsubscribed({
@@ -107,9 +110,8 @@ describe('chatroomResync', () => {
         getStatus: () => Promise.resolve(status('open', { missing: [chatRoomID] })),
         isJoined: () => true,
         sync: spy.sync,
-        timers: clock.timers,
         syncs,
-        now: clock.now,
+        now: () => clock.now,
         ...overrides
       })
       return { clock, spy, open }
@@ -124,7 +126,7 @@ describe('chatroomResync', () => {
       const { spy, promise, clock } = run()
       assert.equal(await promise, true)
       assert.deepEqual(spy.calls, [ROOM])
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(clock.countTimers(), 0)
       assert.equal(warnings().length, 1)
       assert.ok(warnings()[0].includes(ROOM))
     })
@@ -133,7 +135,7 @@ describe('chatroomResync', () => {
       const { spy, promise, clock } = run({ getStatus: () => Promise.resolve(status('open')) })
       assert.equal(await promise, false)
       assert.deepEqual(spy.calls, [])
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(clock.countTimers(), 0)
       assert.deepEqual(logs, [])
     })
 
@@ -148,7 +150,7 @@ describe('chatroomResync', () => {
       const { spy, promise, clock } = run({ getStatus: () => Promise.reject(new Error('SBP: selector not registered: sw/connection/status')) })
       assert.equal(await promise, false)
       assert.deepEqual(spy.calls, [])
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(clock.countTimers(), 0)
       assert.deepEqual(logs, [])
     })
 
@@ -167,10 +169,10 @@ describe('chatroomResync', () => {
       let result
       promise.then(value => { result = value })
       await settle()
-      clock.advance(CONNECTION_STATUS_TIMEOUT - 1)
+      clock.tick(CONNECTION_STATUS_TIMEOUT - 1)
       await settle()
       assert.equal(result, undefined)
-      clock.advance(1)
+      clock.tick(1)
       await settle()
       assert.equal(result, false)
       assert.deepEqual(spy.calls, [])
@@ -198,9 +200,8 @@ describe('chatroomResync', () => {
     })
 
     it("uses the app's selectors by default", async () => {
-      const clock = fakeClock()
       const app = appSelectors()
-      assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, timers: clock.timers, syncs: new Map() }), true)
+      assert.equal(await resyncChatroomIfUnsubscribed({ chatRoomID: ROOM, sbp: app.sbp, syncs: new Map() }), true)
       assert.deepEqual(app.calls, [
         ['sw/connection/status'],
         ['state/vuex/getters'],
@@ -261,7 +262,7 @@ describe('chatroomResync', () => {
         await settle()
         results[0].resolve()
         assert.equal(await first, true)
-        clock.advance(RECENT_SYNC_WINDOW - 1)
+        clock.tick(RECENT_SYNC_WINDOW - 1)
         assert.equal(await open(), false)
         assert.deepEqual(calls, [ROOM])
         assert.deepEqual(warned(), [`open ${ROOM}`])
@@ -273,7 +274,7 @@ describe('chatroomResync', () => {
         await settle()
         results[0].resolve()
         assert.equal(await first, true)
-        clock.advance(RECENT_SYNC_WINDOW)
+        clock.tick(RECENT_SYNC_WINDOW)
         const second = open()
         await settle()
         results[1].resolve()
@@ -300,10 +301,10 @@ describe('chatroomResync', () => {
         const { clock, calls, results, open } = controlled()
         open()
         await settle()
-        clock.advance(RECENT_SYNC_WINDOW - 500)
+        clock.tick(RECENT_SYNC_WINDOW - 500)
         results[0].resolve()
         await settle()
-        clock.advance(1000)
+        clock.tick(1000)
         const opened = open()
         await settle()
         assert.deepEqual(calls, [ROOM, ROOM])
@@ -328,11 +329,11 @@ describe('chatroomResync', () => {
         const { clock, calls, results, open } = controlled()
         open()
         await settle()
-        clock.advance(SHARED_SYNC_MAX_AGE - 1)
+        clock.tick(SHARED_SYNC_MAX_AGE - 1)
         open()
         await settle()
         assert.deepEqual(calls, [ROOM])
-        clock.advance(1)
+        clock.tick(1)
         const opened = open()
         await settle()
         assert.deepEqual(calls, [ROOM, ROOM])
@@ -345,7 +346,7 @@ describe('chatroomResync', () => {
         const { clock, calls, results, open } = controlled()
         open()
         await settle()
-        clock.advance(SHARED_SYNC_MAX_AGE)
+        clock.tick(SHARED_SYNC_MAX_AGE)
         open()
         await settle()
         results[0].resolve()
@@ -362,14 +363,14 @@ describe('chatroomResync', () => {
         const { clock, calls, results, open } = controlled()
         open()
         await settle()
-        clock.advance(SHARED_SYNC_MAX_AGE)
+        clock.tick(SHARED_SYNC_MAX_AGE)
         open()
         await settle()
         results[1].resolve()
         await settle()
         results[0].resolve()
         await settle()
-        clock.advance(RECENT_SYNC_WINDOW - 1)
+        clock.tick(RECENT_SYNC_WINDOW - 1)
         assert.equal(await open(), false)
         assert.deepEqual(calls, [ROOM, ROOM])
         assert.deepEqual(warned(), [`open ${ROOM}`, `open ${ROOM}`])
@@ -379,11 +380,10 @@ describe('chatroomResync', () => {
       // no other test, since the module's map keeps its entry.
       it("shares the module's syncs by default", async () => {
         const chatRoomID = 'zSharedByDefault'
-        const clock = fakeClock()
         const result = deferred()
         const spy = syncSpy(() => result.promise)
         const open = () => resyncChatroomIfUnsubscribed({
-          chatRoomID, getStatus: () => Promise.resolve(status('open', { missing: [chatRoomID] })), isJoined: () => true, sync: spy.sync, timers: clock.timers
+          chatRoomID, getStatus: () => Promise.resolve(status('open', { missing: [chatRoomID] })), isJoined: () => true, sync: spy.sync
         })
         const opened = [open(), open()]
         await settle()

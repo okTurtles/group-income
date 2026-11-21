@@ -1,7 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { fakeClock } from '../../test/unit-helpers/fakeClock.js'
-import { deferred, settle } from '../../test/unit-helpers/utils.js'
+import { deferred, fakeTimers, settle } from '../../test/unit-helpers/utils.js'
 import { callWithTimeout } from './timers.js'
 
 const MESSAGE = 'Timed out doing it'
@@ -17,54 +16,53 @@ const track = (promise) => {
   return result
 }
 
+let clock
+
 describe('timers', () => {
+  beforeEach(() => { clock = fakeTimers() })
+  afterEach(() => { clock.restore() })
+
   describe('callWithTimeout', () => {
     it('resolves with the value of a sync fn', async () => {
-      const clock = fakeClock()
-      assert.equal(await callWithTimeout(() => 42, MS, MESSAGE, clock.timers), 42)
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(await callWithTimeout(() => 42, MS, MESSAGE), 42)
+      assert.equal(clock.countTimers(), 0)
     })
 
     it('resolves with the value of an async fn', async () => {
-      const clock = fakeClock()
-      assert.equal(await callWithTimeout(() => Promise.resolve('ok'), MS, MESSAGE, clock.timers), 'ok')
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(await callWithTimeout(() => Promise.resolve('ok'), MS, MESSAGE), 'ok')
+      assert.equal(clock.countTimers(), 0)
     })
 
     it("rejects with the error of fn's promise", async () => {
-      const clock = fakeClock()
       const error = new Error('rejected')
-      await assert.rejects(callWithTimeout(() => Promise.reject(error), MS, MESSAGE, clock.timers), (e) => e === error)
-      assert.equal(clock.pendingTimers(), 0)
+      await assert.rejects(callWithTimeout(() => Promise.reject(error), MS, MESSAGE), (e) => e === error)
+      assert.equal(clock.countTimers(), 0)
     })
 
     it('rejects with the error fn throws', async () => {
-      const clock = fakeClock()
       const error = new Error('thrown')
-      await assert.rejects(callWithTimeout(() => { throw error }, MS, MESSAGE, clock.timers), (e) => e === error)
-      assert.equal(clock.pendingTimers(), 0)
+      await assert.rejects(callWithTimeout(() => { throw error }, MS, MESSAGE), (e) => e === error)
+      assert.equal(clock.countTimers(), 0)
     })
 
     it('rejects with the message after exactly ms', async () => {
-      const clock = fakeClock()
-      const result = track(callWithTimeout(() => new Promise(() => {}), MS, MESSAGE, clock.timers))
+      const result = track(callWithTimeout(() => new Promise(() => {}), MS, MESSAGE))
       await settle()
-      clock.advance(MS - 1)
+      clock.tick(MS - 1)
       await settle()
       assert.equal(result.settled, false)
-      clock.advance(1)
+      clock.tick(1)
       await settle()
       assert.equal(result.settled, true)
       assert.ok(result.error instanceof Error)
       assert.equal(result.error.message, MESSAGE)
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(clock.countTimers(), 0)
     })
 
     it('ignores an answer that comes after the timeout', async () => {
-      const clock = fakeClock()
       const answer = deferred()
-      const result = track(callWithTimeout(() => answer.promise, MS, MESSAGE, clock.timers))
-      clock.advance(MS)
+      const result = track(callWithTimeout(() => answer.promise, MS, MESSAGE))
+      clock.tick(MS)
       await settle()
       answer.resolve('late')
       await settle()
@@ -73,27 +71,25 @@ describe('timers', () => {
     })
 
     it('calls fn synchronously', () => {
-      const clock = fakeClock()
       let calls = 0
-      callWithTimeout(() => { calls++ }, MS, MESSAGE, clock.timers)
+      callWithTimeout(() => { calls++ }, MS, MESSAGE)
       assert.equal(calls, 1)
     })
 
     it('leaves no pending timer once settled either way', async () => {
-      const clock = fakeClock()
       const answer = deferred()
       const failure = deferred()
-      const resolved = track(callWithTimeout(() => answer.promise, MS, MESSAGE, clock.timers))
-      const rejected = track(callWithTimeout(() => failure.promise, MS, MESSAGE, clock.timers))
-      assert.equal(clock.pendingTimers(), 2)
+      const resolved = track(callWithTimeout(() => answer.promise, MS, MESSAGE))
+      const rejected = track(callWithTimeout(() => failure.promise, MS, MESSAGE))
+      assert.equal(clock.countTimers(), 2)
       answer.resolve('done')
       await settle()
       assert.deepEqual(resolved, { settled: true, value: 'done' })
-      assert.equal(clock.pendingTimers(), 1)
+      assert.equal(clock.countTimers(), 1)
       failure.reject(new Error('failed'))
       await settle()
       assert.equal(rejected.error?.message, 'failed')
-      assert.equal(clock.pendingTimers(), 0)
+      assert.equal(clock.countTimers(), 0)
     })
   })
 })

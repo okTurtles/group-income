@@ -1,4 +1,14 @@
 /* eslint-env mocha */
+import sinon from 'sinon'
+
+// Sinon's fake timers, to install in a `beforeEach` hook and restore in an
+// `afterEach` one. Only the timers are faked: `settle` uses the real
+// `setImmediate`, and `Date` stays real (the code under test takes a `now`
+// function, given `() => clock.now`).
+export const fakeTimers = () => sinon.useFakeTimers({
+  now: 1_000_000,
+  toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval']
+})
 
 // A promise with its `resolve` and `reject` functions
 export const deferred = () => {

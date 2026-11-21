@@ -1,8 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { fakeClock } from '../../test/unit-helpers/fakeClock.js'
 import { connectionStatus } from '../../test/unit-helpers/connectionStatus.js'
-import { deferred, settle, silenceConsole } from '../../test/unit-helpers/utils.js'
+import { deferred, fakeTimers, settle, silenceConsole } from '../../test/unit-helpers/utils.js'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
 import {
   CONNECTION_BANNER,
@@ -26,17 +25,15 @@ const NOT_REGISTERED = 'SBP: selector not registered: sw/connection/status'
 // `answer(now)` is what `getStatus()` returns (a status, a promise, or it
 // throws)
 const harness = ({ answer, online = true, ...options } = {}) => {
-  const clock = fakeClock()
   const env = { answer, online, calls: 0, changes: [] }
   const controller = createConnectionBannerController({
     getStatus: () => {
       env.calls++
-      return env.answer(clock.now())
+      return env.answer(clock.now)
     },
     onChange: (kind) => { env.changes.push(kind) },
     isOnline: () => env.online,
-    now: clock.now,
-    timers: clock.timers,
+    now: () => clock.now,
     ...options
   })
   const start = async () => {
@@ -45,7 +42,7 @@ const harness = ({ answer, online = true, ...options } = {}) => {
   }
   // A status as computed by the service worker now
   const current = (state, { degraded = false } = {}) =>
-    status(state, { at: clock.now(), degraded })
+    status(state, { at: clock.now, degraded })
   return { clock, env, controller, start, current }
 }
 
@@ -58,7 +55,12 @@ const deferredAnswers = (answers) => () => {
 }
 const rejecting = (message = NOT_REGISTERED) => () => Promise.reject(new Error(message))
 
+let clock
+
 describe('connection banner', () => {
+  beforeEach(() => { clock = fakeTimers() })
+  afterEach(() => { clock.restore() })
+
   const logs = silenceConsole()
   const count = (level) => logs.filter(log => log.level === level).length
 
@@ -125,17 +127,17 @@ describe('connection banner', () => {
       await t.start()
       assert.deepEqual(t.env.changes, [])
       t.controller.apply(t.current('open'))
-      assert.equal(t.clock.pendingTimers(), 1, 'the interval: the grace timer was cleared')
-      t.clock.advance(GRACE * 2)
+      assert.equal(t.clock.countTimers(), 1, 'the interval: the grace timer was cleared')
+      t.clock.tick(GRACE * 2)
       assert.deepEqual(t.env.changes, [])
     })
 
     it('shows the reconnecting banner once the first connection takes longer than the grace period', async () => {
       const t = harness({ answer: (now) => Promise.resolve(status('connecting', { at: now, since: now - 100 })) })
       await t.start()
-      t.clock.advance(GRACE - 101)
+      t.clock.tick(GRACE - 101)
       assert.deepEqual(t.env.changes, [])
-      t.clock.advance(1)
+      t.clock.tick(1)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
       assert.equal(t.env.calls, 1, 're-evaluated without a new query')
     })
@@ -163,9 +165,9 @@ describe('connection banner', () => {
       await t.start()
       t.controller.apply(t.current('closed'))
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
-      t.clock.advance(GRACE - 1)
+      t.clock.tick(GRACE - 1)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
-      t.clock.advance(1)
+      t.clock.tick(1)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, CONNECTION_BANNER.FAILED])
       assert.equal(t.env.calls, 1, 're-evaluated without a new query')
     })
@@ -174,10 +176,10 @@ describe('connection banner', () => {
       const t = harness({ answer: answering('open') })
       await t.start()
       t.controller.apply(t.current('closed'))
-      t.clock.advance(100)
+      t.clock.tick(100)
       t.controller.apply(t.current('connecting'))
-      assert.equal(t.clock.pendingTimers(), 2, 'the interval and one grace timer')
-      t.clock.advance(GRACE * 2)
+      assert.equal(t.clock.countTimers(), 2, 'the interval and one grace timer')
+      t.clock.tick(GRACE * 2)
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
     })
 
@@ -188,9 +190,9 @@ describe('connection banner', () => {
         const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
         await t.start()
         assert.deepEqual(t.env.changes, [])
-        t.clock.advance(GRACE - 1)
+        t.clock.tick(GRACE - 1)
         assert.deepEqual(t.env.changes, [])
-        t.clock.advance(1)
+        t.clock.tick(1)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
         assert.equal(t.env.calls, 1, 're-evaluated without a new query')
       })
@@ -199,11 +201,11 @@ describe('connection banner', () => {
         const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
         await t.start()
         for (let i = 0; i < 3; i++) {
-          t.clock.advance(GRACE / 4)
-          t.controller.apply(noClient(t.clock.now()))
+          t.clock.tick(GRACE / 4)
+          t.controller.apply(noClient(t.clock.now))
         }
         assert.deepEqual(t.env.changes, [])
-        t.clock.advance(GRACE / 4)
+        t.clock.tick(GRACE / 4)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
       })
 
@@ -211,12 +213,12 @@ describe('connection banner', () => {
         const t = harness({ answer: answering('open') })
         await t.start()
         for (let i = 0; i < 2; i++) {
-          t.controller.apply(noClient(t.clock.now()))
-          t.clock.advance(300)
+          t.controller.apply(noClient(t.clock.now))
+          t.clock.tick(300)
           t.controller.apply(t.current('connecting'))
-          t.clock.advance(500)
+          t.clock.tick(500)
           t.controller.apply(t.current('open'))
-          t.clock.advance(GRACE * 2)
+          t.clock.tick(GRACE * 2)
         }
         assert.deepEqual(t.env.changes, [])
       })
@@ -224,12 +226,12 @@ describe('connection banner', () => {
       it('shows "could not connect" once a closed client follows, after its own grace period', async () => {
         const t = harness({ answer: (now) => Promise.resolve(noClient(now)) })
         await t.start()
-        t.clock.advance(GRACE)
+        t.clock.tick(GRACE)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
         t.controller.apply(t.current('closed'))
-        t.clock.advance(GRACE - 1)
+        t.clock.tick(GRACE - 1)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
-        t.clock.advance(1)
+        t.clock.tick(1)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, CONNECTION_BANNER.FAILED])
       })
 
@@ -240,10 +242,10 @@ describe('connection banner', () => {
         t.controller.refresh()
         await settle()
         assert.equal(t.controller.legacy, true)
-        t.clock.advance(REFRESH / 2)
-        t.controller.apply(noClient(t.clock.now()))
+        t.clock.tick(REFRESH / 2)
+        t.controller.apply(noClient(t.clock.now))
         assert.equal(t.controller.legacy, false)
-        t.clock.advance(GRACE - 1)
+        t.clock.tick(GRACE - 1)
         assert.deepEqual(t.env.changes, [])
       })
 
@@ -251,8 +253,8 @@ describe('connection banner', () => {
         const t = harness({ answer: (now) => Promise.resolve(status('offline', { at: now, since: null })) })
         await t.start()
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE])
-        t.controller.apply(status('open', { at: t.clock.now(), since: null }))
-        t.clock.advance(GRACE * 2)
+        t.controller.apply(status('open', { at: t.clock.now, since: null }))
+        t.clock.tick(GRACE * 2)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, null])
       })
     })
@@ -277,7 +279,7 @@ describe('connection banner', () => {
       const t = harness({ answer: answering('reconnecting') })
       await t.start()
       for (let i = 0; i < 3; i++) {
-        t.clock.advance(REFRESH)
+        t.clock.tick(REFRESH)
         await settle()
         t.controller.apply(t.current('reconnecting'))
       }
@@ -290,7 +292,7 @@ describe('connection banner', () => {
       const t = harness({ answer: () => answer.promise })
       t.controller.start()
       const old = t.current('reconnecting')
-      t.clock.advance(10)
+      t.clock.tick(10)
       t.controller.apply(t.current('open'))
       answer.resolve(old)
       await settle()
@@ -302,7 +304,7 @@ describe('connection banner', () => {
     it('applies an older status if the clock went back', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
-      t.clock.set(t.clock.now() - 60e3)
+      t.clock.setSystemTime(t.clock.now - 60e3)
       t.controller.apply(t.current('reconnecting'))
       assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
     })
@@ -310,7 +312,7 @@ describe('connection banner', () => {
     it('ignores invalid broadcasts', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
-      for (const invalid of [null, undefined, 'open', {}, { state: 'reconnecting' }, { at: t.clock.now() }]) {
+      for (const invalid of [null, undefined, 'open', {}, { state: 'reconnecting' }, { at: t.clock.now }]) {
         t.controller.apply(invalid)
       }
       assert.deepEqual(t.env.changes, [])
@@ -320,7 +322,7 @@ describe('connection banner', () => {
     it('queries the status periodically, on refresh() and on connection events', async () => {
       const t = harness({ answer: answering('open') })
       await t.start()
-      t.clock.advance(REFRESH)
+      t.clock.tick(REFRESH)
       await settle()
       assert.equal(t.env.calls, 2)
       t.controller.refresh()
@@ -339,7 +341,7 @@ describe('connection banner', () => {
       const t = harness({ answer: answering('open'), isVisible: () => visible })
       await t.start()
       for (let i = 0; i < 3; i++) {
-        t.clock.advance(REFRESH)
+        t.clock.tick(REFRESH)
         await settle()
       }
       assert.equal(t.env.calls, 1, 'only the initial query')
@@ -347,7 +349,7 @@ describe('connection banner', () => {
       await settle()
       assert.equal(t.env.calls, 2)
       visible = true
-      t.clock.advance(REFRESH)
+      t.clock.tick(REFRESH)
       await settle()
       assert.equal(t.env.calls, 3)
     })
@@ -361,7 +363,7 @@ describe('connection banner', () => {
       t.controller.start()
       t.controller.refresh()
       t.controller.onLegacyEvent(OFFLINE)
-      t.clock.advance(refreshInterval)
+      t.clock.tick(refreshInterval)
       assert.equal(t.env.calls, 1)
       answers[0].resolve(t.current('open'))
       await settle()
@@ -377,11 +379,11 @@ describe('connection banner', () => {
       const t = harness({ answer: answering('open') })
       await t.start()
       t.env.answer = deferredAnswers(answers)
-      t.clock.advance(REFRESH + CONNECTION_STATUS_TIMEOUT)
+      t.clock.tick(REFRESH + CONNECTION_STATUS_TIMEOUT)
       await settle()
       assert.equal(count('warn'), 1, 'the timeout is a failure')
       for (let i = 0; i < 3; i++) {
-        t.clock.advance(REFRESH)
+        t.clock.tick(REFRESH)
         t.controller.refresh()
         await settle()
       }
@@ -403,13 +405,13 @@ describe('connection banner', () => {
       const answers = []
       const t = harness({ answer: deferredAnswers(answers) })
       t.controller.start()
-      t.clock.advance(CONNECTION_BANNER_QUERY_MAX_WAIT - 1)
+      t.clock.tick(CONNECTION_BANNER_QUERY_MAX_WAIT - 1)
       await settle()
       assert.equal(t.env.calls, 1)
-      t.clock.advance(1)
+      t.clock.tick(1)
       await settle()
       assert.equal(t.env.calls, 2, 'the refreshes requested meanwhile are made')
-      t.clock.advance(CONNECTION_STATUS_TIMEOUT)
+      t.clock.tick(CONNECTION_STATUS_TIMEOUT)
       await settle()
       answers[0].resolve(t.current('reconnecting'))
       await settle()
@@ -428,10 +430,10 @@ describe('connection banner', () => {
       const answers = []
       const t = harness({ answer: deferredAnswers(answers), isVisible: () => false })
       await t.start()
-      t.clock.advance(CONNECTION_BANNER_QUERY_MAX_WAIT)
+      t.clock.tick(CONNECTION_BANNER_QUERY_MAX_WAIT)
       await settle()
       assert.equal(t.env.calls, 1)
-      assert.equal(t.clock.pendingTimers(), 1, 'the interval')
+      assert.equal(t.clock.countTimers(), 1, 'the interval')
       t.controller.refresh()
       await settle()
       assert.equal(t.env.calls, 2)
@@ -468,7 +470,7 @@ describe('connection banner', () => {
         const t = harness({ answer: rejecting() })
         await t.start()
         for (let i = 0; i < 3; i++) {
-          t.clock.advance(REFRESH)
+          t.clock.tick(REFRESH)
           await settle()
         }
         assert.equal(t.env.calls, 4)
@@ -480,7 +482,7 @@ describe('connection banner', () => {
         const t = harness({ answer: answering('reconnecting') })
         await t.start()
         t.env.answer = rejecting()
-        t.clock.advance(REFRESH)
+        t.clock.tick(REFRESH)
         await settle()
         assert.equal(t.controller.legacy, true)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
@@ -492,7 +494,7 @@ describe('connection banner', () => {
           await t.start()
           t.env.answer = rejecting(reason)
           for (let i = 0; i < 3; i++) {
-            t.clock.advance(REFRESH)
+            t.clock.tick(REFRESH)
             await settle()
           }
           assert.equal(t.env.calls, 4)
@@ -500,10 +502,10 @@ describe('connection banner', () => {
           assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
           assert.equal(count('warn'), 1)
           t.env.answer = answering('open')
-          t.clock.advance(REFRESH)
+          t.clock.tick(REFRESH)
           await settle()
           t.env.answer = rejecting(reason)
-          t.clock.advance(REFRESH)
+          t.clock.tick(REFRESH)
           await settle()
           assert.equal(count('warn'), 2)
           assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, null])
@@ -514,14 +516,14 @@ describe('connection banner', () => {
         const t = harness({ answer: answering('open') })
         await t.start()
         t.env.answer = () => new Promise(() => {})
-        t.clock.advance(REFRESH + CONNECTION_STATUS_TIMEOUT - 1000)
+        t.clock.tick(REFRESH + CONNECTION_STATUS_TIMEOUT - 1000)
         await settle()
         t.controller.apply(t.current('closed'))
-        t.clock.advance(1000)
+        t.clock.tick(1000)
         await settle()
         assert.equal(t.controller.legacy, false)
         assert.equal(t.controller.kind, CONNECTION_BANNER.RECONNECTING)
-        t.clock.advance(GRACE - 1000)
+        t.clock.tick(GRACE - 1000)
         assert.equal(t.controller.kind, CONNECTION_BANNER.FAILED)
       })
 
@@ -541,7 +543,7 @@ describe('connection banner', () => {
         await t.start()
         t.controller.onLegacyEvent(OFFLINE)
         t.env.answer = answering('reconnecting')
-        t.clock.advance(REFRESH)
+        t.clock.tick(REFRESH)
         await settle()
         assert.equal(t.controller.legacy, false)
         assert.deepEqual(t.env.changes, [CONNECTION_BANNER.OFFLINE, CONNECTION_BANNER.RECONNECTING])
@@ -569,10 +571,10 @@ describe('connection banner', () => {
           refreshInterval: CONNECTION_STATUS_TIMEOUT / 2
         })
         t.controller.start()
-        t.clock.advance(CONNECTION_STATUS_TIMEOUT - 1)
+        t.clock.tick(CONNECTION_STATUS_TIMEOUT - 1)
         await settle()
         assert.equal(t.controller.legacy, false)
-        t.clock.advance(1)
+        t.clock.tick(1)
         await settle()
         assert.equal(t.controller.legacy, true)
         // The refreshes requested meanwhile wait for the answer
@@ -600,7 +602,7 @@ describe('connection banner', () => {
       })
       await t.start()
       assert.equal(t.controller.legacy, true)
-      t.clock.advance(REFRESH)
+      t.clock.tick(REFRESH)
       await settle()
       assert.equal(t.env.calls, 2, 'a tab whose visibility is unknown keeps querying')
       t.controller.onLegacyEvent(OFFLINE)

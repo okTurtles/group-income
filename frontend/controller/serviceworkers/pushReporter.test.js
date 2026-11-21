@@ -3,9 +3,8 @@ import assert from 'node:assert/strict'
 import { Buffer } from 'buffer'
 import { getSubscriptionId } from '@chelonia/lib/functions'
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE } from '@chelonia/lib/pubsub'
-import { fakeClock } from '../../../test/unit-helpers/fakeClock.js'
 import { SOCKET } from '../../../test/unit-helpers/socket.js'
-import { deferred, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
+import { deferred, fakeTimers, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
 import {
   VAPID_CACHE_DURATION,
@@ -88,7 +87,6 @@ const fakePushManager = (subscription = null) => {
 const fakeSubscriptionId = (info) => Promise.resolve(`sub:${info.endpoint}`)
 
 const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = fakePushManager(subscription), getSubscriptionId = fakeSubscriptionId, ...options } = {}) => {
-  const clock = fakeClock()
   const env = { client: fakeClient(readyState), loggedIn: true, disabled: false }
   const t = { clock, env, pushManager }
   t.reporter = createPushReporter({
@@ -97,8 +95,7 @@ const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = 
     isLoggedIn: () => typeof env.loggedIn === 'function' ? env.loggedIn() : env.loggedIn,
     notificationsDisabled: () => env.disabled,
     getSubscriptionId,
-    now: clock.now,
-    timers: clock.timers,
+    now: () => clock.now,
     ...options
   })
   t.report = (subscription) => t.reporter.reportExistingSubscription(subscription?.toJSON(), subscription?.options.applicationServerKey)
@@ -113,7 +110,12 @@ const harness = ({ readyState = SOCKET.OPEN, subscription = null, pushManager = 
 
 const sendPublicKey = (t, key) => t.reporter.onPushAction({ data: { type: PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY, data: key } })
 
+let clock
+
 describe('push reporter', () => {
+  beforeEach(() => { clock = fakeTimers() })
+  afterEach(() => { clock.restore() })
+
   const logs = silenceConsole()
   const messages = (level) => logs.filter(log => !level || log.level === level).map(({ args }) => args.map(String).join(' '))
 
@@ -303,13 +305,13 @@ describe('push reporter', () => {
       assert.deepEqual(socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
       sendPublicKey(t, base64url(KEY))
       assert.deepEqual(await options, { userVisibleOnly: true, applicationServerKey: base64url(KEY) })
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
 
-      t.clock.advance(VAPID_CACHE_DURATION - 1)
+      t.clock.tick(VAPID_CACHE_DURATION - 1)
       assert.deepEqual(await t.reporter.getSubscriptionOptions(), { userVisibleOnly: true, applicationServerKey: base64url(KEY) })
       assert.equal(socket.sent.length, 1)
 
-      t.clock.advance(1)
+      t.clock.tick(1)
       const refreshed = t.reporter.getSubscriptionOptions()
       assert.equal(socket.sent.length, 2)
       sendPublicKey(t, base64url(KEY))
@@ -320,11 +322,11 @@ describe('push reporter', () => {
       const t = harness()
       const requests = [t.reporter.getSubscriptionOptions(), t.reporter.getSubscriptionOptions()]
       assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
-      assert.equal(t.clock.pendingTimers(), 1)
+      assert.equal(t.clock.countTimers(), 1)
       sendPublicKey(t, base64url(KEY))
       const answers = await Promise.all(requests)
       assert.deepEqual(answers.map(answer => answer.applicationServerKey), [base64url(KEY), base64url(KEY)])
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
 
     for (const [name, readyState] of [['connecting', SOCKET.CONNECTING], ['closing', SOCKET.CLOSING], ['closed', SOCKET.CLOSED]]) {
@@ -332,7 +334,7 @@ describe('push reporter', () => {
         const t = harness({ readyState })
         await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'WebSocket connection is not open' })
         assert.deepEqual(t.env.client.socket.sent, [])
-        assert.equal(t.clock.pendingTimers(), 0)
+        assert.equal(t.clock.countTimers(), 0)
       })
     }
 
@@ -340,15 +342,15 @@ describe('push reporter', () => {
       const t = harness()
       t.env.client = null
       await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'Missing pubsub instance' })
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
 
     it('rejects with a plain error when the key does not arrive in time on an open socket', async () => {
       const t = harness()
       const options = t.reporter.getSubscriptionOptions()
-      t.clock.advance(VAPID_REQUEST_TIMEOUT)
+      t.clock.tick(VAPID_REQUEST_TIMEOUT)
       await assert.rejects(options, { name: 'Error', message: 'Timed out requesting VAPID key' })
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
 
       // A late answer is still cached
       sendPublicKey(t, base64url(KEY))
@@ -365,9 +367,9 @@ describe('push reporter', () => {
         const t = harness()
         const options = t.reporter.getSubscriptionOptions()
         loseSocket(t)
-        t.clock.advance(VAPID_REQUEST_TIMEOUT)
+        t.clock.tick(VAPID_REQUEST_TIMEOUT)
         await assert.rejects(options, { name: PUBSUB_NOT_OPEN_ERROR, message: 'Timed out requesting VAPID key' })
-        assert.equal(t.clock.pendingTimers(), 0)
+        assert.equal(t.clock.countTimers(), 0)
       })
     }
 
@@ -382,22 +384,22 @@ describe('push reporter', () => {
       sendPublicKey(t, base64url(KEY))
       const answers = await Promise.all([first, second])
       assert.deepEqual(answers.map(answer => answer.applicationServerKey), [base64url(KEY), base64url(KEY)])
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
 
     it('keeps sharing the request on a new socket when the one on the old socket times out', async () => {
       const t = harness()
       const first = t.reporter.getSubscriptionOptions()
-      t.clock.advance(VAPID_REQUEST_TIMEOUT / 2)
+      t.clock.tick(VAPID_REQUEST_TIMEOUT / 2)
       t.env.client.socket = fakeSocket(SOCKET.OPEN)
       const second = t.reporter.getSubscriptionOptions()
-      t.clock.advance(VAPID_REQUEST_TIMEOUT / 2)
+      t.clock.tick(VAPID_REQUEST_TIMEOUT / 2)
       await assert.rejects(first, { name: PUBSUB_NOT_OPEN_ERROR })
       const third = t.reporter.getSubscriptionOptions()
       assert.deepEqual(t.env.client.socket.actions(), [PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY])
       sendPublicKey(t, base64url(KEY))
       await Promise.all([second, third])
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
 
     it('rejects at once on a socket that is closing while a request on it waits', async () => {
@@ -405,16 +407,16 @@ describe('push reporter', () => {
       const first = t.reporter.getSubscriptionOptions()
       t.env.client.socket.readyState = SOCKET.CLOSING
       await assert.rejects(t.reporter.getSubscriptionOptions(), { name: PUBSUB_NOT_OPEN_ERROR, message: 'WebSocket connection is not open' })
-      t.clock.advance(VAPID_REQUEST_TIMEOUT)
+      t.clock.tick(VAPID_REQUEST_TIMEOUT)
       await assert.rejects(first, { name: PUBSUB_NOT_OPEN_ERROR })
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
 
     it('rejects with the send error and leaves nothing pending', async () => {
       const t = harness()
       t.env.client.socket.send = () => { throw new Error('send failed') }
       await assert.rejects(t.reporter.getSubscriptionOptions(), { message: 'send failed' })
-      assert.equal(t.clock.pendingTimers(), 0)
+      assert.equal(t.clock.countTimers(), 0)
     })
   })
 

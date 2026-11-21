@@ -1,8 +1,6 @@
 'use strict'
 
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../../utils/events.js'
-import type { Timers } from '../../utils/timers.js'
-import { defaultTimers } from '../../utils/timers.js'
 
 // How long a wanted contract may stay unsubscribed while the connection is
 // open before the connection is considered degraded.
@@ -112,8 +110,7 @@ export function createConnectionMonitor ({
   graceMs = CONNECTION_DEGRADED_GRACE,
   tickInterval = CONNECTION_TICK_INTERVAL,
   maxHealDelay = CONNECTION_MAX_HEAL_DELAY,
-  maxDegradedHeals = CONNECTION_MAX_DEGRADED_HEALS,
-  timers = defaultTimers
+  maxDegradedHeals = CONNECTION_MAX_DEGRADED_HEALS
 }: {|
   getLibStatus: () => mixed,
   heal: () => mixed,
@@ -122,8 +119,7 @@ export function createConnectionMonitor ({
   graceMs?: number,
   tickInterval?: number,
   maxHealDelay?: number,
-  maxDegradedHeals?: number,
-  timers?: Timers
+  maxDegradedHeals?: number
 |}): ConnectionMonitor {
   let wanted: string[] = []
   // Wanted contracts not subscribed while the connection is open, and since
@@ -313,7 +309,7 @@ export function createConnectionMonitor ({
   const update = () => {
     if (updateTimer !== null) return
     try {
-      updateTimer = timers.setTimeout(() => {
+      updateTimer = setTimeout(() => {
         updateTimer = null
         recompute()
       }, 0)
@@ -354,7 +350,7 @@ export function createConnectionMonitor ({
     start () {
       if (interval !== null) return
       try {
-        interval = timers.setInterval(recompute, tickInterval)
+        interval = setInterval(recompute, tickInterval)
       } catch (e) {
         interval = null
         console.warn('[connection] Error starting the connection monitor', e)

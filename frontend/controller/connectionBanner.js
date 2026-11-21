@@ -1,8 +1,6 @@
 'use strict'
 
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
-import type { Timers } from '../utils/timers.js'
-import { defaultTimers } from '../utils/timers.js'
 import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from './connectionStatus.js'
 import type { ConnectionStatus } from './serviceworkers/connectionMonitor.js'
 
@@ -112,8 +110,7 @@ export function createConnectionBannerController ({
   now = () => Date.now(),
   graceMs = CONNECTION_BANNER_GRACE,
   refreshInterval = CONNECTION_BANNER_REFRESH_INTERVAL,
-  requestTimeout = CONNECTION_STATUS_TIMEOUT,
-  timers = defaultTimers
+  requestTimeout = CONNECTION_STATUS_TIMEOUT
 }: {|
   getStatus: () => mixed,
   onChange: (kind: ConnectionBannerKind | null) => mixed,
@@ -122,8 +119,7 @@ export function createConnectionBannerController ({
   now?: () => number,
   graceMs?: number,
   refreshInterval?: number,
-  requestTimeout?: number,
-  timers?: Timers
+  requestTimeout?: number
 |}): ConnectionBannerController {
   let running = false
   let kind: ConnectionBannerKind | null = null
@@ -153,7 +149,7 @@ export function createConnectionBannerController ({
   }
 
   const clearGraceTimer = () => {
-    if (graceTimer !== null) timers.clearTimeout(graceTimer)
+    if (graceTimer !== null) clearTimeout(graceTimer)
     graceTimer = null
   }
 
@@ -165,7 +161,7 @@ export function createConnectionBannerController ({
     setKind(bannerForStatus(status, at, { graceMs, current: kind }))
     const endsAt = graceEndsAt(status, at, graceMs)
     if (endsAt !== null) {
-      graceTimer = timers.setTimeout(() => {
+      graceTimer = setTimeout(() => {
         graceTimer = null
         evaluate()
       }, endsAt - at)
@@ -256,12 +252,12 @@ export function createConnectionBannerController ({
       pendingAnswer = null
       sendQueued()
     }
-    const abandonTimer = timers.setTimeout(answered, CONNECTION_BANNER_QUERY_MAX_WAIT)
+    const abandonTimer = setTimeout(answered, CONNECTION_BANNER_QUERY_MAX_WAIT)
     answer.then(apply, () => {}).finally(() => {
-      timers.clearTimeout(abandonTimer)
+      clearTimeout(abandonTimer)
       answered()
     })
-    requestConnectionStatus({ getStatus: () => answer, timeout: requestTimeout, timers })
+    requestConnectionStatus({ getStatus: () => answer, timeout: requestTimeout })
       .then((status) => {
         if (!isStatus(status)) enterLegacyMode(new Error('Invalid connection status'))
       }, queryFailed)
@@ -275,7 +271,7 @@ export function createConnectionBannerController ({
     start () {
       if (running) return
       running = true
-      timers.setInterval(() => { if (visible()) refresh() }, refreshInterval)
+      setInterval(() => { if (visible()) refresh() }, refreshInterval)
       refresh()
     },
     refresh,

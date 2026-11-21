@@ -4,8 +4,6 @@ import { getSubscriptionId as defaultGetSubscriptionId } from '@chelonia/lib/fun
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
 import { Buffer } from 'buffer'
 import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
-import type { Timers } from '../../utils/timers.js'
-import { defaultTimers } from '../../utils/timers.js'
 import { isSocketOpen } from './socket.js'
 
 // The server's VAPID public key should change very infrequently, if at all
@@ -83,16 +81,14 @@ export function createPushReporter ({
   isLoggedIn,
   notificationsDisabled,
   getSubscriptionId = defaultGetSubscriptionId,
-  now = () => performance.now(),
-  timers = defaultTimers
+  now = () => performance.now()
 }: {|
   getPubsub: () => ?Object,
   pushManager: ?Object,
   isLoggedIn: () => boolean,
   notificationsDisabled: () => boolean,
   getSubscriptionId?: (subscriptionInfo: Object) => Promise<string>,
-  now?: () => number,
-  timers?: Timers
+  now?: () => number
 |}): PushReporter {
   let cachedVapidInformation: ?[number, Object]
   const vapidWaiters: Set<(options: Object) => void> = new Set()
@@ -110,13 +106,13 @@ export function createPushReporter ({
 
       const waiter = (options) => {
         vapidWaiters.delete(waiter)
-        timers.clearTimeout(timeoutID)
+        clearTimeout(timeoutID)
         resolve(options)
       }
       // Either the socket died without being closed yet (a connection
       // problem: retried on reconnection), or the server is slow or answered
       // with an error, which the pubsub client only logs (the tab retries)
-      const timeoutID = timers.setTimeout(() => {
+      const timeoutID = setTimeout(() => {
         vapidWaiters.delete(waiter)
         const message = 'Timed out requesting VAPID key'
         reject(isCurrentOpenSocket(pubsub, socket) ? new Error(message) : pubsubNotOpenError(message))
@@ -130,7 +126,7 @@ export function createPushReporter ({
         ))
       } catch (e) {
         vapidWaiters.delete(waiter)
-        timers.clearTimeout(timeoutID)
+        clearTimeout(timeoutID)
         reject(e)
       }
     })
