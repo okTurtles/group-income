@@ -168,6 +168,7 @@ import {
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.js'
 import { isUnsentMessage, sortMessages } from './sortMessages.js'
+import { resyncChatroomIfUnsubscribed } from './chatroomResync.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'
@@ -1512,6 +1513,9 @@ export default ({
         this.ephemeral.latestHeight = latestHeight
       } else {
         this.ephemeral.latestHeight = undefined
+        // Safety net for a chatroom whose subscription was lost (#3176). Not
+        // awaited; the events the sync brings are handled like live ones.
+        resyncChatroomIfUnsubscribed({ chatRoomID })
       }
       this.ephemeral.unprocessedEvents = []
       this.ephemeral.editingHash = null

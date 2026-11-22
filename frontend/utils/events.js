@@ -15,6 +15,9 @@ export const ONLINE = 'online'
 export const OFFLINE = 'offline'
 export const RECONNECTING = 'reconnecting'
 export const RECONNECTION_FAILED = 'reconnection-failed'
+// Emitted by the service worker with the new connection status (see
+// `controller/serviceworkers/connectionMonitor.js`)
+export const CONNECTION_STATUS_CHANGED = 'connection-status-changed'
 
 export const ACCEPTED_GROUP = 'accepted-group'
 export const SWITCH_GROUP = 'switch-group'

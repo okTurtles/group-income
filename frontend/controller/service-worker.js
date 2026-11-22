@@ -3,6 +3,7 @@
 import { deserializer, serializer } from '@chelonia/serdes'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
+import { PUBSUB_NOT_OPEN_ERROR } from '@utils/constants.js'
 import { CAPTURED_LOGS, CONTRACT_SYNCS_RESET, LOGIN_COMPLETE, NEW_CHATROOM_NOTIFICATION_SETTINGS, NEW_CHATROOM_SCROLL_POSITION, PWA_INSTALLABLE, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import isPwa from '@utils/isPwa.js'
 import { HOURS_MILLIS } from '~/frontend/model/contracts/shared/time.js'
@@ -269,11 +270,17 @@ sbp('sbp/selectors/register', {
             endpoint = new URL(subscription.endpoint).host // hide the full endpoint from the logs for privacy
             subID = await getSubscriptionId(subscription.toJSON())
           }
-          console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} subscription '${subID}':`, endpoint)
+          console.info(`[service-worker/setup-push-subscription] got ${newSub ? 'new' : 'existing'} Web Push subscription '${subID}':`, endpoint)
         }
         console.info('[service-worker/setup-push-subscription] calling push/reportExistingSubscription on:', subID)
         await sbp('push/reportExistingSubscription', subscription?.toJSON(), subscription?.options.applicationServerKey)
       } catch (e) {
+        // Not a push problem: the ONLINE handler in main.js runs this again
+        // once the SW is connected, so neither retry nor prompt
+        if (e?.name === PUBSUB_NOT_OPEN_ERROR) {
+          console.warn('[service-worker/setup-push-subscription] not connected to the server; will retry when reconnected:', e.message)
+          return
+        }
         console.error('[service-worker/setup-push-subscription] error getting a subscription:', e)
 
         if (attemptNumber >= 12) {

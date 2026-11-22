@@ -69,3 +69,23 @@ export const DEVICE_SETTINGS = {
   DISABLE_NOTIFICATIONS: 'disableNotifications',
   JOURNAL_REDACTIONS_APPLIED_VERSION: 'journalRedactionsAppliedVersion'
 }
+
+// `Error.name` of push-subscription requests that failed only because the
+// service worker isn't connected to the server. It survives the SW <-> tab
+// RPC, so that tabs can tell these apart from Web Push failures.
+export const PUBSUB_NOT_OPEN_ERROR = 'GIErrorPubsubNotOpen'
+
+// The service worker's connection status (see
+// `controller/serviceworkers/connectionMonitor.js`), queried by tabs
+export const CONNECTION_STATUS_SELECTOR = 'sw/connection/status'
+
+// Restarts the service worker's reconnection cycle (see
+// `controller/serviceworkers/reconnectionPolicy.js`). Tabs call it when they
+// become visible and from the connection banner's "Retry now" button.
+export const CONNECTION_RESTART_SELECTOR = 'sw/connection/restart'
+
+// The longest delay between two attempts to reconnect the pubsub client,
+// which keeps retrying while a page is open (the library's default is 60 s).
+// A page opened or shown meanwhile restarts the cycle with short delays, so
+// this can be long without delaying a reconnection that someone waits for.
+export const PUBSUB_MAX_RECONNECTION_DELAY = 10 * 60 * 1000

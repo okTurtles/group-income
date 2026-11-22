@@ -80,8 +80,14 @@ export default ({
         case 'copy': {
           const postCopyAction = () => {
             this.close()
-            sbp('gi.ui/showBanner', L('Copied to clipboard'), 'check-circle')
-            setTimeout(() => { sbp('gi.ui/clearBanner') }, 1500)
+            // A toast, not a banner: a danger or connection banner would hide it, and
+            // clearing the banner could remove someone else's
+            sbp('gi.ui/toast', 'chat-main', {
+              message: L('Copied to clipboard'),
+              variant: 'success',
+              position: 'bottom-center',
+              duration: 3000
+            })
           }
 
           if (window.navigator.clipboard) {

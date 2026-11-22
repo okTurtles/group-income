@@ -6,16 +6,21 @@ import sbp from '@sbp/sbp'
 import '@chelonia/lib'
 import './model/sw-database.js'
 import type { SPMessage } from '@chelonia/lib/SPMessage'
-import { NOTIFICATION_TYPE, PUBSUB_ERROR, REQUEST_TYPE } from '@chelonia/lib/pubsub'
+import { NOTIFICATION_TYPE, PUBSUB_ERROR, PUBSUB_RECONNECTION_FAILED, PUBSUB_RECONNECTION_SCHEDULED, PUBSUB_STATE_CHANGED, PUBSUB_SUBSCRIPTION_FAILED, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.js'
 import { isContractDeletedError } from './controller/actions/namespaceCacheList.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import type { ConnectionMonitor } from './controller/serviceworkers/connectionMonitor.js'
+import { createConnectionMonitor, createPubsubHandlers } from './controller/serviceworkers/connectionMonitor.js'
+import type { ReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.js'
+import { createReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.js'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.js'
 import { JOURNAL_REDACTIONS } from './model/journal/redactions.js'
 import { clearStaleJournals } from './model/journal/migration.js'
-import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR } from './utils/events.js'
+import { PUBSUB_MAX_RECONNECTION_DELAY } from './utils/constants.js'
+import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, CONNECTION_STATUS_CHANGED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, SERIOUS_ERROR } from './utils/events.js'
 
 const diffContractVersion = (va?: Object, vb?: Object): boolean => {
   // If the types don't match, a different release has been made
@@ -108,6 +113,35 @@ const filterOutForeignIdentityKv = (contractIDs: string[]) => {
   })
 }
 
+// The health of the pubsub connection, which tabs use to show the connection
+// banner (`sw/connection/status` and `CONNECTION_STATUS_CHANGED`). It also
+// requests again the subscriptions the pubsub client lost.
+export const connectionMonitor: ConnectionMonitor = createConnectionMonitor({
+  getLibStatus: () => sbp('chelonia/pubsub/status'),
+  heal: () => sbp('chelonia/pubsub/update'),
+  emit: (status) => sbp('okTurtles.events/emit', CONNECTION_STATUS_CHANGED, status)
+})
+
+// When the pubsub client keeps retrying and when a new cycle starts: it's
+// paused while no page is open, and restarted by a page that opens
+// (`sw-primary.js`, on `ready`), a tab that becomes visible and the
+// connection banner's "Retry now" button (`sw/connection/restart`).
+export const reconnectionPolicy: ReconnectionPolicy = createReconnectionPolicy({
+  getClient: () => sbp('okTurtles.data/get', PUBSUB_INSTANCE),
+  // Only the connection: once the new socket opens, Chelonia subscribes it
+  // and syncs each contract as its subscription succeeds. A full sync while
+  // the server is unreachable would only log one error per contract.
+  reconnect: () => connectPubsub(),
+  resetHealBackoff: () => connectionMonitor.resetHealBackoff(),
+  getStatus: () => connectionMonitor.getStatus(),
+  // Only service workers have window clients; in a browsing context, Chelonia
+  // always has a page
+  countPages: typeof self === 'object' && typeof self.clients?.matchAll === 'function'
+    ? () => self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => list.length)
+    : undefined,
+  isOffline: () => typeof navigator === 'object' && navigator.onLine === false
+})
+
 // Event listeners set up by `initialize`. Registered only once, even if
 // `initialize` is retried after failing.
 let listenersRegistered = false
@@ -137,10 +171,30 @@ const registerListeners = () => {
     })
   })
 
-  // See `filterOutForeignIdentityKv`
-  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (_, { added }) => {
-    if (added.length) filterOutForeignIdentityKv(added)
+  // The first argument lists the contracts Chelonia processes events for, i.e.,
+  // those the pubsub client should be subscribed to (there's no other way to read it)
+  sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (subscribedIDs, { added }) => {
+    connectionMonitor.setWanted(subscribedIDs)
+    if (added.length) filterOutForeignIdentityKv(added) // see `filterOutForeignIdentityKv`
   })
+  sbp('okTurtles.events/on', PUBSUB_STATE_CHANGED, () => connectionMonitor.update())
+  sbp('okTurtles.events/on', PUBSUB_SUBSCRIPTION_FAILED, () => connectionMonitor.update())
+  // Pauses reconnecting while no page is open, once an attempt failed (the
+  // event's `nth` tells a failed attempt from a lost connection)
+  sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SCHEDULED, (client, detail) => reconnectionPolicy.onReconnectionScheduled(client, detail))
+  // The client gave up after `maxRetries` attempts, which `Infinity` makes
+  // unreachable. It's then left closed rather than re-created right away,
+  // which would restart the back-off from its shortest delays: the next page
+  // opened, tab shown or "Retry now" click re-creates it
+  // (`reconnectionPolicy`).
+  sbp('okTurtles.events/on', PUBSUB_RECONNECTION_FAILED, (client) => {
+    if (client !== sbp('okTurtles.data/get', PUBSUB_INSTANCE)) return
+    console.warn('[connection] the pubsub client stopped reconnecting; waiting for a page to restart the reconnection cycle')
+  })
+  // Before `connectAndSync` creates the pubsub client, so that a restarted
+  // service worker tells the open tabs that it has no connection yet
+  // (`closed` without `since`, which they show as a connection being made)
+  connectionMonitor.start()
 
   sbp('okTurtles.events/on', LOGGING_OUT, () => {
     logoutInProgress = true
@@ -225,6 +279,14 @@ const initialize = async (): Promise<void> => {
   // SW itself
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    // The pubsub client retries forever (while a page is open, see
+    // `reconnectionPolicy`), backed off up to 10 minutes. Merged key by key
+    // with Chelonia's defaults, so `reconnectOnTimeout` is kept. `maxRetries`
+    // is Chelonia's default too, set here so as not to depend on it.
+    connectionOptions: {
+      maxRetries: Infinity,
+      maxReconnectionDelay: PUBSUB_MAX_RECONNECTION_DELAY
+    },
     // Because Chelonia state is kept separately from Vuex state, there is
     // no need to override stateSelector. However, `reactiveSet` and `reactiveDel`
     // are still needed to persist Chelonia state (this separation means that
@@ -355,9 +417,10 @@ const initialize = async (): Promise<void> => {
   await sbp('chelonia.persistentActions/load')
 }
 
-// Connects to the server and syncs the logged-in user's contracts. Unlike
-// `initialize`, this is re-run after pubsub errors.
-const connectAndSync = () => {
+// Creates the pubsub client (replacing the current one, if any). Unlike
+// `initialize`, this is re-run after pubsub errors, and when a page restarts
+// the reconnection cycle (`reconnectionPolicy`).
+const connectPubsub = () => {
   // must create the connection before we call login
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect', {
     messageHandlers: {
@@ -431,26 +494,13 @@ const connectAndSync = () => {
         })
       }
     },
-    handlers: {
-      offline () {
-        sbp('okTurtles.events/emit', OFFLINE)
-      },
-      online () {
-        sbp('okTurtles.events/emit', ONLINE)
-        console.info('back online!')
-      },
-      'reconnection-attempt' () {
-        sbp('okTurtles.events/emit', RECONNECTING)
-      },
-      'reconnection-failed' () {
-        sbp('okTurtles.events/emit', RECONNECTION_FAILED)
-      },
-      'reconnection-succeeded' () {
-        sbp('okTurtles.events/emit', ONLINE)
-        console.info('reconnected to pubsub!')
-      }
-    }
+    handlers: createPubsubHandlers({
+      monitor: connectionMonitor,
+      emitEvent: (name) => sbp('okTurtles.events/emit', name)
+    })
   }))
+  // The connection status depends on the client, which was just replaced
+  connectionMonitor.update()
   // `chelonia/connect` replaces the socket, but Chelonia still considers the
   // contracts it has synced to be subscribed, so syncing them won't subscribe
   // the new socket. Subscribe it explicitly (a no-op on the first connection).
@@ -459,7 +509,10 @@ const connectAndSync = () => {
   // requests carry them.
   filterOutForeignIdentityKv(Object.keys(sbp('chelonia/rootState').contracts || {}))
   sbp('chelonia/pubsub/update')
+}
 
+// Syncs the logged-in user's contracts
+const syncLoggedInContracts = () => {
   // this should be done here and not in LOGIN_COMPLETE because:
   // If the SW awakens but it's not a navigation event, you'll skip the code syncing all
   // contracts, which will remove all contracts from the push subscription. So, the second
@@ -482,10 +535,20 @@ const connectAndSync = () => {
   })
 }
 
+// Connects to the server and syncs the logged-in user's contracts. Unlike
+// `initialize`, this is re-run after pubsub errors.
+const connectAndSync = () => {
+  connectPubsub()
+  syncLoggedInContracts()
+}
+
 // This implements a 'singleton promise' or 'lazy intialization' of setupChelonia.
 // The idea is that `setupChelonia` be called only once, regardless of how many
 // actual invocations actually happen (unless the last invocation resolved
 // and rejected)
+// Since a page opening calls it too (the `ready` message), it can't be what
+// restarts a connection that is down: the service worker does that once it
+// resolves, through `reconnectionPolicy.restart('page-opened')`.
 export default ((() => {
   let initPromise
   let promise
@@ -514,6 +577,9 @@ export default ((() => {
   // `promise` and then call `singletonFn` after a short delay. Initialization
   // (loading the saved state, configuring Chelonia and registering event
   // listeners) isn't repeated; only connecting and syncing are.
+  // A client paused while no page is open, or one that gave up retrying,
+  // doesn't emit `PUBSUB_ERROR`: the next page opened or other restart signal
+  // re-creates it (see `reconnectionPolicy`), without a full sync.
   sbp('okTurtles.events/on', PUBSUB_ERROR, () => {
     if (!promise) return
     promise = undefined
