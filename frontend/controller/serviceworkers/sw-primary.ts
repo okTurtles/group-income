@@ -18,7 +18,7 @@ import { MAX_JOURNAL_EXPORT_BYTES, orderJournalCandidates, selectJournalsWithinB
 import { sanitizeJournal } from '~/frontend/model/journal/sanitize.ts'
 import notificationGetters from '~/frontend/model/notifications/getters.ts'
 import '~/frontend/model/notifications/selectors.ts'
-import setupChelonia from '~/frontend/setupChelonia.ts'
+import setupChelonia, { connectionMonitor, reconnectionPolicy } from '~/frontend/setupChelonia.ts'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
@@ -27,7 +27,7 @@ import { NOTIFICATION_TYPE } from '@chelonia/lib/pubsub'
 import {
   CHELONIA_STATE_MODIFIED, LOGGING_OUT, LOGIN, LOGIN_ERROR, LOGOUT,
   ACCEPTED_GROUP, CAPTURED_LOGS, CHATROOM_USER_STOP_TYPING,
-  CHATROOM_USER_TYPING, DELETED_CHATROOM,
+  CHATROOM_USER_TYPING, CONNECTION_STATUS_CHANGED, DELETED_CHATROOM,
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   JOINED_CHATROOM, JOINED_GROUP,
   LEFT_CHATROOM, LEFT_GROUP, NAMESPACE_REGISTRATION,
@@ -37,6 +37,7 @@ import {
   OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
+import { CONNECTION_RESTART_SELECTOR, CONNECTION_STATUS_SELECTOR } from '~/frontend/utils/constants.ts'
 import './push.ts'
 import './sw-namespace.ts'
 
@@ -72,6 +73,12 @@ deserializer.register(Secret)
 // https://stackoverflow.com/a/49748437 => https://medium.com/@nekrtemplar/self-destroying-serviceworker-73d62921d717 => https://love2dev.com/blog/how-to-uninstall-a-service-worker/
 
 const reducer = (o, v) => { o[v] = true; return o }
+// Status queries, made periodically: `chelonia/pubsub/status` by the
+// connection monitor every few seconds, and `sw/connection/status` by each
+// visible tab every 30 s and on connection events. Also
+// `sw/connection/restart`, which each tab calls whenever it becomes visible.
+// They aren't logged at the debug level, here or in the `message` handler.
+const statusSelectors = ['chelonia/pubsub/status', CONNECTION_STATUS_SELECTOR, CONNECTION_RESTART_SELECTOR]
 // Domains for which debug logging won't be enabled.
 const domainBlacklist = [
   'sbp',
@@ -85,6 +92,7 @@ const selectorBlacklist = [
   'chelonia/haveSecretKey',
   'chelonia/private/enqueuePostSyncOps',
   'chelonia/private/invoke',
+  ...statusSelectors,
   'state/vuex/state',
   'state/vuex/getters',
   'state/vuex/settings',
@@ -141,7 +149,7 @@ const broadcastMessage = (...args) => {
   ERROR_GROUP_GENERAL_CHATROOM_DOES_NOT_EXIST, ERROR_JOINING_CHATROOM,
   EVENT_HANDLED, LOGIN, LOGIN_ERROR, LOGOUT, LOGGING_OUT, ACCEPTED_GROUP,
   CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, DELETED_CHATROOM,
-  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED,
+  CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CONNECTION_STATUS_CHANGED,
   LEFT_CHATROOM, LEFT_GROUP, JOINED_CHATROOM, JOINED_GROUP,
   NOTIFICATION_TYPE.VERSION_INFO,
   MESSAGE_RECEIVE, MESSAGE_SEND, NAMESPACE_REGISTRATION,
@@ -296,6 +304,12 @@ sbp('sbp/selectors/register', {
       NODE_ENV: process.env.NODE_ENV
     }
   },
+  // The same status as the `CONNECTION_STATUS_CHANGED` event, for tabs that
+  // have just opened (or missed events)
+  [CONNECTION_STATUS_SELECTOR]: () => connectionMonitor.getStatus(),
+  // Restarts the reconnection cycle if the connection is down (see
+  // `reconnectionPolicy.js`). Its answer (`RestartResult`) is informative.
+  [CONNECTION_RESTART_SELECTOR]: (reason) => reconnectionPolicy.restart(reason),
   'sw/deviceSettings/set': (key, value) => {
     const reactiveSet = sbp('chelonia/config').reactiveSet
     const rootState = sbp('chelonia/rootState')
@@ -389,12 +403,18 @@ const sendMessageToClient = async function (payload) {
 }
 */
 
+// A tab's request for one of the `statusSelectors`. The selector is the first
+// serialized argument, as a plain string.
+const isStatusQuery = (data: any): boolean =>
+  data?.type === 'sbp' && Array.isArray(data.data) && statusSelectors.includes(data.data[0])
+
 self.addEventListener('message', function (event) {
-  console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
+  const quiet = isStatusQuery(event.data)
+  if (!quiet) console.debug(`[sw] message from ${event.source.id} of type ${event.data?.type}.`)
   // const client = await self.clients.get(event.source.id)
   // const client = await self.clients.get(event.clientId)
   if (typeof event.data === 'object' && event.data.type) {
-    console.debug('[sw] event received:', event.data)
+    if (!quiet) console.debug('[sw] event received:', event.data)
     switch (event.data.type) {
       case 'sbp': {
         // We don't filter the selectors because such a filter would be
@@ -456,8 +476,9 @@ self.addEventListener('message', function (event) {
         // The 'ready' message is sent by a client (i.e., a tab or window) to
         // ensure that Chelonia has been setup
         const port = event.data.port
+        const setup = setupChelonia()
         Promise.race([
-          setupChelonia(),
+          setup,
           new Promise((resolve, reject) => {
             setTimeout(() => {
               reject(new Error('Timed out setting up Chelonia'))
@@ -474,6 +495,14 @@ self.addEventListener('message', function (event) {
         }).finally(() => {
           port.close()
         })
+        // A page was opened or refreshed: if the connection is down, a new
+        // reconnection cycle starts, with short delays (see
+        // `reconnectionPolicy.js`). It's sent once per service worker by
+        // each page, including pages from older app versions. In a timer, so
+        // that the answer above goes first.
+        setup.then(() => {
+          setTimeout(() => reconnectionPolicy.restart('page-opened'), 0)
+        }, () => {})
 
         // If the window is outdated (different appVersion), trigger an event
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.

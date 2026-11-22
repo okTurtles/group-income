@@ -17,12 +17,15 @@ import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.ts'
+import { connectionBannerContent, createConnectionBannerController } from './controller/connectionBanner.js'
+import { requestConnectionRestart, restartConnectionInBackground } from './controller/connectionStatus.js'
 import { applyNamespaceUpdateToVuex } from './controller/namespace.ts'
 import router from './controller/router.ts'
 import './controller/service-worker.ts'
 import { SETTING_CURRENT_USER } from './model/database.ts'
 import store from './model/state.ts'
-import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
+import { CONNECTION_RESTART_SELECTOR, CONNECTION_STATUS_SELECTOR } from './utils/constants.ts'
+import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, CONNECTION_STATUS_CHANGED, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Modal from './views/components/modal/Modal.vue'
@@ -96,7 +99,11 @@ async function startApp () {
       'state/vuex/state',
       'state/vuex/getters',
       'state/vuex/settings',
-      'gi.db/settings/save'
+      'gi.db/settings/save',
+      // Queried by the connection banner, periodically and on connection events
+      CONNECTION_STATUS_SELECTOR,
+      // Called whenever the tab becomes visible
+      CONNECTION_RESTART_SELECTOR
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selectorBlacklist[selector]) return
@@ -232,7 +239,10 @@ async function startApp () {
           finishedLogin: 'no',
           debouncedSyncBanner: null,
           isCorrupted: false, // TODO #761
-          ready: false
+          ready: false,
+          // Text of the banner's live region (index.html). The region can't be in
+          // BannerGeneral, which is only rendered while it has a message
+          bannerAnnouncement: ''
         }
       }
     },
@@ -326,22 +336,51 @@ async function startApp () {
             console.error('came back online, tried to report push subscription, but got:', e)
           })
         }
-        sbp('gi.ui/clearBanner')
       })
-      sbp('okTurtles.events/on', OFFLINE, () => {
-        sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
+      // The connection banner follows the service worker's connection status,
+      // which is queried right away (so that it's also shown in tabs opened
+      // during an outage), whenever the service worker broadcasts a change,
+      // and periodically while the tab is visible.
+      const connectionBanner = createConnectionBannerController({
+        getStatus: () => sbp(CONNECTION_STATUS_SELECTOR),
+        isOnline: () => navigator.onLine !== false,
+        isVisible: () => document.visibilityState === 'visible',
+        onChange: (kind) => {
+          const content = connectionBannerContent(kind, { legacy: connectionBanner.legacy, retry: retryConnection })
+          if (content) sbp('gi.ui/showConnectionBanner', content.message, content.icon, content.action)
+          else sbp('gi.ui/clearConnectionBanner')
+        }
       })
-      sbp('okTurtles.events/on', RECONNECTING, () => {
-        sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
-      })
-      sbp('okTurtles.events/on', RECONNECTION_FAILED, () => {
-        sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
-      })
-
-      // Useful in case the app is started in offline mode.
-      if (navigator.onLine === false) {
-        sbp('okTurtles.events/emit', OFFLINE)
+      // "Retry now": the banner then follows the status (`connecting`, then
+      // `open` or back to `reconnecting`)
+      const retryConnection = () => requestConnectionRestart('retry-button')
+        .then(() => connectionBanner.refresh())
+        .catch((e) => {
+          console.warn('[connection banner] Could not restart the reconnection cycle', e)
+          sbp('gi.ui/toast', 'app-global', {
+            message: L('Could not retry; please refresh the page.'),
+            variant: 'error'
+          })
+        })
+      sbp('okTurtles.events/on', CONNECTION_STATUS_CHANGED, (status) => connectionBanner.apply(status))
+      // The banner follows these events with older service workers, which
+      // don't provide the connection status; otherwise they trigger a query
+      for (const eventName of [OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED]) {
+        sbp('okTurtles.events/on', eventName, () => connectionBanner.onLegacyEvent(eventName))
       }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return
+        // If the connection is down, the service worker starts a new
+        // reconnection cycle, with short delays: whoever looks at the tab may
+        // be waiting for it. Sent before the query, which then gets the new
+        // state (`connecting`).
+        restartConnectionInBackground('tab-visible')
+        connectionBanner.refresh()
+      })
+      window.addEventListener('online', () => connectionBanner.refresh())
+      window.addEventListener('offline', () => connectionBanner.refresh())
+      connectionBanner.start()
+
       if (this.ephemeral.isCorrupted) {
         const baseRoute = sbp('controller/router').options.base
         sbp('gi.ui/dangerBanner',
@@ -427,6 +466,9 @@ async function startApp () {
       ]),
       setBadgeOnTab () {
         FaviconBadge.setBubble(this.shouldSetBadge)
+      },
+      setBannerAnnouncement (text: string) {
+        this.ephemeral.bannerAnnouncement = text
       },
       removeLoadingAnimation () {
         // remove the minimal loading animation in index.html
