@@ -210,7 +210,7 @@ export default {
 @import "@assets/style/components/_media-viewer_utils.scss";
 
 .c-image-viewer-modal {
-  @include media-viewer-modal-container($zindex: $zindex-modal);
+  @include media-viewer-modal-container($zindex-media-viewer);
 
   --image-viewer-btn-color: #2e3032;
   --image-viewer-slider-bg-color: #2e3032;

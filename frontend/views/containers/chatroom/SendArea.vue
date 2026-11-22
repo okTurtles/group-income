@@ -54,7 +54,7 @@
           emoji-shortcut-item-display(:data='emoji')
 
     .c-jump-to-latest(
-      v-if='scrolledUp && !replyingMessage'
+      v-if='scrolledUp && !replyingMessage && !disableJumpToLatest'
       @click='$emit("jump-to-latest")'
     )
       i18n Jump to latest message
@@ -101,9 +101,9 @@
         .addons.addons-editing
           tooltip(
             v-if='ephemeral.showButtons'
-            direction='top'
             :text='L("Add reaction")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add reaction")'
@@ -111,9 +111,9 @@
             )
               i.icon-smile-beam
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -121,9 +121,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -131,9 +131,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -141,9 +141,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -151,9 +151,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -178,9 +178,9 @@
       .c-edit-action-wrapper(v-else)
         .addons(v-if='ephemeral.showButtons')
           tooltip(
-            direction='top'
             :text='L("Bold")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Bold style text")'
@@ -188,9 +188,9 @@
             )
               i.icon-bold
           tooltip(
-            direction='top'
             :text='L("Italic")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Italic style text")'
@@ -198,9 +198,9 @@
             )
               i.icon-italic
           tooltip(
-            direction='top'
             :text='L("Code")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add code")'
@@ -208,9 +208,9 @@
             )
               i.icon-code
           tooltip(
-            direction='top'
             :text='L("Strikethrough")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add strikethrough")'
@@ -218,9 +218,9 @@
             )
               i.icon-strikethrough
           tooltip(
-            direction='top'
             :text='L("Link")'
             :deactivated='ephemeral.isPhone'
+            v-bind='tooltipTriggerCommonProps'
           )
             button.is-icon(
               :aria-label='L("Add link")'
@@ -231,8 +231,8 @@
         .primary-ctas
           .addons(v-if='ephemeral.showButtons')
             tooltip(
-              direction='top'
               :text='L("Create poll")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 data-test='createPoll'
@@ -241,8 +241,8 @@
               )
                 i.icon-poll
             tooltip(
-              direction='top'
               :text='L("Add reaction")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Add reaction")'
@@ -250,8 +250,8 @@
               )
                 i.icon-smile-beam
             tooltip(
-              direction='top'
               :text='L("Attach file")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon.c-file-attachment-btn(
                 :aria-label='L("Attach file")'
@@ -263,12 +263,14 @@
                   type='file'
                   multiple
                   data-test='attachments'
+                  tabindex='-1'
+                  aria-hidden='true'
                   @change='fileAttachmentHandler($event.target.files)'
                 )
             tooltip(
               v-if='ephemeral.voiceRecording.supported'
-              direction='top'
               :text='L("Record voice message")'
+              v-bind='tooltipTriggerCommonProps'
             )
               button.is-icon(
                 :aria-label='L("Record voice message")'
@@ -287,6 +289,7 @@
 
     .textarea.c-send-mask(
       ref='mask'
+      :style='textareaMaskStyles'
     )
 
     voice-recorder(
@@ -332,6 +335,7 @@ import { getFileType } from '@view-utils/filters.js'
 import { searchEmoji } from './emoji-utils.js'
 import { selectMentionOptions, toMentionCandidate } from './mention-utils.js'
 import { canUseVoiceRecording, getExtensionFromAudioMimeType } from './voice-recording/voice-recording-utils.js'
+import { validateURL } from '@view-utils/misc.js'
 
 const DRAFT_SAVE_DEBOUNCE_DELAY = 450
 // The mention popup intentionally caps results for performance (each one renders an avatar component).
@@ -362,6 +366,7 @@ const emojiShortCodeRegex = new RegExp(`(^|\\s)${CHATROOM_EMOJI_INSERTION_SPECIA
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
+  inject: ['chatMainConfig'],
   components: {
     Avatar,
     Tooltip,
@@ -389,6 +394,10 @@ export default ({
       default: false
     },
     isSavingEdit: {
+      type: Boolean,
+      default: false
+    },
+    disableJumpToLatest: {
       type: Boolean,
       default: false
     }
@@ -452,6 +461,12 @@ export default ({
         })
       }
     },
+    'ephemeral.maskHeight' (to, from) {
+      // This watcher ensures the edit send-area is scrolled and stays visible after the textarea height grows automatically.
+      // It skips the first measurement though as mounted() already scrolls the edit area into view.
+      if (!this.isEditing || !from) return
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
+    },
     currentChatRoomId (newVal) {
       if (this.ephemeral.typingUsers.length) {
         this.ephemeral.typingUsers = []
@@ -484,6 +499,12 @@ export default ({
     this.initializeTextArea()
     this.config.maskResizeObserver = new ResizeObserver(() => { this.ephemeral.maskCappedText = null })
     this.config.maskResizeObserver.observe(this.$refs.mask)
+
+    if (this.isEditing) {
+      // Make sure the whole edit area (including the Cancel/Save buttons) is visible when edit mode opens.
+      // 'nearest' scrolls only if part of it is off-screen, and only by as much as needed.
+      this.$nextTick(() => this.$el.scrollIntoView({ block: 'nearest' }))
+    }
 
     window.addEventListener('click', this.onWindowMouseClicked)
     sbp('okTurtles.events/on', CHATROOM_USER_TYPING, this.onUserTyping)
@@ -520,6 +541,9 @@ export default ({
       'ourIdentityContractId',
       'mentionableChatroomsInDetails'
     ]),
+    conversationWrapperHeight () {
+      return this.chatMainConfig.height
+    },
     activeMembers () {
       const activeGroupMemberIds = Object.keys(this.groupProfiles)
       const isInDM = this.isDirectMessage(this.currentChatRoomId)
@@ -558,9 +582,21 @@ export default ({
       return !this.ephemeral.voiceRecording.isOpen &&
         (this.hasAttachments || this.ephemeral.hasText)
     },
+    textareaMaskStyles () {
+      // 'max-height' css is enlarged for edit mode for convenience.
+      // In the default mode, the original 12.75rem is kept so that the message content is still visible while typing.
+      return this.isEditing
+        ? {
+            // 100px: Minimum max-height value to prevent the textarea become too small when the browser viewport is small.
+            // 80px: Some additional margin - so that send-area cta buttons are not cut off.
+            maxHeight: `${Math.max(100, this.conversationWrapperHeight - 80)}px`
+          }
+        : {}
+    },
     textareaStyles () {
       return {
-        height: this.ephemeral.maskHeight + 'px'
+        height: this.ephemeral.maskHeight + 'px',
+        ...this.textareaMaskStyles
       }
     },
     isPublicChannel () {
@@ -589,6 +625,12 @@ export default ({
     },
     segmentInsertionEnabled () {
       return this.ephemeral.segmentInsertion.options.length > 0
+    },
+    tooltipTriggerCommonProps () {
+      return {
+        direction: 'top',
+        triggerElementSelector: 'button.is-icon'
+      }
     }
   },
   methods: {
@@ -791,9 +833,34 @@ export default ({
       }
     },
     handlePaste (e) {
+      const isExternalLink = text => {
+        const { isValid, isExternalLink: isExternal } = validateURL(text)
+        return isValid && isExternal
+      }
+      const pastedText = e.clipboardData.getData('text/plain').trim()
+
       // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
       if (!this.isEditing && e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
+      } else if (isExternalLink(pastedText)) {
+        // Pasting an external link while a text segment is selected turns the segment into
+        // a markdown link: [segment](url). Every other case is left to the browser's default paste.
+        const inputEl = this.$refs.textarea
+        const selectedText = inputEl.value.slice(inputEl.selectionStart, inputEl.selectionEnd)
+
+        // If the selected text itself is also an external link, then
+        // keep the default paste behavior instead of transforming it into a markdown link.
+        const trimmedSelection = selectedText.trim()
+        if (trimmedSelection && !isExternalLink(trimmedSelection)) {
+          // execCommand('insertText') keeps the undo/redo history and fires the 'input' event.
+          // MDN doc mentions document.execCommand() is deprecated but it is supported in all modern browsers
+          // and there is no alternative to it which preserves undo/redo history like it does. Hence, it is used here.
+          const inserted = document.execCommand('insertText', false, `[${selectedText}](${pastedText})`)
+          if (inserted) {
+            e.preventDefault()
+            this.updateTextArea()
+          }
+        }
       }
     },
     onRecordingCompleted (recordingData) {
@@ -896,7 +963,7 @@ export default ({
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
       maskEl.textContent = text + (isLastLineEmpty ? '.' : '')
-      // ...and apply the maks's height to the textarea so it dynamically grows as the user types
+      // ...and apply the mask's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = maskEl.offsetHeight - 2
       this.ephemeral.maskCappedText = maskEl.scrollHeight - maskEl.clientHeight > 1 ? text : null
     },
@@ -1467,9 +1534,9 @@ export default ({
   &-mask {
     display: block;
     width: 100%;
+    max-height: 12.75rem; // In edit mode, this is overridden by the inline styles.
     font-size: 1rem;
     word-wrap: break-word;
-    max-height: 12.75rem;
   }
 
   &-textarea {
@@ -1610,13 +1677,6 @@ export default ({
 
 .icon-smile-beam::before {
   font-weight: 400;
-}
-
-.emoji-mart {
-  position: absolute;
-  right: 0;
-  bottom: 4rem;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
 .c-reply-wrapper {

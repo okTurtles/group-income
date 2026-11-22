@@ -22,7 +22,7 @@
       v-if='mediaObjectURL'
       :src='mediaObjectURL'
       :alt='attachment.name'
-      @click='attachmentUtils.openImageViewer(mediaObjectURL)'
+      @click.stop='attachmentUtils.openImageViewer(mediaObjectURL)'
       @load='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
       @error='attachmentUtils.onImageSrcSettled(mediaObjectURL)'
     )
@@ -341,26 +341,34 @@ $mobile-narrow: 441px;
   height: 100%;
   border-radius: inherit;
   background-color: $general_2;
-  object-fit: cover;
   padding: 0.5rem;
 
   img {
     user-select: none;
     cursor: pointer;
     max-width: 100%;
-    max-height: 20rem;
+    max-height: 14rem;
+    min-width: 6rem;
+    object-fit: contain;
 
-    @include phone {
-      max-height: 12rem;
+    @include tablet {
+      max-height: 20rem;
+      min-width: 8rem;
     }
   }
 
   .loading-box {
     border-radius: 0;
     margin-bottom: 0;
-    max-height: 20rem;
+    max-height: 14rem;
     min-height: unset;
     max-width: 100%;
+    min-width: 6rem;
+
+    @include tablet {
+      max-height: 20rem;
+      min-width: 8rem;
+    }
   }
 }
 

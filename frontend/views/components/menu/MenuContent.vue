@@ -84,7 +84,7 @@ export default ({
   z-index: 10;
   border-radius: $radius;
   background-color: $background;
-  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: $light_theme_popup_shadow;
   max-height: 0;
   opacity: 0;
   overflow: hidden;
