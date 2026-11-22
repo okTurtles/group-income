@@ -158,4 +158,51 @@ describe('bannerSlots', () => {
   it('ignores unknown slots', () => {
     assert.equal(pickBanner({ ...emptyBannerSlots(), other: entry('Unknown') }), null)
   })
+
+  describe('actions', () => {
+    const retry = { label: 'Retry now', run: () => {} }
+
+    it('keeps the action with its entry, and shows it', () => {
+      const slots = emptyBannerSlots()
+      const shown = setSlot(slots, 'connection', 'Trying to reconnect...', 'wifi', retry)
+      assert.deepEqual(shown, { message: 'Trying to reconnect...', icon: 'wifi', action: retry })
+      assert.equal(shown?.action, retry)
+      assert.deepEqual(pickBanner(slots), {
+        slot: 'connection', message: 'Trying to reconnect...', icon: 'wifi', severity: 'neutral', action: retry
+      })
+      assert.equal(pickBanner(slots)?.action, retry)
+      // Another slot set meanwhile, without one, doesn't change it
+      setSlot(slots, 'transient', 'Loading events from server...', 'wifi')
+      assert.equal(pickBanner(slots)?.action, retry)
+    })
+
+    it('replaces or removes the action when the slot is set again', () => {
+      const slots = emptyBannerSlots()
+      setSlot(slots, 'connection', 'Trying to reconnect...', 'wifi', retry)
+      const other = { label: 'Other', run: () => {} }
+      setSlot(slots, 'connection', 'We could not connect to the server. Please refresh the page.', 'wifi', other)
+      assert.equal(pickBanner(slots)?.action, other)
+      setSlot(slots, 'connection', 'Your device appears to be offline.', 'wifi')
+      assert.equal(slots.connection && 'action' in slots.connection, false)
+      assert.deepEqual(pickBanner(slots), {
+        slot: 'connection', message: 'Your device appears to be offline.', icon: 'wifi', severity: 'neutral'
+      })
+      setSlot(slots, 'connection', 'Trying to reconnect...', 'wifi', null)
+      assert.equal(pickBanner(slots)?.action, undefined)
+    })
+
+    it('clears the action with its slot, revealing the next slot without one', () => {
+      const slots = emptyBannerSlots()
+      setSlot(slots, 'connection', 'Trying to reconnect...', 'wifi', retry)
+      setSlot(slots, 'danger', 'Fatal error', 'exclamation-triangle')
+      setSlot(slots, 'connection', null, '') // `gi.ui/clearConnectionBanner`
+      assert.equal(slots.connection, null)
+      assert.deepEqual(pickBanner(slots), {
+        slot: 'danger', message: 'Fatal error', icon: 'exclamation-triangle', severity: 'danger'
+      })
+      // An action without a message is no entry
+      assert.equal(setSlot(slots, 'connection', '', 'wifi', retry), null)
+      assert.equal(pickBanner(slots)?.slot, 'danger')
+    })
+  })
 })

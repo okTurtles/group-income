@@ -18,7 +18,7 @@ import { MAX_JOURNAL_EXPORT_BYTES, orderJournalCandidates, selectJournalsWithinB
 import { sanitizeJournal } from '~/frontend/model/journal/sanitize.js'
 import notificationGetters from '~/frontend/model/notifications/getters.js'
 import '~/frontend/model/notifications/selectors.js'
-import setupChelonia, { connectionMonitor } from '~/frontend/setupChelonia.js'
+import setupChelonia, { connectionMonitor, reconnectionPolicy } from '~/frontend/setupChelonia.js'
 import { SPMessage } from '@chelonia/lib/SPMessage'
 import { Secret } from '@chelonia/lib/Secret'
 import { CHELONIA_KV_UPDATED, CHELONIA_KV_STATUS_CHANGED, CHELONIA_RESET, CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, CONTRACT_REGISTERED, EVENT_HANDLED } from '@chelonia/lib/events'
@@ -37,7 +37,7 @@ import {
   OFFLINE, ONLINE, RECONNECTING,
   RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP
 } from '~/frontend/utils/events.js'
-import { CONNECTION_STATUS_SELECTOR } from '~/frontend/utils/constants.js'
+import { CONNECTION_RESTART_SELECTOR, CONNECTION_STATUS_SELECTOR } from '~/frontend/utils/constants.js'
 import './push.js'
 import './sw-namespace.js'
 
@@ -70,9 +70,10 @@ deserializer.register(Secret)
 const reducer = (o, v) => { o[v] = true; return o }
 // Status queries, made periodically: `chelonia/pubsub/status` by the
 // connection monitor every few seconds, and `sw/connection/status` by each
-// visible tab every 30 s and on connection events. They aren't logged at the
-// debug level, here or in the `message` handler.
-const statusSelectors = ['chelonia/pubsub/status', CONNECTION_STATUS_SELECTOR]
+// visible tab every 30 s and on connection events. Also
+// `sw/connection/restart`, which each tab calls whenever it becomes visible.
+// They aren't logged at the debug level, here or in the `message` handler.
+const statusSelectors = ['chelonia/pubsub/status', CONNECTION_STATUS_SELECTOR, CONNECTION_RESTART_SELECTOR]
 // Domains for which debug logging won't be enabled.
 const domainBlacklist = [
   'sbp',
@@ -301,6 +302,9 @@ sbp('sbp/selectors/register', {
   // The same status as the `CONNECTION_STATUS_CHANGED` event, for tabs that
   // have just opened (or missed events)
   [CONNECTION_STATUS_SELECTOR]: () => connectionMonitor.getStatus(),
+  // Restarts the reconnection cycle if the connection is down (see
+  // `reconnectionPolicy.js`). Its answer (`RestartResult`) is informative.
+  [CONNECTION_RESTART_SELECTOR]: (reason) => reconnectionPolicy.restart(reason),
   'sw/deviceSettings/set': (key, value) => {
     const reactiveSet = sbp('chelonia/config').reactiveSet
     const rootState = sbp('chelonia/rootState')
@@ -467,8 +471,9 @@ self.addEventListener('message', function (event) {
         // The 'ready' message is sent by a client (i.e., a tab or window) to
         // ensure that Chelonia has been setup
         const port = event.data.port
+        const setup = setupChelonia()
         Promise.race([
-          setupChelonia(),
+          setup,
           new Promise((resolve, reject) => {
             setTimeout(() => {
               reject(new Error('Timed out setting up Chelonia'))
@@ -485,6 +490,14 @@ self.addEventListener('message', function (event) {
         }).finally(() => {
           port.close()
         })
+        // A page was opened or refreshed: if the connection is down, a new
+        // reconnection cycle starts, with short delays (see
+        // `reconnectionPolicy.js`). It's sent once per service worker by
+        // each page, including pages from older app versions. In a timer, so
+        // that the answer above goes first.
+        setup.then(() => {
+          setTimeout(() => reconnectionPolicy.restart('page-opened'), 0)
+        }, () => {})
 
         // If the window is outdated (different appVersion), trigger an event
         // of type 'NOTIFICATION_TYPE.VERSION_INFO'.

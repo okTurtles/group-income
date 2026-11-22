@@ -39,6 +39,7 @@ export type ConnectionMonitor = {
   setWanted: (ids: mixed) => void,
   update: () => void,
   onReconnected: () => void,
+  resetHealBackoff: () => void,
   getStatus: () => ConnectionStatus,
   start: () => void
 }
@@ -137,6 +138,9 @@ export function createConnectionMonitor ({
   }
   let heals = 0
   let nextHealAt = 0
+  // When the last re-subscription request was made, so that a restart signal
+  // can't ask the server more often than the grace period already allows
+  let lastHealAt: number | null = null
   let lastStatus: ConnectionStatus | null = null
   // Whether a wanted contract, counted toward `degraded` or not, was
   // unsubscribed for longer than the grace period at the last recompute
@@ -234,6 +238,7 @@ export function createConnectionMonitor ({
       if (!unhealthy) {
         heals = 0
         nextHealAt = 0
+        lastHealAt = null
       } else {
         // A contract lost while another one is still refused is requested
         // after the grace period, not after the refused one's backoff
@@ -246,6 +251,7 @@ export function createConnectionMonitor ({
           // a pending subscription again does nothing.
           requestHeal('degraded')
           heals++
+          lastHealAt = status.at
           for (const id of status.missing) {
             const attempts = (healAttempts.get(id) ?? 0) + 1
             healAttempts.set(id, attempts)
@@ -332,6 +338,31 @@ export function createConnectionMonitor ({
       notSubscribedSince.clear()
       heals = 0
       nextHealAt = 0
+      lastHealAt = null
+      update()
+    },
+    // Called when a page restarts the reconnection cycle while the connection
+    // is open (see `reconnectionPolicy.js`): the next recompute requests the
+    // missing subscriptions right away rather than after the backoff, if one
+    // has been missing for longer than the grace period. The re-subscription
+    // requests made for each contract are kept, so that one the server keeps
+    // refusing doesn't make the connection degraded again on every restart,
+    // and so are the first-seen times, so that the grace period doesn't
+    // restart either. A request less than a grace period after the last one
+    // would give the server less time to answer than the back-off ever does:
+    // quick restarts (tab switches) would spend in seconds the attempts that
+    // stop a refused contract from being reported as degraded, hiding the
+    // banner long before the back-off would have. The restart's request then
+    // comes at the earliest time allowed instead, a grace period after the
+    // last one.
+    resetHealBackoff () {
+      const earliest = lastHealAt === null ? 0 : lastHealAt + graceMs
+      if (earliest > now()) {
+        nextHealAt = Math.min(nextHealAt, earliest)
+      } else {
+        heals = 0
+        nextHealAt = 0
+      }
       update()
     },
     // For queries (`sw/connection/status`): no re-subscription, log line or

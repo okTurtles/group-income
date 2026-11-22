@@ -7,6 +7,18 @@
     )
       i(:class='`icon-${current.icon} is-prefix`')
       .c-banner-content(v-safe-html:a='current.message')
+      //- A real button: focusable and announced as one. Inactive while its
+      //- action runs, for at least `config.actionMinBusy`, so that a double
+      //- click runs it once. `aria-disabled` (with the guard in `runAction`)
+      //- rather than `disabled`: a focused button that becomes disabled loses
+      //- focus to the body, and keyboard and screen reader users their place.
+      button.is-unstyled.is-link-inherit.c-banner-action(
+        v-if='current.action'
+        type='button'
+        data-test='bannerAction'
+        :aria-disabled='ephemeral.actionRunning'
+        @click='runAction'
+      ) {{ current.action.label }}
 </template>
 
 <script>
@@ -21,9 +33,14 @@ export default ({
     TransitionExpand
   },
   data: () => ({
+    config: {
+      actionMinBusy: 1000
+    },
     ephemeral: {
       // Only the highest-priority non-empty slot is displayed (see bannerSlots.js)
-      slots: emptyBannerSlots()
+      slots: emptyBannerSlots(),
+      actionRunning: false,
+      actionMinBusyTimer: null
     }
   }),
   computed: {
@@ -31,11 +48,15 @@ export default ({
       return pickBanner(this.ephemeral.slots)
     }
   },
+  beforeDestroy () {
+    clearTimeout(this.ephemeral.actionMinBusyTimer)
+  },
   watch: {
     // The live region is in index.html, always rendered: this banner is only
     // rendered while there is a message, and a live region inserted together
     // with its content often isn't announced. It gets the message as text
-    // (`DOMParser` runs no scripts and loads nothing).
+    // (`DOMParser` runs no scripts and loads nothing), without the action's
+    // label: the button is announced when it's reached.
     current (current) {
       const text = current
         ? new DOMParser().parseFromString(current.message, 'text/html').body?.textContent || ''
@@ -58,11 +79,30 @@ export default ({
     danger (message, icon) {
       return setSlot(this.ephemeral.slots, 'danger', message, icon)
     },
-    showConnection (message, icon) {
-      return setSlot(this.ephemeral.slots, 'connection', message, icon)
+    showConnection (message, icon, action) {
+      return setSlot(this.ephemeral.slots, 'connection', message, icon, action)
     },
     clearConnection () {
       setSlot(this.ephemeral.slots, 'connection', null, '')
+    },
+    async runAction () {
+      const action = this.current?.action
+      if (!action || this.ephemeral.actionRunning) return
+      this.ephemeral.actionRunning = true
+      try {
+        await Promise.all([
+          // `run()` throwing is a rejection
+          new Promise(resolve => resolve(action.run())).catch((e) => {
+            console.error('[BannerGeneral] Error running the banner action', e)
+          }),
+          new Promise(resolve => {
+            this.ephemeral.actionMinBusyTimer = setTimeout(resolve, this.config.actionMinBusy)
+          })
+        ])
+      } finally {
+        this.ephemeral.actionMinBusyTimer = null
+        this.ephemeral.actionRunning = false
+      }
     },
     debouncedShow ({ message, icon, seconds, clearWhen }: {
       message: Function, icon: string, seconds: number, clearWhen: Function
@@ -102,6 +142,34 @@ export default ({
   .c-banner-content {
     text-align: left;
     word-break: break-word;
+  }
+
+  // The banner's colors, which contrast with its background, instead of the
+  // link's hover color
+  .c-banner-action {
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+    font-weight: inherit;
+    line-height: inherit;
+
+    &:hover,
+    &:focus {
+      color: inherit;
+      border-bottom: none;
+    }
+
+    // `.is-unstyled` removes the focus outline
+    &:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
+    // While its action runs (see the template). Still focusable, with the
+    // focus outline.
+    &[aria-disabled="true"] {
+      opacity: 0.7;
+      cursor: wait;
+    }
   }
 }
 

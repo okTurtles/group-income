@@ -17,14 +17,14 @@ import '@chelonia/lib/local-selectors'
 // import '@chelonia/lib/persistent-actions' // Commented out as persistentActions are not being used
 import './controller/app/index.js'
 import './controller/backend.js'
-import { CONNECTION_BANNER, createConnectionBannerController } from './controller/connectionBanner.js'
-import type { ConnectionBannerKind } from './controller/connectionBanner.js'
+import { connectionBannerContent, createConnectionBannerController } from './controller/connectionBanner.js'
+import { requestConnectionRestart, restartConnectionInBackground } from './controller/connectionStatus.js'
 import { applyNamespaceUpdateToVuex } from './controller/namespace.js'
 import router from './controller/router.js'
 import './controller/service-worker.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import store from './model/state.js'
-import { CONNECTION_STATUS_SELECTOR } from './utils/constants.js'
+import { CONNECTION_RESTART_SELECTOR, CONNECTION_STATUS_SELECTOR } from './utils/constants.js'
 import { LOGIN_COMPLETE, LOGIN_ERROR, LOGOUT, NAMESPACE_REGISTRATION, CONTRACT_SYNCS_RESET, CONNECTION_STATUS_CHANGED, OFFLINE, ONLINE, OPEN_MODAL, RECONNECTING, RECONNECTION_FAILED, SERIOUS_ERROR, SWITCH_GROUP, THEME_CHANGE } from './utils/events.js'
 import AppStyles from './views/components/AppStyles.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
@@ -101,7 +101,9 @@ async function startApp () {
       'state/vuex/settings',
       'gi.db/settings/save',
       // Queried by the connection banner, periodically and on connection events
-      CONNECTION_STATUS_SELECTOR
+      CONNECTION_STATUS_SELECTOR,
+      // Called whenever the tab becomes visible
+      CONNECTION_RESTART_SELECTOR
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selectorBlacklist[selector]) return
@@ -336,15 +338,6 @@ async function startApp () {
           })
         }
       })
-      // Functions, so that `L()` runs when a banner is shown: that stays correct
-      // if this table moves to module scope, which runs before
-      // `translations/init`
-      const connectionBannerTexts: { [ConnectionBannerKind]: () => string } = {
-        [CONNECTION_BANNER.OFFLINE]: () => L('Your device appears to be offline.'),
-        [CONNECTION_BANNER.RECONNECTING]: () => L('Trying to reconnect...'),
-        [CONNECTION_BANNER.FAILED]: () => L('We could not connect to the server. Please refresh the page.'),
-        [CONNECTION_BANNER.DEGRADED]: () => L('Some updates may be delayed. Re-syncing...')
-      }
       // The connection banner follows the service worker's connection status,
       // which is queried right away (so that it's also shown in tabs opened
       // during an outage), whenever the service worker broadcasts a change,
@@ -354,11 +347,22 @@ async function startApp () {
         isOnline: () => navigator.onLine !== false,
         isVisible: () => document.visibilityState === 'visible',
         onChange: (kind) => {
-          const text = kind ? connectionBannerTexts[kind] : null
-          if (text) sbp('gi.ui/showConnectionBanner', text(), 'wifi')
+          const content = connectionBannerContent(kind, { legacy: connectionBanner.legacy, retry: retryConnection })
+          if (content) sbp('gi.ui/showConnectionBanner', content.message, content.icon, content.action)
           else sbp('gi.ui/clearConnectionBanner')
         }
       })
+      // "Retry now": the banner then follows the status (`connecting`, then
+      // `open` or back to `reconnecting`)
+      const retryConnection = () => requestConnectionRestart('retry-button')
+        .then(() => connectionBanner.refresh())
+        .catch((e) => {
+          console.warn('[connection banner] Could not restart the reconnection cycle', e)
+          sbp('gi.ui/toast', 'app-global', {
+            message: L('Could not retry; please refresh the page.'),
+            variant: 'error'
+          })
+        })
       sbp('okTurtles.events/on', CONNECTION_STATUS_CHANGED, (status) => connectionBanner.apply(status))
       // The banner follows these events with older service workers, which
       // don't provide the connection status; otherwise they trigger a query
@@ -366,7 +370,13 @@ async function startApp () {
         sbp('okTurtles.events/on', eventName, () => connectionBanner.onLegacyEvent(eventName))
       }
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') connectionBanner.refresh()
+        if (document.visibilityState !== 'visible') return
+        // If the connection is down, the service worker starts a new
+        // reconnection cycle, with short delays: whoever looks at the tab may
+        // be waiting for it. Sent before the query, which then gets the new
+        // state (`connecting`).
+        restartConnectionInBackground('tab-visible')
+        connectionBanner.refresh()
       })
       window.addEventListener('online', () => connectionBanner.refresh())
       window.addEventListener('offline', () => connectionBanner.refresh())

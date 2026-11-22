@@ -9,6 +9,7 @@ import {
   CONNECTION_BANNER_QUERY_MAX_WAIT,
   CONNECTION_BANNER_REFRESH_INTERVAL,
   bannerForStatus,
+  connectionBannerContent,
   createConnectionBannerController
 } from './connectionBanner.js'
 import { CONNECTION_STATUS_TIMEOUT } from './connectionStatus.js'
@@ -102,6 +103,45 @@ describe('connection banner', () => {
     it('keeps the current banner for an unknown state', () => {
       assert.equal(bannerForStatus(at('hibernating', 0), now, { current: CONNECTION_BANNER.OFFLINE }), CONNECTION_BANNER.OFFLINE)
       assert.equal(bannerForStatus(at('hibernating', 0), now), null)
+    })
+  })
+
+  describe('connectionBannerContent', () => {
+    const retry = () => {}
+    const content = (kind, legacy = false) => connectionBannerContent(kind, { legacy, retry })
+
+    it('has a message for each kind, and none without a kind', () => {
+      assert.deepEqual(
+        Object.values(CONNECTION_BANNER).map(kind => [kind, content(kind)?.message, content(kind)?.icon]),
+        [
+          [CONNECTION_BANNER.OFFLINE, 'Your device appears to be offline.', 'wifi'],
+          [CONNECTION_BANNER.RECONNECTING, 'Trying to reconnect...', 'wifi'],
+          [CONNECTION_BANNER.FAILED, 'We could not connect to the server. Please refresh the page.', 'wifi'],
+          [CONNECTION_BANNER.DEGRADED, 'Some updates may be delayed. Re-syncing...', 'wifi']
+        ]
+      )
+      assert.equal(content(null), null)
+      assert.equal(content(null, true), null)
+      assert.equal(content('unknown'), null)
+    })
+
+    it('offers "Retry now" while reconnecting and once the connection failed', () => {
+      for (const kind of [CONNECTION_BANNER.RECONNECTING, CONNECTION_BANNER.FAILED]) {
+        const action = content(kind)?.action
+        assert.equal(action?.label, 'Retry now', kind)
+        assert.equal(action?.run, retry, kind)
+      }
+    })
+
+    it('offers no action while offline or degraded, nor in legacy mode', () => {
+      for (const kind of [CONNECTION_BANNER.OFFLINE, CONNECTION_BANNER.DEGRADED]) {
+        assert.equal('action' in (content(kind) ?? {}), false, kind)
+      }
+      for (const kind of Object.values(CONNECTION_BANNER)) {
+        const legacy = content(kind, true)
+        assert.equal(legacy?.message, content(kind)?.message, kind)
+        assert.equal('action' in (legacy ?? {}), false, `${kind} in legacy mode`)
+      }
     })
   })
 
@@ -478,14 +518,50 @@ describe('connection banner', () => {
         assert.equal(t.controller.legacy, true)
       })
 
-      it('keeps the current banner when the status becomes unavailable', async () => {
+      it('keeps the current banner when the status becomes unavailable, shown again for legacy mode', async () => {
         const t = harness({ answer: answering('reconnecting') })
         await t.start()
         t.env.answer = rejecting()
         t.clock.tick(REFRESH)
         await settle()
         assert.equal(t.controller.legacy, true)
-        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING])
+        assert.deepEqual(t.env.changes, [CONNECTION_BANNER.RECONNECTING, CONNECTION_BANNER.RECONNECTING])
+      })
+
+      // So that "Retry now", which needs `sw/connection/restart`, is only
+      // offered outside legacy mode (see `connectionBannerContent`)
+      it('shows the same banner again when legacy mode starts or ends', async () => {
+        const changes = []
+        const t = harness({ answer: answering('reconnecting'), onChange: (kind) => { changes.push([kind, t.controller.legacy]) } })
+        await t.start()
+        t.env.answer = rejecting()
+        t.controller.refresh()
+        await settle()
+        // Not again while legacy mode lasts
+        t.controller.onLegacyEvent(RECONNECTING)
+        t.env.answer = answering('reconnecting')
+        t.controller.onLegacyEvent(RECONNECTING)
+        t.clock.tick(REFRESH)
+        await settle()
+        t.controller.refresh()
+        await settle()
+        assert.deepEqual(changes, [
+          [CONNECTION_BANNER.RECONNECTING, false],
+          [CONNECTION_BANNER.RECONNECTING, true],
+          [CONNECTION_BANNER.RECONNECTING, false]
+        ])
+      })
+
+      it("doesn't clear the banner again when legacy mode starts or ends without one", async () => {
+        const t = harness({ answer: answering('open') })
+        await t.start()
+        t.env.answer = rejecting()
+        t.controller.refresh()
+        await settle()
+        assert.equal(t.controller.legacy, true)
+        t.controller.apply(t.current('open'))
+        assert.equal(t.controller.legacy, false)
+        assert.deepEqual(t.env.changes, [])
       })
 
       for (const reason of ['SW controller changed', 'SBP: selector not registered: some/other']) {

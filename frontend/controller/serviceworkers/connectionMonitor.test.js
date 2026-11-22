@@ -439,6 +439,96 @@ describe('connection monitor', () => {
     assert.ok(t.heals[2] - reconnectedAt < CONNECTION_DEGRADED_GRACE + CONNECTION_TICK_INTERVAL)
   })
 
+  describe('resetHealBackoff (a page restarting the reconnection cycle)', () => {
+    it('re-subscribes at the next recompute instead of after the backoff', () => {
+      // Not given up on, so that it's still degraded when the backoff reaches its cap
+      const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1', 'zB2'], maxDegradedHeals: 10 })
+      t.start()
+      const at = (ms) => t.startedAt + ms
+      // The next request is due 5 minutes after the last one
+      t.clock.tick(at(330e3) - t.clock.now)
+      assert.deepEqual(t.heals, [10e3, 20e3, 40e3, 80e3, 160e3, 320e3].map(at))
+      let status = t.status()
+      assert.equal(status.degraded, true)
+      assert.equal(status.heals, 6)
+
+      t.monitor.resetHealBackoff()
+      t.clock.tick(0)
+      assert.deepEqual(t.heals.slice(6), [at(330e3)])
+      status = t.status()
+      assert.equal(status.degraded, true)
+      assert.equal(status.heals, 1)
+      // The grace period didn't restart
+      assert.equal(status.unsubscribedSince, t.startedAt)
+      assert.ok(messages().includes('[connection] still degraded: 1 missing, 0 pending for 330 s; re-subscribing (attempt 1)'))
+
+      // The backoff starts over
+      t.clock.tick(CONNECTION_DEGRADED_GRACE)
+      assert.deepEqual(t.heals.slice(6), [at(330e3), at(340e3)])
+    })
+
+    it("doesn't re-subscribe before the grace period", () => {
+      const t = harness({ client: fakeClient({ subscribed: ['zA1', 'zB2'] }), wanted: ['zA1', 'zB2'] })
+      t.start()
+      t.env.client.subscriptionSet.delete('zB2')
+      const lostAt = t.clock.now
+      t.monitor.update()
+      t.clock.tick(CONNECTION_DEGRADED_GRACE - 1000)
+      t.monitor.resetHealBackoff()
+      t.clock.tick(0)
+      assert.deepEqual(t.heals, [])
+      assert.equal(t.status().unsubscribedSince, lostAt)
+      assert.equal(t.status().degraded, false)
+      // Requested as the grace period ends (at a tick), as without the reset
+      t.clock.tick(1000)
+      assert.deepEqual(t.heals, [lostAt + CONNECTION_DEGRADED_GRACE])
+    })
+
+    it("doesn't let quick restarts spend the attempts of a refused contract", () => {
+      const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1', 'zC3'] })
+      t.start()
+      const at = (ms) => t.startedAt + ms
+      // The first two requests, at the pace of the back-off
+      t.clock.tick(20e3)
+      assert.deepEqual(t.heals, [at(10e3), at(20e3)])
+      assert.equal(t.status().degraded, true)
+
+      // Three tab switches in quick succession, each followed by its
+      // recompute: none of them asks the server again less than a grace
+      // period after the last request, so the third request that stops the
+      // banner isn't made within seconds of the first
+      for (let i = 0; i < 3; i++) {
+        t.monitor.resetHealBackoff()
+        t.clock.tick(0)
+      }
+      assert.deepEqual(t.heals, [at(10e3), at(20e3)])
+      assert.equal(t.status().degraded, true)
+
+      // The restart's request comes a grace period after the last one, before
+      // the 40 s back-off, and it's the third: the episode ends
+      t.clock.tick(CONNECTION_DEGRADED_GRACE)
+      assert.deepEqual(t.heals, [at(10e3), at(20e3), at(30e3)])
+      assert.equal(t.status().degraded, false)
+    })
+
+    it(`doesn't report a contract refused ${CONNECTION_MAX_DEGRADED_HEALS} times as degraded again`, () => {
+      const t = harness({ client: fakeClient({ subscribed: ['zA1'] }), wanted: ['zA1', 'zC3'] })
+      t.start()
+      t.clock.tick(60e3)
+      assert.equal(t.heals.length, CONNECTION_MAX_DEGRADED_HEALS)
+      assert.equal(t.status().degraded, false)
+      const emits = t.emits.length
+
+      t.monitor.resetHealBackoff()
+      // The recompute that follows the heal too (sinon runs a 0 ms timeout set by a timer callback 1 ms later)
+      t.clock.tick(1)
+      // Still requested right away
+      assert.equal(t.heals.length, CONNECTION_MAX_DEGRADED_HEALS + 1)
+      assert.equal(t.status().degraded, false)
+      assert.equal(t.emits.length, emits)
+    })
+  })
+
   it('maps each pubsub event to the legacy event and the monitor call', () => {
     const calls = []
     const monitor = { update: () => calls.push('update'), onReconnected: () => calls.push('onReconnected') }

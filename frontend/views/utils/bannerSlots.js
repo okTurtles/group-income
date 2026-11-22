@@ -11,7 +11,11 @@ export type BannerSlot = 'danger' | 'connection' | 'transient'
 
 export const BANNER_SLOTS: $ReadOnlyArray<BannerSlot> = ['connection', 'danger', 'transient']
 
-export type BannerEntry = { message: string, icon: string }
+// A button shown after the message, e.g., "Retry now" on the connection
+// banner. `label` is already translated.
+export type BannerAction = { label: string, run: () => mixed }
+
+export type BannerEntry = { message: string, icon: string, action?: BannerAction }
 
 export type BannerSlots = { [slot: BannerSlot]: ?BannerEntry }
 
@@ -19,7 +23,8 @@ export type DisplayedBanner = {
   slot: BannerSlot,
   message: string,
   icon: string,
-  severity: 'danger' | 'neutral'
+  severity: 'danger' | 'neutral',
+  action?: BannerAction
 }
 
 export const emptyBannerSlots = (): BannerSlots => ({ danger: null, connection: null, transient: null })
@@ -27,9 +32,10 @@ export const emptyBannerSlots = (): BannerSlots => ({ danger: null, connection: 
 // Sets a slot (or empties it, without a message) and returns its entry. The
 // slot is typed so that a typo fails Flow instead of adding a key that Vue
 // doesn't track and `pickBanner` ignores (in `.vue` files, only
-// `npm run flow:vue` checks this).
-export const setSlot = (slots: BannerSlots, slot: BannerSlot, message: ?string, icon: string): ?BannerEntry => {
-  const entry = message ? { message, icon } : null
+// `npm run flow:vue` checks this). The action, if any, goes with the message:
+// setting the slot again without one removes it.
+export const setSlot = (slots: BannerSlots, slot: BannerSlot, message: ?string, icon: string, action?: ?BannerAction): ?BannerEntry => {
+  const entry = message ? (action ? { message, icon, action } : { message, icon }) : null
   slots[slot] = entry
   return entry
 }
@@ -55,12 +61,14 @@ export const pickBanner = (slots: ?BannerSlots): DisplayedBanner | null => {
   for (const slot of BANNER_SLOTS) {
     const entry = slots[slot]
     if (entry && entry.message) {
-      return {
+      const banner: DisplayedBanner = {
         slot,
         message: entry.message,
         icon: entry.icon,
         severity: slot === 'danger' ? 'danger' : 'neutral'
       }
+      if (entry.action) banner.action = entry.action
+      return banner
     }
   }
   return null

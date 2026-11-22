@@ -1,5 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
-import { OPEN_TOUCH_LINK_HELPER } from '../../../frontend/utils/events.js'
+import { CONNECTION_STATUS_CHANGED, OPEN_TOUCH_LINK_HELPER } from '../../../frontend/utils/events.js'
 import { randomUserSuffix } from '../support/lib.js'
 
 const API_URL = Cypress.config('baseUrl')
@@ -321,6 +321,49 @@ describe('Send/edit/remove/reply/pin/unpin messages & add/remove reactions insid
     cy.window().its('sbp').then(sbp => sbp('gi.ui/clearBanner'))
     cy.contains('[data-test="bannerGeneral"]', danger).should('not.exist')
     cy.get(liveRegion).should('exist').and('not.contain', danger)
+  })
+
+  it('user2 restarts the reconnection cycle from the connection banner', () => {
+    // `CONNECTION_STATUS_SELECTOR` and `CONNECTION_RESTART_SELECTOR`, which
+    // are in a file with Flow annotations
+    const statusSelector = 'sw/connection/status'
+    const restartSelector = 'sw/connection/restart'
+    const banner = '[data-test="bannerGeneral"]'
+    const restarts = []
+    // The service worker's status as the banner gets it, until restored: a
+    // connection waiting out a back-off
+    overrideSelector(statusSelector, () => () => {
+      const now = Date.now()
+      return { at: now, source: 'chelonia', state: 'reconnecting', since: now, wanted: 1, missing: [], pending: [], oldestPendingSince: null, unsubscribedSince: null, degraded: false, heals: 0 }
+    })
+    overrideSelector(restartSelector, () => (reason) => {
+      restarts.push(reason)
+      return 'nothing-to-do'
+    })
+    // Applied right away, as broadcast by the service worker
+    const broadcastStatus = () => cy.window().its('sbp').then(sbp => {
+      return Promise.resolve(sbp(statusSelector)).then(status => sbp('okTurtles.events/emit', CONNECTION_STATUS_CHANGED, status))
+    })
+    broadcastStatus()
+
+    cy.contains(banner, 'Trying to reconnect...')
+    cy.getByDT('bannerAction').should('have.text', 'Retry now').and('have.attr', 'type', 'button').click()
+    // Inactive while the restart runs, for at least a second, but not
+    // `disabled`, which would move the focus to the body
+    cy.getByDT('bannerAction').should('have.attr', 'aria-disabled', 'true').and('not.have.attr', 'disabled')
+    cy.focused().should('have.attr', 'data-test', 'bannerAction')
+    cy.wrap(null).should(() => {
+      expect(restarts, 'restarts requested').to.deep.equal(['retry-button'])
+    })
+    // The banner follows the status, still reconnecting
+    cy.getByDT('bannerAction').should('not.have.attr', 'aria-disabled')
+    cy.focused().should('have.attr', 'data-test', 'bannerAction')
+
+    restoreSelector(restartSelector)
+    restoreSelector(statusSelector)
+    broadcastStatus()
+    cy.contains(banner, 'Trying to reconnect...').should('not.exist')
+    cy.getByDT('bannerAction').should('not.exist')
   })
 
   it('user2 mentions user1 and adds/removes reactions to the message', () => {

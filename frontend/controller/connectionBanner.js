@@ -1,10 +1,12 @@
 'use strict'
 
+import { L } from '@common/common.js'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
+import type { BannerAction } from '../views/utils/bannerSlots.js'
 import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from './connectionStatus.js'
 import type { ConnectionStatus } from './serviceworkers/connectionMonitor.js'
 
-// The kinds of connection banner a tab can show (the texts are in main.js)
+// The kinds of connection banner a tab can show (see `connectionBannerContent`)
 export const CONNECTION_BANNER = Object.freeze({
   OFFLINE: 'offline',
   RECONNECTING: 'reconnecting',
@@ -13,6 +15,36 @@ export const CONNECTION_BANNER = Object.freeze({
 })
 
 export type ConnectionBannerKind = $Values<typeof CONNECTION_BANNER>
+
+export type ConnectionBannerContent = { message: string, icon: string, action?: BannerAction }
+
+// Functions, so that `L()` runs when a banner is shown, after
+// `translations/init`
+const CONNECTION_BANNER_TEXTS: { [ConnectionBannerKind]: () => string } = {
+  [CONNECTION_BANNER.OFFLINE]: () => L('Your device appears to be offline.'),
+  [CONNECTION_BANNER.RECONNECTING]: () => L('Trying to reconnect...'),
+  // A refresh restarts the reconnection cycle (see `reconnectionPolicy.js`)
+  [CONNECTION_BANNER.FAILED]: () => L('We could not connect to the server. Please refresh the page.'),
+  [CONNECTION_BANNER.DEGRADED]: () => L('Some updates may be delayed. Re-syncing...')
+}
+
+// The banner for `kind` (`null`: none). Waiting out a back-off of up to 10
+// minutes, or after giving up, the banner offers "Retry now" (`retry`), which
+// restarts the service worker's reconnection cycle. Not while offline, where
+// retrying can't help, nor while degraded, which already re-syncs. Nor in
+// legacy mode: the service worker may be older than `sw/connection/restart`.
+export function connectionBannerContent (
+  kind: ConnectionBannerKind | null,
+  { legacy, retry }: {| legacy: boolean, retry: () => mixed |}
+): ConnectionBannerContent | null {
+  const text = kind ? CONNECTION_BANNER_TEXTS[kind] : null
+  if (!text) return null
+  const content: ConnectionBannerContent = { message: text(), icon: 'wifi' }
+  if (!legacy && (kind === CONNECTION_BANNER.RECONNECTING || kind === CONNECTION_BANNER.FAILED)) {
+    content.action = { label: L('Retry now'), run: retry }
+  }
+  return content
+}
 
 // A connection that is `closed` for less than this is shown as reconnecting:
 // after a pubsub error, the service worker re-creates the connection 100 ms
@@ -90,7 +122,8 @@ export type ConnectionBannerController = {
 // connection status:
 //   - `getStatus()`: queries the status (`sw/connection/status`).
 //   - `onChange(kind)`: shows the banner for `kind`, or clears it (`null`).
-//     Only called when the kind changes.
+//     Only called when the kind changes, or when legacy mode starts or ends
+//     while a banner is shown (see `connectionBannerContent`).
 //   - `isOnline()`: `navigator.onLine`.
 //   - `isVisible()`: whether the tab is visible.
 // The status is queried on `start()`, every `refreshInterval` while the tab is
@@ -124,6 +157,9 @@ export function createConnectionBannerController ({
   let running = false
   let kind: ConnectionBannerKind | null = null
   let legacy = false
+  // Whether the banner shown was set in legacy mode, where its content differs
+  // (see `connectionBannerContent`)
+  let shownInLegacy = false
   let lastStatus: ConnectionStatus | null = null
   let graceTimer: any = null
   let inFlight = false
@@ -138,9 +174,12 @@ export function createConnectionBannerController ({
   // a banner, and a client that doesn't come still shows one.
   let noClientSince: number | null = null
 
+  // Also shows the same banner again when legacy mode started or ended since
+  // it was shown
   const setKind = (next: ConnectionBannerKind | null) => {
-    if (next === kind) return
+    if (next === kind && (next === null || shownInLegacy === legacy)) return
     kind = next
+    shownInLegacy = legacy
     try {
       onChange(next)
     } catch (e) {
@@ -205,7 +244,7 @@ export function createConnectionBannerController ({
     clearGraceTimer()
     lastStatus = null
     noClientSince = null
-    if (deviceOffline()) setKind(CONNECTION_BANNER.OFFLINE)
+    setKind(deviceOffline() ? CONNECTION_BANNER.OFFLINE : kind)
   }
 
   // Legacy mode is also used when there's no status to keep, since the tab

@@ -5,6 +5,9 @@
 // (SW) starts up being lost when the SW is stopped. Because of that, the
 // "Less than 1 week left" notification was shown again on every SW cold start
 // (https://github.com/okTurtles/group-income/issues/3158).
+// Also, the SW's pubsub reconnection rules (`reconnectionPolicy.js`), as wired
+// by setupChelonia.js and sw-primary.js: the connection options, the pause
+// while no page is open and the restart when a page opens.
 //
 // Each SW lifetime runs the real SW script (sw-primary.js, which calls
 // setupChelonia.js) in a new worker thread, so that every cold start begins
@@ -12,7 +15,8 @@
 // terminated without any shutdown hook, like browsers do with idle SWs.
 // Only the environment is simulated: IndexedDB (file-backed, so that stored
 // data survives across lifetimes), the SW global scope, an unreachable server
-// and no focused window (so notifications are shown natively).
+// and no focused window (so notifications are shown natively). By default,
+// there is no window at all; the reconnection tests can add hidden ones.
 //
 // This file is both the test (main thread) and the code run by the workers.
 
@@ -170,7 +174,7 @@ const registerFrontendModules = () => {
   require.cache[manifestsFile] = manifests
 }
 
-const setUpServiceWorkerScope = ({ idbDir, onPut, onNotification, messageListeners }) => {
+const setUpServiceWorkerScope = ({ idbDir, onPut, onNotification, messageListeners, pages = 0 }) => {
   // The app's logs aren't relevant to the test results
   const noop = () => {}
   globalThis.console = Object.fromEntries(Object.keys(console).map((k) => [k, noop]))
@@ -185,8 +189,18 @@ const setUpServiceWorkerScope = ({ idbDir, onPut, onNotification, messageListene
   self.addEventListener = (type, fn) => { if (type === 'message') messageListeners.push(fn) }
   self.skipWaiting = () => Promise.resolve()
   self.Notification = function Notification () {}
+  // Open pages (window clients), none of them focused
+  const windows = Array.from({ length: pages }, (_, i) => ({
+    id: `page-${i + 1}`,
+    type: 'window',
+    url: 'http://127.0.0.1:1/app/',
+    focused: false,
+    visibilityState: 'hidden',
+    postMessage () {},
+    navigate: () => Promise.resolve()
+  }))
   self.clients = {
-    matchAll: () => Promise.resolve([]),
+    matchAll: () => Promise.resolve(windows.slice()),
     claim: () => Promise.resolve(),
     get: () => Promise.resolve(undefined)
   }
@@ -309,13 +323,112 @@ const lifetime = async ({ wake, messageListeners, shown, stateWrites }) => {
   return { setup, shown, stateWrites }
 }
 
-const runJob = ({ job, idbDir, wake, seedOptions }) => {
+const waitFor = async (what, condition, timeout = 15e3) => {
+  const start = Date.now()
+  while (!condition()) {
+    if (Date.now() - start > timeout) throw new Error(`Timed out waiting for ${what}`)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+}
+
+// A SW lifetime (like `lifetime`, without a session) that observes the pubsub
+// client while the server is unreachable, with `pages` pages open. Every
+// connection attempt fails right away (`nth` of the next one is then 2 or
+// more: it never opened), and the next one is scheduled at least 1 s later.
+// The SW starts setting up as soon as its script runs, and no message is sent
+// until the first client is paused (no page) or waiting out its back-off (a
+// page). Then a page opens (a `ready` message), which must replace the client
+// with a new one.
+const reconnection = async ({ messageListeners, pages }) => {
+  const sbp = loadSbp()
+  const { PUBSUB_RECONNECTION_SCHEDULED } = require('@chelonia/lib/pubsub')
+  const { PUBSUB_INSTANCE } = require(path.join(ROOT, 'frontend/controller/instance-keys.js'))
+  const { CONNECTION_RESTART_SELECTOR } = require(path.join(ROOT, 'frontend/utils/constants.js'))
+  const deliver = (data) => {
+    messageListeners.forEach((fn) => fn({ data, source: { id: 'tab', postMessage () {} } }))
+  }
+  const current = () => sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+  // Pubsub clients, numbered in the order seen
+  const ids = new Map()
+  const idOf = (client) => {
+    if (!ids.has(client)) ids.set(client, ids.size + 1)
+    return ids.get(client)
+  }
+  const scheduled = []
+  sbp('okTurtles.events/on', PUBSUB_RECONNECTION_SCHEDULED, (client, { nth }) => {
+    scheduled.push({ client: idOf(client), nth })
+  })
+  const scheduledFor = (client) => scheduled.filter((e) => e.client === idOf(client)).map((e) => e.nth)
+  const describeClient = (client) => ({
+    id: idOf(client),
+    state: client.state,
+    // `destroy()` was called: it won't connect again
+    destroyed: client.shouldReconnect === false,
+    attemptScheduled: client.nextConnectionAttemptDelayID !== undefined,
+    options: {
+      maxRetries: client.options.maxRetries,
+      maxReconnectionDelay: client.options.maxReconnectionDelay,
+      reconnectOnTimeout: client.options.reconnectOnTimeout
+    }
+  })
+  // A page opening: it sends `ready` and waits for the answer
+  const openPage = () => new Promise((resolve) => {
+    deliver({
+      type: 'ready',
+      port: { postMessage: ({ type }) => resolve({ type, clientWhenAnswered: current() }), close () {} }
+    })
+  })
+  // Paused (destroyed) while no page is open; waiting out a back-off while a
+  // page is open
+  const settledState = pages === 0 ? 'closed' : 'reconnecting'
+
+  require(path.join(ROOT, 'frontend/controller/serviceworkers/sw-primary.js'))
+  await waitFor(`the pubsub client to be ${settledState}`, () => current()?.state === settledState, 60e3)
+  const before = current()
+  const settled = { ...describeClient(before), scheduled: scheduledFor(before) }
+  const connectionOptions = { ...sbp('chelonia/config').connectionOptions }
+
+  const answer = await openPage()
+  const setup = answer.type
+  const answeredBeforeRestart = answer.clientWhenAnswered === before
+  await waitFor('the pubsub client to be replaced after a page opened', () => current() !== before)
+  const after = current()
+  // It connects right away: its first attempt fails too
+  await waitFor('the new pubsub client to try to connect', () => scheduledFor(after).length > 0)
+  const restarted = {
+    ...describeClient(after),
+    scheduled: scheduledFor(after),
+    previous: describeClient(before),
+    answeredBeforeRestart
+  }
+
+  // The tabs' restart request ("Retry now", a tab shown), made twice in a row
+  // once the new client is paused too
+  let restartSelector
+  if (pages === 0) {
+    await waitFor('the new pubsub client to be paused', () => current() === after && after.state === 'closed')
+    const first = sbp(CONNECTION_RESTART_SELECTOR, 'retry-button')
+    const afterFirst = current()
+    const second = sbp(CONNECTION_RESTART_SELECTOR, 'retry-button')
+    restartSelector = {
+      results: [first, second],
+      replacedByFirst: afterFirst !== after,
+      stateAfterFirst: afterFirst.state,
+      replacedBySecond: current() !== afterFirst
+    }
+  }
+
+  return { setup, connectionOptions, settled, restarted, restartSelector }
+}
+
+const runJob = ({ job, idbDir, wake, seedOptions, pages }) => {
   const messageListeners = []
   const shown = []
   const stateWrites = []
   setUpServiceWorkerScope({
     idbDir,
     messageListeners,
+    pages,
     onNotification: (notification) => shown.push(notification),
     onPut: (key, value) => {
       if (!key.endsWith('CHELONIA_STATE')) return
@@ -325,6 +438,7 @@ const runJob = ({ job, idbDir, wake, seedOptions }) => {
   registerFrontendModules()
   if (job === 'seed') return seed(seedOptions)
   if (job === 'read') return readSavedState()
+  if (job === 'reconnection') return reconnection({ messageListeners, pages })
   return lifetime({ wake, messageListeners, shown, stateWrites })
 }
 
@@ -407,6 +521,88 @@ if (!isMainThread) {
           assert.deepEqual(after[key], before[key], `saved '${key}' is kept`)
         }
       }
+    })
+  })
+
+  describe('setupChelonia: pubsub reconnection rules in the service worker', function () {
+    this.timeout(120e3)
+
+    const MAX_RECONNECTION_DELAY = 10 * 60 * 1000
+    const expectedOptions = { maxRetries: Infinity, maxReconnectionDelay: MAX_RECONNECTION_DELAY, reconnectOnTimeout: true }
+    const idbDirs = []
+    const runReconnection = async (pages) => {
+      const idbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gi-sw-reconnection-'))
+      idbDirs.push(idbDir)
+      const result = await runInWorker({ job: 'reconnection', idbDir, pages })
+      assert.equal(result.setup, 'ready', 'the SW finished setting up')
+      return result
+    }
+
+    after(function () {
+      idbDirs.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true }))
+    })
+
+    describe('with no page open', function () {
+      let result
+      before(async function () {
+        result = await runReconnection(0)
+      })
+
+      it('configures every pubsub client to retry forever, backed off up to 10 minutes', function () {
+        const { maxRetries, maxReconnectionDelay, reconnectOnTimeout } = result.connectionOptions
+        assert.deepEqual({ maxRetries, maxReconnectionDelay, reconnectOnTimeout }, expectedOptions, 'chelonia/config connectionOptions (reconnectOnTimeout kept from the defaults)')
+        assert.deepEqual(result.settled.options, expectedOptions, 'the first client got them')
+        assert.deepEqual(result.restarted.options, expectedOptions, 'a re-created client gets them too')
+      })
+
+      it('pauses (destroys) the client after a failed attempt', function () {
+        const { settled } = result
+        assert.equal(settled.id, 1, 'the client created by the setup, which nothing replaced')
+        assert.ok(settled.scheduled.some((nth) => nth >= 2), `an attempt that never opened failed and the next one was scheduled (nth: ${JSON.stringify(settled.scheduled)})`)
+        assert.equal(settled.state, 'closed')
+        assert.equal(settled.destroyed, true, 'the current client was destroyed')
+        assert.equal(settled.attemptScheduled, false, 'no attempt is left scheduled')
+      })
+
+      it('re-creates a paused client when a page opens, after answering it', function () {
+        const { settled, restarted } = result
+        assert.equal(restarted.answeredBeforeRestart, true, 'the page got its answer before the client was replaced')
+        assert.notEqual(restarted.id, settled.id, 'a new client')
+        assert.ok(restarted.scheduled.length > 0, 'which tried to connect right away')
+      })
+
+      it('registers sw/connection/restart, which re-creates a paused client once', function () {
+        const { results, replacedByFirst, stateAfterFirst, replacedBySecond } = result.restartSelector
+        assert.deepEqual(results, ['reconnecting', 'nothing-to-do'])
+        assert.equal(replacedByFirst, true, 'the first call replaced the paused client')
+        assert.equal(stateAfterFirst, 'connecting', 'with one that connects right away')
+        assert.equal(replacedBySecond, false, 'the second call, made while connecting, left it alone')
+      })
+    })
+
+    describe('with a page open', function () {
+      let result
+      before(async function () {
+        result = await runReconnection(1)
+      })
+
+      it('keeps retrying after a failed attempt', function () {
+        const { settled } = result
+        assert.equal(settled.id, 1, 'the client created by the setup, which nothing replaced')
+        assert.ok(settled.scheduled.some((nth) => nth >= 2), `an attempt that never opened failed and the next one was scheduled (nth: ${JSON.stringify(settled.scheduled)})`)
+        assert.equal(settled.state, 'reconnecting')
+        assert.equal(settled.destroyed, false, 'the client was not paused')
+        assert.equal(settled.attemptScheduled, true)
+      })
+
+      it('re-creates a client waiting out its back-off when a page opens, after answering it', function () {
+        const { settled, restarted } = result
+        assert.equal(restarted.answeredBeforeRestart, true, 'the page got its answer before the client was replaced')
+        assert.notEqual(restarted.id, settled.id, 'a new client')
+        assert.equal(restarted.previous.destroyed, true, 'the old client was destroyed')
+        assert.equal(restarted.previous.attemptScheduled, false, 'and its scheduled attempt cancelled')
+        assert.ok(restarted.scheduled.length > 0, 'the new client tried to connect right away')
+      })
     })
   })
 }
