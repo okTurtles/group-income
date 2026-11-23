@@ -50,16 +50,16 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import ChatAttachmentPreview from './file-attachment/ChatAttachmentPreview.vue'
 import MessageReactions from './MessageReactions.vue'
-import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.js'
-import { humanDate } from '@model/contracts/shared/time.js'
+import RenderMessageWithMarkdown from './chat-mentions/RenderMessageWithMarkdown.ts'
+import { humanDate } from '@model/contracts/shared/time.ts'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
   CHATROOM_MEMBER_MENTION_SPECIAL_CHAR,
   CHATROOM_CHANNEL_MENTION_SPECIAL_CHAR
 } from '@model/contracts/shared/constants.js'
-import { renderMarkdown } from '@view-utils/markdown-utils.js'
-import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.js'
+import { renderMarkdown } from '@view-utils/markdown-utils.ts'
+import { makeMentionFromUserID, makeChannelMention, getIdFromChannelMention } from '@model/chatroom/utils.ts'
 
 export default {
   name: 'PinnedMessages',

@@ -148,7 +148,6 @@ cySbpCheckCommand('giKeyRequestedGroupIDs', (sbp, groupId) => {
         kr.contractID === identityContractID &&
         kr.name &&
         Object.values(authorizedKeys).some((key) => {
-          // $FlowFixMe[incompatible-use]
           return key?.name === kr.name
         })
       )

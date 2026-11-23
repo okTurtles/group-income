@@ -117,7 +117,7 @@ export default {
     this.observer?.disconnect()
   },
   methods: {
-    scrollToItem (index: number) {
+    scrollToItem (index) {
       this.$el.querySelector('.vue-recycle-scroller__item-view:nth-child(' + (index + 1) + ')')?.scrollIntoView()
     }
   }

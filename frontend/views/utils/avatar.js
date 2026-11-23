@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import blockies from '@utils/blockies.js'
 import Colors from '~/frontend/model/settings/colors.js'
 import { randomFromArray } from 'turtledash'
-import { imageDataURItoBlob } from '@utils/image.js'
+import { imageDataURItoBlob } from '@utils/image.ts'
 
 const colorOptions = ['primary', 'warning', 'danger', 'success']
 const theme = Colors.light

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { connectionStatus } from '../../../test/unit-helpers/connectionStatus.js'
 import { deferred, fakeTimers, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
-import { createReconnectionPolicy } from './reconnectionPolicy.js'
+import { createReconnectionPolicy } from './reconnectionPolicy.ts'
 
 // The pubsub client fields the policy uses. `destroy()` makes it `closed`, as
 // in `@chelonia/lib` 2.2.0.

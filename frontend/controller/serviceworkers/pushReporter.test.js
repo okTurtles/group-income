@@ -5,13 +5,13 @@ import { getSubscriptionId } from '@chelonia/lib/functions'
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { SOCKET } from '../../../test/unit-helpers/socket.js'
 import { deferred, fakeTimers, settle, silenceConsole } from '../../../test/unit-helpers/utils.js'
-import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
+import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.ts'
 import {
   VAPID_CACHE_DURATION,
   VAPID_REQUEST_TIMEOUT,
   bufferEq,
   createPushReporter
-} from './pushReporter.js'
+} from './pushReporter.ts'
 
 const fakeSocket = (readyState = SOCKET.OPEN) => ({
   ...SOCKET,

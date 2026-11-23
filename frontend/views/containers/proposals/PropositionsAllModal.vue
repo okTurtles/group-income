@@ -37,7 +37,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import ProposalItem from './ProposalItem.vue'
 import { mapGetters, mapState } from 'vuex'
 
-export default ({
+export default {
   name: 'PropositionsAllModal',
   components: {
     ModalBaseTemplate,
@@ -82,7 +82,7 @@ export default ({
       return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

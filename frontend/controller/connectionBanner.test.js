@@ -11,8 +11,8 @@ import {
   bannerForStatus,
   connectionBannerContent,
   createConnectionBannerController
-} from './connectionBanner.js'
-import { CONNECTION_STATUS_TIMEOUT } from './connectionStatus.js'
+} from './connectionBanner.ts'
+import { CONNECTION_STATUS_TIMEOUT } from './connectionStatus.ts'
 
 const GRACE = CONNECTION_BANNER_GRACE
 const REFRESH = CONNECTION_BANNER_REFRESH_INTERVAL

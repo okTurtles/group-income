@@ -2,13 +2,13 @@
 import assert from 'node:assert/strict'
 import { connectionStatus } from '../../../../test/unit-helpers/connectionStatus.js'
 import { deferred, fakeTimers, settle, silenceConsole } from '../../../../test/unit-helpers/utils.js'
-import { CONNECTION_STATUS_TIMEOUT } from '../../../controller/connectionStatus.js'
+import { CONNECTION_STATUS_TIMEOUT } from '../../../controller/connectionStatus.ts'
 import {
   RECENT_SYNC_WINDOW,
   SHARED_SYNC_MAX_AGE,
   isChatroomUnsubscribed,
   resyncChatroomIfUnsubscribed
-} from './chatroomResync.js'
+} from './chatroomResync.ts'
 
 const ROOM = 'zChatroom'
 const OTHER = 'zOther'

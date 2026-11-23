@@ -33,7 +33,7 @@ import { MODAL_RESPONSE } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default ({
+export default {
   name: 'Prompt',
   components: {
     ModalTemplate,
@@ -63,7 +63,7 @@ export default ({
       this.$refs.modal.unload('Prompt')
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

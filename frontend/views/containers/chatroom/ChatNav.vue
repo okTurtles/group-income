@@ -4,9 +4,9 @@
 </template>
 
 <script>
-export default ({
+export default {
   name: 'ChatNav'
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

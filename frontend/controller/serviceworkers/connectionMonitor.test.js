@@ -10,7 +10,7 @@ import {
   CONNECTION_TICK_INTERVAL,
   createConnectionMonitor,
   createPubsubHandlers
-} from './connectionMonitor.js'
+} from './connectionMonitor.ts'
 
 // The pubsub client fields that `chelonia/pubsub/status` reads (through
 // `client.getStatus()` in `@chelonia/lib` 2.2.0). `since` is set by the

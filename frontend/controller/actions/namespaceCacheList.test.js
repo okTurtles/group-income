@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { createNamespaceCacheList, isContractDeletedError, NS_CACHE_OUTBOX } from './namespaceCacheList.js'
+import { createNamespaceCacheList, isContractDeletedError, NS_CACHE_OUTBOX } from './namespaceCacheList.ts'
 
 const ID = 'identity-own'
 

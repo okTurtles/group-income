@@ -23,11 +23,11 @@
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
-import { clearSlots, emptyBannerSlots, pickBanner, setSlot } from '@view-utils/bannerSlots.js'
-// TODO: use the banner types from bannerSlots.js after the Vue 3 migration
+import { clearSlots, emptyBannerSlots, pickBanner, setSlot } from '@view-utils/bannerSlots.ts'
+// TODO: use the banner types from bannerSlots.ts after the Vue 3 migration
 import { debounce } from 'turtledash'
 
-export default ({
+export default {
   name: 'BannerGeneral',
   components: {
     TransitionExpand
@@ -37,7 +37,7 @@ export default ({
       actionMinBusy: 1000
     },
     ephemeral: {
-      // Only the highest-priority non-empty slot is displayed (see bannerSlots.js)
+      // Only the highest-priority non-empty slot is displayed (see bannerSlots.ts)
       slots: emptyBannerSlots(),
       actionRunning: false,
       actionMinBusyTimer: null
@@ -104,9 +104,7 @@ export default ({
         this.ephemeral.actionRunning = false
       }
     },
-    debouncedShow ({ message, icon, seconds, clearWhen }: {
-      message: Function, icon: string, seconds: number, clearWhen: Function
-    }) {
+    debouncedShow ({ message, icon, seconds, clearWhen }) {
       let clearBannerTimer
       let shownEntry
       return debounce((...args) => {
@@ -129,7 +127,7 @@ export default ({
       }, 1000 * seconds)
     }
   }
-}: Object)
+}
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

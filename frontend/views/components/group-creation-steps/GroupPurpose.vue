@@ -27,7 +27,7 @@
 <script>
 import { GROUP_DESCRIPTION_MAX_CHAR } from '@model/contracts/shared/constants.js'
 
-export default ({
+export default {
   name: 'GroupPurpose',
   props: {
     group: { type: Object },
@@ -62,7 +62,7 @@ export default ({
       })
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

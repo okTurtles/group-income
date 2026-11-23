@@ -59,10 +59,10 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.ts'
 import { normalizeString } from 'turtledash'
 
-export default ({
+export default {
   name: 'GroupLeaveModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -131,7 +131,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

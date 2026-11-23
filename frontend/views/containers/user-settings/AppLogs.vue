@@ -74,16 +74,16 @@
 import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
 import { CAPTURED_LOGS } from '@utils/events.js'
-import { MAX_LOG_ENTRIES } from '@utils/constants.js'
-import safeLinkTag from '@view-utils/safeLinkTag.js'
+import { MAX_LOG_ENTRIES } from '@utils/constants.ts'
+import safeLinkTag from '@view-utils/safeLinkTag.ts'
 import { L, LError } from '@common/common.js'
-import { EXPORT_JSON_INDENT } from '@model/journal/exportSize.js'
+import { EXPORT_JSON_INDENT } from '@model/journal/exportSize.ts'
 import { omit } from 'turtledash'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { requestConnectionStatus } from '~/frontend/controller/connectionStatus.js'
-import { exportedConnection } from './exportedConnection.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.ts'
+import { requestConnectionStatus } from '~/frontend/controller/connectionStatus.ts'
+import { exportedConnection } from './exportedConnection.ts'
 
 const LOGS_FILENAME = 'gi_logs.json.txt'
 const LOGS_MIME_TYPE = 'text/plain'
@@ -107,9 +107,9 @@ const getConnectionStatus = (timeout) =>
 
 // Firefox for Android has `navigator.share` but rejects any file with a
 // TypeError, so `navigator.share` alone doesn't mean the logs can be shared.
-const canShareLogFile = (): boolean => {
+const canShareLogFile = () => {
   try {
-    return Boolean((navigator: any).canShare?.({
+    return Boolean(navigator.canShare?.({
       files: [new File([''], LOGS_FILENAME, { type: LOGS_MIME_TYPE })]
     }))
   } catch {
@@ -117,20 +117,7 @@ const canShareLogFile = (): boolean => {
   }
 }
 
-type LogPayload = {
-  _instructions: string,
-  ua: string,
-  version_info: Object,
-  connection: Object | null,
-  includeJournal: boolean,
-  logs: Object[],
-  journals?: Object,
-  journalTruncated?: boolean,
-  journalOmitted?: Object,
-  journalError?: string
-}
-
-export default ({
+export default {
   name: 'AppLogs',
   components: {
     BannerScoped,
@@ -224,7 +211,7 @@ export default ({
         }
       }
     },
-    addLog (entry: Object) {
+    addLog (entry) {
       if (entry) {
         if (this.form.source === 'browser' && entry.source !== 'browser') return
         if (this.form.source === 'serviceworker' && entry.source !== 'sw') return
@@ -254,7 +241,12 @@ export default ({
         const connectionStatus = getConnectionStatus(
           actionType === 'share' && !includeJournal ? CONNECTION_STATUS_SHARE_TIMEOUT : CONNECTION_STATUS_EXPORT_TIMEOUT
         )
-        const payload: LogPayload = {
+        // Format of the exported gi_logs.json.txt file:
+        //   _instructions: string, ua: string, version_info: Object,
+        //   connection: Object | null, includeJournal: boolean, logs: Object[],
+        //   journals?: Object, journalTruncated?: boolean,
+        //   journalOmitted?: Object, journalError?: string
+        const payload = {
           // Add instructions in case the user opens the file.
           _instructions: 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
           ua: navigator.userAgent,
@@ -288,7 +280,7 @@ export default ({
 
         if (actionType === 'share') {
           try {
-            await (navigator: any).share({
+            await navigator.share({
               files: [new File([blob], LOGS_FILENAME, { type: blob.type })],
               title: L('Application Logs')
             })
@@ -401,7 +393,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang='scss' scoped>

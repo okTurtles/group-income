@@ -10,7 +10,7 @@ import {
   requestConnectionRestart,
   requestConnectionStatus,
   restartConnectionInBackground
-} from './connectionStatus.js'
+} from './connectionStatus.ts'
 
 const SELECTOR = 'sw/connection/status'
 const RESTART_SELECTOR = 'sw/connection/restart'
@@ -152,7 +152,7 @@ describe('connection status request', () => {
     })
   })
 
-  // The tab-visible restart, in main.js
+  // The tab-visible restart, in main.ts
   describe('restartConnectionInBackground', () => {
     const logs = silenceConsole(['warn'])
     const restart = (result) => () => result

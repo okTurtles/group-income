@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { isSocketOpen } from './socket.js'
+import { isSocketOpen } from './socket.ts'
 
 describe('isSocketOpen', () => {
   it('is false without a socket', () => {

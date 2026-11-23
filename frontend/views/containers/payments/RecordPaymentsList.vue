@@ -40,7 +40,7 @@ import Tooltip from '@components/Tooltip.vue'
 import PaymentRowRecord from './PaymentRowRecord.vue'
 import PaymentRowSendLightning from './PaymentRowSendLightning.vue'
 
-export default ({
+export default {
   name: 'RecordPaymentsList',
   components: {
     AvatarUser,
@@ -106,7 +106,7 @@ export default ({
       }
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

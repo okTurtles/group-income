@@ -7,7 +7,7 @@ summary.button(
 </template>
 
 <script>
-export default ({
+export default {
   name: 'MenuTrigger',
   props: {
     hideWhenActive: Boolean
@@ -18,7 +18,7 @@ export default ({
       return this.Menu.isActive
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

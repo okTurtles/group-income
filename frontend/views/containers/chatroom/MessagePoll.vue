@@ -29,13 +29,13 @@ message-base.c-message-poll(
 import sbp from '@sbp/sbp'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
-import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.ts'
 import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import PollMixin from '@containers/chatroom/PollMixin.js'
+import PollMixin from '@containers/chatroom/PollMixin.ts'
 
-export default ({
+export default {
   name: 'MessagePoll',
   mixins: [PollMixin],
   components: {
@@ -128,7 +128,7 @@ export default ({
         markPollClosed()
       } else if (Math.abs(timeDiff) < DAYS_MILLIS) {
         // if the poll is expiring soon(at least within 24 hours), periodically check & mark it 'closed'.
-        // NOTE: this logic is actually a good candidate for a periodic-notification entry in mainNotificationsMixin.js,
+        // NOTE: this logic is actually a good candidate for a periodic-notification entry in mainNotificationsMixin.ts,
         //       but there is a challenge in accessing a particular chat-message data in there.
         //       (couldn't find a way to access a chat-message item via vuex state/getters)
         //       So implemented this logic here.
@@ -144,7 +144,7 @@ export default ({
       clearTimeout(this.expirationTimeoutId)
     }
   }
-}: Object)
+}
 </script>
 
 <style lang="scss" scoped>

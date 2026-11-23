@@ -20,7 +20,7 @@ Event `A`, through a side effect, calls out to the frontend using one of the `gi
 
 Event `B` emits an event using `okTurtles.events` that gets propagated to the frontend.
 
-And event `C` calls a function `periodStampsForDate()` that comes from `frontend/model/contracts/shared/time.js`.
+And event `C` calls a function `periodStampsForDate()` that comes from `frontend/model/contracts/shared/time.ts`.
 
 All three of these scenarios can lead to problems if any of that code changes.
 
@@ -30,19 +30,19 @@ Remember, contract code gets snapshotted and frozen in time through contract pin
 
 Events `A` and `B` in our example are essentially the same problem.
 
-For `A`, the contract could be calling a selector like `'gi.actions/group/join'`. The definition of this selector is in `frontend/controller/actions/group.js`, and this code runs inside of the service worker. Because it is not version controlled through pinning, it must accept the same parameters for life, and behave in essentially the same way for all time, so that if it's called by an old version of the contract it will still work as expected.
+For `A`, the contract could be calling a selector like `'gi.actions/group/join'`. The definition of this selector is in `frontend/controller/actions/group.ts`, and this code runs inside of the service worker. Because it is not version controlled through pinning, it must accept the same parameters for life, and behave in essentially the same way for all time, so that if it's called by an old version of the contract it will still work as expected.
 
-This selector is allowed to be called because when Chelonia is setup via `'chelonia/configure'` (in `frontend/setupChelonia.js`), it's included in the `allowedSelectors` configuration. These are selectors that are allowed to be called from contracts. Their invocation is allowed to leave the contract sandbox.
+This selector is allowed to be called because when Chelonia is setup via `'chelonia/configure'` (in `frontend/setupChelonia.ts`), it's included in the `allowedSelectors` configuration. These are selectors that are allowed to be called from contracts. Their invocation is allowed to leave the contract sandbox.
 
 Likewise, Group Income allows the entire `'okTurtles.events'` domain to be called from contracts (via `allowedDomains`). This means contracts can emit any event that Group Income supports. And that in turn means that any events that are triggered by contracts must have event handlers in the app that will forever take the same parameters.
 
-So for example, `group.js` emits the `JOINED_GROUP` event like so:
+So for example, `group.ts` emits the `JOINED_GROUP` event like so:
 
 ```js
 sbp('okTurtles.events/emit', JOINED_GROUP, { identityContractID: userID, groupContractID: contractID })
 ```
 
-That means this handler in `frontend/controller/app/group.js` cannot ever change its parameters and must essentially behave the same way forever:
+That means this handler in `frontend/controller/app/group.ts` cannot ever change its parameters and must essentially behave the same way forever:
 
 ```js
 // handle incoming group-related events that are sent from the service worker
@@ -62,7 +62,7 @@ This code lives under the `frontend/model/contracts/shared` folder and includes 
 
 This code is actually safer to modify because it's raw functions, not selectors that get dynamically propagated out of the contract sandbox. Contracts will only ever call the version of these functions that they had access to at the time.
 
-For example, if you simply want to display some text to the user in a notification, you might call the `displayWithCurrency` function inside of `currencies.js`. If a contract is calling this function, it might be doing it to format a message that's passed to the frontend to display to the user. It can therefore be safe to modify `displayWithCurrency` to slightly change how currencies are displayed, and if you do that here's what might happen:
+For example, if you simply want to display some text to the user in a notification, you might call the `displayWithCurrency` function inside of `currencies.ts`. If a contract is calling this function, it might be doing it to format a message that's passed to the frontend to display to the user. It can therefore be safe to modify `displayWithCurrency` to slightly change how currencies are displayed, and if you do that here's what might happen:
 
 - The user might see an old-style formatted currency message when syncing old messages. For example, they might see a notification that says `$1000`
 - Other parts of the app might display a new-style formatted message. Using our example, they might see `$1,000` instead of `$1000`.

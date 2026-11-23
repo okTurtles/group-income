@@ -13,7 +13,7 @@ import {
   notificationParamsRedactor,
   pinnedMessageRedactor,
   redactedRedactor
-} from './redactions.js'
+} from './redactions.ts'
 
 const redact = (state, contractName = 'gi.contracts/group') => applyRedactions(state, JOURNAL_REDACTIONS, contractName)
 
@@ -263,7 +263,7 @@ describe('journal redactions', () => {
   })
 
   it('redacts reaction strings, which are object keys a path cannot reach', () => {
-    // `emoticon` is validated as a bare `string` (chatroom.js), so any client
+    // `emoticon` is validated as a bare `string` (chatroom.ts), so any client
     // can use a reaction to smuggle free text into `state.messages`. The text
     // ends up as an object key, which no value-level redaction can rewrite.
     const smuggled = 'my landlord is evicting me and I need $1200 by Friday'
@@ -589,7 +589,7 @@ describe('journal redactions', () => {
   it('pins the redaction rule set together with JOURNAL_REDACTIONS_VERSION', () => {
     // When you intentionally change JOURNAL_REDACTIONS (a path OR its
     // redactor), update this list AND bump JOURNAL_REDACTIONS_VERSION, so
-    // persisted journals get cleared again (see `migration.js`). This also
+    // persisted journals get cleared again (see `migration.ts`). This also
     // applies when a value assertion above fails after a rule change. Message
     // rules live in MESSAGE_FIELD_REDACTIONS, which generates the `messages.*`
     // and `pinnedMessages.*` pairs below.

@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
-import { BANNER_SLOTS, clearSlots, emptyBannerSlots, pickBanner, setSlot } from './bannerSlots.js'
+import { BANNER_SLOTS, clearSlots, emptyBannerSlots, pickBanner, setSlot } from './bannerSlots.ts'
 
 const entry = (message, icon = 'wifi') => ({ message, icon })
 
