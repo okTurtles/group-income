@@ -1,7 +1,7 @@
 'use strict'
 
 // The fields of a connection status (`ConnectionStatus`, see
-// `controller/serviceworkers/connectionMonitor.js`) that hold no contract
+// `controller/serviceworkers/connectionMonitor.ts`) that hold no contract
 // IDs, and the `error` that replaces a status that couldn't be obtained
 const EXPORTED_KEYS = ['at', 'source', 'state', 'since', 'wanted', 'oldestPendingSince', 'unsubscribedSince', 'degraded', 'heals', 'error']
 // The fields that list contract IDs. While the connection is down, they list
@@ -14,7 +14,7 @@ const COUNTED_KEYS = ['missing', 'pending']
 // newer service worker may add some. The logs can still name a few contracts,
 // e.g. in the `@chelonia/lib` warnings about a failed subscription, and in the
 // `[chatroomResync]` warnings about a chatroom that was checked or re-synced.
-export const exportedConnection = (status: mixed, includeJournal: boolean): Object => {
+export const exportedConnection = (status: unknown, includeJournal: boolean): Record<string, any> => {
   // An array's items aren't written: they could be contract IDs
   if (Array.isArray(status)) return { error: `Unexpected status: an array of ${status.length} item(s)` }
   if (!status || typeof status !== 'object') return { error: `Unexpected status: ${String(status)}` }

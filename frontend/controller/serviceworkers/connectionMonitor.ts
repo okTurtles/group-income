@@ -36,7 +36,7 @@ export type ConnectionStatus = {
 }
 
 export type ConnectionMonitor = {
-  setWanted: (ids: mixed) => void,
+  setWanted: (ids: unknown) => void,
   update: () => void,
   onReconnected: () => void,
   resetHealBackoff: () => void,
@@ -46,11 +46,11 @@ export type ConnectionMonitor = {
 
 const CONNECTION_STATES: ConnectionState[] = ['connecting', 'open', 'reconnecting', 'offline', 'closed']
 
-const onlyStrings = (list: $ReadOnlyArray<mixed>): string[] => (list.filter(id => typeof id === 'string'): any)
+const onlyStrings = (list: ReadonlyArray<unknown>): string[] => list.filter(id => typeof id === 'string') as any
 
 // The answer of `chelonia/pubsub/status`, or `null` if it doesn't have the
 // expected shape
-const normalizeLibStatus = (status: any): ?{ state: ConnectionState, since: number | null, wanted: ?number, missing: string[], pending: string[], oldestPendingSince: number | null } => {
+const normalizeLibStatus = (status: any): { state: ConnectionState, since: number | null, wanted: number | null | undefined, missing: string[], pending: string[], oldestPendingSince: number | null } | null | undefined => {
   if (
     !status || typeof status !== 'object' ||
     !CONNECTION_STATES.includes(status.state) ||
@@ -112,16 +112,16 @@ export function createConnectionMonitor ({
   tickInterval = CONNECTION_TICK_INTERVAL,
   maxHealDelay = CONNECTION_MAX_HEAL_DELAY,
   maxDegradedHeals = CONNECTION_MAX_DEGRADED_HEALS
-}: {|
-  getLibStatus: () => mixed,
-  heal: () => mixed,
-  emit: (status: ConnectionStatus) => mixed,
+}: {
+  getLibStatus: () => unknown,
+  heal: () => unknown,
+  emit: (status: ConnectionStatus) => unknown,
   now?: () => number,
   graceMs?: number,
   tickInterval?: number,
   maxHealDelay?: number,
   maxDegradedHeals?: number
-|}): ConnectionMonitor {
+}): ConnectionMonitor {
   let wanted: string[] = []
   // Wanted contracts not subscribed while the connection is open, and since
   // when. Cleared whenever the connection isn't open, so that the grace
@@ -151,7 +151,7 @@ export function createConnectionMonitor ({
   // Whether the last attempt to compute the status failed: a failure is
   // logged once, not on every tick and query, until it succeeds again
   let failing = false
-  const computeFailed = (e: mixed) => {
+  const computeFailed = (e: unknown) => {
     if (!failing) console.warn('[connection] Error computing the connection status (not logged again until it succeeds)', e)
     failing = true
   }
@@ -170,7 +170,7 @@ export function createConnectionMonitor ({
   }
 
   const requestHeal = (reason: string) => {
-    const warn = (e: mixed) => console.warn(`[connection] Error requesting re-subscription (${reason})`, e)
+    const warn = (e: unknown) => console.warn(`[connection] Error requesting re-subscription (${reason})`, e)
     try {
       const result: any = heal()
       if (typeof result?.catch === 'function') result.catch(warn)
@@ -326,7 +326,7 @@ export function createConnectionMonitor ({
   }
 
   return {
-    setWanted (ids: mixed) {
+    setWanted (ids: unknown) {
       wanted = Array.isArray(ids) ? Array.from(new Set(onlyStrings(ids))) : []
       keepHealAttempts(new Set(wanted))
       update()
@@ -342,7 +342,7 @@ export function createConnectionMonitor ({
       update()
     },
     // Called when a page restarts the reconnection cycle while the connection
-    // is open (see `reconnectionPolicy.js`): the next recompute requests the
+    // is open (see `reconnectionPolicy.ts`): the next recompute requests the
     // missing subscriptions right away rather than after the backoff, if one
     // has been missing for longer than the grace period. The re-subscription
     // requests made for each contract are kept, so that one the server keeps
@@ -394,12 +394,12 @@ export function createConnectionMonitor ({
 // The custom handlers passed to `chelonia/connect`. They keep emitting the
 // events older tabs rely on, except `ONLINE` on the browser's `online` event:
 // the network being back doesn't mean the connection is.
-export function createPubsubHandlers ({ monitor, emitEvent }: {|
+export function createPubsubHandlers ({ monitor, emitEvent }: {
   monitor: ConnectionMonitor,
-  emitEvent: (name: string) => mixed
-|}): { [name: string]: () => void } {
+  emitEvent: (name: string) => unknown
+}): { [name: string]: () => void } {
   // An exception in a pubsub handler makes the app re-create the connection
-  const handler = (name: string, steps: Array<() => mixed>) => () => {
+  const handler = (name: string, steps: (() => unknown)[]) => () => {
     for (const step of steps) {
       try {
         step()

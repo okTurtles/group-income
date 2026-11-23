@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { connectionStatus } from '../../../../test/unit-helpers/connectionStatus.js'
-import { exportedConnection } from './exportedConnection.js'
+import { exportedConnection } from './exportedConnection.ts'
 
 const ROOM = 'zRoom'
 

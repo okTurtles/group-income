@@ -308,7 +308,7 @@ sbp('sbp/selectors/register', {
   // have just opened (or missed events)
   [CONNECTION_STATUS_SELECTOR]: () => connectionMonitor.getStatus(),
   // Restarts the reconnection cycle if the connection is down (see
-  // `reconnectionPolicy.js`). Its answer (`RestartResult`) is informative.
+  // `reconnectionPolicy.ts`). Its answer (`RestartResult`) is informative.
   [CONNECTION_RESTART_SELECTOR]: (reason) => reconnectionPolicy.restart(reason),
   'sw/deviceSettings/set': (key, value) => {
     const reactiveSet = sbp('chelonia/config').reactiveSet
@@ -497,7 +497,7 @@ self.addEventListener('message', function (event) {
         })
         // A page was opened or refreshed: if the connection is down, a new
         // reconnection cycle starts, with short delays (see
-        // `reconnectionPolicy.js`). It's sent once per service worker by
+        // `reconnectionPolicy.ts`). It's sent once per service worker by
         // each page, including pages from older app versions. In a timer, so
         // that the answer above goes first.
         setup.then(() => {

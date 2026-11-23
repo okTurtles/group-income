@@ -1,6 +1,6 @@
 'use strict'
 
-import type { ConnectionStatus } from './connectionMonitor.js'
+import type { ConnectionStatus } from './connectionMonitor.ts'
 
 // What restarts the reconnection cycle: a page opened or refreshed (its
 // `ready` message), a tab becoming visible, and the connection banner's
@@ -15,11 +15,11 @@ export type RestartResult = 'reconnecting' | 'healing' | 'nothing-to-do'
 // The second argument of `PUBSUB_RECONNECTION_SCHEDULED`: the attempt's delay
 // and number. `nth` is 1 for the first attempt after an open connection was
 // lost and after the device came back online.
-export type ReconnectionScheduledDetail = { delay?: mixed, nth?: mixed, ... }
+export type ReconnectionScheduledDetail = { delay?: unknown, nth?: unknown, [key: string]: unknown }
 
 export type ReconnectionPolicy = {
   restart: (reason: RestartReason) => RestartResult,
-  onReconnectionScheduled: (client: mixed, detail?: ?ReconnectionScheduledDetail) => void
+  onReconnectionScheduled: (client: unknown, detail?: ReconnectionScheduledDetail | null | undefined) => void
 }
 
 // When the service worker's pubsub connection retries, and when it starts a
@@ -38,7 +38,7 @@ export type ReconnectionPolicy = {
 // The dependencies:
 //   - `getClient()`: the current pubsub client (`PUBSUB_INSTANCE`).
 //   - `reconnect(reason)`: replaces it with a new one that connects right away
-//     (`chelonia/connect`, through `connectPubsub` in setupChelonia.js).
+//     (`chelonia/connect`, through `connectPubsub` in setupChelonia.ts).
 //   - `resetHealBackoff()` and `getStatus()`: the connection monitor's.
 //   - `countPages()`: how many pages (window clients) are open, or
 //     `undefined` without a clients API (a browsing context, which always has
@@ -53,14 +53,14 @@ export function createReconnectionPolicy ({
   getStatus,
   countPages,
   isOffline
-}: {|
-  getClient: () => mixed,
-  reconnect: (reason: RestartReason) => mixed,
-  resetHealBackoff: () => mixed,
+}: {
+  getClient: () => unknown,
+  reconnect: (reason: RestartReason) => unknown,
+  resetHealBackoff: () => unknown,
   getStatus: () => ConnectionStatus,
-  countPages?: ?(() => Promise<number> | number),
+  countPages?: (() => Promise<number> | number) | null | undefined,
   isOffline: () => boolean
-|}): ReconnectionPolicy {
+}): ReconnectionPolicy {
   const offline = (): boolean => {
     try {
       return isOffline() === true
@@ -71,8 +71,8 @@ export function createReconnectionPolicy ({
     }
   }
 
-  const stateOf = (client: mixed): mixed =>
-    client && typeof client === 'object' ? (client: any).state : undefined
+  const stateOf = (client: unknown): unknown =>
+    client && typeof client === 'object' ? (client as any).state : undefined
 
   return {
     restart (reason: RestartReason): RestartResult {
@@ -90,7 +90,7 @@ export function createReconnectionPolicy ({
         if (state === 'reconnecting' || state === 'closed') {
           if (state === 'reconnecting' && offline()) return 'nothing-to-do'
           console.info(`[connection] ${reason} while ${state}; restarting the reconnection cycle`)
-          const warn = (e: mixed) => console.warn(`[connection] Error restarting the reconnection cycle (${reason})`, e)
+          const warn = (e: unknown) => console.warn(`[connection] Error restarting the reconnection cycle (${reason})`, e)
           try {
             const result: any = reconnect(reason)
             if (typeof result?.catch === 'function') result.catch(warn)
@@ -129,15 +129,15 @@ export function createReconnectionPolicy ({
     // Pausing destroys the client, whose state becomes `closed` (broadcast to
     // the tabs by the connection monitor, as usual); the next page opened
     // restarts the cycle.
-    onReconnectionScheduled (client: mixed, detail?: ?ReconnectionScheduledDetail): void {
+    onReconnectionScheduled (client: unknown, detail?: ReconnectionScheduledDetail | null | undefined): void {
       const pages = countPages
       if (!pages) return
       const nth = detail && typeof detail === 'object' ? detail.nth : undefined
-      const unanswered = client && typeof client === 'object' ? (client: any).unansweredReplacements : undefined
+      const unanswered = client && typeof client === 'object' ? (client as any).unansweredReplacements : undefined
       const failed = (typeof nth === 'number' && nth > 1) ||
         (typeof unanswered === 'number' && unanswered > 1)
       if (!failed) return
-      const pause = (count: mixed) => {
+      const pause = (count: unknown) => {
         // Retrying is the safe default, e.g., for an unexpected answer
         if (count !== 0) return
         try {
@@ -148,7 +148,7 @@ export function createReconnectionPolicy ({
           const state = stateOf(client)
           if (state === 'open' || state === 'connecting' || state === 'closed') return
           console.info('[connection] no open pages; pausing reconnection until a page is opened')
-          ;(client: any).destroy()
+          ;(client as any).destroy()
         } catch (e) {
           console.warn('[connection] Error pausing reconnection', e)
         }

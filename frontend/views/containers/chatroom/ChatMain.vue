@@ -168,7 +168,7 @@ import {
 } from '@utils/events.js'
 import { findMessageIdx } from '@model/contracts/shared/functions.ts'
 import { isUnsentMessage, sortMessages } from './sortMessages.ts'
-import { resyncChatroomIfUnsubscribed } from './chatroomResync.js'
+import { resyncChatroomIfUnsubscribed } from './chatroomResync.ts'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.ts'
 import { cloneDeep, debounce, throttle, delay } from 'turtledash'
 import { EVENT_HANDLED } from '@chelonia/lib/events'

@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import assert from 'node:assert/strict'
 import { deferred, fakeTimers, settle } from '../../test/unit-helpers/utils.js'
-import { callWithTimeout } from './timers.js'
+import { callWithTimeout } from './timers.ts'
 
 const MESSAGE = 'Timed out doing it'
 const MS = 1000

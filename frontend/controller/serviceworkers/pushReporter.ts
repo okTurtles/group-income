@@ -3,8 +3,8 @@
 import { getSubscriptionId as defaultGetSubscriptionId } from '@chelonia/lib/functions'
 import { PUSH_SERVER_ACTION_TYPE, REQUEST_TYPE, createMessage } from '@chelonia/lib/pubsub'
 import { Buffer } from 'buffer'
-import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.js'
-import { isSocketOpen } from './socket.js'
+import { PUBSUB_NOT_OPEN_ERROR } from '../../utils/constants.ts'
+import { isSocketOpen } from './socket.ts'
 
 // The server's VAPID public key should change very infrequently, if at all
 export const VAPID_CACHE_DURATION = 3600e3
@@ -12,10 +12,10 @@ export const VAPID_REQUEST_TIMEOUT = 10e3
 const PUSH_HEARTBEAT_INTERVAL = 12 * 60 * 60 * 1000
 
 export type PushReporter = {
-  getSubscriptionOptions: () => Promise<Object>,
-  reportExistingSubscription: (subscriptionInfo?: ?Object, applicationServerKey?: ?ArrayBuffer) => Promise<boolean>,
-  onPushAction: (message: { data: Object }) => void,
-  onReconnected: (client?: Object) => Promise<void>
+  getSubscriptionOptions: () => Promise<Record<string, any>>,
+  reportExistingSubscription: (subscriptionInfo?: Record<string, any> | null | undefined, applicationServerKey?: ArrayBuffer | null | undefined) => Promise<boolean>,
+  onPushAction: (message: { data: Record<string, any> }) => void,
+  onReconnected: (client?: Record<string, any>) => Promise<void>
 }
 
 // The application server (public) key could be either an ArrayBuffer (which is
@@ -33,7 +33,7 @@ export const strOrBufToBuf = (v: string | Uint8Array | ArrayBuffer): Uint8Array 
   return new Uint8Array(v)
 }
 
-export const bufferEq = (a?: ?(string | ArrayBuffer | Uint8Array), b?: ?(string | ArrayBuffer | Uint8Array)): boolean => {
+export const bufferEq = (a?: string | ArrayBuffer | Uint8Array | null | undefined, b?: string | ArrayBuffer | Uint8Array | null | undefined): boolean => {
   // eslint-disable-next-line eqeqeq
   if (a == null || b == null) return a == b
 
@@ -82,22 +82,22 @@ export function createPushReporter ({
   notificationsDisabled,
   getSubscriptionId = defaultGetSubscriptionId,
   now = () => performance.now()
-}: {|
-  getPubsub: () => ?Object,
-  pushManager: ?Object,
+}: {
+  getPubsub: () => Record<string, any> | null | undefined,
+  pushManager: Record<string, any> | null | undefined,
   isLoggedIn: () => boolean,
   notificationsDisabled: () => boolean,
-  getSubscriptionId?: (subscriptionInfo: Object) => Promise<string>,
+  getSubscriptionId?: (subscriptionInfo: Record<string, any>) => Promise<string>,
   now?: () => number
-|}): PushReporter {
-  let cachedVapidInformation: ?[number, Object]
-  const vapidWaiters: Set<(options: Object) => void> = new Set()
+}): PushReporter {
+  let cachedVapidInformation: [number, Record<string, any>] | null | undefined
+  const vapidWaiters: Set<(options: Record<string, any>) => void> = new Set()
 
   // Whether `socket` is still the open socket of the current client
-  const isCurrentOpenSocket = (pubsub: Object, socket: Object): boolean =>
+  const isCurrentOpenSocket = (pubsub: Record<string, any>, socket: Record<string, any>): boolean =>
     getPubsub() === pubsub && pubsub.socket === socket && isSocketOpen(socket)
 
-  const requestVapidKey = (): Promise<Object> => {
+  const requestVapidKey = (): Promise<Record<string, any>> => {
     return new Promise((resolve, reject) => {
       const pubsub = getPubsub()
       if (!pubsub) return reject(pubsubNotOpenError('Missing pubsub instance'))
@@ -136,9 +136,9 @@ export function createPushReporter ({
   // current one and open. One made on a socket that has been replaced or is
   // closing may never be answered: a later caller doesn't wait for it, but
   // sends its own request, or is rejected at once if the socket isn't open.
-  let vapidRequest: ?{ socket: Object, promise: Promise<Object> } = null
+  let vapidRequest: { socket: Record<string, any>, promise: Promise<Record<string, any>> } | null | undefined = null
 
-  const getSubscriptionOptions = (): Promise<Object> => {
+  const getSubscriptionOptions = (): Promise<Record<string, any>> => {
     if (cachedVapidInformation && (now() - cachedVapidInformation[0]) < VAPID_CACHE_DURATION) {
       return Promise.resolve(cachedVapidInformation[1])
     }
@@ -157,14 +157,14 @@ export function createPushReporter ({
   // The subscription the server should have for this device;
   // `subscriptionInfo` is `undefined` or `null` for none. Until the first
   // report, that's also what is assumed, so nothing is sent
-  let wanted: { subscriptionInfo: ?Object, applicationServerKey: ?ArrayBuffer } = { subscriptionInfo: null, applicationServerKey: null }
+  let wanted: { subscriptionInfo: Record<string, any> | null | undefined, applicationServerKey: ArrayBuffer | null | undefined } = { subscriptionInfo: null, applicationServerKey: null }
   // Incremented by every report (from a tab, or after a subscription change),
   // so that a reconnection doesn't replace a report made while it read the
   // browser's subscription
   let reportGeneration = 0
-  const reportedSubscriptionBySocket: WeakMap<Object, ?Object> = new WeakMap()
+  const reportedSubscriptionBySocket: WeakMap<Record<string, any>, Record<string, any> | null | undefined> = new WeakMap()
 
-  const getSubID = async (subscription: Object): Promise<string> => {
+  const getSubID = async (subscription: Record<string, any>): Promise<string> => {
     try {
       return await getSubscriptionId(subscription)
     } catch (e) {
@@ -225,14 +225,14 @@ export function createPushReporter ({
 
   // One flush at a time, so that concurrent reports can't send the same
   // subscription twice on a socket, or reorder a storage and a removal
-  let flushQueue: Promise<mixed> = Promise.resolve()
+  let flushQueue: Promise<unknown> = Promise.resolve()
   const flush = (): Promise<boolean> => {
     const result = flushQueue.then(flushOnce)
     flushQueue = result.catch(() => {})
     return result
   }
 
-  const reportExistingSubscription = async (subscriptionInfo?: ?Object, applicationServerKey?: ?ArrayBuffer): Promise<boolean> => {
+  const reportExistingSubscription = async (subscriptionInfo?: Record<string, any> | null | undefined, applicationServerKey?: ArrayBuffer | null | undefined): Promise<boolean> => {
     reportGeneration++
     wanted = { subscriptionInfo, applicationServerKey }
     const sent = await flush()
@@ -244,7 +244,7 @@ export function createPushReporter ({
     return sent
   }
 
-  const onServerKeyChanged = async (options: Object) => {
+  const onServerKeyChanged = async (options: Record<string, any>) => {
     if (!pushManager) return
     const subscription = await pushManager.getSubscription()
     if (!subscription) return
@@ -264,7 +264,7 @@ export function createPushReporter ({
 
   // Called with every `REQUEST_TYPE.PUSH_ACTION` message from the server.
   // Doesn't throw: it runs inside the pubsub message handler.
-  const onPushAction = ({ data }: { data: Object }) => {
+  const onPushAction = ({ data }: { data: Record<string, any> }) => {
     try {
       if (data?.type !== PUSH_SERVER_ACTION_TYPE.SEND_PUBLIC_KEY) return
       const oldKey = cachedVapidInformation?.[1].applicationServerKey
@@ -287,7 +287,7 @@ export function createPushReporter ({
   // slow `getSubscription()`) aren't skipped: the report runs again.
   let running = false
   let again = false
-  const onReconnected = async (client?: Object): Promise<void> => {
+  const onReconnected = async (client?: Record<string, any>): Promise<void> => {
     try {
       if (!pushManager) return
       if (client && client !== getPubsub()) return

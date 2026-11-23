@@ -11,16 +11,21 @@ import { CONTRACTS_MODIFIED } from '@chelonia/lib/events'
 import { groupContractsByType, syncContractsInOrder } from './controller/actions/utils.ts'
 import { isContractDeletedError } from './controller/actions/namespaceCacheList.ts'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
-import type { ConnectionMonitor } from './controller/serviceworkers/connectionMonitor.js'
-import { createConnectionMonitor, createPubsubHandlers } from './controller/serviceworkers/connectionMonitor.js'
-import type { ReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.js'
-import { createReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.js'
+import type { ConnectionMonitor } from './controller/serviceworkers/connectionMonitor.ts'
+import { createConnectionMonitor, createPubsubHandlers } from './controller/serviceworkers/connectionMonitor.ts'
+import type { ReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.ts'
+import { createReconnectionPolicy } from './controller/serviceworkers/reconnectionPolicy.ts'
 import manifests from './model/contracts/manifests.json'
 import { SETTING_CHELONIA_STATE, SETTING_CURRENT_USER } from './model/database.ts'
 import { JOURNAL_REDACTIONS } from './model/journal/redactions.ts'
 import { clearStaleJournals } from './model/journal/migration.ts'
 import { PUBSUB_MAX_RECONNECTION_DELAY } from './utils/constants.ts'
 import { CHATROOM_USER_STOP_TYPING, CHATROOM_USER_TYPING, CHELONIA_STATE_MODIFIED, CONNECTION_STATUS_CHANGED, LOGGING_OUT, LOGIN_COMPLETE, LOGOUT, SERIOUS_ERROR } from './utils/events.js'
+
+// This module runs in both a browser window and the service worker, so `self` is
+// a `Window` in one context and a `ServiceWorkerGlobalScope` in the other.
+// Declaring it as `any` here is to satisfy the type checker.
+declare const self: any
 
 const diffContractVersion = (va?: Record<string, unknown>, vb?: Record<string, unknown>): boolean => {
   // If the types don't match, a different release has been made
@@ -123,7 +128,7 @@ export const connectionMonitor: ConnectionMonitor = createConnectionMonitor({
 
 // When the pubsub client keeps retrying and when a new cycle starts: it's
 // paused while no page is open, and restarted by a page that opens
-// (`sw-primary.js`, on `ready`), a tab that becomes visible and the
+// (`sw-primary.ts`, on `ready`), a tab that becomes visible and the
 // connection banner's "Retry now" button (`sw/connection/restart`).
 export const reconnectionPolicy: ReconnectionPolicy = createReconnectionPolicy({
   getClient: () => sbp('okTurtles.data/get', PUBSUB_INSTANCE),

@@ -9,8 +9,8 @@
 // check here.
 
 import sbp from '@sbp/sbp'
-import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from '../../../controller/connectionStatus.js'
-import { CONNECTION_STATUS_SELECTOR } from '../../../utils/constants.js'
+import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from '../../../controller/connectionStatus.ts'
+import { CONNECTION_STATUS_SELECTOR } from '../../../utils/constants.ts'
 
 // A chatroom being opened isn't synced again if a sync of it started less
 // than this long ago and succeeded. The window counts from the start of the
@@ -32,7 +32,7 @@ export const SHARED_SYNC_MAX_AGE = 30 * 1000
 // the server keeps refusing don't count, see CONNECTION_MAX_DEGRADED_HEALS).
 // A chatroom that was just joined is pending for a moment, and Chelonia syncs
 // it once subscribed.
-export const isChatroomUnsubscribed = (status: mixed, chatRoomID: string): boolean => {
+export const isChatroomUnsubscribed = (status: any, chatRoomID: string): boolean => {
   if (!status || typeof status !== 'object' || status.state !== 'open') return false
   const { missing, pending, degraded } = status
   if (Array.isArray(missing) && missing.includes(chatRoomID)) return true
@@ -48,24 +48,24 @@ type CallSelector = (selector: string, ...args: any[]) => any
 const defaultIsJoined = (callSelector: CallSelector, chatRoomID: string) => (): boolean =>
   callSelector('state/vuex/getters').isJoinedChatRoom(chatRoomID)
 
-const defaultSync = (callSelector: CallSelector) => (chatRoomID: string): mixed =>
+const defaultSync = (callSelector: CallSelector) => (chatRoomID: string): unknown =>
   callSelector('chelonia/contract/sync', chatRoomID)
 
 // The syncs that `resyncChatroomIfUnsubscribed` made of a chatroom, so that
 // opening it again doesn't sync it twice in a row: the running one, and when
 // it and the last one that succeeded started (for SHARED_SYNC_MAX_AGE and
 // RECENT_SYNC_WINDOW).
-type ChatroomSync = {|
+type ChatroomSync = {
   running: Promise<boolean> | null,
   runningAt: number,
   lastSucceededAt: number
-|}
+}
 type ChatroomSyncs = Map<string, ChatroomSync>
 const chatroomSyncs: ChatroomSyncs = new Map()
 
 // Never rejects; resolves to whether the sync succeeded
 const syncChatroom = (
-  sync: (chatRoomID: string) => mixed, chatRoomID: string, syncs: ChatroomSyncs, now: () => number
+  sync: (chatRoomID: string) => unknown, chatRoomID: string, syncs: ChatroomSyncs, now: () => number
 ): Promise<boolean> => {
   const previous = syncs.get(chatRoomID)
   const startedAt = now()
@@ -91,18 +91,18 @@ const syncChatroom = (
   return running
 }
 
-// The options (see `CallSelector`). Exact, so that a misspelled option fails
-// Flow instead of falling back to its default.
-type ResyncOptions = {|
+// The options (see `CallSelector`). Typed, so that a misspelled option in an
+// object literal fails `tsc` instead of falling back to its default.
+type ResyncOptions = {
   chatRoomID: string,
   sbp?: CallSelector,
-  getStatus?: () => mixed,
+  getStatus?: () => unknown,
   isJoined?: () => boolean,
-  sync?: (chatRoomID: string) => mixed,
+  sync?: (chatRoomID: string) => unknown,
   timeout?: number,
   syncs?: ChatroomSyncs,
   now?: () => number
-|}
+}
 
 // For a chatroom being opened. Resolves to whether a sync made or joined by
 // this call succeeded; never rejects. Does nothing if the status is

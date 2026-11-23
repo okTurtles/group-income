@@ -2,5 +2,5 @@
 
 // Whether a WebSocket (or the pubsub client's socket) is open. Sockets
 // without the `OPEN` constant are compared against its standard value.
-export const isSocketOpen = (socket: ?Object): boolean =>
+export const isSocketOpen = (socket: Record<string, any> | null | undefined): boolean =>
   !!socket && socket.readyState === (socket.OPEN ?? 1)

@@ -3,14 +3,14 @@
 import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
 import { OPEN_MODAL, MODAL_RESPONSE, SHOW_TOAST } from '@utils/events.js'
-import type { BannerAction } from './bannerSlots.js'
+import type { BannerAction } from './bannerSlots.ts'
 
 // Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
 // sbp('gi.ui/clearBanner') // clears the danger banner (the sync banner clears itself)
 // The general banner shows one message at a time: the connection banner, else
-// the danger banner, else the sync banner (see bannerSlots.js). The connection
-// banner is owned by the connection status code in main.js; other callers can
+// the danger banner, else the sync banner (see bannerSlots.ts). The connection
+// banner is owned by the connection status code in main.ts; other callers can
 // neither replace nor clear it:
 // sbp('gi.ui/showConnectionBanner', L('Trying to reconnect...'), 'wifi')
 // sbp('gi.ui/showConnectionBanner', L('Trying to reconnect...'), 'wifi', { label: L('Retry now'), run })

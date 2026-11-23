@@ -76,11 +76,11 @@ export const DEVICE_SETTINGS = {
 export const PUBSUB_NOT_OPEN_ERROR = 'GIErrorPubsubNotOpen'
 
 // The service worker's connection status (see
-// `controller/serviceworkers/connectionMonitor.js`), queried by tabs
+// `controller/serviceworkers/connectionMonitor.ts`), queried by tabs
 export const CONNECTION_STATUS_SELECTOR = 'sw/connection/status'
 
 // Restarts the service worker's reconnection cycle (see
-// `controller/serviceworkers/reconnectionPolicy.js`). Tabs call it when they
+// `controller/serviceworkers/reconnectionPolicy.ts`). Tabs call it when they
 // become visible and from the connection banner's "Retry now" button.
 export const CONNECTION_RESTART_SELECTOR = 'sw/connection/restart'
 

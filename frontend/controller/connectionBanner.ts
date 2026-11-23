@@ -2,9 +2,9 @@
 
 import { L } from '@common/common.js'
 import { OFFLINE, ONLINE, RECONNECTING, RECONNECTION_FAILED } from '../utils/events.js'
-import type { BannerAction } from '../views/utils/bannerSlots.js'
-import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from './connectionStatus.js'
-import type { ConnectionStatus } from './serviceworkers/connectionMonitor.js'
+import type { BannerAction } from '../views/utils/bannerSlots.ts'
+import { CONNECTION_STATUS_TIMEOUT, isStatusUnavailableError, requestConnectionStatus } from './connectionStatus.ts'
+import type { ConnectionStatus } from './serviceworkers/connectionMonitor.ts'
 
 // The kinds of connection banner a tab can show (see `connectionBannerContent`)
 export const CONNECTION_BANNER = Object.freeze({
@@ -14,16 +14,16 @@ export const CONNECTION_BANNER = Object.freeze({
   DEGRADED: 'degraded'
 })
 
-export type ConnectionBannerKind = $Values<typeof CONNECTION_BANNER>
+export type ConnectionBannerKind = (typeof CONNECTION_BANNER)[keyof typeof CONNECTION_BANNER]
 
 export type ConnectionBannerContent = { message: string, icon: string, action?: BannerAction }
 
 // Functions, so that `L()` runs when a banner is shown, after
 // `translations/init`
-const CONNECTION_BANNER_TEXTS: { [ConnectionBannerKind]: () => string } = {
+const CONNECTION_BANNER_TEXTS: { [K in ConnectionBannerKind]?: () => string } = {
   [CONNECTION_BANNER.OFFLINE]: () => L('Your device appears to be offline.'),
   [CONNECTION_BANNER.RECONNECTING]: () => L('Trying to reconnect...'),
-  // A refresh restarts the reconnection cycle (see `reconnectionPolicy.js`)
+  // A refresh restarts the reconnection cycle (see `reconnectionPolicy.ts`)
   [CONNECTION_BANNER.FAILED]: () => L('We could not connect to the server. Please refresh the page.'),
   [CONNECTION_BANNER.DEGRADED]: () => L('Some updates may be delayed. Re-syncing...')
 }
@@ -35,7 +35,7 @@ const CONNECTION_BANNER_TEXTS: { [ConnectionBannerKind]: () => string } = {
 // legacy mode: the service worker may be older than `sw/connection/restart`.
 export function connectionBannerContent (
   kind: ConnectionBannerKind | null,
-  { legacy, retry }: {| legacy: boolean, retry: () => mixed |}
+  { legacy, retry }: { legacy: boolean, retry: () => unknown }
 ): ConnectionBannerContent | null {
   const text = kind ? CONNECTION_BANNER_TEXTS[kind] : null
   if (!text) return null
@@ -76,7 +76,7 @@ const inGrace = (status: ConnectionStatus, now: number, graceMs: number): boolea
 export function bannerForStatus (
   status: ConnectionStatus,
   now: number,
-  { graceMs = CONNECTION_BANNER_GRACE, current = null }: {| graceMs?: number, current?: ConnectionBannerKind | null |} = {}
+  { graceMs = CONNECTION_BANNER_GRACE, current = null }: { graceMs?: number, current?: ConnectionBannerKind | null } = {}
 ): ConnectionBannerKind | null {
   switch (status.state) {
     case 'open':
@@ -99,10 +99,10 @@ export function bannerForStatus (
 // When the banner for `status` changes on its own, as its grace period ends
 const graceEndsAt = (status: ConnectionStatus, now: number, graceMs: number): number | null =>
   (status.state === 'closed' || status.state === 'connecting') && inGrace(status, now, graceMs)
-    ? (status.since: any) + graceMs
+    ? (status.since as any) + graceMs
     : null
 
-const LEGACY_BANNERS: Map<string, ConnectionBannerKind | null> = new Map([
+const LEGACY_BANNERS: Map<string, ConnectionBannerKind | null> = new Map<string, ConnectionBannerKind | null>([
   [OFFLINE, CONNECTION_BANNER.OFFLINE],
   [RECONNECTING, CONNECTION_BANNER.RECONNECTING],
   [RECONNECTION_FAILED, CONNECTION_BANNER.FAILED],
@@ -112,10 +112,10 @@ const LEGACY_BANNERS: Map<string, ConnectionBannerKind | null> = new Map([
 export type ConnectionBannerController = {
   start: () => void,
   refresh: () => void,
-  apply: (status: mixed) => void,
+  apply: (status: unknown) => void,
   onLegacyEvent: (name: string) => void,
-  +kind: ConnectionBannerKind | null,
-  +legacy: boolean
+  readonly kind: ConnectionBannerKind | null,
+  readonly legacy: boolean
 }
 
 // Decides which connection banner a tab shows, from the service worker's
@@ -144,16 +144,16 @@ export function createConnectionBannerController ({
   graceMs = CONNECTION_BANNER_GRACE,
   refreshInterval = CONNECTION_BANNER_REFRESH_INTERVAL,
   requestTimeout = CONNECTION_STATUS_TIMEOUT
-}: {|
-  getStatus: () => mixed,
-  onChange: (kind: ConnectionBannerKind | null) => mixed,
+}: {
+  getStatus: () => unknown,
+  onChange: (kind: ConnectionBannerKind | null) => unknown,
   isOnline: () => boolean,
   isVisible?: () => boolean,
   now?: () => number,
   graceMs?: number,
   refreshInterval?: number,
   requestTimeout?: number
-|}): ConnectionBannerController {
+}): ConnectionBannerController {
   let running = false
   let kind: ConnectionBannerKind | null = null
   let legacy = false
@@ -163,7 +163,7 @@ export function createConnectionBannerController ({
   let lastStatus: ConnectionStatus | null = null
   let graceTimer: any = null
   let inFlight = false
-  let pendingAnswer: Promise<mixed> | null = null
+  let pendingAnswer: Promise<unknown> | null = null
   let refreshQueued = false
   // One warning per run of failed queries: a busy service worker can fail
   // every query for minutes
@@ -207,9 +207,9 @@ export function createConnectionBannerController ({
     }
   }
 
-  const apply = (status: mixed) => {
+  const apply = (status: unknown) => {
     if (!running || !isStatus(status)) return
-    let valid: ConnectionStatus = (status: any)
+    let valid: ConnectionStatus = status as any
     // Answers and broadcasts can arrive out of order. The check is skipped if
     // the clock went back since the last status.
     if (lastStatus && valid.at < lastStatus.at && lastStatus.at <= now()) return
@@ -237,7 +237,7 @@ export function createConnectionBannerController ({
     }
   }
 
-  const enterLegacyMode = (e: mixed) => {
+  const enterLegacyMode = (e: unknown) => {
     if (legacy) return
     legacy = true
     console.warn('[connection banner] Could not get the connection status; following the connection events instead', e)
@@ -250,7 +250,7 @@ export function createConnectionBannerController ({
   // Legacy mode is also used when there's no status to keep, since the tab
   // would otherwise show no banner at all, and while the device is offline,
   // which the last status may not show
-  const queryFailed = (e: mixed) => {
+  const queryFailed = (e: unknown) => {
     if (isStatusUnavailableError(e) || !lastStatus || deviceOffline()) {
       enterLegacyMode(e)
     } else if (!failureLogged) {
@@ -284,7 +284,7 @@ export function createConnectionBannerController ({
     inFlight = true
     // `getStatus()` is called right away; an answer that arrives after the
     // timeout is still applied (and ends legacy mode)
-    const answer: Promise<mixed> = new Promise(resolve => resolve(getStatus()))
+    const answer: Promise<unknown> = new Promise(resolve => resolve(getStatus()))
     pendingAnswer = answer
     const answered = () => {
       if (pendingAnswer !== answer) return

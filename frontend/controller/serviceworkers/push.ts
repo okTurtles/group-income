@@ -5,7 +5,7 @@ import sbp from '@sbp/sbp'
 import setupChelonia from '~/frontend/setupChelonia.ts'
 import { NOTIFICATION_TYPE, PUBSUB_RECONNECTION_SUCCEEDED, REQUEST_TYPE } from '@chelonia/lib/pubsub'
 import { DEVICE_SETTINGS } from '@utils/constants.ts'
-import { createPushReporter } from './pushReporter.js'
+import { createPushReporter } from './pushReporter.ts'
 
 // This module runs only in the service worker, where `self` is a
 // `ServiceWorkerGlobalScope`. But TypeScript's lib.dom assumes it is a `Window`,

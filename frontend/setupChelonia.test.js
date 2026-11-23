@@ -5,8 +5,8 @@
 // (SW) starts up being lost when the SW is stopped. Because of that, the
 // "Less than 1 week left" notification was shown again on every SW cold start
 // (https://github.com/okTurtles/group-income/issues/3158).
-// Also, the SW's pubsub reconnection rules (`reconnectionPolicy.js`), as wired
-// by setupChelonia.js and sw-primary.js: the connection options, the pause
+// Also, the SW's pubsub reconnection rules (`reconnectionPolicy.ts`), as wired
+// by setupChelonia.ts and sw-primary.ts: the connection options, the pause
 // while no page is open and the restart when a page opens.
 //
 // Each SW lifetime runs the real SW script (sw-primary.ts, which calls
@@ -343,7 +343,7 @@ const reconnection = async ({ messageListeners, pages }) => {
   const sbp = loadSbp()
   const { PUBSUB_RECONNECTION_SCHEDULED } = require('@chelonia/lib/pubsub')
   const { PUBSUB_INSTANCE } = require(path.join(ROOT, 'frontend/controller/instance-keys.js'))
-  const { CONNECTION_RESTART_SELECTOR } = require(path.join(ROOT, 'frontend/utils/constants.js'))
+  const { CONNECTION_RESTART_SELECTOR } = require(path.join(ROOT, 'frontend/utils/constants.ts'))
   const deliver = (data) => {
     messageListeners.forEach((fn) => fn({ data, source: { id: 'tab', postMessage () {} } }))
   }
@@ -382,7 +382,7 @@ const reconnection = async ({ messageListeners, pages }) => {
   // page is open
   const settledState = pages === 0 ? 'closed' : 'reconnecting'
 
-  require(path.join(ROOT, 'frontend/controller/serviceworkers/sw-primary.js'))
+  require(path.join(ROOT, 'frontend/controller/serviceworkers/sw-primary.ts'))
   await waitFor(`the pubsub client to be ${settledState}`, () => current()?.state === settledState, 60e3)
   const before = current()
   const settled = { ...describeClient(before), scheduled: scheduledFor(before) }
