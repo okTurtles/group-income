@@ -41,6 +41,8 @@ send-area.c-edit-send-area(
 ```
 
 - The download-style `ChatAttachmentPreview` (`isForDownload: true`) stays mounted under the edit box while editing.
+  This is a bug: the attachments end up shown twice once they also appear in the edit-box gallery. Step 1 hides the
+  download cards in edit mode (see 2.2, `MessageBase.vue`).
 - `SendArea` gets only `defaultText`. It never sees the message's attachments.
 - **Related bug:** `MessageActions.isEditable` is `isMsgSender && isText`, so **Edit** is offered for
   attachment-only messages (where `text` is `''`). But `v-if='isEditing && text'` is false for them, so clicking
@@ -60,8 +62,13 @@ send-area.c-edit-send-area(
 - In edit mode, the edit toolbar (`.addons-editing`) has only reaction and markdown buttons. There is **no attach
   button**, no voice recorder, and `handlePaste` skips files when `isEditing` (added in #3172: *"Edited messages
   can't gain attachments, so files pasted into the edit box are ignored."*). So the path the issue reports was
-  partly closed by hiding the entry points. This spec opens it back up properly.
+  partly closed by hiding the entry points. This spec opens it back up properly: step 2 adds the **Attach file**
+  button back to the edit toolbar and removes the `!this.isEditing` guard from `handlePaste` (see 3.2). Voice
+  recording stays out of edit mode.
 - Drafts: `saveOrDeleteMessageDraft()` returns early when `isEditing`, so edit-mode attachments never reach drafts.
+  Drafts belong to the main composer only, and edit mode must neither write nor read them. **Loading** isn't guarded,
+  though: `initializeTextArea()` loads the draft whenever `defaultText` is empty, without checking `isEditing`. Today
+  that never happens, because the edit box only opens for messages with text. Step 1 changes this (see 2.2).
   Keep it that way.
 - Drag & drop: `ChatMain.dragEndHandler` always sends dropped files to `this.$refs.sendArea` (the main composer),
   even while a message is being edited.
@@ -113,22 +120,33 @@ button (see 2.3).
 
 **`SendArea.vue`**
 - New prop: `defaultAttachments: { type: Array, default: null }`. It is used only when `isEditing`.
+- `initializeTextArea()`: decide whether to load a draft by checking `isEditing`, not `defaultText`. In edit mode,
+  always use `defaultText` (empty for attachment-only messages) and `defaultAttachments`, and never call
+  `loadMessageDraft()`. Otherwise, editing an attachment-only message would pull the main composer's unsent draft
+  (text and files) into the edit box.
 - New state: `ephemeral.existingAttachments` (or a single list with an `isExisting` flag, see 2.4). In
   `initializeTextArea()` (edit mode only), build entries from `defaultAttachments`:
   ```js
   { id: downloadData.manifestCid, name, mimeType, size, dimension, downloadData, isExisting: true, url: '' }
   ```
-  `url` is filled in only for images (see "Media previews for existing attachments" below). Every other type keeps `url: ''`.
-- For existing **images**, resolve `url` asynchronously when edit mode opens: load from `gi.db/filesCache/temporary`,
-  falling back to `chelonia/fileDownload` (and saving the result to the cache), the same way the message view does.
-  The message view has already shown these images, so in practice this is a cache hit with no network request.
+  `url` is filled in for images, and for videos and audio that are already cached (see "Media previews for existing
+  attachments" below). Every other entry keeps `url: ''`.
+- When edit mode opens, resolve `url` asynchronously for existing media:
+  - **Images:** load from `gi.db/filesCache/temporary`, falling back to `chelonia/fileDownload` (and saving the
+    result to the cache), the same way the message view does. The message view has already shown these images, so in
+    practice this is a cache hit with no network request.
+  - **Videos and audio:** load from `gi.db/filesCache/temporary` **only**, never from the network. If the user has
+    already played or downloaded the file, it's in the cache (`ChatAttachmentPreview.loadMediaObjectURL` saves it
+    there). If not, `url` stays `''`. Note that the temporary cache is cleared on every app startup
+    (`frontend/main.js`), so "cached" means "played or downloaded during this app session".
   - Don't copy `ChatAttachmentPreview.getAttachmentObjectURL`. Move it into a shared helper (for example
-    `file-attachment/attachment-utils.js`: `loadAttachmentObjectURL(attachment)`) and import it from both places.
+    `file-attachment/attachment-utils.js`: `loadAttachmentObjectURL(attachment, { allowNetwork })`) and import it from
+    both places. Images pass `allowNetwork: true`, videos and audio pass `false`.
   - Don't rely on `ChatAttachmentPreview.initMediaObjectURLLists()` to do this. It runs only on mount, so it misses
     entries added later. And in the non-download branch its URLs are never revoked.
   - These URLs are created by SendArea, so SendArea revokes them: in `beforeDestroy` (with the existing object-URL
-    cleanup) and when an existing image is removed (step 2).
-  - If loading fails, keep `url: ''` and show the file card for that image (see below).
+    cleanup) and when an existing attachment is removed (step 2).
+  - If loading fails or there's no cache entry, keep `url: ''` and show the file card (see below).
 - Render: the existing `chat-attachment-preview` block in SendArea shows `ephemeral.attachments` (new uploads). In edit
   mode it must show existing + new. Use a computed `previewAttachments` that concatenates them and pass it as
   `:attachmentList`.
@@ -138,32 +156,43 @@ button (see 2.3).
 | Existing attachment type | Shown in the edit gallery as |
 |---|---|
 | Image | Thumbnail (`media-preview-in-text-area`), same as in the composer |
-| Video | File card (icon + name + extension), no thumbnail |
-| Audio | File card, no player |
+| Video, already cached | `media-preview-in-text-area`: thumbnail generated from the cached file, same as in the composer |
+| Video, not cached | File card (icon + name + extension), no thumbnail |
+| Audio, already cached | `media-preview-in-text-area`: minimal audio player, same as in the composer |
+| Audio, not cached | File card, no player |
 | Other files | File card (unchanged) |
 
-Why videos and audio get no preview: the files are stored encrypted, no thumbnail is saved at upload time, and
-`chelonia/fileDownload` only returns the whole file. A video thumbnail would mean downloading the full video (up to
-30 MB, `CHAT_ATTACHMENT_SIZE_LIMIT`) just to open edit mode, and that download can't be cancelled. Images don't have
-this problem, because the message view has already downloaded and cached them.
+Why uncached videos and audio get no preview: the files are stored encrypted, no thumbnail is saved at upload time,
+and `chelonia/fileDownload` only returns the whole file. A video thumbnail would mean downloading the full video (up
+to 30 MB, `CHAT_ATTACHMENT_SIZE_LIMIT`) just to open edit mode, and that download can't be cancelled. Cached files
+don't have this problem: the data is already on the device, so the preview costs nothing.
 
 Files **newly added** during the edit keep the composer's normal previews for every type (`media-preview-in-text-area`).
 They are local object URLs, so previewing them costs nothing.
 
 **`ChatAttachmentPreview.vue` (non-download branch)**
-- Show the file card when the type is `NON_MEDIA`, **or** the entry is existing and is not an image, **or** the entry
-  is an existing image whose `url` failed to load. Otherwise use `media-preview-in-text-area` as today.
+- Show the file card when the type is `NON_MEDIA`, **or** the entry is existing and has no `url` once loading has
+  finished (an uncached video/audio, or an image that failed to load). Otherwise use `media-preview-in-text-area` as
+  today.
+  - This needs a per-entry "still loading" flag (for example `isLoadingPreview`), so that a card doesn't show the file
+    card for a moment and then switch to the media preview. While loading, render `media-preview-in-text-area` in
+    its loading state. A cache lookup is quick, so this lasts only a moment.
 - Key entries by `entry.id || entry.url`, because existing entries may have `url: ''`.
 - New per-entry remove control: hide the remove button for existing entries in step 1. Step 2 shows it.
   Either a `canRemove` prop or a check on `entry.isExisting` works. Per entry is better because step 2 needs it.
 - Optional: on the file card, use an icon that matches the media type (video/audio) instead of the generic
   `icon-file`, so users can still tell what each file is. Check which icons exist in the icon font.
-- Clicking an existing image thumbnail opens `ImageViewerModal`, the same as for new images. `openMediaViewer` already
-  uses `entry.url`. File cards for existing videos and audio are not clickable.
+- Clicking an existing image thumbnail opens `ImageViewerModal`, and clicking a cached video's card opens
+  `VideoViewerModal`, the same as for new files. `onMediaPreviewCardClick` / `openMediaViewer` already use `entry.url`.
+  File cards (uncached videos and audio) are not clickable.
 
 **`MediaPreviewInTextArea.vue`**
-- An existing image's `url` arrives shortly after the card mounts. Until then, show a loading state instead of an
-  `img` with an empty `src`. With a cache hit this lasts only a moment.
+- An existing attachment's `url` arrives shortly after the card mounts. Until then, show a loading state instead of
+  an `img` with an empty `src`, an attempt to generate a video thumbnail, or an audio player with no `src`.
+- Video: `generateVideoThumbnail()` currently runs once, in `created()`. Run it again when `attachment.url` changes from `''`
+  to a value.
+- Audio: pass the resolved `url` as the `AudioPlayerCard` `src`, as today. With a `src` set, `AudioPlayerCard` never
+  reaches its own `loadAudio()` fallback, so it doesn't trigger a download.
 
 ### 2.3 Out of scope for step 1
 
@@ -178,16 +207,21 @@ Every attachment entry in SendArea gets a stable `id`:
 - New: `id = url` (the object URL), `isExisting: false`, `downloadData: null`.
 
 `remove` events should carry `id`, not `url`. `removeAttachment(id)` revokes the entry's `url` whenever it has one.
-That covers new entries and existing images, because both URLs were created by SendArea.
+That covers new entries and existing media with a resolved preview, because SendArea created all of those URLs.
 
 ### 2.5 Acceptance criteria (step 1)
 
-- [ ] Editing a message with attachments shows them in the gallery inside the edit box, with no download cards below.
-      Existing images show as thumbnails. Existing videos, audio and other files show as file cards (icon, name,
-      extension).
+- [ ] Editing a message with attachments shows them **only** in the gallery inside the edit box. The download cards
+      below the message are hidden while editing.
+- [ ] Existing images show as thumbnails.
+- [ ] A video that was played or downloaded earlier in the session shows a thumbnail. An audio file that was played
+      earlier in the session shows the minimal player.
+- [ ] Videos and audio that weren't cached show as file cards (icon, name, extension). So do other files.
 - [ ] Opening edit mode downloads no videos or audio (check the network tab). Images come from the cache when the
       message view has already shown them.
-- [ ] Clicking an existing image thumbnail in the edit box opens the image viewer.
+- [ ] Clicking an existing image thumbnail opens the image viewer. Clicking a cached video's card opens the video
+      viewer.
+- [ ] No card switches from a file card to a media preview while it loads.
 - [ ] If an existing image can't be loaded, its card falls back to the file card. Nothing breaks.
 - [ ] No leaked object URLs: open and cancel edit repeatedly, and the number of `blob:` URLs doesn't grow.
 - [ ] No remove ("×") buttons on existing attachments in step 1.
@@ -195,6 +229,8 @@ That covers new entries and existing images, because both URLs were created by S
 - [ ] Cancel / Escape / Save restore the normal download cards, with image thumbnails back. Truncation ("Show more") is
       recalculated correctly.
 - [ ] Attachment-only message: **Edit** opens an edit box (empty textarea + gallery). Cancel works.
+- [ ] With an unsent draft (text + a file) in the main composer, editing an attachment-only message shows **none**
+      of the draft in the edit box, and the draft is still intact in the main composer afterwards.
 - [ ] Pinned-messages popup and other places that render `MessageBase` aren't affected (edit happens only in the main list).
 - [ ] Mobile layout: the gallery fits within the edit box width.
 
@@ -420,7 +456,8 @@ creator can delete it normally. No data is lost.
 - [ ] Switching chatrooms mid-save doesn't throw, close another message's edit, or show a toast in the wrong room
       (existing `hasChatroomSwitchedSince` guards).
 - [ ] No object-URL leaks after save, cancel, or failure.
-- [ ] Drafts are not written for edit-mode attachments.
+- [ ] Drafts are neither written nor read in edit mode. Adding or removing files while editing doesn't change the
+      main composer's draft.
 
 ### 3.8 Tests
 
@@ -450,8 +487,8 @@ creator can delete it normally. No data is lost.
 | `frontend/views/containers/chatroom/Message.vue` | 2 | forward 2nd arg of `edit-message` |
 | `frontend/views/containers/chatroom/SendArea.vue` | 1, 2 | `defaultAttachments` prop, existing/new/removed state, combined preview list, attach button + paste in edit mode, edit emit payload, URL cleanup |
 | `frontend/views/containers/chatroom/file-attachment/ChatAttachmentPreview.vue` | 1, 2 | file card for existing non-image entries, use shared URL loader, key by `id`, per-entry remove control, emit `id` on remove |
-| `frontend/views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue` | 1 | loading state until an existing image's `url` arrives |
-| `frontend/views/containers/chatroom/file-attachment/attachment-utils.js` (new) | 1 | shared `loadAttachmentObjectURL` (cache, then download) |
+| `frontend/views/containers/chatroom/file-attachment/MediaPreviewInTextArea.vue` | 1 | loading state until an existing attachment's `url` arrives; regenerate the video thumbnail when `url` changes |
+| `frontend/views/containers/chatroom/file-attachment/attachment-utils.js` (new) | 1 | shared `loadAttachmentObjectURL(attachment, { allowNetwork })` (cache, then download if allowed) |
 | `frontend/views/containers/chatroom/ChatMain.vue` | 2 | upload-then-edit flow, error handling and cleanup, patch local attachments, drag-drop routing while editing |
 | `frontend/model/contracts/chatroom.js` | 2 | optional `attachments` on `editMessage`; `process` pushes the new `deleteEditedAttachments` method |
 | `frontend/model/contracts/shared/types.js` | 2 | export a shared `attachmentType` validator |
@@ -467,9 +504,9 @@ creator can delete it normally. No data is lost.
 2. **Voice messages in edit mode:** Leave out for v1 (recommended)? Removing an existing voice recording should
    still work like any other attachment.
   Let's leave it out for this task.
-3. ~~**Uncached video/audio in the edit gallery**~~ **Resolved:** existing images show as thumbnails (from the
-   cache). Existing videos and audio show as file cards, so nothing large is downloaded (see 2.2, "Media previews for
-   existing attachments").
+3. ~~**Uncached video/audio in the edit gallery**~~ **Resolved:** existing images show as thumbnails. Existing
+   videos and audio show a media preview if they're already in the session cache, and a file card otherwise. Nothing
+   large is downloaded (see 2.2, "Media previews for existing attachments").
 4. **Removing the last attachment of an attachment-only message:** Disable Save (as specced), or offer "delete
    message instead", the way `ChatMain.deleteAttachment` does for single-attachment messages today? As specced for now.
 5. **Edit history / "(edited)" label:** Should an attachment-only change also set `updatedDate` and show "(edited)"? yes.
