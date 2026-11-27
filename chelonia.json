@@ -1,5 +1,5 @@
 {
-  "appVersion": "2.9.0",
+  "appVersion": "2.9.2",
   "contracts": {
     "gi.contracts/chatroom": {
       "version": "2.9.0",

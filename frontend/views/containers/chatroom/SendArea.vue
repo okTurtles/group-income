@@ -9,7 +9,7 @@
     i18n.has-text-bold This channel is public and everyone on the internet can see its content.
 
   fieldset.c-send.inputgroup(
-    :class='{"is-editing": isEditing}'
+    :class='{ "is-editing": isEditing }'
     :disabled='loading || isSavingEdit'
     data-test='messageInputWrapper'
   )
@@ -97,83 +97,86 @@
     )
 
     .c-send-actions(ref='actions')
-      div(v-if='isEditing')
-        .addons.addons-editing
-          tooltip(
-            v-if='ephemeral.showButtons'
-            :text='L("Add reaction")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Add reaction")'
-              @click='openEmoticon'
+      template(v-if='isEditing')
+        .c-edit-toolbar
+          .addons.c-markdown-addons
+            tooltip(
+              :text='L("Bold")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
             )
-              i.icon-smile-beam
-          tooltip(
-            :text='L("Bold")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Bold style text")'
-              @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
+              button.is-icon(
+                :aria-label='L("Bold style text")'
+                @mousedown.prevent='transformTextSelectionToMarkdown("bold")'
+              )
+                i.icon-bold
+            tooltip(
+              :text='L("Italic")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
             )
-              i.icon-bold
-          tooltip(
-            :text='L("Italic")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Italic style text")'
-              @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
+              button.is-icon(
+                :aria-label='L("Italic style text")'
+                @mousedown.prevent='transformTextSelectionToMarkdown("italic")'
+              )
+                i.icon-italic
+            tooltip(
+              :text='L("Code")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
             )
-              i.icon-italic
-          tooltip(
-            :text='L("Code")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Add code")'
-              @mousedown.prevent='transformTextSelectionToMarkdown("code")'
+              button.is-icon(
+                :aria-label='L("Add code")'
+                @mousedown.prevent='transformTextSelectionToMarkdown("code")'
+              )
+                i.icon-code
+            tooltip(
+              :text='L("Strikethrough")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
             )
-              i.icon-code
-          tooltip(
-            :text='L("Strikethrough")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Add strikethrough")'
-              @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
+              button.is-icon(
+                :aria-label='L("Add strikethrough")'
+                @mousedown.prevent='transformTextSelectionToMarkdown("strikethrough")'
+              )
+                i.icon-strikethrough
+            tooltip(
+              :text='L("Link")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
             )
-              i.icon-strikethrough
-          tooltip(
-            :text='L("Link")'
-            :deactivated='ephemeral.isPhone'
-            v-bind='tooltipTriggerCommonProps'
-          )
-            button.is-icon(
-              :aria-label='L("Add link")'
-              @mousedown.prevent='transformTextSelectionToMarkdown("link")'
-            )
-              i.icon-link
+              button.is-icon(
+                :aria-label='L("Add link")'
+                @mousedown.prevent='transformTextSelectionToMarkdown("link")'
+              )
+                i.icon-link
 
-      .c-edit-actions(v-if='isEditing')
-        i18n.is-small.is-outlined(
-          tag='button'
-          data-test='cancelEditing'
-          @click='cancelEditing'
-        ) Cancel
+          .addons.c-other-addons
+            tooltip(
+              v-if='ephemeral.showButtons'
+              :text='L("Add reaction")'
+              :deactivated='ephemeral.isPhone'
+              v-bind='tooltipTriggerCommonProps'
+            )
+              button.is-icon(
+                :aria-label='L("Add reaction")'
+                @click='openEmoticon'
+              )
+                i.icon-smile-beam
 
-        i18n.button.is-small.is-loader(
-          tag='button'
-          data-test='saveEditing'
-          :data-loading='isSavingEdit'
-          @click='sendMessage'
-        ) Save changes
+        .c-edit-actions
+          i18n.is-small.is-outlined(
+            tag='button'
+            data-test='cancelEditing'
+            @click='cancelEditing'
+          ) Cancel
+
+          i18n.button.is-small.is-loader(
+            tag='button'
+            data-test='saveEditing'
+            :data-loading='isSavingEdit'
+            @click='sendMessage'
+          ) Save changes
 
       .c-edit-action-wrapper(v-else)
         .addons(v-if='ephemeral.showButtons')
@@ -839,8 +842,7 @@ export default ({
       }
       const pastedText = e.clipboardData.getData('text/plain').trim()
 
-      // Edited messages can't gain attachments, so files pasted into the edit box are ignored.
-      if (!this.isEditing && e.clipboardData.files.length > 0) {
+      if (e.clipboardData.files.length > 0) {
         this.fileAttachmentHandler(e.clipboardData.files)
       } else if (isExternalLink(pastedText)) {
         // Pasting an external link while a text segment is selected turns the segment into
@@ -1589,21 +1591,29 @@ export default ({
 
     .c-send-actions {
       position: relative;
-      margin-top: 0.5rem;
-      margin-bottom: 0.5rem;
-      bottom: 0;
+      margin: 0.5rem 0;
       height: auto;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      row-gap: 0.75rem;
+      justify-content: flex-end;
 
-      @include phone {
-        flex-wrap: wrap;
-        row-gap: 0.75rem;
+      .c-edit-toolbar {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .c-other-addons {
+        margin-right: 0.25rem;
       }
 
       .c-edit-actions {
+        display: inline-flex;
         margin-right: 0.5rem;
         margin-left: 0.5rem;
+        justify-content: flex-end;
       }
     }
 
@@ -1615,7 +1625,7 @@ export default ({
       cursor: not-allowed;
 
       .c-send-textarea,
-      .addons-editing,
+      .c-addons-editing,
       .c-edit-actions .is-outlined {
         opacity: 0.5;
         pointer-events: none;
@@ -1641,7 +1651,7 @@ export default ({
   position: relative;
   margin-left: 0.25rem;
 
-  &.addons-editing {
+  &.c-addons-editing {
     display: flex;
     width: 100%;
   }
