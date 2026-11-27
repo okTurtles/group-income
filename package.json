@@ -1,6 +1,6 @@
 {
   "name": "group-income",
-  "version": "2.9.2",
+  "version": "2.9.3",
   "private": true,
   "description": "Group Income is a decentralized and private (end-to-end encrypted) financial safety net for you and your friends.",
   "scripts": {
@@ -175,7 +175,7 @@
     "flow-bin": "0.154.0",
     "flow-remove-types": "2.181.0",
     "mocha": "11.7.5",
-    "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
+    "pug-lint-vue": "github:okTurtles/pug-lint-vue#619952b834296a98e807691019ef6c2f70540df0",
     "sass": "1.71.1",
     "should": "13.2.3",
     "should-sinon": "0.0.6",

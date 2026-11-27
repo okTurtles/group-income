@@ -145,6 +145,8 @@ $ npm version --no-git-tag-version 2.9.0
 This updates `package.json` and `package-lock.json` without committing, so the
 version bump can be committed together with the pinned contracts in step 2.
 
+Verify that `chelonia.json` lists the same version for `"appVersion"`.
+
 ### 2. Pin the contracts
 
 Pinning freezes a built copy of each contract into
