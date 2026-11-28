@@ -9,6 +9,7 @@ import 'cypress-file-upload'
 import { CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '../../../frontend/model/contracts/shared/constants.js'
 import { JOINED_GROUP } from '../../../frontend/utils/events.js'
 import { CONTRACTS_MODIFIED_READY, EVENT_HANDLED_READY, EVENT_PUBLISHED, EVENT_PUBLISHING_ERROR } from '@chelonia/lib/events'
+import { currentKeyByName, withChatRoom } from './lib.js'
 
 const API_URL = Cypress.config('baseUrl')
 
@@ -60,35 +61,79 @@ const getRandomNonMonetary = () => {
 // The function takes a name (to register it as a Cypress command) and custom
 // check function that takes SBP as its first parameter. It registers event
 // handlers for various events that may change the Chelonia state and returns
-// a Promise that resolves once the check passes.
+// a Promise that resolves once the check passes. The check function may return
+// a Promise; while one is pending, the check isn't run again, and such checks
+// are only run once a second rather than on every event. They're expensive
+// (e.g., they sync a contract), and their own work can emit those events
+// (retaining and releasing a contract emits `CONTRACTS_MODIFIED`), which would
+// otherwise re-run them back to back.
+// The check stops shortly before Cypress gives up on the command (after
+// `defaultCommandTimeout`), so that it doesn't keep running in the background,
+// and so that the failure names the check.
 const cySbpCheckCommand = (name, customCheckFn) => {
   Cypress.Commands.add(name, (...params) => {
     cy.window().its('sbp').then(sbp => {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
+        const deadline = Date.now() + Cypress.config('defaultCommandTimeout') - 1500
         let resolved = false
+        let pending = false
+        let isAsync = false
 
-        const check = () => {
+        // Un-register event listeners once the check has succeeded or timed out
+        const cleanup = () => {
+          sbp('okTurtles.events/off', EVENT_HANDLED_READY, onEvent)
+          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHED, onEvent)
+          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, onEvent)
+          clearInterval(x)
+        }
+
+        const done = (passed) => {
           if (resolved) return
-          if (!customCheckFn(sbp, ...params)) {
+          if (!passed) {
             console.warn(`[cypress] SBP Check ${name} failed!`)
             return
           }
           resolved = true
           resolve()
-          // Un-register event listeners once the check has succeeded
-          sbp('okTurtles.events/off', EVENT_HANDLED_READY, check)
-          sbp('okTurtles.events/off', CONTRACTS_MODIFIED_READY, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHED, check)
-          sbp('okTurtles.events/off', EVENT_PUBLISHING_ERROR, check)
-          clearInterval(x)
+          cleanup()
+        }
+
+        const check = () => {
+          if (resolved) return
+          // Checked before the pending guard, so that a check that never
+          // settles doesn't keep the listeners and the interval alive
+          if (Date.now() > deadline) {
+            console.warn(`[cypress] SBP Check ${name} timed out`)
+            resolved = true
+            cleanup()
+            reject(new Error(`[cypress] SBP Check ${name} timed out`))
+            return
+          }
+          if (pending) return
+          const result = customCheckFn(sbp, ...params)
+          if (typeof result?.then !== 'function') {
+            done(result)
+            return
+          }
+          isAsync = true
+          pending = true
+          result.then(done, (e) => {
+            console.warn(`[cypress] SBP Check ${name} failed with an error`, e)
+          }).finally(() => {
+            pending = false
+          })
+        }
+        const onEvent = () => {
+          if (!isAsync) check()
         }
 
         // Register event listeners. The following events could change the
         // state and affect the result of customCheckFn
-        sbp('okTurtles.events/on', EVENT_HANDLED_READY, check)
-        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHED, check)
-        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, check)
+        sbp('okTurtles.events/on', EVENT_HANDLED_READY, onEvent)
+        sbp('okTurtles.events/on', CONTRACTS_MODIFIED_READY, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHED, onEvent)
+        sbp('okTurtles.events/on', EVENT_PUBLISHING_ERROR, onEvent)
 
         // We also run the test manually in case there are no events
         const x = setInterval(check, 1000)
@@ -186,6 +231,51 @@ cySbpCheckCommand('giAssertKeyRotation', (sbp, contractID, height, keyName) => {
       return key.nbf > height
     })
   )
+})
+
+// Checks that a chatroom's current CEK is different from `previousCEKid`
+// (i.e., that the chatroom keys have been rotated)
+cySbpCheckCommand('giChatRoomKeysRotated', (sbp, chatRoomID, previousCEKid) => {
+  const currentCEK = currentKeyByName(sbp('state/vuex/state')[chatRoomID], 'cek')
+  console.info('giChatRoomKeysRotated', chatRoomID, previousCEKid, currentCEK?.id)
+  return !!currentCEK && currentCEK.id !== previousCEKid
+})
+
+cySbpCheckCommand('giChatRoomCheck', (sbp, chatRoomID, checkFn) => withChatRoom(sbp, chatRoomID, (state) => checkFn(state, sbp)))
+
+// Whether no membership check of a chatroom (see
+// `frontend/controller/actions/chatroom.js`) is scheduled or running in the
+// service worker
+cySbpCheckCommand('giChatRoomMembershipChecksDone', async (sbp, chatRoomID) => {
+  return !(await sbp('gi.actions/chatroom/membershipCheckPending', chatRoomID))
+})
+
+// Waits for the service worker to be done with a chatroom: the events that
+// reached it, the membership check that they may schedule (1 s after the
+// first chatroom event that calls for one), and what that check publishes or
+// queues. Use it before checking that something did *not* happen. Unlike
+// `giEmptyInvocationQueue`, which only sees the tab's queues, this waits for
+// Chelonia's queues and the membership checks, which are in the service
+// worker. It's done twice, as the events that a check publishes can schedule
+// another check. `quietMs` gives events that were just published (by us or by
+// others) time to reach the service worker.
+Cypress.Commands.add('giChatRoomSettled', (chatRoomID, { quietMs = 1000 } = {}) => {
+  const waitForQueues = () => cy.window().its('sbp').then(async sbp => {
+    await sbp('chelonia/contract/waitPublish', chatRoomID)
+    await sbp('chelonia/contract/wait', chatRoomID)
+  })
+  for (let round = 0; round < 2; round++) {
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(quietMs)
+    waitForQueues()
+    cy.giChatRoomMembershipChecksDone(chatRoomID)
+    waitForQueues()
+  }
+})
+
+cySbpCheckCommand('giChatRoomHasMessage', (sbp, chatRoomID, text) => {
+  const messages = sbp('state/vuex/state')[chatRoomID]?.messages || []
+  return messages.some((message) => message.text === text)
 })
 
 Cypress.Commands.add('giSignup', (username, {
